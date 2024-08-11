@@ -105,10 +105,31 @@ def task3():
     """
     Task 3 for Lab 1 of COMP3710.
     """
-    pass
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
+    # grid for computing image, subdivide the space
+    Y, X = np.mgrid[-1:1:0.002, -1:1:0.002] # 1-1 test with range for now? or normalise coords later?
 
-
+    # load into PyTorch tensors
+    x = torch.Tensor(X)
+    y = torch.Tensor(Y)
+    z = torch.complex(x, y) # needed?
+    
+    # transfer to the GPU device
+    x = x.to(device)
+    y = y.to(device)
+    
+    # Dragon curve fractal functions - https://en.wikipedia.org/wiki/Dragon_curve
+    def f1(z):
+        return ((1 + 1j) * z) / 2
+    
+    def f2(z):
+        return (1 - (1 - 1j) * z) / 2
+    
+    
+    
+    
 def main():
     # task1()
     # task2()

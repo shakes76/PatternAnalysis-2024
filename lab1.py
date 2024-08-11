@@ -108,32 +108,54 @@ def task3():
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # grid for computing image, subdivide the space
-    Y, X = np.mgrid[-1:1:0.002, -1:1:0.002] # 1-1 test with range for now? or normalise coords later?
+    # Dragon curve fractal iterated function system- REF: https://en.wikipedia.org/wiki/Dragon_curve
+    # Generates the fractal from the limit set of the two functions: 
+    # def f1(z):
+    #     return ((1 + 1j) * z) / 2
+    
+    # def f2(z):
+    #     return (1 - (1 - 1j) * z) / 2
+    # Trying to use these didn't work for me -> not enough iterations maybe?
 
-    # load into PyTorch tensors
-    x = torch.Tensor(X)
-    y = torch.Tensor(Y)
-    z = torch.complex(x, y) # needed?
+    # Following steps of curve generation described by REF: https://www.instructables.com/Dragon-Curve-Using-Python/
+    # Resulting sequence should describe direction of 90 deg rotation of next line relative to prev line
+    num_iters = 15
+    # Start with R (line to right) - represent as 1 in tensor form
+    sequence = torch.tensor([1], dtype=torch.int, device=device) # Creates tensor directly in device
+    for i in range(num_iters - 1): # -1 because one iteration already completed by creating init sequnce with R
+        # Add right turn to sequence
+        new_sequence = torch.cat([sequence, torch.tensor([1], device=device)])
+        #Flip original sequence backward
+        flipped = sequence.flip(0)
+        # Switch rights to lefts (0) and the opposite
+        switched = 1 - flipped
+        # Combine new sequence with flipped and switched one
+        sequence = torch.cat([new_sequence, switched])
     
-    # transfer to the GPU device
-    x = x.to(device)
-    y = y.to(device)
+    coords = torch.zeros((len(sequence) + 1, 2), dtype=torch.float32, device=device) # Initialise coords
+    direction = torch.tensor([1.0, 0.0], device=device) # Initial R line direction
     
-    # Dragon curve fractal functions - https://en.wikipedia.org/wiki/Dragon_curve
-    def f1(z):
-        return ((1 + 1j) * z) / 2
+    # Construct coordinates for lines based on turn sequence
+    for i, turn in enumerate(sequence):
+        # Update coords to add next line
+        coords[i + 1] = coords[i] + direction
+        # Update direction from turn in seqeunce
+        if turn == 1:  # Rot right
+            direction = torch.tensor([-direction[1], direction[0]], device=device)
+        else:  # Rot left
+            direction = torch.tensor([direction[1], -direction[0]], device=device)
     
-    def f2(z):
-        return (1 - (1 - 1j) * z) / 2
-    
-    
+    # Plot
+    plt.plot(coords[:, 0].cpu(), coords[:, 1].cpu())
+    plt.tight_layout()
+    plt.show()
     
     
 def main():
     # task1()
     # task2()
     task3()
+    
     
 if __name__ == "__main__":
     main()

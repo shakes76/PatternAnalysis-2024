@@ -119,8 +119,8 @@ def task3():
 
     # Following steps of curve generation described by REF: https://www.instructables.com/Dragon-Curve-Using-Python/
     # Resulting sequence should describe direction of 90 deg rotation of next line relative to prev line
-    num_iters = 15
-    # Start with R (line to right) - represent as 1 in tensor form
+    num_iters = 17
+    # Start with R (line to right) - represent right turn as 1 in tensor
     sequence = torch.tensor([1], dtype=torch.int, device=device) # Creates tensor directly in device
     for i in range(num_iters - 1): # -1 because one iteration already completed by creating init sequnce with R
         # Add right turn to sequence
@@ -132,21 +132,44 @@ def task3():
         # Combine new sequence with flipped and switched one
         sequence = torch.cat([new_sequence, switched])
     
-    coords = torch.zeros((len(sequence) + 1, 2), dtype=torch.float32, device=device) # Initialise coords
-    direction = torch.tensor([1.0, 0.0], device=device) # Initial R line direction
+    # coords = torch.zeros((len(sequence) + 1, 2), dtype=torch.float32, device=device) # Initialise coords
+    # direction = torch.tensor([1.0, 0.0], device=device) # Direction to draw line - initially for R line direction
     
-    # Construct coordinates for lines based on turn sequence
-    for i, turn in enumerate(sequence):
-        # Update coords to add next line
-        coords[i + 1] = coords[i] + direction
-        # Update direction from turn in seqeunce
-        if turn == 1:  # Rot right
-            direction = torch.tensor([-direction[1], direction[0]], device=device)
-        else:  # Rot left
-            direction = torch.tensor([direction[1], -direction[0]], device=device)
+    # # Construct coordinates for lines based on turn sequence
+    # for i, turn in enumerate(sequence):
+    #     # Update coords to add next line
+    #     coords[i + 1] = coords[i] + direction
+    #     # Update direction from turn in seqeunce
+    #     if turn == 1:  # Rot right
+    #         direction = torch.tensor([-direction[1], direction[0]], device=device)
+    #     else:  # Rot left
+    #         direction = torch.tensor([direction[1], -direction[0]], device=device)
+    
+
+    # convert 0's to -1's for left turns - easier for later steps
+    turn_directions = sequence * 2 - 1
+    # Calc cumulative sum along 1D tensor
+    # gives total sum of rotation up to that step in the line.
+    cum_rot = torch.cumsum(turn_directions, dim=0)
+    # Convert to rads
+    cum_rot = cum_rot * torch.pi / 2
+    # Calc x component of direction vectors
+    x_comp = torch.cos(cum_rot)
+    # Calc y comp of direction vectors
+    y_comp = torch.sin(cum_rot)
+    # Combine into unit direction vectors (2D tensor)
+    directions = torch.stack([x_comp, y_comp], dim=1)
+    # Add initial right direction at start
+    init_direction = torch.tensor([[1.0, 0.0]], device=device)
+    coord_changes = torch.cat([init_direction, directions])
+    # Calc coords based on sum of unit direction vectors for each segment
+    # E.g. coords[0] = [0,0], coords[1] = coords[0]+coord_changes[0], etc.
+    # Same functionality as prev version line: coords[i + 1] = coords[i] + direction
+    coords = torch.cumsum(coord_changes, dim=0)
     
     # Plot
     plt.plot(coords[:, 0].cpu(), coords[:, 1].cpu())
+    plt.axis('equal')
     plt.tight_layout()
     plt.show()
     

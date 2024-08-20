@@ -24,9 +24,9 @@ def task1():
     gaussian = torch.exp(-(x**2+y**2)/2.0)
     # Compute 2D sine function
     sin1 = torch.sin(x*y) # Should it be this?
-    sin2 = torch.sin(x+y) # Or this? - got both in case - this one is Gabor filter?
+    sin2 = torch.sin((x+y)) # Or this? - got both in case - this one is Gabor filter?
     
-    z = gaussian * sin2 # can change which sin1/2 is used by setting it to equal z.
+    z = sin2 # can change which sin1/2 is used by setting it to equal z.
 
     
     plt.imshow(z.cpu().numpy())
@@ -54,12 +54,12 @@ def task2():
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Use NumPy to create a 2D array of complex numbers on [-2,2]x[-2,2]
-    # Y, X = np.mgrid[-1.3:1.3:0.005, -2:1:0.005] # Default resolution
+    Y, X = np.mgrid[-1.3:1.3:0.005, -2:1:0.005] # Default resolution
     # Y, X = np.mgrid[-1.3:1.3:0.001, -2:1:0.001] # Higher resolution
     # Y, X = np.mgrid[-1:1:0.002, -1.5:0.5:0.002] # Slightly hihger res
     # Y, X = np.mgrid[-0.8:-0.5:0.0001, -0.05:0.15:0.0001] # Higher res + zoom
     # Y, X = np.mgrid[-1.3/2.5:1.3/2.5:0.001, -2/2.5:1/2.5:0.001] # Zoom and high res
-    Y, X = np.mgrid[-1.5:1.5:0.001, -1.5:1.5:0.001] # Julie set range
+    # Y, X = np.mgrid[-1.5:1.5:0.001, -1.5:1.5:0.001] # Julie set range
     
     # load into PyTorch tensors
     x = torch.Tensor(X)
@@ -77,21 +77,21 @@ def task2():
     c = c.to(device) # Julia set stuff
     
     # Mandelbrot Set
-    # for i in range(200):
-    #     # Compute the new values of z: z^2 + x
-    #     zs_ = zs*zs + z
-    #     # Have we diverged with this new value?
-    #     not_diverged = torch.abs(zs_) < 4.0
-    #     # Update variables to compute
-    #     ns += not_diverged
-    #     zs = zs_
-        
-    # Julia set calc
     for i in range(200):
-        zs_ = zs*zs + c  # Use constant c
+        # Compute the new values of z: z^2 + x
+        zs_ = zs*zs + z
+        # Have we diverged with this new value?
         not_diverged = torch.abs(zs_) < 4.0
+        # Update variables to compute
         ns += not_diverged
         zs = zs_
+        
+    # Julia set calc
+    # for i in range(200):
+    #     zs_ = zs*zs + c  # Use constant c
+    #     not_diverged = torch.abs(zs_) < 4.0
+    #     ns += not_diverged
+    #     zs = zs_
         
     # plot
     fig = plt.figure(figsize=(16,10))
@@ -119,7 +119,7 @@ def task3():
 
     # Following steps of curve generation described by REF: https://www.instructables.com/Dragon-Curve-Using-Python/
     # Resulting sequence should describe direction of 90 deg rotation of next line relative to prev line
-    num_iters = 17
+    num_iters = 14
     # Start with R (line to right) - represent right turn as 1 in tensor
     sequence = torch.tensor([1], dtype=torch.int, device=device) # Creates tensor directly in device
     for i in range(num_iters - 1): # -1 because one iteration already completed by creating init sequnce with R
@@ -176,8 +176,8 @@ def task3():
     
 def main():
     # task1()
-    # task2()
-    task3()
+    task2()
+    # task3()
     
     
 if __name__ == "__main__":

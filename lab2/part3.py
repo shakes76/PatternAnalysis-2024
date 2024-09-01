@@ -12,7 +12,6 @@ import torch.optim as optim
 from torchvision import utils as vutils
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset
-from torchvision.datasets import ImageFolder
 import os
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -138,7 +137,7 @@ class Discriminator(nn.Module):
 def save_gan(model, filename):
     torch.save(model.state_dict(), filename)
     
-# Function to load GAN for later use
+# Function to load GAN for later inference
 def load_model(model, filename):
     model.load_state_dict(torch.load(filename))
     model.eval()  # Set to eval mode

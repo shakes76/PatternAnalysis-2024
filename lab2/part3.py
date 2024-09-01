@@ -134,8 +134,27 @@ class Discriminator(nn.Module):
     def forward(self, input):
         return self.main(input).view(-1, 1).squeeze(1)
     
+# Function to save gan 
+def save_gan(model, filename):
+    torch.save(model.state_dict(), filename)
     
-def main():
+# Function to load GAN for later use
+def load_model(model, filename):
+    model.load_state_dict(torch.load(filename))
+    model.eval()  # Set to eval mode
+    return model
+
+# function to save an image from a tensor - UNSUSED
+def save_image(tensor, filename):
+    image = tensor.clone().detach().cpu()
+    image = image.squeeze(0)
+    image = (image + 1) / 2.0  # Denormalize
+    image = image.clamp(0, 1)
+    image = Image.fromarray((image.permute(1, 2, 0).numpy() * 255).astype('uint8'))
+    image.save(filename)
+    
+    
+def main():    
     # Seed for reproducibility
     torch.manual_seed(1)
     
@@ -239,6 +258,10 @@ def main():
                 img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
             
             iters += 1
+            
+    # Save final models
+    save_gan(netG, 'models/generator_final.pth')
+    save_gan(netD, 'models/discriminator_final.pth')
             
     return G_losses, D_losses, img_list
 

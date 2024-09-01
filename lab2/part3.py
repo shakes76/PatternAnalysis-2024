@@ -9,7 +9,7 @@ https://arxiv.org/abs/1511.06434
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchvision
+from torchvision import utils as vutils
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets import ImageFolder
@@ -21,7 +21,7 @@ IMAGE_SIZE = 256
 LATENT_DIM = 100
 BATCH_SIZE = 64
 LEARNING_RATE = 0.0002
-NUM_EPOCHS = 100
+NUM_EPOCHS = 20
 BETA1 = 0.5
 NGPU = 1 # num GPUs
 
@@ -173,4 +173,68 @@ def main():
     img_list = []
     G_losses = []
     D_losses = []
-    iters = 0        
+    iters = 0   
+    
+    for epoch in range(NUM_EPOCHS):
+        for i, data in enumerate(dataloader):
+            ############################
+            # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
+            ###########################
+            netD.zero_grad()
+            
+            # train D with real
+            real = data.to(device)
+            b_size = real.size(0) # Get batch size
+            label = torch.full((b_size,), real_label, dtype=torch.float, device=device) # Create real labels
+            
+            with torch.cuda.amp.autocast():
+                output = netD(real) # Forward pass real batch for D
+                errD_real = criterion(output, label) # Calc D err on real
+            scaler.scale(errD_real).backward() # Calc gradients in back pass
+            D_x = output.mean().item()
+            
+            # Train with fake
+            noise = torch.randn(b_size, LATENT_DIM, 1, 1, device=device)
+            with torch.cuda.amp.autocast():
+                fake = netG(noise) # Gen fake image batch for G
+                label.fill_(fake_label)# add fake labels
+                output = netD(fake.detach()) # classify with D
+                errD_fake = criterion(output, label) # Calc D err
+            scaler.scale(errD_fake).backward() # Calc grads for D
+            D_G_z1 = output.mean().item() # Avg D out on fake
+            # Total err for D
+            errD = errD_real + errD_fake
+            scaler.step(optimiserD) # Update D weights
+
+            ############################
+            # (2) Update G network: maximize log(D(G(z)))
+            ###########################
+            netG.zero_grad()
+            label.fill_(real_label)  # fake labels are real for generator cost
+            # Since we just updated D, perform another forward pass of all-fake batch through D
+            with torch.cuda.amp.autocast():
+                output = netD(fake) # classify fake batch with D
+                errG = criterion(output, label) # Calc G's err
+            scaler.scale(errG).backward() # Calc gradients for G
+            D_G_z2 = output.mean().item() #  D's average output for fake data (2nd time)
+            scaler.step(optimiserG) # update G weights
+            
+            scaler.update() # update scaler for next iter
+            
+            # Output training stats
+            if i % 50 == 0:
+                print(f'[{epoch}/{NUM_EPOCHS}][{i}/{len(dataloader)}] '
+                      f'Loss_D: {errD.item():.4f} Loss_G: {errG.item():.4f} '
+                      f'D(x): {D_x:.4f} D(G(z)): {D_G_z1:.4f}/{D_G_z2:.4f}')
+            
+            # Save Losses for plotting
+            G_losses.append(errG.item())
+            D_losses.append(errD.item())
+            
+            # Check generator progress - save G's output on fixed_noise
+            if (iters % 500 == 0) or ((epoch == NUM_EPOCHS-1) and (i == len(dataloader)-1)):
+                with torch.no_grad():
+                    fake = netG(fixed_noise).detach().cpu()
+                img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
+            
+            iters += 1

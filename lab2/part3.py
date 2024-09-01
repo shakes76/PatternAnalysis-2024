@@ -132,3 +132,45 @@ class Discriminator(nn.Module):
         
     def forward(self, input):
         return self.main(input).view(-1, 1).squeeze(1)
+    
+    
+def main():
+    # Seed for reproducibility
+    torch.manual_seed(1)
+    
+    device = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
+    
+    # Create generator
+    netG = Generator().to(device)
+    netG.apply(weights_init)
+    # Create discriminator
+    netD = Discriminator().to(device)
+    netD.apply(weights_init)
+    
+    # Setup dataset and data loader
+    dataset = GrayscaleImageDataset(root_dir='path/to/keras_png_slices_data', split='train')
+    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+
+    # Initialise BCE loss function
+    criterion = nn.BCELoss()
+    
+    # Create batch of latent vectors that we will use to visualize
+    # the progression of the generator
+    fixed_noise = torch.randn(64, LATENT_DIM, 1, 1, device=device)
+
+    # Establish convention for real and fake labels during training
+    real_label = 1.
+    fake_label = 0.
+
+    # Setup Adam optimizers for both G and D
+    optimiserD = optim.Adam(netD.parameters(), lr=LEARNING_RATE, betas=(BETA1, 0.999))
+    optimiserG = optim.Adam(netG.parameters(), lr=LEARNING_RATE, betas=(BETA1, 0.999))
+    
+    # Enable mixed precision training
+    scaler = torch.cuda.amp.GradScaler()
+    
+    # Lists to keep track of progress
+    img_list = []
+    G_losses = []
+    D_losses = []
+    iters = 0        

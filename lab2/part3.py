@@ -11,7 +11,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
+from torchvision.datasets import ImageFolder
+import os
+from PIL import Image
 
 # Constants
 IMAGE_SIZE = 256
@@ -21,6 +24,35 @@ LEARNING_RATE = 0.0002
 NUM_EPOCHS = 100
 BETA1 = 0.5
 NGPU = 1 # num GPUs
+
+
+# Custom Dataset class for grayscale images
+class GrayscaleImageDataset(Dataset):
+    def __init__(self, root_dir, split='train'):
+        self.root_dir = root_dir
+        self.split = split
+        self.image_paths = []
+
+        # Define the transformations
+        self.transform = transforms.Compose([
+            transforms.Grayscale(),
+            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5]) # [-1, 1] normalisation
+        ])
+
+        # Collect image paths
+        image_folder = os.path.join(root_dir, f'keras_png_slices_{split}')
+        self.image_paths = [os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith('.nii.png')]
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.image_paths[idx]
+        image = Image.open(img_path)
+        image = self.transform(image)
+        return image
 
 
 def weights_init(m):
@@ -99,4 +131,4 @@ class Discriminator(nn.Module):
         )
         
     def forward(self, input):
-        return self.main(input)
+        return self.main(input).view(-1, 1).squeeze(1)

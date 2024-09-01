@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets import ImageFolder
 import os
 from PIL import Image
+import matplotlib.pyplot as plt
 
 # Constants
 IMAGE_SIZE = 256
@@ -180,7 +181,7 @@ def main():
             ############################
             # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
             ###########################
-            netD.zero_grad()
+            netD.zero_grad() # Reset D gradients
             
             # train D with real
             real = data.to(device)
@@ -209,7 +210,7 @@ def main():
             ############################
             # (2) Update G network: maximize log(D(G(z)))
             ###########################
-            netG.zero_grad()
+            netG.zero_grad() # reset G gradients
             label.fill_(real_label)  # fake labels are real for generator cost
             # Since we just updated D, perform another forward pass of all-fake batch through D
             with torch.cuda.amp.autocast():
@@ -238,3 +239,22 @@ def main():
                 img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
             
             iters += 1
+            
+    return G_losses, D_losses, img_list
+
+
+# Function to plot training losses
+def plot_losses(G_losses, D_losses):
+    plt.figure(figsize=(10,5))
+    plt.title("Generator and Discriminator Loss During Training")
+    plt.plot(G_losses,label="G")
+    plt.plot(D_losses,label="D")
+    plt.xlabel("iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.show()
+    
+
+if __name__ == "__main__":
+    G_losses, D_losses, img_list = main()
+    plot_losses(G_losses, D_losses)

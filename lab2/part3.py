@@ -168,7 +168,7 @@ def main():
     
     # Setup dataset and data loader
     dataset = GrayscaleImageDataset(root_dir='./keras_png_slices_data', split='train')
-    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=1)
 
     # Initialise BCE loss function
     criterion = nn.BCELoss()

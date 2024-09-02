@@ -167,7 +167,7 @@ def main():
     netD.apply(weights_init)
     
     # Setup dataset and data loader
-    dataset = GrayscaleImageDataset(root_dir='~/COMP3710/lab2/keras_png_slices_data', split='train')
+    dataset = GrayscaleImageDataset(root_dir='./keras_png_slices_data', split='train')
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
 
     # Initialise BCE loss function

@@ -206,7 +206,7 @@ def main():
             b_size = real.size(0) # Get batch size
             label = torch.full((b_size,), real_label, dtype=torch.float, device=device) # Create real labels
             
-            with torch.amp.autocast():
+            with torch.cuda.amp.autocast():
                 output = netD(real) # Forward pass real batch for D
                 errD_real = criterion(output, label) # Calc D err on real
             scaler.scale(errD_real).backward() # Calc gradients in back pass

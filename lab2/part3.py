@@ -274,7 +274,7 @@ def plot_losses(G_losses, D_losses):
     plt.xlabel("iterations")
     plt.ylabel("Loss")
     plt.legend()
-    plt.show()
+    plt.savefig('losses_plot.png')
     
 
 if __name__ == "__main__":

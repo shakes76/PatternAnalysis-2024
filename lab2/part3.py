@@ -123,7 +123,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(1028),
+            nn.BatchNorm2d(1024),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             
             nn.Conv2d(in_channels=1024, out_channels=1, kernel_size=4, stride=1, padding=0, bias=False),
@@ -206,7 +206,7 @@ def main():
             b_size = real.size(0) # Get batch size
             label = torch.full((b_size,), real_label, dtype=torch.float, device=device) # Create real labels
             
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast():
                 output = netD(real) # Forward pass real batch for D
                 errD_real = criterion(output, label) # Calc D err on real
             scaler.scale(errD_real).backward() # Calc gradients in back pass

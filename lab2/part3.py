@@ -21,7 +21,7 @@ IMAGE_SIZE = 256
 LATENT_DIM = 256
 BATCH_SIZE = 64
 LEARNING_RATE = 0.0002
-NUM_EPOCHS = 20
+NUM_EPOCHS = 15
 BETA1 = 0.5
 NGPU = 1 # num GPUs
 NGF = 256 # Num generator filters
@@ -138,7 +138,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             # Input size: NDF*8 x 4 x 4
             nn.Conv2d(in_channels=NDF*8, out_channels=NC, kernel_size=4, stride=1, padding=0, bias=False)#,
-            #nn.Sigmoid() # Removed Sigmoid - unsave to autocast with BCELoss criterion - use BCEWithLogitsLoss
+            #nn.Sigmoid() # Removed Sigmoid - unsafe to autocast with BCELoss criterion - use BCEWithLogitsLoss
             # Output size: 1 x 1 x 1
         )
         
@@ -163,6 +163,32 @@ def save_image(tensor, filename):
     image = image.clamp(0, 1)
     image = Image.fromarray((image.permute(1, 2, 0).numpy() * 255).astype('uint8'))
     image.save(filename)
+    
+
+def generate_and_save_images(netG, fixed_noise, file_path, num_images=64):
+    """
+    Generate images using the Generator and save them in a grid.
+    
+    Args:
+    netG (nn.Module): The trained Generator model
+    fixed_noise (Tensor): A fixed noise tensor to generate images
+    file_path (str): The path to save the generated image grid
+    num_images (int): Number of images to generate (default: 64)
+    """
+    # Ensure the output directory exists
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    # Set the model to evaluation mode
+    netG.eval()
+    with torch.no_grad():
+        # Generate fake images
+        fake = netG(fixed_noise).detach().cpu()
+    # Rescale images from [-1, 1] to [0, 1]
+    fake = (fake + 1) / 2.0
+    # Create a grid of images
+    img_grid = vutils.make_grid(fake[:num_images], padding=2, normalize=False, nrow=8)
+    # Save the grid
+    vutils.save_image(img_grid, file_path, nrow=8)
+    print(f"Generated images saved to {file_path}")
     
     
 def main():    
@@ -269,7 +295,11 @@ def main():
                 img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
             
             iters += 1
-            
+    
+    # Generate and save images on final generator
+    generate_and_save_images(netG, fixed_noise, 'generated_images/final_generated_images.png')
+    plot_losses(G_losses, D_losses)
+    
     # Save final models
     save_gan(netG, 'models/generator_final.pth')
     save_gan(netD, 'models/discriminator_final.pth')
@@ -291,4 +321,3 @@ def plot_losses(G_losses, D_losses):
 
 if __name__ == "__main__":
     G_losses, D_losses, img_list = main()
-    plot_losses(G_losses, D_losses)

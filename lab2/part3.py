@@ -21,7 +21,7 @@ IMAGE_SIZE = 256
 LATENT_DIM = 256
 BATCH_SIZE = 64
 LEARNING_RATE = 0.0002
-NUM_EPOCHS = 15
+NUM_EPOCHS = 12
 BETA1 = 0.5
 NGPU = 1 # num GPUs
 NGF = 256 # Num generator filters
@@ -145,29 +145,110 @@ class Discriminator(nn.Module):
     def forward(self, input):
         return self.main(input).view(-1, 1)
     
+    
 # Function to save gan 
 def save_gan(model, filename):
     torch.save(model.state_dict(), filename)
     
-# Function to load GAN for later inference
+    
+# Function to load GAN if needed for later inference
 def load_model(model, filename):
     model.load_state_dict(torch.load(filename))
     model.eval()  # Set to eval mode
     return model
 
-# function to save an image from a tensor - UNSUSED
-def save_image(tensor, filename):
-    image = tensor.clone().detach().cpu()
-    image = image.squeeze(0)
-    image = (image + 1) / 2.0  # Denormalize
-    image = image.clamp(0, 1)
-    image = Image.fromarray((image.permute(1, 2, 0).numpy() * 255).astype('uint8'))
-    image.save(filename)
+
+def load_dataset(root_dir, split, batch_size):
+    """
+    Load a dataset for a specific split (train, test, or validate).
+    """
+    dataset = GrayscaleImageDataset(root_dir=root_dir, split=split)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+    return dataloader
+
+
+def evaluate_discriminator_real(netD, dataloader, device):
+    """
+    Evaluate the Discriminator's performance on a given dataset.
+    """
+    netD.eval()
+    total_correct = 0
+    total_samples = 0
     
+    with torch.no_grad():
+        for data in dataloader:
+            real_images = data.to(device)
+            batch_size = real_images.size(0)
+            
+            # Discriminator output for real images
+            output = netD(real_images).view(-1)
+            predictions = (output > 0.5).float()
+            
+            total_correct += (predictions == 1).sum().item()
+            total_samples += batch_size
+    
+    accuracy = total_correct / total_samples
+    return accuracy
+
+
+def evaluate_discriminator_fake(netD, netG, dataloader, device):
+    """
+    Evaluate the Discriminator's performance on generator created images.
+    """
+    netD.eval()
+    netG.eval()
+    total_correct = 0
+    total_samples = 0
+    
+    with torch.no_grad():
+        for _ in dataloader:  # We don't need the real data, just using it for batch size and number of iterations
+            batch_size = _.size(0)
+            
+            # Generate fake images
+            noise = torch.randn(batch_size, LATENT_DIM, 1, 1, device=device)
+            fake_images = netG(noise)
+            
+            # Discriminator output for fake images
+            output = netD(fake_images).view(-1)
+            predictions = (output < 0.5).float()
+            
+            total_correct += (predictions == 1).sum().item()
+            total_samples += batch_size
+    
+    accuracy = total_correct / total_samples
+    return accuracy
+            
+
+
+def save_image_grid(images, file_path, nrow=8):
+    """
+    Save a grid of images.
+    """
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    vutils.save_image(images, file_path, normalize=True, nrow=nrow)
+
+
+def evaluate(netD, netG, root_dir, device, latent_dim, batch_size=64):
+    """
+    Evaluate the Discriminator and generate images for test and validate sets.
+    """
+    # Test set evaluation
+    test_loader = load_dataset(root_dir, 'test', batch_size)
+    test_real_accuracy = evaluate_discriminator_real(netD, test_loader, device)
+    test_fake_accuracy = evaluate_discriminator_fake(netD, netG, test_loader, device)
+    print(f"Discriminator accuracy on test set: Real {test_real_accuracy:.4f}, Fake {test_fake_accuracy:.4f}")
+    
+    # Validation set evaluation
+    val_loader = load_dataset(root_dir, 'validate', batch_size)
+    val_real_accuracy = evaluate_discriminator_real(netD, val_loader, device)
+    val_fake_accuracy = evaluate_discriminator_fake(netD, netG, val_loader, device)
+    print(f"Discriminator accuracy on validation set: Real {val_real_accuracy:.4f}, Fake {val_fake_accuracy:.4f}")
+
 
 def generate_and_save_images(netG, fixed_noise, file_path, num_images=64):
     """
-    Generate images using the Generator and save them in a grid.
+    Generate images using the trained Generator and save them in a grid. 
+    Specifically used to check final performance.
     
     Args:
     netG (nn.Module): The trained Generator model
@@ -189,6 +270,23 @@ def generate_and_save_images(netG, fixed_noise, file_path, num_images=64):
     # Save the grid
     vutils.save_image(img_grid, file_path, nrow=8)
     print(f"Generated images saved to {file_path}")
+    
+    
+def save_progression_images(img_list, output_dir='progression_images'):
+    """
+    Save the progression images stored in img_list.
+    
+    Args:
+    img_list (list): List of image grids showing Generator progression
+    output_dir (str): Directory to save the images
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    for i, img_grid in enumerate(img_list):
+        file_path = os.path.join(output_dir, f'progression_image_{i * 500}.png')
+        vutils.save_image(img_grid, file_path, normalize=False)
+    
+    print(f"Saved {len(img_list)} progression images to {output_dir}")
     
     
 def main():    
@@ -232,7 +330,7 @@ def main():
     D_losses = []
     iters = 0   
     
-    for epoch in range(NUM_EPOCHS):
+    for epoch in range(NUM_EPOCHS): # Training Loop
         for i, data in enumerate(dataloader):
             ############################
             # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
@@ -288,7 +386,7 @@ def main():
             G_losses.append(errG.item())
             D_losses.append(errD.item())
             
-            # Check generator progress - save G's output on fixed_noise
+            # Check generator progress - return G's output on fixed_noise
             if (iters % 500 == 0) or ((epoch == NUM_EPOCHS-1) and (i == len(dataloader)-1)):
                 with torch.no_grad():
                     fake = netG(fixed_noise).detach().cpu()
@@ -299,7 +397,9 @@ def main():
     # Generate and save images on final generator
     generate_and_save_images(netG, fixed_noise, 'generated_images/final_generated_images.png')
     plot_losses(G_losses, D_losses)
-    
+    save_progression_images(img_list)
+    evaluate(netD, netG, './keras_png_slices_data', device, LATENT_DIM)
+
     # Save final models
     save_gan(netG, 'models/generator_final.pth')
     save_gan(netD, 'models/discriminator_final.pth')

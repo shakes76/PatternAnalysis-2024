@@ -137,8 +137,8 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(NDF*8),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             # Input size: NDF*8 x 4 x 4
-            nn.Conv2d(in_channels=NDF*8, out_channels=NC, kernel_size=4, stride=1, padding=0, bias=False),
-            nn.Sigmoid()
+            nn.Conv2d(in_channels=NDF*8, out_channels=NC, kernel_size=4, stride=1, padding=0, bias=False)#,
+            #nn.Sigmoid() # Removed Sigmoid - unsave to autocast with BCELoss criterion - use BCEWithLogitsLoss
             # Output size: 1 x 1 x 1
         )
         
@@ -183,7 +183,7 @@ def main():
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=1)
 
     # Initialise BCE loss function
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss()
     
     # Create batch of latent vectors that we will use to visualize
     # the progression of the generator

@@ -18,12 +18,15 @@ import matplotlib.pyplot as plt
 
 # Constants
 IMAGE_SIZE = 256
-LATENT_DIM = 100
+LATENT_DIM = 256
 BATCH_SIZE = 64
 LEARNING_RATE = 0.0002
 NUM_EPOCHS = 20
 BETA1 = 0.5
 NGPU = 1 # num GPUs
+NGF = 256 # Num generator filters
+NDF = 256 # Num discriminator filters
+NC = 1 # Num channels
 
 
 # Custom Dataset class for grayscale images
@@ -69,31 +72,35 @@ class Generator(nn.Module):
         self.ngpu = NGPU
         self.main = nn.Sequential(
             # Input layer - Input size: LATENT_DIM x 1 x 1
-            nn.ConvTranspose2d(in_channels=LATENT_DIM, out_channels=1024, kernel_size=4, stride=1, padding=0, bias=False),
-            nn.BatchNorm2d(num_features=1024),
+            nn.ConvTranspose2d(in_channels=LATENT_DIM, out_channels=NGF*8, kernel_size=4, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(num_features=NGF*8),
             nn.ReLU(inplace=True),
             
-            # Upsampling layers - Input size: 1024 x 4 x 4
-            nn.ConvTranspose2d(in_channels=1024, out_channels=512, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(num_features=512),
+            # Upsampling layers - Input size: 2048 (NGF*8) x 4 x 4
+            nn.ConvTranspose2d(in_channels=NGF*8, out_channels=NGF*4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=NGF*4),
             nn.ReLU(inplace=True),
-            # Input size: 512 x 8 x 8
-            nn.ConvTranspose2d(in_channels=512, out_channels=256, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(num_features=256),
+            # Input size: 1024 x 8 x 8
+            nn.ConvTranspose2d(in_channels=NGF*4, out_channels=NGF*2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=NGF*2),
             nn.ReLU(inplace=True),
-            # Input size: 256 x 16 x 16
-            nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(num_features=128),
+            # Input size: 512 x 16 x 16
+            nn.ConvTranspose2d(in_channels=NGF*2, out_channels=NGF, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=NGF),
             nn.ReLU(inplace=True),
-            # Input size: 128 x 32 x 32
-            nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(num_features=64),
+            # Input size: 256 x 32 x 32
+            nn.ConvTranspose2d(in_channels=NGF, out_channels=NGF//2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=NGF//2),
+            nn.ReLU(inplace=True),
+            # Input size: 128 x 64 x 64
+            nn.ConvTranspose2d(in_channels=NGF//2, out_channels=NGF//4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(num_features=NGF//4),
             nn.ReLU(inplace=True),
             
-            # Output layer - Input size: 64 x 64 x 64
-            nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=4, stride=2, padding=1, bias=False),
+            # Output layer - Input size: 64 x 128 x 128
+            nn.ConvTranspose2d(in_channels=NGF//4, out_channels=NC, kernel_size=4, stride=2, padding=1, bias=False),
             nn.Tanh()
-            # Output size: 1 x 128 x 128
+            # Output size: NC x 256 x 256
         )
     
     def forward(self, input):
@@ -105,33 +112,38 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.ngpu = NGPU
         self.main = nn.Sequential(
-            # Input layer: Input size: 1 x 128 x 128
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=4, stride=2, padding=1, bias=False),
+            # Input layer: Input size: NC x 256 x 256
+            nn.Conv2d(in_channels=NC, out_channels=NDF//4, kernel_size=4, stride=2, padding=1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             
-            # Downsampling
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(128),
+            # Downsampling: Input size: NDF//4 x 128 x 128
+            nn.Conv2d(in_channels=NDF//4, out_channels=NDF//2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(NDF//2),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(256),
+            # Input size: NDF//2 x 64 x 64
+            nn.Conv2d(in_channels=NDF//2, out_channels=NDF, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(NDF),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            
-            nn.Conv2d(in_channels=256, out_channels=512, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(512),
+            # Input size: NDF x 32 x 32
+            nn.Conv2d(in_channels=NDF, out_channels=NDF*2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(NDF*2),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            
-            nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(1024),
+            # Input size: NDF*2 x 16 x 16
+            nn.Conv2d(in_channels=NDF*2, out_channels=NDF*4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(NDF*4),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            
-            nn.Conv2d(in_channels=1024, out_channels=1, kernel_size=4, stride=1, padding=0, bias=False),
+            # Input size: NDF*4 x 8 x 8
+            nn.Conv2d(in_channels=NDF*4, out_channels=NDF*8, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(NDF*8),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True),
+            # Input size: NDF*8 x 4 x 4
+            nn.Conv2d(in_channels=NDF*8, out_channels=NC, kernel_size=4, stride=1, padding=0, bias=False),
             nn.Sigmoid()
+            # Output size: 1 x 1 x 1
         )
         
     def forward(self, input):
-        return self.main(input).view(-1, 1).squeeze(1)
+        return self.main(input).view(-1, 1)
     
 # Function to save gan 
 def save_gan(model, filename):
@@ -207,7 +219,7 @@ def main():
             label = torch.full((b_size,), real_label, dtype=torch.float, device=device) # Create real labels
             
             with torch.cuda.amp.autocast():
-                output = netD(real) # Forward pass real batch for D
+                output = netD(real).view(-1) # Forward pass real batch for D
                 errD_real = criterion(output, label) # Calc D err on real
             scaler.scale(errD_real).backward() # Calc gradients in back pass
             D_x = output.mean().item()
@@ -217,7 +229,7 @@ def main():
             with torch.cuda.amp.autocast():
                 fake = netG(noise) # Gen fake image batch for G
                 label.fill_(fake_label)# add fake labels
-                output = netD(fake.detach()) # classify with D
+                output = netD(fake.detach()).view(-1) # classify with D
                 errD_fake = criterion(output, label) # Calc D err
             scaler.scale(errD_fake).backward() # Calc grads for D
             D_G_z1 = output.mean().item() # Avg D out on fake
@@ -232,7 +244,7 @@ def main():
             label.fill_(real_label)  # fake labels are real for generator cost
             # Since we just updated D, perform another forward pass of all-fake batch through D
             with torch.cuda.amp.autocast():
-                output = netD(fake) # classify fake batch with D
+                output = netD(fake).view(-1) # classify fake batch with D
                 errG = criterion(output, label) # Calc G's err
             scaler.scale(errG).backward() # Calc gradients for G
             D_G_z2 = output.mean().item() #  D's average output for fake data (2nd time)

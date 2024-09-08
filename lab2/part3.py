@@ -230,7 +230,7 @@ def save_image_grid(images, file_path, nrow=8):
 
 def evaluate(netD, netG, root_dir, device, latent_dim, batch_size=64):
     """
-    Evaluate the Discriminator and generate images for test and validate sets.
+    Evaluate the Discriminator.
     """
     # Test set evaluation
     test_loader = load_dataset(root_dir, 'test', batch_size)

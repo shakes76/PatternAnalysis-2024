@@ -11,117 +11,9 @@ from collections import OrderedDict
 # Check if CUDA is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Helper functions and classes
-def node_def(module, **kwargs):
-    return lambda *args, **kw: module(*args, **{**kwargs, **kw})
-
-class Flatten(nn.Module):
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
-class Add(nn.Module):
-    def forward(self, x, y):
-        return x + y
-
-class Mul(nn.Module):
-    def __init__(self, weight):
-        super().__init__()
-        self.weight = weight
-    def forward(self, x):
-        return x * self.weight
-
-class Identity(nn.Module):
-    def forward(self, x):
-        return x
-
-# Define building blocks
-conv = node_def(nn.Conv2d)
-linear = node_def(nn.Linear)
-batch_norm = node_def(nn.BatchNorm2d)
-pool = node_def(nn.MaxPool2d)
-relu = node_def(nn.ReLU)
-
-def conv_block(c_in, c_out):
-    return OrderedDict([
-        ('conv', conv(in_channels=c_in, out_channels=c_out, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)),
-        ('norm', batch_norm(c_out)),
-        ('act', relu()),
-    ])
-
-def conv_pool_block(c_in, c_out):
-    return OrderedDict(list(conv_block(c_in, c_out).items()) + [('pool', pool(2))])
-
-def conv_pool_block_pre(c_in, c_out):
-    return OrderedDict([
-        ('conv', conv(in_channels=c_in, out_channels=c_out, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)),
-        ('pool', pool(2)),
-        ('norm', batch_norm(c_out)),
-        ('act', relu()),
-    ])
-
-def residual(c, conv_block):
-    return OrderedDict([
-        ('in', Identity()),
-        ('res1', nn.Sequential(conv_block(c, c))),
-        ('res2', nn.Sequential(conv_block(c, c))),
-        ('out', Identity()),
-        ('add', Add()),
-    ])
-
-def build_network(channels, extra_layers, res_layers, scale, conv_block=conv_block,
-                  prep_block=conv_block, conv_pool_block=conv_pool_block):
-    net = OrderedDict([
-        ('prep', nn.Sequential(prep_block(3, channels['prep']))),
-        ('layer1', nn.Sequential(conv_pool_block(channels['prep'], channels['layer1']))),
-        ('layer2', nn.Sequential(conv_pool_block(channels['layer1'], channels['layer2']))),
-        ('layer3', nn.Sequential(conv_pool_block(channels['layer2'], channels['layer3']))),
-        ('pool', pool(4)),
-        ('flatten', Flatten()),
-        ('classifier', linear(channels['layer3'], 10, bias=False)),
-        ('scale', Mul(scale)),
-    ])
-    
-    for layer in res_layers:
-        current_layer = net[layer]
-        net[layer] = nn.Sequential(OrderedDict([
-            ('main', current_layer),
-            ('residual', nn.Sequential(residual(channels[layer], conv_block)))
-        ]))
-    
-    for layer in extra_layers:
-        current_layer = net[layer]
-        net[layer] = nn.Sequential(OrderedDict([
-            ('main', current_layer),
-            ('extra', nn.Sequential(conv_block(channels[layer], channels[layer])))
-        ]))
-    
-    return nn.Sequential(net)
-
-# Define the neural network
-# class FastCIFAR10Net(nn.Module):
-#     def __init__(self):
-#         super(FastCIFAR10Net, self).__init__()
-#         channels = {
-#             'prep': 64,
-#             'layer1': 128,
-#             'layer2': 256,
-#             'layer3': 512,
-#         }
-#         self.network = build_network(
-#             channels,
-#             extra_layers=['layer1', 'layer2'],
-#             res_layers=['layer1', 'layer2', 'layer3'],
-#             scale=1.0,
-#             conv_block=conv_block,
-#             conv_pool_block=conv_pool_block
-#         )
-
-#     def forward(self, x):
-#         return self.network(x)
-
-class SimplifiedFastCIFAR10Net(nn.Module):
+class FastCIFAR10Net(nn.Module):
     def __init__(self):
-        super(SimplifiedFastCIFAR10Net, self).__init__()
+        super(FastCIFAR10Net, self).__init__()
         
         # Define channel sizes
         self.prep_channels = 64
@@ -215,7 +107,7 @@ except Exception as e:
     raise
 
 # Initialize the model, loss function, and optimizer
-net = SimplifiedFastCIFAR10Net().to(device)
+net = FastCIFAR10Net().to(device)
 criterion = nn.CrossEntropyLoss(label_smoothing=0.1)  # Using label smoothing
 optimizer = optim.Adam(net.parameters(), lr=0.001)
 

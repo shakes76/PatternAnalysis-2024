@@ -5,7 +5,7 @@ from dataset import create_mnist_dataset, generate_random_inputs
 
 # Define training parameters
 BATCH_SIZE = 32
-EPOCHS = 2
+EPOCHS = 30
 
 # Load the models
 generator = build_generator()
@@ -17,7 +17,7 @@ mnist_dataset = create_mnist_dataset(BATCH_SIZE)
 
 # Compile the models
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001, beta_1=0.5)
 
 # Define the loss function
 cross_entropy = tf.keras.losses.BinaryCrossentropy()
@@ -52,7 +52,7 @@ def train(epochs):
         
         print(f"Epoch {epoch+1}, Gen Loss: {gen_loss:.4f}, Disc Loss: {disc_loss:.4f}")
 
-        if (epoch + 1) % 1 == 0:
+        if (epoch + 1) % 2 == 0:
             generate_and_save_images(generator, epoch + 1)
 
 def generate_and_save_images(model, epoch):

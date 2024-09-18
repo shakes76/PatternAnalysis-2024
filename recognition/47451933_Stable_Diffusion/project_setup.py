@@ -1,7 +1,28 @@
+#######################################################
+# Project Setup
+#######################################################
+# script to setup the project directories
+# and validate that the data is supplied
+#######################################################
+# Authur: Jamie Westerhout, 2024
+#######################################################
+# Imports
+#######################################################
 import os
 import zipfile
+#######################################################
 
 def create_paths():
+    '''
+        create paths need for training to work
+        models folder for it to be able to out put the models to
+        and output path to output logs to
+
+        Returns:
+            tuple of (model path, out path)
+    '''
+
+    #setup model path
     try:
         model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'models'))
         os.mkdir(model_path)
@@ -11,6 +32,7 @@ def create_paths():
     except:
         print("failed to create model path")
     
+    #setup output path
     try:
         output_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'output'))
         os.mkdir(output_path)
@@ -23,10 +45,18 @@ def create_paths():
     return (model_path, output_path)
 
 def decompress_data(archive_path, output_path):
+    '''
+        decompressed the file at archive path
+        the puts the output in output path
+
+        returns:
+            True if succsessful
+            False if it fails
+    '''
     print("decompressing.....")
     try:
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-            zip_ref.extractall(output_path)
+            zip_ref.extractall(output_path) #decompress
             print("decompressed")
             return True
     except:
@@ -34,6 +64,14 @@ def decompress_data(archive_path, output_path):
         return False
 
 def decompressable_check(data_path):
+    '''
+        checks to see if the ADNI.zip archive exsits in the data path
+        if it does then decompress it and return True otherwise return false
+
+        Returns:
+            True if ADNI.zip exists and decompressed completed
+            False if file not found or fails to decompress
+    '''
     adni_archive_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI.zip'))
     if os.path.isfile(adni_archive_data_path):
         print("data archive found")
@@ -45,6 +83,11 @@ def decompressable_check(data_path):
     return False
 
 def verify_data_set():
+    '''
+        verfies that dataset is avaliable 
+        if its not try and fix and the ask the user to supply missing data
+        then corrects the issues if the user supplies the correct files
+    '''
     adni_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI'))
     if os.path.isdir(adni_data_path):
         print("data set root found, data should be okay")

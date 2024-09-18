@@ -31,9 +31,9 @@ class StableDiffusion(nn.Module):
         self.encoder = Encoder(
             in_channels=in_channels, 
             model_channels=model_channels, 
-            num_heads=num_res_blocks, 
+            num_res_blocks=num_res_blocks, 
             attention_resolutions=attention_resolutions, 
-           channel_mult= channel_mult, 
+            channel_mult= channel_mult, 
             num_heads=num_heads
         )
 

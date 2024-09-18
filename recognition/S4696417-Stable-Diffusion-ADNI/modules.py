@@ -57,13 +57,13 @@ class StableDiffusion(nn.Module):
     def forward(self, x):
 
         # Time embedding
-        t_embed = self.time_embed(x)
+        #t_embed = self.time_embed(x)
 
         # Encoder
         h = self.encoder(x)
 
         # Add time embedding
-        h += t_embed[:, :, None, None]
+        #h += t_embed[:, :, None, None]
 
         # Decoder
         out = self.decoder(h)

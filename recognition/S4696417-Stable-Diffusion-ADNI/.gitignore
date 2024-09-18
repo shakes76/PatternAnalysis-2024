@@ -1,3 +1,4 @@
 *.pth
 /data/
 /__pycache__/
+/wandb/

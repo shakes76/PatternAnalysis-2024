@@ -11,10 +11,10 @@ image_transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-cwd = os.getcwd()
-
-train_loader_AD = get_dataloader(os.path.join(cwd,'data/train/AD'), batch_size=16, transform=image_transform)
-train_loader_CN = get_dataloader(os.path.join(cwd,'data/train/NC'), batch_size=16, transform=image_transform)
+print("Loading data...")
+os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
+train_loader_AD = get_dataloader('data/train/AD', batch_size=8, transform=image_transform)
+train_loader_CN = get_dataloader('data/train/NC', batch_size=8, transform=image_transform)
 
 # Settings
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -23,24 +23,30 @@ print(f'Using {device}')
 lr = 1e-5
 epochs = 100
 
+print("Loading model...")
 model = StableDiffusion(
     in_channels=3,
     out_channels=3,
-    model_channels=256,
+    model_channels=128,
     num_res_blocks=2,
     attention_resolutions=[16,8],
     channel_mult=[1, 2, 4, 8],
     num_heads=8
-).to(device)
+)
+model = model.to(device)
+print("Model loaded")
+
+
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
 
 # initialise wandb
+
 wandb.init(
-    project="S4696417-Stable-Diffusion-ADNI", 
-    entity="s1lentcs",
+    project="Stable-Diffusion-ADNI", 
+    entity="s1lentcs-uq",
     config={
         "learning rate": lr,
         "epochs": epochs,
@@ -50,6 +56,7 @@ wandb.init(
     }
 )
 
+print("Training model...")
 model.train()
 for epoch in range(epochs):
     total_loss = 0

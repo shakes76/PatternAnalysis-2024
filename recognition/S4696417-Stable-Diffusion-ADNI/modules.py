@@ -2,10 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+"""
+<<<<< Diffusion Model >>>>>
+"""
 class StableDiffusion(nn.Module):
     """
-    Advanced Stable Diffusion model.
+    Advanced Stable Diffusion model. Customisable encoder and decoder properties.
 
     Args:
         in_channels (int): Number of input channels

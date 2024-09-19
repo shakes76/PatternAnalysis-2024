@@ -27,6 +27,7 @@ class StableDiffusion(nn.Module):
                 channel_mult=(1, 2, 4, 8),
                 num_heads=8):
         super(StableDiffusion, self).__init__()
+        self.model_channels = model_channels
 
         self.encoder = Encoder(
             in_channels=in_channels, 
@@ -54,22 +55,30 @@ class StableDiffusion(nn.Module):
         )
 
 
-    def forward(self, x):
+    def forward(self, x, t):
 
         # Time embedding
-        #t_embed = self.time_embed(x)
+        t = t.unsqueeze(-1).type(torch.float)
+        t = t.repeat(1, self.model_channels)
+        t_embed = self.time_embed(t)  # Shape: [8, 512]
 
         # Encoder
-        h = self.encoder(x)
+        h = self.encoder(x) # Shape: [8, 1024, 4, 4]
+
+        # Reshape t_embed to match h's spatial dimensions
+        t_embed = t_embed.view(t_embed.shape[0], t_embed.shape[1], 1, 1)  # Shape: [8, 512, 1, 1]
+        t_embed = t_embed.repeat(1, 1, h.shape[2], h.shape[3])  # Shape: [8, 512, 4, 4]
+
+        t_embed = F.pad(t_embed, (0, 0, 0, 0, 0, h.shape[1] - t_embed.shape[1]))  # Shape: [8, 1024, 4, 4]
 
         # Add time embedding
-        #h += t_embed[:, :, None, None]
+        h = h + t_embed
 
         # Decoder
         out = self.decoder(h)
 
+
         return out
-    
 
 """
 <<<<< Encoder and Decoder >>>>>

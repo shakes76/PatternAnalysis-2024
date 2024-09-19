@@ -166,7 +166,7 @@ for epoch in range(epochs):
     print(f'Train PSNR: {train_psnr/len(train_loader):.4f}, Val PSNR: {val_psnr/len(val_loader):.4f}')
     print(f'Train SSIM: {train_ssim/len(train_loader):.4f}, Val SSIM: {val_ssim/len(val_loader):.4f}')
 
-    if (epoch + 1) % 5 == 0:
+    if (epoch + 1) % 2 == 0:
         generate_images(model, device, epoch+1)
 
 

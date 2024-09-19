@@ -6,4 +6,5 @@ __pycache__/
 /data/
 data/
 wandb/
+generated_images
 

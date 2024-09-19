@@ -1,10 +1,12 @@
-import torch, io
+import torch, io, matplotlib, os
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import wandb
 
-def generate_images(model, device, epoch, num_images=10):
+matplotlib.use('Agg')
+
+def generate_images(model, device, epoch, num_images=10, save_dir='generated_images'):
     """
     Fuinction to generate and save images to Wandb for checking model outputs during training
 
@@ -34,32 +36,40 @@ def generate_images(model, device, epoch, num_images=10):
         generated_images = (generated_images + 1) / 2.0
         generated_images = np.clip(generated_images, 0, 1)  # Ensure values are in [0, 1]
         generated_images = np.transpose(generated_images, (0, 2, 3, 1))
+    
+    # Make directory if it doesnt exist
+    os.makedirs(save_dir, exist_ok=True)
 
     # Plot and save the generated images
     fig, axes = plt.subplots(1, num_images, figsize=(20, 2))
     wandb_images = []
+
     for i, img in enumerate(generated_images):
-        axes[i].imshow(img)
-        axes[i].axis('off')
+        img_path = os.path.join(save_dir, f'epoch_{epoch}_image_{i}.png')
+        plt.imsave(img_path, img)
         
-        # Convert to PIL Image for wandb
-        pil_img = Image.fromarray((img * 255).astype(np.uint8))
-        wandb_images.append(wandb.Image(pil_img, caption=f"Epoch {epoch}, Image {i+1}"))
+        wandb_images.append(wandb.Image(img_path, caption=f"Epoch {epoch}, Image {i+1}"))
+
+        # Plot for combined figure
+        if num_images > 1:
+            axes[i].imshow(img)
+            axes[i].axis('off')
+        else:
+            axes.imshow(img)
+            axes.axis('off')
 
     plt.tight_layout()
 
-    # Save the figure to a buffer
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
+    # Save the combined figure
+    combined_path = os.path.join(save_dir, f'epoch_{epoch}_combined.png')
+    plt.savefig(combined_path)
+    plt.close(fig)
 
-    # Log the whole figure and individual images to wandb
+    # Log to wandb
     wandb.log({
-        f"generated_images_epoch_{epoch}": wandb.Image(buf, caption=f"Generated Images at Epoch {epoch}"),
+        f"generated_images_epoch_{epoch}": wandb.Image(combined_path, caption=f"Generated Images at Epoch {epoch}"),
         f"individual_images_epoch_{epoch}": wandb_images
     })
-
-    plt.close(fig)
     print(f"Images for epoch {epoch} have been logged to wandb.")
 
 def calculate_gradient_norm(model):

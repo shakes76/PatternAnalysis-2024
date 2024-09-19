@@ -3,13 +3,12 @@ from dataset import get_dataloader
 from modules import StableDiffusion
 from torchvision.datasets import CIFAR10
 from torch.utils.data import DataLoader
-import torch, wandb, os
+import torch, wandb, os, io
 import torch.nn as nn
 from tqdm import tqdm
 from torch.cuda.amp import autocast, GradScaler
-import matplotlib.pyplot as plt
-import numpy as np
-from torchmetrics.functional import structural_similarity_index_measure, peak_signal_noise_ratio
+from utils import generate_images, calculate_gradient_norm
+from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 image_transform = transforms.Compose([
     transforms.ToTensor(),    
@@ -50,7 +49,7 @@ print("Model loaded")
 criterion = nn.MSELoss()
 scaler = GradScaler()
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
 # initialise wandb
 
@@ -67,49 +66,6 @@ wandb.init(
         "name": "SD-CIFAR-10",
     }
 )
-
-
-def generate_images(model, device, epoch, num_images=10):
-    print("Generating images...")
-    model.eval()
-    with torch.no_grad():
-        # Generate random noise
-        noise = torch.randn(num_images, 3, 32, 32).to(device)
-        
-        # Generate timestamps (you may need to adjust this based on your model's requirements)
-        timestamps = torch.randint(0, 1000, (images.size(0),), device=device).long()
-        
-        # Generate images
-        generated_images = model(noise, timestamps)
-        
-        # Denormalize and convert to numpy for plotting
-        generated_images = generated_images.cpu().numpy()
-        generated_images = (generated_images + 1) / 2.0
-        generated_images = np.transpose(generated_images, (0, 2, 3, 1))
-
-    # Plot and save the generated images
-    fig, axes = plt.subplots(1, num_images, figsize=(20, 2))
-    for i, ax in enumerate(axes):
-        ax.imshow(generated_images[i])
-        ax.axis('off')
-    plt.tight_layout()
-    plt.savefig(f'generated_images_epoch_{epoch}.png')
-    plt.close()
-
-def calculate_gradient_norm(model):
-    total_norm = 0
-    for p in model.parameters():
-        if p.grad is not None:
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-    total_norm = total_norm ** 0.5
-    return total_norm
-
-def log_param_stats(model):
-    for name, param in model.named_parameters():
-        if 'weight' in name:
-            wandb.log({f'{name}_mean': param.data.mean().item(),
-                       f'{name}_std': param.data.std().item()})
 
 
 print("Training model...")
@@ -140,8 +96,12 @@ for epoch in range(epochs):
         scaler.update()
 
         # Get PSNR and SSIM metrics
-        psnr = peak_signal_noise_ratio(outputs, images)
-        ssim = structural_similarity_index_measure(outputs, images)
+        with torch.no_grad():
+            # Convert outputs to float32 for metric calculation
+            outputs_float = outputs.float()
+            psnr = peak_signal_noise_ratio(outputs_float, images)
+            ssim = structural_similarity_index_measure(outputs_float, images)
+
 
         train_loss += loss.item()
         train_psnr += psnr.item()
@@ -160,8 +120,7 @@ for epoch in range(epochs):
         loop.set_postfix(loss=loss.item(), psnr=psnr.item(), ssim=ssim.item())
 
 
-    scheduler.step(train_loss)
-    log_param_stats(model)
+    scheduler.step()
 
     # validation
     model.eval()
@@ -182,8 +141,9 @@ for epoch in range(epochs):
                 loss = criterion(outputs, images)
 
             # Calculate PSNR and SSIM
-            psnr = peak_signal_noise_ratio(outputs, images)
-            ssim = structural_similarity_index_measure(outputs, images)
+            outputs_float = outputs.float()
+            psnr = peak_signal_noise_ratio(outputs_float, images)
+            sam = structural_similarity_index_measure(outputs_float, images)
 
             val_loss += loss.item()
             val_psnr += psnr.item()

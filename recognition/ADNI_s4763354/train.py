@@ -4,6 +4,8 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import sys
 import os
+from tqdm import tqdm
+
 sys.path.append(os.path.abspath('/home/Student/s4763354/comp3710/GFNet'))
 
 from modules import GFNetBinaryClassifier
@@ -28,6 +30,77 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-4, batch_size=32):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
+    # Track training progress
+    train_losses = []
+    train_accuracies = []
+    
+    # Training loop
+    for epoch in range(epochs):
+        model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        
+        for images, labels in tqdm(train_loader, desc=f'Epoch {epoch + 1}/{epochs}', unit='batch'):
+            images, labels = images.to(device), labels.to(device)
+            
+            # Forward pass
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            
+            # Backward pass
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            running_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
+
+        # Compute training accuracy and loss
+        train_accuracy = 100 * correct / total
+        train_losses.append(running_loss)
+        train_accuracies.append(train_accuracy)
+        
+        print(f'Epoch [{epoch+1}/{epochs}], Loss: {running_loss:.4f}, Train Accuracy: {train_accuracy:.2f}%')
+
+    # Testing loop
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
+
+    test_accuracy = 100 * correct / total
+    print(f'Test Accuracy: {test_accuracy:.2f}%')
+    
+    # Plot training loss and accuracy
+    plt.figure(figsize=(12, 4))
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(train_losses, label='Training Loss')
+    plt.title('Loss over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(train_accuracies, label='Training Accuracy')
+    plt.title('Accuracy over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy (%)')
+    plt.legend()
+    
+    plt.show()
+    
+    # Save the trained model
+    torch.save(model.state_dict(), 'gfnet_binary_classifier.pth')
 
 if __name__ == "__main__":
     train_and_evaluate(train_dir='/home/groups/comp3710/ADNI/AD_NC/train', 

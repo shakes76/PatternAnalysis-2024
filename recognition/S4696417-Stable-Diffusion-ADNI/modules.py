@@ -49,12 +49,6 @@ class StableDiffusion(nn.Module):
             with torch.no_grad():
                 pred_noise = self.unet(z, t_batch)
             
-            # Guidance (you can implement your own guidance method here)
-            if guidance_scale > 0:
-                # This is a placeholder for guidance. In a real implementation,
-                # you would apply some form of guidance here.
-                pass
-            
             # Remove noise
             z = self.noise_scheduler.remove_noise(z, t_batch, pred_noise)
             
@@ -68,7 +62,7 @@ class StableDiffusion(nn.Module):
         
         return samples
     
-class UNet(nn.Module):
+class UNet2(nn.Module):
     """
     Unet to predict noise at each timestep
 
@@ -88,7 +82,7 @@ class UNet(nn.Module):
         - Bottleneck: Bottleneck with residual and attention blocks
         - Decoder blocks: Upsampling path with residual and attention blocks
     """
-    def __init__(self, in_channels=256, hidden_dims=[512, 256, 128], time_emb_dim=256):
+    def __init__(self, in_channels=256, hidden_dims=[128, 256, 512], time_emb_dim=256):
         super().__init__()
         self.in_channels = in_channels
         self.hidden_dims = hidden_dims
@@ -131,14 +125,14 @@ class UNet(nn.Module):
         t = self.time_embed(t)
 
         # Initial linear layer
-        x = self.linear_in(x).unsqueeze(-1) 
+        x = self.linear_in(x) # [B, latent_dim] -> [B, hidden_dim]
         
         # Downsampling
         residuals = []
         for down_block in self.down_blocks:
             x = down_block(x, t)
             residuals.append(x)
-            x = F.avg_pool1d(x, 2)
+            x = F.avg_pool2d(x, 2)
         
         # Apply attention
         x = self.attn1(x)
@@ -161,6 +155,96 @@ class UNet(nn.Module):
         x = x.squeeze(-1)  
         return self.linear_out(x)
     
+class UNet(nn.Module):
+    """
+    Unet to predict noise at each timestep
+
+    Args:
+        in_channels: Number of channels in the input image
+        hidden_dims: Number of channels in the hidden layers
+        time_emb_dim: Number of channels in the time embedding
+
+    Model Call:
+        Input: x: [B, latent_dim, 2, 2] noisy image or latent tensor
+        Input: t: [B] tensor of timesteps
+        Output: [B, C, H, W] Predicted noise tensor
+    """
+    def __init__(self, in_channels=256, hidden_dims=[128, 256, 512], time_emb_dim=256):
+        super().__init__()
+        self.in_channels = in_channels
+        self.hidden_dims = hidden_dims
+        
+        # Time embedding
+        self.time_embed = TimeEmbedding(time_emb_dim)
+
+        # Initial conv and linear layer
+        self.conv_in = nn.Conv2d(in_channels, hidden_dims[0], kernel_size=3, stride=1, padding=1)
+        
+        # Encoder (Downsampling)
+        self.down_blocks = nn.ModuleList()
+        input_channel = hidden_dims[0]
+        for hidden_dim in hidden_dims:
+            self.down_blocks.append(ResidualBlock(input_channel, hidden_dim, time_emb_dim))
+            input_channel = hidden_dim
+        
+        # Attention blocks
+        self.attn1 = AttentionBlock(hidden_dims[-1])
+        self.attn2 = AttentionBlock(hidden_dims[-1])
+        
+        # Bottleneck
+        self.bottleneck1 = ResidualBlock(hidden_dims[-1], hidden_dims[-1], time_emb_dim)
+        self.bottleneck2 = ResidualBlock(hidden_dims[-1], hidden_dims[-1], time_emb_dim)
+        
+        # Decoder (Upsampling)
+        self.up_blocks = nn.ModuleList()
+        reversed_hidden_dims = list(reversed(hidden_dims))
+        for i in range(len(reversed_hidden_dims) - 1):
+            self.up_blocks.append(
+                ResidualBlock(reversed_hidden_dims[i] * 2, reversed_hidden_dims[i + 1], time_emb_dim)
+            )
+        self.up_blocks.append(ResidualBlock(reversed_hidden_dims[-1] * 2, in_channels, time_emb_dim))
+        
+        # Final conv layer
+        self.conv_out = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, x, t):
+        # Time embedding
+        t = self.time_embed(t)
+        
+        # Initial layers 
+        x = self.conv_in(x)
+        
+        # Downsampling
+        residuals = []
+        for down_block in self.down_blocks:
+            x = down_block(x, t)
+            residuals.append(x)
+            if x.size(-1) > 1:  # Only downsample if spatial dimensions are > 1
+                x = F.avg_pool2d(x, 2)
+        
+        # Apply attention
+        x = self.attn1(x)
+        
+        # Bottleneck
+        x = self.bottleneck1(x, t)
+        x = self.bottleneck2(x, t)
+        
+        # Apply attention
+        x = self.attn2(x)
+        
+        # Upsampling
+        for i, up_block in enumerate(self.up_blocks):
+            if len(residuals) > 0:
+                residual = residuals.pop()
+                if x.size(-1) < residual.size(-1):
+                    x = F.interpolate(x, size=residual.shape[-2:], mode='nearest')
+                x = torch.cat([x, residual], dim=1)
+            x = up_block(x, t)
+        
+        # Final linear layer
+        return self.conv_out(x)
+    
+
 class VAE(nn.Module):
     """
     VAE to compress images to latent space and reconstruct from latent representation
@@ -192,14 +276,12 @@ class VAE(nn.Module):
             VAEResidualBlock(128, 256),
             nn.Conv2d(256, 256, 3, stride=2, padding=1),
             nn.ReLU(),
-            nn.AdaptiveAvgPool2d((1, 1)),  
-            nn.Flatten()
         )
 
-        self.fc_mu = nn.Linear(256, latent_dim)
-        self.fc_logvar = nn.Linear(256, latent_dim)
+        self.conv_mu = nn.Conv2d(256, latent_dim, 3, stride=1, padding=1)
+        self.conv_logvar = nn.Conv2d(256, latent_dim, 3, stride=1, padding=1)
 
-        self.decoder_input = nn.Linear(latent_dim, 256 * 2 * 2)
+        self.decoder_input = nn.Conv2d(latent_dim, 256, kernel_size=3, stride=1, padding=1)
        
         # Decoder
         self.decoder = nn.Sequential(
@@ -224,9 +306,9 @@ class VAE(nn.Module):
 
     def encode(self, x):
         x = self.encoder(x)
-        mu = self.fc_mu(x)
-        logvar = self.fc_logvar(x)
-        return mu, logvar, x
+        mu = self.conv_mu(x)        
+        logvar = self.conv_logvar(x)
+        return mu, logvar
 
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
@@ -235,14 +317,13 @@ class VAE(nn.Module):
 
     def decode(self, z):
         z = self.decoder_input(z)
-        z = z.view(-1, 256, 2, 2)
         output = self.decoder(z)
         return output
 
     def forward(self, x):
-        mu, logvar, _ = self.encode(x)
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar, z
+        mu, logvar = self.encode(x)
+        latents = self.reparameterize(mu, logvar)
+        return self.decode(latents), mu, logvar, latents
 
 
 class SinusoidalPositionEmbeddings(nn.Module):
@@ -346,7 +427,7 @@ class AttentionBlock(nn.Module):
         self.channels = channels
         self.mha = nn.MultiheadAttention(channels, 4, batch_first=True)
         self.ln = nn.LayerNorm(channels)
-        self.ff = nn.Sequential(
+        self.ff_self = nn.Sequential(
             nn.LayerNorm(channels),
             nn.Linear(channels, channels),
             nn.GELU(),
@@ -354,20 +435,31 @@ class AttentionBlock(nn.Module):
         )
 
     def forward(self, x):
-        x = x.transpose(1, 2)  # [B, C, L] -> [B, L, C]
-        x_ln = self.ln(x)
-        attention_value, _ = self.mha(x_ln, x_ln, x_ln)
-        attention_value = attention_value + x
-        attention_value = self.ff(attention_value) + attention_value
-        return attention_value.transpose(1, 2)  # [B, L, C] -> [B, C, L]
+        b, c, h, w = x.shape
+        
+        # Flatten the spatial dimensions and transpose to (B, H*W, C)
+        x_flat = x.view(b, c, -1).transpose(1, 2)
+        
+        # Perform self-attention
+        x_flat = self.mha(x_flat, x_flat, x_flat)[0]
+        
+        # Apply layer norm and feedforward network
+        x_flat = self.ln(x_flat)
+        x_flat = self.ff_self(x_flat)
+        
+        # Reshape back to original spatial dimensions
+        x = x_flat.transpose(1, 2).view(b, c, h, w)
+        
+        return x
 
 class NoiseScheduler:
-    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
+    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02, device='cpu'):
         self.num_timesteps = num_timesteps
-        
+        self.device = device
+       
         # Define beta schedule
-        self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
-        
+        self.betas = torch.linspace(beta_start, beta_end, num_timesteps).to(device)
+       
         # Define alphas
         self.alphas = 1. - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
@@ -375,43 +467,50 @@ class NoiseScheduler:
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
 
     def add_noise(self, latents, noise, timesteps):
-        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        
+        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps].to(latents.device)
+        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].to(latents.device)
+       
+        # Reshape for broadcasting
+        sqrt_alpha_prod = sqrt_alpha_prod.view(-1, 1, 1, 1).expand_as(latents)
+        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.view(-1, 1, 1, 1).expand_as(latents)
+       
         noisy_latents = sqrt_alpha_prod * latents + sqrt_one_minus_alpha_prod * noise
         return noisy_latents
 
     def remove_noise(self, noisy_latents, predicted_noise, timesteps):
-        alpha_prod = self.alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        
+        alpha_prod = self.alphas_cumprod[timesteps].to(noisy_latents.device)
+        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].to(noisy_latents.device)
+       
+        # Reshape for broadcasting
+        alpha_prod = alpha_prod.view(-1, 1, 1, 1).expand_as(noisy_latents)
+        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.view(-1, 1, 1, 1).expand_as(noisy_latents)
+       
         original_latents = (noisy_latents - sqrt_one_minus_alpha_prod * predicted_noise) / torch.sqrt(alpha_prod)
         return original_latents
 
     def step(self, model_output, timestep, sample):
         prev_timestep = timestep - 1
-        alpha_prod_t = self.alphas_cumprod[timestep]
-        alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else torch.tensor(1.0)
+        alpha_prod_t = self.alphas_cumprod[timestep].to(sample.device)
+        alpha_prod_t_prev = self.alphas_cumprod[prev_timestep].to(sample.device) if prev_timestep >= 0 else torch.tensor(1.0, device=sample.device)
         beta_prod_t = 1 - alpha_prod_t
+
+        # Reshape for broadcasting
+        alpha_prod_t = alpha_prod_t.view(-1, 1, 1, 1).expand_as(sample)
+        alpha_prod_t_prev = alpha_prod_t_prev.view(-1, 1, 1, 1).expand_as(sample)
+        beta_prod_t = beta_prod_t.view(-1, 1, 1, 1).expand_as(sample)
+
         pred_original_sample = (sample - beta_prod_t.sqrt() * model_output) / alpha_prod_t.sqrt()
-        
+       
         # Direction pointing to x_t
         pred_sample_direction = (1 - alpha_prod_t_prev).sqrt() * model_output
-        
+       
         # x_{t-1}
         prev_sample = alpha_prod_t_prev.sqrt() * pred_original_sample + pred_sample_direction
-        
+       
         return prev_sample
 
     def to(self, device):
-        self.betas = self.betas.to(device)
-        self.alphas = self.alphas.to(device)
-        self.alphas_cumprod = self.alphas_cumprod.to(device)
-        self.sqrt_alphas_cumprod = self.sqrt_alphas_cumprod.to(device)
-        self.sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod.to(device)
-        return self
-
-    def to(self, device):
+        self.device = device
         self.betas = self.betas.to(device)
         self.alphas = self.alphas.to(device)
         self.alphas_cumprod = self.alphas_cumprod.to(device)

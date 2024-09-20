@@ -111,8 +111,3 @@ def calculate_gradient_norm(model):
             total_norm += param_norm.item() ** 2
     total_norm = total_norm ** 0.5
     return total_norm
-
-def add_spectral_norm(module):
-    if isinstance(module, (nn.Conv2d, nn.ConvTranspose2d, nn.Linear)):
-        return nn.utils.spectral_norm(module)
-    return module

@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from tqdm import tqdm
 from modules import VAE
-from utils import add_spectral_norm
 from torchmetrics.functional.image import structural_similarity_index_measure, peak_signal_noise_ratio
 
 def vae_loss(recon_x, x, mu, logvar, kld_weight=0.1):
@@ -37,7 +36,6 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device):
             optimizer.zero_grad()
             
             recon_batch, mu, logvar, _ = vae(data)
-            latents = vae.reparameterize(mu, logvar)
             loss, mse, kld = vae_loss(recon_batch, data, mu, logvar)
             
             loss.backward()
@@ -83,7 +81,7 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device):
         scheduler.step(val_metrics[0])
 
         # Log reconstructed images periodically
-        if epoch % 5 == 0:
+        if epoch % 1 == 0:
             with torch.no_grad():
                 sample = next(iter(val_loader))[0][:8].to(device)
                 recon, _, _, _ = vae(sample)
@@ -101,7 +99,7 @@ if __name__ == "__main__":
 
     # Set up data loaders
     image_transform = transforms.Compose([
-    transforms.Resize((32, 32)),
+    transforms.Resize((256, 256)),
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(10),
     transforms.ColorJitter(brightness=0.1, contrast=0.1),
@@ -112,13 +110,13 @@ if __name__ == "__main__":
 
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=image_transform)
     val_dataset = datasets.MNIST('./data', train=False, transform=transforms.Compose([
-        transforms.Resize((32, 32)),
+        transforms.Resize((256, 256)),
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ]))
 
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
 
     # Initialize VAE (assuming you have a VAE class defined)
     vae = VAE(in_channels=1, latent_dim=8) 
@@ -127,6 +125,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Pretrain VAE
-    pretrain_vae(vae, train_loader, val_loader, num_epochs=20, device=device)
+    pretrain_vae(vae, train_loader, val_loader, num_epochs=5, device=device)
 
     wandb.finish()

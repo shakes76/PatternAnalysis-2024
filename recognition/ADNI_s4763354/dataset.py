@@ -4,8 +4,8 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 # Data paths
-train_dir = '/home/groups/comp3710/ADNI/train'
-test_dir = '/home/groups/comp3710/ADNI/test'
+train_dir = '/home/groups/comp3710/ADNI/AD_NC/train'
+test_dir = '/home/groups/comp3710/ADNI/AD_NC/test'
 
 # Transformations for input images
 transform = transforms.Compose([
@@ -21,14 +21,14 @@ test_dataset = datasets.ImageFolder(root=test_dir, transform=transform)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-# Fetch a single batch from the training loader
-data_iter = iter(train_loader)
-images, labels = next(data_iter)
+# # Fetch a single batch from the training loader
+# data_iter = iter(train_loader)
+# images, labels = next(data_iter)
 
-# Print the shapes of the batch
-print(f'Image batch shape: {images.shape}')  # [batch_size, 3, 224, 224]
-print(f'Label batch shape: {labels.shape}')  # [batch_size]
+# # Print the shapes of the batch
+# print(f'Image batch shape: {images.shape}')  # [batch_size, 3, 224, 224]
+# print(f'Label batch shape: {labels.shape}')  # [batch_size]
 
-print(f'First label in the batch: {labels[0]}') 
+# print(f'First label in the batch: {labels[0]}') 
 
 

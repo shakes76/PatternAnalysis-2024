@@ -1,0 +1,3 @@
+[submodule "recognition/ADNI_s4763354/GFNet"]
+	path = recognition/ADNI_s4763354/GFNet
+	url = https://github.com/raoyongming/GFNet.git

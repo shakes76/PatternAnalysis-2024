@@ -1,272 +1,352 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
-"""
-<<<<< Diffusion Model >>>>>
-"""
 class StableDiffusion(nn.Module):
     """
-    Advanced Stable Diffusion model. Customisable encoder and decoder properties.
+    Main model class
+
+     - Unet predicts noise at each timestep
+     - VAE encodes images to latent space and decodes latent representations back to images
+     - Noise Scheduler manages the noise shcedule for the diffusion process
 
     Args:
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-        model_channels (int): Number of channels in the model
-        num_res_blocks (int): Number of residual blocks
-        attention_resolutions (list): List of attention resolutions
-        channel_mult (list): List of channel multipliers
-        num_heads (int): Number of attention heads    
+        unet: UNet model
+        vae: VAE model
+        noise_scheduler: Noise scheduler
+
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Input: t: [B] tensor of timesteps
+        Output: [B, C, H, W] Predicted noise tensor
     """
-    def __init__(self,
-                in_channels=3,
-                out_channels=3,
-                model_channels=256,
-                num_res_blocks=2,
-                attention_resolutions=(16,8),
-                channel_mult=(1, 2, 4, 8),
-                num_heads=8):
-        super(StableDiffusion, self).__init__()
-        self.model_channels = model_channels
+    def __init__(self, unet, vae, noise_scheduler):
+        super().__init__()
+        self.unet = unet
+        self.vae = vae
+        self.noise_scheduler = noise_scheduler
 
-        self.encoder = Encoder(
-            in_channels=in_channels, 
-            model_channels=model_channels, 
-            num_res_blocks=num_res_blocks, 
-            attention_resolutions=attention_resolutions, 
-            channel_mult= channel_mult, 
-            num_heads=num_heads
-        )
+    def encode(self, x):
+        return self.vae.encode(x)
+    
+    def decode(self, z):
+        return self.vae.decode(z)
 
-        self.decoder = Decoder(
-            out_channels=out_channels,
-            model_channels=model_channels,
-            num_res_blocks=num_res_blocks,
-            attention_resolutions=attention_resolutions,
-            channel_mult=channel_mult[::-1],
-            num_heads=num_heads
-        )
+    def predict_noise(self, z, t):
+        pred_noise = self.unet(z, t)
+        
+        return pred_noise
 
-        # Time embedding - allows for longer sequences
-        self.time_embed = nn.Sequential(
-            nn.Linear(model_channels, model_channels * 4),
-            nn.SiLU(),
-            nn.Linear(model_channels * 4, model_channels * 4)
-        )
+    def sample(self, num_samples, latent_dim, device, guidance_scale=0.0):
+        # Start from pure noise
+        z = torch.randn(num_samples, latent_dim, device=device)
+        
+        for t in reversed(range(self.noise_scheduler.num_timesteps)):
+            t_batch = torch.full((num_samples,), t, device=device, dtype=torch.long)
+            
+            # Predict noise
+            with torch.no_grad():
+                pred_noise = self.unet(z, t_batch)
+            
+            # Guidance (you can implement your own guidance method here)
+            if guidance_scale > 0:
+                # This is a placeholder for guidance. In a real implementation,
+                # you would apply some form of guidance here.
+                pass
+            
+            # Remove noise
+            z = self.noise_scheduler.remove_noise(z, t_batch, pred_noise)
+            
+            # Add some noise back (except for the last step)
+            if t > 0:
+                z += torch.randn_like(z) * self.noise_scheduler.betas[t].sqrt()
+        
+        # Decode the final latent representation to an image
+        with torch.no_grad():
+            samples = self.vae.decode(z)
+        
+        return samples
+    
+class UNet(nn.Module):
+    """
+    Unet to predict noise at each timestep
 
+    Args:
+        in_channels: Number of channels in the input image
+        hidden_dims: Number of channels in the hidden layers
+        time_emb_dim: Number of channels in the time embedding
+
+    Model Call:
+        Input: x: [B, C, H, W] noisy image or latent tensor
+        Input: t: [B] tensor of timesteps
+        Output: [B, C, H, W] Predicted noise tensor
+
+    Unet Structure:
+        - Time embedding layer will convert timesteps to vector representation
+        - Encoder blocks: Downsampling path with residual and attention blocks
+        - Bottleneck: Bottleneck with residual and attention blocks
+        - Decoder blocks: Upsampling path with residual and attention blocks
+    """
+    def __init__(self, in_channels=256, hidden_dims=[512, 256, 128], time_emb_dim=256):
+        super().__init__()
+        self.in_channels = in_channels
+        self.hidden_dims = hidden_dims
+        
+        # Time embedding
+        self.time_embed = TimeEmbedding(time_emb_dim)
+
+        # Initial linear layer
+        self.linear_in = nn.Linear(in_channels, hidden_dims[0])
+        
+        # Encoder (Downsampling)
+        self.down_blocks = nn.ModuleList()
+        input_channel = hidden_dims[0]
+        for hidden_dim in hidden_dims:
+            self.down_blocks.append(ResidualBlock(input_channel, hidden_dim, time_emb_dim))
+            input_channel = hidden_dim
+        
+        # Attention blocks
+        self.attn1 = AttentionBlock(hidden_dims[-1])
+        self.attn2 = AttentionBlock(hidden_dims[-1])
+        
+        # Bottleneck
+        self.bottleneck1 = ResidualBlock(hidden_dims[-1], hidden_dims[-1], time_emb_dim)
+        self.bottleneck2 = ResidualBlock(hidden_dims[-1], hidden_dims[-1], time_emb_dim)
+        
+        # Decoder (Upsampling)
+        self.up_blocks = nn.ModuleList()
+        reversed_hidden_dims = list(reversed(hidden_dims))
+        for i in range(len(reversed_hidden_dims) - 1):
+            self.up_blocks.append(
+                ResidualBlock(reversed_hidden_dims[i] * 2, reversed_hidden_dims[i+1], time_emb_dim)
+            )
+        self.up_blocks.append(ResidualBlock(reversed_hidden_dims[-1] * 2, in_channels, time_emb_dim))
+        
+        # Final linear layer
+        self.linear_out = nn.Linear(in_channels, in_channels)
 
     def forward(self, x, t):
-
         # Time embedding
-        t = t.unsqueeze(-1).type(torch.float)
-        t = t.repeat(1, self.model_channels)
-        t_embed = self.time_embed(t)  # Shape: [8, 512]
+        t = self.time_embed(t)
 
+        # Initial linear layer
+        x = self.linear_in(x).unsqueeze(-1) 
+        
+        # Downsampling
+        residuals = []
+        for down_block in self.down_blocks:
+            x = down_block(x, t)
+            residuals.append(x)
+            x = F.avg_pool1d(x, 2)
+        
+        # Apply attention
+        x = self.attn1(x)
+        
+        # Bottleneck
+        x = self.bottleneck1(x, t)
+        x = self.bottleneck2(x, t)
+        
+        # Apply attention
+        x = self.attn2(x)
+        
+        # Upsampling
+        for i, up_block in enumerate(self.up_blocks):
+            residual = residuals.pop()
+            x = F.interpolate(x, scale_factor=2, mode='linear', align_corners=False)
+            x = torch.cat([x, residual], dim=1)
+            x = up_block(x, t)
+        
+        # Final linear layer
+        x = x.squeeze(-1)  
+        return self.linear_out(x)
+    
+class VAE(nn.Module):
+    """
+    VAE to compress images to latent space and reconstruct from latent representation
+     - Encoder takes input [B, C, H, W] and outputs mean and variance of latent space [B, latent_dim, 4, 4]
+     - Decoder takes latent representation [B, latent_dim, 4, 4] and outputs [B, C, H, W] image tensor
+     - Noise scheduler manages the noise schedule for the diffusion process
+   
+    Args:
+        in_channels (int): number of channels in the input image
+        latent_dim (int): dimension of the latent space
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, in_channels=1, latent_dim=8):
+        super().__init__()
+        self.latent_dim = latent_dim
+       
         # Encoder
-        h = self.encoder(x) # Shape: [8, 1024, 4, 4]
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels, 32, 3, stride=2, padding=1),
+            nn.ReLU(),
+            VAEResidualBlock(32, 64),
+            nn.Conv2d(64, 64, 3, stride=2, padding=1),
+            nn.ReLU(),
+            VAEResidualBlock(64, 128),
+            nn.Conv2d(128, 128, 3, stride=2, padding=1),
+            nn.ReLU(),
+            VAEResidualBlock(128, 256),
+            nn.Conv2d(256, 256, 3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),  
+            nn.Flatten()
+        )
 
-        # Reshape t_embed to match h's spatial dimensions
-        t_embed = t_embed.view(t_embed.shape[0], t_embed.shape[1], 1, 1)  # Shape: [8, 512, 1, 1]
-        t_embed = t_embed.repeat(1, 1, h.shape[2], h.shape[3])  # Shape: [8, 512, 4, 4]
+        self.fc_mu = nn.Linear(256, latent_dim)
+        self.fc_logvar = nn.Linear(256, latent_dim)
 
-        t_embed = F.pad(t_embed, (0, 0, 0, 0, 0, h.shape[1] - t_embed.shape[1]))  # Shape: [8, 1024, 4, 4]
-
-        # Add time embedding
-        h = h + t_embed
-
+        self.decoder_input = nn.Linear(latent_dim, 256 * 2 * 2)
+       
         # Decoder
-        out = self.decoder(h)
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1),
+            nn.ReLU(),
+            VAEResidualBlock(128, 128),
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),
+            nn.ReLU(),
+            VAEResidualBlock(64, 64),
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1),
+            nn.ReLU(),
+            VAEResidualBlock(32, 32),
+            nn.ConvTranspose2d(32, in_channels, 4, stride=2, padding=1),
+            nn.Tanh()
+        )
+   
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs)
+        self.encoder = self.encoder.to(*args, **kwargs)
+        self.decoder = self.decoder.to(*args, **kwargs)
+        return self
 
+    def encode(self, x):
+        x = self.encoder(x)
+        mu = self.fc_mu(x)
+        logvar = self.fc_logvar(x)
+        return mu, logvar, x
 
-        return out
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
 
-"""
-<<<<< Encoder and Decoder >>>>>
-"""
-class Encoder(nn.Module):
-    """
-    Advanced encoder for the Stable Diffusion model.
-
-    - Residual blocks for improved gradient flow in deep networks.
-    - Self-attention mechanisms to capture long-range dependencies in images.
-    - Progressive downsampling to efficiently capture multi-scale features.
-    - Group Normalization for consistent performance across various batch sizes.
-    - SiLU (Swish) activation for enhanced non-linearity and gradient propagation.
-
-    Args:
-
-        in_channels (int): Number of input channels
-        model_channels (int): Number of channels in the model
-        num_res_blocks (int): Number of residual blocks
-        attention_resolutions (list): List of attention resolutions
-        channel_mult (list): List of channel multipliers
-        num_heads (int): Number of attention heads  
-    """
-    def __init__(self,
-                 in_channels=3,
-                 model_channels=256,
-                 num_res_blocks=2,
-                 attention_resolutions=(16,8),
-                 channel_mult=(1, 2, 4, 8),
-                 num_heads=8):
-        super(Encoder, self).__init__()
-        self.in_channels = in_channels
-        self.model_channels = model_channels
-        self.num_res_blocks = num_res_blocks
-        self.attention_resolutions = attention_resolutions
-        self.channel_mult = channel_mult
-        self.num_heads = num_heads
-
-        # Initial convolution
-        self.conv_in = nn.Conv2d(in_channels, model_channels, kernel_size=3, stride=1, padding=1)
-
-        # Encoder blocks
-        self.encoder_blocks = nn.ModuleList([])
-        channels = [model_channels * mult for mult in channel_mult]
-
-        in_chan = model_channels
-        for level, mult in enumerate(channel_mult):
-            for _ in range(num_res_blocks):
-                out_chan = channels[level]
-                self.encoder_blocks.append(ResidualBlock(in_chan, out_chan))
-                in_chan = out_chan
-                if mult in attention_resolutions:
-                    self.encoder_blocks.append(AttentionBlock(in_chan))
-            
-            if level != len(channel_mult) - 1:
-                self.encoder_blocks.append(DownsampleBlock(in_chan, in_chan))
-
-        # Normalisation and convolution
-        self.norm_out = nn.GroupNorm(32, in_chan)
-        self.conv_out = nn.Conv2d(in_chan, in_chan, kernel_size=3, stride=1, padding=1)
+    def decode(self, z):
+        z = self.decoder_input(z)
+        z = z.view(-1, 256, 2, 2)
+        output = self.decoder(z)
+        return output
 
     def forward(self, x):
-        x = self.conv_in(x)
+        mu, logvar, _ = self.encode(x)
+        z = self.reparameterize(mu, logvar)
+        return self.decode(z), mu, logvar, z
 
-        for block in self.encoder_blocks:
-            x = block(x)
-        
-        x = self.norm_out(x)
-        x = F.silu(x)
-        x = self.conv_out(x)
 
-        return x
-    
-
-class Decoder(nn.Module):
+class SinusoidalPositionEmbeddings(nn.Module):
     """
-    Advanced decoderr for the Stable Diffusion model.
-
-    - Residual blocks for improved gradient flow in deep networks.
-    - Self-attention mechanisms to capture long-range dependencies in images.
-    - Progressive upsampling to efficiently represent multi-scale features.
-    - Group Normalization for consistent performance across various batch sizes.
-    - SiLU (Swish) activation for enhanced non-linearity and gradient propagation.
+    Convert timestep tensor to a vector representation
 
     Args:
-        out_channels (int): Number of output channels
-        model_channels (int): Number of channels in the model
-        num_res_blocks (int): Number of residual blocks
-        attention_resolutions (list): List of attention resolutions
-        channel_mult (list): List of channel multipliers
-        num_heads (int): Number of attention heads
+        dim (int): number of channels in the input image
+
+    Model Call:
+        Input: time: [B] tensor of timesteps
+        Output: [B, dim] vector representation
     """
-    def __init__(self, out_channels=3, model_channels=256, num_res_blocks=2, attention_resolutions=(16,8), channel_mult=(8, 4, 2, 1), num_heads=8):
-        super(Decoder, self).__init__()
-        self.out_channels = out_channels
-        self.model_channels = model_channels
-        self.num_res_blocks = num_res_blocks
-        self.attention_resolutions = attention_resolutions
-        self.channel_mult = channel_mult
-        self.num_heads = num_heads
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
 
-        # Initial convolution
-        self.conv_in = nn.Conv2d(model_channels * channel_mult[0], model_channels * channel_mult[0], kernel_size=3, stride=1, padding=1)
+    def forward(self, time):
+        device = time.device
+        half_dim = self.dim // 2
+        embeddings = math.log(10000) / (half_dim - 1)
+        embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
+        embeddings = time[:, None] * embeddings[None, :]
+        embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
+        return embeddings
 
-        # Decoder blocks
-        self.decoder_blocks = nn.ModuleList([])
-        channels = [model_channels * mult for mult in channel_mult]
-
-        in_chan = model_channels * channel_mult[0]
-        for level, mult in enumerate(channel_mult):
-            for _ in range(num_res_blocks + 1):
-                out_chan = channels[level]
-                self.decoder_blocks.append(ResidualBlock(in_chan, out_chan))
-                in_chan = out_chan
-                if mult in attention_resolutions:
-                    self.decoder_blocks.append(AttentionBlock(in_chan))
-            
-            if level != len(channel_mult) - 1:
-                self.decoder_blocks.append(UpsampleBlock(in_chan, channels[level + 1]))
-                in_chan = channels[level + 1]
-
-        # Normalisation and convolution
-        self.norm_out = nn.GroupNorm(32, in_chan)
-        self.conv_out = nn.Conv2d(in_chan, out_channels, kernel_size=3, stride=1, padding=1)
-    
-    def forward(self, x):
-        x = self.conv_in(x)
-
-        for block in self.decoder_blocks:
-            x = block(x)
-        
-        x = self.norm_out(x)
-        x = F.silu(x)
-        x = self.conv_out(x)
-
-        return x
-
-
-"""
-<<<<< Blocks >>>>>
-"""
 class ResidualBlock(nn.Module):
     """
-    Residual block with two convolutional layers and SiLU activation
+    Residual convolution block with time embedding for diffusion in Unet
 
     Args:
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-        stride (int): Stride for the convolutional layers
+        in_channels (int): number of channels in the input image
+        out_channels (int): number of channels in the output image
+        time_emb_dim (int): number of channels in the time embedding
+
+    Model Call:
+        Input: x: [B, C_in, H, W] tensor of images
+        Output: [B, C_out, H, W] processed feature tensor
     """
-    def __init__(self, in_channels, out_channels, stride=1):
-        super(ResidualBlock, self).__init__()
+    def __init__(self, in_channels, out_channels, time_emb_dim):
+        super().__init__()
+        num_groups = min(out_channels, 32)
+        self.time_mlp = nn.Linear(time_emb_dim, out_channels)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+        self.norm1 = nn.GroupNorm(num_groups, out_channels)
+        self.norm2 = nn.GroupNorm(num_groups, out_channels)
+        self.activation = nn.SiLU()
+        if in_channels != out_channels:
+            self.shortcut = nn.Conv2d(in_channels, out_channels, 1)
+        else:
+            self.shortcut = nn.Identity()
 
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1),
-            nn.GroupNorm(32, out_channels),
-            nn.SiLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1),
-            nn.GroupNorm(32, out_channels),
-        )
-        self.silu = nn.SiLU(inplace=True)
-        self.shortcut = nn.Sequential()
-
-        if in_channels != out_channels or stride != 1:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
-                nn.GroupNorm(32, out_channels),
-            )
-    def forward(self, x):
-        out = self.conv(x)
-        out += self.shortcut(x)
-        out = self.silu(out)
-        return out
+    def forward(self, x, t):
+        h = self.conv1(x)
+        h = self.norm1(h)
+        h += self.time_mlp(t)[:, :, None, None]
+        h = self.activation(h)
+        h = self.conv2(h)
+        h = self.norm2(h)
+        return self.activation(h + self.shortcut(x))
     
+class VAEResidualBlock(nn.Module):
+    """
+    Res block without time embedding for VAE
+    """
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        
+        self.shortcut = nn.Sequential()
+        if in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1),
+                nn.BatchNorm2d(out_channels)
+            )
+    
+    def forward(self, x):
+        residual = x
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.bn2(self.conv2(x))
+        x += self.shortcut(residual)
+        return F.relu(x)
 
 class AttentionBlock(nn.Module):
     """
-    AttentionBlock block for the decoder
+    Self Attention block for Unet
 
     Args:
-        channels (int): Number channels for attention block
+        channels (int): number of channels in the input image
+
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] processed feature tensor
     """
     def __init__(self, channels):
-        super(AttentionBlock, self).__init__()
+        super().__init__()
         self.channels = channels
-        self.mha = nn.MultiheadAttention(channels, num_heads=8, batch_first=True)
+        self.mha = nn.MultiheadAttention(channels, 4, batch_first=True)
         self.ln = nn.LayerNorm(channels)
-        self.ff_self = nn.Sequential(
+        self.ff = nn.Sequential(
             nn.LayerNorm(channels),
             nn.Linear(channels, channels),
             nn.GELU(),
@@ -274,52 +354,90 @@ class AttentionBlock(nn.Module):
         )
 
     def forward(self, x):
-        size = x.shape[-1]
-        x = x.view(-1, self.channels, size * size).swapaxes(1, 2)
+        x = x.transpose(1, 2)  # [B, C, L] -> [B, L, C]
         x_ln = self.ln(x)
         attention_value, _ = self.mha(x_ln, x_ln, x_ln)
-        attention_value = attention_value + x 
-        attention_value = self.ff_self(attention_value) + attention_value
-        return attention_value.swapaxes(2, 1).view(-1, self.channels, size, size)
+        attention_value = attention_value + x
+        attention_value = self.ff(attention_value) + attention_value
+        return attention_value.transpose(1, 2)  # [B, L, C] -> [B, C, L]
+
+class NoiseScheduler:
+    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
+        self.num_timesteps = num_timesteps
         
+        # Define beta schedule
+        self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
+        
+        # Define alphas
+        self.alphas = 1. - self.betas
+        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
+        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
 
-class DownsampleBlock(nn.Module):
+    def add_noise(self, latents, noise, timesteps):
+        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
+        
+        noisy_latents = sqrt_alpha_prod * latents + sqrt_one_minus_alpha_prod * noise
+        return noisy_latents
+
+    def remove_noise(self, noisy_latents, predicted_noise, timesteps):
+        alpha_prod = self.alphas_cumprod[timesteps].view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
+        
+        original_latents = (noisy_latents - sqrt_one_minus_alpha_prod * predicted_noise) / torch.sqrt(alpha_prod)
+        return original_latents
+
+    def step(self, model_output, timestep, sample):
+        prev_timestep = timestep - 1
+        alpha_prod_t = self.alphas_cumprod[timestep]
+        alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else torch.tensor(1.0)
+        beta_prod_t = 1 - alpha_prod_t
+        pred_original_sample = (sample - beta_prod_t.sqrt() * model_output) / alpha_prod_t.sqrt()
+        
+        # Direction pointing to x_t
+        pred_sample_direction = (1 - alpha_prod_t_prev).sqrt() * model_output
+        
+        # x_{t-1}
+        prev_sample = alpha_prod_t_prev.sqrt() * pred_original_sample + pred_sample_direction
+        
+        return prev_sample
+
+    def to(self, device):
+        self.betas = self.betas.to(device)
+        self.alphas = self.alphas.to(device)
+        self.alphas_cumprod = self.alphas_cumprod.to(device)
+        self.sqrt_alphas_cumprod = self.sqrt_alphas_cumprod.to(device)
+        self.sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod.to(device)
+        return self
+
+    def to(self, device):
+        self.betas = self.betas.to(device)
+        self.alphas = self.alphas.to(device)
+        self.alphas_cumprod = self.alphas_cumprod.to(device)
+        self.sqrt_alphas_cumprod = self.sqrt_alphas_cumprod.to(device)
+        self.sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod.to(device)
+        return self
+
+class TimeEmbedding(nn.Module):
     """
-    Downsample block for the encoder
+    Time embeddings for Unet
 
     Args:
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
+        dim (int): number of channels in the input image
+
+    Model Call:
+        Input: t: [B] tensor of timesteps
+        Output: [B, dim]
     """
-    def __init__(self, in_channels, out_channels):
-        super(DownsampleBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
-        self.norm = nn.GroupNorm(32, out_channels)
-        self.silu = nn.SiLU(inplace=True)
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+        self.layer = nn.Sequential(
+            nn.Linear(1, dim),
+            nn.SiLU(),
+            nn.Linear(dim, dim)
+        )
 
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.norm(x)
-        x = self.silu(x)
-        return x
-    
-
-class UpsampleBlock(nn.Module):
-    """
-    Upsample for the diffusion model
-
-    Args:
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-    """
-    def __init__(self, in_channels, out_channels):
-        super(UpsampleBlock, self).__init__()
-        self.conv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1)
-        self.norm = nn.GroupNorm(32, out_channels)
-        self.silu = nn.SiLU(inplace=True)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.norm(x)
-        x = self.silu(x)
-        return x
+    def forward(self, t):
+        return self.layer(t.unsqueeze(-1).float())

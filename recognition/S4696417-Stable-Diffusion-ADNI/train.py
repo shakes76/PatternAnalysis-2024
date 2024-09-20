@@ -1,13 +1,14 @@
 from torchvision import transforms
 from dataset import get_dataloader
-from modules import StableDiffusion
+from modules import StableDiffusion, NoiseScheduler, UNet, VAE
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import torch, wandb, os, io
 import torch.nn as nn
 from tqdm import tqdm
+import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
-from utils import generate_images, calculate_gradient_norm, get_noise_schedule, add_noise
+from utils import generate_samples
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 image_transform = transforms.Compose([
@@ -36,22 +37,21 @@ lr = 0.0001
 epochs = 50
 
 print("Loading model...")
-model = StableDiffusion(
-    in_channels=1,
-    out_channels=1,
-    model_channels=128,
-    num_res_blocks=2,
-    attention_resolutions=[16,8],
-    channel_mult=[1, 2, 4, 8],
-    num_heads=8
-)
-model = model.to(device)
+
+vae = VAE(in_channels=1, latent_dim=8)
+vae.load_state_dict(torch.load('pretrained_vae.pth'))
+vae.eval()  # Set VAE to evaluation mode
+for param in vae.parameters():
+    param.requires_grad = False 
+
+unet = UNet(in_channels=8, hidden_dims=[128, 256, 512], time_emb_dim=256)
+noise_scheduler = NoiseScheduler().to(device)
+model = StableDiffusion(unet, vae, noise_scheduler).to(device)
 
 criterion = nn.MSELoss()
 scaler = GradScaler()
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-noise_schedule = get_noise_schedule().to(device)
 
 # initialise wandb
 wandb.init(
@@ -64,7 +64,7 @@ wandb.init(
         "scheduler": type(scheduler).__name__,
         "loss": type(criterion).__name__,
         "scaler": type(scaler).__name__,
-        "name": "SD-MNIST",
+        "name": "SD-MNIST - VAE and Unet",
     }
 )
 
@@ -75,39 +75,53 @@ for epoch in range(epochs):
     train_loss, val_loss = 0, 0
     train_psnr, val_psnr = 0, 0
     train_ssim, val_ssim = 0, 0
+    train_loss, vae_train_loss, unet_train_loss = 0, 0, 0
 
     loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
     for i, batch in enumerate(loop):
 
         # for MNIST
-        images, _ = batch
+        images, _ = batch # retrieve clean image batch
         images = images.to(device)
-        timestamps = torch.randint(0, 1000, (images.size(0),), device=device)
-        noisy_images = add_noise(images, timestamps, noise_schedule)
-       
-        optimizer.zero_grad()
 
-        # Mixed precision training
+        # Encode images to latent space
+        with torch.no_grad():
+            recon_batch, mu, logvar, _ = model.vae(images)
+            latents = recon_batch
+            print(latents.shape)
+        
+        # Sample noise and timesteps
+        noise = torch.randn_like(latents)
+        timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
+        
+        # Add noise to latents
+        noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+
+        # Train UNet
+        optimizer.zero_grad()
         with autocast():
-            outputs = model(noisy_images, timestamps)
-            loss = criterion(outputs, images)
+            print(noisy_latents.shape)
+            predicted_noise = model.unet(noisy_latents, timesteps)
+            loss = criterion(predicted_noise, noise)
 
         scaler.scale(loss).backward()
-        grad_norm = calculate_gradient_norm(model)
         scaler.step(optimizer)
         scaler.update()
 
-        # Get PSNR and SSIM metrics
+        # Compute metrics
         with torch.no_grad():
-            # Convert outputs to float32 for metric calculation
-            outputs_float = outputs.float()
-            psnr = peak_signal_noise_ratio(outputs_float, images)
-            ssim = structural_similarity_index_measure(outputs_float, images)
+            denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
+            denoised_images = model.decode(denoised_latents)
+            ssim = structural_similarity_index_measure(denoised_images, images)
+            psnr = peak_signal_noise_ratio(denoised_images, images)
 
-
+        # Update metrics
         train_loss += loss.item()
         train_psnr += psnr.item()
         train_ssim += ssim.item()
+
+        # Update progress bar
+        loop.set_postfix(loss=loss.item(), psnr=psnr.item(), ssim=ssim.item())
 
         # Log metrics
         wandb.log({
@@ -115,61 +129,71 @@ for epoch in range(epochs):
             'train_psnr': psnr.item(),
             'train_ssim': ssim.item(),
             'learning_rate': optimizer.param_groups[0]['lr'],
-            'gradient_norm': grad_norm
         })
 
-        # update progress bar
-        loop.set_postfix(loss=loss.item(), psnr=psnr.item(), ssim=ssim.item())
+    # Compute average metrics
+    avg_train_loss = train_loss / len(train_loader)
+    avg_train_psnr = train_psnr / len(train_loader)
+    avg_train_ssim = train_ssim / len(train_loader)
 
+    # Log average loss for the epoch
+    avg_train_loss = train_loss / len(train_loader)
+    wandb.log({"epoch": epoch, "train_loss": avg_train_loss})
+    
+    # Generate and log sample images
+    if (epoch + 1) % 2 == 0:  # Generate every 5 epochs
+        generate_samples(model, noise_scheduler, device, epoch+1)
 
-    scheduler.step()
-
-    # validation
+    # Validation
     model.eval()
-    total_loss = 0
+    val_loss = 0
+    val_psnr = 0
+    val_ssim = 0
     with torch.no_grad():
-        for i, batch in enumerate(val_loader):
-            # for MNIST
-            images, _ = batch
-            timestamps = torch.randint(0, 1000, (images.size(0),), device=device).long()
-
-            #images, timestamps = batch
+        for images, _ in val_loader:
             images = images.to(device)
-            timestamps = timestamps.to(device)
+            latents = model.encode(images)
+            noise = torch.randn_like(latents)
+            timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
+            noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+            predicted_noise = model.unet(noisy_latents, timesteps)
+            loss = criterion(predicted_noise, noise)
 
-            # Mixed precision training
-            with autocast():
-                outputs = model(images, timestamps)
-                loss = criterion(outputs, images)
-
-            # Calculate PSNR and SSIM
-            outputs_float = outputs.float()
-            psnr = peak_signal_noise_ratio(outputs_float, images)
-            sam = structural_similarity_index_measure(outputs_float, images)
+            denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
+            denoised_images = model.decode(denoised_latents)
+            ssim = structural_similarity_index_measure(denoised_images, images)
+            psnr = peak_signal_noise_ratio(denoised_images, images)
 
             val_loss += loss.item()
             val_psnr += psnr.item()
             val_ssim += ssim.item()
-
-            loop.set_postfix(loss=loss.item())
+    
+    # Compute average validation metrics
+    avg_val_loss = val_loss / len(val_loader)
+    avg_val_psnr = val_psnr / len(val_loader)
+    avg_val_ssim = val_ssim / len(val_loader)
 
     # Log epoch-level metrics
     wandb.log({
         'epoch': epoch,
-        'avg_train_loss': train_loss / len(train_loader),
-        'avg_val_loss': val_loss / len(val_loader),
-        'avg_train_psnr': train_psnr / len(train_loader),
-        'avg_val_psnr': val_psnr / len(val_loader),
-        'avg_train_ssim': train_ssim / len(train_loader),
-        'avg_val_ssim': val_ssim / len(val_loader)
+        'avg_train_loss': avg_train_loss,
+        'avg_val_loss': avg_val_loss,
+        'avg_train_psnr': avg_train_psnr,
+        'avg_val_psnr': avg_val_psnr,
+        'avg_train_ssim': avg_train_ssim,
+        'avg_val_ssim': avg_val_ssim
     })
 
-    print(f'Epoch: {epoch}, Train Loss: {train_loss/len(train_loader):.4f}, Val Loss: {val_loss/len(val_loader):.4f}')
-    print(f'Train PSNR: {train_psnr/len(train_loader):.4f}, Val PSNR: {val_psnr/len(val_loader):.4f}')
-    print(f'Train SSIM: {train_ssim/len(train_loader):.4f}, Val SSIM: {val_ssim/len(val_loader):.4f}')
+    print(f'Epoch: {epoch}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
+    print(f'Train PSNR: {avg_train_psnr:.4f}, Val PSNR: {avg_val_psnr:.4f}')
+    print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
-    if (epoch + 1) % 10 == 0:
-        generate_images(model, device, epoch+1)
+    # Generate and log sample images
+    if (epoch + 1) % 5 == 0:  # Generate every 5 epochs
+        generate_samples(model, noise_scheduler, device, epoch+1)
+
+    # Step the scheduler
+    scheduler.step()
 
 print("Training complete")
 torch.save(model.state_dict(), 'final_model.pth')

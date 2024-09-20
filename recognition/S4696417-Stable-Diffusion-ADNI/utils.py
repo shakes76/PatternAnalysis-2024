@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import wandb
+from tqdm import tqdm
+from torchvision.utils import make_grid
+import torch.nn as nn
 
 matplotlib.use('Agg')
 
@@ -19,69 +22,86 @@ def generate_images(model, device, epoch, num_images=10, save_dir='generated_ima
     Usage:
         generate_images(model, device, epoch, num_images=10)
     """
-    print("Generating images...")
+    print(f"Generating images for epoch {epoch}...")
     model.eval()
     with torch.no_grad():
-        # Generate random noise
-        noise = torch.randn(num_images, 1, 32, 32).to(device)
+        # Start from random noise
+        latents = torch.randn(num_images, model.vae.latent_dim, 1, 1).to(device)
         
-        # Generate timestamps (you may need to adjust this based on your model's requirements)
-        timestamps = torch.randint(0, 1000, (num_images,), device=device).long()
-        
-        # Generate images
-        generated_images = model(noise, timestamps)
-        
-        # Denormalize and convert to numpy for plotting
-        generated_images = generated_images.cpu().numpy()
-        generated_images = (generated_images + 1) / 2.0
-        generated_images = np.clip(generated_images, 0, 1)  # Ensure values are in [0, 1]
-        generated_images = np.squeeze(generated_images, axis=1) # for MNIST
-        #generated_images = np.transpose(generated_images, (0, 2, 3, 1))
-    
-    # Make directory if it doesnt exist
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Plot and save the generated images
-    fig, axes = plt.subplots(1, num_images, figsize=(20, 2))
-    wandb_images = []
-
-    for i, img in enumerate(generated_images):
-        img_path = os.path.join(save_dir, f'epoch_{epoch}_image_{i}.png')
-
-        # For single image
-        if num_images == 1:
-            axes.imshow(img, cmap='gray')
-            axes.axis('off')
-        else:
-            axes[i].imshow(img, cmap='gray')
-            axes[i].axis('off')
+        # Gradual denoising
+        for t in reversed(range(model.noise_scheduler.num_timesteps)):
+            t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
             
-        # plt.imsave(img_path, img)
-        plt.imsave(img_path, img, cmap='gray') #MNIST
+            # Predict and remove noise
+            predicted_noise = model.unet(latents, t_batch)
+            latents = model.noise_scheduler.remove_noise(latents, t_batch, predicted_noise)
         
-        #wandb_images.append(wandb.Image(img_path, caption=f"Epoch {epoch}, Image {i+1}"))
-
-        # Plot for combined figure
-        if num_images > 1:
-            axes[i].imshow(img, cmap='gray')
-            axes[i].axis('off')
-        else:
-            axes.imshow(img, cmap='gray')
-            axes.axis('off')
-
-    plt.tight_layout()
-
-    # Save the combined figure
-    combined_path = os.path.join(save_dir, f'epoch_{epoch}_combined.png')
-    plt.savefig(combined_path)
-    plt.close(fig)
-
+        # Decode the final latents
+        generated_images = model.vae.decode(latents)
+        
+        # Denormalize and clamp to [0, 1]
+        generated_images = (generated_images + 1) / 2.0
+        generated_images = torch.clamp(generated_images, 0, 1)
+    
+    # Create a grid of images
+    img_grid = make_grid(generated_images, nrow=int(np.sqrt(num_images)))
+    
+    # Convert to numpy and transpose for correct image format
+    img_grid = img_grid.cpu().numpy().transpose((1, 2, 0))
+    
+    # Create a figure and display the image grid
+    plt.figure(figsize=(10, 10))
+    plt.imshow(img_grid)
+    plt.axis('off')
+    
+    # Save the figure locally
+    plt.savefig(f"{save_dir}/generated_images_epoch_{epoch}.png", bbox_inches='tight', pad_inches=0.1)
+    plt.close()
+    
     # Log to wandb
     wandb.log({
-        f"generated_images_epoch_{epoch}": wandb.Image(combined_path, caption=f"Generated Images at Epoch {epoch}"),
-        # f"individual_images_epoch_{epoch}": wandb_images
+        f"generated_images_epoch_{epoch}": wandb.Image(img_grid),
+        "epoch": epoch
     })
-    print(f"Images for epoch {epoch} have been logged to wandb.")
+    
+    # Also log individual images to wandb
+    wandb_images = [wandb.Image(img) for img in generated_images.cpu()]
+    wandb.log({f"individual_images_epoch_{epoch}": wandb_images})
+
+    print(f"Images for epoch {epoch} have been generated and logged to wandb.")
+
+
+def generate_samples(model, noise_scheduler, device, epoch, num_samples=5):
+    model.eval()
+    with torch.no_grad():
+        # Start from random noise
+        latents = torch.randn(num_samples, model.unet.in_channels, 32, 32).to(device)
+
+        # Gradually denoise the latents
+        for t in tqdm(reversed(range(noise_scheduler.num_timesteps)), desc="Sampling"):
+            t_batch = torch.full((num_samples,), t, device=device, dtype=torch.long)
+            
+            # Predict noise
+            noise_pred = model.unet(latents, t_batch)
+            
+            # Update latents
+            latents = noise_scheduler.step(noise_pred, t, latents)
+
+        # Decode the final latents to images
+        samples = model.decode(latents)
+
+    # Create a grid of images
+    samples_grid = make_grid(samples, nrow=num_samples) 
+    samples_grid_np = samples_grid.cpu().numpy().transpose((1, 2, 0))
+    
+    # Log to wandb
+    wandb.log({
+        f"generated_samples_epoch_{epoch}": wandb.Image(samples_grid_np),
+        "epoch": epoch
+    })
+
+    print(f"Samples for epoch {epoch} have been generated and logged to wandb.")
+    return samples
 
 def calculate_gradient_norm(model):
     total_norm = 0
@@ -92,25 +112,7 @@ def calculate_gradient_norm(model):
     total_norm = total_norm ** 0.5
     return total_norm
 
-
-def get_noise_schedule(num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
-    """
-    Create a noise schedule for the diffusion process.
-    """
-    return torch.linspace(beta_start, beta_end, num_timesteps)
-
-def add_noise(x, t, noise_schedule):
-    """
-    Add noise to the input images based on the timesteps.
-    x: [B, C, H, W] tensor of images
-    t: [B] tensor of timesteps
-    noise_schedule: [num_timesteps] tensor of noise schedule
-    """
-    batch_size = x.shape[0]
-    cumulative_alphas = torch.cumprod(1 - noise_schedule, dim=0)
-    alphas_t = cumulative_alphas[t]
-    alphas_t = alphas_t.view(-1, 1, 1, 1)  # reshape for broadcasting
-
-    noise = torch.randn_like(x)
-    noisy_images = torch.sqrt(alphas_t) * x + torch.sqrt(1 - alphas_t) * noise
-    return noisy_images
+def add_spectral_norm(module):
+    if isinstance(module, (nn.Conv2d, nn.ConvTranspose2d, nn.Linear)):
+        return nn.utils.spectral_norm(module)
+    return module

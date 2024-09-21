@@ -44,7 +44,7 @@ vae.eval()
 for param in vae.parameters():
     param.requires_grad = False 
 
-unet = UNet(in_channels=8, hidden_dims=[64, 128, 256], time_emb_dim=256)
+unet = UNet(in_channels=8, hidden_dims=[32, 64, 128, 256, 512], time_emb_dim=256)
 noise_scheduler = NoiseScheduler().to(device)
 model = StableDiffusion(unet, vae, noise_scheduler).to(device)
 
@@ -188,7 +188,7 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch + 1) % 2 == 0:  # Generate every 5 epochs
+    if (epoch + 1) % 5 == 0:  # Generate every 5 epochs
         generate_samples(model, noise_scheduler, device, epoch+1)
 
     # Step the scheduler

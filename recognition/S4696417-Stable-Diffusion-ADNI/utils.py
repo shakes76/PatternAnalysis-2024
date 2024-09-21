@@ -25,26 +25,26 @@ def generate_samples(model, noise_scheduler, device, epoch, num_samples=5):
             latents = noise_scheduler.step(noise_pred, t, latents)
 
             # Optionally, log intermediate samples to wandb
-            if t % (noise_scheduler.num_timesteps // 10) == 0:  # Log every 10% of steps
-                # Decode the latents to images at this step
-                intermediate_images = model.vae.decode(latents)
-                samples_grid = make_grid(intermediate_images, nrow=num_samples)
-                samples_grid_np = samples_grid.cpu().numpy().transpose((1, 2, 0))
+            # if t % (noise_scheduler.num_timesteps // 10) == 0:  # Log every 10% of steps
+            #     # Decode the latents to images at this step
+            #     intermediate_images = model.vae.decode(latents)
+            #     samples_grid = make_grid(intermediate_images, nrow=num_samples)
+            #     samples_grid_np = samples_grid.cpu().numpy().transpose((1, 2, 0))
                 
-                # Log to wandb
-                wandb.log({
-                    f"intermediate_samples_epoch_{epoch}_step_{t}": wandb.Image(samples_grid_np),
-                    "epoch": epoch
-                })
+            #     # Log to wandb
+            #     wandb.log({
+            #         f"intermediate_samples_epoch_{epoch}_step_{t}": wandb.Image(samples_grid_np),
+            #         "epoch": epoch
+            #     })
 
         # Decode the final latents to images
         images = model.vae.decode(latents)
 
-    # Create a grid of images
+    # Create a grid of final images
     samples_grid = make_grid(images, nrow=num_samples) 
     samples_grid_np = samples_grid.cpu().numpy().transpose((1, 2, 0))
     
-    # Log to wandb
+    # Log final samples to wandb
     wandb.log({
         f"generated_samples_epoch_{epoch}": wandb.Image(samples_grid_np),
         "epoch": epoch

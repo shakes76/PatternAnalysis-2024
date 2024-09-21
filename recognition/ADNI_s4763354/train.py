@@ -16,7 +16,9 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-4, batch_size=32):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Load data
-    train_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
+    #train_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
+    train_loader, val_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
+
     # # Fetch a single batch from the training loader
     # data_iter = iter(train_loader)
     # images, labels = next(data_iter)
@@ -28,11 +30,12 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-4, batch_size=32):
     # Initialize model, loss, and optimizer
     model = GFNetBinaryClassifier(num_classes=2).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
     # Track training progress
     train_losses = []
     train_accuracies = []
+    val_accuracies = []
     
     # Training loop
     for epoch in range(epochs):
@@ -62,8 +65,22 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-4, batch_size=32):
         train_accuracy = 100 * correct / total
         train_losses.append(running_loss)
         train_accuracies.append(train_accuracy)
-        
-        print(f'Epoch [{epoch+1}/{epochs}], Loss: {running_loss:.4f}, Train Accuracy: {train_accuracy:.2f}%')
+
+        model.eval()
+        val_correct = 0
+        val_total = 0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                _, predicted = outputs.max(1)
+                val_total += labels.size(0)
+                val_correct += predicted.eq(labels).sum().item()
+
+        val_accuracy = 100 * val_correct / val_total
+        val_accuracies.append(val_accuracy)
+
+        print(f'Epoch [{epoch+1}/{epochs}], Loss: {running_loss:.4f}, Train Accuracy: {train_accuracy:.2f}%, Val Accuracy: {val_accuracy:.2f}%')
 
     # Testing loop
     model.eval()
@@ -100,8 +117,8 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-4, batch_size=32):
     plt.show()
     
     # Save the trained model
-    torch.save(model.state_dict(), 'gfnet_binary_classifier.pth')
+    torch.save(model.state_dict(), 'gfnet.pth')
 
 if __name__ == "__main__":
     train_and_evaluate(train_dir='/home/groups/comp3710/ADNI/AD_NC/train', 
-                    test_dir='/home/groups/comp3710/ADNI/AD_NC/test', epochs=1)
+                    test_dir='/home/groups/comp3710/ADNI/AD_NC/test', epochs=10)

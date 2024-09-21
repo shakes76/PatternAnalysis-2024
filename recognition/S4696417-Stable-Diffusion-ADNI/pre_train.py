@@ -35,7 +35,7 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device):
             data = data.to(device)
             optimizer.zero_grad()
             
-            recon_batch, mu, logvar, _ = vae(data)
+            recon_batch, mu, logvar = vae(data)
             loss, mse, kld = vae_loss(recon_batch, data, mu, logvar)
             
             loss.backward()
@@ -51,7 +51,7 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device):
         with torch.no_grad():
             for data, _ in val_loader:
                 data = data.to(device)
-                recon_batch, mu, logvar, _ = vae(data)
+                recon_batch, mu, logvar = vae(data)
                 loss, mse, kld = vae_loss(recon_batch, data, mu, logvar)
                 val_loss += loss.item()
                 val_mse += mse.item()
@@ -84,7 +84,7 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device):
         if epoch % 1 == 0:
             with torch.no_grad():
                 sample = next(iter(val_loader))[0][:8].to(device)
-                recon, _, _, _ = vae(sample)
+                recon, _, _ = vae(sample)
                 comparison = torch.cat([sample, recon])
                 wandb.log({
                     "reconstructions": wandb.Image(comparison.cpu())
@@ -93,7 +93,7 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device):
     torch.save(vae.state_dict(), 'pretrained_vae.pth')
     print("Pretraining completed. VAE saved.")
 
-if __name__ == "__main__":
+def train_vae():
     # Initialize wandb
     wandb.init(project="vae-pretraining", name="VAE-MNIST Pretraining")
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
 
     # Initialize VAE (assuming you have a VAE class defined)
-    vae = VAE(in_channels=1, latent_dim=8) 
+    vae = VAE(in_channels=1, latent_dim=16) 
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

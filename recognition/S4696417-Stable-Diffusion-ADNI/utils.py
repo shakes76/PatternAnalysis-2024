@@ -75,7 +75,8 @@ def generate_samples(model, noise_scheduler, device, epoch, num_samples=5):
     model.eval()
     with torch.no_grad():
         # Start from random noise
-        latents = torch.randn(num_samples, model.unet.in_channels, 32, 32).to(device)
+        latents = torch.randn(num_samples, model.vae.latent_dim, 4, 4).to(device)
+        latents = latents * model.vae.scaling_factor
 
         # Gradually denoise the latents
         for t in tqdm(reversed(range(noise_scheduler.num_timesteps)), desc="Sampling"):
@@ -88,10 +89,10 @@ def generate_samples(model, noise_scheduler, device, epoch, num_samples=5):
             latents = noise_scheduler.step(noise_pred, t, latents)
 
         # Decode the final latents to images
-        samples = model.decode(latents)
+        images = model.vae.decode_from_latent(latents)
 
     # Create a grid of images
-    samples_grid = make_grid(samples, nrow=num_samples) 
+    samples_grid = make_grid(images, nrow=num_samples) 
     samples_grid_np = samples_grid.cpu().numpy().transpose((1, 2, 0))
     
     # Log to wandb
@@ -101,7 +102,7 @@ def generate_samples(model, noise_scheduler, device, epoch, num_samples=5):
     })
 
     print(f"Samples for epoch {epoch} have been generated and logged to wandb.")
-    return samples
+    return images
 
 def calculate_gradient_norm(model):
     total_norm = 0

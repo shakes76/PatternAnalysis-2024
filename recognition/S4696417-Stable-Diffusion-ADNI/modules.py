@@ -259,9 +259,10 @@ class VAE(nn.Module):
         Input: x: [B, C, H, W] tensor of images
         Output: [B, C, H, W] Reconstructed image tensor
     """
-    def __init__(self, in_channels=1, latent_dim=8):
+    def __init__(self, in_channels=1, latent_dim=8, scaling_factor=0.18215):
         super().__init__()
         self.latent_dim = latent_dim
+        self.scaling_factor = scaling_factor
        
         # Encoder
         self.encoder = nn.Sequential(
@@ -323,7 +324,21 @@ class VAE(nn.Module):
     def forward(self, x):
         mu, logvar = self.encode(x)
         latents = self.reparameterize(mu, logvar)
-        return self.decode(latents), mu, logvar, latents
+        return self.decode(latents), mu, logvar
+    
+    def sample(self, num_samples, device):
+        z = torch.randn(num_samples, self.latent_dim, 4, 4).to(device)
+        samples = self.decode(z)
+        return samples
+    
+    def encode_to_latent(self, x):
+        mu, logvar = self.encode(x)
+        z = self.reparameterize(mu, logvar)
+        return z * self.scaling_factor
+
+    def decode_from_latent(self, z):
+        z = z / self.scaling_factor
+        return self.decode(z)
 
 
 class SinusoidalPositionEmbeddings(nn.Module):
@@ -453,13 +468,12 @@ class AttentionBlock(nn.Module):
         return x
 
 class NoiseScheduler:
-    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02, device='cpu'):
+    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
         self.num_timesteps = num_timesteps
-        self.device = device
-       
+        
         # Define beta schedule
-        self.betas = torch.linspace(beta_start, beta_end, num_timesteps).to(device)
-       
+        self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
+        
         # Define alphas
         self.alphas = 1. - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
@@ -467,50 +481,50 @@ class NoiseScheduler:
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
 
     def add_noise(self, latents, noise, timesteps):
-        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps].to(latents.device)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].to(latents.device)
-       
+        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps]
+        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps]
+        
         # Reshape for broadcasting
-        sqrt_alpha_prod = sqrt_alpha_prod.view(-1, 1, 1, 1).expand_as(latents)
-        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.view(-1, 1, 1, 1).expand_as(latents)
-       
+        sqrt_alpha_prod = sqrt_alpha_prod.view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.view(-1, 1, 1, 1)
+        
         noisy_latents = sqrt_alpha_prod * latents + sqrt_one_minus_alpha_prod * noise
         return noisy_latents
 
     def remove_noise(self, noisy_latents, predicted_noise, timesteps):
-        alpha_prod = self.alphas_cumprod[timesteps].to(noisy_latents.device)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].to(noisy_latents.device)
-       
+        alpha_prod = self.alphas_cumprod[timesteps]
+        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps]
+        
         # Reshape for broadcasting
-        alpha_prod = alpha_prod.view(-1, 1, 1, 1).expand_as(noisy_latents)
-        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.view(-1, 1, 1, 1).expand_as(noisy_latents)
-       
+        alpha_prod = alpha_prod.view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.view(-1, 1, 1, 1)
+        
         original_latents = (noisy_latents - sqrt_one_minus_alpha_prod * predicted_noise) / torch.sqrt(alpha_prod)
         return original_latents
 
-    def step(self, model_output, timestep, sample):
-        prev_timestep = timestep - 1
-        alpha_prod_t = self.alphas_cumprod[timestep].to(sample.device)
-        alpha_prod_t_prev = self.alphas_cumprod[prev_timestep].to(sample.device) if prev_timestep >= 0 else torch.tensor(1.0, device=sample.device)
+    def step(self, model_output, timesteps, sample):
+        prev_timesteps = (timesteps - 1)
+        alpha_prod_t = self.alphas_cumprod[timesteps]
+        alpha_prod_t_prev = self.alphas_cumprod[prev_timesteps]
         beta_prod_t = 1 - alpha_prod_t
+        beta_prod_t_prev = 1 - alpha_prod_t_prev
 
         # Reshape for broadcasting
-        alpha_prod_t = alpha_prod_t.view(-1, 1, 1, 1).expand_as(sample)
-        alpha_prod_t_prev = alpha_prod_t_prev.view(-1, 1, 1, 1).expand_as(sample)
-        beta_prod_t = beta_prod_t.view(-1, 1, 1, 1).expand_as(sample)
+        alpha_prod_t = alpha_prod_t.view(-1, 1, 1, 1)
+        alpha_prod_t_prev = alpha_prod_t_prev.view(-1, 1, 1, 1)
+        beta_prod_t = beta_prod_t.view(-1, 1, 1, 1)
 
         pred_original_sample = (sample - beta_prod_t.sqrt() * model_output) / alpha_prod_t.sqrt()
-       
+        
         # Direction pointing to x_t
         pred_sample_direction = (1 - alpha_prod_t_prev).sqrt() * model_output
-       
+        
         # x_{t-1}
         prev_sample = alpha_prod_t_prev.sqrt() * pred_original_sample + pred_sample_direction
-       
+
         return prev_sample
 
     def to(self, device):
-        self.device = device
         self.betas = self.betas.to(device)
         self.alphas = self.alphas.to(device)
         self.alphas_cumprod = self.alphas_cumprod.to(device)

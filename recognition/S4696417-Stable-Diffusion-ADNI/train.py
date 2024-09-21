@@ -9,6 +9,7 @@ from tqdm import tqdm
 import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
 from utils import generate_samples
+from pre_train import train_vae
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 image_transform = transforms.Compose([
@@ -37,20 +38,20 @@ lr = 1e-5
 epochs = 100
 
 print("Loading model...")
-
-vae = VAE(in_channels=1, latent_dim=8)
+#train_vae()
+vae = VAE(in_channels=1, latent_dim=16)
 vae.load_state_dict(torch.load('pretrained_vae.pth'))
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
 
-unet = UNet(in_channels=8, hidden_dims=[128, 256, 512, 1024], time_emb_dim=256)
+unet = UNet(in_channels=16, hidden_dims=[32, 64, 128, 256], time_emb_dim=256)
 noise_scheduler = NoiseScheduler().to(device)
 model = StableDiffusion(unet, vae, noise_scheduler).to(device)
 
 criterion = nn.MSELoss()
 scaler = GradScaler()
-optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
 # initialise wandb
@@ -84,7 +85,7 @@ for epoch in range(epochs):
 
         # Encode images to latent space
         with torch.no_grad():
-            recon_batch, mu, logvar, latents = model.vae(images)
+            latents = model.vae.encode_to_latent(images)
         
         # Sample noise and timesteps
         noise = torch.randn_like(latents)
@@ -105,8 +106,10 @@ for epoch in range(epochs):
 
         # Compute metrics
         with torch.no_grad():
-            denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
-            denoised_images = model.decode(denoised_latents)
+            # denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
+            # denoised_images = model.decode(denoised_latents)
+            denoised_latents = noise_scheduler.step(predicted_noise, timesteps, noisy_latents)
+            denoised_images = model.vae.decode_from_latent(denoised_latents)
             ssim = structural_similarity_index_measure(denoised_images, images)
             psnr = peak_signal_noise_ratio(denoised_images, images)
 
@@ -149,7 +152,7 @@ for epoch in range(epochs):
             images = images.to(device)
 
             with torch.no_grad():
-                recon_batch, mu, logvar, latents = model.vae(images)
+                latents = model.vae.encode_to_latent(images)
 
             noise = torch.randn_like(latents)
             timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
@@ -160,8 +163,10 @@ for epoch in range(epochs):
                 loss = criterion(predicted_noise, noise)
 
             with torch.no_grad():
-                denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
-                denoised_images = model.decode(denoised_latents)
+                # denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
+                # denoised_images = model.decode(denoised_latents)
+                denoised_latents = noise_scheduler.step(predicted_noise, timesteps, noisy_latents)
+                denoised_images = model.vae.decode_from_latent(denoised_latents)
                 ssim = structural_similarity_index_measure(denoised_images, images)
                 psnr = peak_signal_noise_ratio(denoised_images, images)
 
@@ -190,7 +195,7 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch + 1) % 10 == 0:  # Generate every 5 epochs
+    if (epoch + 1) % 2 == 0:  # Generate every 5 epochs
         generate_samples(model, noise_scheduler, device, epoch+1)
 
     # Step the scheduler

@@ -554,3 +554,174 @@ class TimeEmbedding(nn.Module):
 
     def forward(self, t):
         return self.layer(t.unsqueeze(-1).float())
+    
+
+
+
+""" NEW VAE Modules"""
+class VAEResidualBlock(nn.Module):
+    """
+    Residual block for VAE encoder/decoder
+
+    Args:
+        in_channels (int): number of channels in the input image
+        out_channels (int): number of channels in the output image
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.group_norm1 = nn.GroupNorm(32, in_channels)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.group_norm2 = nn.GroupNorm(32, out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+
+        if in_channels != out_channels:
+            self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        else:
+            self.shortcut = nn.Identity()
+
+
+    def forward(self, x):
+        residual = x
+
+        x = self.group_norm1(x)
+        x = F.silu(x)
+        x = self.conv1(x)
+
+        x = self.group_norm2(x)
+        x = F.silu(x)
+        x = self.conv2(x)
+
+        x += self.shortcut(residual)
+
+        return x
+    
+
+class VAEAttentionBlock(nn.Module):
+    """
+    Attention block for VAE encoder/decoder
+
+    Args:
+        channels (int): number of channels in the input image
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, channels):
+        super().__init__()
+
+        self.group_norm = nn.GroupNorm(32, channels)
+        self.attention = SelfAttention(1, channels)
+
+    def forward(self, x):
+        
+        residual = x
+        x = self.group_norm(x)
+
+        # reshape to (B, C, H*W)
+        B, C, H, W = x.shape
+        x = x.view((B, C, H * W)) 
+        x = x.transpose(-1, -2) # (B, C, H*W) -> (B, H*W, C)
+
+        x = self.attention(x)
+        x = x.transpose(-1, -2) # (B, H*W, C) -> (B, C, H*W)
+        x = x.view((B, C, H, W)) # (B, C, H*W) -> (B, C, H, W)
+
+        x += residual
+
+        return x
+    
+class SelfAttention(nn.Module):
+    """
+    Self Attention block for VAE encoder/decoder
+
+    Args:
+        num_heads (int): number of heads
+        d_embed (int): number of channels in the input image
+
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, num_heads, d_embed, in_bias=True, out_bias=True):
+        super().__init__()
+        self.in_proj = nn.Linear(d_embed, 3 * d_embed, bias=in_bias)
+        self.out_proj = nn.Linear(d_embed, d_embed, bias=out_bias)
+        self.num_heads = num_heads
+        self.d_head = d_embed // num_heads
+
+
+    def forward(self, x):
+        in_shape = x.shape
+        B, seq_len, d_embed = in_shape
+        interim_shape = (B, seq_len, self.num_heads, self.d_head)
+        
+        q, k, v = self.in_proj(x).chunk(3, dim=-1) # (B, seq_len, d_embed) -> 3 x (B, seq_len, dim)
+        q = q.view(interim_shape).transpose(1, 2) # (B, seq_len, dim) -> (B, num_heads, seq_len, dim / num_heads)
+        k = k.view(interim_shape).transpose(1, 2) 
+        v = v.view(interim_shape).transpose(1, 2) 
+
+        # (B, num_heads, seq_len, dim / num_heads) @ (B, num_heads, dim / num_heads, seq_len) -> (B, num_heads, seq_len, seq_len)
+        weight = q @ k.transpose(-2, -1) 
+        weight /= math.sqrt(self.d_head)
+        weight = F.softmax(weight, dim=-1)
+
+        # (B, num_heads, seq_len, seq_len) @ (B, num_heads, seq_len, dim / num_heads) -> (B, num_heads, seq_len, dim / num_heads)
+        output = weight @ v
+        output = output.transpose(1, 2) #  -> (B, seq_len, num_heads, dim / num_heads)
+        output = output.reshape(in_shape) #  -> (B, seq_len, dim)
+        output = self.out_proj(output) 
+
+        return output
+
+
+class CrossAttention(nn.Module):
+    """
+    cross attention block for VAE encoder/decoder
+
+    Args:
+        num_heads (int): number of heads
+        d_embed (int): number of channels in the input image
+
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, num_heads, d_embed, in_bias=True, out_bias=True):
+        super().__init__()
+        self.q_proj = nn.Linear(d_embed, d_embed, bias=in_bias)
+        self.k_proj = nn.Linear(d_embed, d_embed, bias=in_bias)
+        self.v_proj = nn.Linear(d_embed, d_embed, bias=in_bias)
+        self.out_proj = nn.Linear(d_embed, d_embed, bias=out_bias)
+        self.num_heads = num_heads
+        self.d_head = d_embed // num_heads
+
+
+    def forward(self, x):
+        in_shape = x.shape
+        B, seq_len, d_embed = in_shape
+        interim_shape = (B, -1, self.num_heads, self.d_head)
+        
+        q, k, v = self.q_proj(x), self.k_proj(x), self.v_proj(x)
+        q = q.view(interim_shape).transpose(1, 2) # (B, seq_len, dim) -> (B, num_heads, seq_len, dim / num_heads)
+        k = k.view(interim_shape).transpose(1, 2) 
+        v = v.view(interim_shape).transpose(1, 2) 
+
+        # (B, num_heads, seq_len, dim / num_heads) @ (B, num_heads, dim / num_heads, seq_len) -> (B, num_heads, seq_len, seq_len)
+        weight = q @ k.transpose(-1, -2) 
+        weight /= math.sqrt(self.d_head)
+        weight = F.softmax(weight, dim=-1)
+
+        # (B, num_heads, seq_len, seq_len) @ (B, num_heads, seq_len, dim / num_heads) -> (B, num_heads, seq_len, dim / num_heads)
+        output = weight @ v
+        output = output.transpose(1, 2).contiguous() #  -> (B, seq_len, num_heads, dim / num_heads)
+        output = output.reshape(in_shape) #  -> (B, seq_len, dim)
+        output = self.out_proj(output) 
+
+        return output
+
+
+        

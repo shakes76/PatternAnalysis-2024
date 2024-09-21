@@ -1,10 +1,9 @@
-import torch, wandb
+import torch, wandb, os
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from tqdm import tqdm
-#from modules import VAE
 from vae import VAE
 from torchmetrics.functional.image import structural_similarity_index_measure, peak_signal_noise_ratio
 
@@ -19,9 +18,6 @@ def calculate_metrics(original, reconstructed):
     ssim = structural_similarity_index_measure(reconstructed, original)
     psnr = peak_signal_noise_ratio(reconstructed, original)
     return ssim, psnr
-
-def calculate_mse(original, reconstructed):
-    return nn.functional.mse_loss(reconstructed, original).item()
 
 def pretrain_vae(vae, train_loader, val_loader, num_epochs, device, batch_size):
     vae.to(device)
@@ -93,7 +89,8 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device, batch_size):
                     "reconstructions": wandb.Image(comparison.cpu())
                 })
 
-    torch.save(vae, f'checkpoints/VAE/vae_e{epoch+1}_b{batch_size}.pt')
+    path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/vae_e{epoch+1}_b{batch_size}.pt')
+    torch.save(vae, path)
     print("Pretraining completed. VAE saved.")
 
 def train_vae():

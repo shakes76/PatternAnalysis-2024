@@ -62,7 +62,7 @@ class StableDiffusion(nn.Module):
         
         return samples
     
-class UNet2(nn.Module):
+class UNet_Depricated(nn.Module):
     """
     Unet to predict noise at each timestep
 
@@ -245,7 +245,7 @@ class UNet(nn.Module):
         return self.conv_out(x)
     
 
-class VAE(nn.Module):
+class VAE_Depricated(nn.Module):
     """
     VAE to compress images to latent space and reconstruct from latent representation
      - Encoder takes input [B, C, H, W] and outputs mean and variance of latent space [B, latent_dim, 4, 4]
@@ -401,7 +401,7 @@ class ResidualBlock(nn.Module):
         h = self.norm2(h)
         return self.activation(h + self.shortcut(x))
     
-class VAEResidualBlock(nn.Module):
+class VAEResidualBlock_Depreciated(nn.Module):
     """
     Res block without time embedding for VAE
     """
@@ -558,7 +558,7 @@ class TimeEmbedding(nn.Module):
 
 
 
-""" NEW VAE Modules"""
+""" NEW VAE/UNet Modules"""
 class VAEResidualBlock(nn.Module):
     """
     Residual block for VAE encoder/decoder
@@ -724,4 +724,47 @@ class CrossAttention(nn.Module):
         return output
 
 
+class UNetResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, n_time=1000):
+        super().__init__()
+        self.groupnorm_feature = nn.GroupNorm(32, in_channels)
+        self.conv_feature = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.time = nn.Linear(n_time, out_channels)
+
+        self.merged_norm = nn.GroupNorm(32, out_channels)
+        self.merged_conv = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+
+        # Skip connection
+        if in_channels != out_channels:
+            self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        else:
+            self.shortcut = nn.Identity()
+
+
+    def forward(self, x, t):
+
+        residual = x
+        feature = F.silu(self.groupnorm_feature(x))
+        feature = self.conv_feature(feature)
         
+        t = F.silu(t)
+        t = self.time(t)
+
+        merged = self.groupnorm_feature(feature + t.unsqueeze(-1).unsqueeze(-1))
+        merged = self.merged_conv(F.silu(merged))
+
+        return merged + self.shortcut(residual)
+        
+
+class UNetAttentionBlock(nn.Module):
+    def __init__(self, num_heads, num_emb):
+        super().__init__()
+        channels = num_emb * num_heads
+
+        self.groupnorm = nn.GroupNorm(32, channels)
+        self.conv_input = nn.Conv2d(channels, channels, kernel_size=1, padding=1)
+
+        self.norm1 = nn.LayerNorm(channels)
+        self.attn1 = SelfAttention(num_heads, channels, in_bias=False)
+        self.norm2 = nn.LayerNorm(channels)
+        self.attn2 = CrossAttention(num_heads, channels, in_bias=False)

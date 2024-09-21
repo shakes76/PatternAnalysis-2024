@@ -1,6 +1,7 @@
 from torchvision import transforms
 from dataset import get_dataloader
-from modules import StableDiffusion, NoiseScheduler, UNet, VAE
+from modules import StableDiffusion, NoiseScheduler, UNet
+from vae import VAE
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import torch, wandb, os, io
@@ -9,11 +10,10 @@ from tqdm import tqdm
 import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
 from utils import generate_samples
-from pre_train import train_vae
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 image_transform = transforms.Compose([
-    transforms.Resize((256, 256)),
+    transforms.Resize((32, 32)),
     transforms.ToTensor(),    
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     transforms.Normalize((0.1307,), (0.3081,)) # MNIST-specific
@@ -38,14 +38,13 @@ lr = 1e-5
 epochs = 100
 
 print("Loading model...")
-#train_vae()
-vae = VAE(in_channels=1, latent_dim=16)
-vae.load_state_dict(torch.load('pretrained_vae.pth'))
+#vae = VAE(in_channels=1, latent_dim=8)
+vae = torch.load('recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/vae_e5_b64.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
 
-unet = UNet(in_channels=16, hidden_dims=[32, 64, 128, 256], time_emb_dim=256)
+unet = UNet(in_channels=8, hidden_dims=[64, 128, 256], time_emb_dim=256)
 noise_scheduler = NoiseScheduler().to(device)
 model = StableDiffusion(unet, vae, noise_scheduler).to(device)
 
@@ -85,7 +84,8 @@ for epoch in range(epochs):
 
         # Encode images to latent space
         with torch.no_grad():
-            latents = model.vae.encode_to_latent(images)
+            mu, logvar = model.vae.encode(images)
+            latents = model.vae.sample(mu, logvar)
         
         # Sample noise and timesteps
         noise = torch.randn_like(latents)
@@ -106,10 +106,8 @@ for epoch in range(epochs):
 
         # Compute metrics
         with torch.no_grad():
-            # denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
-            # denoised_images = model.decode(denoised_latents)
             denoised_latents = noise_scheduler.step(predicted_noise, timesteps, noisy_latents)
-            denoised_images = model.vae.decode_from_latent(denoised_latents)
+            denoised_images = model.vae.decode(denoised_latents)
             ssim = structural_similarity_index_measure(denoised_images, images)
             psnr = peak_signal_noise_ratio(denoised_images, images)
 
@@ -137,10 +135,6 @@ for epoch in range(epochs):
     # Log average loss for the epoch
     avg_train_loss = train_loss / len(train_loader)
     wandb.log({"epoch": epoch, "train_loss": avg_train_loss})
-    
-    # Generate and log sample images
-    # if (epoch + 1) % 5 == 0:  # Generate every 5 epochs
-    #     generate_samples(model, noise_scheduler, device, epoch+1)
 
     # Validation
     model.eval()
@@ -152,7 +146,8 @@ for epoch in range(epochs):
             images = images.to(device)
 
             with torch.no_grad():
-                latents = model.vae.encode_to_latent(images)
+                mu, logvar = model.vae.encode(images)
+                latents = model.vae.sample(mu, logvar)
 
             noise = torch.randn_like(latents)
             timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
@@ -163,10 +158,8 @@ for epoch in range(epochs):
                 loss = criterion(predicted_noise, noise)
 
             with torch.no_grad():
-                # denoised_latents = noise_scheduler.remove_noise(noisy_latents, predicted_noise, timesteps)
-                # denoised_images = model.decode(denoised_latents)
                 denoised_latents = noise_scheduler.step(predicted_noise, timesteps, noisy_latents)
-                denoised_images = model.vae.decode_from_latent(denoised_latents)
+                denoised_images = model.vae.decode(denoised_latents)
                 ssim = structural_similarity_index_measure(denoised_images, images)
                 psnr = peak_signal_noise_ratio(denoised_images, images)
 
@@ -202,7 +195,8 @@ for epoch in range(epochs):
     scheduler.step()
 
 print("Training complete")
-torch.save(model.state_dict(), 'final_model.pth')
+path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/Diffusion/dif_e{epoch+1}.pt')
+torch.save(model, path)
 wandb.finish()
 
 

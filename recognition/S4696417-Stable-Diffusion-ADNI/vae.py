@@ -4,7 +4,17 @@ import torch.nn.functional as F
 from modules import VAEResidualBlock, VAEAttentionBlock
 
 class VAE(nn.Module):
+    """
+    Variational autoencoder to encode input images to compressed latent space for passing theough UNet in stable diffusion
+    Should be pre-trained on the daatset via pre_train.py
 
+    Args:
+        in_channels (int): number of channels in the input image
+        latent_dim (int): dimension of the latent space
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, latent_dim, 4, 4] tensor of latent space representation
+    """
     def __init__(self, in_channels, latent_dim):
         super().__init__()
         self.latent_dim = latent_dim

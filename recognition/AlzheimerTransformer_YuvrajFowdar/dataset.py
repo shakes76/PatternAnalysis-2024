@@ -27,3 +27,5 @@ def get_mean_std(loader: DataLoader):
     std = torch.sqrt((squared_mean - mean ** 2)) # Std per pixel
     
     return mean, std
+
+

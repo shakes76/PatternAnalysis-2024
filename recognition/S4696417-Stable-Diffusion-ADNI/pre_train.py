@@ -102,12 +102,12 @@ def train_vae():
     image_transform = transforms.Compose([
     transforms.ToPILImage(),
     transforms.Resize((128, 128)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(10),
-    transforms.ColorJitter(brightness=0.1, contrast=0.1),
+    # transforms.RandomHorizontalFlip(),
+    # transforms.RandomRotation(10),
+    # transforms.ColorJitter(brightness=0.1, contrast=0.1),
     transforms.ToTensor(),
-    transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05)),
-    transforms.Normalize((0.1307,), (0.3081,))
+    # transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05)),
+    transforms.Normalize((0.5,), (0.5,))
     ])
 
     # train_dataset = datasets.MNIST('./data', train=True, download=True, transform=image_transform)

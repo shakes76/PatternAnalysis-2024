@@ -9,13 +9,12 @@ import torch.nn as nn
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
-from utils import generate_samples
+from utils import get_linear_schedule_with_warmup
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 image_transform = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.ToTensor(),    
-    # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     transforms.Normalize((0.1307,), (0.3081,)) # MNIST-specific
 ])
 
@@ -34,9 +33,6 @@ val_loader = DataLoader(test_set, batch_size=64, shuffle=True, num_workers=2)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device}')
 
-lr = 1e-5
-epochs = 100
-
 print("Loading model...")
 #vae = VAE(in_channels=1, latent_dim=8)
 vae = torch.load('recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/vae_e5_b64.pt')
@@ -44,14 +40,21 @@ vae.eval()
 for param in vae.parameters():
     param.requires_grad = False 
 
-unet = UNet(in_channels=8, hidden_dims=[32, 64, 128, 256, 512], time_emb_dim=256)
+unet = UNet(in_channels=8, hidden_dims=[32, 64, 128], time_emb_dim=256)
 noise_scheduler = NoiseScheduler().to(device)
 model = StableDiffusion(unet, vae, noise_scheduler).to(device)
 
 criterion = nn.MSELoss()
 scaler = GradScaler()
-optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+
+lr = 1e-4
+epochs = 100
+steps_per_epoch = len(train_loader)
+total_steps = steps_per_epoch * epochs
+warmup_steps = int(0.2 * total_steps)
+optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
 
 # initialise wandb
 wandb.init(
@@ -88,8 +91,8 @@ for epoch in range(epochs):
             latents = model.vae.sample(mu, logvar)
         
         # Sample noise and timesteps
-        noise = torch.randn_like(latents)
-        timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
+        timesteps = torch.randint(0, noise_scheduler.num_timesteps, (latents.size(0),), device=device)
+        noise = torch.randn_like(latents) 
         
         # Add noise to latents
         noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
@@ -103,6 +106,7 @@ for epoch in range(epochs):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
+        scheduler.step()
 
         # Compute metrics
         with torch.no_grad():
@@ -188,11 +192,11 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch + 1) % 5 == 0:  # Generate every 5 epochs
-        generate_samples(model, noise_scheduler, device, epoch+1)
-
+    # if (epoch + 1) % 5 == 0:  # Generate every 5 epochs
+    #generate_samples(model, noise_scheduler, device, epoch+1)
+    model.sample(epoch+1, shape=(64, 8, 3, 3), device=device)
     # Step the scheduler
-    scheduler.step()
+    #scheduler.step()
 
 print("Training complete")
 path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/Diffusion/dif_e{epoch+1}.pt')

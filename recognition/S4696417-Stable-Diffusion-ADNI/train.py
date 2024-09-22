@@ -13,7 +13,7 @@ from utils import get_linear_schedule_with_warmup
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 image_transform = transforms.Compose([
-    transforms.Resize((32, 32)),
+    transforms.Resize((128, 128)),
     transforms.ToTensor(),    
     transforms.Normalize((0.1307,), (0.3081,)) # MNIST-specific
 ])
@@ -26,8 +26,8 @@ print("Loading data...")
 train_set = MNIST(root='./data', train=True, download=True, transform=image_transform)
 test_set = MNIST(root='./data', train=False, download=True, transform=image_transform)
 
-train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=2)
-val_loader = DataLoader(test_set, batch_size=64, shuffle=True, num_workers=2)
+train_loader = DataLoader(train_set, batch_size=16, shuffle=True, num_workers=2)
+val_loader = DataLoader(test_set, batch_size=16, shuffle=True, num_workers=2)
 
 # Settings
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -35,7 +35,7 @@ print(f'Using {device}')
 
 print("Loading model...")
 #vae = VAE(in_channels=1, latent_dim=8)
-vae = torch.load('recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/vae_e5_b64.pt')
+vae = torch.load('recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/MNIST-vae_e5_b16_im128.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
@@ -51,7 +51,7 @@ lr = 1e-4
 epochs = 100
 steps_per_epoch = len(train_loader)
 total_steps = steps_per_epoch * epochs
-warmup_steps = int(0.2 * total_steps)
+warmup_steps = int(0.1 * total_steps)
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
@@ -194,7 +194,7 @@ for epoch in range(epochs):
     # Generate and log sample images
     # if (epoch + 1) % 5 == 0:  # Generate every 5 epochs
     #generate_samples(model, noise_scheduler, device, epoch+1)
-    model.sample(epoch+1, shape=(64, 8, 3, 3), device=device)
+    model.sample(epoch+1, shape=(64, 8, 16, 16), device=device)
     # Step the scheduler
     #scheduler.step()
 

@@ -3,6 +3,7 @@ from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import torch
+import random
 import numpy as np
 from dataset import ADNIDataset
 import torch
@@ -99,3 +100,13 @@ def test(model, test_loader, criterion, device="cuda", disable_tqdm=True):
     accuracy = 100 * correct / total
     return epoch_loss, accuracy
 
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True 
+    torch.backends.cudnn.benchmark = False
+    

@@ -10,7 +10,8 @@ class ADNIDataset(Dataset):
     """Load ADNI dataset.
     It will automatically crop the brain image and resize to 210*210.
     """
-    def __init__(self, root, transform=None):
+    def __init__(self, root, split="train" , transform=None):
+        root = os.path.join(root, split)
         self.root = root
         self.ad_dir = os.path.join(root, 'AD')
         self.nc_dir = os.path.join(root, 'NC')

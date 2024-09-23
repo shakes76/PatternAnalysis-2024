@@ -30,7 +30,7 @@ disable_tqdm = not args.show_progress
 if __name__ == "__main__":
     
     # load the dataset
-    train_dataset = ADNIDataset(root=os.path.join(args.data_path, 'train'), transform=get_transform(train=True))
+    train_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=True))
     
     # split dataset
     train_dataset, val_dataset = split_dataset(train_dataset, split_ratio=0.8, seed=0)

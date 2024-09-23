@@ -10,15 +10,6 @@ from utils import get_transform, train, test, set_seed
 from modules import GFNet
 from functools import partial
 
-"""
-To do:
-change model
-Save model
-early stopping
-pin training seed
-draw training progress(tensorboard)
-"""
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
 parser.add_argument('--show_progress', default="True", type=str)

@@ -7,8 +7,17 @@ from PIL import Image
 import random
 
 class ADNIDataset(Dataset):
-    """Load ADNI dataset.
-    It will automatically crop the brain image and resize to 210*210.
+    """ADNI dataset loader.
+
+    This dataset class automatically preprocesses brain images by cropping the brain region 
+    and resizing them to 210x210 pixels. It supports loading data for two categories: 
+    Alzheimer's Disease (AD) and Normal Control (NC), from specified directories.
+
+    The class can split the dataset into training and validation sets based on 'split_ratio'
+    and seed is used for reproducibility. Preprocessing steps such as cropping and resizing are applied 
+    during the first run, and processed images are saved for future reuse.
+    
+    Please make sure you have write permission to the folder where the dataset is located.
     """
     def __init__(self, root, split="train", transform=None, val=False, seed=0, split_ratio=0.8):
         root = os.path.join(root, split)

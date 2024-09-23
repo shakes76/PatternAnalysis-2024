@@ -1,21 +1,18 @@
+"""
+Adapted from the official implementation of GFNet by Yongming Rao [https://github.com/raoyongming/GFNet].
+
+This file has been modified to adapt the model for a binary classification task, 
+with necessary adjustments made to ensure compatibility.
+"""
+
 import math
-import logging
 from functools import partial
 from collections import OrderedDict
-from copy import Error, deepcopy
-from re import S
-from numpy.lib.arraypad import pad
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import torch.fft
-from torch.nn.modules.container import Sequential
 
-_logger = logging.getLogger(__name__)
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -34,6 +31,7 @@ class Mlp(nn.Module):
         x = self.fc2(x)
         x = self.drop(x)
         return x
+
 
 class GlobalFilter(nn.Module):
     def __init__(self, dim, h=14, w=8):
@@ -62,6 +60,7 @@ class GlobalFilter(nn.Module):
 
         return x
 
+
 class Block(nn.Module):
 
     def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
@@ -77,22 +76,6 @@ class Block(nn.Module):
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
-class BlockLayerScale(nn.Module):
-
-    def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, 
-                norm_layer=nn.LayerNorm, h=14, w=8, init_values=1e-5):
-        super().__init__()
-        self.norm1 = norm_layer(dim)
-        self.filter = GlobalFilter(dim, h=h, w=w)
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
-        self.norm2 = norm_layer(dim)
-        mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.gamma = nn.Parameter(init_values * torch.ones((dim)),requires_grad=True)
-
-    def forward(self, x):
-        x = x + self.drop_path(self.gamma * self.mlp(self.norm2(self.filter(self.norm1(x)))))
-        return x
 
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
@@ -137,11 +120,13 @@ class DownLayer(nn.Module):
 
 class GFNet(nn.Module):
     
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, depth=12,
                  mlp_ratio=4., representation_size=None, uniform_drop=False,
                  drop_rate=0., drop_path_rate=0., norm_layer=None, 
                  dropcls=0):
         """
+        num_classes is set to 1 to accommodate the binary classification problem.
+        
         Args:
             img_size (int, tuple): input image size
             patch_size (int, tuple): patch size
@@ -149,18 +134,14 @@ class GFNet(nn.Module):
             num_classes (int): number of classes for classification head
             embed_dim (int): embedding dimension
             depth (int): depth of transformer
-            num_heads (int): number of attention heads
             mlp_ratio (int): ratio of mlp hidden dim to embedding dim
-            qkv_bias (bool): enable bias for qkv if True
-            qk_scale (float): override default qk scale of head_dim ** -0.5 if set
             representation_size (Optional[int]): enable and set representation layer (pre-logits) to this value if set
             drop_rate (float): dropout rate
-            attn_drop_rate (float): attention dropout rate
             drop_path_rate (float): stochastic depth rate
-            hybrid_backbone (nn.Module): CNN backbone to use in-place of PatchEmbed module
             norm_layer: (nn.Module): normalization layer
         """
         super().__init__()
+        num_classes=1
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
@@ -251,6 +232,4 @@ class GFNet(nn.Module):
         x = self.head(x)
         x = x.squeeze()
         return x
-
-
 

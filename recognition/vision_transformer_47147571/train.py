@@ -4,10 +4,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from dataset import ADNIDataset, split_dataset
+from dataset import ADNIDataset
 from utils import get_transform, train, test
 from modules import GFNet
 from functools import partial
+
+"""
+To do:
+change model
+Save model
+early stopping
+pin training seed
+draw training progress(tensorboard)
+"""
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
@@ -29,12 +38,14 @@ disable_tqdm = not (args.show_progress == "True")
 if __name__ == "__main__":
     
     # load the dataset
-    train_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=True))
+    train_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=True), 
+                                val=False, seed=0, split_ratio=0.8)
     
-    # split dataset
-    train_dataset, val_dataset = split_dataset(train_dataset, split_ratio=0.8, seed=0)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    val_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=False), 
+                              val=True, seed=0, split_ratio=0.8)
+    
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
     # create model
     model = GFNet(img_size=224, in_chans=1, num_classes=1, patch_size=14, embed_dim=256, 

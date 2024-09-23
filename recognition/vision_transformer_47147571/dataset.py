@@ -10,7 +10,7 @@ class ADNIDataset(Dataset):
     """Load ADNI dataset.
     It will automatically crop the brain image and resize to 210*210.
     """
-    def __init__(self, root, split="train" , transform=None):
+    def __init__(self, root, split="train", transform=None, val=False, seed=0, split_ratio=0.8):
         root = os.path.join(root, split)
         self.root = root
         self.ad_dir = os.path.join(root, 'AD')
@@ -27,6 +27,18 @@ class ADNIDataset(Dataset):
         self.labels = [1] * len(self.ad_images) + [0] * len(self.nc_images)
         
         self.transform = transform
+        self.val = val
+        self.seed = seed
+        self.split_ratio = split_ratio
+        
+        self.mask = self._generate_mask()
+    
+    def _generate_mask(self):
+        random.seed(self.seed)
+        if self.split_ratio == 1:
+            return [True] * len(self.images)
+        mask = [random.random() < self.split_ratio for _ in range(len(self.images))]
+        return mask if not self.val else [not m for m in mask]
 
     def preprocess_images(self):
         if not os.path.exists(self.ad_processed_dir):
@@ -71,38 +83,16 @@ class ADNIDataset(Dataset):
         return image[y:y+h, x:x+w]
 
     def __len__(self):
-        return len(self.images)
+        return sum(self.mask)
 
     def __getitem__(self, idx):
-        img_path = self.images[idx]
+        real_idx = [i for i, m in enumerate(self.mask) if m][idx]
+        img_path = self.images[real_idx]
         image = Image.open(img_path).convert('L')  # Convert image to grayscale
         
         if self.transform:
             image = self.transform(image)
         
-        label = self.labels[idx]
+        label = self.labels[real_idx]
         return image, label
 
-
-
-def split_dataset(dataset, split_ratio=0.8, seed=None):
-    """Split the ADNIDataset into two subsets.
-    
-    Args:
-    split_ratio (float): The ratio of data to include in the first subset (0 to 1).
-    seed (int): Random seed for reproducibility.
-    """
-    if seed is not None:
-        random.seed(seed)
-    
-    dataset_size = len(dataset)
-    indices = list(range(dataset_size))
-    split = int(np.floor(split_ratio * dataset_size))
-    
-    random.shuffle(indices)
-    train_indices, val_indices = indices[:split], indices[split:]
-    
-    train_dataset = Subset(dataset, train_indices)
-    val_dataset = Subset(dataset, val_indices)
-    
-    return train_dataset, val_dataset

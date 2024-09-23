@@ -11,7 +11,7 @@ from functools import partial
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
-parser.add_argument('--show_progress', default=True, type=bool)
+parser.add_argument('--show_progress', default="True", type=str)
 parser.add_argument('--epochs', default=30, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--early_stopping', default=5, type=int)
@@ -24,8 +24,7 @@ device = args.device if torch.cuda.is_available() else "cpu"
 num_epochs = args.epochs
 batch_size = args.batch_size
 early_stopping = args.early_stopping
-disable_tqdm = not args.show_progress
-
+disable_tqdm = not (args.show_progress == "True")
 
 if __name__ == "__main__":
     

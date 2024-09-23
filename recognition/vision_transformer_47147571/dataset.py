@@ -80,3 +80,4 @@ class ADNIDataset(Dataset):
         
         label = self.labels[idx]
         return image, label
+

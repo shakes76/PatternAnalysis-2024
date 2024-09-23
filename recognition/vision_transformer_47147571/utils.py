@@ -39,17 +39,17 @@ def get_transform(train):
     return transforms.Compose(transform_list)
 
 
-def train(model, train_loader, optimizer, criterion, device="cuda", use_tqdm=True):
+def train(model, train_loader, optimizer, criterion, device="cuda", disable_tqdm=True):
     """Train the model. We assume the model output logits and train via 
     BCEWithLogitsLoss.
-    use_tqdm: Show the progress bar
+    disable_tqdm: Disable the progress bar
     
     """
     model.train()
     running_loss = 0.0
     correct = 0
     total = 0
-    for inputs, labels in tqdm(train_loader, disable=use_tqdm):
+    for inputs, labels in tqdm(train_loader, disable=disable_tqdm):
         inputs, labels = inputs.to(device), labels.float().to(device)
 
         # Zero the parameter gradients
@@ -72,7 +72,7 @@ def train(model, train_loader, optimizer, criterion, device="cuda", use_tqdm=Tru
     return epoch_loss, accuracy
 
 
-def test(model, test_loader, criterion, device="cuda", use_tqdm=True):
+def test(model, test_loader, criterion, device="cuda", disable_tqdm=True):
     """Test the model. We assume the model output logits and train via 
     BCEWithLogitsLoss.
     use_tqdm: Show the progress bar
@@ -82,7 +82,7 @@ def test(model, test_loader, criterion, device="cuda", use_tqdm=True):
     correct = 0
     total = 0
     with torch.no_grad():
-        for inputs, labels in tqdm(test_loader, disable=use_tqdm):
+        for inputs, labels in tqdm(test_loader, disable=disable_tqdm):
             inputs, labels = inputs.to(device), labels.float().to(device)
 
             # Forward pass

@@ -38,6 +38,7 @@ device = args.device if torch.cuda.is_available() else "cpu"
 num_epochs = args.epochs
 batch_size = args.batch_size
 early_stopping = args.early_stopping
+disable_tqdm = not args.show_progress
 
 
 if __name__ == "__main__":
@@ -60,8 +61,8 @@ if __name__ == "__main__":
 
     # Training loop
     for epoch in range(num_epochs):
-        train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, use_tqdm=args.show_progress)
-        test_loss, test_acc = test(model, test_loader, criterion, device, use_tqdm=args.show_progress)
+        train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, disable_tqdm=disable_tqdm)
+        test_loss, test_acc = test(model, test_loader, criterion, device, disable_tqdm=disable_tqdm)
         
         print(f'Epoch [{epoch+1}/{num_epochs}]')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')

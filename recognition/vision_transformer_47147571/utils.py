@@ -98,3 +98,4 @@ def test(model, test_loader, criterion, device="cuda", disable_tqdm=True):
     epoch_loss = test_loss / len(test_loader)
     accuracy = 100 * correct / total
     return epoch_loss, accuracy
+

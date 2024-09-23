@@ -1,27 +1,13 @@
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-import torch
-import numpy as np
-from dataset import ADNIDataset
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torchvision import models
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-import argparse
 import os
+import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import models
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+from dataset import ADNIDataset, split_dataset
+from utils import get_transform, train, test
 from modules import GFNet
 from functools import partial
-from utils import get_transform, train, test
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
@@ -45,10 +31,11 @@ if __name__ == "__main__":
     
     # load the dataset
     train_dataset = ADNIDataset(root=os.path.join(args.data_path, 'train'), transform=get_transform(train=True))
+    
+    # split dataset
+    train_dataset, val_dataset = split_dataset(train_dataset, split_ratio=0.8, seed=0)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-
-    test_dataset = ADNIDataset(root=os.path.join(args.data_path, 'test'), transform=get_transform(train=False))
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     # create model
     model = GFNet(img_size=224, in_chans=1, num_classes=1, patch_size=14, embed_dim=256, 
@@ -62,7 +49,7 @@ if __name__ == "__main__":
     # Training loop
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, disable_tqdm=disable_tqdm)
-        test_loss, test_acc = test(model, test_loader, criterion, device, disable_tqdm=disable_tqdm)
+        test_loss, test_acc = test(model, val_loader, criterion, device, disable_tqdm=disable_tqdm)
         
         print(f'Epoch [{epoch+1}/{num_epochs}]')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')

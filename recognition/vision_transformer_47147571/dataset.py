@@ -2,13 +2,14 @@ import os
 import cv2
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-from torchvision import transforms
-from torchvision.transforms import InterpolationMode
+from torch.utils.data import Dataset, Subset
 from PIL import Image
-import shutil
+import random
 
 class ADNIDataset(Dataset):
+    """Load ADNI dataset.
+    It will automatically crop the brain image and resize to 210*210.
+    """
     def __init__(self, root, transform=None):
         self.root = root
         self.ad_dir = os.path.join(root, 'AD')
@@ -81,3 +82,26 @@ class ADNIDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
+
+
+def split_dataset(dataset, split_ratio=0.8, seed=None):
+    """Split the ADNIDataset into two subsets.
+    
+    Args:
+    split_ratio (float): The ratio of data to include in the first subset (0 to 1).
+    seed (int): Random seed for reproducibility.
+    """
+    if seed is not None:
+        random.seed(seed)
+    
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(split_ratio * dataset_size))
+    
+    random.shuffle(indices)
+    train_indices, val_indices = indices[:split], indices[split:]
+    
+    train_dataset = Subset(dataset, train_indices)
+    val_dataset = Subset(dataset, val_indices)
+    
+    return train_dataset, val_dataset

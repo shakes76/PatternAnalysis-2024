@@ -1,39 +1,16 @@
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-import torch
 import random
+import torch
+from torchvision import transforms
 import numpy as np
-from dataset import ADNIDataset
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torchvision import models
-from torch.utils.data import DataLoader
 from tqdm import tqdm
-import argparse
-import os
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torchvision import models
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-from modules import GFNet
-from functools import partial
 
 def get_transform(train):
     transform_list = [
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ]
     if train:
         transform_list.extend([
-            transforms.RandomRotation(10),  # rotation
-            transforms.ColorJitter(brightness=0.2, contrast=0.2),  # adjust brightness and contrast
-            transforms.RandomApply([transforms.GaussianBlur(kernel_size=3)], p=0.5),  # Gaussian Blur
-            transforms.RandomErasing(p=0.5, scale=(0.02, 0.2)),  # Random Erasing
+            transforms.RandomRotation(10),
             transforms.RandomApply([transforms.ElasticTransform()], p=0.5)  # Elastic Transform
         ])
     transform_list.append(transforms.Normalize(mean=[0.5], std=[0.5]))

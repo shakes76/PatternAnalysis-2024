@@ -2,6 +2,7 @@ import torch, wandb, math
 import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm
+from torch.optim.lr_scheduler import _LRScheduler
 
 class StableDiffusion(nn.Module):
     """
@@ -32,6 +33,9 @@ class StableDiffusion(nn.Module):
     
     def decode(self, z):
         return self.vae.decode(z)
+    
+    def sample_latent(self, mu, logvar):
+        return self.vae.sample(mu, logvar)
 
     def predict_noise(self, z, t):
         pred_noise = self.unet(z, t)
@@ -40,13 +44,13 @@ class StableDiffusion(nn.Module):
     @torch.no_grad()
     def sample(self, epoch, shape, device='cuda'):
         x = torch.randn(shape, device=device)
-        for i in tqdm(reversed(range(self.noise_scheduler.num_timesteps)), desc="Sampling"):
+        steps = reversed(range(self.noise_scheduler.num_timesteps))
+        for i in tqdm(steps, desc="Sampling"):
             t = torch.full((shape[0],), i, device=device, dtype=torch.long)
-            pred_noise = self.unet(x, t)
-            x = self.noise_scheduler.step(pred_noise, t, x)
+            x = self.noise_scheduler.step(self.unet, x, t)
 
         final_image = self.vae.decode(x)
-        wandb.log({f"sample at epoch {epoch}": wandb.Image(final_image)})
+        wandb.log({f"sample": wandb.Image(final_image)})
         return x
     
 
@@ -79,7 +83,6 @@ class UNet(nn.Module):
         self.down_blocks = nn.ModuleList()
         input_channel = hidden_dims[0]
         for hidden_dim in hidden_dims:
-            #self.down_blocks.append(ResidualBlock(input_channel, hidden_dim, time_emb_dim))
             self.down_blocks.append(ResidualBlock(input_channel, hidden_dim, time_emb_dim))
             input_channel = hidden_dim
         
@@ -139,94 +142,7 @@ class UNet(nn.Module):
         
         # Final linear layer
         return self.conv_out(x)
-
-
-class NoiseScheduler_Depricated:
-    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02, schedule_type='linear'):
-        self.num_timesteps = num_timesteps
-        
-        # Define beta schedule
-        self.betas = self._cosine_beta_schedule(num_timesteps)
-
-        # Define alphas
-        self.alphas = 1. - self.betas
-        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
-        self.alphas_cumprod_prev = torch.cat([torch.tensor([1.0]), self.alphas_cumprod[:-1]])
-        
-        # Calculations for diffusion q(x_t | x_{t-1}) and others
-        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
-        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
-        self.log_one_minus_alphas_cumprod = torch.log(1. - self.alphas_cumprod)
-        self.sqrt_recip_alphas_cumprod = torch.sqrt(1. / self.alphas_cumprod)
-        self.sqrt_recipm1_alphas_cumprod = torch.sqrt(1. / self.alphas_cumprod - 1)
-
-        # Calculations for posterior q(x_{t-1} | x_t, x_0)
-        self.posterior_variance = self.betas * (1. - self.alphas_cumprod_prev) / (1. - self.alphas_cumprod)
-        self.posterior_log_variance_clipped = torch.log(self.posterior_variance.clamp(min=1e-20))
-        self.posterior_mean_coef1 = self.betas * torch.sqrt(self.alphas_cumprod_prev) / (1. - self.alphas_cumprod)
-        self.posterior_mean_coef2 = (1. - self.alphas_cumprod_prev) * torch.sqrt(self.alphas) / (1. - self.alphas_cumprod)
-
-    def _cosine_beta_schedule(self, timesteps):
-        steps = timesteps + 1
-        x = torch.linspace(0, timesteps, steps)
-        alphas_cumprod = torch.cos(((x / timesteps) + 0.008) / 1.008 * math.pi * 0.5) ** 2
-        alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
-        betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
-        return torch.clip(betas, 0.0001, 0.9999)
-
-    def add_noise(self, original_samples, noise, timesteps):
-        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        noisy_samples = sqrt_alpha_prod * original_samples + sqrt_one_minus_alpha_prod * noise
-        return noisy_samples
-
-    def get_velocity(self, x, t, predicted_noise):
-        alpha_prod_t = self.alphas_cumprod[t].view(-1, 1, 1, 1)
-        beta_prod_t = 1 - alpha_prod_t
-        return (beta_prod_t.sqrt() * predicted_noise - x * beta_prod_t) / alpha_prod_t.sqrt()
-
-    def step(self, model_output, timesteps, sample):
-        # Handle batched timesteps
-        t = timesteps
-        prev_t = (t - 1).clamp(min=0)
-        
-        pred_original_sample = self._predict_x0_from_eps(sample, t, model_output)
-        
-        alpha_prod_t = self.alphas_cumprod[t].view(-1, 1, 1, 1)
-        alpha_prod_t_prev = self.alphas_cumprod[prev_t].view(-1, 1, 1, 1)
-        beta_prod_t = 1 - alpha_prod_t
-        beta_prod_t_prev = 1 - alpha_prod_t_prev
-        
-        pred_sample_direction = (1 - alpha_prod_t_prev) * model_output
-        
-        # Compute x_{t-1} mean
-        pred_prev_sample = (
-            alpha_prod_t_prev.sqrt() * pred_original_sample +
-            pred_sample_direction
-        )
-        
-        # Add noise
-        variance = ((beta_prod_t_prev / beta_prod_t) * (1 - alpha_prod_t / alpha_prod_t_prev)).sqrt()
-        noise = torch.randn_like(model_output)
-        variance = variance.view(-1, 1, 1, 1) * noise
-        
-        # Only add variance where t > 0
-        mask = (t > 0).float().view(-1, 1, 1, 1)
-        pred_prev_sample = pred_prev_sample + variance * mask
-        
-        return pred_prev_sample
-
-    def _predict_x0_from_eps(self, x_t, t, eps):
-        alpha_prod_t = self.alphas_cumprod[t].view(-1, 1, 1, 1)
-        return (x_t - (1 - alpha_prod_t).sqrt() * eps) / alpha_prod_t.sqrt()
-
-    def to(self, device):
-        # Move all tensors in the class to the specified device
-        for key, value in self.__dict__.items():
-            if isinstance(value, torch.Tensor):
-                setattr(self, key, value.to(device))
-        return self
-
+    
 
 class SinusoidalPositionEmbeddings(nn.Module):
     """
@@ -251,79 +167,7 @@ class SinusoidalPositionEmbeddings(nn.Module):
         embeddings = time[:, None] * embeddings[None, :]
         embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
         return embeddings
-
-
-class NoiseScheduler_Depricated:
-    def __init__(self, num_timesteps=1000):
-        self.num_timesteps = num_timesteps
-        
-        # Define beta schedule
-        self.betas = self._cosine_beta_schedule(num_timesteps)
-        
-        # Define alphas
-        self.alphas = 1. - self.betas
-        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
-        
-        # Calculations for diffusion q(x_t | x_{t-1})
-        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
-        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
-
-    def _cosine_beta_schedule(self, timesteps):
-        steps = timesteps + 1
-        x = torch.linspace(0, timesteps, steps)
-        alphas_cumprod = torch.cos(((x / timesteps) + 0.008) / 1.008 * math.pi * 0.5) ** 2
-        alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
-        betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
-        return torch.clip(betas, 0.0001, 0.9999)
-
-    def add_noise(self, original_samples, noise, timesteps):
-        sqrt_alpha_prod = self.sqrt_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        noisy_samples = sqrt_alpha_prod * original_samples + sqrt_one_minus_alpha_prod * noise
-        return noisy_samples
-
-    def remove_noise(self, noisy_latent, timesteps, noise_pred):
-        alpha_prod = self.alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_prod = self.sqrt_one_minus_alphas_cumprod[timesteps].view(-1, 1, 1, 1)
-        
-        pred_original_sample = (noisy_latent - sqrt_one_minus_alpha_prod * noise_pred) / torch.sqrt(alpha_prod)
-        return pred_original_sample
-
-    def step(self, model_output, timesteps, sample):
-        t = timesteps
-        prev_t = (t - 1).clamp(min=0)
-        
-        alpha_prod_t = self.alphas_cumprod[t].view(-1, 1, 1, 1)
-        alpha_prod_t_prev = self.alphas_cumprod[prev_t].view(-1, 1, 1, 1)
-        beta_prod_t = 1 - alpha_prod_t
-        beta_prod_t_prev = 1 - alpha_prod_t_prev
-        
-        pred_original_sample = self.remove_noise(sample, t, model_output)
-        
-        pred_sample_direction = (1 - alpha_prod_t_prev) * model_output
-        
-        # Compute x_{t-1} mean
-        pred_prev_sample = (
-            torch.sqrt(alpha_prod_t_prev) * pred_original_sample +
-            pred_sample_direction
-        )
-        
-        # Add noise
-        variance = ((beta_prod_t_prev / beta_prod_t) * (1 - alpha_prod_t / alpha_prod_t_prev)).sqrt()
-        noise = torch.randn_like(model_output)
-        pred_prev_sample += variance.view(-1, 1, 1, 1) * noise * (t > 0).float().view(-1, 1, 1, 1)
-        
-        return pred_prev_sample
     
-    def to(self, device):
-        # Move all tensors in the class to the specified device
-        for key, value in self.__dict__.items():
-            if isinstance(value, torch.Tensor):
-                setattr(self, key, value.to(device))
-        return self
-    
-
-
 
 class VAEResidualBlock(nn.Module):
     """
@@ -548,7 +392,7 @@ class NoiseScheduler:
     """
     Noise scheduler based on Fast-DDPM implementation in stable diffusion
     """
-    def __init__(self, num_timesteps=10, beta_start=0.0001, beta_end=0.02):
+    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
         self.num_timesteps = num_timesteps
         self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
         self.alphas = 1.0 - self.betas
@@ -561,38 +405,48 @@ class NoiseScheduler:
             self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1) * x +
             self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1) * noise
         )
+    
+    def remove_noise(self, x_noisy, predicted_noise, t):
+        alpha_cumprod = self.alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_cumprod = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+        
+        denoised = (x_noisy - sqrt_one_minus_alpha_cumprod * predicted_noise) / torch.sqrt(alpha_cumprod)
+        return denoised
+
+    # def step(self, model_output, timestep, sample):
+    #     """
+    #     Step the noise schduler back one step
+
+    #     Args:
+    #         model_output (torch.Tensor): model output predictedd noise
+    #         timestep (torch.Tensor): timestep
+    #         sample (torch.Tensor): sample
+    #     """
+    #     t = timestep
+    #     prev_t = (t - 1)
+
+    #     alpha = self.alphas_cumprod[t]
+    #     alpha_prev = self.alphas_cumprod[prev_t]
+
+    #     beta = 1- alpha / alpha_prev
+
+    #     # Ensure proper broadcasting
+    #     beta = beta.view(-1, 1, 1, 1)
+    #     alpha = alpha.view(-1, 1, 1, 1)
+    #     alpha_prev = alpha_prev.view(-1, 1, 1, 1)
+
+    #     pred_original_sample = (sample - beta.sqrt() * model_output) / alpha.sqrt()
+    #     pred_sample_direction = (1 - alpha_prev).sqrt() * model_output
+    #     prev_sample = alpha_prev.sqrt() * pred_original_sample + pred_sample_direction
+
+    #     noise = torch.randn_like(sample)
+    #     variance = ((1 - alpha_prev) / (1 - alpha) * beta).sqrt()
+    #     prev_sample = prev_sample + variance * noise * (t > 0).float().view(-1, 1, 1, 1)
+
+    #     return prev_sample
 
     def step(self, model_output, timestep, sample):
-        """
-        Step the noise schduler back one step
-
-        Args:
-            model_output (torch.Tensor): model output
-            timestep (torch.Tensor): timestep
-            sample (torch.Tensor): sample
-        """
-        t = timestep
-        prev_t = (t - 1).clamp(min=0)
-
-        alpha = self.alphas_cumprod[t]
-        alpha_prev = self.alphas_cumprod[prev_t]
-
-        beta = 1- alpha / alpha_prev
-
-        # Ensure proper broadcasting
-        beta = beta.view(-1, 1, 1, 1)
-        alpha = alpha.view(-1, 1, 1, 1)
-        alpha_prev = alpha_prev.view(-1, 1, 1, 1)
-
-        pred_original_sample = (sample - beta.sqrt() * model_output) / alpha.sqrt()
-        pred_sample_direction = (1 - alpha_prev).sqrt() * model_output
-        prev_sample = alpha_prev.sqrt() * pred_original_sample + pred_sample_direction
-
-        noise = torch.randn_like(sample)
-        variance = ((1 - alpha_prev) / (1 - alpha) * beta).sqrt()
-        prev_sample = prev_sample + variance * noise * (t > 0).float().view(-1, 1, 1, 1)
-
-        return prev_sample
+        return self.remove_noise(sample, model_output, timestep)
 
     def to(self, device):
         # Move all tensors in the class to the specified device
@@ -600,3 +454,103 @@ class NoiseScheduler:
             if isinstance(value, torch.Tensor):
                 setattr(self, key, value.to(device))
         return self
+
+
+class CosineAnnealingWarmupScheduler(_LRScheduler):
+    def __init__(self, optimizer, warmup_steps, total_steps, min_lr=0, last_epoch=-1):
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+        self.min_lr = min_lr
+        super(CosineAnnealingWarmupScheduler, self).__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch < self.warmup_steps:
+            # Linear warmup
+            return [base_lr * (self.last_epoch + 1) / self.warmup_steps for base_lr in self.base_lrs]
+        else:
+            # Cosine annealing
+            progress = (self.last_epoch - self.warmup_steps) / (self.total_steps - self.warmup_steps)
+            return [self.min_lr + (base_lr - self.min_lr) * 
+                    (1 + math.cos(math.pi * progress)) / 2
+                    for base_lr in self.base_lrs]
+        
+
+class NoiseScheduler_Fast_DDPM():
+    def __init__(self, num_timesteps=1000, beta_start=1e-4, beta_end=0.02):
+        super().__init__()
+        self.num_timesteps = num_timesteps
+        self.beta_start = beta_start
+        self.beta_end = beta_end
+
+        # Define beta schedule
+        self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
+        
+        # Calculate alpha values
+        self.alphas = 1 - self.betas
+        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
+        self.alphas_cumprod_prev = F.pad(self.alphas_cumprod[:-1], (1, 0), value=1.0)
+        
+        # Calculate diffusion coefficients
+        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1 - self.alphas_cumprod)
+        
+        # Calculate posterior variance
+        self.posterior_variance = self.betas * (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod)
+
+    def add_noise(self, x_0, noise, t):
+        if noise is None:
+            noise = torch.randn_like(x_0)
+        
+        sqrt_alphas_cumprod_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_one_minus_alphas_cumprod_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+        
+        return sqrt_alphas_cumprod_t * x_0 + sqrt_one_minus_alphas_cumprod_t * noise
+
+    def step(self, model, noisy_latents, timesteps):
+        # Ensure timesteps is a 1D tensor
+        timesteps = timesteps.view(-1)
+        
+        # Get the corresponding beta and alpha values
+        betas = self.betas[timesteps]
+        alphas = self.alphas[timesteps]
+        alphas_cumprod = self.alphas_cumprod[timesteps]
+        
+        # Expand dimensions for broadcasting
+        betas = betas.view(-1, 1, 1, 1)
+        alphas = alphas.view(-1, 1, 1, 1)
+        alphas_cumprod = alphas_cumprod.view(-1, 1, 1, 1)
+        
+        # Predict noise
+        predicted_noise = model(noisy_latents, timesteps)
+        
+        # Calculate mean
+        mean = (noisy_latents - betas * predicted_noise / torch.sqrt(1 - alphas_cumprod)) / torch.sqrt(alphas)
+        
+        # Calculate variance
+        variance = betas * (1 - alphas_cumprod) / (1 - alphas_cumprod)
+        
+        # Add noise only if not at the last step
+        noise = torch.randn_like(noisy_latents)
+        mask = (timesteps > 0).float().view(-1, 1, 1, 1)
+        
+        denoised_latents = mean + mask * torch.sqrt(variance) * noise
+        
+        return denoised_latents
+
+    def fast_sampling(self, model, shape, device, num_steps=50):
+        x_t = torch.randn(shape, device=device)
+        timesteps = torch.linspace(self.num_timesteps - 1, 0, num_steps).long().to(device)
+        
+        for t in timesteps:
+            t_batch = torch.full((shape[0],), t, device=device, dtype=torch.long)
+            x_t = self.step(model, x_t, t_batch)
+        
+        return x_t
+    
+    def to(self, device):
+        # Move all tensors in the class to the specified device
+        for key, value in self.__dict__.items():
+            if isinstance(value, torch.Tensor):
+                setattr(self, key, value.to(device))
+        return self
+    

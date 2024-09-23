@@ -90,36 +90,33 @@ def pretrain_vae(vae, train_loader, val_loader, num_epochs, device, batch_size):
                     "reconstructions": wandb.Image(comparison.cpu())
                 })
 
-    path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/MNIST-vae_e{epoch+1}_b{batch_size}.pt')
+    path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE/ADNI-vae_e{epoch+1}_b{batch_size}_im128.pt')
     torch.save(vae, path)
     print("Pretraining completed. VAE saved.")
 
 def train_vae():
     # Initialize wandb
-    wandb.init(project="vae-pretraining", name="VAE-MNIST Pretraining")
+    wandb.init(project="vae-pretraining", name="VAE-ADNI Pretraining")
 
     # Set up data loaders
     image_transform = transforms.Compose([
-    #transforms.ToPILImage(),
+    transforms.ToPILImage(),
     transforms.Resize((128, 128)),
-    # transforms.RandomHorizontalFlip(),
-    # transforms.RandomRotation(10),
-    # transforms.ColorJitter(brightness=0.1, contrast=0.1),
     transforms.ToTensor(),
-    # transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05)),
-    transforms.Normalize((0.1307,), (0.3081,))
+    transforms.Normalize((0.5,), (0.5,))
     ])
 
-    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=image_transform)
-    val_dataset = datasets.MNIST('./data', train=False, transform=transforms.Compose([
-        transforms.Resize((128, 128)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ]))
-    #train_loader, val_loader = get_dataloader('recognition/S4696417-Stable-Diffusion-ADNI/data/train/AD', batch_size=32, transform=image_transform)
+    #train_dataset = datasets.MNIST('./data', train=True, download=True, transform=image_transform)
+    #val_dataset = datasets.MNIST('./data', train=False, transform=transforms.Compose([
+        #transforms.Resize((128, 128)),
+        #transforms.ToTensor(),
+        #transforms.Normalize((0.1307,), (0.3081,))
+    #]))
 
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+    # train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+    # val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+
+    train_loader, val_loader = get_dataloader('recognition/S4696417-Stable-Diffusion-ADNI/data/train/AD', batch_size=16, transform=image_transform)
 
     # Initialize VAE (assuming you have a VAE class defined)
     vae = VAE(in_channels=1, latent_dim=8) 
@@ -128,7 +125,7 @@ def train_vae():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Pretrain VAE
-    pretrain_vae(vae, train_loader, val_loader, num_epochs=1, device=device, batch_size=16)
+    pretrain_vae(vae, train_loader, val_loader, num_epochs=80, device=device, batch_size=16)
 
     wandb.finish()
 

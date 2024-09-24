@@ -16,7 +16,6 @@ image_size = 256
 
 dataset = torchvision.datasets.ImageFolder(root=dataroot,
                                            transform=transforms.Compose([
-                                               transforms.Resize(image_size),
                                                transforms.CenterCrop(image_size),
                                                transforms.ToTensor(),
                                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
@@ -32,7 +31,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def show_images(images, title=""):
     """Plot input images"""
-
     # Converting images to CPU numpy arrays
     if type(images) is torch.Tensor:
         images = images.detach().cpu().numpy()
@@ -55,7 +53,3 @@ def show_images(images, title=""):
 
     # Showing the figure
     plt.show()
-
-# Plot some training images
-real_batch = next(iter(dataloader))
-show_images(real_batch[0], "Training")

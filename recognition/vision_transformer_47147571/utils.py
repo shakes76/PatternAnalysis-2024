@@ -4,6 +4,7 @@ from torchvision import transforms
 import numpy as np
 from tqdm import tqdm
 
+
 def get_transform(train):
     transform_list = [
         transforms.ToTensor(),
@@ -12,11 +13,11 @@ def get_transform(train):
         transform_list.extend([
             transforms.RandomRotation(10),
             transforms.RandomErasing(p=0.4, scale=(0.01, 0.1), ratio=(0.5, 2.0)),
-            transforms.RandomApply([transforms.ElasticTransform()], p=0.5)  # Elastic Transform
+            transforms.RandomApply([transforms.ElasticTransform()], p=0.5),
+            transforms.RandomResizedCrop(size=(210, 210), scale=(0.95, 1.0), ratio=(0.95, 1.05))
         ])
     transform_list.append(transforms.Normalize(mean=[0.5], std=[0.5]))
     return transforms.Compose(transform_list)
-
 
 def train(model, train_loader, optimizer, criterion, device="cuda", disable_tqdm=True):
     """Train the model. We assume the model output logits and train via 

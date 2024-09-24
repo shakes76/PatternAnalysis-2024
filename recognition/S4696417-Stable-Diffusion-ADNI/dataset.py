@@ -24,8 +24,6 @@ class ADNIDataset(Dataset):
     def __getitem__(self, index):
         img = cv2.imread(os.path.join(self.path, self.files[index]), cv2.IMREAD_GRAYSCALE)
         img = cv2.resize(img, (256, 256))
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        #img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
         if self.transform is not None:
             img = self.transform(img)

@@ -22,11 +22,12 @@ class StableDiffusion(nn.Module):
         Input: t: [B] tensor of timesteps
         Output: [B, C, H, W] Predicted noise tensor
     """
-    def __init__(self, unet, vae, noise_scheduler):
+    def __init__(self, unet, vae, noise_scheduler, image_size):
         super().__init__()
         self.unet = unet
         self.vae = vae
         self.noise_scheduler = noise_scheduler
+        self.image_size = image_size
 
     def encode(self, x):
         return self.vae.encode(x)

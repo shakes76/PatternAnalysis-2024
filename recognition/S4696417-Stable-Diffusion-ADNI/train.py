@@ -1,42 +1,38 @@
 from torchvision import transforms
 from dataset import get_dataloader
-from modules import StableDiffusion, NoiseScheduler, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
-from vae import VAE
-from torchvision.datasets import MNIST
-from torch.utils.data import DataLoader
-import torch, wandb, os, io
+import torch, wandb, os
 import torch.nn as nn
 from tqdm import tqdm
-import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
 from utils import get_linear_schedule_with_warmup, visualize_denoising_process
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
+from modules import StableDiffusion, NoiseScheduler, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
+
+# SETUP - Must Match Image Size of VAE
+IMAGE_SIZE = 128
+batch_size = 8
+method = 'Local'
 
 image_transform = transforms.Compose([
     transforms.ToPILImage(),
-    transforms.Resize((128, 128)),
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.ToTensor(),    
     transforms.Normalize((0.5,), (0.5,)),
 ])
 
 print("Loading data...")
-os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
-train_loader, val_loader = get_dataloader('data/train/AD', batch_size=8, transform=image_transform)
-
-# IMport MNIST dataset
-#train_set = MNIST(root='./data', train=True, download=True, transform=image_transform)
-#test_set = MNIST(root='./data', train=False, download=True, transform=image_transform)
-
-#train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=2)
-#val_loader = DataLoader(test_set, batch_size=64, shuffle=True, num_workers=2)
+if method == 'Local':
+    os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
+    train_loader, val_loader = get_dataloader('data/train/AD', batch_size=batch_size, transform=image_transform)
+elif method == 'Slurm':
+    train_loader, val_loader = get_dataloader('/home/groups/comp3710/ADNI/AD_NC/train/AD', batch_size=batch_size, transform=image_transform)
 
 # Settings
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device}')
 
 print("Loading model...")
-#vae = VAE(in_channels=1, latent_dim=8)
-vae = torch.load('checkpoints/VAE/ADNI-vae_e40_b64_im128.pt') #recognition/S4696417-Stable-Diffusion-ADNI/
+vae = torch.load(f'checkpoints/VAE/ADNI-vae_e40_b64_im{IMAGE_SIZE}.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
@@ -44,7 +40,7 @@ for param in vae.parameters():
 unet = UNet(in_channels=8, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
 #noise_scheduler = NoiseScheduler(num_timesteps=100).to(device)
 noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
-model = StableDiffusion(unet, vae, noise_scheduler).to(device)
+model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
 
 criterion = nn.MSELoss()
 scaler = GradScaler()
@@ -55,8 +51,8 @@ steps_per_epoch = len(train_loader)
 total_steps = steps_per_epoch * epochs
 warmup_steps = int(0.1 * total_steps)
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
+#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 #scheduler = CosineAnnealingWarmupScheduler(optimizer, warmup_steps, total_steps)
 
 # initialise wandb
@@ -70,7 +66,9 @@ wandb.init(
         "scheduler": type(scheduler).__name__,
         "loss": type(criterion).__name__,
         "scaler": type(scaler).__name__,
-        "name": "SD-MNIST - VAE and Unet",
+        "name": "SD-ADNI - VAE and Unet",
+        "image size": IMAGE_SIZE,
+        "batch size": batch_size
     })
 
 print("Training model...")
@@ -99,9 +97,6 @@ for epoch in range(epochs):
 
         # Add noise to latents
         noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-
-        # if i == 10 and epoch % 2 == 0:
-        #     visualize_denoising_process(model, noise_scheduler)
 
         # Train UNet
         optimizer.zero_grad()
@@ -200,7 +195,7 @@ for epoch in range(epochs):
 
     # Generate and log sample images
     if (epoch) % 10 == 0:  # Generate every 10 epochs
-        sample_images = model.sample(epoch+1, shape=(8, 8, 16, 16), device=device)
+        sample_images = model.sample(epoch+1, shape=(8, 8, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)
         wandb.log({
@@ -209,12 +204,11 @@ for epoch in range(epochs):
         })
 
     if epoch == epochs: 
-        sample_images = model.sample(epoch+1, shape=(8, 8, 32, 32), device=device)
+        sample_images = model.sample(epoch+1, shape=(8, 8, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
     
 
-
 print("Training complete")
-path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/Diffusion/dif_e{epoch+1}.pt')
+path = os.path.join(os.getcwd(), f'checkpoints/Diffusion/ADNI_diffusion_e{epoch+1}_im{IMAGE_SIZE}.pt')
 torch.save(model, path)
 wandb.finish()
 

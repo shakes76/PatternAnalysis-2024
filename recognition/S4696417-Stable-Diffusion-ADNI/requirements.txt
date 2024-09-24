@@ -1,0 +1,7 @@
+opencv_python==4.10.0.84
+opencv_python_headless==4.10.0.84
+torch==2.1.2
+torchmetrics==1.4.2
+torchvision==0.16.1
+tqdm==4.66.5
+wandb==0.12.4

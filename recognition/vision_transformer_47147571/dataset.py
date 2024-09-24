@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset, Subset
 from PIL import Image
 import random
+from tqdm import tqdm
 
 class ADNIDataset(Dataset):
     """ADNI dataset loader.
@@ -19,13 +20,14 @@ class ADNIDataset(Dataset):
     
     Please make sure you have write permission to the folder where the dataset is located.
     """
-    def __init__(self, root, split="train", transform=None, val=False, seed=0, split_ratio=0.8):
+    def __init__(self, root, split="train", transform=None, val=False, seed=0, split_ratio=0.8, disable_tqdm=False):
         root = os.path.join(root, split)
         self.root = root
         self.ad_dir = os.path.join(root, 'AD')
         self.nc_dir = os.path.join(root, 'NC')
         self.ad_processed_dir = os.path.join(root, 'AD_processed')
         self.nc_processed_dir = os.path.join(root, 'NC_processed')
+        self.disable_tqdm = disable_tqdm
         
         self.preprocess_images()
         
@@ -51,15 +53,17 @@ class ADNIDataset(Dataset):
 
     def preprocess_images(self):
         if not os.path.exists(self.ad_processed_dir):
+            print("Processing AD")
             os.makedirs(self.ad_processed_dir)
             self._process_directory(self.ad_dir, self.ad_processed_dir)
         
         if not os.path.exists(self.nc_processed_dir):
+            print("Processing NC")
             os.makedirs(self.nc_processed_dir)
             self._process_directory(self.nc_dir, self.nc_processed_dir)
 
     def _process_directory(self, input_dir, output_dir):
-        for filename in os.listdir(input_dir):
+        for filename in tqdm(os.listdir(input_dir), disable=self.disable_tqdm):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
                 input_path = os.path.join(input_dir, filename)
                 output_path = os.path.join(output_dir, filename)
@@ -72,11 +76,29 @@ class ADNIDataset(Dataset):
         # Crop the relevant region
         cropped = self._crop_brain_region(image)
         
-        # Resize to 210x210
-        resized = cv2.resize(cropped, (210, 210), interpolation=cv2.INTER_CUBIC)
+        h, w = cropped.shape
+    
+        # Calculate scaling factor to make the longer side 210 pixels
+        scale = 210 / max(h, w)
+        
+        # Calculate new dimensions
+        new_h, new_w = int(h * scale), int(w * scale)
+        
+        # Resize the image
+        resized = cv2.resize(cropped, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
+        
+        # Calculate padding
+        top = (210 - new_h) // 2
+        bottom = 210 - new_h - top
+        left = (210 - new_w) // 2
+        right = 210 - new_w - left
+        
+        # Add padding
+        padded = cv2.copyMakeBorder(resized, top, bottom, left, right, 
+                                    cv2.BORDER_CONSTANT, value=0)
         
         # Save the processed image
-        cv2.imwrite(output_path, resized)
+        cv2.imwrite(output_path, padded)
 
     def _crop_brain_region(self, image):
         # Apply Otsu's thresholding

@@ -7,27 +7,58 @@ from tqdm import tqdm
 from vae import VAE
 from torchmetrics.functional.image import structural_similarity_index_measure, peak_signal_noise_ratio
 
-def vae_loss(recon_x, x, mu, logvar, kld_weight=0.1):
-    batch_size = x.size(0)
-    MSE = nn.functional.mse_loss(recon_x, x, reduction='sum') / batch_size
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / batch_size
-    loss = MSE + kld_weight * KLD
-    return loss, MSE, KLD
-
-def calculate_metrics(original, reconstructed):
-    ssim = structural_similarity_index_measure(reconstructed, original)
-    psnr = peak_signal_noise_ratio(reconstructed, original)
-    return ssim, psnr
-
-def pretrain_vae(vae, 
-                 train_loader, 
-                 val_loader, 
-                 num_epochs, 
-                 device, 
-                 batch_size, 
-                 image_size,
-                 ckp_path):
+def pretrain_vae(
+                 num_epochs=80,
+                 in_channels=1, 
+                 latent_dim=8, 
+                 device='cuda', 
+                 batch_size='16', 
+                 image_size=128,
+                 data_path='/home/groups/comp3710/ADNI/AD_NC/train/AD',
+                 ckp_path='checkpoints/VAE'):
     
+    """
+    Train the VAE to encode and decode images from the ADNI dataset. Pretraining this to a reasonable level of performance will
+    help with reconstruction of the images in the diffusion model. 
+
+    Args:
+        vae: VAE model to be trained
+        train_loader: training dataloader
+        val_loader: validation dataloader
+        num_epochs: number of epochs
+        in_channels: number of input channels
+        latent_dim: latent dimension
+        device: device to use
+        batch_size: batch size
+        image_size: image size (must be the same as the diffusion model)
+        data_path: path to the ADNI dataset
+        ckp_path: path to save the checkpoints
+
+    Returns:
+        vae: trained VAE model (saved in the checkpoints folder)
+    """
+
+    # Initialize wandb
+    wandb.init(project="vae-pretraining", name=f"VAE-ADNI Pretraining ({image_size})",
+               config={
+                "epochs": epochs,
+                "name": "VAE-ADNI Pretraining",
+                "image size": image_size,
+                "batch size": batch_size
+    })
+
+    # Define Transforms for Dataset
+    image_transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    train_loader, val_loader = get_dataloader(data_path, batch_size, transform=image_transform)
+
+    vae = VAE(in_channels=in_channels, latent_dim=latent_dim)
+   
     vae.to(device)
     optimizer = optim.AdamW(vae.parameters(), lr=1e-3, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
@@ -97,52 +128,24 @@ def pretrain_vae(vae,
                     "reconstructions": wandb.Image(comparison.cpu())
                 })
 
+    wandb.finish()
     path = os.path.join(os.getcwd(), f'{ckp_path}/ADNI-vae_e{epoch+1}_b{batch_size}_im{image_size}.pt')
     torch.save(vae, path)
     print("Pretraining completed. VAE saved.")
 
-def train_vae(IMAGE_SIZE=128, 
-              epochs=80, 
-              batch_size=16, 
-              data_path='/home/groups/comp3710/ADNI/AD_NC/train/AD',
-              ckp_path='checkpoints/VAE'):
-    # Initialize wandb
-    wandb.init(project="vae-pretraining", name=f"VAE-ADNI Pretraining ({IMAGE_SIZE})",
-               config={
-                "epochs": epochs,
-                "name": "VAE-ADNI Pretraining",
-                "image size": IMAGE_SIZE,
-                "batch size": batch_size
-    })
+def vae_loss(recon_x, x, mu, logvar, kld_weight=0.1):
+    batch_size = x.size(0)
+    MSE = nn.functional.mse_loss(recon_x, x, reduction='sum') / batch_size
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / batch_size
+    loss = MSE + kld_weight * KLD
+    return loss, MSE, KLD
 
-    # Set up data loaders
-    image_transform = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
-    ])
+def calculate_metrics(original, reconstructed):
+    ssim = structural_similarity_index_measure(reconstructed, original)
+    psnr = peak_signal_noise_ratio(reconstructed, original)
+    return ssim, psnr
 
 
-    train_loader, val_loader = get_dataloader(data_path, batch_size=16, transform=image_transform)
-
-    # Initialize VAE (assuming you have a VAE class defined)
-    vae = VAE(in_channels=1, latent_dim=8) 
-
-    # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Pretrain VAE
-    pretrain_vae(vae, 
-                 train_loader, 
-                 val_loader, 
-                 num_epochs=80, 
-                 device=device, 
-                 batch_size=16, 
-                 image_size=IMAGE_SIZE, 
-                 ckp_path=ckp_path)
-
-    wandb.finish()
 
 ######### Pre Train VAE Model #########
 
@@ -150,13 +153,19 @@ method = 'Local'
 epochs = 80
 batch_size = 16
 IMAGE_SIZE = 128
+in_channels = 1 # monochrome image so 1 in channel
+latent_dim = 8 # latent dim is 8 as design choice
 
-if method == 'Slurm':
-    train_vae(IMAGE_SIZE, epochs, batch_size, 
-              data_path='/home/groups/comp3710/ADNI/AD_NC/train/AD', 
-              ckp_path='checkpoints/VAE')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # probably dont try this on a cpu
+
+if method == 'Slurm': 
+              data_path='/home/groups/comp3710/ADNI/AD_NC/train/AD'
+              ckp_path='checkpoints/VAE'
 elif method == 'Local':
-    train_vae(IMAGE_SIZE, epochs, batch_size, 
-              data_path='recognition/S4696417-Stable-Diffusion-ADNI/data/train/AD', 
-              ckp_path='recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE')
+              data_path='recognition/S4696417-Stable-Diffusion-ADNI/data/train/AD' 
+              ckp_path='recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE'
+              
+
+pretrain_vae(epochs, in_channels, latent_dim, device, batch_size, IMAGE_SIZE, data_path, ckp_path) 
+
 

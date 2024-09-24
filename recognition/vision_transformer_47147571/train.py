@@ -15,7 +15,7 @@ parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/
 parser.add_argument('--show_progress', default="True", type=str)
 parser.add_argument('--epochs', default=200, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
-parser.add_argument('--early_stopping', default=5, type=int)
+parser.add_argument('--early_stopping', default=30, type=int)
 parser.add_argument('--device', default="cuda", type=str)
 parser.add_argument('--train_seed', default=0, type=int)
 
@@ -51,7 +51,8 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)
 
     # create model
-    model = GFNet(img_size=210, in_chans=1, num_classes=1, patch_size=16, embed_dim=256, 
+    # gfnet-ti
+    model = GFNet(img_size=210, in_chans=1, patch_size=15, embed_dim=256, 
                   depth=12, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
 
     # Loss and optimizer

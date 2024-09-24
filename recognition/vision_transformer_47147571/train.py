@@ -14,8 +14,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
 parser.add_argument('--show_progress', default="True", type=str)
 parser.add_argument('--epochs', default=200, type=int)
-parser.add_argument('--batch_size', default=32, type=int)
-parser.add_argument('--early_stopping', default=30, type=int)
+parser.add_argument('--batch_size', default=64, type=int)
+parser.add_argument('--early_stopping', default=20, type=int)
 parser.add_argument('--device', default="cuda", type=str)
 parser.add_argument('--train_seed', default=0, type=int)
 
@@ -57,14 +57,15 @@ if __name__ == "__main__":
 
     # Loss and optimizer
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=5e-4)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     best_val_acc = 0
     patience_counter = 0 # count patience for early stopping
     
     # Training loop
     for epoch in range(num_epochs):
-        train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, disable_tqdm=disable_tqdm)
+        train_loss, train_acc = train(model, train_loader, optimizer, criterion, scheduler, device, disable_tqdm=disable_tqdm)
         val_loss, val_acc = test(model, val_loader, criterion, device, disable_tqdm=disable_tqdm)
         test_loss, test_acc = test(model, test_loader, criterion, device, disable_tqdm=disable_tqdm)
         

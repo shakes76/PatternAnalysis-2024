@@ -19,16 +19,17 @@ def get_transform(train):
     transform_list.append(transforms.Normalize(mean=[0.5], std=[0.5]))
     return transforms.Compose(transform_list)
 
-def train(model, train_loader, optimizer, criterion, device="cuda", disable_tqdm=True):
+def train(model, train_loader, optimizer, criterion, scheduler=None, device="cuda", disable_tqdm=True):
     """Train the model. We assume the model output logits and train via 
     BCEWithLogitsLoss.
     disable_tqdm: Disable the progress bar
-    
+    scheduler: Learning rate scheduler (optional)
     """
     model.train()
     running_loss = 0.0
     correct = 0
     total = 0
+    
     for inputs, labels in tqdm(train_loader, disable=disable_tqdm):
         inputs, labels = inputs.to(device), labels.float().to(device)
 
@@ -47,8 +48,14 @@ def train(model, train_loader, optimizer, criterion, device="cuda", disable_tqdm
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
+    # After each epoch, calculate loss and accuracy
     epoch_loss = running_loss / len(train_loader)
     accuracy = 100 * correct / total
+
+    # Step the scheduler after each epoch if it is provided
+    if scheduler is not None:
+        scheduler.step()
+
     return epoch_loss, accuracy
 
 

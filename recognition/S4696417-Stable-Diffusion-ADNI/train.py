@@ -199,8 +199,19 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch + 1) % 10 == 0:  # Generate every 10 epochs
-        model.sample(epoch+1, shape=(64, 8, 16, 16), device=device)
+    if (epoch) % 10 == 0:  # Generate every 10 epochs
+        sample_images = model.sample(epoch+1, shape=(8, 8, 16, 16), device=device)
+        ssim = structural_similarity_index_measure(sample_images, images)
+        psnr = peak_signal_noise_ratio(sample_images, images)
+        wandb.log({
+            'Generated SSIM': ssim,
+            'Generated PSNR': psnr
+        })
+
+    if epoch == epochs: 
+        sample_images = model.sample(epoch+1, shape=(8, 8, 32, 32), device=device)
+    
+
 
 print("Training complete")
 path = os.path.join(os.getcwd(), f'recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/Diffusion/dif_e{epoch+1}.pt')

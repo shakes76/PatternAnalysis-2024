@@ -51,7 +51,7 @@ class StableDiffusion(nn.Module):
 
         final_image = self.vae.decode(x)
         wandb.log({f"sample": wandb.Image(final_image)})
-        return x
+        return final_image
     
 
 class UNet(nn.Module):

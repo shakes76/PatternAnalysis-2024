@@ -69,7 +69,7 @@ class UNet(nn.Module):
         Input: t: [B] tensor of timesteps
         Output: [B, C, H, W] Predicted noise tensor
     """
-    def __init__(self, in_channels=256, hidden_dims=[128, 256, 512], time_emb_dim=256):
+    def __init__(self, in_channels=8, hidden_dims=[128, 256, 512], time_emb_dim=256):
         super().__init__()
         self.in_channels = in_channels
         self.hidden_dims = hidden_dims

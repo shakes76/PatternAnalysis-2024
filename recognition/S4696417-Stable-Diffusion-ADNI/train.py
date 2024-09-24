@@ -10,7 +10,7 @@ from modules import StableDiffusion, NoiseScheduler, UNet, CosineAnnealingWarmup
 
 # SETUP - Must Match Image Size of VAE
 IMAGE_SIZE = 128
-batch_size = 8
+BATCH_SIZE = 8 # this will effect VRAM usage significantly
 method = 'Local'
 
 image_transform = transforms.Compose([
@@ -19,25 +19,24 @@ image_transform = transforms.Compose([
     transforms.ToTensor(),    
     transforms.Normalize((0.5,), (0.5,)),
 ])
-
 print("Loading data...")
 if method == 'Local':
     os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
-    train_loader, val_loader = get_dataloader('data/train/AD', batch_size=batch_size, transform=image_transform)
+    train_loader, val_loader = get_dataloader('data/train/AD', batch_size=BATCH_SIZE, transform=image_transform)
 elif method == 'Slurm':
-    train_loader, val_loader = get_dataloader('/home/groups/comp3710/ADNI/AD_NC/train/AD', batch_size=batch_size, transform=image_transform)
+    train_loader, val_loader = get_dataloader('/home/groups/comp3710/ADNI/AD_NC/train/AD', batch_size=BATCH_SIZE, transform=image_transform)
 
 # Settings
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device}')
 
 print("Loading model...")
-vae = torch.load(f'checkpoints/VAE/ADNI-vae_e40_b64_im{IMAGE_SIZE}.pt')
+vae = torch.load(f'checkpoints/VAE/ADNI-vae_e80_b16_im{IMAGE_SIZE}.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
 
-unet = UNet(in_channels=8, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
+unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
 #noise_scheduler = NoiseScheduler(num_timesteps=100).to(device)
 noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
 model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
@@ -68,7 +67,7 @@ wandb.init(
         "scaler": type(scaler).__name__,
         "name": "SD-ADNI - VAE and Unet",
         "image size": IMAGE_SIZE,
-        "batch size": batch_size
+        "batch size": BATCH_SIZE
     })
 
 print("Training model...")
@@ -195,7 +194,7 @@ for epoch in range(epochs):
 
     # Generate and log sample images
     if (epoch) % 10 == 0:  # Generate every 10 epochs
-        sample_images = model.sample(epoch+1, shape=(8, 8, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
+        sample_images = model.sample(epoch+1, shape=(8, vae.latent_dim, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)
         wandb.log({
@@ -204,7 +203,7 @@ for epoch in range(epochs):
         })
 
     if epoch == epochs: 
-        sample_images = model.sample(epoch+1, shape=(8, 8, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
+        sample_images = model.sample(epoch+1, shape=(8, vae.latent_dim, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
     
 
 print("Training complete")

@@ -151,10 +151,10 @@ def calculate_metrics(original, reconstructed):
 
 method = 'Local'
 epochs = 80
-batch_size = 16
-image_size = 128
+batch_size = 16 # will depend on image size and GPU memory
+image_size = 128 # width/height of image
 in_channels = 1 # monochrome image so 1 in channel
-latent_dim = 8 # latent dim is 8 as design choice
+latent_dim = 8 # latent dim is 8 as design choice (need ~16 for images @ 256x256)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # probably dont try this on a cpu
 

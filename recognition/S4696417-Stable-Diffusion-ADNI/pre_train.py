@@ -50,7 +50,7 @@ def pretrain_vae(
     # Define Transforms for Dataset
     image_transform = transforms.Compose([
     transforms.ToPILImage(),
-    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.Resize((image_size, image_size)),
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
     ])
@@ -152,7 +152,7 @@ def calculate_metrics(original, reconstructed):
 method = 'Local'
 epochs = 80
 batch_size = 16
-IMAGE_SIZE = 128
+image_size = 128
 in_channels = 1 # monochrome image so 1 in channel
 latent_dim = 8 # latent dim is 8 as design choice
 
@@ -164,8 +164,8 @@ if method == 'Slurm':
 elif method == 'Local':
               data_path='recognition/S4696417-Stable-Diffusion-ADNI/data/train/AD' 
               ckp_path='recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE'
-              
 
-pretrain_vae(epochs, in_channels, latent_dim, device, batch_size, IMAGE_SIZE, data_path, ckp_path) 
+
+pretrain_vae(epochs, in_channels, latent_dim, device, batch_size, image_size, data_path, ckp_path) 
 
 

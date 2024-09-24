@@ -12,7 +12,7 @@ class ADNIDataset(Dataset):
 
     This dataset class automatically preprocesses brain images by cropping the brain region 
     and resizing them to 210x210 pixels. It supports loading data for two categories: 
-    Alzheimer's Disease (AD) and Normal Control (NC), from specified directories.
+    AD and NC.
 
     The class can split the dataset into training and validation sets based on 'split_ratio'
     and seed is used for reproducibility. Preprocessing steps such as cropping and resizing are applied 

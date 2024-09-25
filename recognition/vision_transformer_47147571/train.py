@@ -52,13 +52,13 @@ if __name__ == "__main__":
 
     # create model
     # gfnet-ti
-    model = GFNet(img_size=210, in_chans=1, patch_size=15, embed_dim=256, 
-                  depth=12, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
+    model = GFNet(img_size=210, in_chans=1, patch_size=15, embed_dim=256, depth=12, mlp_ratio=4,
+                  norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
 
     # Loss and optimizer
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=5e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=25, eta_min=1e-6)
 
     best_val_acc = 0
     patience_counter = 0 # count patience for early stopping
@@ -77,8 +77,8 @@ if __name__ == "__main__":
         # Save training loss and acc
         writer.add_scalar('Loss/train', train_loss, epoch)
         writer.add_scalar('Accuracy/train', train_acc, epoch)
-        writer.add_scalar('Loss/Val', val_loss, epoch)
-        writer.add_scalar('Accuracy/Val', val_acc, epoch)
+        writer.add_scalar('Loss/val', val_loss, epoch)
+        writer.add_scalar('Accuracy/val', val_acc, epoch)
 
         # Early Stopping Logic
         if val_acc > best_val_acc:

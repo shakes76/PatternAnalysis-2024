@@ -1,6 +1,7 @@
 import random
 import torch
 from torchvision import transforms
+import torchvision.transforms.functional as TF
 import numpy as np
 from tqdm import tqdm
 
@@ -12,12 +13,13 @@ def get_transform(train):
     if train:
         transform_list.extend([
             transforms.RandomRotation(10),
-            transforms.RandomErasing(p=0.4, scale=(0.01, 0.1), ratio=(0.5, 2.0)),
-            transforms.RandomApply([transforms.ElasticTransform()], p=0.5),
-            transforms.RandomResizedCrop(size=(210, 210), scale=(0.95, 1.0), ratio=(0.95, 1.05))
+            transforms.RandomErasing(p=0.4, scale=(0.01, 0.10), ratio=(0.5, 2.0)),
+            transforms.RandomResizedCrop(size=(210, 210), scale=(0.95, 1.02), ratio=(0.95, 1.05)),
+            transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(0.98, 1.02))
         ])
-    transform_list.append(transforms.Normalize(mean=[0.5], std=[0.5]))
+    transform_list.append(transforms.Normalize(mean=[0.263], std=[0.271]))
     return transforms.Compose(transform_list)
+
 
 def train(model, train_loader, optimizer, criterion, scheduler=None, device="cuda", disable_tqdm=True):
     """Train the model. We assume the model output logits and train via 

@@ -37,7 +37,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)
 
     # create model
-    model = GFNet(img_size=210, in_chans=1, patch_size=14, embed_dim=256, depth=12, mlp_ratio=4,
+    model = GFNet(img_size=210, in_chans=1, patch_size=15, embed_dim=256, depth=12, mlp_ratio=4,
                   norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
 
     model.load_state_dict(torch.load(os.path.join(log_dir, "best_gfnet.pt")))

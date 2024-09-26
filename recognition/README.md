@@ -8,3 +8,6 @@ Tasks may include:
 * Image super resolution
 * Disease classification
 * Generative modelling with StyleGAN and Stable Diffusion
+
+* # UPDATED README for S4878126's Project - No.7 in Task Sheet, a vector quantised variational autoencoder over the HipMRI dataset.
+* Readme will be updated further in later commits.

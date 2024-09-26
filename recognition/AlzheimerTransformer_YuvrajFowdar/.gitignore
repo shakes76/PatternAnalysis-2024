@@ -2,3 +2,5 @@ ADNI/
 COMP3710*
 .conda
 *pycache*
+*.pth
+*.pt

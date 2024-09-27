@@ -57,7 +57,7 @@ class PatchEmbeddingLayer(nn.Module):
 
         self.class_token_embeddings = nn.Parameter(torch.rand((BATCH_SIZE, 1, EMBEDDING_DIMS), requires_grad=True))
         
-        self.position_embeddings = nn.Parameter(torch.rand((1, NUM_OF_PATCHES + 1, EMBEDDING_DIMS), requires_grad=True))
+        self.position_embeddings = nn.Parameter(torch.rand((1, NUM_OF_PATCHES + 1, EMBEDDING_DIMS), requires_grad=True)) # [batch_size, num_patches+1, embeddings_dims]
 
     def forward(self, x):
         """
@@ -65,20 +65,20 @@ class PatchEmbeddingLayer(nn.Module):
         - x: the input image tensor with shape (batch_size, channels, height, width), e.g., (32, 3, 224, 224)
         """
         # 1. Apply the convolutional layer to the input, which divides it into patches and projects them into the embedding space.
-        patches = self.conv_layer(x)  # Output shape: (batch_size, embedding_dim, num_patches_height, num_patches_width)
+        patches = self.conv_layer(x)  # Output shape: (batch_size, embedding_dim, num_patch_rows, num_patches_cols) e.g [32, 768, 14, 14].
         
-        # 2. Rearrange the tensor dimensions to (batch_size, num_patches, embedding_dim) 
-        # so each patch becomes a single vector. We permute to move the embedding dimension to the end.
-        patches = patches.permute((0, 2, 3, 1))  # Rearrange shape to (batch_size, num_patches_height, num_patches_width, embedding_dim)
+        # 2. Rearrange the tensor dimensions to (B, NUM_PATCHROW, NUM_PATCHCOL , EMBEDDING_DIMS)
+
+        patches = patches.permute((0, 2, 3, 1))  
         
-        # 3. Flatten the patches. The output shape will now be (batch_size, num_patches, embedding_dim).
+        # 3. Flatten the patches. The output shape will now be [batch_size, num_of_patches, embedding_dims] e.g [32, 196, 768].
         patches_flattened = self.flatten_layer(patches)
         
         # 4. Concatenate the class token embeddings at the start of the sequence of patches.
         # This class token is used for the final classification.
-        output = torch.cat((self.class_token_embeddings, patches_flattened), dim=1)
+        output = torch.cat((self.class_token_embeddings, patches_flattened), dim=1) # [batch_size, num_of_patches+1, embeddiing_dims]
         
         # 5. Add positional embeddings to the patch embeddings to retain positional information.
-        output += self.position_embeddings
+        output += self.position_embeddings # e.g [32, 197, 768]
         
-        return output  # Output shape: (batch_size, num_patches + 1, embedding_dim)
+        return output  # Output shape: (batch_size, num_patches + 1, embedding_dim) e.g [32, 197, 768]

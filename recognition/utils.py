@@ -4,6 +4,7 @@ import torch
 import nibabel as nib
 import numpy as np
 from tqdm import tqdm
+import torch
 
 
 """
@@ -79,10 +80,13 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         if i > 20 and early_stop:
             break
 
+    images = torch.tensor(images)
     if getAffines:
         return images,affines
     else:
         return images
+
+
 
 def SaveCheckpoint():
     print()

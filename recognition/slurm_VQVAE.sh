@@ -11,6 +11,6 @@ conda init
 conda activate torch
 python utils.py
 python dataset.py
+python train.py
 # python modules.py
-# python train.py
 # python predict.py

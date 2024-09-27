@@ -1,4 +1,4 @@
-import torch 
+import torch
 import os
 
 import torch.nn as nn
@@ -7,20 +7,29 @@ import numpy as np
 import nibabel as nib
 
 from torchvision import transforms
-from tqdm import tqdm 
+from tqdm import tqdm
 
-def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
-    channels = np . unique ( arr )
-    res = np . zeros ( arr . shape + ( len ( channels ) ,) , dtype = dtype )
-    for c in channels :
-        c = int( c )
-        res [... , c : c +1][ arr == c ] = 1
+
+def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
+    channels = np.unique(arr)
+    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
+    for c in channels:
+        c = int(c)
+        res[..., c : c + 1][arr == c] = 1
 
     return res
 
-def load_data_3D ( imageNames , normImage = False , categorical = False , dtype = np.float32,
-getAffines = False , orient = False , early_stop = False ) :
-    '''
+
+def load_data_3D(
+    imageNames,
+    normImage=False,
+    categorical=False,
+    dtype=np.float32,
+    getAffines=False,
+    orient=False,
+    early_stop=False,
+):
+    """
     Load medical image data from names , cases list provided into a list for each .
     This function pre - allocates 5D arrays for conv3d to avoid excessive memory &
     usage .
@@ -31,22 +40,22 @@ getAffines = False , orient = False , early_stop = False ) :
     labels
     1early_stop : Stop loading pre - maturely ? Leaves arrays mostly empty , for quick &
     loading and testing scripts .
-    '''
+    """
     affines = []
 
-    #~ interp = ' continuous '
-    interp = 'linear '
-    if dtype == np.uint8 : # assume labels
-        interp = 'nearest '
+    # ~ interp = ' continuous '
+    interp = "linear "
+    if dtype == np.uint8:  # assume labels
+        interp = "nearest "
 
     # get fixed size
     num = len(imageNames)
     niftiImage = nib.load(imageNames[0])
-    if orient :
+    if orient:
         niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
-        #~ testResultName = "oriented.nii.gz"
-        #~ niftiImage.to_filename(testResultName)
-    first_case = niftiImage.get_fdata(caching='unchanged')
+        # ~ testResultName = "oriented.nii.gz"
+        # ~ niftiImage.to_filename(testResultName)
+    first_case = niftiImage.get_fdata(caching="unchanged")
     if len(first_case.shape) == 4:
         first_case = first_case[:, :, :, 0]  # sometimes extra dims, remove
     if categorical:
@@ -61,23 +70,31 @@ getAffines = False , orient = False , early_stop = False ) :
         niftiImage = nib.load(inName)
         if orient:
             niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
-        inImage = niftiImage.get_fdata(caching='unchanged')  # read disk only
+        inImage = niftiImage.get_fdata(caching="unchanged")  # read disk only
         affine = niftiImage.affine
         if len(inImage.shape) == 4:
             inImage = inImage[:, :, :, 0]  # sometimes extra dims in HipMRI_study data
         inImage = inImage[:, :, :depth]  # clip slices
         inImage = inImage.astype(dtype)
         if normImage:
-            #~ inImage = inImage / np.linalg.norm(inImage)
-            #~ inImage = 255. * inImage / inImage.max()
+            # ~ inImage = inImage / np.linalg.norm(inImage)
+            # ~ inImage = 255. * inImage / inImage.max()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
             inImage = utils.to_channels(inImage, dtype=dtype)
-            #~ images[i, :, :, :, :] = inImage
-            images[i, :inImage.shape[0], :inImage.shape[1], :inImage.shape[2], :inImage.shape[3]] = inImage  # with pad
+            # ~ images[i, :, :, :, :] = inImage
+            images[
+                i,
+                : inImage.shape[0],
+                : inImage.shape[1],
+                : inImage.shape[2],
+                : inImage.shape[3],
+            ] = inImage  # with pad
         else:
-            #~ images[i, :, :, :] = inImage
-            images[i, :inImage.shape[0], :inImage.shape[1], :inImage.shape[2]] = inImage  # with pad
+            # ~ images[i, :, :, :] = inImage
+            images[i, : inImage.shape[0], : inImage.shape[1], : inImage.shape[2]] = (
+                inImage  # with pad
+            )
 
         affines.append(affine)
         if i > 20 and early_stop:
@@ -92,3 +109,81 @@ getAffines = False , orient = False , early_stop = False ) :
 slice_data_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
 semantic_labels_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
 semantic_MR_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
+
+
+class NormConv3D(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+        activation=nn.ReLU(),
+    ):
+        super(NormConv3D, self).__init__()
+
+        # Convolutional layer
+        self.conv = nn.Conv3d(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias,
+        )
+
+        self.norm = nn.BatchNorm3d(out_channels)
+
+        self.activation = activation
+
+    def foward(self, x):
+        x = self.conv(x)
+        x = self.norm(x)
+        x = self.activation(x)
+        return x
+
+
+class NormConvTranspose3D(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        output_padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+        activation=nn.ReLU(),
+    ):
+        super(NormConv3D, self).__init__()
+
+        # Convolutional layer
+        self.conv_transpose = nn.ConvTranspose3d(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            output_padding=output_padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias,
+        )
+
+        self.norm = nn.BatchNorm3d(out_channels)
+
+        self.activation = activation
+
+    def foward(self, x):
+        x = self.conv_transpose(x)
+        x = self.norm(x)
+        x = self.activation(x)
+        return x

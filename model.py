@@ -106,11 +106,6 @@ def load_data_3D(
         return images
 
 
-slice_data_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
-semantic_labels_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
-semantic_MR_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
-
-
 class NormConv3D(nn.Module):
     def __init__(
         self,
@@ -187,7 +182,7 @@ class NormConvTranspose3D(nn.Module):
         x = self.norm(x)
         x = self.activation(x)
         return x
-    
+
 
 class UNet3D(nn.Module):
     def __init__(self):
@@ -210,7 +205,6 @@ class UNet3D(nn.Module):
         self.botteneck1 = NormConv3D(256, 256, kernel_size=3, stride=1, padding=1)
         self.botteneck2 = NormConv3D(256, 512, kernel_size=3, stride=1, padding=1)
 
-
         # Decoder
         self.up1 = NormConvTranspose3D(256, 256, kernel_size=2, stride=2)
         self.dec11 = NormConv3D(768, 256, kernel_size=3, stride=1, padding=1)
@@ -224,7 +218,7 @@ class UNet3D(nn.Module):
         self.dec31 = NormConv3D(192, 64, kernel_size=3, stride=1, padding=1)
         self.dec32 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
 
-        self.final = nn.Conv3d(64, 3, kernel_size=1) # TODO check if this is right
+        self.final = nn.Conv3d(64, 3, kernel_size=1)  # TODO check if this is right
 
     def foward(self, x):
         # Encocder foward pass
@@ -244,9 +238,9 @@ class UNet3D(nn.Module):
         b1 = self.botteneck1(p3)
         b2 = self.botteneck2(b1)
 
-        #Decoder foward pass with skip connections
+        # Decoder foward pass with skip connections
         d1 = self.up1(b2)
-        d1 = torch.cat([e32, d1], dim=1) # TODO check if dim is correct
+        d1 = torch.cat([e32, d1], dim=1)  # TODO check if dim is correct
         d1 = self.dec11(d1)
         d1 = self.dec12(d1)
 
@@ -262,5 +256,23 @@ class UNet3D(nn.Module):
 
         out = self.final(d3)
         return out
+    
+
+# Define device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+if not torch.cuda.is_available():
+    print("Warning: No access to CUDA, model being trained on CPU.")
+
+model = UNet3D.to(device)
+
+# Define the loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
+
+slice_data_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
+semantic_labels_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
+semantic_MR_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
+
+# TODO load in dataS
 
 

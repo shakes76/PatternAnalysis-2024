@@ -1,3 +1,4 @@
+from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 from torch.optim.lr_scheduler import LambdaLR 
 import wandb
 import torch
@@ -37,8 +38,50 @@ def visualize_denoising_process(model, noise_scheduler, num_inference_steps=10, 
             # Decode latents to image space
             with torch.no_grad():
                 images.append(wandb.Image(model.vae.decode(latents).cpu(), caption=f"Step {i}"))
-
-    #noise_scheduler.fast_sampling(model, (num_images,8,32,32), 'cuda', num_steps=50)
     
     wandb.log({"denoising_process": images})
+
+def calculate_metrics(model, noisy_latents, timesteps, images, loss, optimizer, mode):
+    """
+    Calculate the PSNR and SSIM metrics for the denoised images. 
+    Will log to wandb based on train/val
+
+    Args:
+        model (torch.nn.Module): The diffusion model instance
+        noisy_latents (torch.Tensor): The noisy latents to use for denoising
+        timesteps (torch.Tensor): The timesteps to use for denoising
+        images (torch.Tensor): The clean images to use for calculating metrics
+        loss (torch.Tensor): The loss to use for calculating metrics
+        optimizer (torch.optim.Optimizer): The optimizer to use for calculating metrics
+        mode (string): Whether the model is in training, validation mode
+
+    Returns:
+        psnr (torch.Tensor): The PSNR metric
+        ssim (torch.Tensor): The SSIM metric
+    """
+    assert mode in ['train', 'val'], "mode must be 'train' or 'val'"
+    
+    with torch.no_grad():
+        denoised_latents = model.noise_scheduler.step(model.unet, noisy_latents, timesteps)
+        denoised_images = model.vae.decode(denoised_latents)
+        ssim = structural_similarity_index_measure(denoised_images, images)
+        psnr = peak_signal_noise_ratio(denoised_images, images)
+
+    if mode == 'train':
+        wandb.log({
+            'train_psnr': psnr.item(),
+            'train_ssim': ssim.item(),
+            'train_loss': loss.item(),
+            'learning_rate': optimizer.param_groups[0]['lr'],
+        })
+    elif mode == 'val':
+        wandb.log({
+            'val_psnr': psnr.item(),
+            'val_ssim': ssim.item(),
+            'val_loss': loss.item(),
+            'learning_rate': optimizer.param_groups[0]['lr'],
+        })
+
+    return psnr, ssim
+
 

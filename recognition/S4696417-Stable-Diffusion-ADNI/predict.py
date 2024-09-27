@@ -16,6 +16,6 @@ model = torch.load('checkpoints/Diffusion/ADNI_dif_e200_b16_im{IMAGE_SIZE}.pt').
 
 # Generate images
 with torch.no_grad():
-    sample_images = model.sample(0, shape=(num_images, 8, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
+    sample_images = model.sample(num_images, device=device)
 
 

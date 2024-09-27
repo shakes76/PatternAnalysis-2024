@@ -4,13 +4,13 @@ import torch, wandb, os
 import torch.nn as nn
 from tqdm import tqdm
 from torch.cuda.amp import autocast, GradScaler
-from utils import get_linear_schedule_with_warmup, visualize_denoising_process
+from utils import get_linear_schedule_with_warmup, visualize_denoising_process, calculate_metrics
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
-from modules import StableDiffusion, NoiseScheduler, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
+from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
 
 # SETUP - Must Match Image Size of VAE
 IMAGE_SIZE = 128
-BATCH_SIZE = 8 # this will effect VRAM usage significantly
+BATCH_SIZE = 8 # will affect training performance
 method = 'Local'
 
 image_transform = transforms.Compose([
@@ -19,6 +19,7 @@ image_transform = transforms.Compose([
     transforms.ToTensor(),    
     transforms.Normalize((0.5,), (0.5,)),
 ])
+
 print("Loading data...")
 if method == 'Local':
     os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
@@ -37,7 +38,6 @@ for param in vae.parameters():
     param.requires_grad = False 
 
 unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
-#noise_scheduler = NoiseScheduler(num_timesteps=100).to(device)
 noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
 model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
 
@@ -76,12 +76,10 @@ for epoch in range(epochs):
     train_loss, val_loss = 0, 0
     train_psnr, val_psnr = 0, 0
     train_ssim, val_ssim = 0, 0
-    train_loss, vae_train_loss, unet_train_loss = 0, 0, 0
 
     loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
     for i, batch in enumerate(loop):
 
-        # for MNIST
         images, _ = batch # retrieve clean image batch
         images = images.to(device)
 
@@ -109,12 +107,7 @@ for epoch in range(epochs):
         scheduler.step()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
-        # Compute metrics
-        with torch.no_grad():
-            denoised_latents = noise_scheduler.step(model.unet, noisy_latents, timesteps)
-            denoised_images = model.decode(denoised_latents)
-            ssim = structural_similarity_index_measure(denoised_images, images)
-            psnr = peak_signal_noise_ratio(denoised_images, images)
+        psnr, ssim = calculate_metrics(model, noisy_latents, timesteps, images, loss, optimizer, 'train')
 
         # Update metrics
         train_loss += loss.item()
@@ -124,28 +117,17 @@ for epoch in range(epochs):
         # Update progress bar
         loop.set_postfix(loss=loss.item(), psnr=psnr.item(), ssim=ssim.item())
 
-        # Log metrics
-        wandb.log({
-            'train_loss': loss.item(),
-            'train_psnr': psnr.item(),
-            'train_ssim': ssim.item(),
-            'learning_rate': optimizer.param_groups[0]['lr'],
-        })
-
     # Compute average metrics
     avg_train_loss = train_loss / len(train_loader)
     avg_train_psnr = train_psnr / len(train_loader)
     avg_train_ssim = train_ssim / len(train_loader)
-
-    # Log average loss for the epoch
-    avg_train_loss = train_loss / len(train_loader)
-    wandb.log({"epoch": epoch, "train_loss": avg_train_loss})
 
     # Validation
     model.eval()
     val_loss = 0
     val_psnr = 0
     val_ssim = 0
+
     with torch.no_grad():
         for images, _ in val_loader:
             images = images.to(device)
@@ -162,11 +144,7 @@ for epoch in range(epochs):
                 predicted_noise = model.predict_noise(noisy_latents, timesteps)
                 loss = criterion(predicted_noise, noise)
 
-            with torch.no_grad():
-                denoised_latents = noise_scheduler.step(model.unet, noisy_latents, timesteps)
-                denoised_images = model.decode(denoised_latents)
-                ssim = structural_similarity_index_measure(denoised_images, images)
-                psnr = peak_signal_noise_ratio(denoised_images, images)
+            psnr, ssim = calculate_metrics(model, noisy_latents, timesteps, images, loss, optimizer, 'val')
 
             val_loss += loss.item()
             val_psnr += psnr.item()
@@ -193,8 +171,8 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch) % 10 == 0:  # Generate every 10 epochs
-        sample_images = model.sample(epoch+1, shape=(8, vae.latent_dim, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
+    if (epoch) % 10 == 0: 
+        sample_images = model.sample(BATCH_SIZE, device=device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)
         wandb.log({
@@ -203,7 +181,7 @@ for epoch in range(epochs):
         })
 
     if epoch == epochs: 
-        sample_images = model.sample(epoch+1, shape=(8, vae.latent_dim, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)), device=device)
+        sample_images = model.sample(num_images=8, device=device)
     
 
 print("Training complete")

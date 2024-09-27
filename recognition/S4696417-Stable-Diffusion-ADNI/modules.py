@@ -6,7 +6,8 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 class StableDiffusion(nn.Module):
     """
-    Main model class
+    Stable diffusion model. 
+    Used to train noise prediction and generate new samples from diffusion process
 
      - Unet predicts noise at each timestep
      - VAE encodes images to latent space and decodes latent representations back to images
@@ -16,11 +17,14 @@ class StableDiffusion(nn.Module):
         unet: UNet model
         vae: VAE model
         noise_scheduler: Noise scheduler
+        image_size: Size of the image
 
-    Model Call:
-        Input: x: [B, C, H, W] tensor of images
-        Input: t: [B] tensor of timesteps
-        Output: [B, C, H, W] Predicted noise tensor
+    Methods:
+        encode: Encode images to latent space
+        decode: Decode latent representations back to images
+        sample_latent: Sample latent representations
+        predict_noise: Predict noise at each timestep
+        sample: Generate samples from the model
     """
     def __init__(self, unet, vae, noise_scheduler, image_size):
         super().__init__()
@@ -43,7 +47,18 @@ class StableDiffusion(nn.Module):
         return pred_noise
 
     @torch.no_grad()
-    def sample(self, epoch, shape, device='cuda'):
+    def sample(self, num_images, device='cuda'):
+        """
+        Generate new images from the diffusion model and logs to wandb
+
+        Args:
+            num_images: Number of images to generate
+            device: Device to run the model on
+
+        Returns:
+            final_image: Generated images
+        """
+        shape = (num_images, self.vae.latent_dim, int(self.image_size/8), int(self.image_size/8))
         x = torch.randn(shape, device=device)
         steps = reversed(range(self.noise_scheduler.num_timesteps))
         for i in tqdm(steps, desc="Sampling"):
@@ -64,10 +79,8 @@ class UNet(nn.Module):
         hidden_dims: Number of channels in the hidden layers
         time_emb_dim: Number of channels in the time embedding
 
-    Model Call:
-        Input: x: [B, latent_dim, 2, 2] noisy image or latent tensor
-        Input: t: [B] tensor of timesteps
-        Output: [B, C, H, W] Predicted noise tensor
+    Methods:
+        forward: Predict noise at timestep t
     """
     def __init__(self, in_channels=8, hidden_dims=[128, 256, 512], time_emb_dim=256):
         super().__init__()
@@ -310,11 +323,11 @@ class SelfAttention(nn.Module):
 
     def forward(self, x):
         in_shape = x.shape
-        B, seq_len, d_embed = in_shape
+        B, seq_len, _ = in_shape
         interim_shape = (B, seq_len, self.num_heads, self.d_head)
         
-        q, k, v = self.in_proj(x).chunk(3, dim=-1) # (B, seq_len, d_embed) -> 3 x (B, seq_len, dim)
-        q = q.view(interim_shape).transpose(1, 2) # (B, seq_len, dim) -> (B, num_heads, seq_len, dim / num_heads)
+        q, k, v = self.in_proj(x).chunk(3, dim=-1) # (B, seq_len) -> 3 x (B, seq_len, dim)
+        q = q.view(interim_shape).transpose(1, 2) # -> (B, num_heads, seq_len, dim / num_heads)
         k = k.view(interim_shape).transpose(1, 2) 
         v = v.view(interim_shape).transpose(1, 2) 
 
@@ -389,74 +402,6 @@ class TimeEmbedding(nn.Module):
         return self.layer(t.unsqueeze(-1).float())
 
 
-class NoiseScheduler:
-    """
-    Noise scheduler based on Fast-DDPM implementation in stable diffusion
-    """
-    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
-        self.num_timesteps = num_timesteps
-        self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
-        self.alphas = 1.0 - self.betas
-        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
-        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
-        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1 - self.alphas_cumprod)
-
-    def add_noise(self, x, noise, t):
-        return (
-            self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1) * x +
-            self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1) * noise
-        )
-    
-    def remove_noise(self, x_noisy, predicted_noise, t):
-        alpha_cumprod = self.alphas_cumprod[t].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_cumprod = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
-        
-        denoised = (x_noisy - sqrt_one_minus_alpha_cumprod * predicted_noise) / torch.sqrt(alpha_cumprod)
-        return denoised
-
-    # def step(self, model_output, timestep, sample):
-    #     """
-    #     Step the noise schduler back one step
-
-    #     Args:
-    #         model_output (torch.Tensor): model output predictedd noise
-    #         timestep (torch.Tensor): timestep
-    #         sample (torch.Tensor): sample
-    #     """
-    #     t = timestep
-    #     prev_t = (t - 1)
-
-    #     alpha = self.alphas_cumprod[t]
-    #     alpha_prev = self.alphas_cumprod[prev_t]
-
-    #     beta = 1- alpha / alpha_prev
-
-    #     # Ensure proper broadcasting
-    #     beta = beta.view(-1, 1, 1, 1)
-    #     alpha = alpha.view(-1, 1, 1, 1)
-    #     alpha_prev = alpha_prev.view(-1, 1, 1, 1)
-
-    #     pred_original_sample = (sample - beta.sqrt() * model_output) / alpha.sqrt()
-    #     pred_sample_direction = (1 - alpha_prev).sqrt() * model_output
-    #     prev_sample = alpha_prev.sqrt() * pred_original_sample + pred_sample_direction
-
-    #     noise = torch.randn_like(sample)
-    #     variance = ((1 - alpha_prev) / (1 - alpha) * beta).sqrt()
-    #     prev_sample = prev_sample + variance * noise * (t > 0).float().view(-1, 1, 1, 1)
-
-    #     return prev_sample
-
-    def step(self, model_output, timestep, sample):
-        return self.remove_noise(sample, model_output, timestep)
-
-    def to(self, device):
-        # Move all tensors in the class to the specified device
-        for key, value in self.__dict__.items():
-            if isinstance(value, torch.Tensor):
-                setattr(self, key, value.to(device))
-        return self
-
-
 class CosineAnnealingWarmupScheduler(_LRScheduler):
     def __init__(self, optimizer, warmup_steps, total_steps, min_lr=0, last_epoch=-1):
         self.warmup_steps = warmup_steps
@@ -477,6 +422,21 @@ class CosineAnnealingWarmupScheduler(_LRScheduler):
         
 
 class NoiseScheduler_Fast_DDPM():
+    """
+    Noise scheduler based on the Fast-DDPM paper (https://arxiv.org/abs/2405.14802)
+    Improved performance with fewer iterations compared to DDPM
+
+    Args:
+        num_timesteps (int): number of timesteps
+        beta_start (float): initial value of beta
+        beta_end (float): final value of beta
+
+    Methods:
+        step(model, noisy_latents, timesteps): Perform one step of the diffusion process
+        add_noise(x_0, noise, t): Add noise to the image    
+        fast_sampling(model, shape, device, num_steps): Generate samples from the model
+        to(device): Move all tensors in the class to the specified device
+    """
     def __init__(self, num_timesteps=1000, beta_start=1e-4, beta_end=0.02):
         super().__init__()
         self.num_timesteps = num_timesteps

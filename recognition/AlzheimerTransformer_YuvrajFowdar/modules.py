@@ -22,7 +22,6 @@ See exploration.ipynb for more details.
 """
 import torch
 from torch import nn
-from torchinfo import summary
 
 BATCH_SIZE = 32
 
@@ -201,5 +200,4 @@ class ViT(nn.Module):
     output = self.classifier(cls_token)
     
     return output
-  
   

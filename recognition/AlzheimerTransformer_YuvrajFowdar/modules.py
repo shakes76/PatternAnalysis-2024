@@ -82,3 +82,124 @@ class PatchEmbeddingLayer(nn.Module):
         output += self.position_embeddings # e.g [32, 197, 768]
         
         return output  # Output shape: (batch_size, num_patches + 1, embedding_dim) e.g [32, 197, 768]
+    
+class MultiHeadSelfAttentionBlock(nn.Module):
+  def __init__(self,
+               embedding_dims = 768, # Hidden Size D in the ViT Paper Table 1
+               num_heads = 12,  # Heads in the ViT Paper Table 1
+               attn_dropout = 0.0 # Default to Zero as there is no dropout for the the MSA Block as per the ViT Paper
+               ):
+    super().__init__()
+
+    self.embedding_dims = embedding_dims
+    self.num_heads = num_heads
+    self.attn_dropout = attn_dropout
+
+    self.layernorm = nn.LayerNorm(normalized_shape = embedding_dims)
+
+    self.multiheadattention =  nn.MultiheadAttention(num_heads = num_heads,
+                                                     embed_dim = embedding_dims,
+                                                     dropout = attn_dropout,
+                                                     batch_first = True,
+                                                    ) # Expects (batchsize, seq_len, embed_dim)
+
+  def forward(self, x):
+    x = self.layernorm(x)
+    output,_ = self.multiheadattention(query=x, key=x, value=x,need_weights=False)
+    return output
+
+
+class MachineLearningPerceptronBlock(nn.Module):
+  def __init__(self, embedding_dims, mlp_size, mlp_dropout):
+    super().__init__()
+    self.embedding_dims = embedding_dims
+    self.mlp_size = mlp_size
+    self.dropout = mlp_dropout
+
+    self.layernorm = nn.LayerNorm(normalized_shape = embedding_dims)
+    self.mlp = nn.Sequential(
+        nn.Linear(in_features = embedding_dims, out_features = mlp_size),
+        nn.GELU(),
+        nn.Dropout(p = mlp_dropout),
+        nn.Linear(in_features = mlp_size, out_features = embedding_dims),
+        nn.Dropout(p = mlp_dropout)
+    )
+
+  def forward(self, x):
+    return self.mlp(self.layernorm(x))
+
+# https://aws.amazon.com/what-is/transformers-in-artificial-intelligence/#:~:text=Each%20transformer%20block%20has%20two,the%20input%20when%20making%20predictions.
+class TransformerBlock(nn.Module):
+  def __init__(self, embedding_dims = 768,
+               mlp_dropout=0.1,
+               attn_dropout=0.0,
+               mlp_size = 3072,
+               num_heads = 12,
+               ):
+    super().__init__()
+
+    self.msa_block = MultiHeadSelfAttentionBlock(embedding_dims = embedding_dims,
+                                                 num_heads = num_heads,
+                                                 attn_dropout = attn_dropout)
+
+    self.mlp_block = MachineLearningPerceptronBlock(embedding_dims = embedding_dims,
+                                                    mlp_size = mlp_size,
+                                                    mlp_dropout = mlp_dropout,
+                                                    )
+
+  def forward(self,x):
+    x = self.msa_block(x) + x # Skip connections
+    x = self.mlp_block(x) + x
+
+    return x
+  
+class ViT(nn.Module):
+  def __init__(self, img_size = 224,
+               in_channels = 3,
+               patch_size = 16,
+               embedding_dims = 768,
+               num_transformer_layers = 12, # from table 1 above
+               mlp_dropout = 0.1,
+               attn_dropout = 0.0,
+               mlp_size = 3072,
+               num_heads = 12,
+               num_classes = 1000):
+    super().__init__()
+
+    ## Get the patch layer.
+    self.patch_embedding_layer = PatchEmbeddingLayer(in_channels = in_channels,
+                                                     patch_size=patch_size,
+                                                     embedding_dim = embedding_dims)
+
+    # Throw it in the encoder
+    # ViT's are encoder only architectures!! (I think)!!
+    # The * unpacks the list generated from list comprehension, to instead be a ton of params for Sequential e.g Sequential(tb1, tb2, tb3, tb...).
+    self.transformer_encoder = nn.Sequential(*[TransformerBlock(embedding_dims = embedding_dims,
+                                              mlp_dropout = mlp_dropout,
+                                              attn_dropout = attn_dropout,
+                                              mlp_size = mlp_size,
+                                              num_heads = num_heads) for _ in range(num_transformer_layers)])
+
+
+    # Classify it
+    # eq 4 if the ViT paper 2020
+    self.classifier = nn.Sequential(nn.LayerNorm(normalized_shape = embedding_dims),
+                                    nn.Linear(in_features = embedding_dims,
+                                              out_features = num_classes))
+
+  def forward(self, x):
+    # Get patch embeddings from the image
+    patches = self.patch_embedding_layer(x)
+    
+    # Pass the patch embeddings through the transformer encoder
+    encoded_patches = self.transformer_encoder(patches)
+    
+    # Extract the CLS token (the first token in the sequence)
+    cls_token = encoded_patches[:, 0]
+    
+    # Pass the CLS token through the classifier for final output
+    output = self.classifier(cls_token)
+    
+    return output
+  
+  

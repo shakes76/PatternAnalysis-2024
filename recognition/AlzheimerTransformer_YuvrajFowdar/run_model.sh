@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:a100
 #SBATCH --job-name=antis_transformer_eats_brains
-#SBATCH --mail-user=s4753820@uq.edu.au 
+#SBATCH --mail-user-name=s4753820@uq.edu.au 
 #SBATCH -o gan_run.out
 conda activate torch
 python train.py

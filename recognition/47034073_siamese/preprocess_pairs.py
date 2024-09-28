@@ -11,6 +11,7 @@ IMAGE_NAME = "image_name"
 
 logger = logging.getLogger(__name__)
 
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser()
@@ -31,7 +32,7 @@ def main() -> None:
     train_df = pd.concat([benign_train, malignant_train])
     val_df = pd.concat([benign_val, malignant_val])
     test_df = pd.concat([benign_test, malignant_test])
-    
+
     # Shuffle dfs
     benign_train = benign_train.sample(frac=1, random_state=42)
     malignant_train = malignant_train.sample(frac=1, random_state=42)
@@ -40,26 +41,33 @@ def main() -> None:
 
     # Collect benign pairs
     benign_pairs = []
-    for pair in itertools.combinations(benign_train, 2):
+    for pair in itertools.combinations(benign_train[IMAGE_NAME], 2):
         benign_pairs.append(pair)
 
         if len(benign_pairs) == len(malignant_pairs):
             break
-    
+
     # Collect negative pairs
     negative_pairs = []
-    for pair in itertools.product(benign_train, malignant_train):
+    for pair in itertools.product(
+        benign_train[IMAGE_NAME], malignant_train[IMAGE_NAME]
+    ):
         negative_pairs.append(pair)
 
         if len(negative_pairs) == len(malignant_pairs):
             break
 
     all_pairs = malignant_pairs + benign_pairs + negative_pairs
+    targets = (
+        len(malignant_pairs) * [1] + len(benign_pairs) * [1] + len(negative_pairs) * [0]
+    )
 
     image_ones = [image_one for image_one, _ in all_pairs]
     image_twos = [image_two for _, image_two in all_pairs]
 
-    pairs_df = pd.DataFrame({"image_one": image_ones, "image_two": image_twos})
+    pairs_df = pd.DataFrame(
+        {"image_one": image_ones, "image_two": image_twos, "targets": targets}
+    )
 
     pairs_df.to_csv(pathlib.Path("data/pairs.csv"), index=False)
     train_df.to_csv(pathlib.Path("data/train.csv"), index=False)
@@ -73,13 +81,17 @@ def _split_sub_population(df: pd.DataFrame, id_name: str) -> tuple:
 
     return df_train, df_test
 
+
 def _summarise_num_pairs(benign_df: pd.DataFrame, malignant_df: pd.DataFrame) -> None:
     pos_benign = math.comb(len(benign_df), 2)
     pos_malig = math.comb(len(malignant_df), 2)
     neg = len(benign_df) * len(malignant_df)
-    logger.info(f"Num positive benign pairs {pos_benign}\n" 
-          f"Num positive malignant pairs {pos_malig}\n" 
-          f"Num negative pairs {neg}") 
+    logger.info(
+        f"Num positive benign pairs {pos_benign}\n"
+        f"Num positive malignant pairs {pos_malig}\n"
+        f"Num negative pairs {neg}"
+    )
+
 
 if __name__ == "__main__":
     main()

@@ -27,6 +27,10 @@ def main() -> None:
     malignant_train, malignant_test = _split_sub_population(malignant, IMAGE_NAME)
     malignant_train, malignant_val = _split_sub_population(malignant_train, IMAGE_NAME)
     _summarise_num_pairs(benign_train, malignant_train)
+
+    train_df = pd.concat([benign_train, malignant_train])
+    val_df = pd.concat([benign_val, malignant_val])
+    test_df = pd.concat([benign_test, malignant_test])
     
     # Shuffle dfs
     benign_train = benign_train.sample(frac=1, random_state=42)
@@ -56,8 +60,11 @@ def main() -> None:
     image_twos = [image_two for _, image_two in all_pairs]
 
     pairs_df = pd.DataFrame({"image_one": image_ones, "image_two": image_twos})
-    pairs_df.to_csv(pathlib.Path("data/pairs.csv"), index=False)
 
+    pairs_df.to_csv(pathlib.Path("data/pairs.csv"), index=False)
+    train_df.to_csv(pathlib.Path("data/train.csv"), index=False)
+    val_df.to_csv(pathlib.Path("data/val.csv"), index=False)
+    test_df.to_csv(pathlib.Path("data/test.csv"), index=False)
 
 
 def _split_sub_population(df: pd.DataFrame, id_name: str) -> tuple:

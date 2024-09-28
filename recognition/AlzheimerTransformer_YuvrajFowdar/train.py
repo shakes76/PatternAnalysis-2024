@@ -1,5 +1,6 @@
 from modules import ViT
 from dataset import get_dataloaders
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -81,9 +82,13 @@ def evaluate(model, dataloader, criterion, device):
     return avg_loss, accuracy
 
 # Function to save model checkpoints
-def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="best_model.pth"):
+def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="models/best_model.pth"):
+    # Create the directory if it doesn't exist
+    model_dir = Path("models")
+    model_dir.mkdir(parents=True, exist_ok=True)
+
     # Format the save path to include epoch and validation accuracy
-    save_path = f"model_epoch_{epoch+1}_valacc_{val_accuracy:.2f}.pth"
+    save_path = model_dir / f"model_epoch_{epoch+1}_valacc_{val_accuracy:.2f}.pth"
     
     torch.save({
         'epoch': epoch,
@@ -92,6 +97,7 @@ def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="best_mode
     }, save_path)
     
     print(f"Model saved at epoch {epoch+1} with validation accuracy {val_accuracy:.2f}% at {save_path}")
+
 
 # Function for full training loop
 def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device):
@@ -167,7 +173,7 @@ def main():
                                                                          path = dataset_path)
     
     # Create the model and optimisers 
-    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=2).to(device)
+    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)

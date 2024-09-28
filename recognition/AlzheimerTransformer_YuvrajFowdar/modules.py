@@ -165,6 +165,8 @@ class ViT(nn.Module):
                num_classes = 1000):
     super().__init__()
 
+    # Check that image and patch size are divisible.
+    assert img_size % patch_size == 0, f"Your {img_size=} is not divisible by {patch_size=}!"
     ## Get the patch layer.
     self.patch_embedding_layer = PatchEmbeddingLayer(in_channels = in_channels,
                                                      patch_size=patch_size,

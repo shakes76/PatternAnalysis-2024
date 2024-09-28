@@ -10,3 +10,6 @@ Random Horizontal Flip.
 Random Rotation (small angles, e.g., ±10 degrees).
 Random Brightness/Contrast Adjustments (slight, e.g., ±20%).
 Normalization using the standard pre-trained stats for ImageNet  / empirically gathered statistics.
+
+
+### Run files from this directory!

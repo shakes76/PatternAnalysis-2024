@@ -167,13 +167,15 @@ def main():
                                                                          path = dataset_path)
     
     # Create the model and optimisers 
-    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers)
+    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     ## Train the model
     train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, num_epochs = 20, device=device)
+
+    print("stuff", train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses)
 
     ## Test model on test dataset for final evaluation
     test_loss, test_acc = evaluate(model, test_dataloader, criterion, device)

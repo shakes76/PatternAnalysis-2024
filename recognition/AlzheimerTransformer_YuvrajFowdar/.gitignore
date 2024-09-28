@@ -4,3 +4,4 @@ COMP3710*
 *pycache*
 *.pth
 *.pt
+run_model.sh

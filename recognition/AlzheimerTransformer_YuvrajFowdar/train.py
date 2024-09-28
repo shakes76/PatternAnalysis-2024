@@ -167,7 +167,7 @@ def main():
                                                                          path = dataset_path)
     
     # Create the model and optimisers 
-    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers).to(device)
+    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=2).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)

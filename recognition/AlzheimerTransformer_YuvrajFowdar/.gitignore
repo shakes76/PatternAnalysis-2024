@@ -5,3 +5,4 @@ COMP3710*
 *.pth
 *.pt
 run_model.sh
+*.out

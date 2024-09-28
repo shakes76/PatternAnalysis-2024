@@ -65,11 +65,11 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
 
 
     # Create DataLoaders for the training, validation, and test datasets
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last= True) # Drops 8 images here out of 606 * 32 + 8 images...
 
     # Val/test dataloaders
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)  # No need to shuffle validation set
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last= True)  # No need to shuffle validation set
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last= True)
 
     # Check dataset sizes
     print(f"Training set size: {len(train_dataset)}")

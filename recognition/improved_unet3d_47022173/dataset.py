@@ -4,6 +4,7 @@ import nibabel as nib
 import torch
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
+import torchio as tio
 
 def load_data_3D(imageNames, normImage=False, dtype=np.float32, 
 				getAffines=False, early_stop=False):
@@ -14,14 +15,14 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 	orient: Apply orientation and resample image? Good for images with large slice 
 	thickness or anisotropic resolution
 	dtype: Type of the data. If dtype=np.uint8, it is assumed that the data is 
-	labels
+	masks
 	early_stop: Stop loading pre-maturely? Leaves arrays mostly empty, for quick 
 	loading and testing scripts.
 	'''
 
 	affines = []
 	interp = 'linear'
-	if dtype == np.uint8:  # assume labels
+	if dtype == np.uint8:  # assume masks
 		interp = 'nearest'
 
 	num = len(imageNames)
@@ -65,35 +66,27 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 
 
 class ProstateDataset3D(Dataset):
-	def __init__(self, images_path, labels_path, transform=None, target_transform=None):
+	def __init__(self, images_path, masks_path, transforms):
 		self.image_names = [images_path + f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith('.nii')]
-		self.label_names = [labels_path + f.name for f in Path(labels_path).iterdir() if f.is_file() and f.name.endswith('.nii')]
+		self.mask_names = [masks_path + f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith('.nii')]
 
-		self.transform = transform
-		self.target_transform = target_transform
+		raw_images = load_data_3D(self.image_names[:10]) # TODO remove, load 10 for testing
+		raw_masks = load_data_3D(self.mask_names[:10]) # TODO remove, load 10 for testing
 
-		self.images = load_data_3D(self.image_names[:10]) # TODO remove, load 10 for testing
-		self.labels = load_data_3D(self.label_names[:10]) # TODO remove, load 10 for testing
+		subject = tio.Subject(
+			image=tio.ScalarImage(tensor=raw_images),
+			mask=tio.LabelMap(tensor=raw_masks),
+		)
+
+		transformed = transforms(subject)
+		self.images = transformed['image'].data
+		self.masks = transformed['mask'].data
+		
     
 	def __len__(self):
 		return len(self.images)
 
 	def __getitem__(self, idx):
-		image = self.images[idx]
-		image = torch.from_numpy(image)  #TODO Add a channel dimension? with unsqueeze(0)?
-
-		label = self.labels[idx]
-		label = torch.from_numpy(label)  # Add a channel dimension
-
-		if self.transform:
-			image = self.transform(image)
-			
-		if self.target_transform:
-			label = self.target_transform(label)
-
-		return image, label
-
-
-def create_data_loader(images_path, labels_path, batch_size, shuffle, num_workers, transform=None):
-	dataset = ProstateDataset3D(images_path, labels_path, transform)
-	return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+		image = self.images[idx] # TODO Add a channel dimension? with unsqueeze(0)?
+		mask = self.masks[idx] # TODO Add a channel dimension? with unsqueeze(0)?
+		return image, mask

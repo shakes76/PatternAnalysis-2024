@@ -50,6 +50,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             inImage = to_channels(inImage, dtype=dtype)
             images[i, :, :, :] = inImage
         else:
+            inImage = cv2.resize(inImage, (128, 256), interpolation=cv2.INTER_LINEAR)
             images[i, :, :] = inImage
 
         affines.append(affine)

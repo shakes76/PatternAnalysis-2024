@@ -41,3 +41,9 @@ embeddings = VQEmbedLayer(embeddings=dimensions["embeddings"], embed_dim=dimensi
 decoder = Decoder(latent_dim=dimensions["latent"], hidden_dim=dimensions["hidden"], output_dim=dimensions["output"])
 
 vqvae = Model(Encoder=encoder, VQEmbeddings=embeddings, Decoder=decoder).to(device=device)
+
+print("Training the Vector Quantised Varitional AutoEncoder...")
+vqvae.train()
+
+#TBD
+

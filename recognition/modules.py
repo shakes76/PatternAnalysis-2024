@@ -158,16 +158,19 @@ class Decoder(nn.Module):
         return res_out
 
 class Model(nn.Module):
-    def __init__(self, Encoder, VQEmbeddings, Decoder):
+    def __init__(self, Encoder, VQEmbedLayer, Decoder):
         super().__init__()
         self.Encoder = Encoder
-        # TBD VQEmbedLayer
+        self.VQEmbedLayer = VQEmbedLayer
         self.Decoder = Decoder
+
 
     def forward(self, input):
         logit = self.Encoder(input)
         #Get loss values and quantised logit
+        zq, commitment_loss, codebook_loss, perplexity = self.VQEmbedLayer(logit)
         # get reconstruction from quantised logit
+        xHat = self.Decoder(zq)
         
         # return reconstruction and loss values
-        return
+        return xHat, commitment_loss, codebook_loss, perplexity

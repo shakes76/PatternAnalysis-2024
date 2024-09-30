@@ -7,36 +7,43 @@ import torchvision.utils as vutils
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import utils as utils
+import glob
+import nibabel as nab
+import torchvision
 
-IMAGE_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
-
-class BrainDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = root_dir
-        self.transform = transform
-        self.image_paths = [os.path.join(root_dir, img) for img in os.listdir(root_dir) if img.endswith('.png')]
-        
-    def __len__(self):
-        return len(self.image_paths)
-    
-    def __getitem__(self, idx):
-        img_path = self.image_paths[idx]
-        image = cv2.imread(img_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        if self.transform:
-            image = self.transform(image)
-        return image
-    
-if __name__ == "__main__":
-    dataset = BrainDataset(IMAGE_PATH)
-    
-    device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
-    
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=128,
-                                            shuffle=True)
+def show_example_images(dataloader):
+    # Get image batch
     real_batch = next(iter(dataloader))
-    plt.figure(figsize=(8,8))
-    plt.axis("off")
-    plt.title("Training Images")
-    plt.imshow(np.transpose(vutils.make_grid(real_batch.to(device)[:64], padding=2, normalize=True).cpu(),(1,2,0)))
-    plt.savefig(f'./generated_images3/training_images.png')
+
+    # Create a grid of subplots
+    fig, axes = plt.subplots(3, 5, figsize=(12, 6))
+    axes = axes.flatten()
+
+    # Plot each subplot
+    for i in range(15):
+        img = real_batch[i, :, :].cpu().numpy()  
+        axes[i].imshow(img, cmap='gray')         
+        axes[i].axis("off")                      
+
+    plt.suptitle("Training Images")
+    plt.savefig(f'./outputs/test_images.png')
+
+def load_data():
+    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    
+    train_folder_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+    test_folder_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
+
+    train_file_list = sorted(glob.glob(f"{train_folder_path}/**.nii.gz", recursive=True))
+    test_file_list = sorted(glob.glob(f"{test_folder_path}/**.nii.gz", recursive=True))
+    
+    train_dataset = utils.load_data_2D(train_file_list[1:]) # trim list as root file is included
+    test_dataset = utils.load_data_2D(test_file_list[1:])
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64,
+                                            shuffle=True)
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=64,
+                                            shuffle=True)
+   
+    return train_dataloader, test_dataloader
+    

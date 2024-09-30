@@ -186,3 +186,102 @@ class NoiseInjection(nn.Module):
         
         # Scale the noise by the learned weight and add it to the input
         return x + self.weight * noise
+
+
+class ModulatedConv2d(nn.Module):
+    """
+    Modulated Convolution layer for StyleGAN2.
+    
+    Applies style-based modulation to convolution weights.
+
+    Args:
+        in_channels (int): Num input channels.
+        out_channels (int): Num output channels.
+        kernel_size (int): Size of the conv kernel.
+        style_dim (int): Dim of style vector.
+        demodulate (bool, optional): Use demodulation? Defaults to True.
+        up (int, optional): Upsampling factor. Defaults to 1.
+        down (int, optional): Downsampling factor. Defaults to 1.
+        padding (int, optional): Padding for conv. Defaults to 0.
+    """
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 style_dim,
+                 demodulate=True,
+                 up=1,
+                 down=1,
+                 padding=0
+                ):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.demodulate = demodulate
+        self.up = up
+        self.down = down
+        self.padding = padding
+
+        # Scaling factor for weight init
+        self.scale = 1 / math.sqrt(in_channels * kernel_size ** 2)
+        # Learnable conv weights
+        self.weight = nn.Parameter(torch.randn(out_channels, in_channels, kernel_size, kernel_size))
+        # Linear layer for style modulation
+        self.modulation = nn.Linear(style_dim, in_channels, bias=False)
+        # Noise injection layer
+        self.noise_injection = NoiseInjection(out_channels)
+
+    def forward(self, x, style, noise):
+        """
+        Forward pass of modulated convolution layer.
+        
+        Args:
+            x (Tensor): Input feature map
+            style (Tensor): Style vector
+            noise (Tensor, optional): Noise tensor for injection
+        
+        Returns:
+            Tensor: Output feature map after modulated convolution and noise injection
+        """
+        batch, in_channels, height, width = x.shape
+
+        # Style Modulation
+        # Transform style vector to match input channels
+        style = self.modulation(style).view(batch, in_channels, 1, 1)
+        # Scale weights and multiply by style
+        weight = self.scale * self.weight.unsqueeze(0) * style.unsqueeze(1)
+
+        # Demodulation
+        if self.demodulate:
+            # Calc demodulation factor
+            demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + 1e-8)
+            # Apply demodulation to weights
+            weight = weight * demod.view(batch, self.out_channels, 1, 1, 1)
+
+        # Reshape weight for conv
+        # Combine batch and out_channels dimensions
+        weight = weight.view(
+            batch * self.out_channels, in_channels, self.kernel_size, self.kernel_size
+        )
+
+        # Stride and padding for up/downsampling
+        stride = (1 / self.up) if self.up > 1 else self.down
+        if isinstance(stride, float):
+            stride = int(1 / stride)
+        padding = self.kernel_size // 2 if self.padding == 0 else self.padding
+
+        # Perform conv
+        # Reshape input to combine batch and in_channels
+        x = x.reshape(1, batch * in_channels, height, width)
+        # Apply grouped conv (1 group per batch item)
+        out = F.conv2d(x, weight, padding=padding, stride=stride, groups=batch)
+        # Reshape output to original batch size
+        out = out.view(batch, self.out_channels, out.size(2), out.size(3))
+        
+        # Inject noise
+        out = self.noise_injection(out, noise)
+
+        return out
+
+ 

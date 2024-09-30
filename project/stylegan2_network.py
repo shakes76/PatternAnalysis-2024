@@ -100,3 +100,33 @@ class FullyConnectedLayer(nn.Module):
         
         return x
 
+
+class MappingNetwork(nn.Module):
+    """
+    Mapping Network for StyleGAN2.
+    
+    This network maps the input latent code z to an intermediate latent space w,
+    which is then used to control the styles at each layer of the synthesis network.
+    """
+    def __init__(self,
+                 z_dim,         # Dimension of input latent code z.
+                 w_dim,         # Dimension of intermediate latent code w.
+                 num_layers,    # Num layers in mapping network.
+                 dropout=0.1    # Dropout rate.
+                ):
+        super().__init__()
+        layers = []
+        for i in range(num_layers):
+            layers.append(FullyConnectedLayer(
+                z_dim if i == 0 else w_dim,
+                w_dim,
+                activation='leaky_relu',
+                weight_init='kaiming',
+                dropout=dropout,
+                batch_norm=True
+            ))
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, z):
+        """Transform the input latent code z to the intermediate latent code w."""
+        return self.net(z)

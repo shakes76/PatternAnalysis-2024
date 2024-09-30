@@ -21,17 +21,27 @@ import math
 class FullyConnectedLayer(nn.Module):
     """
     A flexible fully connected layer with various customisation options.
-    This layer can be used in the mapping network and other parts of StyleGAN2.
+    Can be used in the mapping network and other parts of StyleGAN2.
+    
+    Args:
+        in_features (int): Num input features.
+        out_features (int): Num output features.
+        bias (bool, optional): Include bias term? Defaults to True.
+        activation (str, optional): Activation function to use. Defaults to 'linear'.
+        weight_init (str): Weight initialisation method. Defaults to 'xavier'.
+        dropout (float): Dropout rate. Defaults to 0.0.
+        batch_norm (bool, optional): Use batch normalisation? Defaults to False.
+        layer_norm (bool, optional): Use layer normalisation? Defaults to False.
     """
     def __init__(self, 
-                 in_features,               # Num input features.
-                 out_features,              # Num output features.
-                 bias=True,                 # Include bias term?
-                 activation='linear',       # Activation function to use.
-                 weight_init='xavier',      # Weight initialisation method.
-                 dropout=0.0,               # Dropout rate.
-                 batch_norm=False,          # Use batch normalisation?
-                 layer_norm=False           # Use layer normalisation?
+                 in_features,
+                 out_features,
+                 bias=True, 
+                 activation='linear', 
+                 weight_init='xavier',
+                 dropout=0.0, 
+                 batch_norm=False,
+                 layer_norm=False
                 ):
         super().__init__()
         self.in_features = in_features
@@ -105,8 +115,15 @@ class MappingNetwork(nn.Module):
     """
     Conditional Mapping Network for StyleGAN2.
     
-    This network maps the input latent code z and a label, to an intermediate latent space w,
-    which is then used to control the styles at each layer of the synthesis network.
+    Network to map input latent code z and a label to intermediate latent space w.
+    W used to control styles at each layer of synthesis network.
+
+    Args:
+        z_dim (int): Dim of input latent code z.
+        w_dim (int): Dim of intermediate latent code w.
+        num_layers (int): Num layers in mapping network.
+        label_dim (int): Dim of label embedding.
+        dropout (float, optional): Dropout rate. Defaults to 0.1.
     """
     def __init__(self,
                  z_dim,         # Dimension of input latent code z
@@ -148,9 +165,12 @@ class NoiseInjection(nn.Module):
     This module adds learnable per-pixel noise to the output of convolutional layers
     in the generator. It helps in generating fine details and stochastic variations
     in the created images.
+
+    Args:
+        channels (int): Number of input channels.
     """
     def __init__(self, 
-                 channels       # Num channels.
+                 channels
                 ):
         super().__init__()
         # Create a learnable parameter for scaling the noise

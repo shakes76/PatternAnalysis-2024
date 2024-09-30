@@ -103,18 +103,23 @@ class FullyConnectedLayer(nn.Module):
 
 class MappingNetwork(nn.Module):
     """
-    Mapping Network for StyleGAN2.
+    Conditional Mapping Network for StyleGAN2.
     
-    This network maps the input latent code z to an intermediate latent space w,
+    This network maps the input latent code z and a label, to an intermediate latent space w,
     which is then used to control the styles at each layer of the synthesis network.
     """
     def __init__(self,
-                 z_dim,         # Dimension of input latent code z.
-                 w_dim,         # Dimension of intermediate latent code w.
-                 num_layers,    # Num layers in mapping network.
-                 dropout=0.1    # Dropout rate.
+                 z_dim,         # Dimension of input latent code z
+                 w_dim,         # Dimension of intermediate latent code w
+                 num_layers,    # Number of layers in mapping network
+                 label_dim,     # Dimension of label embedding
+                 dropout=0.1    # Dropout rate
                 ):
         super().__init__()
+        
+        # Label embedding
+        self.label_embedding = nn.Embedding(label_dim, z_dim)
+        
         layers = []
         for i in range(num_layers):
             layers.append(FullyConnectedLayer(
@@ -127,6 +132,10 @@ class MappingNetwork(nn.Module):
             ))
         self.net = nn.Sequential(*layers)
 
-    def forward(self, z):
-        """Transform the input latent code z to the intermediate latent code w."""
-        return self.net(z)
+    def forward(self, z, labels):
+        """
+        Transform the input latent code z and labels to the intermediate latent code w.
+        """
+        embedded_labels = self.label_embedding(labels)
+        z_prime = z + embedded_labels  # Combine latent and label information
+        return self.net(z_prime)

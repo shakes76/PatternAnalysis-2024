@@ -1,49 +1,73 @@
 import os
 import torch
-from torch import optim
+import torch.optim as optim
 from tqdm import tqdm
-from dataset import get_loader
 from modules import Generator, Discriminator
+from dataset import get_loader 
 
-# Hyperparameters
-Z_DIM = 512
-W_DIM = 512
-IN_CHANNELS = 512
-CHANNELS_IMG = 3
-LR = 1e-3
-LAMBDA_GP = 10
-PROGRESSIVE_EPOCHS = [30] * 6
+# Constants
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+Z_DIM = 512  # Latent space dimension
+W_DIM = 512  # Intermediate latent space dimension
+IN_CHANNELS = 512  # Initial input channels
+CHANNELS_IMG = 3  # Number of output image channels
+LR = 0.001  # Learning rate
+BATCH_SIZE = 16  # Batch size
+NUM_EPOCHS = 100  # Number of epochs for training
 
-# Define functions: gradient_penalty, train_fn, generate_examples, main
+# Function to generate examples
+def generate_examples(gen, n=100):
+    gen.eval()
+    for i in range(n):
+        with torch.no_grad():
+            noise = torch.randn(1, Z_DIM).to(DEVICE)
+            img = gen(noise, 1.0, 0)  # Alpha=1.0, steps=0 for full-size image
+            if not os.path.exists('saved_examples'):
+                os.makedirs('saved_examples')
+            save_image(img * 0.5 + 0.5, f"saved_examples/img_{i}.png")
+    gen.train()
 
-def gradient_penalty(critic, real, fake, alpha, train_step):
-    ...
+# Training function
+def train_fn(critic, gen, loader, opt_critic, opt_gen):
+    loop = tqdm(loader, leave=True)
 
-def train_fn(critic, gen, loader, step, alpha, opt_critic, opt_gen):
-    ...
+    for batch_idx, (real, _) in enumerate(loop):
+        real = real.to(DEVICE)
+        cur_batch_size = real.shape[0]
+        noise = torch.randn(cur_batch_size, Z_DIM).to(DEVICE)
+        fake = gen(noise, 1.0, 0)  # Generate fake images
 
-def generate_examples(gen, steps, n=100):
-    ...
+        # Critic loss
+        loss_critic = -torch.mean(critic(real)) + torch.mean(critic(fake.detach()))
+        
+        critic.zero_grad()
+        loss_critic.backward()
+        opt_critic.step()
 
+        # Generator loss
+        loss_gen = -torch.mean(critic(fake))
+        
+        gen.zero_grad()
+        loss_gen.backward()
+        opt_gen.step()
+
+        loop.set_postfix(loss_critic=loss_critic.item(), loss_gen=loss_gen.item())
+
+# Main training loop
 def main():
     gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)
     critic = Discriminator(IN_CHANNELS, CHANNELS_IMG).to(DEVICE)
+    
     opt_gen = optim.Adam(gen.parameters(), lr=LR, betas=(0.0, 0.99))
     opt_critic = optim.Adam(critic.parameters(), lr=LR, betas=(0.0, 0.99))
 
-    step = 0
-    for num_epochs in PROGRESSIVE_EPOCHS:
-        alpha = 1e-7
-        loader, dataset = get_loader(4 * 2**step)
-        print(f'Current image size: {4 * 2**step}')
+    loader, dataset = get_loader(BATCH_SIZE)
+    
+    for epoch in range(NUM_EPOCHS):
+        print(f'Epoch [{epoch + 1}/{NUM_EPOCHS}]')
+        train_fn(critic, gen, loader, opt_critic, opt_gen)
 
-        for epoch in range(num_epochs):
-            print(f'Epoch [{epoch + 1}/{num_epochs}]')
-            alpha = train_fn(critic, gen, loader, step, alpha, opt_critic, opt_gen)
+    generate_examples(gen)
 
-        generate_examples(gen, step)
-        step += 1
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

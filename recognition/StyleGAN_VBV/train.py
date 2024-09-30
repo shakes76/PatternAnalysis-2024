@@ -1,16 +1,17 @@
+import os
 import torch
 from torch import optim
-import matplotlib.pyplot as plt
-from modules import Generator, Discriminator
+from tqdm import tqdm
 from dataset import get_loader
+from modules import Generator, Discriminator
 
-def train():
-    # Initialize model, optimizers, and data loaders
-    pass
+# Hyperparameters
+Z_DIM = 512
+W_DIM = 512
+IN_CHANNELS = 512
+CHANNELS_IMG = 3
+LR = 1e-3
+LAMBDA_GP = 10
+PROGRESSIVE_EPOCHS = [30] * 6  # Adjust based on your image sizes
 
-def plot_losses():
-    # Function to plot training losses
-    pass
-
-if __name__ == "__main__":
-    train()
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'

@@ -20,7 +20,7 @@ import math
 
 class FullyConnectedLayer(nn.Module):
     """
-    A flexible fully connected layer with various customization options.
+    A flexible fully connected layer with various customisation options.
     This layer can be used in the mapping network and other parts of StyleGAN2.
     """
     def __init__(self, 
@@ -139,3 +139,30 @@ class MappingNetwork(nn.Module):
         embedded_labels = self.label_embedding(labels)
         z_prime = z + embedded_labels  # Combine latent and label information
         return self.net(z_prime)
+
+
+class NoiseInjection(nn.Module):
+    """
+    Noise Injection module for StyleGAN2.
+    
+    This module adds learnable per-pixel noise to the output of convolutional layers
+    in the generator. It helps in generating fine details and stochastic variations
+    in the created images.
+    """
+    def __init__(self, 
+                 channels       # Num channels.
+                ):
+        super().__init__()
+        # Create a learnable parameter for scaling the noise
+        # One scaling factor per channel
+        self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
+    
+    def forward(self, x, noise=None):
+        """Apply noise injection to the input tensor."""
+        if noise is None:
+            # Generate random noise if not provided
+            batch, _, height, width = x.shape
+            noise = torch.randn(batch, 1, height, width, device=x.device, dtype=x.dtype)
+        
+        # Scale the noise by the learned weight and add it to the input
+        return x + self.weight * noise

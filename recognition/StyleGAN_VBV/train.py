@@ -3,7 +3,7 @@ import torch
 import torch.optim as optim
 from tqdm import tqdm
 from modules import Generator, Discriminator
-from dataset import get_loader 
+from dataset.py import get_loader 
 
 # Constants
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'

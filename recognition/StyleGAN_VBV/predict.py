@@ -2,6 +2,13 @@ import torch
 from torchvision.utils import save_image
 from modules import Generator
 
+# Constants
+Z_DIM = 512
+W_DIM = 512
+IN_CHANNELS = 512
+CHANNELS_IMG = 3
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 # Load your trained generator model
 def load_model(checkpoint_path):
     model = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG)

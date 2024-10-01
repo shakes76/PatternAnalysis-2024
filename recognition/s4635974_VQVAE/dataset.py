@@ -83,7 +83,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
 # save_sample_images(dataset, num_images=5)
 
-print("start")
+print("Start")
 # Specify the file path
 file_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train/case_012_week_6_slice_25.nii.gz'
 
@@ -92,4 +92,9 @@ image_data = nib.load(file_path).get_fdata(caching='unchanged')
 
 # Check the shape of the image
 print("Shape of the image:", image_data.shape)
+
+# Load the single image using load_data_2D
+img = load_data_2D([file_path])  # Pass a list with the file path
+
+
 print("End")

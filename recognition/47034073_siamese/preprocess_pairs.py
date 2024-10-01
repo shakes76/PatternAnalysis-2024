@@ -1,3 +1,5 @@
+"""Pre-process training metadata into pairs for training. Handle split for validation and test."""
+
 import pathlib
 import itertools
 import math

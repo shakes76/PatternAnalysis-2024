@@ -18,6 +18,9 @@ def main() -> None:
     parser.add_argument("-i", "--input")
     args = parser.parse_args()
 
+    if args.input is None:
+        args.input = "data/train.csv"
+
     metadata = pd.read_csv(args.input)
 
     benign = metadata[metadata[TARGET] == 0]

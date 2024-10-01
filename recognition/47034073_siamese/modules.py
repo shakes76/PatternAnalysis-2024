@@ -1,11 +1,14 @@
 from torchvision.models import efficientnet_b0
+import torch
 from torch import nn
 from torch.nn.functional import pairwise_distance, binary_cross_entropy_with_logits
 from dataclasses import dataclass
 
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+@dataclass
 class HyperParams:
     num_epochs: int = 20
     batch_size: int = 32
@@ -13,7 +16,7 @@ class HyperParams:
 
 class TumorTrainer:
     def __init__(self, hparams: HyperParams):
-        self._model = SiameseTumor().to(device)
+        self._model = TumorTower().to(device)
         self._optim = nn.optim.Adam(self._model.parameters())
         self._hparams = hparams
 
@@ -26,11 +29,11 @@ class TumorTrainer:
             x1.to(device)
             x2.to(device)
             y.to(device)
-            self._optimizer.zero_grad()
+            self._optim.zero_grad()
             distances = self._model(x1, x2)
-            loss = binary_cross_entropy_with_logits(distances, targets)
+            loss = binary_cross_entropy_with_logits(distances, y)
             loss.backward()
-            self._optimizer.step()
+            self._optim.step()
 
 
 class TumorTower(nn.Module):

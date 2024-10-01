@@ -87,6 +87,6 @@ class ProstateDataset3D(Dataset):
 		return len(self.images)
 
 	def __getitem__(self, idx):
-		image = self.images[idx] # TODO Add a channel dimension? with unsqueeze(0)?
-		mask = self.masks[idx] # TODO Add a channel dimension? with unsqueeze(0)?
+		image = self.images[idx].unsqueeze(0)
+		mask = self.masks[idx].unsqueeze(0)
 		return image, mask

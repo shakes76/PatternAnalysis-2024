@@ -9,7 +9,7 @@ class Modified3DUNet(nn.Module):
 		self.base_n_filter = base_n_filter
 
 		self.lrelu = nn.LeakyReLU()
-		self.dropout3d = nn.Dropout3d(p=0.6)
+		self.dropout3d = nn.Dropout3d(p=0.3)
 		self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 		self.softmax = nn.Softmax(dim=1)
 
@@ -188,6 +188,6 @@ class Modified3DUNet(nn.Module):
 		out = out_pred + ds1_ds2_sum_upscale_ds3_sum_upscale
 		seg_layer = out
 		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes)
-		#out = out.view(-1, self.n_classes)
+		logits = out
 		out = self.softmax(out)
-		return out, seg_layer
+		return out, seg_layer, logits

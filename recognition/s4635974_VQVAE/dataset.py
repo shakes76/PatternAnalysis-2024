@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+import scipy.ndimage
 
 # Directories for datasets
 train_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -114,6 +115,8 @@ def save_sample_images(dataset, num_images=5, save_dir='saved_images'):
         plt.savefig(save_path)
         plt.close()  # Close figure after saving to avoid overwriting
 
-dataset = HipMRIDataset(train_dir, normImage=True)
+#dataset = HipMRIDataset(train_dir, normImage=True)
 
-save_sample_images(dataset, num_images=5)
+# save_sample_images(dataset, num_images=5)
+
+print("test....")

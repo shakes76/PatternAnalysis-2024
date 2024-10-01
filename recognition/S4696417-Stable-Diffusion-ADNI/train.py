@@ -4,18 +4,23 @@ import torch, wandb, os
 import torch.nn as nn
 from tqdm import tqdm
 from torch.cuda.amp import autocast, GradScaler
-from utils import get_linear_schedule_with_warmup, visualize_denoising_process, calculate_metrics
+from utils import get_linear_schedule_with_warmup, visualize_denoising_process
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
-from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
+from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, PerceptualLoss
 
 # SETUP - Must Match Image Size of VAE
-IMAGE_SIZE = 128
+IMAGE_SIZE = 256
 BATCH_SIZE = 8 # will affect training performance
 method = 'Local'
 
 image_transform = transforms.Compose([
     transforms.ToPILImage(),
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(),
+    transforms.RandomRotation(10),
+    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
     transforms.ToTensor(),    
     transforms.Normalize((0.5,), (0.5,)),
 ])
@@ -32,16 +37,20 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device}')
 
 print("Loading model...")
-vae = torch.load(f'checkpoints/VAE/ADNI-vae_e80_b16_im{IMAGE_SIZE}.pt')
+vae = torch.load(f'checkpoints/VAE/ADNI-vae_e100_b8_im{IMAGE_SIZE}_l16.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
 
-unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
+unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512], time_emb_dim=256)
 noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
 model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
 
-criterion = nn.MSELoss()
+
+#criterion = nn.MSELoss()
+perceptual_weight = 0.2
+perceptual_loss = PerceptualLoss().to(device)
+mse_loss = nn.MSELoss()
 scaler = GradScaler()
 
 lr = 1e-4
@@ -49,10 +58,13 @@ epochs = 100
 steps_per_epoch = len(train_loader)
 total_steps = steps_per_epoch * epochs
 warmup_steps = int(0.1 * total_steps)
-optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
+
+base_optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+optimizer = Lookahead(base_optimizer, k=5, alpha=0.5)
+
+#scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
 #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
-#scheduler = CosineAnnealingWarmupScheduler(optimizer, warmup_steps, total_steps)
+scheduler = CosineAnnealingWarmupScheduler(optimizer, warmup_steps, total_steps)
 
 # initialise wandb
 wandb.init(
@@ -63,7 +75,8 @@ wandb.init(
         "epochs": epochs,
         "optimizer": type(optimizer).__name__,
         "scheduler": type(scheduler).__name__,
-        "loss": type(criterion).__name__,
+        "perceptual loss": type(perceptual_loss).__name__,
+        "mse loss": type(mse_loss).__name__,
         "scaler": type(scaler).__name__,
         "name": "SD-ADNI - VAE and Unet",
         "image size": IMAGE_SIZE,
@@ -94,28 +107,42 @@ for epoch in range(epochs):
 
         # Add noise to latents
         noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+        
+        with torch.no_grad():
+            denoised_images = model.vae.decode(noise_scheduler.step(model.unet, noisy_latents, timesteps))
+            ssim = structural_similarity_index_measure(denoised_images, images)
+            psnr = peak_signal_noise_ratio(denoised_images, images)
 
         # Train UNet
         optimizer.zero_grad()
         with autocast():
             predicted_noise = model.predict_noise(noisy_latents, timesteps)
-            loss = criterion(predicted_noise, noise)
+            mse = mse_loss(predicted_noise, noise)
+            perceptual = perceptual_loss(denoised_images, images)
+            loss = mse + perceptual_weight * perceptual
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
         scheduler.step()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-
-        psnr, ssim = calculate_metrics(model, noisy_latents, timesteps, images, loss, optimizer, 'train')
-
+           
         # Update metrics
         train_loss += loss.item()
         train_psnr += psnr.item()
         train_ssim += ssim.item()
 
+        wandb.log({
+            'train_psnr': psnr.item(),
+            'train_ssim': ssim.item(),
+            'train_loss': loss.item(),
+            'train_mse': mse.item(),
+            'train_perceptual': perceptual.item(),
+            'learning_rate': optimizer.param_groups[0]['lr'],
+        })
+
         # Update progress bar
-        loop.set_postfix(loss=loss.item(), psnr=psnr.item(), ssim=ssim.item())
+        loop.set_postfix(loss=loss.item(), mse=mse.item(), perceptual=perceptual.item())
 
     # Compute average metrics
     avg_train_loss = train_loss / len(train_loader)
@@ -138,13 +165,26 @@ for epoch in range(epochs):
 
             noise = torch.randn_like(latents)
             timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
+            
             noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+            with torch.no_grad():
+                denoised_images = model.vae.decode(noise_scheduler.step(model.unet, noisy_latents, timesteps))
+                ssim = structural_similarity_index_measure(denoised_images, images)
+                psnr = peak_signal_noise_ratio(denoised_images, images)
 
             with autocast():
                 predicted_noise = model.predict_noise(noisy_latents, timesteps)
-                loss = criterion(predicted_noise, noise)
+                mse = mse_loss(predicted_noise, noise)
+                perceptual = perceptual_loss(denoised_images, images)
+                loss = mse + perceptual_weight * perceptual
 
-            psnr, ssim = calculate_metrics(model, noisy_latents, timesteps, images, loss, optimizer, 'val')
+            # wandb.log({
+            # 'val_psnr': psnr.item(),
+            # 'val_ssim': ssim.item(),
+            # 'val_loss': loss.item(),
+            # 'val_mse': mse.item(),
+            # 'val_perceptual': perceptual.item(),
+            # })
 
             val_loss += loss.item()
             val_psnr += psnr.item()
@@ -171,7 +211,7 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch) % 10 == 0: 
+    if (epoch) % 2 == 0: 
         sample_images = model.sample(BATCH_SIZE, device=device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)

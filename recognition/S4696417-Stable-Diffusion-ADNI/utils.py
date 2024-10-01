@@ -1,7 +1,11 @@
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 from torch.optim.lr_scheduler import LambdaLR 
-import wandb
+import wandb, os
 import torch
+import numpy as np
+from torchvision import transforms
+from sklearn.manifold import TSNE
+from dataset import get_dataloader
 
 def calculate_gradient_norm(model):
     total_norm = 0
@@ -41,47 +45,64 @@ def visualize_denoising_process(model, noise_scheduler, num_inference_steps=10, 
     
     wandb.log({"denoising_process": images})
 
-def calculate_metrics(model, noisy_latents, timesteps, images, loss, optimizer, mode):
-    """
-    Calculate the PSNR and SSIM metrics for the denoised images. 
-    Will log to wandb based on train/val
 
-    Args:
-        model (torch.nn.Module): The diffusion model instance
-        noisy_latents (torch.Tensor): The noisy latents to use for denoising
-        timesteps (torch.Tensor): The timesteps to use for denoising
-        images (torch.Tensor): The clean images to use for calculating metrics
-        loss (torch.Tensor): The loss to use for calculating metrics
-        optimizer (torch.optim.Optimizer): The optimizer to use for calculating metrics
-        mode (string): Whether the model is in training, validation mode
-
-    Returns:
-        psnr (torch.Tensor): The PSNR metric
-        ssim (torch.Tensor): The SSIM metric
-    """
-    assert mode in ['train', 'val'], "mode must be 'train' or 'val'"
-    
+def get_latent_representations(dataloader, device, vae, label):
+    latent_reps = []
+    labels = []
     with torch.no_grad():
-        denoised_latents = model.noise_scheduler.step(model.unet, noisy_latents, timesteps)
-        denoised_images = model.vae.decode(denoised_latents)
-        ssim = structural_similarity_index_measure(denoised_images, images)
-        psnr = peak_signal_noise_ratio(denoised_images, images)
+        for images, _ in dataloader:
+            images = images.to(device)
+            mu, logvar = vae.encode(images)
+            latent = vae.sample(mu, logvar)
+            print(latent.shape)
+            # mu = mu.view(mu.size(0), -1).cpu().numpy()
+            latent_reps.append(latent.cpu().numpy())
+            labels.extend([label] * images.shape[0])
+    return np.concatenate(latent_reps), np.array(labels)
 
-    if mode == 'train':
-        wandb.log({
-            'train_psnr': psnr.item(),
-            'train_ssim': ssim.item(),
-            'train_loss': loss.item(),
-            'learning_rate': optimizer.param_groups[0]['lr'],
-        })
-    elif mode == 'val':
-        wandb.log({
-            'val_psnr': psnr.item(),
-            'val_ssim': ssim.item(),
-            'val_loss': loss.item(),
-            'learning_rate': optimizer.param_groups[0]['lr'],
-        })
 
-    return psnr, ssim
+def get_manifold():
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
+    vae = torch.load('checkpoints/VAE/ADNI-vae_e80_b16_im128.pt').to(device)
+    vae.eval()
 
+    image_transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((128, 128)),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    train_loader_AD, _ = get_dataloader('data/train/AD', batch_size=16, transform=image_transform)
+    train_loader_NC, _ = get_dataloader('data/train/NC', batch_size=16, transform=image_transform)
+    train_latent_AD, train_labels_AD = get_latent_representations(train_loader_AD, device, vae, "AD")
+    train_latent_NC, train_labels_NC = get_latent_representations(train_loader_NC, device, vae, "NC")
+    train_latent = np.concatenate([train_latent_AD, train_latent_NC])
+    train_labels = np.concatenate([train_labels_AD, train_labels_NC])
+
+    tsne = TSNE(n_components=2)
+    tsne_results = tsne.fit_transform(train_latent)
+
+    wandb.init(project="Stable-Diffusion-ADNI-Manifold", name="TSNE Manifold")
+
+    tsne_table = wandb.Table(columns=["t-SNE_1", "t-SNE_2", "Label"])
+    for i in range(len(tsne_results)):
+        tsne_table.add_data(tsne_results[i, 0], tsne_results[i, 1], train_labels[i])
+
+    wandb.log({"tsne_table": tsne_table})
+
+    # Create and log the t-SNE plot
+    tsne_plot = wandb.plot.scatter(
+        tsne_table, 
+        x="t-SNE_1", 
+        y="t-SNE_2", 
+        title="t-SNE visualization of VAE latent space"
+    )
+    wandb.log({"tsne_plot": tsne_plot})
+
+    print("t-SNE plot logged to wandb")
+
+    # Finish the wandb run
+    wandb.finish()
 

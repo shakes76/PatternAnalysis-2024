@@ -1,7 +1,11 @@
 import torch, wandb, math
+from collections import defaultdict
 import torch.nn as nn
+from torch.optim import Optimizer
 import torch.nn.functional as F
 from tqdm import tqdm
+from torchvision.models import vgg16
+from torchvision.transforms import Normalize
 from torch.optim.lr_scheduler import _LRScheduler
 
 class StableDiffusion(nn.Module):
@@ -45,7 +49,7 @@ class StableDiffusion(nn.Module):
     def predict_noise(self, z, t):
         pred_noise = self.unet(z, t)
         return pred_noise
-
+    
     @torch.no_grad()
     def sample(self, num_images, device='cuda'):
         """
@@ -69,6 +73,13 @@ class StableDiffusion(nn.Module):
         wandb.log({f"sample": wandb.Image(final_image)})
         return final_image
     
+    def fast_sample(self, num_images, device='cuda', steps=80):
+        shape = (num_images, self.vae.latent_dim, int(self.image_size/8), int(self.image_size/8))
+        samples = self.noise_scheduler.fast_sampling(self.unet, shape, device, steps)
+        sample_images = self.vae.decode(samples)
+        wandb.log({f"sample": wandb.Image(sample_images)})
+        return sample_images
+    
 
 class UNet(nn.Module):
     """
@@ -87,7 +98,7 @@ class UNet(nn.Module):
         self.in_channels = in_channels
         self.hidden_dims = hidden_dims
         
-        # Time embedding
+        # Time embedding and condition embedding
         self.time_embed = TimeEmbedding(time_emb_dim)
 
         # Initial conv and linear layer
@@ -158,6 +169,8 @@ class UNet(nn.Module):
         return self.conv_out(x)
     
 
+
+######### Model Components #########
 class SinusoidalPositionEmbeddings(nn.Module):
     """
     Convert timestep tensor to a vector representation
@@ -402,6 +415,7 @@ class TimeEmbedding(nn.Module):
         return self.layer(t.unsqueeze(-1).float())
 
 
+######### Noise Schedulers / Optimizers / LR Schedulers / Loss #########
 class CosineAnnealingWarmupScheduler(_LRScheduler):
     def __init__(self, optimizer, warmup_steps, total_steps, min_lr=0, last_epoch=-1):
         self.warmup_steps = warmup_steps
@@ -502,7 +516,7 @@ class NoiseScheduler_Fast_DDPM():
         x_t = torch.randn(shape, device=device)
         timesteps = torch.linspace(self.num_timesteps - 1, 0, num_steps).long().to(device)
         
-        for t in timesteps:
+        for t in tqdm(timesteps):
             t_batch = torch.full((shape[0],), t, device=device, dtype=torch.long)
             x_t = self.step(model, x_t, t_batch)
         
@@ -514,4 +528,103 @@ class NoiseScheduler_Fast_DDPM():
             if isinstance(value, torch.Tensor):
                 setattr(self, key, value.to(device))
         return self
+
+
+class Lookahead(Optimizer):
+    def __init__(self, optimizer, k=5, alpha=0.5):
+        self.optimizer = optimizer
+        self.k = k
+        self.alpha = alpha
+        self.param_groups = self.optimizer.param_groups
+        self.state = defaultdict(dict)
+        self.fast_state = self.optimizer.state
+        for group in self.param_groups:
+            group["counter"] = 0
+
+        self.defaults = self.optimizer.defaults
+        
+
+    def update(self, group):
+        for fast in group["params"]:
+            param_state = self.state[fast]
+            if "slow_param" not in param_state:
+                param_state["slow_param"] = torch.zeros_like(fast.data)
+                param_state["slow_param"].copy_(fast.data)
+            slow = param_state["slow_param"]
+            slow += (fast.data - slow) * self.alpha
+            fast.data.copy_(slow)
+
+    def update_lookahead(self):
+        for group in self.param_groups:
+            self.update(group)
+
+    def step(self, closure=None):
+        loss = self.optimizer.step(closure)
+        for group in self.param_groups:
+            if group["counter"] == 0:
+                self.update(group)
+            group["counter"] += 1
+            if group["counter"] >= self.k:
+                group["counter"] = 0
+        return loss
     
+    def state_dict(self):
+        fast_state_dict = self.optimizer.state_dict()
+        slow_state = {
+            (id(k) if isinstance(k, torch.Tensor) else k): v
+            for k, v in self.state.items()
+        }
+        fast_state = fast_state_dict["state"]
+        param_groups = fast_state_dict["param_groups"]
+        return {
+            "fast_state": fast_state,
+            "slow_state": slow_state,
+            "param_groups": param_groups,
+        }
+    
+    def load_state_dict(self, state_dict):
+        fast_state_dict = {
+            "state": state_dict["fast_state"],
+            "param_groups": state_dict["param_groups"],
+        }
+        self.optimizer.load_state_dict(fast_state_dict)
+        slow_state_new = {
+            "slow_param": torch.zeros_like(v) for v in self.optimizer.state.values()
+        }
+        slow_state_new.update(state_dict["slow_state"])
+        self.state = defaultdict(dict, slow_state_new)
+
+
+class PerceptualLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        vgg = vgg16(pretrained=True).eval() # pretrained VGG 
+        self.feature_extractor = nn.Sequential(*list(vgg.features)[:31]).eval()
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False
+
+        # Normalise for VGG
+        self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
+        
+    
+    def forward(self, input, target):
+        if torch.isnan(input).any() or torch.isnan(target).any():
+            print("NaN detected in input or target")
+            return torch.tensor(0.0, requires_grad=True)
+        
+        if input.shape[1] != 3:
+            input = input.repeat(1, 3, 1, 1)
+            target = target.repeat(1, 3, 1, 1)
+        
+        input = (input-self.mean) / self.std
+        target = (target-self.mean) / self.std
+        input_features = self.feature_extractor(input)
+        target_features = self.feature_extractor(target)
+
+        loss = F.mse_loss(input_features, target_features)
+        if torch.isnan(loss):
+            print("NaN detected in perceptual loss")
+            return torch.tensor(0.0, requires_grad=True)
+
+        return loss

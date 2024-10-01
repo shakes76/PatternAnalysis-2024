@@ -3,14 +3,18 @@ from torch import nn
 from torch.nn.functional import pairwise_distance, binary_cross_entropy_with_logits
 from dataclasses import dataclass
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class HyperParams:
     num_epochs: int = 20
+    batch_size: int = 32
 
 
 class TumorTrainer:
     def __init__(self, hparams: HyperParams):
-        self._model = SiameseTumor()
+        self._model = SiameseTumor().to(device)
+        self._optim = nn.optim.Adam(self._model.parameters())
         self._hparams = hparams
 
     def train(self, train_loader):
@@ -19,6 +23,9 @@ class TumorTrainer:
 
     def _train_epoch(self, train_loader):
         for x1, x2, y in train_loader:
+            x1.to(device)
+            x2.to(device)
+            y.to(device)
             self._optimizer.zero_grad()
             distances = self._model(x1, x2)
             loss = binary_cross_entropy_with_logits(distances, targets)

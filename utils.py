@@ -1,6 +1,7 @@
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+from skimage.transform import resize
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -50,7 +51,8 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             inImage = to_channels(inImage, dtype=dtype)
             images[i, :, :, :] = inImage
         else:
-            images[i, :, :] = inImage
+            inImage = resize(inImage, (rows, cols), preserve_range=True, anti_aliasing=True)
+        images[i, :, :] = inImage
 
         affines.append(affine)
         if i > 20 and early_stop:

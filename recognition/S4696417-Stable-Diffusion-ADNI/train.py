@@ -3,7 +3,8 @@ from dataset import get_dataloader
 import torch, wandb, os
 import torch.nn as nn
 from tqdm import tqdm
-from torch.cuda.amp import autocast, GradScaler
+from torch.cuda.amp import GradScaler
+from torch.amp import autocast
 from utils import get_linear_schedule_with_warmup, visualize_denoising_process
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, PerceptualLoss
@@ -49,7 +50,7 @@ model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(de
 
 #criterion = nn.MSELoss()
 perceptual_weight = 0.2
-perceptual_loss = PerceptualLoss().to(device)
+perceptual_loss = PerceptualLoss(vae).to(device)
 mse_loss = nn.MSELoss()
 scaler = GradScaler()
 
@@ -115,11 +116,12 @@ for epoch in range(epochs):
 
         # Train UNet
         optimizer.zero_grad()
-        with autocast():
+        with autocast('cuda'):
             predicted_noise = model.predict_noise(noisy_latents, timesteps)
             mse = mse_loss(predicted_noise, noise)
-            perceptual = perceptual_loss(denoised_images, images)
-            loss = mse + perceptual_weight * perceptual
+
+        perceptual = perceptual_loss(denoised_images, images)
+        loss = mse + perceptual_weight * perceptual
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -172,19 +174,12 @@ for epoch in range(epochs):
                 ssim = structural_similarity_index_measure(denoised_images, images)
                 psnr = peak_signal_noise_ratio(denoised_images, images)
 
-            with autocast():
+            with autocast('cuda'):
                 predicted_noise = model.predict_noise(noisy_latents, timesteps)
                 mse = mse_loss(predicted_noise, noise)
-                perceptual = perceptual_loss(denoised_images, images)
-                loss = mse + perceptual_weight * perceptual
-
-            # wandb.log({
-            # 'val_psnr': psnr.item(),
-            # 'val_ssim': ssim.item(),
-            # 'val_loss': loss.item(),
-            # 'val_mse': mse.item(),
-            # 'val_perceptual': perceptual.item(),
-            # })
+                
+            perceptual = perceptual_loss(denoised_images, images)
+            loss = mse + perceptual_weight * perceptual
 
             val_loss += loss.item()
             val_psnr += psnr.item()

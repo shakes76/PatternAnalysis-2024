@@ -596,35 +596,25 @@ class Lookahead(Optimizer):
 
 
 class PerceptualLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, vae):
         super().__init__()
-        vgg = vgg16(pretrained=True).eval() # pretrained VGG 
-        self.feature_extractor = nn.Sequential(*list(vgg.features)[:31]).eval()
-        for param in self.feature_extractor.parameters():
-            param.requires_grad = False
-
-        # Normalise for VGG
-        self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
-        self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
+        self.vae = vae
+        self.vae.eval()
+        for param in self.vae.parameters():
+            param.requires_grad = False 
         
-    
+    @torch.no_grad()
     def forward(self, input, target):
         if torch.isnan(input).any() or torch.isnan(target).any():
             print("NaN detected in input or target")
             return torch.tensor(0.0, requires_grad=True)
         
-        if input.shape[1] != 3:
-            input = input.repeat(1, 3, 1, 1)
-            target = target.repeat(1, 3, 1, 1)
+        input_encoding = self.vae.encode(input)
+        target_encoding = self.vae.encode(target)
         
-        input = (input-self.mean) / self.std
-        target = (target-self.mean) / self.std
-        input_features = self.feature_extractor(input)
-        target_features = self.feature_extractor(target)
+        if isinstance(input_encoding, tuple):
+            input_encoding = input_encoding[0]
+        if isinstance(target_encoding, tuple):
+            target_encoding = target_encoding[0]
 
-        loss = F.mse_loss(input_features, target_features)
-        if torch.isnan(loss):
-            print("NaN detected in perceptual loss")
-            return torch.tensor(0.0, requires_grad=True)
-
-        return loss
+        return F.mse_loss(input_encoding, target_encoding)

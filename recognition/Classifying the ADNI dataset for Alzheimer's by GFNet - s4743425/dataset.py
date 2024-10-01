@@ -11,6 +11,44 @@ from torchvision.datasets import ImageFolder
 import torchvision.utils as vutils
 import numpy as np
 import torchvision
+from PIL import Image
+
+# Class to load and process the images
+class ADNIDataset(Dataset):
+    def __init__(self, data_dir, transform=None, mode='train'):
+        self.data_dir = data_dir
+        self.mode = mode
+        # Use the transform specific to the mode (train, test, val)
+        self.transform = transform[mode]  
+
+        # assumes that the dataset is structured in subfolders (AD and NC)
+        self.image_filenames = []
+        for label_dir in os.listdir(self.data_dir):
+            label_path = os.path.join(self.data_dir, label_dir)
+            if os.path.isdir(label_path):
+                for file_name in os.listdir(label_path):
+                    if file_name.endswith(('.jpeg')):
+                        self.image_filenames.append((os.path.join(label_dir, file_name), label_dir))
+
+    def __len__(self):
+        return len(self.image_filenames)
+    
+    def __getitem__(self, idx):
+        img_name, label = self.image_filenames[idx]
+        img_path = os.path.join(self.data_dir, img_name)
+
+        # Open the image and convert it to grayscale
+        image = Image.open(img_path).convert("L")
+
+        # Apply the transformation based on the mode (train, test, val)
+        if self.transform:
+            image = self.transform(image)
+
+        # Map label to an index (AD -> 0, NC -> 1)
+        label_idx = 0 if label == 'AD' else 1
+        
+        return image, label_idx
+
 
 if __name__ == "__main__":
 
@@ -31,40 +69,52 @@ if __name__ == "__main__":
 
     print("Start DataLoading ...")
 
+    transform = {
+        'train': transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.CenterCrop(image_size),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5), (0.5))
+        ]),
+        'test': transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5), (0.5))
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5), (0.5))
+        ])
+    }
+    # Create train, test, and validation datasets
+    train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=transform, mode='train')
+    test_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'test'), transform=transform, mode='test')
 
-    # Transformations applied during data loading
-    transform_train=transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.CenterCrop(image_size),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5), (0.5))
-    ])
 
-    transform_test=transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5), (0.5))
-    ])
-
-    transform_val=transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5), (0.5))
-    ])
-
-    # Create the training and testing datasets using ImageFolder
-    train_dataset = ImageFolder(root=os.path.join(data_directory , 'train'), transform=transform_train)
-    test_dataset = ImageFolder(root=os.path.join(data_directory, 'test'), transform=transform_test)
-
-    # Create the DataLoader for train, test
+    # DataLoader for batching
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
-    # Print a few statistics about the dataset
+    # Print dataset statistics
     print(f"Number of training images: {len(train_dataset)}")
     print(f"Number of testing images: {len(test_dataset)}")
+    print(f"Classes in dataset: AD (0), NC (1)")
 
-    # Checking the dataset classes (AD and NC)
-    print(f"Classes in train dataset: {train_dataset.classes}")
-    print(f"Classes in test dataset: {test_dataset.classes}")
+     # iterate over DataLoader
+    data_iter = iter(train_loader)
+    images, labels = next(data_iter)
+
+    print(f"Batch size: {images.size(0)}")
+    print(f"Image size: {images.size()}")  # (batch_size, channels, height, width)
+    print(f"Labels: {labels}")  # Tensor containing the class indices
+
+    # visual to check if we can see the images
+    def imshow(img):
+        np_img = img.numpy()
+        plt.imshow(np.transpose(np_img, (1, 2, 0)))
+        plt.show()
+
+    imshow(torchvision.utils.make_grid(images[:4]))
+
 

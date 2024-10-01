@@ -1,19 +1,10 @@
-import imageio
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torchvision
-import torchvision.transforms as transforms
-import torchvision.utils as vutils
-import matplotlib.pyplot as plt
-import numpy as np
-import einops
-
 import dataset as ds
 
 
 class Diffusion(nn.Module):
-    def __init__(self, nwork, n_steps=200, min_beta=10**-4, max_beta=0.02, device=None, image_chw=(1,64,64)):
+    def __init__(self, nwork, n_steps=200, min_beta=10**-4, max_beta=0.02, device=None, image_chw=(3, 256, 256)):
         super(Diffusion, self).__init__()
         self.n_steps = n_steps
         self.device = device
@@ -45,19 +36,16 @@ def show_forward(diff, loader, device):
 
         ds.show_images(imgs, "Original images")
 
-        # for percent in [0.25, 0.5, 0.75, 1]:
-        #     ds.show_images(
-        #         diff(imgs.to(device),
-        #              [int(percent * diff.n_steps) - 1 for _ in range(len(imgs))]),
-        #         f"DDPM Noisy images {int(percent * 100)}%")
+        for percent in [0.25, 0.5, 0.75, 1]:
+            ds.show_images(
+                diff(imgs.to(device),
+                     [int(percent * diff.n_steps) - 1 for _ in range(len(imgs))]),
+                f"Noisy images {int(percent * 100)}%")
         break
 
-def generate_new_images(diff, n_samples=16, device=None, c=1, h=64, w=64):
+def generate_new_images(diff, n_samples=16, device=None, c=3, h=256, w=256):
     """Start with random noise and backtrack to t=0
     zeta_tau is estimate of noise and apply denoising"""
-    frame_idxs = np.linspace(0, diff.n_steps).astype(np.uint)
-    frames = []
-
     with torch.no_grad():
         if device is None:
             device = diff.device
@@ -79,7 +67,6 @@ def generate_new_images(diff, n_samples=16, device=None, c=1, h=64, w=64):
             if t > 0:
                 z = torch.randn(n_samples, c, h, w).to(device)
 
-                # Option 1: sigma_t squared = beta_t
                 beta_t = diff.betas[t]
                 sigma_t = beta_t.sqrt()
 
@@ -90,21 +77,6 @@ def generate_new_images(diff, n_samples=16, device=None, c=1, h=64, w=64):
 
                 # Adding some more noise like in Langevin Dynamics fashion
                 x = x + sigma_t * z
-
-            # Adding frames to the GIF
-            if idx in frame_idxs or t == 0:
-                # Putting digits in range [0, 255]
-                normalized = x.clone()
-                for i in range(len(normalized)):
-                    normalized[i] -= torch.min(normalized[i])
-                    normalized[i] *= 255 / torch.max(normalized[i])
-
-                # Reshaping batch (n, c, h, w) to be a (as much as it gets) square frame
-                frame = einops.rearrange(normalized, "(b1 b2) c h w -> (b1 h) (b2 w) c", b1=int(n_samples ** 0.5))
-                frame = frame.cpu().numpy().astype(np.uint8)
-
-                # Rendering frame
-                frames.append(frame)
 
         return x
 
@@ -138,7 +110,7 @@ def sinusoidal_embedding(n, d):
     return embedding
 
 class UNet(nn.Module):
-    def __init__(self, n_steps=1000, time_emb_dim=100):
+    def __init__(self, n_steps=10000, time_emb_dim=100):
         super(UNet, self).__init__()
 
         # Sinusoidal embedding
@@ -147,65 +119,65 @@ class UNet(nn.Module):
         self.time_embed.requires_grad_(False)
 
         # First half
-        self.te1 = self.posi_map(time_emb_dim, 1)
+        self.te1 = self.pos_map(time_emb_dim, 1)
         self.b1 = nn.Sequential(
-            BasicBlock((1, 64, 64), 1, 10),
-            BasicBlock((10, 64, 64), 10, 10),
-            BasicBlock((10, 64, 64), 10, 10)
+            BasicBlock((3, 256, 256), 3, 10),
+            BasicBlock((10, 256, 256), 10, 10),
+            BasicBlock((10, 256, 256), 10, 10)
         )
         self.down1 = nn.Conv2d(10, 10, 4, 2, 1)
 
-        self.te2 = self.posi_map(time_emb_dim, 10)
+        self.te2 = self.pos_map(time_emb_dim, 10)
         self.b2 = nn.Sequential(
-            BasicBlock((10, 32, 32), 10, 20),
-            BasicBlock((20, 32, 32), 20, 20),
-            BasicBlock((20, 32, 32), 20, 20)
+            BasicBlock((10, 128, 128), 10, 20),
+            BasicBlock((20, 128, 128), 20, 20),
+            BasicBlock((20, 128, 128), 20, 20)
         )
         self.down2 = nn.Conv2d(20, 20, 4, 2, 1)
 
-        self.te3 = self.posi_map(time_emb_dim, 20)
+        self.te3 = self.pos_map(time_emb_dim, 20)
         self.b3 = nn.Sequential(
-            BasicBlock((20, 16, 16), 20, 40),
-            BasicBlock((40, 16, 16), 40, 40),
-            BasicBlock((40, 16, 16), 40, 40)
+            BasicBlock((20, 64, 64), 20, 40),
+            BasicBlock((40, 64, 64), 40, 40),
+            BasicBlock((40, 64, 64), 40, 40)
         )
         self.down3 = nn.Conv2d(40, 40, 4, 2, 1)
 
         # Bottleneck
-        self.te_mid = self.posi_map(time_emb_dim, 40)
+        self.te_mid = self.pos_map(time_emb_dim, 40)
         self.b_mid = nn.Sequential(
-            BasicBlock((40, 8, 8), 40, 20),
-            BasicBlock((20, 8, 8), 20, 20),
-            BasicBlock((20, 8, 8), 20, 40)
+            BasicBlock((40, 32, 32), 40, 20),
+            BasicBlock((20, 32, 32), 20, 20),
+            BasicBlock((20, 32, 32), 20, 40)
         )
 
         # Second half
         self.up1 = nn.ConvTranspose2d(40, 40, 4, 2, 1)
 
-        self.te4 = self.posi_map(time_emb_dim, 80)
+        self.te4 = self.pos_map(time_emb_dim, 80)
         self.b4 = nn.Sequential(
-            BasicBlock((80, 16, 16), 80, 40),
-            BasicBlock((40, 16, 16), 40, 20),
-            BasicBlock((20, 16, 16), 20, 20)
+            BasicBlock((80, 64, 64), 80, 40),
+            BasicBlock((40, 64, 64), 40, 20),
+            BasicBlock((20, 64, 64), 20, 20)
         )
 
         self.up2 = nn.ConvTranspose2d(20, 20, 4, 2, 1)
-        self.te5 = self.posi_map(time_emb_dim, 40)
+        self.te5 = self.pos_map(time_emb_dim, 40)
         self.b5 = nn.Sequential(
-            BasicBlock((40, 32, 32), 40, 20),
-            BasicBlock((20, 32, 32), 20, 10),
-            BasicBlock((10, 32, 32), 10, 10)
+            BasicBlock((40, 128, 128), 40, 20),
+            BasicBlock((20, 128, 128), 20, 10),
+            BasicBlock((10, 128, 128), 10, 10)
         )
 
         self.up3 = nn.ConvTranspose2d(10, 10, 4, 2, 1)
-        self.te_out = self.posi_map(time_emb_dim, 20)
+        self.te_out = self.pos_map(time_emb_dim, 20)
         self.b_out = nn.Sequential(
-            BasicBlock((20, 64, 64), 20, 10),
-            BasicBlock((10, 64, 64), 10, 10),
-            BasicBlock((10, 64, 64), 10, 10, normalize=False)
+            BasicBlock((20, 256, 256), 20, 10),
+            BasicBlock((10, 256, 256), 10, 10),
+            BasicBlock((10, 256, 256), 10, 10, normalize=False)
         )
 
-        self.conv_out = nn.Conv2d(10, 1, 3, 1, 1)
+        self.conv_out = nn.Conv2d(10, 3, 3, 1, 1)
 
     def forward(self, x, t):
         # x is (N, 2, 64, 64) (image with positional embedding stacked on channel dimension)
@@ -230,17 +202,8 @@ class UNet(nn.Module):
 
         return out
 
-    def posi_map(self, dim_in, dim_out):
+    def pos_map(self, dim_in, dim_out):
         return nn.Sequential(
             nn.Linear(dim_in, dim_out),
             nn.SiLU(),
             nn.Linear(dim_out, dim_out))
-
-# Defining model
-n_steps, min_beta, max_beta = 1000, 10 ** -4, 0.02  # Originally used by the authors
-ddpm = Diffusion(UNet(n_steps), n_steps=n_steps, min_beta=min_beta, max_beta=max_beta, device=ds.device)
-
-show_forward(ddpm, ds.dataloader, ds.device)
-
-generated = generate_new_images(ddpm)
-ds.show_images(generated, "Images")

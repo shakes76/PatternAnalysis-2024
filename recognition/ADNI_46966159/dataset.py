@@ -1,16 +1,14 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-import torchvision.utils as vutils
 import matplotlib.pyplot as plt
-import numpy as np
 
 # specify directory of data
 dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/ADNI_46966159/ADNI"
 # dataroot = "/home/groups/comp3710/ADNI"
 
-batch_size = 128
-n_epochs = 20
+batch_size = 28
+n_epochs = 200
 epsilon = 0.001
 image_size = 256
 
@@ -25,7 +23,7 @@ dataset = torchvision.datasets.ImageFolder(root=dataroot,
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                          shuffle=True, num_workers=2)
 
-# Decide which device we want to run on
+# pick device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -40,7 +38,7 @@ def show_images(images, title=""):
     rows = int(len(images) ** (1 / 2))
     cols = round(len(images) / rows)
 
-    # Populating figure with sub-plots
+    # sub-plots
     idx = 0
     for i in range(rows):
         for j in range(cols):
@@ -53,3 +51,4 @@ def show_images(images, title=""):
 
     # Showing the figure
     plt.show()
+

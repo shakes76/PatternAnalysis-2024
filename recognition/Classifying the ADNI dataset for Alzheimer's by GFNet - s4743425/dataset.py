@@ -6,7 +6,7 @@ import torch
 import os
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision.datasets import ImageFolder
 import torchvision.utils as vutils
 import numpy as np
@@ -37,8 +37,8 @@ class ADNIDataset(Dataset):
         img_name, label = self.image_filenames[idx]
         img_path = os.path.join(self.data_dir, img_name)
 
-        # Open the image and convert it to grayscale
-        image = Image.open(img_path).convert("L")
+        # Open the image and check all same
+        image = Image.open(img_path).convert("RGB")
 
         # Apply the transformation based on the mode (train, test, val)
         if self.transform:
@@ -69,24 +69,29 @@ if __name__ == "__main__":
 
     print("Start DataLoading ...")
 
+    # the mean and std values are hardcoded here, previously calculated in utils.py from the training data
     transform = {
         'train': transforms.Compose([
             transforms.Resize(image_size),
             transforms.CenterCrop(image_size),
             transforms.ToTensor(),
-            transforms.Normalize((0.5), (0.5))
+            transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
         ]),
         'test': transforms.Compose([
             transforms.Resize(image_size),
             transforms.ToTensor(),
-            transforms.Normalize((0.5), (0.5))
+            transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
         ]),
-        'val': transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5), (0.5))
-        ])
     }
+
+     # Create the complete dataset for training
+    complete_train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=transform, mode='train')
+
+    # Split the training dataset: 80% training, 20% validation
+    train_size = int(0.8 * len(complete_train_dataset))
+    val_size = len(complete_train_dataset) - train_size
+    train_dataset, val_dataset = random_split(complete_train_dataset, [train_size, val_size])
+
     # Create train, test, and validation datasets
     train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=transform, mode='train')
     test_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'test'), transform=transform, mode='test')
@@ -94,7 +99,9 @@ if __name__ == "__main__":
 
     # DataLoader for batching
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+    val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+    
 
     # Print dataset statistics
     print(f"Number of training images: {len(train_dataset)}")

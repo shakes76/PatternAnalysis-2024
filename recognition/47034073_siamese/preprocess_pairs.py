@@ -92,9 +92,12 @@ def _summarise_num_pairs(benign_df: pd.DataFrame, malignant_df: pd.DataFrame) ->
     pos_malig = math.comb(len(malignant_df), 2)
     neg = len(benign_df) * len(malignant_df)
     logger.info(
-        f"Num positive benign pairs {pos_benign}\n"
-        f"Num positive malignant pairs {pos_malig}\n"
-        f"Num negative pairs {neg}"
+        "Num positive benign pairs %d\n"
+        "Num positive malignant pairs %d\n"
+        "Num negative pairs %d",
+        pos_benign,
+        pos_malig,
+        neg,
     )
 
 

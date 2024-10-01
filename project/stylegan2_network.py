@@ -51,7 +51,7 @@ class FullyConnectedLayer(nn.Module):
         self.batch_norm = nn.BatchNorm1d(out_features) if batch_norm else None
         self.layer_norm = nn.LayerNorm(out_features) if layer_norm else None
         
-        # Initialise weights and biases
+        # Init weights and biases
         self.weight = nn.Parameter(torch.Tensor(out_features, in_features))
         if bias:
             self.bias = nn.Parameter(torch.Tensor(out_features))
@@ -126,11 +126,11 @@ class MappingNetwork(nn.Module):
         dropout (float, optional): Dropout rate. Defaults to 0.1.
     """
     def __init__(self,
-                 z_dim,         # Dimension of input latent code z
-                 w_dim,         # Dimension of intermediate latent code w
-                 num_layers,    # Number of layers in mapping network
-                 label_dim,     # Dimension of label embedding
-                 dropout=0.1    # Dropout rate
+                 z_dim, 
+                 w_dim,
+                 num_layers,
+                 label_dim,
+                 dropout=0.1
                 ):
         super().__init__()
         
@@ -162,12 +162,12 @@ class NoiseInjection(nn.Module):
     """
     Noise Injection module for StyleGAN2.
     
-    This module adds learnable per-pixel noise to the output of convolutional layers
-    in the generator. It helps in generating fine details and stochastic variations
+    Module adds learnable per-pixel noise to the output of convolutional layers
+    in the generator. Helps in generating fine details and stochastic variations
     in the created images.
 
     Args:
-        channels (int): Number of input channels.
+        channels (int): Num input channels.
     """
     def __init__(self, 
                  channels
@@ -178,7 +178,7 @@ class NoiseInjection(nn.Module):
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
     
     def forward(self, x, noise=None):
-        """Apply noise injection to the input tensor."""
+        """Inject noise in input tensor."""
         if noise is None:
             # Generate random noise if not provided
             batch, _, height, width = x.shape
@@ -237,12 +237,12 @@ class ModulatedConv2d(nn.Module):
         Forward pass of modulated convolution layer.
         
         Args:
-            x (Tensor): Input feature map
-            style (Tensor): Style vector
-            noise (Tensor, optional): Noise tensor for injection
+            x (Tensor): Input feature map.
+            style (Tensor): Style vector.
+            noise (Tensor, optional): Noise tensor for injection.
         
         Returns:
-            Tensor: Output feature map after modulated convolution and noise injection
+            Tensor: Output feature map after modulated convolution and noise injection.
         """
         batch, in_channels, height, width = x.shape
 
@@ -284,4 +284,40 @@ class ModulatedConv2d(nn.Module):
 
         return out
 
- 
+
+class SynthesisBlock(nn.Module):
+    """
+    Synthesis Block for StyleGAN2.
+
+    Block contains modulated convolution, noise injection, and activation.
+
+    Args:
+        in_channels (int): Num input channels.
+        out_channels (int): Num output channels.
+        style_dim (int): Dim of style vector.
+        kernel_size (int, optional): Size of conv kernel. Defaults to 3.
+        up (int, optional): Upsampling factor. Defaults to 1.
+        final_resolution (tuple, optional): Final resolution for last block. Defaults to None.
+    """
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 style_dim,
+                 kernel_size=3,
+                 up=1,
+                 final_resolution=None
+                ):
+        super().__init__()
+        self.up = up
+        self.final_resolution = final_resolution
+        self.conv = ModulatedConv2d(in_channels, out_channels, kernel_size, style_dim, up=up)
+        self.noise = NoiseInjection(out_channels)
+        self.activate = nn.LeakyReLU(0.2)
+
+    def forward(self, x, style, noise=None):
+        x = self.conv(x, style)  # Upsampling handled in ModulatedConv2d
+        x = self.noise(x, noise=noise)
+        x = self.activate(x)
+        if self.final_resolution: # Get 256x240 output
+            x = F.interpolate(x, size=self.final_resolution, mode='bilinear', align_corners=False)
+        return x

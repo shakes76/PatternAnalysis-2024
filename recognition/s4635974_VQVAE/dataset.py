@@ -96,5 +96,14 @@ print("Shape of the image:", image_data.shape)
 # Load the single image using load_data_2D
 img = load_data_2D([file_path])  # Pass a list with the file path
 
+# Extract the image slice (assuming it's a single slice)
+image_slice = img[0]  # This gives you the 2D array of the first (and only) image
+
+# Save the image using matplotlib
+plt.imshow(image_slice, cmap='gray')  # Use 'gray' colormap for grayscale images
+plt.axis('off')  # Hide axis
+plt.savefig('case_012_week_6_slice_25.png', bbox_inches='tight', pad_inches=0)  # Save without padding
+plt.close()  # Close the plot
+
 
 print("End")

@@ -22,6 +22,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
         res[..., c:c+1][arr == c] = 1
     return res
 
+# Helper function to ensure all images are of the same size
 def resize_image(inImage, target_shape):
     # Get the zoom factors for resizing
     zoom_factors = [
@@ -102,27 +103,49 @@ class HipMRIDataset(Dataset):
         
         return image
 
-def save_sample_images(dataset, num_images=5, save_dir='saved_images'):
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    dataloader = DataLoader(dataset, batch_size=num_images, shuffle=True)
-    
-    images = next(iter(dataloader))
-    
-    # Loop over images and save each one
-    for i in range(num_images):
-        image = images[i].numpy()
-        plt.imshow(image, cmap='gray')
-        plt.axis('off')
+# Dataloader class for HipMRI data
+class HipMRILoader:
+    def __init__(self, train_dir, validate_dir, test_dir, batch_size=128, transform=None, num_workers=4):
+        self.batch_size = batch_size
+        self.transform = transform
         
-        save_path = os.path.join(save_dir, f'sample_image_{i}.png')
-        plt.savefig(save_path)
-        plt.close()  # Close figure after saving to avoid overwriting
+        # Create datasets
+        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)
+        self.validate_dataset = HipMRIDataset(validate_dir, transform=self.transform, normImage=True)
+        self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=True)  # No transforms for test data
+        
+        # Create data loaders
+        self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=num_workers)
+        self.validate_loader = DataLoader(self.validate_dataset, batch_size=self.batch_size, shuffle=False, num_workers=num_workers)
+        self.test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=num_workers)
 
-dataset = HipMRIDataset(train_dir, normImage=True)
+    def get_loaders(self):
+        return self.train_loader, self.validate_loader, self.test_loader
+    
 
-save_sample_images(dataset, num_images=5)
+
+
+# def save_sample_images(dataset, num_images=5, save_dir='saved_images'):
+#     if not os.path.exists(save_dir):
+#         os.makedirs(save_dir)
+
+#     dataloader = DataLoader(dataset, batch_size=num_images, shuffle=True)
+    
+#     images = next(iter(dataloader))
+    
+#     # Loop over images and save each one
+#     for i in range(num_images):
+#         image = images[i].numpy()
+#         plt.imshow(image, cmap='gray')
+#         plt.axis('off')
+        
+#         save_path = os.path.join(save_dir, f'sample_image_{i}.png')
+#         plt.savefig(save_path)
+#         plt.close()  # Close figure after saving to avoid overwriting
+
+# dataset = HipMRIDataset(train_dir, normImage=True)
+
+# save_sample_images(dataset, num_images=5)
 
 # print("Start")
 # # Specify the file path

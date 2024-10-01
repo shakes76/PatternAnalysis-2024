@@ -77,46 +77,19 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
     
-# Custom Dataset class for loading data into PyTorch
-class HipMRIDataset(Dataset):
-    def __init__(self, image_dir, transform=None, normImage=False):
-        self.image_dir = image_dir
-        self.image_names = [os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if fname.endswith('.nii.gz')]
-        self.transform = transform
-        self.images = load_data_2D(self.image_names, normImage=normImage)  # Load all images
 
-    def __len__(self):
-        return len(self.images)
-
-    def __getitem__(self, idx):
-        image = self.images[idx]
-        image = torch.tensor(image, dtype=torch.float32)
-        
-        if self.transform:
-            image = self.transform(image)
-        
-        return image
-
-def save_sample_images(dataset, num_images=5, save_dir='saved_images'):
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    dataloader = DataLoader(dataset, batch_size=num_images, shuffle=True)
-    
-    images = next(iter(dataloader))
-    
-    # Loop over images and save each one
-    for i in range(num_images):
-        image = images[i].numpy()
-        plt.imshow(image, cmap='gray')
-        plt.axis('off')
-        
-        save_path = os.path.join(save_dir, f'sample_image_{i}.png')
-        plt.savefig(save_path)
-        plt.close()  # Close figure after saving to avoid overwriting
 
 #dataset = HipMRIDataset(train_dir, normImage=True)
 
 # save_sample_images(dataset, num_images=5)
 
-print("test....")
+print("start")
+# Specify the file path
+file_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train/case_012_week_6_slice_25.nii.gz'
+
+# Load the NIfTI file
+image_data = nib.load(file_path).get_fdata(caching='unchanged')
+
+# Check the shape of the image
+print("Shape of the image:", image_data.shape)
+print("End")

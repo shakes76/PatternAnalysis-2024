@@ -26,12 +26,12 @@ class TumorTrainer:
 
     def _train_epoch(self, train_loader):
         for x1, x2, y in train_loader:
-            x1.to(device)
-            x2.to(device)
-            y.to(device)
+            x1 = x1.to(device)
+            x2 = x2.to(device)
+            y = y.float().to(device)
             self._optim.zero_grad()
-            distances = self._model(x1, x2)
-            loss = binary_cross_entropy_with_logits(distances, y)
+            logits = self._model(x1, x2)
+            loss = binary_cross_entropy_with_logits(logits.flatten(), y)
             loss.backward()
             self._optim.step()
 

@@ -332,6 +332,15 @@ class SynthesisBlock(nn.Module):
     
     
 class ResidualBlock(nn.Module):
+    """
+    Residual blcok for StyleGAN2.
+
+    2 convs, skip connection, optional downsampling.
+    Args:
+        in_channels (int): Num input channels
+        out_channels (int): Num output channels
+        downsample (bool, optional): Use avg pooling to downsample? Defaults to True.
+    """
     def __init__(self, in_channels, out_channels, downsample=True):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, in_channels, 3, padding=1)
@@ -341,6 +350,15 @@ class ResidualBlock(nn.Module):
         self.activation = nn.LeakyReLU(0.2)
 
     def forward(self, x):
+        """
+        Forward pass of Residual Block.
+
+        Args:
+            x (torch.Tensor): Input tensor - shape [N, in_channels, H, W]
+
+        Returns:
+            torch.Tensor: Processed tensor - shape [N, out_channels, H', W']
+        """
         residual = self.skip(x)
         if self.downsample:
             residual = F.avg_pool2d(residual, 2)
@@ -355,18 +373,17 @@ class ResidualBlock(nn.Module):
     
 class MiniBatchStdDev(nn.Module):
     """
-    Caclulate std dev of features across mini-batches
-    and concatenate to input features.
-    Helps discriminator better distinguish real and generated images.
+    Caclulate std dev of features across mini-batches, add to input features.
+    Helps discriminator better find real and generated images.
     """
     def __init__(self, group_size=4, num_new_features=1):
         """
         Initialise MiniBatchStdDev layer.
 
         Args:
-            group_size (int): Num images in each group for std calculation.
-                              If None - entire batch used.
-            num_new_features (int): Num stddev features added to each pixel.
+            group_size (int, optional): Num images per group for std calc. Defaults to 4.
+                              If None - use whole batch.
+            num_new_features (int, optional): Num stddev features per pixel. Defaults to 1.
         """
         super().__init__()
         self.group_size = group_size
@@ -380,7 +397,7 @@ class MiniBatchStdDev(nn.Module):
             x (torch.Tensor): Input tensor - shape [N, C, H, W]
 
         Returns:
-            torch.Tensor: Output tensor with stddev features appended - shape [N, C+1, H, W]
+            torch.Tensor: Output tensor with stddev features - shape [N, C+1, H, W]
         """
         N, C, H, W = x.shape
         

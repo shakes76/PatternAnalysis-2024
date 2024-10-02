@@ -9,9 +9,9 @@ from dataset import *
 data = Dataset()
 device = data.device
 
-encoder = Encoder()
-decoder = Decoder()
-unet = UNet()
+encoder = Encoder().to(device)
+decoder = Decoder().to(device)
+unet = UNet().to(device)
 
 optimizer = torch.optim.Adam(list(encoder.parameters()) + 
                              list(decoder.parameters()) + 
@@ -37,7 +37,7 @@ def train_model(dataloader = data.train_dataloader, epochs=10):
             print(len(diffused))
             optimizer.zero_grad()
             outputs = encoder(diffused[rnd.randint(0,99)])
-            print(len(outputs))
+            print(outputs.shape)
             loss = criterion(outputs, noise)
             loss.backward()
             optimizer.step()

@@ -20,7 +20,7 @@ class Dataset():
     '''
     def __init__(self, 
                  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-                 batch_size = 128) -> None:
+                 batch_size = 64) -> None:
         self.device = device
 
         #paths to datasets
@@ -28,9 +28,9 @@ class Dataset():
         adni_data_path_test = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test'))
 
         transforms = tvtransforms.Compose([
-            tvtransforms.Grayscale(), #grascale images 
-            tvtransforms.Resize(256), #the next two lines decrease the resolution to 64x64
-            tvtransforms.CenterCrop(256),
+            #tvtransforms.Grayscale(), #grascale images 
+            tvtransforms.Resize(64), #the next two lines decrease the resolution to 64x64
+            tvtransforms.CenterCrop(64),
             tvtransforms.ToTensor(), #turn the datat into a tensor if its not already
             tvtransforms.Normalize(0.5,0.5)]) #normilze the data 0.5 beacuse values between 0-1 so 0.5 is just good general value
 

@@ -10,7 +10,7 @@ class Encoder(nn.Module):
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1), # B, 128, 64, 64
             nn.ReLU(),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1), # B, 256, 32, 32
+            nn.Conv2d(128, 128, kernel_size=4, stride=2, padding=1), # B, 256, 32, 32
             nn.ReLU(),
         )
         
@@ -34,30 +34,6 @@ class Decoder(nn.Module):
     def forward(self, x):
         reconstruction = self.decoder(x)
         return reconstruction
-
-class UNet(nn.Module):
-    def __init__(self):
-        super(UNet, self).__init__()
-        # Contracting path
-        self.down1 = nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
-        self.down2 = nn.Conv2d(512, 1024, kernel_size=3, stride=1, padding=1)
-
-        self.relu = nn.ReLU()
-        
-        # Expanding path
-        self.up1 = nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2, padding=1)
-        self.up2 = nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1)
-    
-    def forward(self, x):
-        # Contracting path
-        down1 = self.relu(self.down1(x))
-        down2 = self.relu(self.down2(down1))
-        
-        # Expanding path
-        up1 = self.relu(self.up1(down2))
-        up2 = self.relu(self.up2(up1))
-        
-        return up2
 
 def forward_diffusion(x_0, timesteps, beta):
     noise = torch.randn_like(x_0)

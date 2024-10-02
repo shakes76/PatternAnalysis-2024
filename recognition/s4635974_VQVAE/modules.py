@@ -36,5 +36,25 @@ class Encoder(nn.Module):
         x = self.res_block2(x)
         return x
 
-
+class Decoder(nn.Module):
+    def __init__(self, in_channels, num_hiddens, num_residual_hiddens):
+        super(Decoder, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, num_hiddens, 
+                               kernel_size=3, stride=1, padding=1)
+        self.res_block1 = ResidualBlock(num_hiddens, num_hiddens, num_residual_hiddens)  # Residual block
+        self.res_block2 = ResidualBlock(num_hiddens, num_hiddens, num_residual_hiddens)  # Residual block
+        self.deconv1 = nn.ConvTranspose2d(num_hiddens, num_hiddens // 2, 
+                                          kernel_size=4, stride=2, padding=1)  # Transposed conv
+        self.relu = nn.ReLU()
+        self.deconv2 = nn.ConvTranspose2d(num_hiddens // 2, out_channels=1, 
+                                          kernel_size=4, stride=2, padding=1)  # Transposed conv
+    
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.res_block1(x)
+        x = self.res_block2(x)
+        x = self.deconv1(x)
+        x = self.relu(x)
+        x = self.deconv2(x)
+        return x
 

@@ -1,0 +1,3 @@
+# Ignore the data folder for the node classification task
+recognition/gnn-node-classification-TsungTseTu/data/
+

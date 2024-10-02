@@ -6,25 +6,25 @@ from torchvision import transforms
 
 class ADNIDataset(Dataset):
     """
-    A custom Dataset class for the ADNI brain image dataset.
-    This class handles grayscale JPEG images of size 256x240 pixels,
-    organised in AD (Alzheimer's Disease) and NC (Normal Control) categories.
+    Dataset class for ADNI brain image dataset.
+    Handles grayscale JPEG images - size 256x240.
+    Labeled in AD (Alzheimer's Disease) and NC (Normal Control) categories.
     """
     def __init__(self, 
-                 root_dir,          # Directory with the images.
-                 split='train',     # Use train or test images.
-                 transform=None     # Optional transform to apply to sample.
+                 root_dir,          # Directory with images.
+                 split='train',     # Use train or test images?
+                 transform=None     # Optional transform to sample.
                 ):   
         self.root_dir = root_dir
         self.split = split
         self.image_paths = []
         self.labels = []
         
-        # Define default transformations if none provided
+        # Define transformations if None
         if transform is None:
             self.transform = transforms.Compose([
                 transforms.Grayscale(),
-                transforms.Resize((256, 240)),  # Adjust if needed to match exact dimensions
+                transforms.Resize((256, 240)),
                 transforms.ToTensor(),
                 transforms.Normalize([0.5], [0.5])  # [-1, 1] normalisation
             ])

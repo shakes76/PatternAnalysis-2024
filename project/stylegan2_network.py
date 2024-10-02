@@ -310,14 +310,103 @@ class SynthesisBlock(nn.Module):
         super().__init__()
         self.up = up
         self.final_resolution = final_resolution
-        self.conv = ModulatedConv2d(in_channels, out_channels, kernel_size, style_dim, up=up)
-        self.noise = NoiseInjection(out_channels)
+        self.conv1 = ModulatedConv2d(in_channels, out_channels, style_dim, kernel_size=3)
+        self.conv2 = ModulatedConv2d(out_channels, out_channels, style_dim, kernel_size=3, up=up)
+        self.noise1 = NoiseInjection(out_channels)
+        self.noise2 = NoiseInjection(out_channels)
         self.activate = nn.LeakyReLU(0.2)
 
     def forward(self, x, style, noise=None):
-        x = self.conv(x, style)  # Upsampling handled in ModulatedConv2d
-        x = self.noise(x, noise=noise)
+        # Decerease channel num first - transform features first, then upsample
+        x = self.conv1(x, style)
+        x = self.noise1(x, noise=noise)
         x = self.activate(x)
-        if self.final_resolution: # Get 256x240 output
+        # Upsampling handled in ModulatedConv2d
+        x = self.conv2(x, style)  
+        x = self.noise2(x, noise=noise)
+        x = self.activate(x)
+        
+        if self.final_resolution: # Get 256x240 output via this
             x = F.interpolate(x, size=self.final_resolution, mode='bilinear', align_corners=False)
         return x
+    
+    
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, downsample=True):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels, in_channels, 3, padding=1)
+        self.conv2 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.skip = nn.Conv2d(in_channels, out_channels, 1, bias=False)
+        self.downsample = downsample
+        self.activation = nn.LeakyReLU(0.2)
+
+    def forward(self, x):
+        residual = self.skip(x)
+        if self.downsample:
+            residual = F.avg_pool2d(residual, 2)
+
+        out = self.activation(self.conv1(x))
+        out = self.activation(self.conv2(out))
+        if self.downsample:
+            out = F.avg_pool2d(out, 2)
+
+        return out + residual
+    
+    
+class MiniBatchStdDev(nn.Module):
+    """
+    Caclulate std dev of features across mini-batches
+    and concatenate to input features.
+    Helps discriminator better distinguish real and generated images.
+    """
+    def __init__(self, group_size=4, num_new_features=1):
+        """
+        Initialise MiniBatchStdDev layer.
+
+        Args:
+            group_size (int): Num images in each group for std calculation.
+                              If None - entire batch used.
+            num_new_features (int): Num stddev features added to each pixel.
+        """
+        super().__init__()
+        self.group_size = group_size
+        self.num_new_features = num_new_features
+
+    def forward(self, x):
+        """
+        Forward pass of MiniBatchStdDev layer.
+
+        Args:
+            x (torch.Tensor): Input tensor - shape [N, C, H, W]
+
+        Returns:
+            torch.Tensor: Output tensor with stddev features appended - shape [N, C+1, H, W]
+        """
+        N, C, H, W = x.shape
+        
+        # Calc group size
+        G = min(self.group_size or N, N)
+
+        # Reshape input: [G, M, num_new_features, C // num_new_features, H, W]
+        # G: num groups
+        # M: num images per group
+        # C: input channels
+        grouped_input = x.view(G, -1, self.num_new_features, C // self.num_new_features, H, W)
+
+        # Calc stddev for each group
+        # Add epsilon (1e-8) to prevent div by zero
+        stddev = torch.sqrt(grouped_input.var(dim=1, unbiased=False) + 1e-8)
+
+        # Avg stddev over the "num_new_features" and "C // num_new_features" dim
+        stddev = stddev.mean(dim=[2, 3])
+
+        # Expand stddev tensor - match input tensor spatial dim
+        stddev = stddev.expand(G, -1, H, W).contiguous()
+        
+        # Reshape stddev - match input batch size
+        stddev = stddev.view(N, -1, H, W)
+
+        # Concat calcd stddev to original input
+        output = torch.cat([x, stddev], dim=1)
+
+        return output

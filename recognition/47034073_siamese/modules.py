@@ -17,7 +17,7 @@ class HyperParams:
 class TumorTrainer:
     def __init__(self, hparams: HyperParams):
         self._model = TumorTower().to(device)
-        self._optim = nn.optim.Adam(self._model.parameters())
+        self._optim = torch.optim.Adam(self._model.parameters())
         self._hparams = hparams
 
     def train(self, train_loader):

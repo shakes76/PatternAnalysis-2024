@@ -73,14 +73,15 @@ if __name__ == "__main__":
     transform = {
         'train': transforms.Compose([
             transforms.Resize(image_size),
+            transforms.RandAugment(num_ops=4),
             transforms.CenterCrop(image_size),
             transforms.ToTensor(),
-            transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
+            transforms.Normalize((0.5, 0.5, 0.5), (0.2253, 0.2253, 0.2253))
         ]),
         'test': transforms.Compose([
             transforms.Resize(image_size),
             transforms.ToTensor(),
-            transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
+            transforms.Normalize((0.5, 0.5, 0.5), (0.2253, 0.2253, 0.2253))
         ]),
     }
 
@@ -118,6 +119,7 @@ if __name__ == "__main__":
 
     # visual to check if we can see the images
     def imshow(img):
+        
         np_img = img.numpy()
         plt.imshow(np.transpose(np_img, (1, 2, 0)))
         plt.show()

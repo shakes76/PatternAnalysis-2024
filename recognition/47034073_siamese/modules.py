@@ -18,9 +18,9 @@ class HyperParams:
 
 
 class TumorClassifier:
-    def __init__(self, hparams: HyperParams):
+    def __init__(self, hparams: HyperParams) -> None:
         self._model = TumorTower().to(device)
-        self._optim = torch.optim.Adam(self._model.parameters())
+        self._optim = torch.optim.Adam(params=self._model.parameters())
         self._hparams = hparams
         self._losses = []
         self._benign_centroid = None
@@ -32,10 +32,10 @@ class TumorClassifier:
             logger.debug("hello")
             logger.info("Epoch %d / loss %e", epoch, self._losses[-1])
 
-    def compute_centroids(self, loader: DataLoader)
+    def compute_centroids(self, loader: DataLoader) -> None:
         self._benign_centroid = None
         self._malignant_centroid = None
-        
+
         num_benign = 0
         num_malignant = 0
         with torch.inference_mode():
@@ -43,15 +43,15 @@ class TumorClassifier:
                 x = x.to(device)
                 embeddings = self._model.compute_embedding(x)
 
-                if self._benign_centroid == None:
+                if self._benign_centroid is None:
                     embedding_dim = embeddings.shape[1]
                     self._benign_centroid = torch.zeros(embedding_dim)
-                if self._malignant_centroid == None:
+                if self._malignant_centroid is None:
                     self._malignant_centroid = torch.zeros(embedding_dim)
 
                 benign = embeddings[labels == 0]
                 malignant = embeddings[labels == 1]
-                
+
                 num_benign += len(benign)
                 num_malignant += len(malignant)
 
@@ -61,7 +61,7 @@ class TumorClassifier:
             self._benign_centroid /= num_benign
             self._malignant_centroid /= num_malignant
 
-    def _train_epoch(self, train_loader):
+    def _train_epoch(self, train_loader) -> None:
         avg_loss = 0.0
         n = 0
         for x1, x2, y in train_loader:
@@ -81,7 +81,6 @@ class TumorClassifier:
         self._losses.append(avg_loss)
 
 
-
 class TumorTower(nn.Module):
     def __init__(self):
         super().__init__()
@@ -90,7 +89,7 @@ class TumorTower(nn.Module):
         # Makes output in feature space
         self._backbone.classifer = nn.Identity()
 
-        # Weighted summation of component differences
+        # Weighted summation of component differencess
         self._component_adder = nn.Linear(1000, 1, bias=False)
 
     def forward(self, x1, x2):
@@ -99,6 +98,6 @@ class TumorTower(nn.Module):
         component_diffs = torch.abs(embeddings1 - embeddings2)
         distances = self._component_adder(component_diffs)
         return distances
-    
+
     def compute_embedding(self, x: torch.Tensor):
         return self._backbone(x)

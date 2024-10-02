@@ -16,6 +16,35 @@ class ResidualBlock(nn.Module):
     
     def forward(self, x):
         return x + self.block(x)  # Skip connection
+
+class VectorQuantizer(nn.Module):
+    def __init__(self, num_embeddings, embedding_dim):
+        super(VectorQuantizer, self).__init__()
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+        self.embeddings = nn.Embedding(num_embeddings, embedding_dim)
+        self.embeddings.weight.data.uniform_(-1/num_embeddings, 1/num_embeddings)
+    
+    def forward(self, z_e):
+        z_e_flattened = z_e.view(-1, self.embedding_dim)
+        distances = torch.sum(z_e_flattened ** 2, dim=1, keepdim=True) + \
+                    torch.sum(self.embeddings.weight ** 2, dim=1) - \
+                    2 * torch.matmul(z_e_flattened, self.embeddings.weight.t())
+        encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+        quantized = self.embeddings(encoding_indices).view_as(z_e)
+        quantized = z_e + (quantized - z_e).detach()
+        
+        return quantized, encoding_indices
+
+def vq_loss(quantized, z_e, beta=0.25):
+    # Reconstruction loss (scaled by beta)
+    recon_loss = beta * torch.mean((quantized.detach() - z_e) ** 2)
+    
+    # Commitment loss (not scaled)
+    commitment_loss = torch.mean((quantized - z_e.detach()) ** 2)
+    
+    # Combine both losses
+    return recon_loss + commitment_loss
     
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_hiddens):

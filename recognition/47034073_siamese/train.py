@@ -4,7 +4,7 @@ import pathlib
 import pandas as pd
 from torch.utils.data import DataLoader
 
-from modules import TumorTrainer, HyperParams
+from modules import TumorClassifier, HyperParams
 from dataset import TumorPairDataset
 
 logger = logging.getLogger(__name__)
@@ -18,9 +18,10 @@ IMAGES_PATH = DATA_PATH / "train"
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    hparams = HyperParams()
-    trainer = TumorTrainer(hparams)
+    hparams = HyperParams(batch_size=128)
+    trainer = TumorClassifier(hparams)
     pairs_df = pd.read_csv(PAIRS_PATH)
+    pairs_df = pairs_df.sample(random_state=42, n=1000)
     dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
     train_loader = DataLoader(
         dataset,

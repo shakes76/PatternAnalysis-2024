@@ -25,7 +25,7 @@ class TumorPairDataset(Dataset):
         image2 = io.read_image(self._image_path / f"{image2_name}.jpg") / 255
         image1 = _transform(image1)
         image2 = _transform(image2)
-        logger.debug("--%s %s", str(image1.shape), str(image2.shape))
+        # logger.debug("--%s %s", str(image1.shape), str(image2.shape))
 
         return image1, image2, target
 

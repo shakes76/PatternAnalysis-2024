@@ -16,3 +16,25 @@ class ResidualBlock(nn.Module):
     
     def forward(self, x):
         return x + self.block(x)  # Skip connection
+    
+class Encoder(nn.Module):
+    def __init__(self, in_channels, num_hiddens, num_residual_hiddens):
+        super(Encoder, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, num_hiddens // 2, 
+                               kernel_size=4, stride=2, padding=1)  # Strided convolution
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(num_hiddens // 2, num_hiddens, 
+                               kernel_size=4, stride=2, padding=1)  # Strided convolution
+        self.res_block1 = ResidualBlock(num_hiddens, num_hiddens, num_residual_hiddens)  # Residual block
+        self.res_block2 = ResidualBlock(num_hiddens, num_hiddens, num_residual_hiddens)  # Residual block
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.res_block1(x)
+        x = self.res_block2(x)
+        return x
+
+
+

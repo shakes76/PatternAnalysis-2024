@@ -3,7 +3,7 @@ import torchvision
 import torch.utils.data.dataloader as dataloader
 import os
 import matplotlib.pyplot as plt
-import torchvision.transforms as transforms
+import torchvision.transforms as tvtransforms
 import torchvision.utils as vutils
 import numpy as np
 
@@ -27,12 +27,12 @@ class Dataset():
         adni_data_path_train = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'train'))
         adni_data_path_test = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test'))
 
-        transforms = transforms.Compose([
-            transforms.Grayscale(), #grascale images 
-            transforms.Resize(64), #the next two lines decrease the resolution to 64x64
-            transforms.CenterCrop(64),
-            transforms.ToTensor(), #turn the datat into a tensor if its not already
-            transforms.Normalize(0.5,0.5)]) #normilze the data 0.5 beacuse values between 0-1 so 0.5 is just good general value
+        transforms = tvtransforms.Compose([
+            tvtransforms.Grayscale(), #grascale images 
+            tvtransforms.Resize(256), #the next two lines decrease the resolution to 64x64
+            tvtransforms.CenterCrop(256),
+            tvtransforms.ToTensor(), #turn the datat into a tensor if its not already
+            tvtransforms.Normalize(0.5,0.5)]) #normilze the data 0.5 beacuse values between 0-1 so 0.5 is just good general value
 
         #create datasets from image folder
         self.train_dataset = torchvision.datasets.ImageFolder(root=adni_data_path_train, transform=transforms)
@@ -49,7 +49,7 @@ class Dataset():
 
     def sample(self):
         '''
-            displauy a sample from the dataset
+            display a sample from the dataset
             using matplotlib imshow
         '''
         #get sample of data

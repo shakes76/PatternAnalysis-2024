@@ -105,7 +105,7 @@ class HipMRIDataset(Dataset):
 
 # Dataloader class for HipMRI data
 class HipMRILoader:
-    def __init__(self, train_dir, validate_dir, test_dir, batch_size=128, transform=None, num_workers=4):
+    def __init__(self, train_dir, validate_dir, test_dir, batch_size=128, transform=None, num_workers=1):
         self.batch_size = batch_size
         self.transform = transform
         

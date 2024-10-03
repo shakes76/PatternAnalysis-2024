@@ -8,6 +8,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 
 IMAGE_NAME = "image_name"
+TARGET = "target"
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
     def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
         observation_data = self._meta_df.iloc[index]
         image_name = observation_data[IMAGE_NAME]
-        target = observation_data[IMAGE_NAME]
+        target = observation_data[TARGET]
 
         image = io.read_image(self._image_path / f"{image_name}.jpg") / 255
         image = _transform(image)

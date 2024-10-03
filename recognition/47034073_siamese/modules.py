@@ -43,24 +43,21 @@ class TumorClassifier:
         with torch.inference_mode():
             for x, labels in loader:
                 x = x.to(device)
+                labels = labels.to(device)
                 embeddings = self._model.compute_embedding(x)
 
                 if self._benign_centroid is None:
                     embedding_dim = embeddings.shape[1]
-                    self._benign_centroid = torch.zeros(embedding_dim)
+                    self._benign_centroid = torch.zeros(embedding_dim).to(device)
                 if self._malignant_centroid is None:
-                    self._malignant_centroid = torch.zeros(embedding_dim)
+                    self._malignant_centroid = torch.zeros(embedding_dim).to(device)
 
-                benign = embeddings[labels == 0]
-                malignant = embeddings[labels == 1]
+                benign = embeddings[labels == 0, :]
+                malignant = embeddings[labels == 1, :]
 
                 num_benign += len(benign)
                 num_malignant += len(malignant)
 
-                logger.debug(
-                    "Shape of benign centroid %s", str(self._benign_centroid.shape)
-                )
-                logger.debug("Shape of benign embeddings %s", str(benign.shape))
                 self._benign_centroid += benign.sum(dim=0)
                 self._malignant_centroid += malignant.sum(dim=0)
 
@@ -100,7 +97,7 @@ class TumorTower(nn.Module):
         # Weighted summation of component differencess
         self._component_adder = nn.Linear(1000, 1, bias=False)
 
-    def forward(self, x1, x2):
+    def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
         embeddings1 = self._backbone(x1)
         embeddings2 = self._backbone(x2)
         component_diffs = torch.abs(embeddings1 - embeddings2)

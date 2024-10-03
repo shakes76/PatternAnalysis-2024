@@ -43,10 +43,14 @@ class TumorClassifier:
 
         num_benign = 0
         num_malignant = 0
+        n = 0
+        start_time = time.time()
         with torch.inference_mode():
             for x, labels in loader:
                 x = x.to(device)
                 labels = labels.to(device)
+                n += len(labels)
+
                 embeddings = self._model.compute_embedding(x)
 
                 if self._benign_centroid is None:
@@ -64,6 +68,10 @@ class TumorClassifier:
                 self._benign_centroid += benign.sum(dim=0)
                 self._malignant_centroid += malignant.sum(dim=0)
 
+                if time.time() - start_time > 60:
+                    start_time = time.time()
+                    logger.info("%d/%d", n, len(loader.dataset))
+
             self._benign_centroid /= num_benign
             self._malignant_centroid /= num_malignant
 
@@ -71,6 +79,7 @@ class TumorClassifier:
         with torch.inference_mode():
             hits = 0
             n = 0
+            start_time = time.time()
             for x, labels in loader:
                 x = x.to(device)
                 labels = labels.to(device)
@@ -90,6 +99,10 @@ class TumorClassifier:
                 logger.debug("Predictions %s", str(predictions))
 
                 hits += torch.sum(predictions == labels)
+
+                if time.time() - start_time > 60:
+                    start_time = time.time()
+                    logger.info("%d/%d", n, len(loader.dataset))
 
             acc = hits / n
             return acc

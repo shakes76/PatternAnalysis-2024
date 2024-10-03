@@ -16,7 +16,7 @@ DATA_PATH = pathlib.Path(
 PAIRS_PATH = DATA_PATH / "pairs.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
 VAL_META_PATH = DATA_PATH / "val.csv"
-IMAGES_PATH = DATA_PATH / "train"
+IMAGES_PATH = DATA_PATH / "small_images"
 
 
 def main() -> None:
@@ -69,7 +69,6 @@ def _debug() -> None:
     logger.info("Evaluating classification on train data...")
     acc = trainer.evaluate(train_classification_loader)
     logger.info("Train acc: %e", acc)
-    logger.info("Script done.")
 
     logger.info("Evaluating classification on val data...")
     val_meta_df = pd.read_csv(VAL_META_PATH)
@@ -85,7 +84,7 @@ def _debug() -> None:
 def _train() -> None:
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=128, num_epochs=1, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=10, learning_rate=0.0001)
     trainer = TumorClassifier(hparams)
 
     pairs_df = pd.read_csv(PAIRS_PATH)
@@ -115,7 +114,6 @@ def _train() -> None:
     logger.info("Evaluating classification on train data...")
     acc = trainer.evaluate(train_classification_loader)
     logger.info("Train acc: %e", acc)
-    logger.info("Script done.")
 
     logger.info("Evaluating classification on val data...")
     val_meta_df = pd.read_csv(VAL_META_PATH)

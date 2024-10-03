@@ -117,10 +117,33 @@ class HipMRILoader:
         # Create data loaders
         self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=num_workers)
         self.validate_loader = DataLoader(self.validate_dataset, batch_size=self.batch_size, shuffle=False, num_workers=num_workers)
-        self.test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=num_workers)
+
+        # Calculate the variance for data normalization
+        self.train_variance = self.calculate_variance()
+
+    def calculate_variance(self):
+        mean = 0.0
+        mean_sq = 0.0
+        count = 0
+
+        for index, data in enumerate(self.train_loader):
+            data = data.float()  # Ensure the data is in the correct type
+            mean = data.sum()
+            mean_sq = mean_sq + (data ** 2).sum()
+            count += np.prod(data.shape)
+
+        total_mean = mean / count
+        total_var = (mean_sq / count) - (total_mean ** 2)
+        data_variance = float(total_var.item())  # Convert tensor to float
+        return data_variance
 
     def get_loaders(self):
-        return self.train_loader, self.validate_loader, self.test_loader
+        return self.train_loader, self.validate_loader, self.train_variance
+
+    def get_test_loader(self):
+        # Create a separate data loader for the test dataset
+        test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=1)
+        return test_loader
     
 
 

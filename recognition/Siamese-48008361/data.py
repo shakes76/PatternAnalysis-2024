@@ -1,36 +1,33 @@
-import numpy as np
-from PIL import Image
-import glob
 import os
+import glob
+from PIL import Image
+import torch
+from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 
-def load_and_preprocess_image(image_path, target_size=(128, 128)):
-    # Load the image using PIL
-    image = Image.open(image_path)
+class SiameseDataset(Dataset):
+    def __init__(self, image_pairs, labels, image_dir, transform=None):
+        self.image_pairs = image_pairs
+        self.labels = labels
+        self.image_dir = image_dir
+        self.transform = transform
 
-    # Resize the image to the desired target size
-    image = image.resize(target_size)
+    def __len__(self):
+        return len(self.image_pairs)
 
-    # Convert to NumPy array and normalize pixel values to [0, 1]
-    image_array = np.array(image) / 255.0
+    def __getitem__(self, idx):
+        img_name1, img_name2 = self.image_pairs[idx]
+        label = self.labels[idx]
 
-    return image_array
+        # Load images
+        img_path1 = os.path.join(self.image_dir, img_name1 + '.jpg')
+        img_path2 = os.path.join(self.image_dir, img_name2 + '.jpg')
+        image1 = Image.open(img_path1).convert('RGB')
+        image2 = Image.open(img_path2).convert('RGB')
 
-def testImage():
-        
-    image_dir = 'data/ISIC_2020_Training_JPEG/train/'
-    image_files = [os.path.join(image_dir, img) for img in os.listdir(image_dir) if img.endswith('.jpg')]
+        # Apply transformations
+        if self.transform:
+            image1 = self.transform(image1)
+            image2 = self.transform(image2)
 
-    
-    preprocessed_image = load_and_preprocess_image(image_files[0])
-    print(preprocessed_image.shape) 
-    print(len(image_files))
-
-    # Display the first preprocessed image
-    
-
-    plt.imshow(preprocessed_image)
-    plt.title("Preprocessed Image")
-    plt.axis('off')
-    plt.show()
-
+        return image1, image2, torch.tensor(label, dtype=torch.float32)

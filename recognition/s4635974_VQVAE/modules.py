@@ -84,3 +84,20 @@ class Decoder(nn.Module):
         x = self.deconv2(x)
         return x
     
+class VQVAE(nn.Module):
+    def __init__(self, num_channels, num_hiddens, num_residual_hiddens,
+                 num_embeddings, embedding_dim, beta) -> None:
+        super(VQVAE, self).__init__()
+        self.encoder = Encoder(num_channels,num_hiddens, num_residual_hiddens)
+        self.pre_vq_conv = nn.Conv2d(in_channels=num_hiddens, out_channels=embedding_dim, kernel_size=1, stride=1)
+        self.vq = VectorQuantizer(num_embeddings, embedding_dim, beta)
+        self.decoder = Decoder(embedding_dim, num_hiddens, num_residual_hiddens)
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.pre_vq_conv(x)
+        loss, quantized, _, _ = self.vq(x)
+        x = self.decoder(quantized)
+
+        return loss, x
+

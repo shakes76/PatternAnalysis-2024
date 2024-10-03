@@ -36,7 +36,7 @@ def train():
         
         #Convert features, edges, and target to Pytorch tensors
         features = torch.tensor(features, dtype=torch.float32)
-        edges_index = torch.tensor(edges.T, dtype=torch.long) #Tranpose for GCN
+        edge_index = torch.tensor(edges.T, dtype=torch.long) #Tranpose for GCN
         target = torch.tensor(target, dtype=torch.long)
 
 

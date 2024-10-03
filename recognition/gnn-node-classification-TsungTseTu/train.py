@@ -8,7 +8,7 @@ def train():
     print("start training section")
     # Load data
     print("Loading data...")
-    data = load_facebook_data('/data/facebook.npz')
+    data = load_facebook_data()
 
     # Check if data loaded correctly
     print(f"Data successfully loaded. Number of nodes: {data.num_nodes}, Number of classes: {data.num_classes}")

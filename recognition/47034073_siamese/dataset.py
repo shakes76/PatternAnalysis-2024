@@ -52,6 +52,24 @@ class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
         return image, target
 
 
+class AllTumorDataset(Dataset[torch.Tensor]):
+    def __init__(self, image_path: pathlib.Path) -> None:
+        self._image_paths = sorted(list(image_path.iterdir()))
+        self._len = len(self._image_paths)
+
+    def __len__(self) -> int:
+        return self._len
+
+    @override
+    def __getitem__(self, index: int) -> torch.Tensor:
+        return (
+            transforms.CenterCrop(224)(
+                transforms.Resize(256)(io.read_image(self._image_paths[index]) / 255)
+            ),
+            self._image_paths[index].stem,
+        )
+
+
 _transform = transforms.Compose(
     [
         transforms.Resize(256),

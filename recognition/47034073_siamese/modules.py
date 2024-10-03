@@ -1,3 +1,4 @@
+import time
 import logging
 from dataclasses import dataclass
 
@@ -31,7 +32,6 @@ class TumorClassifier:
     ) -> None:
         for epoch in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
-            logger.debug("hello")
             logger.info("Epoch %d / loss %e", epoch, self._losses[-1])
 
     def compute_centroids(self, loader: DataLoader[tuple[torch.Tensor, int]]) -> None:
@@ -94,6 +94,7 @@ class TumorClassifier:
     def _train_epoch(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
     ) -> None:
+        start_time = time.time()
         avg_loss = 0.0
         n = 0
         for x1, x2, y in train_loader:
@@ -108,6 +109,10 @@ class TumorClassifier:
             avg_loss += loss.item()
             loss.backward()
             self._optim.step()
+
+            if time.time() - start_time > 60:
+                start_time = time.time()
+                logger.info("Loss so far: %e", avg_loss / n)
 
         avg_loss /= n
         self._losses.append(avg_loss)

@@ -32,65 +32,6 @@ def main() -> None:
 
     _train()
 
-    hparams = HyperParams(batch_size=128, num_epochs=1)
-    if args.debug:
-        hparams = HyperParams(batch_size=128, num_epochs=1)
-
-    trainer = TumorClassifier(hparams)
-
-    pairs_df = pd.read_csv(PAIRS_PATH)
-    if args.debug:
-        pairs_df = pairs_df.sample(random_state=42, n=128)
-
-    dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
-
-    train_loader = DataLoader(
-        dataset,
-        shuffle=True,
-        pin_memory=True,
-        batch_size=hparams.batch_size,
-        num_workers=2,
-        drop_last=True,
-    )
-    if args.debug:
-        train_loader = DataLoader(
-            dataset,
-            shuffle=True,
-            pin_memory=True,
-            batch_size=hparams.batch_size,
-            num_workers=2,
-            drop_last=True,
-        )
-
-    logger.info("Starting training...")
-    trainer.train(train_loader)
-
-    logger.info("Computing centroids...")
-
-    train_meta_df = pd.read_csv(TRAIN_META_PATH)
-    if args.debug:
-        train_meta_df = train_meta_df.sample(n=128)
-
-    centroid_dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
-    train_classification_loader = DataLoader(
-        centroid_dataset, batch_size=128, num_workers=2
-    )
-    trainer.compute_centroids(train_classification_loader)
-
-    logger.info("Evaluating classification on train data...")
-    acc = trainer.evaluate(train_classification_loader)
-    logger.info("Train acc: %e", acc)
-    logger.info("Script done.")
-
-    logger.info("Evaluating classification on val data...")
-    val_meta_df = pd.read_csv(VAL_META_PATH)
-    if args.debug:
-        val_meta_df = val_meta_df.sample(n=128)
-    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
-    val_loader = DataLoader(val_dataset, batch_size=128, num_workers=2)
-    val_acc = trainer.evaluate(val_loader)
-    logger.info("Val acc: %e", val_acc)
-
 
 def _debug() -> None:
     hparams = HyperParams(batch_size=128, num_epochs=1)
@@ -138,22 +79,23 @@ def _debug() -> None:
     val_acc = trainer.evaluate(val_loader)
     logger.info("Val acc: %e", val_acc)
 
+    logger.info("Script done.")
+
 
 def _train() -> None:
-    hparams = HyperParams(batch_size=128, num_epochs=1)
-
+    # Training params
+    num_workers = 3
+    hparams = HyperParams(batch_size=256, num_epochs=1)
     trainer = TumorClassifier(hparams)
 
     pairs_df = pd.read_csv(PAIRS_PATH)
-
     dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
-
     train_loader = DataLoader(
         dataset,
         shuffle=True,
         pin_memory=True,
         batch_size=hparams.batch_size,
-        num_workers=2,
+        num_workers=num_workers,
         drop_last=True,
     )
 
@@ -166,7 +108,7 @@ def _train() -> None:
 
     centroid_dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
     train_classification_loader = DataLoader(
-        centroid_dataset, batch_size=128, num_workers=2
+        centroid_dataset, batch_size=hparams.batch_size, num_workers=num_workers
     )
     trainer.compute_centroids(train_classification_loader)
 
@@ -178,9 +120,13 @@ def _train() -> None:
     logger.info("Evaluating classification on val data...")
     val_meta_df = pd.read_csv(VAL_META_PATH)
     val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
-    val_loader = DataLoader(val_dataset, batch_size=128, num_workers=2)
+    val_loader = DataLoader(
+        val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
+    )
     val_acc = trainer.evaluate(val_loader)
     logger.info("Val acc: %e", val_acc)
+
+    logger.info("Script done.")
 
 
 if __name__ == "__main__":

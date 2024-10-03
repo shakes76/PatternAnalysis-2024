@@ -5,14 +5,14 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler
 from torch.amp import autocast
-from utils import get_linear_schedule_with_warmup, visualize_denoising_process
+from utils import visualize_denoising_process, log_threshold_visualization_to_wandb
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
-from loss import PerceptualLoss, WeightedMSELoss
-from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, PerceptualLoss, ImprovedNoiseScheduler
+from loss import PerceptualLoss
+from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, ImprovedNoiseScheduler
 
 # SETUP - Must Match Image Size of VAE
 IMAGE_SIZE = 256
-BATCH_SIZE = 8 # will affect training performance
+BATCH_SIZE = 16 # will affect training performance
 method = 'Local'
 
 image_transform = transforms.Compose([
@@ -51,8 +51,8 @@ noise_scheduler = ImprovedNoiseScheduler(num_timesteps=1000).to(device)
 model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
 
 perceptual_loss = PerceptualLoss(vae, threshold=0.5, weight=0.1).to(device)
-#mse_loss = nn.MSELoss()
-mse_loss = WeightedMSELoss().to(device)
+mse_loss = nn.MSELoss()
+#mse_loss = WeightedMSELoss().to(device)
 scaler = GradScaler()
 
 lr = 1e-4
@@ -64,7 +64,6 @@ warmup_steps = int(0.1 * total_steps)
 base_optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
 optimizer = Lookahead(base_optimizer, k=5, alpha=0.5)
 
-#scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
 #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 scheduler = CosineAnnealingWarmupScheduler(optimizer, warmup_steps, total_steps)
 
@@ -97,6 +96,7 @@ for epoch in range(epochs):
 
         images, _ = batch # retrieve clean image batch
         images = images.to(device)
+        optimizer.zero_grad()
 
         # Encode images to latent space
         with torch.no_grad():
@@ -116,7 +116,6 @@ for epoch in range(epochs):
             psnr = peak_signal_noise_ratio(denoised_images, images)
 
         # Train UNet
-        optimizer.zero_grad()
         with autocast('cuda'):
             predicted_noise = model.predict_noise(noisy_latents, timesteps)
             mse = mse_loss(predicted_noise, noise)
@@ -159,7 +158,7 @@ for epoch in range(epochs):
     val_ssim = 0
 
     with torch.no_grad():
-        for images, _ in val_loader:
+        for images, _ in tqdm(val_loader, desc="Validating"):
             images = images.to(device)
 
             with torch.no_grad():
@@ -211,6 +210,7 @@ for epoch in range(epochs):
         sample_images = model.sample(BATCH_SIZE, device=device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)
+        log_threshold_visualization_to_wandb(perceptual_loss, images, num_thresholds=5)
         wandb.log({
             'Generated SSIM': ssim,
             'Generated PSNR': psnr

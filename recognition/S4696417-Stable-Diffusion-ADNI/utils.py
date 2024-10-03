@@ -6,6 +6,7 @@ import numpy as np
 from torchvision import transforms
 from sklearn.manifold import TSNE
 from dataset import get_dataloader
+from torchvision.utils import make_grid
 
 def calculate_gradient_norm(model):
     total_norm = 0
@@ -105,4 +106,22 @@ def get_manifold():
 
     # Finish the wandb run
     wandb.finish()
+
+
+def log_threshold_visualization_to_wandb(perceptual_loss, images, num_thresholds=5):
+    thresholds = np.linspace(0.1, 0.9, num_thresholds)
+    
+    all_images = []
+    for image in images:
+        image_row = [image.cpu()]
+        for threshold in thresholds:
+            perceptual_loss.threshold = threshold
+            mask = perceptual_loss.create_brain_mask(image.unsqueeze(0))
+            image_row.append(mask.cpu())
+        
+        all_images.extend(image_row)
+    
+    grid = make_grid(all_images, nrow=num_thresholds+1, normalize=True, scale_each=True)
+    wandb.log({"threshold_visualization": wandb.Image(grid, caption="Threshold Visualization")})
+
 

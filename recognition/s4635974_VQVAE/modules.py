@@ -18,16 +18,16 @@ class ResidualBlock(nn.Module):
         return x + self.block(x)  # Skip connection
 
 class VectorQuantizer(nn.Module):
-    def __init__(self, num_embeddings, embedding_dim, beta):
+    def __init__(self, num_embeddings, dim_embedding, beta):
         super(VectorQuantizer, self).__init__()
-        self.embedding_dim = embedding_dim
+        self.dim_embedding = dim_embedding
         self.num_embeddings = num_embeddings
-        self.embeddings = nn.Embedding(num_embeddings, embedding_dim)
+        self.embeddings = nn.Embedding(num_embeddings, dim_embedding)
         self.embeddings.weight.data.uniform_(-1/num_embeddings, 1/num_embeddings)
         self.beta = beta
     
     def forward(self, z_e):
-        z_e_flattened = z_e.view(-1, self.embedding_dim)
+        z_e_flattened = z_e.view(-1, self.dim_embedding)
         distances = torch.sum(z_e_flattened ** 2, dim=1, keepdim=True) + \
                     torch.sum(self.embeddings.weight ** 2, dim=1) - \
                     2 * torch.matmul(z_e_flattened, self.embeddings.weight.t())
@@ -86,12 +86,12 @@ class Decoder(nn.Module):
     
 class VQVAE(nn.Module):
     def __init__(self, num_channels, num_hiddens, num_residual_hiddens,
-                 num_embeddings, embedding_dim, beta) -> None:
+                 num_embeddings, dim_embedding, beta) -> None:
         super(VQVAE, self).__init__()
         self.encoder = Encoder(num_channels,num_hiddens, num_residual_hiddens)
-        self.pre_vq_conv = nn.Conv2d(in_channels=num_hiddens, out_channels=embedding_dim, kernel_size=1, stride=1)
-        self.vq = VectorQuantizer(num_embeddings, embedding_dim, beta)
-        self.decoder = Decoder(embedding_dim, num_hiddens, num_residual_hiddens)
+        self.pre_vq_conv = nn.Conv2d(in_channels=num_hiddens, out_channels=dim_embedding, kernel_size=1, stride=1)
+        self.vq = VectorQuantizer(num_embeddings, dim_embedding, beta)
+        self.decoder = Decoder(dim_embedding, num_hiddens, num_residual_hiddens)
 
     def forward(self, x):
         x = self.encoder(x)

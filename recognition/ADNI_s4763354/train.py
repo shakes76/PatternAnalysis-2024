@@ -31,6 +31,13 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-5, batch_size=64):
 
     # Initialize model, loss, and optimizer
     model = GFNetBinaryClassifier(num_classes=2).to(device)
+    pretrained_path = 'gfnet-h-ti.pth'
+    if os.path.exists(pretrained_path):
+        state_dict = torch.load(pretrained_path, map_location=device)
+        model.load_state_dict(state_dict, strict=False)
+        print(f"Loaded pretrained weights from {pretrained_path}")
+    else:
+        print(f"Pretrained weights file {pretrained_path} not found. Using random initialization.")
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 

@@ -15,17 +15,20 @@ def train():
         if data is None:
             print("Data loading error. Exiting...")
             return
+
+        # print available arrays in the dataset if successfully loaded
+        print(f"Data successfully loaded. Available arrays:{data.files}")
     
         edges = data['edges']
         features = data['features']
         target = data['target']
 
-        # Check if data loaded correctly
-        print(f"Data successfully loaded. Number of nodes: {data.num_nodes}, Number of classes: {data.num_classes}")
+        
+        print(f"Edge shape: {edges.shape}, features shape: {features.shape}, target shapes: {target.shape}")
 
         # Initialize the model
         print("Model starting...")
-        input = feature.shapes[1]
+        input = features.shape[1]
         output = len(set(target))
         model = GCN(input_dim=input, hidden_dim=64, output_dim=output)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -48,7 +51,7 @@ def train():
         print("Model saved to gnn_model.pth")
 
     except Exception as e:
-        print("An error occured: {e}")
+        print(f"An error occured: {e}")
 
 if __name__ == '__main__':                                                                     
     train()

@@ -34,7 +34,14 @@ def predict():
 
     # Forward pass to get predictions
     with torch.no_grad():
-        out = model(features, edge)
+        out = model(features, edge) #raw output
+        prediction = out.argmax(dim=1) #Get predicted class for each node
+
+    # Check Accuracy
+    correct = (prediction==target).sum().item() #Collect correctly predicted
+    total = target.size(0) #total nodes
+    accuracy = correct/total
+    print(f"Accuracy:{accuracy*100:.2f}%")
 
     # Visualize embeddings using TSNE
     embeddings = out.numpy()

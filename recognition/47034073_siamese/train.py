@@ -105,9 +105,11 @@ def _debug() -> None:
 
 
 def _train() -> None:
+    script_start_time = time.time()
+
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=128, num_epochs=100, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=5, learning_rate=0.0001)
     trainer = TumorClassifier(hparams)
 
     # Prepare train pair data
@@ -137,11 +139,18 @@ def _train() -> None:
     )
 
     logger.info("Computing centroids...")
-    trainer.compute_centroids(train_classification_loader)
+    # trainer.compute_centroids(train_classification_loader)
+    embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
+    knn = KNeighborsClassifier()
+    fit_knn = knn.fit(embeddings, labels)
 
     logger.info("Evaluating classification on train data...")
-    acc = trainer.evaluate(train_classification_loader)
-    logger.info("Train acc: %e", acc)
+    # acc = trainer.evaluate(train_classification_loader)
+    # logger.info("Train acc: %e", acc)
+
+    predictions = fit_knn.predict(embeddings)
+    report = classification_report(labels, predictions)
+    logger.info("train data report:\n%s", report)
 
     # Prepare validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
@@ -151,10 +160,17 @@ def _train() -> None:
     )
 
     logger.info("Evaluating classification on val data...")
-    val_acc = trainer.evaluate(val_loader)
-    logger.info("Val acc: %e", val_acc)
+    # val_acc = trainer.evaluate(val_loader)
+    # logger.info("Val acc: %e", val_acc)
+    #
+    embeddings, labels = trainer.compute_all_embeddings(val_loader)
+    predictions = fit_knn.predict(embeddings)
 
-    logger.info("Script done.")
+    report = classification_report(labels, predictions)
+    logger.info("val data report\n%s", report)
+
+    total_script_time = time.time() - script_start_time
+    logger.info("Script done in %d seconds.", total_script_time)
 
 
 if __name__ == "__main__":

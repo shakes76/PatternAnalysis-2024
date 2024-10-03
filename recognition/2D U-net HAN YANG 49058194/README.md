@@ -12,8 +12,9 @@ The U-Net model employs a convolutional neural network architecture specifically
 - `download.py`: download the files, process them, and convert them to .npy format.
 - `modules.py`: include model architecture (UNet).
 - `dataset.py`: load and preprocess Nifti format data files.
-- `train.py`: train, validate, and test UNet models
+- `train.py`: train, validate, and test UNet models.
 - `predict.py`: Show how to use a trained model for inference.
+- `test_driver.py`: calls and runs algorithm.
 - `README.md`: Project documentation.
 
 ## Steps to Run the Project

@@ -26,7 +26,7 @@ class ADNIDataset(Dataset):
                 transforms.Grayscale(),
                 transforms.Resize((256, 240)),
                 transforms.ToTensor(),
-                transforms.Normalize([0.5], [0.5])  # [-1, 1] normalisation
+                transforms.Normalize([0.1156], [0.2200])  # Mean, stddev from train dataset
             ])
         else:
             self.transform = transform

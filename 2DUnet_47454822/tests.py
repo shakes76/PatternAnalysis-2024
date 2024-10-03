@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 from keras.src.optimizers import Adam
+from keras.src.utils import to_categorical
 
 from dataset import load_dir, load_data_2D
 from tensorflow.keras.preprocessing import image
@@ -42,6 +43,8 @@ def test_train():
     # X = np.resize(X, (batch_size, 128, 128, 1))
 
     y = np.expand_dims(y, axis=-1)
+    y = to_categorical(y, num_classes=6)
+    # y = np.squeeze(y, axis=-1)
     # y = np.resize(y, (batch_size, 128, 128, 1))
 
     print(f"X Shape: {np.shape(X)}")
@@ -49,7 +52,7 @@ def test_train():
 
 
     model = unet_model((256, 128, 1), batch_size=batch_size)
-    model.compile(optimizer=Adam(learning_rate=0.0001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
 
     model.fit(x=X, y=y, batch_size=batch_size, epochs=1, shuffle=True, verbose=2)
 

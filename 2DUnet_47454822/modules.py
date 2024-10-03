@@ -58,7 +58,7 @@ def unet_model(input_size=(128, 128, 1), batch_size=12):
     conv9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(concat4)
     conv9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv9)
 
-    outputs = layers.Conv2D(4, (1, 1), activation='sigmoid')(conv9)
+    outputs = layers.Conv2D(6, (1, 1), activation='sigmoid')(conv9)
 
     model = models.Model(inputs=[inputs], outputs=[outputs])
     model.summary()

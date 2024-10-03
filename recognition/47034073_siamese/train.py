@@ -14,6 +14,7 @@ DATA_PATH = pathlib.Path(
 )
 PAIRS_PATH = DATA_PATH / "pairs.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
+VAL_META_PATH = DATA_PATH / "val.csv"
 IMAGES_PATH = DATA_PATH / "train"
 
 
@@ -41,6 +42,19 @@ def main() -> None:
     centroid_dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
     centroid_loader = DataLoader(centroid_dataset, batch_size=128, num_workers=2)
     trainer.compute_centroids(centroid_loader)
+
+    logger.info("Evaluating classification on train data...")
+    acc = trainer.evaluate(centroid_loader)
+    logger.info("Train acc: %e", acc)
+    logger.info("Script done.")
+
+    logger.info("Evaluating classification on val data...")
+    val_meta_df = pd.read_csv(VAL_META_PATH)
+    val_meta_df = val_meta_df.sample(n=128)
+    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
+    val_loader = DataLoader(val_dataset, batch_size=128, num_workers=2)
+    val_acc = trainer.evaluate(val_loader)
+    logger.info("Val acc: %e", val_acc)
 
 
 if __name__ == "__main__":

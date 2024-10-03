@@ -5,7 +5,7 @@ from torchvision.models import efficientnet_b0
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torch.nn.functional import binary_cross_entropy_with_logits
+from torch.nn.functional import binary_cross_entropy_with_logits, cosine_similarity
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -63,6 +63,33 @@ class TumorClassifier:
 
             self._benign_centroid /= num_benign
             self._malignant_centroid /= num_malignant
+
+    def evaluate(self, loader: DataLoader) -> dict:
+        with torch.inference_mode():
+            hits = 0
+            n = 0
+            for x, labels in loader:
+                x = x.to(device)
+                labels = labels.to(device)
+
+                n += len(labels)
+
+                logger.debug("Shape of centroid %s", str(self._benign_centroid.shape))
+                embeddings = self._model.compute_embedding(x)
+                benign_distances = cosine_similarity(embeddings, self._benign_centroid)
+                malignant_distances = cosine_similarity(
+                    embeddings, self._malignant_centroid
+                )
+                logger.debug("%s", str(benign_distances.shape))
+                distances = torch.stack([benign_distances, malignant_distances], dim=1)
+                logger.debug("%s", str(distances.shape))
+                predictions = distances.argmax(dim=1)
+                logger.debug("Predictions %s", str(predictions))
+
+                hits += torch.sum(predictions == labels)
+
+            acc = hits / n
+            return acc
 
     def _train_epoch(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]

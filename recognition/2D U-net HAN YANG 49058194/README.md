@@ -33,9 +33,9 @@ The U-Net model employs a convolutional neural network architecture specifically
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
-    - `train_model(root_dir, num_epochs, lr)`: Trains the U-Net model on the dataset, saves the model, and logs the loss.
     - `dice_score(pred, target)`: Calculates the Dice score.
-- `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
+    - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
+- `test_driver.py`
   - **Purpose**: Runs the entire pipeline, from downloading and preprocessing the data, to training the model, to evaluating its performance.
   - **Key Steps**:
     - Download and preprocess data.

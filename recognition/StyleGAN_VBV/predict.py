@@ -1,6 +1,7 @@
 import torch
 from torchvision.utils import save_image
 from modules import Generator
+import os
 
 # Constants
 Z_DIM = 512
@@ -9,19 +10,14 @@ IN_CHANNELS = 512
 CHANNELS_IMG = 3
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Load your trained generator model
-def load_model(checkpoint_path):
-    model = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG)
-    model.load_state_dict(torch.load(checkpoint_path))
-    model.eval()
-    return model
-
-def generate_and_save_images(model, n=100):
+def generate_examples(gen, steps, n=100):
+    gen.eval()
+    alpha = 1.0
     for i in range(n):
-        noise = torch.randn(1, Z_DIM).to(DEVICE)
-        img = model(noise, alpha=1.0, steps=6)  # Adjust 'steps' based on your training
-        save_image(img * 0.5 + 0.5, f"generated_images/img_{i}.png")
-
-if __name__ == "__main__":
-    model = load_model('path_to_your_checkpoint.pth')
-    generate_and_save_images(model)
+        with torch.no_grad():
+            noise = torch.randn(1, Z_DIM).to(DEVICE)
+            img = gen(noise, alpha, steps)
+            if not os.path.exists(f'saved_examples/step{steps}'):
+                os.makedirs(f'saved_examples/step{steps}')
+            save_image(img * 0.5 + 0.5, f"saved_examples/step{steps}/img_{i}.png")
+    gen.train()

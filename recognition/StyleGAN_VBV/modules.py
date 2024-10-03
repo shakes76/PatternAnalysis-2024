@@ -1,21 +1,20 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
-# Weight scaling linear layer
 class WSLinear(nn.Module):
     def __init__(self, in_features, out_features):
         super(WSLinear, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
-        self.scale = (2/in_features) ** 0.5
+        self.scale = (2 / in_features) ** 0.5
         self.bias = self.linear.bias
         self.linear.bias = None
+
         nn.init.normal_(self.linear.weight)
         nn.init.zeros_(self.bias)
 
     def forward(self, x):
         return self.linear(x * self.scale) + self.bias
 
-# Pixel normalization layer
 class PixenNorm(nn.Module):
     def __init__(self):
         super(PixenNorm, self).__init__()
@@ -24,7 +23,6 @@ class PixenNorm(nn.Module):
     def forward(self, x):
         return x / torch.sqrt(torch.mean(x**2, dim=1, keepdim=True) + self.epsilon)
 
-# Mapping Network
 class MappingNetwork(nn.Module):
     def __init__(self, z_dim, w_dim):
         super().__init__()
@@ -48,7 +46,6 @@ class MappingNetwork(nn.Module):
     def forward(self, x):
         return self.mapping(x)
 
-# Adaptive Instance Normalization
 class AdaIN(nn.Module):
     def __init__(self, channels, w_dim):
         super().__init__()
@@ -62,8 +59,7 @@ class AdaIN(nn.Module):
         style_bias = self.style_bias(w).unsqueeze(2).unsqueeze(3)
         return style_scale * x + style_bias
 
-# Noise Injection
-class InjectNoise(nn.Module):
+class injectNoise(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
@@ -72,15 +68,14 @@ class InjectNoise(nn.Module):
         noise = torch.randn((x.shape[0], 1, x.shape[2], x.shape[3]), device=x.device)
         return x + self.weight + noise
 
-# Generator Block
 class GenBlock(nn.Module):
     def __init__(self, in_channel, out_channel, w_dim):
         super(GenBlock, self).__init__()
         self.conv1 = WSConv2d(in_channel, out_channel)
         self.conv2 = WSConv2d(out_channel, out_channel)
         self.leaky = nn.LeakyReLU(0.2, inplace=True)
-        self.inject_noise1 = InjectNoise(out_channel)
-        self.inject_noise2 = InjectNoise(out_channel)
+        self.inject_noise1 = injectNoise(out_channel)
+        self.inject_noise2 = injectNoise(out_channel)
         self.adain1 = AdaIN(out_channel, w_dim)
         self.adain2 = AdaIN(out_channel, w_dim)
 
@@ -89,7 +84,6 @@ class GenBlock(nn.Module):
         x = self.adain2(self.leaky(self.inject_noise2(self.conv2(x))), w)
         return x
 
-# Generator
 class Generator(nn.Module):
     def __init__(self, z_dim, w_dim, in_channels, img_channels=3):
         super().__init__()
@@ -97,10 +91,11 @@ class Generator(nn.Module):
         self.map = MappingNetwork(z_dim, w_dim)
         self.initial_adain1 = AdaIN(in_channels, w_dim)
         self.initial_adain2 = AdaIN(in_channels, w_dim)
-        self.initial_noise1 = InjectNoise(in_channels)
-        self.initial_noise2 = InjectNoise(in_channels)
+        self.initial_noise1 = injectNoise(in_channels)
+        self.initial_noise2 = injectNoise(in_channels)
         self.initial_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
         self.leaky = nn.LeakyReLU(0.2, inplace=True)
+
         self.initial_rgb = WSConv2d(in_channels, img_channels, kernel_size=1, stride=1, padding=0)
         self.prog_blocks, self.rgb_layers = nn.ModuleList([]), nn.ModuleList([self.initial_rgb])
 
@@ -131,7 +126,32 @@ class Generator(nn.Module):
 
         return self.fade_in(alpha, final_upscaled, final_out)
 
-# Discriminator
+class WSConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
+        super(WSConv2d, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.scale = (2 / (in_channels * (kernel_size ** 2))) ** 0.5
+        self.bias = self.conv.bias
+        self.conv.bias = None
+
+        nn.init.normal_(self.conv.weight)
+        nn.init.zeros_(self.bias)
+
+    def forward(self, x):
+        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(ConvBlock, self).__init__()
+        self.conv1 = WSConv2d(in_channels, out_channels)
+        self.conv2 = WSConv2d(out_channels, out_channels)
+        self.leaky = nn.LeakyReLU(0.2)
+
+    def forward(self, x):
+        x = self.leaky(self.conv1(x))
+        x = self.leaky(self.conv2(x))
+        return x
+
 class Discriminator(nn.Module):
     def __init__(self, in_channels, img_channels=3):
         super(Discriminator, self).__init__()
@@ -142,11 +162,18 @@ class Discriminator(nn.Module):
             conv_in = int(in_channels * factors[i])
             conv_out = int(in_channels * factors[i - 1])
             self.prog_blocks.append(ConvBlock(conv_in, conv_out))
-            self.rgb_layers.append(WSConv2d(img_channels, conv_in, kernel_size=1, stride=1, padding=0))
+            self.rgb_layers.append(
+                WSConv2d(img_channels, conv_in, kernel_size=1, stride=1, padding=0)
+            )
 
-        self.initial_rgb = WSConv2d(img_channels, in_channels, kernel_size=1, stride=1, padding=0)
+        self.initial_rgb = WSConv2d(
+            img_channels, in_channels, kernel_size=1, stride=1, padding=0
+        )
         self.rgb_layers.append(self.initial_rgb)
-        self.avg_pool = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.avg_pool = nn.AvgPool2d(
+            kernel_size=2, stride=2
+        )
+
         self.final_block = nn.Sequential(
             WSConv2d(in_channels + 1, in_channels, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2),
@@ -154,6 +181,9 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2),
             WSConv2d(in_channels, 1, kernel_size=1, padding=0, stride=1),
         )
+
+    def fade_in(self, alpha, downscaled, out):
+        return alpha * out + (1 - alpha) * downscaled
 
     def minibatch_std(self, x):
         batch_statistics = (
@@ -165,7 +195,7 @@ class Discriminator(nn.Module):
         cur_step = len(self.prog_blocks) - steps
         out = self.leaky(self.rgb_layers[cur_step](x))
 
-        if steps == 0:  # i.e., image is 4x4
+        if steps == 0:
             out = self.minibatch_std(out)
             return self.final_block(out).view(out.shape[0], -1)
 

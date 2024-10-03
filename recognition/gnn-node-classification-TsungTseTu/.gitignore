@@ -1,3 +1,10 @@
-# Ignore the data folder for the node classification task
-recognition/gnn-node-classification-TsungTseTu/data/
+# Ignore the data folder
+/data/
 
+# Ignore temporary and backup files
+*~
+*.un~
+*.py~
+
+# Ignore Python cache
+__pycache__/

@@ -8,3 +8,6 @@
 
 # Ignore Python cache
 __pycache__/
+
+#ignore trained model
+gnn_model.pth

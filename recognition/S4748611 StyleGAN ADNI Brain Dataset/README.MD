@@ -26,11 +26,11 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 The model uses the ADNI dataset, which can be downloaded from the [ADNI website](http://adni.loni.usc.edu/). The dataset should be organized in the following directory structure:
 
 ├── train/ <br/>
-│   ├── AD/ <br/>
-│   └── NC/ <br/>
+│     ├── AD/ <br/>
+│     └── NC/ <br/>
 └── test/ <br/>
-    ├── AD/ <br/>
-    └── NC/ <br/>
+      ├── AD/ <br/>
+      └── NC/ <br/>
 
 
 Make sure to place the images in the respective folders for training and testing.

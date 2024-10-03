@@ -27,7 +27,7 @@ def predict():
     model = GCN(input_dim=input, hidden_dim=64, output_dim=output)
 
     # Load pre-trained model
-    model.load_state_dict(torch.load("gnn_model.pth"))
+    model.load_state_dict(torch.load("gnn_model.pth", weights_only=True))
                         
     # Set the model to evaluation mode
     model.eval()

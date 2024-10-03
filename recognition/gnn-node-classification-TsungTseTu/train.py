@@ -55,7 +55,7 @@ def train():
             print(f'Epoch {epoch+1}, Loss: {loss.item()}')
 
         # Save the trained model without training it again
-        torch.save(model.state_dict(), 'gnn_model.pth')
+        torch.save(model.state_dict(), 'gnn_model.pth', _use_new_zipfile_serialization=True)
         print("Model saved to gnn_model.pth")
 
     except Exception as e:

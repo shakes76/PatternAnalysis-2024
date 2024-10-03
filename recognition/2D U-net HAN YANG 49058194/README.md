@@ -46,17 +46,17 @@ The U-Net model employs a convolutional neural network architecture specifically
 
 ## Usage：Steps to Run the Project
 
-### 1. Download and Process Data
-Run `download.py` to download the `.nii` files from the given URL, process them, and convert them to `.npy` format.
+### Step 1. Download and Process Data
+&nbsp; Run `download.py` to download the `.nii` files from the given URL, process them, and convert them to `.npy` format.
 
-### 2. Train the Model
-Once the `.npy` files are prepared, train the U-Net model.
+### Step 2. Train the Model
+&nbsp; Once the `.npy` files are prepared, train the U-Net model.
 
-### 3. Make Predictions and Evaluate
-After training, using `predict.py` to evaluate the model's performance on the test set. It calculates the Dice score to assess segmentation quality.
+### Step 3. Make Predictions and Evaluate
+&nbsp; After training, using `predict.py` to evaluate the model's performance on the test set. It calculates the Dice score to assess segmentation quality.
 
-### 4. Full Pipeline Execution
-The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
+### Step 4. Full Pipeline Execution
+&nbsp; The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
 
 ## Dependencies
 The project requires the following dependencies:

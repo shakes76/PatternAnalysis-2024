@@ -8,16 +8,43 @@ of 0.75 on the test set on the prostate label.
 The U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images. The process begins with loading Nifti files containing MRI slices using the Nibabel library, converting them into NumPy arrays for preprocessing. Each slice is then resized and normalized to ensure uniform input dimensions of `[1, 1, 128, 128]` for grayscale images. During training, the model minimizes the binary cross-entropy loss, using the Dice similarity coefficient as a metric for evaluation. Once trained, the model can predict segmentation masks for new MRI slices, providing a clear delineation of the prostate gland against the surrounding tissues, which is crucial for accurate diagnosis and treatment planning.
 
 
-## File Structure
-- `download.py`: download the files, process them, and convert them to .npy format.
-- `modules.py`: include model architecture (UNet).
-- `dataset.py`: load and preprocess Nifti format data files.
-- `train.py`: train, validate, and test UNet models.
-- `predict.py`: Show how to use a trained model for inference.
-- `test_driver.py`: calls and runs algorithm.
-- `README.md`: Project documentation.
+## File Structure and Descriptions
+- `download.py`
+  - **Purpose**: Downloads MRI data from a specified URL and processes `.nii` and `.nii.g`z files into `.npy` format for training.
+  - **Key Functions**:
+    - `download_and_extract(url, extract_to)`: Downloads and extracts the dataset.
+    - `load_and_process_nii_files(root_dir, save_dir)`: Loads and resizes NIfTI images to 2D slices, then saves them as NumPy arrays.
+- `modules.py`
+  - **Purpose**: Implements the U-Net model architecture used for MRI image segmentation.
+  - **Key Components**:
+    - `DoubleConv`: Two sequential convolutional layers.
+    - `Down`: Max pooling followed by double convolution.
+    - `Up`: Upsampling and concatenation.
+    - `OutConv`: Final layer to output the segmentation map.
+- `dataset.py`
+  - **Purpose**: Defines a custom PyTorch `Dataset` class, `ProstateMRIDataset`, to load the preprocessed MRI slices (`.npy` files).
+  - **Key Functions**:
+    - `__len__()`: Returns the total number of images.
+    - `__getitem__(idx)`: Loads an individual image as a PyTorch tensor.
+- `train.py`
+  - **Purpose**: Handles model training using the U-Net architecture.
+  - **Key Functions**:
+    - `train_model(root_dir, num_epochs, lr)`: Trains the U-Net model on the dataset, saves the model, and logs the loss.
+- `predict.py`
+  - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
+  - **Key Functions**:
+    - `train_model(root_dir, num_epochs, lr)`: Trains the U-Net model on the dataset, saves the model, and logs the loss.
+    - `dice_score(pred, target)`: Calculates the Dice score.
+- `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
+  - **Purpose**: Runs the entire pipeline, from downloading and preprocessing the data, to training the model, to evaluating its performance.
+  - **Key Steps**:
+    - Download and preprocess data.
+    - Train the U-Net model.
+    - Evaluate and predict the segmentation quality using the trained model.
+- `README.md`
+  - **Purpose**: Project documentation.
 
-## Steps to Run the Project
+## Usage：Steps to Run the Project
 
 ### 1. Download and Process Data
 Run `download.py` to download the `.nii` files from the given URL, process them, and convert them to `.npy` format.
@@ -25,8 +52,11 @@ Run `download.py` to download the `.nii` files from the given URL, process them,
 ### 2. Train the Model
 Once the `.npy` files are prepared, train the U-Net model.
 
-### 3. Predict using the Trained Model
-After training, use the model to predict the segmentation of new MRI slices.
+### 3. Make Predictions and Evaluate
+After training, using `predict.py` to evaluate the model's performance on the test set. It calculates the Dice score to assess segmentation quality.
+
+### 4. Full Pipeline Execution
+The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
 
 ## Dependencies
 The project requires the following dependencies:

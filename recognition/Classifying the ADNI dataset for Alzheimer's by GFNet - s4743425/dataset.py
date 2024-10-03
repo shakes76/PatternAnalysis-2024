@@ -19,7 +19,7 @@ data_directory = '../../../AD_NC'
 #data_directory = '/home/groups/comp3710/ADNI/AD_NC'
 
 #Set Hyperparameters
-image_size = 256
+image_size = 224
 batch_size = 32
 
 # the mean and std values are hardcoded here, previously calculated in utils.py from the training data
@@ -94,15 +94,16 @@ def dataloader(batch_size, train_size=0.8, val_size=0.2):
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
     dataloaders = (train_loader, val_loader, test_loader)
 
+    print(f"Number of training images: {len(datasets[0])}")
+    print(f"Number of validation images: {len(datasets[1])}")
+    print(f"Number of testing images: {len(datasets[2])}")
+    print(f"Classes in dataset: AD (0), NC (1)")
+
     return datasets, dataloaders
 
 
-""" if __name__ == "__main__":
-    datasets, dataloaders = dataloader(batch_size)
-    # Print dataset statistics
-    print(f"Number of training images: {len(datasets[0])}")
-    print(f"Number of testing images: {len(datasets[2])}")
-    print(f"Classes in dataset: AD (0), NC (1)")
+if __name__ == "__main__":
+    datasets, dataloaders = dataloader(32)
 
     # iterate over DataLoader
     data_iter = iter(dataloaders[0])
@@ -120,5 +121,5 @@ def dataloader(batch_size, train_size=0.8, val_size=0.2):
         plt.show()
 
     imshow(torchvision.utils.make_grid(images[:4]))
- """
+
 

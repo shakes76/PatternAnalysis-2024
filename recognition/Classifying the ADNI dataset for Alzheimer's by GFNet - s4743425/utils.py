@@ -16,7 +16,7 @@ import numpy as np
 import torchvision
 import dataset
 
-image_size = 256
+image_size = 224
 batch_size = 32
 
 # The path when running locally

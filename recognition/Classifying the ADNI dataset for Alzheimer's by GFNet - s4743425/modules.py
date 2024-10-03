@@ -3,10 +3,9 @@ Each component is implemented as a class or in a function.
 
 The general structure of this vision Transformer was made in assistance by following 
 these sources:
-
-Shengjie, Z., Xiang, C., Bohan, R., & Haibo, Y. (2022, August 29). 
-3D Global Fourier Network for Alzheimer’s Disease Diagnosis using Structural MRI. MICCAI 2022
- - Accepted Papers and Reviews. https://conferences.miccai.org/2022/papers/002-Paper1233.html
+-   Shengjie, Z., Xiang, C., Bohan, R., & Haibo, Y. (2022, August 29). 
+    3D Global Fourier Network for Alzheimer’s Disease Diagnosis using Structural MRI. MICCAI 2022
+    Accepted Papers and Reviews. https://conferences.miccai.org/2022/papers/002-Paper1233.html
 
 ‌
 """
@@ -15,6 +14,10 @@ import torch.nn as nn
 import torch.fft
 from functools import partial
 from collections import OrderedDict
+import math
+
+#Hyperparmeters
+image_size = 224
 
 # MLP Block similar to the example
 class MLP(nn.Module):
@@ -34,42 +37,46 @@ class MLP(nn.Module):
         x = self.act(x)
         x = self.drop(x)
         x = self.fc2(x)
-        x = self.act(x)  
+#        x = self.act(x)  
         x = self.drop(x)
         return x
     
 # Global Filter following the FFT-based logic
 class Global_Filter(nn.Module):
-    def __init__(self, h=9, w=10, d=5, dim=1000):
+    def __init__(self, h=14, w=8, dim=1000):
         super().__init__()
         # Learnable complex weight parameter for FFT
-        self.complex_weight = nn.Parameter(torch.randn(
-            h, w, d//2+1, dim, 2, dtype=torch.float32) * 0.02)
+        self.complex_weight = nn.Parameter(torch.randn(h, w, dim,2 , dtype=torch.float32) * 0.02)
         self.dim = dim
         self.h = h
         self.w = w
-        self.d = d
 
-    def forward(self, x):
+    def forward(self, x, spatial_size = None):
         B, N, C = x.shape
-        x = x.to(torch.float32)
-        x = x.view(B, self.h, self.w, self.d, self.dim)
+        if spatial_size is None:
+            a = b = int(math.sqrt(N))
+        else:
+            a, b = spatial_size
+        
+  #      x = x.to(torch.float32)
+        x = x.view(B, a, b, C)
+#        x = x.view(B, self.h, self.w, self.dim)
         # Forward FFT
-        x = torch.fft.rfftn(x, dim=(1, 2, 3), norm='ortho')
+        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
         # Inverse FFT
-        x = torch.fft.irfftn(x, s=(self.h, self.w, self.d), dim=(1, 2, 3), norm='ortho')
+        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
         x = x.reshape(B, N, C)
         return x
     
 
 # Block with Global Filter and MLP
 class Block(nn.Module):
-    def __init__(self, dim=1000, mlp_ratio=2., drop=0.5, drop_path=0.6, act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=18, w=21, d=10):
+    def __init__(self, dim, mlp_ratio=4., drop=0.5, drop_path=0.6, act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
         super().__init__()
         self.norm1 = norm_layer(dim)
-        self.filter = Global_Filter(dim=dim, h=h, w=w, d=d)
+        self.filter = Global_Filter(dim=dim, h=h, w=w)
         # setting to Identity regardless, can include a drop path later
         self.drop_path = nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -84,33 +91,27 @@ class Block(nn.Module):
 
 # Patch embedding from image to flattened patches
 class PatchEmbed(nn.Module):
-    def __init__(self, img_size=(181, 217, 181), patch_size=(10, 10, 10), num_classes=2, in_channels=1):
+    def __init__(self, img_size=image_size, patch_size=16, in_channels=3, embed_dim=768):
         super().__init__()
-        num_patches = (img_size[2] // patch_size[2]) * (img_size[1] //
-                                                        patch_size[1]) * (img_size[0] // patch_size[0])
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.num_patches = num_patches
-        self.patch_dim = in_channels * \
-            patch_size[0]*patch_size[1]*patch_size[2]
-        self.proj = nn.Conv3d(in_channels, self.patch_dim,
-                              kernel_size=patch_size, stride=patch_size)
+        self.img_size = (img_size, img_size)
+        self.patch_size = (patch_size, patch_size)
+        self.num_patches = (img_size // patch_size) ** 2
+        self.proj = nn.Conv2d(in_channels, embed_dim,kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
-        N, C, H, W, D = x.size()
-        assert H == self.img_size[0] and W == self.img_size[1] and D == self.img_size[2],\
-            f"Input image size ({H}*{W}*{D}) doesn't match model ({self.img_size[0]}*{self.img_size[1]}*{self.img_size[2]})."
-        x = self.proj(x)
-        x = x.flatten(2).transpose(1, 2)
+        B, C, H, W = x.shape
+        assert H == self.img_size[0] and W == self.img_size[1], \
+            f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+        x = self.proj(x).flatten(2).transpose(1, 2)
         return x
-
 
 # GFNet main, follows block stacking with dropout
 class GFNet(nn.Module):
-    def __init__(self, img_size=(181, 217, 181), patch_size=(10, 10, 10), embed_dim=1000, num_classes=2, in_channels=1, drop_rate=0.5, depth=1, mlp_ratio=2., drop_path_rate=0.6, norm_layer=None):
+    #images are set 256 x 265 with RGB # change depth ect
+    def __init__(self, img_size=image_size, patch_size= 16, embed_dim=768, num_classes=2, in_channels=3, drop_rate=0.5, depth=2, mlp_ratio=4., drop_path_rate=0.6, norm_layer=None):
         super().__init__()
         self.num_classes = num_classes
-        self.embed_dim = embed_dim
+        self.num_features = self.embed_dim = embed_dim
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
         # call the patchembed to flatten patches
         self.patch_embed = PatchEmbed(
@@ -118,26 +119,27 @@ class GFNet(nn.Module):
         num_patches = self.patch_embed.num_patches
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_rate)
-        h, w, d = img_size[0] // patch_size[0], img_size[1] // patch_size[1], img_size[2] // patch_size[2]
+        h = img_size // patch_size
+        w =  h // 2 + 1
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+
+
         self.blocks = nn.ModuleList([
             Block(dim=embed_dim, mlp_ratio=mlp_ratio, drop=drop_rate,
-                  drop_path=dpr[i], norm_layer=norm_layer, h=h, w=w, d=d)
+                  drop_path=dpr[i], norm_layer=norm_layer, h=h, w=w)
             for i in range(depth)
         ])
 
         self.norm = norm_layer(embed_dim)
-        self.head = nn.Sequential(
-            nn.Linear(embed_dim, 256),
-            nn.GELU(),
-            nn.Linear(256, num_classes)
-        )
+        # Classification head for Alzheimer's (AD vs NC)
+        self.head = nn.Linear(self.num_features, num_classes)
         self.apply(self._init_weights)
 
     # Now check where it belongs and apply the constants
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
+ #           trunc_normal_(m.weight, std=.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -160,9 +162,3 @@ class GFNet(nn.Module):
 
 #### Include some form of truncated normal distribution to tensors
 
-if __name__ == '__main__':
-    # test to see if it works
-    x = torch.randn(2, 1, 256, 256, 256)
-    net = GFNet(img_size=[256, 256, 256], patch_size=[16, 16, 16], embed_dim=4096)
-    output = net(x)
-    print(output.shape)

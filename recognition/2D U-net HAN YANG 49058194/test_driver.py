@@ -8,8 +8,8 @@ from predict import predict_and_evaluate
 from download import download_and_extract, load_and_process_nii_files  
 
 # Configure hyperparameters
-BATCH_SIZE = 16
-LEARNING_RATE = 1e-4
+BATCH_SIZE = 128
+LEARNING_RATE = 0.001
 NUM_EPOCHS = 30
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 DATA_URL = "https://filesender.aarnet.edu.au/download.php?token=76f406fd-f55d-497a-a2ae-48767c8acea2&files_ids=23102543"

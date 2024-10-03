@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 
 def get_transform(train):
+    """Get transform for training or testing."""
     transform_list = [
         transforms.ToTensor(),
     ]
@@ -94,7 +95,10 @@ def test(model, test_loader, criterion, device="cuda", disable_tqdm=True):
     accuracy = 100 * correct / total
     return epoch_loss, accuracy
 
+
 def set_seed(seed):
+    """Set seeds for reproducibility.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

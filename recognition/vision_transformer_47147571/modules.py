@@ -1,5 +1,5 @@
 """
-Adapted from the official implementation of GFNet by Yongming Rao [https://github.com/raoyongming/GFNet].
+GFNet adapted from the official implementation of GFNet by Yongming Rao [https://github.com/raoyongming/GFNet].
 
 This file has been modified to adapt the model for a binary classification task, 
 with necessary adjustments made to ensure compatibility.

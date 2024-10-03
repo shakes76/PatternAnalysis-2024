@@ -55,8 +55,8 @@ if __name__ == "__main__":
         
         outputs = model(data)
         
-        outputs = (torch.sigmoid(outputs) >= 0.5).float()
-        preds = 1 if torch.mean(outputs.float()) >= 0.5 else 0 
+        outputs = torch.sigmoid(outputs).mean().item()
+        preds = 1 if outputs > 0.5 else 0
 
         preds_list.append(preds)
         true_list.append(labels.item())

@@ -14,6 +14,7 @@ import random
 from tqdm import tqdm
 from collections import defaultdict
 
+
 class ADNIDataset(Dataset):
     """ADNI dataset loader.
 
@@ -77,7 +78,6 @@ class ADNIDataset(Dataset):
                 self._process_image(input_path, output_path)
 
     def _process_image(self, input_path, output_path):
-        # Read image
         image = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
         
         # Crop the relevant region
@@ -85,13 +85,11 @@ class ADNIDataset(Dataset):
         
         h, w = cropped.shape
     
-        # Calculate scaling factor to make the longer side 210 pixels
         scale = 210 / max(h, w)
         
         # Calculate new dimensions
         new_h, new_w = int(h * scale), int(w * scale)
-        
-        # Resize the image
+
         resized = cv2.resize(cropped, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
         
         # Calculate padding
@@ -100,21 +98,18 @@ class ADNIDataset(Dataset):
         left = (210 - new_w) // 2
         right = 210 - new_w - left
         
-        # Add padding
         padded = cv2.copyMakeBorder(resized, top, bottom, left, right, 
                                     cv2.BORDER_CONSTANT, value=0)
         
-        # Save the processed image
         cv2.imwrite(output_path, padded)
 
     def _crop_brain_region(self, image):
-        # Apply Otsu's thresholding
+        """Crop brain region and remove redundant background."""
+
         _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         
-        # Find the coordinates of non-zero pixels
         coords = cv2.findNonZero(binary)
         
-        # Get the smallest rectangle that encloses all non-zero pixels
         x, y, w, h = cv2.boundingRect(coords)
         
         # Crop the image
@@ -192,18 +187,11 @@ class ADNIDatasetTest(Dataset):
         """Preprocess image by cropping, resizing, and padding, then save it."""
         image = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
         
-        # Crop the relevant region
         cropped = self._crop_brain_region(image)
-        
         h, w = cropped.shape
-    
-        # Calculate scaling factor to make the longer side 210 pixels
         scale = 210 / max(h, w)
-        
-        # Calculate new dimensions
         new_h, new_w = int(h * scale), int(w * scale)
         
-        # Resize the image
         resized = cv2.resize(cropped, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
         
         # Calculate padding
@@ -212,25 +200,19 @@ class ADNIDatasetTest(Dataset):
         left = (210 - new_w) // 2
         right = 210 - new_w - left
         
-        # Add padding
         padded = cv2.copyMakeBorder(resized, top, bottom, left, right, 
                                     cv2.BORDER_CONSTANT, value=0)
         
-        # Save the processed image
         cv2.imwrite(output_path, padded)
 
     def _crop_brain_region(self, image):
-        """Crop the brain region using Otsu's thresholding."""
-        # Apply Otsu's thresholding
+        """Crop the brain region."""
         _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         
-        # Find the coordinates of non-zero pixels
         coords = cv2.findNonZero(binary)
-        
-        # Get the smallest rectangle that encloses all non-zero pixels
+
         x, y, w, h = cv2.boundingRect(coords)
         
-        # Crop the image
         return image[y:y+h, x:x+w]
 
     def _group_images(self, processed_dir, label):
@@ -279,10 +261,9 @@ class ADNIDatasetTest(Dataset):
         processed_dir = self.ad_processed_dir if label == 1 else self.nc_processed_dir
         
         for filename in image_filenames:
-            # Construct the full path of the image
+            # load data
             image_path = os.path.join(processed_dir, filename)
             
-            # Preprocess the image (crop, resize, and pad)
             image = Image.open(image_path).convert('L')
             
             # Apply any given transformations
@@ -295,3 +276,5 @@ class ADNIDatasetTest(Dataset):
         image_stack = np.stack(image_stack, axis=0)
         
         return torch.tensor(image_stack, dtype=torch.float32), torch.tensor(label).float()
+    
+    

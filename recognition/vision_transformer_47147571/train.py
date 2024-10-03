@@ -47,15 +47,11 @@ if __name__ == "__main__":
     val_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=False), 
                               val=True, seed=0, split_ratio=0.8)
     
-    test_dataset = ADNIDataset(root=args.data_path, split="test", transform=get_transform(train=False), 
-                               val=False, split_ratio=1)
-    
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=6, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)
 
     # create model
-    # gfnet-ti
+    # gfnet-xs
     model = GFNet(img_size=210, in_chans=1, patch_size=14, embed_dim=384, depth=12, mlp_ratio=4,
                   norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
     
@@ -71,12 +67,10 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, scheduler, device, disable_tqdm=disable_tqdm)
         val_loss, val_acc = test(model, val_loader, criterion, device, disable_tqdm=disable_tqdm)
-        test_loss, test_acc = test(model, test_loader, criterion, device, disable_tqdm=disable_tqdm)
         
         print(f'Epoch [{epoch+1}/{num_epochs}]')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
-        print(f'Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.2f}%')
         
         # Save training loss and acc
         writer.add_scalar('Loss/train', train_loss, epoch)

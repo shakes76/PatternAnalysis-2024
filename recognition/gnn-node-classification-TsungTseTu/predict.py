@@ -12,21 +12,33 @@ def visualize(embeddings, labels):
 
 def predict():
     # Load data
-    data = load_facebook_data('recognition/gnn-node-classification-TsungTseTu/data/facebook.npz')
+    data = load_facebook_data()
+
+    # Extract features, edges, and target
+    features = torch.tensor(data['features'], dtype=torch.float32)
+    edge = torch.tensor(data['edges'].T, dtype=torch.long)
+    target = torch.tensor(data['target'], dtype=torch.long)
+    
+    # Set input nad output based on feature and target
+    input = features.shape[1] #Number of features per node
+    output = len(set(target.numpy())) # number of unique classes
 
     # Initialize the model (same as in training)
-    model = GCN(input_dim=128, hidden_dim=64, output_dim=data.num_classes)
+    model = GCN(input_dim=input, hidden_dim=64, output_dim=output)
+
+    # Load pre-trained model
+    model.load_state_dict(torch.load("gnn_model.pth"))
                         
     # Set the model to evaluation mode
     model.eval()
 
     # Forward pass to get predictions
     with torch.no_grad():
-    out = model(data)
+        out = model(features, edge)
 
     # Visualize embeddings using TSNE
     embeddings = out.numpy()
-    labels = data.y.numpy()
+    labels = target.numpy()
     visualize(embeddings, labels)
 
 if __name__ == '__main__':

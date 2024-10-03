@@ -15,7 +15,7 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 
 
 
-## Install required packages
+## Installation
 - pip
 - tensorflow
 - matplotlib
@@ -25,12 +25,12 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 
 The model uses the ADNI dataset, which can be downloaded from the [ADNI website](http://adni.loni.usc.edu/). The dataset should be organized in the following directory structure:
 
-├── train/
-│   ├── AD/
-│   └── NC/
-└── test/
-    ├── AD/
-    └── NC/
+├── train/ <br/>
+│&emsp;&emsp;├── AD/ <br/>
+│&emsp;&emsp;└── NC/ <br/>
+└── test/ <br/>
+&emsp;&emsp;&nbsp;├── AD/ <br/>
+&emsp;&emsp;&nbsp;└── NC/ <br/>
 
 
 Make sure to place the images in the respective folders for training and testing.
@@ -46,7 +46,7 @@ python train.py
 2. **Generating Images**: After training, you can generate new images using the trained model. Run the `predict.py` script.
 
 ```
-python generate_images.py
+python predict.py
 ```
 
 3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images, saved as `t-SNE_visualization.png`.

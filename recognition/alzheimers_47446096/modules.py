@@ -1,7 +1,20 @@
 import torch.nn as nn
+from torch import Tensor
 
 class PatchSplitter(nn.Module):
-    def __init__(self, patchLen: int, imgDims: tuple[int, int, int], dimOut) -> None:
+    '''
+    PatchSplitter module for VisionTransformer.
+    Splits image into the required number of patches based of patchLen
+    and runs subsequent patches through an initial linear layer
+    '''
+    def __init__(self, patchLen: int, imgDims: tuple[int, int, int], dimOut: int) -> None:
+        '''
+        Inputs:
+            patchLen: int - Length/Width of the sqaure patches to be generated
+            imgDims: (int, int, int) - (channels, height, width) of the img
+            dimOut: int - output dimension of each patch's linear layer
+        Returns: None
+        '''
         super().__init__()
         self.patchLen = patchLen
         self.imgDims = imgDims
@@ -18,7 +31,18 @@ class PatchSplitter(nn.Module):
         )
         self.linear = nn.Linear((self.patchLen ** 2) * channels, dimOut)
     
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        '''
+        Compute forward step of the PatchSplitter Module,
+        through both an unfold layer to split the img into
+        pathces and then an initial linear layer.
+
+        Input:
+            x: Tensor - pytorch tensor representing the img, must
+                match the dimmensions specified of the PatchSplitter
+        Returns: Tensor - Computed values after the final linear Layer
+        '''
+        assert x.size() == self.imgDims #* Checking given img matches img dims
         x = self.partition(x).transpose(1, 0)
         x = self.linear(x)
         return x
@@ -26,4 +50,3 @@ class PatchSplitter(nn.Module):
 class VisionTransformer(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-

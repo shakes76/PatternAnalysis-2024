@@ -29,8 +29,8 @@ The model uses the ADNI dataset, which can be downloaded from the [ADNI website]
 │&emsp;&emsp;├── AD/ <br/>
 │&emsp;&emsp;└── NC/ <br/>
 └── test/ <br/>
-&emsp;&emsp;├── AD/ <br/>
-&emsp;&emsp;└── NC/ <br/>
+&emsp;&emsp;&nbsp;├── AD/ <br/>
+&emsp;&emsp;&nbsp;└── NC/ <br/>
 
 
 Make sure to place the images in the respective folders for training and testing.

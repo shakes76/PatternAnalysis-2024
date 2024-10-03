@@ -6,6 +6,7 @@ import sys
 import os
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
+from GFNet.gfnet import GFNet, GFNetPyramid
 writer = SummaryWriter()
 
 sys.path.append(os.path.abspath('/home/Student/s4763354/comp3710/GFNet'))
@@ -29,15 +30,23 @@ def train_and_evaluate(train_dir, test_dir, epochs=10, lr=1e-5, batch_size=64):
     # print(f'Label batch shape: {labels.shape}')  # [batch_size]
     # print(f'First label in the batch: {labels[0]}') 
 
-    # Initialize model, loss, and optimizer
-    model = GFNetBinaryClassifier(num_classes=2).to(device)
-    pretrained_path = 'gfnet-h-ti.pth'
-    if os.path.exists(pretrained_path):
-        state_dict = torch.load(pretrained_path, map_location=device)
-        model.load_state_dict(state_dict, strict=False)
-        print(f"Loaded pretrained weights from {pretrained_path}")
-    else:
-        print(f"Pretrained weights file {pretrained_path} not found. Using random initialization.")
+    # Load the pretrained model
+    model = GFNetPyramid(img_size=224, patch_size=4, num_classes=1000)  # Original number of classes
+    
+    # Load the state dict and extract the model weights
+    state_dict = torch.load("gfnet-h-ti.pth")
+    if "model" in state_dict:
+        state_dict = state_dict["model"]
+    
+    # Load the weights, ignoring mismatched keys
+    model.load_state_dict(state_dict, strict=False)
+    
+    # Modify the final layer for binary classification
+    num_features = model.head.in_features
+    model.head = nn.Linear(num_features, 2)  # Change to 2 classes
+    
+    model = model.to(device)
+    
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 

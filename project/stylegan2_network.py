@@ -329,6 +329,111 @@ class SynthesisBlock(nn.Module):
         if self.final_resolution: # Get 256x240 output via this
             x = F.interpolate(x, size=self.final_resolution, mode='bilinear', align_corners=False)
         return x
+
+
+class StyleGAN2Generator(nn.Module):
+    """
+    Generator class for StyleGAN2.
+
+    Generates grayscale images from latent vectors - size 256x240.
+    Mapping network transforms input latent code.
+    Synthesis network generates images. Uses progressive growing 
+    through strided modulated convolutions.
+
+    Args:
+        z_dim (int): Dim of input latent vector.
+        w_dim (int): Dim of intermediate latent space.
+        num_mapping_layers (int): Num layers in mapping network.
+        mapping_dropout (float): Dropout rate for mapping network.
+        label_dim (int): Num classes for conditional generation. Defaults to 2 (AD, NC).
+        num_layers (int, optional): Num layers in synthesis network. Defaults to 7.
+        # channel_base (int, optional): Base num channels. Defaults to 8192.
+        # channel_max (int, optional): Max num channels. Defaults to 512.
+        ngf (int, optional): Num generator features. Defaults to 256.
+    """
+    def __init__(self, 
+                 z_dim,
+                 w_dim,
+                 num_mapping_layers,
+                 mapping_dropout,
+                 label_dim = 2, 
+                 num_layers=7,
+                #  channel_base=8192,
+                #  channel_max=512,
+                 ngf = 256
+                ):
+        super().__init__()
+        self.z_dim = z_dim
+        self.w_dim = w_dim
+        self.num_mapping_layers = num_mapping_layers
+        self.label_dim = label_dim
+        self.num_layers = num_layers
+        # self.channel_base = channel_base
+        # self.channel_max = channel_max
+        self.ngf = ngf
+        self.mapping_dropout = mapping_dropout
+        
+        # Init mapping network
+        self.mapping_network = MappingNetwork(self.z_dim,
+                                              self.w_dim,
+                                              self.num_mapping_layers,
+                                              self.label_dim,
+                                              self.mapping_dropout)
+        
+        # Init synthesis network
+        self.synthesis_network = nn.ModuleList()
+        in_channels = w_dim
+        
+        # Learnable constant input (4x4)
+        self.const = nn.Parameter(torch.randn(1, ngf * 8, 4, 4))
+        
+        # Create synthesis architecture
+        # Use strided modulated convolutions for progressive growing
+        # With default values spatial dimensions upsample to desired image size (per batch sample):
+        #    2048x4x4 -> 2048x4x4 -> 1024x8x8 -> 512x16x16 -> 256x32x32 -> 128x64x64 -> 64x128x128 -> 32x256x256
+        # Create synthesis architecture
+        channel_multipliers = [8, 4, 2, 1, 1/2, 1/4, 1/8]
+        in_channels = self.ngf * 8  # Start with the number of channels in const
+        for i in range(num_layers):
+            out_channels = int(self.ngf * channel_multipliers[i])
+            up = 2 if i > 0 else 1  # First layer doesn't upsample
+            final_resolution = None
+            if i == num_layers - 1:  # Last layer
+                final_resolution = (256, 240) # Use interpolation
+            self.synthesis_network.append(
+                SynthesisBlock(in_channels, out_channels, w_dim, up=up, final_resolution=final_resolution)
+            )
+            in_channels = out_channels
+
+        # Add final conv layer - force greyscale output and 1 channel
+        self.to_rgb = nn.Conv2d(in_channels, 1, kernel_size=1)
+
+    def forward(self, z, labels):
+        """
+        Forward pass of the StyleGAN2 generator.
+
+        Args:
+            z (torch.Tensor): Input latent vector.
+            labels (torch.Tensor): Class labels for conditional generation.
+
+        Returns:
+            torch.Tensor: Generated grayscale image of size 256x240.
+        """
+        batch_size = z.shape[0]
+        
+        # Generate w from z
+        w = self.mapping_network(z, labels)
+        
+        # Start with learned constant - repeated for batch
+        x = self.const.repeat(batch_size, 1, 1, 1)
+        
+        # Apply synthesis blocks
+        for block in self.synthesis_network:
+            x = block(x, w)
+
+        x = self.to_rgb(x) # Force greyscale and 1 channel
+        
+        return torch.tanh(x)  # Force output range [-1, 1]
     
     
 class ResidualBlock(nn.Module):
@@ -375,16 +480,13 @@ class MiniBatchStdDev(nn.Module):
     """
     Caclulate std dev of features across mini-batches, add to input features.
     Helps discriminator better find real and generated images.
-    """
-    def __init__(self, group_size=4, num_new_features=1):
-        """
-        Initialise MiniBatchStdDev layer.
-
-        Args:
+    
+    Args:
             group_size (int, optional): Num images per group for std calc. Defaults to 4.
                               If None - use whole batch.
             num_new_features (int, optional): Num stddev features per pixel. Defaults to 1.
-        """
+    """
+    def __init__(self, group_size=4, num_new_features=1):
         super().__init__()
         self.group_size = group_size
         self.num_new_features = num_new_features

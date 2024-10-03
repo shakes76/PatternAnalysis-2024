@@ -4,7 +4,7 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 
 ## Table of Contents
 
-- [Installation](#installation)
+- [Installation](#instal-required-packages)
 - [Dataset](#dataset)
 - [Usage](#usage)
 - [Model Architecture](#model-architecture)

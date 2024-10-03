@@ -13,3 +13,14 @@ NUM_CHANNELS = 1
 
 # The total number of images trained on the model at any given time
 BATCH_SIZE = 128
+
+################################## Mapping Network ###############################
+
+# The amount of fully connected layers within the StyleGAN Mapping Network
+MAPPING_LAYERS = 8
+
+# The size of the latent space vectors within the StyleGAN Mapping Network
+LATENT_SIZE = 512
+
+# Controls the negative slope angle used for the leaky ReLu function
+LRELU_SLOPE_ANGLE = 0.2

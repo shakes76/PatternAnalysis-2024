@@ -20,6 +20,13 @@ def train():
         optimizer.step()
         print(f'Epoch {epoch+1}, Loss: {loss.item()}')
 
+        # print the loss for each epoch
+        print(f'Epoch {epoch+1}, Loss: {loss.item()}')
+
+    # Save the trained model without training it again
+    torch.save(model.state_dict(), 'gnn_model.pth')
+    print("Model saved to gnn_model.pth")
+
 if __name__ == '__main_':                                                                     
     train()
 

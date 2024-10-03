@@ -7,7 +7,8 @@ from torch.cuda.amp import GradScaler
 from torch.amp import autocast
 from utils import get_linear_schedule_with_warmup, visualize_denoising_process
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
-from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, PerceptualLoss
+from loss import PerceptualLoss, WeightedMSELoss
+from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, PerceptualLoss, ImprovedNoiseScheduler
 
 # SETUP - Must Match Image Size of VAE
 IMAGE_SIZE = 256
@@ -17,11 +18,11 @@ method = 'Local'
 image_transform = transforms.Compose([
     transforms.ToPILImage(),
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
-    transforms.RandomRotation(10),
-    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-    transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+    # transforms.RandomHorizontalFlip(),
+    # transforms.RandomVerticalFlip(),
+    # transforms.RandomRotation(10),
+    # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    # transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
     transforms.ToTensor(),    
     transforms.Normalize((0.5,), (0.5,)),
 ])
@@ -37,21 +38,21 @@ elif method == 'Slurm':
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device}')
 
-print("Loading model...")
+print("Loading model...") # Load Pretrained VAE and new Unet
 vae = torch.load(f'checkpoints/VAE/ADNI-vae_e100_b8_im{IMAGE_SIZE}_l16.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
-
 unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512], time_emb_dim=256)
-noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
+
+#noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
+noise_scheduler = ImprovedNoiseScheduler(num_timesteps=1000).to(device)
+
 model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
 
-
-#criterion = nn.MSELoss()
-perceptual_weight = 0.2
-perceptual_loss = PerceptualLoss(vae).to(device)
-mse_loss = nn.MSELoss()
+perceptual_loss = PerceptualLoss(vae, threshold=0.5, weight=0.1).to(device)
+#mse_loss = nn.MSELoss()
+mse_loss = WeightedMSELoss().to(device)
 scaler = GradScaler()
 
 lr = 1e-4
@@ -121,7 +122,7 @@ for epoch in range(epochs):
             mse = mse_loss(predicted_noise, noise)
 
         perceptual = perceptual_loss(denoised_images, images)
-        loss = mse + perceptual_weight * perceptual
+        loss = mse + perceptual_loss.weight * perceptual
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -179,7 +180,7 @@ for epoch in range(epochs):
                 mse = mse_loss(predicted_noise, noise)
                 
             perceptual = perceptual_loss(denoised_images, images)
-            loss = mse + perceptual_weight * perceptual
+            loss = mse + perceptual_loss.weight * perceptual
 
             val_loss += loss.item()
             val_psnr += psnr.item()

@@ -79,6 +79,70 @@ class StableDiffusion(nn.Module):
         sample_images = self.vae.decode(samples)
         wandb.log({f"sample": wandb.Image(sample_images)})
         return sample_images
+
+
+class ImprovedStableDiffusion(nn.Module):
+    """
+    Implementation of the Diffusion class with improved sample generation process
+    """
+    def __init__(self, unet, vae, noise_scheduler, image_size):
+        super().__init__()
+        self.unet = unet
+        self.vae = vae
+        self.noise_scheduler = noise_scheduler
+        self.image_size = image_size
+
+    def encode(self, x):
+        return self.vae.encode(x)
+    
+    def decode(self, z):
+        return self.vae.decode(z)
+    
+    def sample_latent(self, mu, logvar):
+        return self.vae.sample(mu, logvar)
+
+    def predict_noise(self, z, t):
+        return self.unet(z, t)
+
+    @torch.no_grad()
+    def sample(self, num_images, device='cuda', num_inference_steps=50):
+        shape = (num_images, self.vae.latent_dim, int(self.image_size/8), int(self.image_size/8))
+        x = torch.randn(shape, device=device)
+        timesteps = torch.linspace(self.noise_scheduler.num_timesteps - 1, 0, num_inference_steps).long().to(device)
+        
+        for i in tqdm(range(len(timesteps) - 1), desc="Sampling"):
+            t = timesteps[i]
+            t_next = timesteps[i + 1]
+            
+            # First-order prediction
+            noise_pred = self.predict_noise(x, t.repeat(num_images))
+            x_0_pred = self.noise_scheduler.step(self.unet, x, t.repeat(num_images))
+            
+            # Second-order correction
+            if i < len(timesteps) - 2:
+                noise_pred_next = self.predict_noise(x_0_pred, t_next.repeat(num_images))
+                noise_pred_corrected = (noise_pred + noise_pred_next) / 2
+            else:
+                noise_pred_corrected = noise_pred
+            
+            # Apply correction
+            alpha = self.noise_scheduler.alphas[t]
+            alpha_next = self.noise_scheduler.alphas[t_next]
+            sigma = self.noise_scheduler.betas[t]
+            x = (x - (1 - alpha).sqrt() * noise_pred_corrected) / alpha.sqrt()
+            x = alpha_next.sqrt() * x + (1 - alpha_next).sqrt() * noise_pred_corrected
+            
+            # Add noise for stochasticity (optional)
+            if t_next > 0:
+                noise = torch.randn_like(x)
+                x = x + sigma * noise
+
+        # Decode the latent representation
+        final_image = self.vae.decode(x)
+        return final_image
+
+    def forward(self, x, t):
+        return self.predict_noise(x, t)
     
 
 class UNet(nn.Module):
@@ -530,6 +594,80 @@ class NoiseScheduler_Fast_DDPM():
         return self
 
 
+class ImprovedNoiseScheduler:
+    """
+    Improved noise scheduler based on Improvedd Denoising Diffusion Probabalistic Models (https://arxiv.org/abs/2102.09672)
+
+    Args:
+        num_timesteps: number of timesteps
+        beta_start: start value of beta
+        beta_end: end value of beta
+
+    """
+    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02):
+        self.num_timesteps = num_timesteps
+        self.beta_start = beta_start
+        self.beta_end = beta_end
+
+        # Predefine noise schedule values
+        self.betas = self.cosine_beta_schedule(num_timesteps)
+        self.alphas = 1 - self.betas
+        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
+        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
+
+    def cosine_beta_schedule(self, timesteps, s=0.008):
+        steps = timesteps + 1
+        x = torch.linspace(0, timesteps, steps)
+        alphas_cumprod = torch.cos(((x / timesteps) + s) / (1 + s) * math.pi * 0.5) ** 2
+        alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
+        betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
+        return torch.clip(betas, 0.0001, 0.9999)
+    
+    def add_noise(self, x_0, noise, t):
+        sqrt_alphas_cumprod_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_one_minus_alphas_cumprod_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+        return sqrt_alphas_cumprod_t * x_0 + sqrt_one_minus_alphas_cumprod_t * noise
+    
+
+    def step(self, model, noisy_latents, timesteps):
+        # Ensure timesteps is a 1D tensor
+        timesteps = timesteps.view(-1)
+        
+        # Get the corresponding beta and alpha values
+        betas = self.betas[timesteps]
+        alphas = self.alphas[timesteps]
+        alphas_cumprod = self.alphas_cumprod[timesteps]
+        
+        # Expand dimensions for broadcasting
+        betas = betas.view(-1, 1, 1, 1)
+        alphas = alphas.view(-1, 1, 1, 1)
+        alphas_cumprod = alphas_cumprod.view(-1, 1, 1, 1)
+        
+        # Predict noise
+        predicted_noise = model(noisy_latents, timesteps)
+        
+        # Calculate mean
+        mean = (noisy_latents - betas * predicted_noise / torch.sqrt(1 - alphas_cumprod)) / torch.sqrt(alphas)
+        
+        # Calculate variance
+        variance = betas * (1 - alphas_cumprod) / (1 - alphas_cumprod)
+        
+        # Add noise only if not at the last step
+        noise = torch.randn_like(noisy_latents)
+        mask = (timesteps > 0).float().view(-1, 1, 1, 1)
+        
+        denoised_latents = mean + mask * torch.sqrt(variance) * noise
+        
+        return denoised_latents
+
+    def to(self, device):
+        for key, value in self.__dict__.items():
+            if isinstance(value, torch.Tensor):
+                setattr(self, key, value.to(device))
+        return self
+
+
 class Lookahead(Optimizer):
     def __init__(self, optimizer, k=5, alpha=0.5):
         self.optimizer = optimizer
@@ -595,26 +733,3 @@ class Lookahead(Optimizer):
         self.state = defaultdict(dict, slow_state_new)
 
 
-class PerceptualLoss(nn.Module):
-    def __init__(self, vae):
-        super().__init__()
-        self.vae = vae
-        self.vae.eval()
-        for param in self.vae.parameters():
-            param.requires_grad = False 
-        
-    @torch.no_grad()
-    def forward(self, input, target):
-        if torch.isnan(input).any() or torch.isnan(target).any():
-            print("NaN detected in input or target")
-            return torch.tensor(0.0, requires_grad=True)
-        
-        input_encoding = self.vae.encode(input)
-        target_encoding = self.vae.encode(target)
-        
-        if isinstance(input_encoding, tuple):
-            input_encoding = input_encoding[0]
-        if isinstance(target_encoding, tuple):
-            target_encoding = target_encoding[0]
-
-        return F.mse_loss(input_encoding, target_encoding)

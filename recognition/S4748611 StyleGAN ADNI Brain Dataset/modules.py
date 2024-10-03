@@ -82,15 +82,9 @@ def build_discriminator():
     x = Conv2D(128, 3, strides=2, padding='same')(x)
     x = LeakyReLU(0.2)(x)
     
-    x = Conv2D(256, 3, strides=2, padding='same')(x)
-    x = LeakyReLU(0.2)(x)
-    
-    x = Conv2D(512, 3, strides=2, padding='same')(x)
-    x = LeakyReLU(0.2)(x)
-    
     x = Flatten()(x)
     
-    x = Dense(512)(x)
+    x = Dense(256)(x)
     x = LeakyReLU(0.2)(x)
     
     x = Dense(1, activation='sigmoid')(x)

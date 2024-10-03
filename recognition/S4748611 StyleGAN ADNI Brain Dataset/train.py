@@ -86,6 +86,12 @@ def extract_features(dataset, model):
         labels.extend(['AD' if 'AD' in str(batch) else 'NC'] * batch.shape[0])
     return np.concatenate(features), np.array(labels)
 
+def save_models(generator, discriminator, stylegan):
+    generator.save('stylegan_generator.h5')
+    discriminator.save('stylegan_discriminator.h5')
+    stylegan.save('stylegan_model.h5')
+    print("Models saved successfully.")
+
 if __name__ == "__main__":
     train(EPOCHS)
 
@@ -134,3 +140,7 @@ if __name__ == "__main__":
     plt.axis('off')
     plt.savefig('final_generated_image.png')
     plt.close()
+
+
+    # Save the models
+    save_models(generator, discriminator, stylegan)

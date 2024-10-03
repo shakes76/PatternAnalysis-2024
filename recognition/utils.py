@@ -15,10 +15,10 @@ Contains function to load Nifti files as well.
 
 def to_channels(arr: np.ndarray , dtype =np.uint8) -> np.ndarray :
     channels = np.unique(arr)
-    res = np. zeros (arr.shape + (len(channels),), dtype=dtype)
+    res = np.zeros (arr.shape + (len(channels),), dtype=dtype)
     for c in channels :
         c = int(c)
-        res [... , c:c +1][arr == c] = 1
+        res [..., c:c +1][arr == c] = 1
 
     return res
 
@@ -71,7 +71,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             #~ inImage = 255. * inImage / inImage .max ()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
-            inImage = utils.to_channels(inImage,dtype=dtype)
+            inImage = utils.to_channels(inImage, dtype=dtype)
             images[i ,:inImage.shape[0] ,:inImage.shape[1] ,:] = inImage
         else :
             images[i ,:inImage.shape[0] ,:inImage.shape[1]] = inImage
@@ -81,6 +81,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             break
 
     images = torch.tensor(images)
+    images = images.unsqueeze(1)
     if getAffines:
         return images,affines
     else:

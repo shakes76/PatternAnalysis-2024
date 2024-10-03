@@ -11,29 +11,33 @@ The files are stored in .NII format.
 trainPath = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 testPath = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 
-def init():
+def GetTrainSet():
     tempTrain = []
-    tempTest = []
 
     for file in os.listdir(trainPath):
         tempTrain.append(os.path.join(trainPath, file))
-
-    for file in os.listdir(testPath):
-        tempTest.append(os.path.join(testPath, file))
 
     print("Getting training data...")
     trainSet = load_data_2D(tempTrain)
     print(trainSet[0].shape)
 
+    print("Finished fetching training data.")
+
+    return trainSet
+
+def GetTestSet():
+    tempTest = []
+
+    for file in os.listdir(testPath):
+        tempTest.append(os.path.join(testPath, file))
+
     print("Getting testing data...")
     testSet = load_data_2D(tempTest)
     print(testSet[0].shape)
 
-    print("Finished fetching data.")
+    print("Finished fetching testing data.")
 
-    return trainSet, testSet
-
-
+    return testSet
 
     
 

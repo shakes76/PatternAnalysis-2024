@@ -1,5 +1,5 @@
 import torch
-from modules import GCN  # Import your GNN model
+from modules import GCN  # Import GCN model
 from dataset import load_facebook_data  # Load the dataset
 
 print("script start")
@@ -33,12 +33,20 @@ def train():
         model = GCN(input_dim=input, hidden_dim=64, output_dim=output)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
+        
+        #Convert features, edges, and target to Pytorch tensors
+        features = torch.tensor(features, dtype=torch.float32)
+        edges_index = torch.tensor(edges.T, dtype=torch.long) #Tranpose for GCN
+        target = torch.tensor(target, dtype=torch.long)
+
+
+
         # Training loop
         print("start training...")
         model.train()
         for epoch in range(200):
             optimizer.zero_grad()
-            out = model(data)
+            out = model(features, edge_index)
             loss = torch.nn.functional.nll_loss(out,target)
             loss.backward()
             optimizer.step()

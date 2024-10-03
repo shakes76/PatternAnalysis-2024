@@ -1,3 +1,7 @@
+"""
+Helper functions that will be used in the training process.
+"""
+
 import random
 import torch
 from torchvision import transforms
@@ -15,8 +19,10 @@ def get_transform(train):
             transforms.RandomRotation(10),
             transforms.RandomErasing(p=0.4, scale=(0.01, 0.10), ratio=(0.5, 2.0)),
             transforms.RandomResizedCrop(size=(210, 210), scale=(0.95, 1.02), ratio=(0.95, 1.05)),
-            transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(0.98, 1.02))
+            transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(0.98, 1.02)),
+            transforms.RandomApply([transforms.ElasticTransform(alpha=10.0, sigma=3.0)], p=0.3)  # Elastic Transform
         ])
+
     transform_list.append(transforms.Normalize(mean=[0.263], std=[0.271]))
     return transforms.Compose(transform_list)
 

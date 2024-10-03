@@ -1,3 +1,7 @@
+"""
+Train and save the model.
+"""
+
 import argparse
 import os
 import torch
@@ -13,11 +17,11 @@ from functools import partial
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
 parser.add_argument('--show_progress', default="True", type=str)
-parser.add_argument('--epochs', default=200, type=int)
+parser.add_argument('--epochs', default=60, type=int)
 parser.add_argument('--batch_size', default=64, type=int)
 parser.add_argument('--early_stopping', default=20, type=int)
 parser.add_argument('--device', default="cuda", type=str)
-parser.add_argument('--train_seed', default=0, type=int)
+parser.add_argument('--train_seed', default=1, type=int)
 
 args = parser.parse_args()
 
@@ -52,13 +56,13 @@ if __name__ == "__main__":
 
     # create model
     # gfnet-ti
-    model = GFNet(img_size=210, in_chans=1, patch_size=15, embed_dim=256, depth=12, mlp_ratio=4,
+    model = GFNet(img_size=210, in_chans=1, patch_size=14, embed_dim=384, depth=12, mlp_ratio=4,
                   norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
-
+    
     # Loss and optimizer
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=25, eta_min=1e-6)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20, eta_min=1e-6)
 
     best_val_acc = 0
     patience_counter = 0 # count patience for early stopping

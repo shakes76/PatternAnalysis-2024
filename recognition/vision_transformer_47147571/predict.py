@@ -1,9 +1,13 @@
+"""
+Make prediction and evaluate the model performance on test set.
+"""
+
 import argparse
 import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from dataset import ADNIDataset
+from dataset import ADNIDataset, ADNIDatasetTest
 from utils import get_transform, set_seed
 from modules import GFNet
 from functools import partial
@@ -32,13 +36,12 @@ log_dir = os.path.join(script_dir, 'logs/GFNet')
 if __name__ == "__main__":
     
     # load the dataset
-    test_dataset = ADNIDataset(root=args.data_path, split="test", transform=get_transform(train=False), 
-                               val=False, split_ratio=1)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)
+    test_dataset = ADNIDatasetTest(root=args.data_path, transform=get_transform(train=False))
 
     # create model
-    model = GFNet(img_size=210, in_chans=1, patch_size=15, embed_dim=256, depth=12, mlp_ratio=4,
+    model = GFNet(img_size=210, in_chans=1, patch_size=14, embed_dim=384, depth=12, mlp_ratio=4,
                   norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
+
 
     model.load_state_dict(torch.load(os.path.join(log_dir, "best_gfnet.pt")))
 
@@ -47,15 +50,16 @@ if __name__ == "__main__":
     true_list = []
 
     # test
-    for data, labels in tqdm(test_loader, disable=disable_tqdm):
+    for data, labels in tqdm(test_dataset, disable=disable_tqdm):
         data, labels = data.to(device), labels.float().to(device)
         
         outputs = model(data)
         
-        preds = outputs >= 0
-        
-        preds_list.extend(preds.detach().cpu().float().numpy())
-        true_list.extend(labels.detach().cpu().numpy())
+        outputs = (torch.sigmoid(outputs) >= 0.5).float()
+        preds = 1 if torch.mean(outputs.float()) >= 0.5 else 0 
+
+        preds_list.append(preds)
+        true_list.append(labels.item())
         
     preds_list = np.array(preds_list)
     true_list = np.array(true_list)

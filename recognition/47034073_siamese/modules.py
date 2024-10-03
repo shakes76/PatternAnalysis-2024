@@ -22,17 +22,19 @@ class TumorClassifier:
         self._model = TumorTower().to(device)
         self._optim = torch.optim.Adam(params=self._model.parameters())
         self._hparams = hparams
-        self._losses = []
+        self._losses: list[float] = []
         self._benign_centroid = None
         self._malignant_centroid = None
 
-    def train(self, train_loader: DataLoader):
+    def train(
+        self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
+    ) -> None:
         for epoch in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
             logger.debug("hello")
             logger.info("Epoch %d / loss %e", epoch, self._losses[-1])
 
-    def compute_centroids(self, loader: DataLoader) -> None:
+    def compute_centroids(self, loader: DataLoader[tuple[torch.Tensor, int]]) -> None:
         self._benign_centroid = None
         self._malignant_centroid = None
 
@@ -55,13 +57,19 @@ class TumorClassifier:
                 num_benign += len(benign)
                 num_malignant += len(malignant)
 
+                logger.debug(
+                    "Shape of benign centroid %s", str(self._benign_centroid.shape)
+                )
+                logger.debug("Shape of benign embeddings %s", str(benign.shape))
                 self._benign_centroid += benign.sum(dim=0)
                 self._malignant_centroid += malignant.sum(dim=0)
 
             self._benign_centroid /= num_benign
             self._malignant_centroid /= num_malignant
 
-    def _train_epoch(self, train_loader) -> None:
+    def _train_epoch(
+        self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
+    ) -> None:
         avg_loss = 0.0
         n = 0
         for x1, x2, y in train_loader:

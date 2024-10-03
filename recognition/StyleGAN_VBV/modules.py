@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 class WSLinear(nn.Module):
     def __init__(self, in_features, out_features):
@@ -83,6 +84,8 @@ class GenBlock(nn.Module):
         x = self.adain1(self.leaky(self.inject_noise1(self.conv1(x))), w)
         x = self.adain2(self.leaky(self.inject_noise2(self.conv2(x))), w)
         return x
+
+factors = [1, 1, 1, 1 / 2, 1 / 4, 1 / 8, 1 / 16, 1 / 32]
 
 class Generator(nn.Module):
     def __init__(self, z_dim, w_dim, in_channels, img_channels=3):

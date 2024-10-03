@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets
 from PIL import Image
 import matplotlib.pylab as plt
+from math import log2
 
 DATASET_PATH = '/home/groups/comp3710/ADNI'
 START_TRAIN_IMG_SIZE = 4

@@ -2,10 +2,13 @@ import torch
 from modules import GCN  # Import your GNN model
 from dataset import load_facebook_data  # Load the dataset
 
+print("script start")
+
 def train():
+    print("start training section")
     # Load data
     print("Loading data...")
-    data = load_facebook_data('recognition/gnn-node-classification-TsungTseTu/data/facebook.npz')
+    data = load_facebook_data('/data/facebook.npz')
 
     # Check if data loaded correctly
     print(f"Data successfully loaded. Number of nodes: {data.num_nodes}, Number of classes: {data.num_classes}")

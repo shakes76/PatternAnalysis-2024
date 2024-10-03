@@ -74,7 +74,7 @@ Several techniques were used during the training phase.
 
 ## Results
 
-We provided our trained model. You can download the **model** and **tensorboard log** from [Google Drive](https://drive.google.com/drive/folders/1RUhFyJrzHR0Rm5UYrUytsMD3Ht17Vy2N?usp=sharing). Please place the `log` folder under the `vision_transformer_47147571` directory.
+We provided our trained model. You can download the **model** and **tensorboard event file** from [Google Drive](https://drive.google.com/drive/folders/1RUhFyJrzHR0Rm5UYrUytsMD3Ht17Vy2N?usp=sharing). Please place the `log` folder under the `vision_transformer_47147571` directory.
 
 We also visualized the training/validation accuracy and average training/validation loss per batch over the epochs below.
 

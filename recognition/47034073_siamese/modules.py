@@ -37,6 +37,20 @@ class TumorClassifier:
             self._train_epoch(train_loader)
             logger.info("Epoch %d / loss %e", epoch, self._losses[-1])
 
+    def compute_all_embeddings(
+        self, loader: DataLoader
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        with torch.inference_mode():
+            all_embeddings = []
+            all_labels = []
+            for x, labels in loader:
+                x = x.to(device)
+                embeddings = self._model.compute_embedding(x).cpu()
+                all_embeddings.append(embeddings)
+                all_labels.append(labels)
+
+            return torch.cat(all_embeddings), torch.cat(all_labels)
+
     def compute_centroids(self, loader: DataLoader[tuple[torch.Tensor, int]]) -> None:
         self._benign_centroid = None
         self._malignant_centroid = None
@@ -132,7 +146,8 @@ class TumorClassifier:
             if time.time() - start_time > 60:
                 start_time = time.time()
                 logger.info(
-                    "Loss so far %e / progress %d/%d",
+                    "step %d / loss %e / progress %d/%d",
+                    n,
                     avg_loss / n,
                     num_observations,
                     len(train_loader.dataset),

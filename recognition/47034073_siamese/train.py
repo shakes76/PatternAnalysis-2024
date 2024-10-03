@@ -1,7 +1,10 @@
+import time
 import argparse
 import logging
 import pathlib
 
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report
 import pandas as pd
 from torch.utils.data import DataLoader
 
@@ -34,6 +37,7 @@ def main() -> None:
 
 
 def _debug() -> None:
+    script_start_time = time.time()
     hparams = HyperParams(batch_size=128, num_epochs=1)
 
     trainer = TumorClassifier(hparams)
@@ -60,33 +64,53 @@ def _debug() -> None:
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     train_meta_df = train_meta_df.sample(n=128)
 
-    centroid_dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
-    train_classification_loader = DataLoader(
-        centroid_dataset, batch_size=128, num_workers=2
+    train_classification_dataset = TumorClassificationDataset(
+        IMAGES_PATH, train_meta_df
     )
-    trainer.compute_centroids(train_classification_loader)
+    train_classification_loader = DataLoader(
+        train_classification_dataset, batch_size=128, num_workers=2
+    )
+    # trainer.compute_centroids(train_classification_loader)
+    embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
+    knn = KNeighborsClassifier()
+    fit_knn = knn.fit(embeddings, labels)
+
+    logger.debug(
+        "embeddings shape %s\nlabels shape %s", str(embeddings.shape), str(labels.shape)
+    )
+
+    predictions = fit_knn.predict(embeddings)
+    report = classification_report(labels, predictions)
+    logger.info("train data report:\n%s", report)
 
     logger.info("Evaluating classification on train data...")
-    acc = trainer.evaluate(train_classification_loader)
-    logger.info("Train acc: %e", acc)
+    # acc = trainer.evaluate(train_classification_loader)
+    # logger.info("Train acc: %e", acc)
 
     logger.info("Evaluating classification on val data...")
     val_meta_df = pd.read_csv(VAL_META_PATH)
     val_meta_df = val_meta_df.sample(n=128)
     val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
     val_loader = DataLoader(val_dataset, batch_size=128, num_workers=2)
-    val_acc = trainer.evaluate(val_loader)
-    logger.info("Val acc: %e", val_acc)
+    # val_acc = trainer.evaluate(val_loader)
+    # logger.info("Val acc: %e", val_acc)
+    embeddings, labels = trainer.compute_all_embeddings(val_loader)
+    predictions = fit_knn.predict(embeddings)
 
-    logger.info("Script done.")
+    report = classification_report(labels, predictions)
+    logger.info("val data report\n%s", report)
+
+    total_script_time = time.time() - script_start_time
+    logger.info("Script done in %d seconds.", total_script_time)
 
 
 def _train() -> None:
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=128, num_epochs=10, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=100, learning_rate=0.0001)
     trainer = TumorClassifier(hparams)
 
+    # Prepare train pair data
     pairs_df = pd.read_csv(PAIRS_PATH)
     dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
     train_loader = DataLoader(
@@ -101,26 +125,32 @@ def _train() -> None:
     logger.info("Starting training...")
     trainer.train(train_loader)
 
-    logger.info("Computing centroids...")
-
+    # Prepare train classification data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
-
-    centroid_dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
-    train_classification_loader = DataLoader(
-        centroid_dataset, batch_size=hparams.batch_size, num_workers=num_workers
+    train_classification_dataset = TumorClassificationDataset(
+        IMAGES_PATH, train_meta_df
     )
+    train_classification_loader = DataLoader(
+        train_classification_dataset,
+        batch_size=hparams.batch_size,
+        num_workers=num_workers,
+    )
+
+    logger.info("Computing centroids...")
     trainer.compute_centroids(train_classification_loader)
 
     logger.info("Evaluating classification on train data...")
     acc = trainer.evaluate(train_classification_loader)
     logger.info("Train acc: %e", acc)
 
-    logger.info("Evaluating classification on val data...")
+    # Prepare validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
     val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
     val_loader = DataLoader(
         val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
     )
+
+    logger.info("Evaluating classification on val data...")
     val_acc = trainer.evaluate(val_loader)
     logger.info("Val acc: %e", val_acc)
 

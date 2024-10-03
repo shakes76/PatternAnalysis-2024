@@ -85,7 +85,7 @@ def _debug() -> None:
 def _train() -> None:
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=256, num_epochs=1)
+    hparams = HyperParams(batch_size=128, num_epochs=1, learning_rate=0.0001)
     trainer = TumorClassifier(hparams)
 
     pairs_df = pd.read_csv(PAIRS_PATH)

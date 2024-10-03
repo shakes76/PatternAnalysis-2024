@@ -16,12 +16,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class HyperParams:
     num_epochs: int = 20
     batch_size: int = 32
+    learning_rate: float = 0.001
 
 
 class TumorClassifier:
     def __init__(self, hparams: HyperParams) -> None:
         self._model = TumorTower().to(device)
-        self._optim = torch.optim.Adam(params=self._model.parameters())
+        self._optim = torch.optim.Adam(
+            params=self._model.parameters(), lr=hparams.learning_rate
+        )
         self._hparams = hparams
         self._losses: list[float] = []
         self._benign_centroid = None
@@ -97,12 +100,15 @@ class TumorClassifier:
         start_time = time.time()
         avg_loss = 0.0
         n = 0
+        num_observations = 0
         for x1, x2, y in train_loader:
             n += 1
             logger.debug("start train loop")
             x1 = x1.to(device)
             x2 = x2.to(device)
             y = y.float().to(device)
+            num_observations += len(y)
+
             self._optim.zero_grad()
             logits = self._model(x1, x2)
             loss = binary_cross_entropy_with_logits(logits.flatten(), y)
@@ -112,7 +118,12 @@ class TumorClassifier:
 
             if time.time() - start_time > 60:
                 start_time = time.time()
-                logger.info("Loss so far: %e", avg_loss / n)
+                logger.info(
+                    "Loss so far %e / progress %d/%d",
+                    avg_loss / n,
+                    num_observations,
+                    len(train_loader.dataset),
+                )
 
         avg_loss /= n
         self._losses.append(avg_loss)

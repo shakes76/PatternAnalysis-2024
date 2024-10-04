@@ -6,10 +6,10 @@ from torchvision import models
 class SiameseNetwork(nn.Module):
     def __init__(self, backbone="resnet18"):
         '''
-        Creates a siamese network with a network from torchvision.models as backbone.
+        Creates a siamese network with a network from torchvision.models as backbone -> our featrue extractor
 
             Parameters:
-                    backbone (str): Options of the backbone networks can be found at https://pytorch.org/vision/stable/models.html
+                    backbone (str): Networks from https://pytorch.org/vision/stable/models.html
         '''
 
         super().__init__()
@@ -17,14 +17,16 @@ class SiameseNetwork(nn.Module):
         if backbone not in models.__dict__:
             raise Exception("No model named {} exists in torchvision.models.".format(backbone))
 
-        # Create a backbone network from the pretrained models provided in torchvision.models
+        # Create a feature extractor network from the pretrained models
         self.backbone = models.__dict__[backbone](pretrained=True, progress=True)
 
-        # Get the number of features that are outputted by the last layer of backbone network.
+        # Get the number of features that are outputted by the last layer of feature extractor network
         out_features = list(self.backbone.modules())[-1].out_features
 
-        # Create an MLP (multi-layer perceptron) as the classification head.
-        # Classifies if provided combined feature vector of the 2 images represent same player or different.
+        # Our classification head with be an MLP with dense layers
+        # The classification head classifies if the given combined feature
+        # vector represents both malignant or both benign (same class of image) -> will return a value close to 1
+        # Else if the images are of different classes, we want the head to return a value close to 0
         self.cls_head = nn.Sequential(
             nn.Dropout(p=0.5),
             nn.Linear(out_features, 512),
@@ -55,7 +57,7 @@ class SiameseNetwork(nn.Module):
                     output (torch.Tensor): shape=[b, 1], Similarity of each pair of images
         '''
 
-        # Pass the both images through the backbone network to get their seperate feature vectors
+        # Pass the both images through the backbone network to get their separate feature vectors
         feat1 = self.backbone(img1)
         feat2 = self.backbone(img2)
 
@@ -63,6 +65,10 @@ class SiameseNetwork(nn.Module):
         # to generate a combined feature vector representing the similarity between the two.
         combined_features = feat1 * feat2
 
-        # Pass the combined feature vector through classification head to get similarity value in the range of 0 to 1.
-        output = self.cls_head(combined_features)
+        # Combine this similarity vector with the original 2 feature vectors to pass to the Siamese net
+        # This gives the dense Siamese layers the most opportunity to learn all patterns within the feature vectors
+        final_vector = torch.cat((feat1, feat2, combined_features), dim=1)
+
+        # Pass the final feature vector through classification head to get similarity value in the range of 0 to 1.
+        output = self.cls_head(final_vector)
         return output

@@ -5,10 +5,9 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler
 from torch.amp import autocast
-from utils import visualize_denoising_process, log_threshold_visualization_to_wandb
+from utils import visualize_denoising_process
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
-from loss import PerceptualLoss
-from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM, Lookahead, ImprovedNoiseScheduler
+from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
 
 # SETUP - Must Match Image Size of VAE
 IMAGE_SIZE = 256
@@ -18,11 +17,6 @@ method = 'Local'
 image_transform = transforms.Compose([
     transforms.ToPILImage(),
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    # transforms.RandomHorizontalFlip(),
-    # transforms.RandomVerticalFlip(),
-    # transforms.RandomRotation(10),
-    # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-    # transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
     transforms.ToTensor(),    
     transforms.Normalize((0.5,), (0.5,)),
 ])
@@ -39,30 +33,25 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device}')
 
 print("Loading model...") # Load Pretrained VAE and new Unet
-vae = torch.load(f'checkpoints/VAE/ADNI-vae_e100_b8_im{IMAGE_SIZE}_l16.pt')
+vae = torch.load(f'checkpoints/VAE/ADNI-vae_e85_b8_im{IMAGE_SIZE}.pt')
 vae.eval() 
 for param in vae.parameters():
     param.requires_grad = False 
-unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512], time_emb_dim=256)
 
-#noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
-noise_scheduler = ImprovedNoiseScheduler(num_timesteps=1000).to(device)
-
+unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
+noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
 model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
 
-perceptual_loss = PerceptualLoss(vae, threshold=0.5, weight=0.1).to(device)
-mse_loss = nn.MSELoss()
-#mse_loss = WeightedMSELoss().to(device)
+criterion = nn.MSELoss()
 scaler = GradScaler()
 
 lr = 1e-4
-epochs = 100
+epochs = 500
 steps_per_epoch = len(train_loader)
 total_steps = steps_per_epoch * epochs
 warmup_steps = int(0.1 * total_steps)
 
-base_optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-optimizer = Lookahead(base_optimizer, k=5, alpha=0.5)
+optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
 
 #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 scheduler = CosineAnnealingWarmupScheduler(optimizer, warmup_steps, total_steps)
@@ -76,8 +65,7 @@ wandb.init(
         "epochs": epochs,
         "optimizer": type(optimizer).__name__,
         "scheduler": type(scheduler).__name__,
-        "perceptual loss": type(perceptual_loss).__name__,
-        "mse loss": type(mse_loss).__name__,
+        "loss": type(criterion).__name__,
         "scaler": type(scaler).__name__,
         "name": "SD-ADNI - VAE and Unet",
         "image size": IMAGE_SIZE,
@@ -118,10 +106,7 @@ for epoch in range(epochs):
         # Train UNet
         with autocast('cuda'):
             predicted_noise = model.predict_noise(noisy_latents, timesteps)
-            mse = mse_loss(predicted_noise, noise)
-
-        perceptual = perceptual_loss(denoised_images, images)
-        loss = mse + perceptual_loss.weight * perceptual
+            loss = criterion(predicted_noise, noise)
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -138,13 +123,11 @@ for epoch in range(epochs):
             'train_psnr': psnr.item(),
             'train_ssim': ssim.item(),
             'train_loss': loss.item(),
-            'train_mse': mse.item(),
-            'train_perceptual': perceptual.item(),
             'learning_rate': optimizer.param_groups[0]['lr'],
         })
 
         # Update progress bar
-        loop.set_postfix(loss=loss.item(), mse=mse.item(), perceptual=perceptual.item())
+        loop.set_postfix(loss=loss.item(), psnr=psnr.item(), ssim=ssim.item())
 
     # Compute average metrics
     avg_train_loss = train_loss / len(train_loader)
@@ -176,10 +159,7 @@ for epoch in range(epochs):
 
             with autocast('cuda'):
                 predicted_noise = model.predict_noise(noisy_latents, timesteps)
-                mse = mse_loss(predicted_noise, noise)
-                
-            perceptual = perceptual_loss(denoised_images, images)
-            loss = mse + perceptual_loss.weight * perceptual
+                loss = criterion(predicted_noise, noise)
 
             val_loss += loss.item()
             val_psnr += psnr.item()
@@ -206,11 +186,10 @@ for epoch in range(epochs):
     print(f'Train SSIM: {avg_train_ssim:.4f}, Val SSIM: {avg_val_ssim:.4f}')
 
     # Generate and log sample images
-    if (epoch) % 2 == 0: 
+    if (epoch) % 10 == 0: 
         sample_images = model.sample(BATCH_SIZE, device=device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)
-        log_threshold_visualization_to_wandb(perceptual_loss, images, num_thresholds=5)
         wandb.log({
             'Generated SSIM': ssim,
             'Generated PSNR': psnr

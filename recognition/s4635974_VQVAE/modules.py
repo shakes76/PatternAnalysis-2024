@@ -27,6 +27,7 @@ class VectorQuantizer(nn.Module):
         self.beta = beta
     
     def forward(self, z_e):
+        z_e = z_e.float()
         z_e_flattened = z_e.view(-1, self.dim_embedding)
         distances = torch.sum(z_e_flattened ** 2, dim=1, keepdim=True) + \
                     torch.sum(self.embeddings.weight ** 2, dim=1) - \
@@ -34,6 +35,7 @@ class VectorQuantizer(nn.Module):
         encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
         quantized = self.embeddings(encoding_indices).view_as(z_e)
         quantized = z_e + (quantized - z_e).detach()
+        quantized = quantized.float()
 
         # Calculate loss
         recon_loss = F.mse_loss(quantized.detach(), z_e)

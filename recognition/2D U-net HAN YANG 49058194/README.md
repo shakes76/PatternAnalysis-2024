@@ -38,7 +38,7 @@ This model is a 2D UNet with encoder decoder structure and skip connections.
     - `dice_score(pred, target)`: Calculates the Dice score.
     - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
 - `test_driver.py`
-  - **Purpose**: Calls and runs algorithm.
+  - **Purpose**: Test driver script that calls and runs algorithm.
   - **Key Steps**:
     - Download and preprocess data.
     - Train the U-Net model.

@@ -149,4 +149,7 @@ class ISICDataLoader:
 
         return benign_loader, malignant_loader
 
+        # We want to change this function to return data loaders for train, validation and test data
+        # I think that there's a way to imbed the classification onto each item in the data loader (means we can dilute)
+
 

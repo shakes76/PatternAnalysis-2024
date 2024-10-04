@@ -37,6 +37,6 @@ dice = predict_and_evaluate(processed_dir)
 
 # Step 5: Output Results
 if dice >= 0.75:
-    print(f"Model achieved the desired Dice score of 0.75 or above: {dice}")
+    print(f"Model achieved the desired Dice score of 0.75 or above: {dice:.2f}")
 else:
-    print(f"Model did not achieve the desired Dice score: {dice}")
+    print(f"Model did not achieve the desired Dice score: {dice:.2f}")

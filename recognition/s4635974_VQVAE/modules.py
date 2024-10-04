@@ -6,10 +6,10 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_hiddens):
         super(ResidualBlock, self).__init__()
         self.block = nn.Sequential(
-            nn.ReLU(),
+            nn.ReLU(True),
             nn.Conv2d(in_channels, num_residual_hiddens, 
                       kernel_size=3, stride=1, padding=1, bias=False),
-            nn.ReLU(),
+            nn.ReLU(True),
             nn.Conv2d(num_residual_hiddens, num_hiddens, 
                       kernel_size=1, stride=1, bias=False)
         )
@@ -27,15 +27,16 @@ class VectorQuantizer(nn.Module):
         self.beta = beta
     
     def forward(self, z_e):
-        z_e = z_e.float()
+        print("Quantized z_e type:", z_e.dtype)
         z_e_flattened = z_e.view(-1, self.dim_embedding)
         distances = torch.sum(z_e_flattened ** 2, dim=1, keepdim=True) + \
                     torch.sum(self.embeddings.weight ** 2, dim=1) - \
                     2 * torch.matmul(z_e_flattened, self.embeddings.weight.t())
         encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
         quantized = self.embeddings(encoding_indices).view_as(z_e)
+        print("Quantized shape:", quantized.shape)
         quantized = z_e + (quantized - z_e).detach()
-        quantized = quantized.float()
+        print("Quantized tensor type:", quantized.dtype)
 
         # Calculate loss
         recon_loss = F.mse_loss(quantized.detach(), z_e)

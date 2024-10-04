@@ -163,4 +163,5 @@ In the prediction results, the prostate area seems to be well identified and seg
     - In my `predict.py` code. <br />Output: `Model achieved the desired Dice score of 0.75 or above: 0.81`.  
  
 ## Result
-The model successfully achieve a Dice score of at least 0.75 on the test set.
+The model successfully achieve a Dice score of at least 0.75 on the test set.<br />
+With `test_driver.py` output: `Model achieved the desired Dice score of 0.75 or above: 0.81`.

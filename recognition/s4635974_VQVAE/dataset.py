@@ -3,7 +3,6 @@ import numpy as np
 import nibabel as nib
 from torch.utils.data import Dataset
 import torch
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import scipy.ndimage
@@ -55,7 +54,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     rows, cols = target_shape  # Use the target shape for consistency
     images = np.zeros((num, rows, cols), dtype=dtype)
     
-    for i, inName in enumerate(tqdm(imageNames)):
+    for i, inName in enumerate(imageNames):
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching='unchanged')  # Read from disk only
         affine = niftiImage.affine

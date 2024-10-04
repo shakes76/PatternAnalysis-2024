@@ -32,7 +32,7 @@ def predict():
     output_dim = len(set(target.numpy())) # number of unique classes
 
     # Initialize the model (same as in training)
-    model = GCN(input_dim=input_dim, hidden_dim=64, output_dim=output_dim)
+    model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
 
     # Load pre-trained model
     model.load_state_dict(torch.load("gnn_model.pth", weights_only=True))

@@ -59,8 +59,8 @@ def train():
         print("Model starting...")
         input_dim = X_train.shape[1]
         output_dim = torch.unique(y_train).size(0) #get number of unique class
-        model = GCN(input_dim=input_dim, hidden_dim=64, output_dim=output_dim)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+        model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
 
         
 

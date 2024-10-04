@@ -13,16 +13,17 @@ from siamese import SiameseNetwork
 from libs.dataset import Dataset
 
 if __name__ == "__main__":
-    # The path to the model's checkpoint - where weights are saved ---------------------------
-    checkpoint_path = ""
+    # The path to the model's checkpoint - where weights are saved
+    # The checkpoint is kind of like a list of different checkpoints, hence why we need to index it with 'backbone'
+    checkpoint_path = "~/project/outputs/best.pth"
 
-    # If we decide to save the data to the FileSystem rather than calling the data processing every time ---------------------
+    # If we decide to save the data to the FileSystem rather than calling the data processing every time ---------------
     data_path = ""
 
     # Set device to CUDA if a CUDA device is available, else CPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Get the data here (as a tensor dataloader) ------------------------------------
+    # Get the data here (as a tensor dataloader) ------------------------------------------------------------
     test_data = None
 
     criterion = torch.nn.BCELoss()

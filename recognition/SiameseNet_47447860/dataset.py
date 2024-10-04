@@ -13,9 +13,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not torch.cuda.is_available():
     print("Warning: CUDA not Found. Using CPU")
 
-images_path = "~/.kaggle/train-image/image"
-csv_path = "~/.kaggle/train-metadata.csv"
-
 H, W = 256, 256
 
 

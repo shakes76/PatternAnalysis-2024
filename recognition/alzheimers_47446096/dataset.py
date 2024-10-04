@@ -2,9 +2,16 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 
-ROOT = "../ADNI/AD_NC/train"
+ROOT = "../../../AD_NC"
 TESTPATH = "/test"
 TRAINPATH = "/train"
+
+TRAINTRANSFORM = transforms.Compose([
+    transforms.ToTensor()
+])
+TESTTRANSFORM = transforms.Compose([
+    transforms.ToTensor()
+])
 
 def getTrainLoader(path: str = ROOT + TRAINPATH, batchSize: int = 128, shuffle: bool = True):
     '''
@@ -17,7 +24,10 @@ def getTrainLoader(path: str = ROOT + TRAINPATH, batchSize: int = 128, shuffle: 
     Returns:
         Pytorch DataLoader with ADNI training data loaded
     '''
-    trainData = ImageFolder(path)
+    trainData = ImageFolder(
+        root = path,
+        transform = TRAINTRANSFORM
+    )
     trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
     return trainLoader
 
@@ -32,6 +42,9 @@ def getTestLoader(path = ROOT + TESTPATH, batchSize = 128, shuffle = True):
     Returns:
         Pytorch DataLoader with ADNI test data loaded
     '''
-    trainData = ImageFolder(path)
+    trainData = ImageFolder(
+        root = path,
+        transform = TESTTRANSFORM
+    )
     trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
     return trainLoader

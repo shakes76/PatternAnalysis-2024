@@ -17,3 +17,23 @@ class GlobalFilterBlock(nn.Module):
 
         return x
 
+# GFNet block and MLP
+class BlockMLP(nn.Module):
+    def __init__(self, dim, mlp_ratio=4., drop=0.0):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(dim)
+        self.global_filter = GlobalFilterBlock(dim)
+        # MLP
+        self.norm2 = nn.LayerNorm(dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, int(dim * mlp_ratio)),
+            nn.GELU(),
+            nn.Dropout(drop),
+            nn.Linear(int(dim * mlp_ratio), dim),
+            nn.Dropout(drop)
+        )
+    
+    def forward(self, x):
+        x = x + self.global_filter(self.norm1(x)) # Global Filter
+        x = x + self.mlp(self.norm2(x)) # MLP
+        return x

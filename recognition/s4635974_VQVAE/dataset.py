@@ -104,12 +104,9 @@ class HipMRIDataset(Dataset):
 
         # Extract the 2D array of the first (and only) image
         image = image_data[0]  # load_data_2D returns a list
-
-        # Resize image if needed
-        # image_resized = resize_image(image, target_shape=(256, 128))  # Specify target shape
         
         if self.transform:
-            image_resized = self.transform(image_resized)
+            image = self.transform(image)
 
         return image
 

@@ -9,11 +9,13 @@ class GCN(torch.nn.Module):
         super(GCN, self).__init__()
         self.conv1 = GCNConv(input_dim, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, output_dim)
+        self.dropout = torch.nn.Dropout(p=0.5) # Add dropout with 50% prob
 
     def forward(self, x, edge_index):
         # First GCN layer+ RELU active
         x = self.conv1(x, edge_index)
         x = F.relu(x)
+        x = self.dropout(x) #apply dropout after relu
 
         # Second GCN layer + log_softmax for multiclassification
         x = self.conv2(x, edge_index)

@@ -96,7 +96,7 @@ class VQVAE(nn.Module):
     def forward(self, x):
         x = self.encoder(x)
         x = self.pre_vq_conv(x)
-        loss, quantized, _, _ = self.vq(x)
+        loss, quantized, _ = self.vq(x)
         x = self.decoder(quantized)
 
         return loss, x

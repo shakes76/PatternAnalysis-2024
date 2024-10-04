@@ -8,13 +8,14 @@ from torchmetrics.functional.image \
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from tqdm import tqdm
 
 from dataset import HipMRILoader
 import modules
 
 
 # Hyperparameters
-num_epochs = 5
+num_epochs = 1
 batch_size = 32
 lr = 0.0002
 num_hiddens = 128
@@ -80,7 +81,7 @@ for epoch in range(num_epochs):
     model.train()
     training_error = []
 
-    for i, training_images in enumerate(train_loader):
+    for i, training_images in enumerate(tqdm(train_loader, disable=True)):
         training_input_images = training_images.to(device)
 
         optimizer.zero_grad()
@@ -129,26 +130,34 @@ for epoch in range(num_epochs):
     epoch_ssim.append(average_ssim)
     print()
 
-    # Save a few real and decoded images for inspection
-    num_images_to_save = 5  
+    # Number of images to save
+    num_images_to_save = 4  # Adjust this for the number of real and decoded images
+
+    # Convert tensors to numpy arrays
     real_images = validation_input_images.cpu().numpy()
     decoded_images = validation_output_images.cpu().numpy()  
 
-    # Save images
-    for k in range(num_images_to_save):
-        # Save real images
-        plt.imshow(real_images[k, 0], cmap='gray')
-        plt.title('Real Image')
-        plt.axis('off')
-        plt.savefig(os.path.join(save_dir, f'real_image_{epoch + 1}_{k + 1}.png'))
-        plt.close()
+    # Create a new figure for saving real and decoded images side by side
+    fig, axes = plt.subplots(num_images_to_save, 2, figsize=(8, num_images_to_save * 4))  # 2 columns
 
-        # Save decoded images
-        plt.imshow(decoded_images[k, 0], cmap='gray')
-        plt.title('Decoded Image')
-        plt.axis('off')
-        plt.savefig(os.path.join(save_dir, f'decoded_image_{epoch + 1}_{k + 1}.png'))
-        plt.close()
+    # Plot real and decoded images
+    for k in range(num_images_to_save):
+        # Plot real images
+        axes[k, 0].imshow(real_images[k, 0], cmap='gray')
+        axes[k, 0].set_title('Real Image')
+        axes[k, 0].axis('off')
+
+        # Plot decoded images
+        axes[k, 1].imshow(decoded_images[k, 0], cmap='gray')
+        axes[k, 1].set_title('Decoded Image')
+        axes[k, 1].axis('off')
+
+    # Adjust layout for better spacing
+    plt.tight_layout()
+
+    # Save the figure as a single PNG file
+    plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
+    plt.close()
 
 
 # Plotting and saving the graphs
@@ -180,5 +189,9 @@ plt.savefig(os.path.join(save_dir, 'average_ssim.png'))
 # Close the figure to free up memory
 plt.close()
 
-# Save model
-torch.save(model, save_dir)
+# Define the save directory and ensure it exists
+model_dir = 'saved_model/model.pth'
+os.makedirs(os.path.dirname(model_dir), exist_ok=True)
+
+# Save the model state_dict
+torch.save(model.state_dict(), model_dir)

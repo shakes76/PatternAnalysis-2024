@@ -125,7 +125,7 @@ for epoch in range(num_epochs):
 
     # Average validation loss and SSIM
     average_validation_loss = validation_loss / len(validate_loader)
-    epoch_validation_loss.append(average_validation_loss.item())
+    epoch_validation_loss.append(average_validation_loss)
     average_ssim = np.mean(validation_ssim)
     print(f'Epoch [{epoch + 1}/{num_epochs}], Validation loss: {average_validation_loss:.5f}, Average SSIM: {average_ssim:.5f}')
     epoch_ssim.append(average_ssim)

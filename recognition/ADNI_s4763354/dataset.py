@@ -1,10 +1,11 @@
 import os
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
 from sklearn.model_selection import train_test_split
+import torch
+import numpy as np
 
 def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_seed=42):
-    # Define transforms for training and validation/test
     train_transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(),
@@ -42,7 +43,8 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
         all_patient_ids,
         test_size=val_ratio,
         random_state=random_seed,
-        shuffle=True
+        shuffle=True,
+        stratify=[full_dataset.targets[patient_to_indices[pid][0]] for pid in all_patient_ids]
     )
     
     # Gather all image indices for training and validation
@@ -62,16 +64,20 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     train_subset.dataset.transform = train_transform
     val_subset.dataset.transform = val_test_transform
     
-    # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    # Compute class weights for the training set
+    train_labels = [full_dataset.targets[i] for i in train_indices]
+    class_sample_count = np.array([len(np.where(train_labels == t)[0]) for t in np.unique(train_labels)])
+    weight = 1. / class_sample_count
+    samples_weight = np.array([weight[t] for t in train_labels])
+    samples_weight = torch.from_numpy(samples_weight)
+    sampler = WeightedRandomSampler(samples_weight.type('torch.DoubleTensor'), len(samples_weight))
+
+    train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=sampler, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
-    
-    # Load test dataset with validation/test transforms
     test_dataset = datasets.ImageFolder(root=test_dir, transform=val_test_transform)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     
     return train_loader, val_loader, test_loader
-
 
 
 

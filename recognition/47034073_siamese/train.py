@@ -4,7 +4,7 @@ import logging
 import pathlib
 
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, roc_auc_score
 import pandas as pd
 from torch.utils.data import DataLoader
 
@@ -141,7 +141,7 @@ def _train() -> None:
     logger.info("Computing centroids...")
     # trainer.compute_centroids(train_classification_loader)
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier()
+    knn = KNeighborsClassifier(weights="distance")
     fit_knn = knn.fit(embeddings, labels)
 
     logger.info("Evaluating classification on train data...")
@@ -149,8 +149,10 @@ def _train() -> None:
     # logger.info("Train acc: %e", acc)
 
     predictions = fit_knn.predict(embeddings)
+    proba = fit_knn.predict_proba(embeddings)
     report = classification_report(labels, predictions)
-    logger.info("train data report:\n%s", report)
+    auc = roc_auc_score(labels, proba)
+    logger.info("train data report:\n%s\nauc: %d", report, auc)
 
     # Prepare validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
@@ -165,9 +167,11 @@ def _train() -> None:
     #
     embeddings, labels = trainer.compute_all_embeddings(val_loader)
     predictions = fit_knn.predict(embeddings)
+    proba = fit_knn.predict_proba(embeddings)
 
     report = classification_report(labels, predictions)
-    logger.info("val data report\n%s", report)
+    auc = roc_auc_score(labels, proba)
+    logger.info("val data report\n%s\nauc: %d", report, auc)
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)

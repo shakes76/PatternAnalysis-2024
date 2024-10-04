@@ -53,6 +53,6 @@ if __name__ == "__main__":
     root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
     dice = predict_and_evaluate(root_dir)
     if dice >= 0.75:
-        print(f"Model achieved the desired Dice score of 0.75 or above: {dice}")
+        print(f"Model achieved the desired Dice score of 0.75 or above: {dice:.2f}")
     else:
-        print(f"Model did not achieve the desired Dice score: {dice}")
+        print(f"Model did not achieve the desired Dice score: {dice:.2f}")

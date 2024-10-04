@@ -78,7 +78,6 @@ save_dir = 'saved_images'
 
 # Training loop
 for epoch in range(num_epochs):
-    print(f"Epoch: {epoch}")
     model.train()
     training_error = []
 
@@ -112,8 +111,9 @@ for epoch in range(num_epochs):
             vq_loss, validation_output_images = model(validation_input_images)
 
             # Reshape images for SSIM calculation
-            real_image = validation_input_images.view(-1, 1, 128, 128).detach().to(device)
-            decoded_image = validation_output_images.view(-1, 1, 128, 128).detach()
+            # Reshape images for SSIM calculation
+            real_image = validation_input_images.view(-1, 1, 256, 128).detach().to(device)
+            decoded_image = validation_output_images.view(-1, 1, 256, 128).detach().to(device)
             
             # Calculate SSIM and store it
             similarity = ssim(decoded_image, real_image, data_range=1.0).item()

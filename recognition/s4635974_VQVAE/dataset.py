@@ -89,19 +89,28 @@ class HipMRIDataset(Dataset):
         self.image_dir = image_dir
         self.image_names = [os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if fname.endswith('.nii.gz')]
         self.transform = transform
-        self.images = load_data_2D(self.image_names, normImage=normImage)  # Load all images
+        self.normImage = normImage  # Store the normalization flag
 
     def __len__(self):
-        return len(self.images)
+        return len(self.image_names)
 
     def __getitem__(self, idx):
-        image = self.images[idx]
-        
-        image = torch.tensor(image, dtype=torch.float32)
+        # Get the image path
+        image_path = self.image_names[idx]
+
+        # Use load_data_2D to load the image
+        # Since load_data_2D expects a list of image names, wrap the path in a list
+        image_data = load_data_2D([image_path], normImage=self.normImage)
+
+        # Extract the 2D array of the first (and only) image
+        image = image_data[0]  # load_data_2D returns a list
+
+        # Resize image if needed
+        # image_resized = resize_image(image, target_shape=(256, 128))  # Specify target shape
         
         if self.transform:
-            image = self.transform(image)
-        
+            image_resized = self.transform(image_resized)
+
         return image
 
 # Dataloader class for HipMRI data

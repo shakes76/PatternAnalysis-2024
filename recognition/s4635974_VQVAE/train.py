@@ -69,8 +69,11 @@ optimizer = optim.Adam(
     amsgrad=False)
 
 # Training mectrics
-epoch_training_loss = []
-epoch_validation_loss = []
+epoch_training_output_loss = []
+epoch_training_vq_loss = []
+
+epoch_validation_output_loss = []
+epoch_validation_vq_loss = []
 epoch_ssim = []
 
 # Directory for saving images
@@ -79,7 +82,8 @@ save_dir = 'saved_images'
 # Training loop
 for epoch in range(num_epochs):
     model.train()
-    training_error = []
+    training_output_error = []
+    training_vq_error = []
 
     for i, training_images in enumerate(train_loader):
         training_input_images = training_images.to(device)
@@ -94,23 +98,27 @@ for epoch in range(num_epochs):
 
         optimizer.step()
 
-        training_error.append(output_loss.item())
+        training_output_error.append(output_loss.item())
+        training_vq_error.append(vq_loss.item())
     
-    # Calculate and store average training loss
-    training_loss = np.mean(training_error[-300:])
-    epoch_training_loss.append(training_loss)
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Training loss: {training_loss:.5f}')
+    # Calculate and store average training losses
+    training_output_loss = np.mean(training_output_error)
+    epoch_training_output_loss.append(training_output_loss)
+    training_vq_loss = np.mean(training_vq_error)
+    epoch_training_vq_loss.append(training_vq_loss)
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Training output loss: {training_output_loss:.5f}, Training VQ loss: {training_vq_loss:.5f}')
 
     # Evaluate on the validation dataset
     model.eval()
-    validation_loss = 0
+    validation_output_error = []
+    validation_vq_error = []
     validation_ssim = []
+
     with torch.no_grad():
         for j, validation_images in enumerate(validate_loader):
             validation_input_images = validation_images.to(device)
-            vq_loss, validation_output_images = model(validation_input_images)
+            validation_vq_loss, validation_output_images = model(validation_input_images)
 
-            # Reshape images for SSIM calculation
             # Reshape images for SSIM calculation
             real_image = validation_input_images.view(-1, 1, 256, 128).detach().to(device)
             decoded_image = validation_output_images.view(-1, 1, 256, 128).detach().to(device)
@@ -120,15 +128,18 @@ for epoch in range(num_epochs):
             validation_ssim.append(similarity)
 
              # Calculate output loss for validation
-            output_loss = F.mse_loss(validation_output_images, validation_input_images) / data_variance
-            validation_loss += (output_loss.item() + vq_loss.item())
+            validation_output_loss = F.mse_loss(validation_output_images, validation_input_images) / data_variance
+            validation_output_error.append(validation_output_loss.item())
+            validation_vq_error.append(validation_vq_loss.item())
 
     # Average validation loss and SSIM
-    average_validation_loss = validation_loss / len(validate_loader)
-    epoch_validation_loss.append(average_validation_loss)
+    average_validation_loss = np.mean(validation_output_error)
+    epoch_validation_output_loss.append(average_validation_loss)
+    average_validation_vq_loss = np.mean(validation_vq_error)
+    epoch_validation_vq_loss.append(average_validation_vq_loss)
     average_ssim = np.mean(validation_ssim)
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Validation loss: {average_validation_loss:.5f}, Average SSIM: {average_ssim:.5f}')
     epoch_ssim.append(average_ssim)
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Validation output loss: {average_validation_loss:.5f}, Validation VQ loss: {average_validation_vq_loss}, Average SSIM: {average_ssim:.5f}')
     print()
 
     if (epoch + 1) % 10 == 0:
@@ -165,33 +176,56 @@ for epoch in range(num_epochs):
         plt.close()
 
 
-# Plotting and saving the graphs
+epochs = range(1, num_epochs + 1)
+
+# 1. Plot Training Output Loss vs. Validation Output Loss
+plt.figure(figsize=(12, 6))  # Width of normal page
+plt.plot(epochs, epoch_training_output_loss, label='Training Output Loss')
+plt.plot(epochs, epoch_validation_output_loss, label='Validation Output Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Output Loss')
+plt.title('Training and Validation Output Loss per Epoch')
+plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(save_dir, 'output_loss_per_epoch.png'))
+plt.close()
+
+# 2. Plot Training VQ Loss vs. Validation VQ Loss
 plt.figure(figsize=(12, 6))
-
-# Plot Training and Validation Loss
-plt.subplot(1, 2, 1)
-plt.plot(epoch_training_loss, label='Training Loss', color='blue')
-plt.plot(epoch_validation_loss, label='Validation Loss', color='orange')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
+plt.plot(epochs, epoch_training_vq_loss, label='Training VQ Loss')
+plt.plot(epochs, epoch_validation_vq_loss, label='Validation VQ Loss')
+plt.xlabel('Epochs')
+plt.ylabel('VQ Loss')
+plt.title('Training and Validation VQ Loss per Epoch')
 plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(save_dir, 'vq_loss_per_epoch.png'))
+plt.close()
 
-# Save the Loss plot
-plt.savefig(os.path.join(save_dir, 'training_validation_loss.png'))
+# 3. Plot Combined Training Loss vs. Validation Loss
+combined_training_loss = [x + y for x, y in zip(epoch_training_output_loss, epoch_training_vq_loss)]
+combined_validation_loss = [x + y for x, y in zip(epoch_validation_output_loss, epoch_validation_vq_loss)]
 
-# Plot Average SSIM
-plt.subplot(1, 2, 2)
-plt.plot(epoch_ssim, label='Average SSIM', color='green')
-plt.title('Average SSIM over Epochs')
-plt.xlabel('Epoch')
+plt.figure(figsize=(12, 6))
+plt.plot(epochs, combined_training_loss, label='Combined Training Loss')
+plt.plot(epochs, combined_validation_loss, label='Combined Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Combined Loss')
+plt.title('Combined Training and Validation Loss per Epoch')
+plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(save_dir, 'combined_loss_per_epoch.png'))
+plt.close()
+
+# 4. Plot SSIM per Epoch
+plt.figure(figsize=(12, 6))
+plt.plot(epochs, epoch_ssim, label='SSIM')
+plt.xlabel('Epochs')
 plt.ylabel('SSIM')
+plt.title('SSIM per Epoch')
 plt.legend()
-
-# Save the SSIM plot
-plt.savefig(os.path.join(save_dir, 'average_ssim.png'))
-
-# Close the figure to free up memory
+plt.grid(True)
+plt.savefig(os.path.join(save_dir, 'ssim_per_epoch.png'))
 plt.close()
 
 # Define the save directory and ensure it exists

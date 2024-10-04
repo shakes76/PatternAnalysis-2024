@@ -16,7 +16,7 @@ import modules
 
 
 # Hyperparameters
-num_epochs = 5
+num_epochs = 150
 batch_size = 32
 lr = 0.0002
 num_hiddens = 128
@@ -131,34 +131,38 @@ for epoch in range(num_epochs):
     epoch_ssim.append(average_ssim)
     print()
 
-    # Number of images to save
-    num_images_to_save = 4  # Adjust this for the number of real and decoded images
+    if (epoch + 1) % 10 == 0:
+        # Number of images to save
+        num_images_to_save = 4  # Adjust this for the number of real and decoded images
 
-    # Convert tensors to numpy arrays
-    real_images = validation_input_images.cpu().numpy()
-    decoded_images = validation_output_images.cpu().numpy()  
+        # Convert tensors to numpy arrays
+        real_images = validation_input_images.cpu().numpy()
+        decoded_images = validation_output_images.cpu().numpy()  
 
-    # Create a new figure for saving real and decoded images side by side
-    fig, axes = plt.subplots(num_images_to_save, 2, figsize=(8, num_images_to_save * 4))  # 2 columns
+        # Create a new figure for saving real and decoded images side by side
+        fig, axes = plt.subplots(num_images_to_save, 2, figsize=(8, num_images_to_save * 4))  # 2 columns
 
-    # Plot real and decoded images
-    for k in range(num_images_to_save):
-        # Plot real images
-        axes[k, 0].imshow(real_images[k, 0], cmap='gray')
-        axes[k, 0].set_title('Real Image')
-        axes[k, 0].axis('off')
+        # Plot real and decoded images
+        for k in range(num_images_to_save):
+            # Plot real images
+            axes[k, 0].imshow(real_images[k, 0], cmap='gray')
+            axes[k, 0].set_title('Real Image')
+            axes[k, 0].axis('off')
 
-        # Plot decoded images
-        axes[k, 1].imshow(decoded_images[k, 0], cmap='gray')
-        axes[k, 1].set_title('Decoded Image')
-        axes[k, 1].axis('off')
+            # Plot decoded images
+            axes[k, 1].imshow(decoded_images[k, 0], cmap='gray')
+            axes[k, 1].set_title('Decoded Image')
+            axes[k, 1].axis('off')
 
-    # Adjust layout for better spacing
-    plt.tight_layout()
+        # Add a title for the entire figure with the epoch number
+        fig.suptitle(f'Epoch {epoch + 1}', fontsize=16)
 
-    # Save the figure as a single PNG file
-    plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
-    plt.close()
+        # Adjust layout for better spacing
+        plt.tight_layout(rect=[0, 0, 1, 0.96])  # Leave space for the title
+
+        # Save the figure as a single PNG file with the epoch number in the filename
+        plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
+        plt.close()
 
 
 # Plotting and saving the graphs

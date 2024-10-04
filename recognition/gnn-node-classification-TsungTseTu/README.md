@@ -73,8 +73,8 @@ The following t-SNE plot shows the learned node embeddings, where each color rep
 ![SNE](./images/SNE%20visualization.png)
 
 ## 7. Reference
-    1. Kipf, T. N., & Welling, M. (2016). Semi-Supervised Classification with Graph Convolutional Networks. arXiv preprint arXiv:1609.02907.
-    2. Facebook Large Page-Page Network Dataset: [Data Source](https://snap.stanford.edu/data/facebook-large-page-page-network.html) [Paritally proecessed one](https://graphmining.ai/datasets/ptg/facebook.npz)
+1. Kipf, T. N., & Welling, M. (2016). Semi-Supervised Classification with Graph Convolutional Networks. arXiv preprint arXiv:1609.02907.
+2. Facebook Large Page-Page Network Dataset: [Data Source](https://snap.stanford.edu/data/facebook-large-page-page-network.html) [Paritally proecessed one](https://graphmining.ai/datasets/ptg/facebook.npz)
 
 ## 8. License
-This project is licensed under the Apache License - see the [License](LICENSE) file for details.
+This project is licensed under the Apache License - see the [License](../LICENSE) file for details.

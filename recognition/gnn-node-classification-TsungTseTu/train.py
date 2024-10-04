@@ -60,14 +60,14 @@ def train():
         input_dim = X_train.shape[1]
         output_dim = torch.unique(y_train).size(0) #get number of unique class
         model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
         
 
         # Training loop
         print("start training...")
         model.train()
-        for epoch in range(200):
+        for epoch in range(500):
             optimizer.zero_grad()
             out = model(X_train, edges_train)
             loss = torch.nn.functional.nll_loss(out,y_train)

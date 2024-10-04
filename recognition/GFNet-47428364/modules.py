@@ -37,3 +37,36 @@ class BlockMLP(nn.Module):
         x = x + self.global_filter(self.norm1(x)) # Global Filter
         x = x + self.mlp(self.norm2(x)) # MLP
         return x
+
+# GFNet Model
+class GFNet(nn.Module):
+    def __init__(self, img_size=256, patch_size=16, in_chans=3, num_classes=2, embed_dim=768, depth=12, mlp_ratio=4.):
+        super().__init__()
+
+        # Patch embedding
+        self.patch_embed = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+        num_patches = (img_size // patch_size) ** 2
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
+
+        # Stacked blocks
+        self.blocks = nn.Sequential(
+            *[BlockMLP(embed_dim, mlp_ratio) for _ in range(depth)]
+        )
+
+        # Classification head
+        self.norm = nn.LayerNorm(embed_dim)
+        self.head = nn.Linear(embed_dim, num_classes)
+
+    def forward(self, x):
+        # Patch Embedding
+        x = self.patch_embed(x)
+        x = x.flatten(2).transpose(1, 2)
+        x = x + self.pos_embed
+        # GfNet Blocks
+        x = self.blocks(x)
+        # Classification Head
+        x = self.norm(x)
+        x = x.mean(dim=1)
+        x = self.head(x)
+
+        return x

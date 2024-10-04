@@ -49,10 +49,13 @@ train_loader, validate_loader, data_variance = HipMRILoader(
     batch_size=batch_size, transform=transform
     ).get_loaders()
 
+print("variance: ", data_variance)
+
 # Create model
 model = modules.VQVAE(
     num_channels=num_channels,
     num_hiddens=num_hiddens,
+    num_residual_hiddens=num_hiddens,
     num_embeddings=num_embeddings,
     dim_embedding=dim_embedding,
     beta=beta)

@@ -43,13 +43,13 @@ transform = transforms.Compose([
     # transforms.RandomRotation(15),  # Random rotation within 15 degrees
 ])
 
-# Get loaders
+# Get loaders (variance == 5)
 train_loader, validate_loader, data_variance = HipMRILoader(
     train_dir, validate_dir, test_dir,
     batch_size=batch_size, transform=transform
     ).get_loaders()
 
-print("variance: ", data_variance)
+
 
 # Create model
 model = modules.VQVAE(
@@ -59,6 +59,8 @@ model = modules.VQVAE(
     num_embeddings=num_embeddings,
     dim_embedding=dim_embedding,
     beta=beta)
+
+model = model.to(device)
 
 # Set optimiser
 optimizer = optim.Adam(

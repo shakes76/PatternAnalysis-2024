@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
+os.environ['TQDM_DISABLE'] = 'True'
 
 from dataset import HipMRILoader
 import modules

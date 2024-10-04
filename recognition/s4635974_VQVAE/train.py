@@ -83,9 +83,6 @@ for epoch in range(num_epochs):
     for i, training_images in enumerate(train_loader):
         training_input_images = training_images.to(device)
 
-        print("Image type: ", training_input_images.dtype)  # Check the dtype
-        print("Image shape:",training_input_images.shape)   # Check the shape
-
         optimizer.zero_grad()
         vq_loss, training_output_images = model(training_input_images)
 

@@ -27,16 +27,16 @@ class VectorQuantizer(nn.Module):
         self.beta = beta
     
     def forward(self, z_e):
-        print("Quantized z_e type:", z_e.dtype)
+        # print("Quantized z_e type:", z_e.dtype)
         z_e_flattened = z_e.view(-1, self.dim_embedding)
         distances = torch.sum(z_e_flattened ** 2, dim=1, keepdim=True) + \
                     torch.sum(self.embeddings.weight ** 2, dim=1) - \
                     2 * torch.matmul(z_e_flattened, self.embeddings.weight.t())
         encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
         quantized = self.embeddings(encoding_indices).view_as(z_e)
-        print("Quantized shape:", quantized.shape)
+        # print("Quantized shape:", quantized.shape)
         quantized = z_e + (quantized - z_e).detach()
-        print("Quantized tensor type:", quantized.dtype)
+        # print("Quantized tensor type:", quantized.dtype)
 
         # Calculate loss
         recon_loss = F.mse_loss(quantized.detach(), z_e)
@@ -79,8 +79,8 @@ class Decoder(nn.Module):
                                           kernel_size=4, stride=2, padding=1)  # Transposed conv
     
     def forward(self, x):
-        print("Decoder input type before processing:", x.dtype)
-        print("Decoder input shape before processing:", x.shape)
+        # print("Decoder input type before processing:", x.dtype)
+        # print("Decoder input shape before processing:", x.shape)
         x = self.conv1(x)
         x = self.res_block1(x)
         x = self.res_block2(x)

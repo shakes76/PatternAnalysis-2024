@@ -79,6 +79,8 @@ class Decoder(nn.Module):
                                           kernel_size=4, stride=2, padding=1)  # Transposed conv
     
     def forward(self, x):
+        print("Decoder input type before processing:", x.dtype)
+        print("Decoder input shape before processing:", x.shape)
         x = self.conv1(x)
         x = self.res_block1(x)
         x = self.res_block2(x)

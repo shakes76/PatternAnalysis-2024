@@ -110,7 +110,7 @@ class HipMRI2d(torch.utils.data.Dataset):
         """
         imgPath = os.path.join(self.root, self.setPath, self.pics[i])
         niftiImg = nib.load(imgPath)
-        # TODO: look up what get_fdata() actually returns
+        # get_fdata() returns an ndarray
         img = niftiImg.get_fdata(caching = "unchanged")
         if len(img.shape) == 3:
             img = img[: ,: ,0] # sometimes extra dims , remove
@@ -118,5 +118,7 @@ class HipMRI2d(torch.utils.data.Dataset):
             # TODO: look up what this Nibabel affine object is and how to use it
             # with PyTorch
             self.trans = niftiImg.affine
-        imgTensor = img.tensor(img)
+        # turn it back into 3D because PyTorch demands a channel dimension (and it demands that it be the first dim)
+        img = img[np.newaxis,:,:]
+        imgTensor = torch.tensor(img)
         return imgTensor, 0

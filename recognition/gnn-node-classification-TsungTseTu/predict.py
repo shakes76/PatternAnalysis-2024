@@ -3,6 +3,8 @@ from modules import GCN
 from dataset import load_facebook_data  
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from torch.nn import functional as F
 
 def visualize(embeddings, labels):
     tsne = TSNE(n_components=2)
@@ -16,15 +18,21 @@ def predict():
 
     # Extract features, edges, and target
     features = torch.tensor(data['features'], dtype=torch.float32)
-    edge = torch.tensor(data['edges'].T, dtype=torch.long)
+    edges = torch.tensor(data['edges'].T, dtype=torch.long)
     target = torch.tensor(data['target'], dtype=torch.long)
-    
+   
+    # Load the split test data
+    _, X_test, _, y_test = train_test_split(features,target,test_size=0.3,random_state=42)
+
+    #re-index the dges for test set
+    edge_reindex = edges[:, torch.all(edges<X_test.size(0), dim=0)]
+
     # Set input nad output based on feature and target
-    input = features.shape[1] #Number of features per node
-    output = len(set(target.numpy())) # number of unique classes
+    input_dim = X_test.shape[1] #Number of features per node
+    output_dim = len(set(target.numpy())) # number of unique classes
 
     # Initialize the model (same as in training)
-    model = GCN(input_dim=input, hidden_dim=64, output_dim=output)
+    model = GCN(input_dim=input_dim, hidden_dim=64, output_dim=output_dim)
 
     # Load pre-trained model
     model.load_state_dict(torch.load("gnn_model.pth", weights_only=True))
@@ -34,18 +42,16 @@ def predict():
 
     # Forward pass to get predictions
     with torch.no_grad():
-        out = model(features, edge) #raw output
+        out = model(X_test, edge_reindex) #raw output
         prediction = out.argmax(dim=1) #Get predicted class for each node
-
-    # Check Accuracy
-    correct = (prediction==target).sum().item() #Collect correctly predicted
-    total = target.size(0) #total nodes
-    accuracy = correct/total
-    print(f"Accuracy:{accuracy*100:.2f}%")
+        # Check Accuracy
+        correct = (prediction==y_test).sum().item() #Collect correctly predicted
+        accuracy = correct/y_test.size(0)
+        print(f"Accuracy:{accuracy*100:.2f}%")
 
     # Visualize embeddings using TSNE
     embeddings = out.numpy()
-    labels = target.numpy()
+    labels = y_test.numpy()
     visualize(embeddings, labels)
 
 if __name__ == '__main__':

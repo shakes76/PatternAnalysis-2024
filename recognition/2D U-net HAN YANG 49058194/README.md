@@ -7,6 +7,8 @@ of 0.75 on the test set on the prostate label.
 ## How It Works
 The U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images. The process begins with loading Nifti files containing MRI slices using the Nibabel library, converting them into NumPy arrays for preprocessing. Each slice is then resized and normalized to ensure uniform input dimensions of `[1, 1, 128, 128]` for grayscale images. During training, the model minimizes the binary cross-entropy loss, using the Dice similarity coefficient as a metric for evaluation. Once trained, the model can predict segmentation masks for new MRI slices, providing a clear delineation of the prostate gland against the surrounding tissues, which is crucial for accurate diagnosis and treatment planning.
 
+## Model architecture
+This model is a 2D UNet with encoder decoder structure and skip connections.
 
 ## File Structure and Descriptions
 - `download.py`
@@ -43,6 +45,13 @@ The U-Net model employs a convolutional neural network architecture specifically
     - Evaluate and predict the segmentation quality using the trained model.
 - `README.md`
   - **Purpose**: Project documentation.
+ 
+## Dependencies
+The project requires the following dependencies:
+- `torch==1.10.0`: PyTorch for building and training the model.
+- `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
+- `nibabel==3.2.1`: Nibabel for loading Nifti files.
+- `matplotlib==3.4.3`: Matplotlib for visualizing results and training metrics.
 
 ## Usage：Steps to Run the Project
 
@@ -57,16 +66,6 @@ The U-Net model employs a convolutional neural network architecture specifically
 
 - ### Step 4. Full Pipeline Execution
 &nbsp; &nbsp; The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
-
-## Dependencies
-The project requires the following dependencies:
-- `torch==1.10.0`: PyTorch for building and training the model.
-- `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
-- `nibabel==3.2.1`: Nibabel for loading Nifti files.
-- `matplotlib==3.4.3`: Matplotlib for visualizing results and training metrics.
-
-## Model architecture
-This model is a 2D UNet with encoder decoder structure and skip connections.
 
 ## Details
 - **Loss function**: `Binary cross entropy with Logits`.

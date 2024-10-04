@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
 os.environ['TQDM_DISABLE'] = 'True'
+tqdm.tqdm.pandas(disable=True)
 
 from dataset import HipMRILoader
 import modules

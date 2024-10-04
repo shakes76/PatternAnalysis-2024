@@ -44,7 +44,7 @@ class VectorQuantizer(nn.Module):
         commitment_loss = self.beta * F.mse_loss(quantized, z_e.detach()) ###
         loss = recon_loss + commitment_loss
 
-        return quantized, encoding_indices, loss
+        return loss, quantized, encoding_indices
     
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_hiddens):

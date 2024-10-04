@@ -175,3 +175,6 @@ plt.savefig(os.path.join(save_dir, 'average_ssim.png'))
 
 # Close the figure to free up memory
 plt.close()
+
+# Save model
+torch.save(model, save_dir)

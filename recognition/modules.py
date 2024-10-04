@@ -36,23 +36,17 @@ class Encoder(nn.Module):
 
         self.proj = nn.Conv2d(hidden_dim, out_channels=output_dim, kernel_size=1)
 
-        self.training = True
+    def forward(self, inp):
+        inp = self.strided_conv1(inp)
+        inp = self.strided_conv2(inp)
 
-        self.ReLU = nn.ReLU()
+        inp = nn.ReLU()(inp)
+        out = self.residual_conv1(inp)
+        out += inp
 
-    def forward(self, input):
-        input = self.strided_conv1(input)
-        input = self.strided_conv2(input)
-
-        #F.relu(act)
-        input = self.ReLU(input)
-        out = self.residual_conv1(input)
-        out += input
-
-        #F.relu(res_out)
-        input = self.ReLU(out)
-        out = self.residual_conv2(input)
-        out += input
+        inp = nn.ReLU()(inp)
+        out = self.residual_conv2(inp)
+        out += inp
 
         out = self.proj(out)
 
@@ -60,11 +54,11 @@ class Encoder(nn.Module):
 
 """TBD"""
 class Quantise(nn.Module):
-    def __init__(self, n_embeddings, embed_dim, commitment_cost=0.25, decay=0.999, e=1e-5):
+    def __init__(self, n_embeddings, embed_dim, commitment_cost=0.25, decay=0.999, eps=1e-5):
         super().__init__()
         self.commitment_cost = commitment_cost
         self.decay = decay
-        self.e = e
+        self.eps = eps
 
         init_bound = 1 / n_embeddings
         embedding = torch.Tensor(n_embeddings, embed_dim)
@@ -75,54 +69,51 @@ class Quantise(nn.Module):
         self.register_buffer("ema_count", torch.zeros(n_embeddings))
         self.register_buffer("ema_weight", self.embedding.clone())
 
-    def encode(self, input):
+    def encode(self, inp):
         M, D = self.embedding.size()
-        input_flat = input.detach().reshape(-1, D)
+        inpFlat = inp.detach().reshape(-1, D)
 
-        distances = (-torch.cdist(input_flat, self.embedding, p=2)) ** 2
+        distances = (-torch.cdist(inpFlat, self.embedding, p=2)) ** 2
 
         indices = torch.argmin(distances.float(), dim=-1)
         quantised = F.embedding(indices, self.embedding)
-        quantised = quantised.view_as(input)
-        return quantised, indices.view(input.size(0), input.size(1))
+        quantised = quantised.view_as(inp)
+        return quantised, indices.view(inp.size(0), inp.size(1))
 
     def retrieve(self, random_i):
         quantised = F.embedding(random_i, self.embedding)
         quantised = quantised.transpose(1, 3)
         return quantised
 
-    def forward(self, input):
-        # print(f"embedding:{self.embedding.shape}")
+    def forward(self, inp):
         M, D = self.embedding.size()
-        # print("M: {M}, D: {D}")
-        input_flat = input.detach().reshape(-1, D)
+        inpFlat = inp.detach().reshape(-1, D)
 
-        distances = (-torch.cdist(input_flat, self.embedding, p=2)) ** 2
+        distances = (-torch.cdist(inpFlat, self.embedding, p=2)) ** 2
 
         indices = torch.argmin(distances.float(), dim=-1)
         # categorical encoding required? (load_data_2D(categorical=True))
         encodings = F.one_hot(indices, M).float()
-        # print(f"Encodings shape:{encodings.shape}")
+
         quantised = F.embedding(indices, self.embedding)
-        quantised = quantised.view_as(input)
+        quantised = quantised.view_as(inp)
 
         if self.training:
-            decayed_count = self.decay * self.ema_count + (1 - self.decay)
             # print(f"ema count: {decayed_count.shape} sum of encodings: {torch.sum(encodings, dim=0).shape}")
-            self.ema_count = decayed_count * torch.sum(encodings, dim=0)
+            self.ema_count = self.decay * self.ema_count + (1 - self.decay) * torch.sum(encodings, dim=0)
             n = torch.sum(self.ema_count)
-            self.ema_count = (self.ema_count + self.e) / (n + M * self.e) * n
+            self.ema_count = (self.ema_count + self.eps) / (n + M * self.eps) * n
 
-            dw = torch.matmul(encodings.t(), input_flat)
+            dw = torch.matmul(encodings.t(), inpFlat)
             self.ema_weight = self.decay * self.ema_weight + (1 - self.decay) * dw
             self.embedding = self.ema_weight / self.ema_count.unsqueeze(-1)
 
         # Loss equations are different in the blog
-        reconstr_loss = F.mse_loss(input.detach(), quantised)
-        codebook_loss = F.mse_loss(input, quantised.detach())
+        reconstr_loss = F.mse_loss(inp.detach(), quantised)
+        codebook_loss = F.mse_loss(inp, quantised.detach())
         commitment_loss = self.commitment_cost * reconstr_loss
 
-        quantised = input + (quantised - input).detach()
+        quantised = inp + (quantised - inp).detach()
 
         avg = torch.mean(encodings, dim=0)
         # perplexity is defined as the level of entropy
@@ -143,26 +134,23 @@ class Decoder(nn.Module):
         
         self.strided_conv1 = nn.ConvTranspose2d(hidden_dim, hidden_dim, kernel_size=k3, stride=stride, padding=0)
         self.strided_conv2 = nn.ConvTranspose2d(hidden_dim, output_dim, kernel_size=k4, stride=stride, padding=0)
-        self.ReLU = nn.ReLU()
 
-    def forward(self, input):
+    def forward(self, inp):
         # print("Inner projection in Decoder...")
         # print(f"Input before decoder projection: {input.shape}")
-        input = self.inner_proj(input)
+        inp = self.inner_proj(inp)
         # print(f"Input after decoder projection: {input.shape}")
 
         # print("First residual layer in Decoder...")
-        out = self.residual_conv1(input)
+        out = self.residual_conv1(inp)
         # print(f"out:{out.shape}, in:{input.shape}")
-        out += input
-        #F.relu(res_out)
-        input = self.ReLU(out)
+        out += inp
+        inp = nn.ReLU()(out)
 
         # print("Second residual layer in Decoder...")
-        out = self.residual_conv2(input)
-        out += input
-        #F.relu(res_out)
-        out = self.ReLU(out)
+        out = self.residual_conv2(inp)
+        out += inp
+        out = nn.ReLU()(out)
 
         # print("Strided layer 1 in Decoder...")
         out = self.strided_conv1(out)
@@ -178,14 +166,14 @@ class Model(nn.Module):
         self.quantise = Quantise
         self.decoder = Decoder
 
-    def forward(self, input):
-        logit = self.encoder(input)
+    def forward(self, inp):
+        latentRep = self.encoder(inp)
         # print(f"input: {input.shape} logit:{logit.shape}")
         #Get loss values and quantised logit
-        logitq, commitment_loss, codebook_loss, perplexity = self.quantise(logit)
+        q, commitment_loss, codebook_loss, perplexity = self.quantise(latentRep)
         # get reconstruction from quantised logit
         # print(f"input: {input.shape} logit:{logit.shape} ZQ: {logitq.shape}")
-        xHat = self.decoder(logitq)
+        inpHat = self.decoder(q)
         
         # return reconstruction and loss values
-        return xHat, commitment_loss, codebook_loss, perplexity
+        return inpHat, commitment_loss, codebook_loss, perplexity

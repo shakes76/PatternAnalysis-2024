@@ -18,7 +18,7 @@ def GetTrainSet():
         tempTrain.append(os.path.join(trainPath, file))
 
     print("Getting training data...")
-    trainSet = load_data_2D(tempTrain)
+    trainSet = load_data_2D(tempTrain, normImage=True)
     print(trainSet[0].shape)
 
     print("Finished fetching training data.")
@@ -32,7 +32,7 @@ def GetTestSet():
         tempTest.append(os.path.join(testPath, file))
 
     print("Getting testing data...")
-    testSet = load_data_2D(tempTest)
+    testSet = load_data_2D(tempTest, normImage=True)
     print(testSet[0].shape)
 
     print("Finished fetching testing data.")

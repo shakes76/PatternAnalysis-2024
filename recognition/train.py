@@ -22,7 +22,7 @@ dimensions = {
 
 parameters = {
     "lr": 2e-4, 
-    "epochs": 5, 
+    "epochs": 50, 
     "batch": 100,
     "gpu": "cuda",
     "cpu": "cpu"
@@ -50,13 +50,13 @@ vqvae.train()
 for epoch in range(parameters["epochs"]):
     running_loss = 0.0
     # Labels not being outputted?
-    for i, x in enumerate(trainLoader):
-        x = x.to(device)
+    for i, image in enumerate(trainLoader):
+        image = image.to(device)
 
         optimiser.zero_grad()
-
-        xHat, commitment_loss, codebook_loss, perplexity = vqvae(x)
-        reconstr_loss = mse_loss(xHat, x)
+        
+        imageRec, commitment_loss, codebook_loss, perplexity = vqvae(image)
+        reconstr_loss = mse_loss(imageRec, image)
 
         loss = reconstr_loss + commitment_loss * dimensions["commitment_beta"] + codebook_loss
         running_loss += loss.item()
@@ -64,10 +64,9 @@ for epoch in range(parameters["epochs"]):
         loss.backward()
         optimiser.step()
 
-        if i % 50 == 0:
+        if i % 100 == 0:
             print(f"Loss for {epoch + 1},{i + 1} = {loss.item()}\nreconstruction loss = {reconstr_loss.item()}, perplexity: {perplexity.item()}, commitment loss: {commitment_loss.item()}, codebook loss: {codebook_loss.item()}")
     print(f"Epoch {epoch + 1} loss: {running_loss}.")
-
 
 #TBD
 

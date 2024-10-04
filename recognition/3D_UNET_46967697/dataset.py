@@ -1,15 +1,38 @@
 import numpy as np
 import nibabel as nib
 import tqdm 
+import torch
+import os
+
+class Prostate3DDataset(torch.utils.data.Dataset):
+    def __init__(self, semantic_MRs_path, semantic_labels_path, transforms=None):
+        self.semantic_MRs_files = [file for file in os.listdir(semantic_MRs_path) if file.endswith('.nii')]
+        self.semantic_labels_files = [file for file in os.listdir(semantic_labels_path) if file.endswith('.nii')]
+
+        MRs = load_data_3D(self.semantic_MRs_files)
+        labels = load_data_3D(self.semantic_labels_files)
+
+        self.MRs = None
+        self.labels = None
+
+    def __len__(self):
+        return len(self.MRs)
+    
+    def __getitem__(self, idx):
+        mr = self.MRs[idx]
+        label = self.labels[idx]
+
+        return mr, label
+
 
 def to_channels(arr: np.ndarray, dtype=np.uint8):
-	channels = np.unique(arr)
-	res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
-	for c in channels:
-		c = int(c)
-		res[..., c:c+1][arr == c ] = 1
+    channels = np.unique(arr)
+    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
+    for c in channels:
+        c = int(c)
+        res[..., c:c+1][arr == c ] = 1
 		
-	return res
+    return res
 
 def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, orient=False, early_stop=False):
     """

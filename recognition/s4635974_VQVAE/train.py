@@ -28,7 +28,7 @@ beta = 0.25
 seed = 42
 torch.manual_seed(seed)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(device)
+print("Device: ", device)
 
 # Directories for datasets
 train_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -39,8 +39,6 @@ validate_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_
 transform = transforms.Compose([
     transforms.ToTensor(),  
     transforms.Normalize((0.5,), (0.5,)), 
-    # transforms.RandomHorizontalFlip(),  # Random horizontal flip
-    # transforms.RandomRotation(15),  # Random rotation within 15 degrees
 ])
 
 # Get loaders (variance == 5)
@@ -84,6 +82,10 @@ for epoch in range(num_epochs):
 
     for i, training_images in enumerate(train_loader):
         training_input_images = training_images.to(device)
+
+        # print("Image type: ", training_input_images.dtype)  # Check the dtype
+        # print("Image shape:",training_input_images.shape)   # Check the shape
+
         optimizer.zero_grad()
         vq_loss, training_output_images = model(training_input_images)
 

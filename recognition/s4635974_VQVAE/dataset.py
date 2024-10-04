@@ -97,6 +97,8 @@ class HipMRIDataset(Dataset):
     def __getitem__(self, idx):
         image = self.images[idx]
         
+        image = torch.tensor(image, dtype=torch.float32)
+        
         if self.transform:
             image = self.transform(image)
         

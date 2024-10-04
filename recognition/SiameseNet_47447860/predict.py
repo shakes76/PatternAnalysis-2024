@@ -12,50 +12,56 @@ from torchvision import transforms
 from siamese import SiameseNetwork
 from libs.dataset import Dataset
 
-if __name__ == "__main__":
-    # The path to the model's checkpoint - where weights are saved
-    # The checkpoint is kind of like a list of different checkpoints, hence why we need to index it with 'backbone'
-    checkpoint_path = "~/project/outputs/best.pth"
+class PredictData:
+    def __init__(self, test_data):
+        self.test_data = test_data
 
-    # If we decide to save the data to the FileSystem rather than calling the data processing every time ---------------
-    data_path = ""
+        # results path where our final plots go
+        self.results_path = "~/project/results/"
 
-    # Set device to CUDA if a CUDA device is available, else CPU
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # The path to the model's checkpoint - where weights are saved
+        # The checkpoint is kind of like a list of different checkpoints, hence why we need to index it with 'backbone'
+        self.checkpoint_path = "~/project/outputs/best.pth"
 
-    # Get the data here (as a tensor dataloader) ------------------------------------------------------------
-    test_data = None
+        # Set device to CUDA if a CUDA device is available, else CPU
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    criterion = torch.nn.BCELoss()
+        self.criterion = torch.nn.BCELoss()
 
-    checkpoint = torch.load(checkpoint_path)
-    model = SiameseNetwork(backbone=checkpoint['backbone'])
-    model.to(device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
+        self.checkpoint = torch.load(self.checkpoint_path)
+        self.model = SiameseNetwork(backbone=self.checkpoint['backbone'])
+        self.model.to(self.device)
+        self.model.load_state_dict(self.checkpoint['model_state_dict'])
+        self.model.eval()
 
-    losses = []
-    correct = 0
-    total = 0
+        self.losses = []
+        self.correct = 0
+        self.total = 0
 
-    # Will have to change the format of the data to fit this for-loop structure
-    for i, ((img1, img2), target, (class1, class2)) in enumerate(test_data):
-        print("[{} / {}]".format(i, len(test_data)))
+    def predict(self):
+        # Will have to change the format of the data to fit this for-loop structure
+        for i, ((img1, img2), target, (class1, class2)) in enumerate(self.test_data):
+            print("[{} / {}]".format(i, len(self.test_data)))
 
-        img1, img2, target = map(lambda x: x.to(device), [img1, img2, target])
-        class1 = class1[0]
-        class2 = class2[0]
+            img1, img2, target = map(lambda x: x.to(self.device), [img1, img2, target])
+            class1 = class1[0]
+            class2 = class2[0]
 
-        similarity = model(img1, img2)
-        loss = criterion(similarity, target)
+            similarity = self.model(img1, img2)
+            loss = self.criterion(similarity, target)
 
-        losses.append(loss.item())
-        correct += torch.count_nonzero(target == (similarity > 0.5)).item()
-        total += len(target)
+            self.losses.append(loss.item())
+            self.correct += torch.count_nonzero(target == (similarity > 0.5)).item()
+            self.total += len(target)
 
-        fig = plt.figure("class1={}\tclass2={}".format(class1, class2), figsize=(4, 2))
-        plt.suptitle("cls1={}  conf={:.2f}  cls2={}".format(class1, similarity[0][0].item(), class2))
+            fig = plt.figure("class1={}\tclass2={}".format(class1, class2), figsize=(4, 2))
+            plt.suptitle("cls1={}  conf={:.2f}  cls2={}".format(class1, similarity[0][0].item(), class2))
 
-        # save the plot
+            # save the plot
+            save_path = os.path.join(self.results_path, 'prediction_results.png')
+            fig.savefig(save_path, format='png')
 
-    print("Validation: Loss={:.2f}\t Accuracy={:.2f}\t".format(sum(losses) / len(losses), correct / total))
+            # 
+
+        print("Validation: Loss={:.2f}\t Accuracy={:.2f}\t".format(sum(self.losses) / len(self.losses),
+                                                                   self.correct / self.total))

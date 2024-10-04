@@ -27,11 +27,25 @@ if __name__ == "__main__":
     save_after = 20  # save the model's image every {20} epoch
 
     # path to write things to - includes summary writer, checkpoints,
-    out_path = "~/project/outputs"
+    out_path = "~/project/outputs/"
 
     # get data from the dataset.py file
     images_path = "~/.kaggle/train-image/image"
     csv_path = "~/.kaggle/train-metadata.csv"
+
+    train_data = None
+    val_data = None
+    test_data = None
+
+
+
+
+
+
+
+
+
+
 
     model = SiameseNetwork()
     model.to(device)
@@ -123,3 +137,9 @@ if __name__ == "__main__":
                 },
                 os.path.join(out_path, "epoch_{}.pth".format(epoch + 1))
             )
+
+
+    # need to run the predict.py code to test the accuracy of the model on the test data
+    prediction = PredictData(test_data)
+    prediction.predict()
+

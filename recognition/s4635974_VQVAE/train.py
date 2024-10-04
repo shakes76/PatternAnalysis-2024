@@ -121,7 +121,7 @@ for epoch in range(num_epochs):
 
              # Calculate output loss for validation
             output_loss = F.mse_loss(validation_output_images, validation_input_images) / data_variance
-            validation_loss += output_loss + vq_loss
+            validation_loss += (output_loss.item() + vq_loss.item())
 
     # Average validation loss and SSIM
     average_validation_loss = validation_loss / len(validate_loader)

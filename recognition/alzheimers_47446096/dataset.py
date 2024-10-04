@@ -5,11 +5,16 @@ from torchvision import transforms
 ROOT = "../../../AD_NC"
 TESTPATH = "/test"
 TRAINPATH = "/train"
+IMG_SIZE = 256
 
-TRAINTRANSFORM = transforms.Compose([
+TRAIN_TRANSFORM = transforms.Compose([
+    transforms.Resize(IMG_SIZE),
+    transforms.CenterCrop(IMG_SIZE),
     transforms.ToTensor()
 ])
-TESTTRANSFORM = transforms.Compose([
+TEST_TRANSFORM = transforms.Compose([
+    transforms.Resize(IMG_SIZE),
+    transforms.CenterCrop(IMG_SIZE),
     transforms.ToTensor()
 ])
 
@@ -26,7 +31,7 @@ def getTrainLoader(path: str = ROOT + TRAINPATH, batchSize: int = 128, shuffle: 
     '''
     trainData = ImageFolder(
         root = path,
-        transform = TRAINTRANSFORM
+        transform = TRAIN_TRANSFORM
     )
     trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
     return trainLoader
@@ -44,7 +49,7 @@ def getTestLoader(path = ROOT + TESTPATH, batchSize = 128, shuffle = True):
     '''
     trainData = ImageFolder(
         root = path,
-        transform = TESTTRANSFORM
+        transform = TEST_TRANSFORM
     )
     trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
     return trainLoader

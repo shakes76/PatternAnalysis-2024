@@ -16,7 +16,7 @@ import modules
 
 
 # Hyperparameters
-num_epochs = 1
+num_epochs = 5
 batch_size = 32
 lr = 0.0002
 num_hiddens = 128

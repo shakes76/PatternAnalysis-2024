@@ -106,7 +106,7 @@ for epoch in range(num_epochs):
     validation_loss = 0
     validation_ssim = []
     with torch.no_grad():
-        for j, validation_images in enumerate(validate_loader):
+        for j, validation_images in enumerate(tqdm(validate_loader, disable=True)):
             validation_input_images = validation_images.to(device)
             vq_loss, validation_output_images = model(validation_input_images)
 

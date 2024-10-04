@@ -59,7 +59,7 @@ def _debug() -> None:
     logger.info("Starting training...")
     trainer.train(train_loader)
 
-    logger.info("Computing centroids...")
+    logger.info("Fitting KNN")
 
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     train_meta_df = train_meta_df.sample(n=128)
@@ -80,8 +80,10 @@ def _debug() -> None:
     )
 
     predictions = fit_knn.predict(embeddings)
+    proba = fit_knn.predict_proba(embeddings)
     report = classification_report(labels, predictions)
-    logger.info("train data report:\n%s", report)
+    auc = roc_auc_score(labels, proba[:, 1])
+    logger.info("train data report:\n%s\nauc: %d", report, auc)
 
     logger.info("Evaluating classification on train data...")
     # acc = trainer.evaluate(train_classification_loader)
@@ -138,10 +140,9 @@ def _train() -> None:
         num_workers=num_workers,
     )
 
-    logger.info("Computing centroids...")
-    # trainer.compute_centroids(train_classification_loader)
+    logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier(weights="distance")
+    knn = KNeighborsClassifier(n_neighbors=10, weights="distance", p=1)
     fit_knn = knn.fit(embeddings, labels)
 
     logger.info("Evaluating classification on train data...")
@@ -151,7 +152,7 @@ def _train() -> None:
     predictions = fit_knn.predict(embeddings)
     proba = fit_knn.predict_proba(embeddings)
     report = classification_report(labels, predictions)
-    auc = roc_auc_score(labels, proba)
+    auc = roc_auc_score(labels, proba[:, 1])
     logger.info("train data report:\n%s\nauc: %d", report, auc)
 
     # Prepare validation data
@@ -170,7 +171,7 @@ def _train() -> None:
     proba = fit_knn.predict_proba(embeddings)
 
     report = classification_report(labels, predictions)
-    auc = roc_auc_score(labels, proba)
+    auc = roc_auc_score(labels, proba[:, 1])
     logger.info("val data report\n%s\nauc: %d", report, auc)
 
     total_script_time = time.time() - script_start_time

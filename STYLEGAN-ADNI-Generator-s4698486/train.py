@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 # Define hyperparameters
 batch_size = 10
 latent_dim = 512
-epochs = 25
+epochs = 1
 mixing_prob = 0.90
 
 # Initialize models
@@ -24,7 +24,7 @@ discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=
 mapping_network_optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # Papers suggest 100x lower, I will do 10x because my learning rates are already very low.
 
 # Define training step
-#@tf.function
+@tf.function
 def train_step(images):
     noise1 = tf.random.normal([batch_size, latent_dim])
     noise2 = tf.random.normal([batch_size, latent_dim])
@@ -64,6 +64,19 @@ def train_step(images):
     mapping_network_variables = mapping_network.trainable_variables
     gradients_of_mapping_network = gen_tape.gradient(gen_loss, mapping_network_variables)
     mapping_network_optimizer.apply_gradients(zip(gradients_of_mapping_network, mapping_network_variables))
+
+    # Check for gradient issues - trying to fix the warning that I am having.
+    for var, grad in zip(generator.trainable_variables, gradients_of_generator):
+        if grad is None:
+            print(f"Warning: Gradient for generator variable {var.name} is None")
+    
+    for var, grad in zip(discriminator.trainable_variables, gradients_of_discriminator):
+        if grad is None:
+            print(f"Warning: Gradient for discriminator variable {var.name} is None")
+
+    for var, grad in zip(mapping_network_variables, gradients_of_mapping_network):
+        if grad is None:
+            print(f"Warning: Gradient for mapping network variable {var.name} is None")
 
     # So that it doesn't persist beyond its required usage (ie; into other epochs)
     del gen_tape

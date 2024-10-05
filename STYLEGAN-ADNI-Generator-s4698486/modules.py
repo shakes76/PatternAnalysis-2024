@@ -77,7 +77,7 @@ class MappingNetwork(tf.keras.layers.Layer):
 
 # 2) Add AdaIN - Adaptive instance normalisation. This prov
 class AdaIN(tf.keras.layers.Layer):
-    counter = 0
+    #counter = 0
     def __init__(self, epsilon=1e-5):
         super(AdaIN, self).__init__()
         self.epsilon = epsilon
@@ -123,8 +123,8 @@ class AdaIN(tf.keras.layers.Layer):
         scale = tf.reshape(scale, [batch_size, 1, 1, num_channels])  # [10, 1, 1, 256]
         shift = tf.reshape(shift, [batch_size, 1, 1, num_channels])  # [10, 1, 1, 256]
 
-        if num_channels == 64:
-            AdaIN.counter += 1
+        #if num_channels == 64:
+            #AdaIN.counter += 1
 
         return scale * content_norm + shift
 
@@ -272,7 +272,8 @@ class StyleGANGenerator(tf.keras.Model):
             self.upsampling_layers.append(tf.keras.layers.UpSampling2D(size=(2, 2), interpolation='bilinear'))
             
             # Add a modulated convolution block
-            self.conv_blocks.append(ModulatedConv2D(f, (4, 4), padding='same'))
+            #self.conv_blocks.append(ModulatedConv2D(f, (4, 4), padding='same'))
+            self.conv_blocks.append(Conv2D(f, (4, 4), padding='same'))
             
             # Add a style block for scale and shift
             self.style_blocks.append(Dense(2 * f))  # Use 2 * f to split into scale and shift
@@ -292,6 +293,23 @@ class StyleGANGenerator(tf.keras.Model):
     """
     def call(self, z1, z2=None, mixing_prob=0.9):
         # Map latent vectors z1 and z2 to style vectors w1 and w2
+
+        w1 = self.mapping_network(z1)
+
+        def true_fn():
+            return self.mapping_network(z2), tf.random.uniform((), minval=1, maxval=len(self.conv_blocks), dtype=tf.int32)
+
+        def false_fn():
+            return w1, len(self.conv_blocks)
+
+        # Required with the tf function decorator in train.py 
+
+        if z2 is not None:
+            w2, mixing_cutoff = tf.cond(tf.random.uniform(()) < mixing_prob, true_fn, false_fn)
+        else:
+            w2, mixing_cutoff = w1, len(self.conv_blocks)
+
+        """
         w1 = self.mapping_network(z1)
         if z2 is not None and tf.random.uniform(()) < mixing_prob:
             w2 = self.mapping_network(z2)
@@ -300,6 +318,7 @@ class StyleGANGenerator(tf.keras.Model):
         else:
             w2 = w1
             mixing_cutoff = len(self.conv_blocks)  # No mixing if z2 is None or not chosen
+        """
 
 
 
@@ -315,14 +334,23 @@ class StyleGANGenerator(tf.keras.Model):
         for i, (upsample_layer, conv_block, style_block, noise_injection) in enumerate(zip(self.upsampling_layers, self.conv_blocks, self.style_blocks, self.noise_injections)):
         #for i, (conv_block, style_block, noise_injection) in enumerate(zip(self.conv_blocks, self.style_blocks, self.noise_injections)):   
 
-            #print("Building layer", i)
+            print("Building layer", i)
             #print("=====================================")
 
             x = upsample_layer(x)
             
             # Use w1 for layers before cutoff, and w2 for layers after cutoff
-            style = style_block(w1 if i < mixing_cutoff else w2)
-            x = conv_block(x, style)                    # I think we are erroring here.
+            #style = style_block(w1 if i < mixing_cutoff else w2)
+
+
+            style = tf.cond(
+                i < mixing_cutoff,
+                lambda: style_block(w1),
+                lambda: style_block(w2)
+            )
+
+
+            x = conv_block(x)                    # I think we are erroring here.
             x = LeakyReLU(alpha=0.2)(x)
 
             # Noise injection

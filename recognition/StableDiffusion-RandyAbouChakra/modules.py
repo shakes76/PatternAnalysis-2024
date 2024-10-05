@@ -96,3 +96,54 @@ class Decoder(nn.Module):
         x = F.relu(self.conv2(x))
         x = torch.sigmoid(self.conv1(x))
         return x
+    
+
+class LatentDiffusionModel(nn.Module):
+    def __init__(self, encoder, decoder, unet, timesteps=1000):
+        super(LatentDiffusionModel, self).__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.unet = unet
+        self.timesteps = timesteps
+        self.betas = self._linear_beta_schedule(timesteps)
+        self.alphas = 1.0 - self.betas
+        self.alpha_hat = torch.cumprod(self.alphas, 0)
+
+    def _linear_beta_schedule(self, timesteps):
+        return torch.linspace(0.0001, 0.02, timesteps)
+
+    def forward_diffusion(self, z, t):
+        """
+        Add noise to the latent z space according to a variance schedule.
+        """
+        noise = torch.randn_like(z)
+        alpha_hat_t = self.alpha_hat[t][:, None, None, None]
+        return torch.sqrt(alpha_hat_t) * z + torch.sqrt(1 - alpha_hat_t) * noise, noise
+
+    def reverse_denoise(self, z_t, t):
+        """
+        Apply the reverse process to denoise the latent code.
+        """
+        pred_noise = self.unet(z_t, t)
+        return pred_noise
+
+    def forward(self, x, t):
+        """
+        Full forward pass from image to noise prediction.
+        """
+        # Encode image to latent space
+        z = self.encoder(x)
+        
+        # Apply forward diffusion in latent space
+        z_noisy, noise = self.forward_diffusion(z, t)
+        
+        # Predict noise added in latent space
+        pred_noise = self.reverse_denoise(z_noisy, t)
+        
+        return pred_noise, noise
+
+    def decode_latent(self, z):
+        """
+        Decode latent space back to image.
+        """
+        return self.decoder(z)

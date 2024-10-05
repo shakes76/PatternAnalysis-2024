@@ -55,6 +55,7 @@ def train():
 
         edges_train = np.array(edge_list).T
         edges_train = torch.tensor(edges_train, dtype=torch.long)
+        
         # Initialize the model
         print("Model starting...")
         input_dim = X_train.shape[1]
@@ -62,7 +63,13 @@ def train():
         model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-        
+        # learn rate scheduler
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',factor=0.1,patience=10, verbose=True)
+
+        # Early stop
+        early_stop_patience = 20
+        early_stop_counter = 0
+        best_loss = float("inf")
 
         # Training loop
         print("start training...")
@@ -74,6 +81,21 @@ def train():
             loss.backward()
             optimizer.step()
 
+            # Learn rate scheduling
+            scheduler.step(loss)
+
+            # Early stop check
+            if loss.item() < best_loss:
+                best_loss = loss.item()
+                early_stop_counter = 0
+            else:
+                early_stop_counter += 1
+
+            # If early stop counter hit patience threshold, stop training
+            if early_stop_counter >= early_stop_patience:
+                print(f"early stop at epoch {epoch+1}")
+                break
+            
             # print the loss for each epoch
             print(f'Epoch {epoch+1}, Loss: {loss.item()}')
 

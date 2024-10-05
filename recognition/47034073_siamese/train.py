@@ -4,6 +4,7 @@ import logging
 import pathlib
 
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, roc_auc_score
 import pandas as pd
 from torch.utils.data import DataLoader
@@ -111,7 +112,7 @@ def _train() -> None:
 
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=128, num_epochs=5, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=20, learning_rate=0.0001)
     trainer = TumorClassifier(hparams)
 
     # Prepare train pair data
@@ -131,6 +132,15 @@ def _train() -> None:
 
     # Prepare train classification data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
+
+    # Undersample to handle class imbalance
+    benign = train_meta_df[train_meta_df["target"] == 0]
+    malignant = train_meta_df[train_meta_df["target"] == 1]
+    num_malignant = len(malignant)
+    logger.debug("num malignant %d", num_malignant)
+    benign = benign.sample(random_state=42, n=num_malignant)
+    train_meta_df = pd.concat([benign, malignant])
+
     train_classification_dataset = TumorClassificationDataset(
         IMAGES_PATH, train_meta_df
     )
@@ -142,7 +152,11 @@ def _train() -> None:
 
     logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier(n_neighbors=10, weights="distance", p=1)
+    knn = KNeighborsClassifier(n_neighbors=100, weights="distance", p=1)
+    scaler = StandardScaler()
+    scaler = scaler.fit(embeddings)
+    embeddings = scaler.transform(embeddings)
+
     fit_knn = knn.fit(embeddings, labels)
 
     logger.info("Evaluating classification on train data...")
@@ -163,10 +177,9 @@ def _train() -> None:
     )
 
     logger.info("Evaluating classification on val data...")
-    # val_acc = trainer.evaluate(val_loader)
-    # logger.info("Val acc: %e", val_acc)
-    #
+
     embeddings, labels = trainer.compute_all_embeddings(val_loader)
+    scaler.transform(embeddings)
     predictions = fit_knn.predict(embeddings)
     proba = fit_knn.predict_proba(embeddings)
 

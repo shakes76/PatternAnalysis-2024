@@ -165,15 +165,17 @@ class TumorTower(nn.Module):
         # Makes output in feature space
         self._backbone.classifer = nn.Identity()
 
+        self._embedder = nn.Sequential(nn.Linear(1000, 128), nn.PReLU())
+
         # Weighted summation of component differencess
-        self._component_adder = nn.Linear(1000, 1, bias=False)
+        self._component_adder = nn.Linear(128, 1, bias=False)
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
-        embeddings1 = self._backbone(x1)
-        embeddings2 = self._backbone(x2)
+        embeddings1 = self._embedder(self._backbone(x1))
+        embeddings2 = self._embedder(self._backbone(x2))
         component_diffs = torch.abs(embeddings1 - embeddings2)
         distances = self._component_adder(component_diffs)
         return distances
 
     def compute_embedding(self, x: torch.Tensor):
-        return self._backbone(x)
+        return self._embedder(self._backbone(x))

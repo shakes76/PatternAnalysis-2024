@@ -69,7 +69,7 @@ class ISIC2020Dataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        
+
         """
         Generates one sample of data including a triplet (anchor, positive, negative).
         
@@ -95,4 +95,26 @@ class ISIC2020Dataset(Dataset):
             negative = self.get_image(self.benign.sample().iloc[0])
 
         return anchor_img, positive, negative, anchor_label
+    
+    def get_image(self, row):
+        """
+        Loads and processes an image.
 
+        Args:
+            row (pd.Series): A row from the dataset containing image information.
+
+        Returns:
+            torch.Tensor: Processed image tensor.
+        """
+        img_name = row['image_name']
+        img_path = os.path.join(self.img_dir, img_name + '.jpg')
+        image = Image.open(img_path).convert('RGB')
+        
+        if self.transform:
+            image = self.transform(image)
+        
+        # Apply additional random augmentation for malignant samples in training mode
+        if self.mode == 'train' and row['target'] == 1:
+            image = self.random_augment(image)
+        
+        return image

@@ -35,7 +35,7 @@ This model is a 2D UNet with encoder decoder structure and skip connections[^3].
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
-    - `dice_score(pred, target)`: Calculates the Dice score.
+    - `dice_score(pred, target)`: Calculates the Dice score[^4].
     - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
 - `test_driver.py`
   - **Purpose**: Test driver script that calls and runs algorithm.
@@ -47,7 +47,7 @@ This model is a 2D UNet with encoder decoder structure and skip connections[^3].
   - **Purpose**: Project documentation.
  
 ## Dependencies
-The project requires the following dependencies:
+The project requires the following dependencies[^5]:
 - `torch==1.10.0`: PyTorch for building and training the model.
 - `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
 - `nibabel==3.2.1`: Nibabel for loading Nifti files.
@@ -172,3 +172,5 @@ With `test_driver.py` output: `Model achieved the desired Dice score of 0.75 or 
 [^1]: Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional networks for biomedical image segmentation. *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 234-241.
 [^2]: Milletari, F., Navab, N., & Ahmadi, S. A. (2016). V-Net: Fully convolutional neural networks for volumetric medical image segmentation. *2016 Fourth International Conference on 3D Vision (3DV)*, 565-571.
 [^3]: Çiçek, Ö., Abdulkadir, A., Lienkamp, S. S., Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning dense volumetric segmentation from sparse annotation. *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 424-432.
+[^4]: Dice, L. R. "Measures of the amount of ecologic association between species." *Ecology* 26.3 (1945): 297-302.
+[^5]: Paszke, Adam, et al. "PyTorch: An imperative style, high-performance deep learning library." *Advances in neural information processing systems* 32 (2019).

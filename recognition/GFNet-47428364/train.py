@@ -3,6 +3,7 @@ from modules import GFNet
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
 
 # Select the GPU is available otherwise select the CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -58,6 +59,21 @@ def evaluate(model, dataloader, criterion):
 
     return avg_loss, accuracy
 
+""" Plot the generated model based on the found accuracies """
+def plot(train_accuracies, test_accuracy, epochs):
+    epochs = range(1, epochs + 1)
+    plt.figure(figsize=(16, 8))
+
+    # Plot the accuracies
+    plt.plot(epochs, train_accuracies, label="Train Epoch Accuracy", color="blue")
+    plt.axhline(test_accuracy, label="Test Accuracy", color="red")
+
+    # Create the model
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.show()
+
 """ Main method """
 def main():
     # Get the dataloaders from dataset.py
@@ -68,11 +84,13 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimiser = optim.Adam(model.parameters(), lr=0.0001)
 
-    epochs = 1
+    epochs = 10
+    train_accuracies = []
     # Loop through each of the epochs
     for epoch in range(epochs):
         # Train the model in the current epoch
         train_loss, train_accuracy = train(model, train_dataloader, criterion, optimiser)
+        train_accuracies.append(train_accuracy)
 
         # Print the results of the epoch
         print(f"Epoch {epoch + 1}/{epochs}")
@@ -83,9 +101,10 @@ def main():
 
     # Evaluate trained model on the test data
     test_loss, test_accuracy = evaluate(model, test_dataloader, criterion)
-
-    # Print the results of the evaluation
     print(f"Test - Loss: {test_loss:.4f}, Accuracy: {100*test_accuracy:.2f}%")
+
+    # Plot the generated model
+    plot(train_accuracies, test_accuracy, epochs)
 
 if __name__ == "__main__":
     main()

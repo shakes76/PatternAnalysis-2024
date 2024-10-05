@@ -10,6 +10,7 @@ Visualisation of GFNet ([ResearchGate, 2023](https://www.researchgate.net/figure
 The following dependencies are required: m
 * torch >= 1.8.0
 * torchvision
+* matplotlib
 
 *Note:* To use the required `rffnt` and `irfftn` function from PyTorch, verion 1.8.0 or greater is required.
 
@@ -27,10 +28,13 @@ GFNet(embed_dim=384, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth
 ### Outputs
 [Example Model Output](readme_support/train_output.txt)
 
+### Plot
+![Model Accuracies](readme_support/model_accuracies.png)
+
 ## Example Model - Prediction
 
 ### Inputs
-This is how the model is being loaded
+This is how the model is being loaded:
 ```
 model = GFNet()
 model.load_state_dict(torch.load("GFNet-Model.pth"))

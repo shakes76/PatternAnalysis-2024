@@ -56,7 +56,7 @@ def train():
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.3,patience=10)
 
         # Early stop
-        early_stop_patience = 10
+        early_stop_patience = 20
         early_stop_counter = 0
         best_loss = float("inf")
 

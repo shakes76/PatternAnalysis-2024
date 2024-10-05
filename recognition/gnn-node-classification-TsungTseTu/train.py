@@ -61,10 +61,10 @@ def train():
         input_dim = X_train.shape[1]
         output_dim = torch.unique(y_train).size(0) #get number of unique class
         model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
         # learn rate scheduler
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1,patience=10)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.3,patience=10)
 
         # Early stop
         early_stop_patience = 10

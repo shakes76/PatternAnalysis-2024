@@ -118,3 +118,75 @@ class ISIC2020Dataset(Dataset):
             image = self.random_augment(image)
         
         return image
+    
+    def random_augment(self, image):
+        """
+        Applies random augmentations to an image.
+
+        Args:
+            image (torch.Tensor): Input image tensor.
+
+        Returns:
+            torch.Tensor: Augmented image tensor.
+        """
+        # Define a set of possible augmentations
+        augmentations = [
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+            transforms.RandomRotation(20),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        ]
+        # Randomly apply some of these augmentations
+        for aug in augmentations:
+            if random.random() > 0.5:
+                image = aug(image)
+        return image
+
+    def train_test_split(self, split_ratio):
+        """
+        Splits the data into training and testing sets.
+
+        Args:
+            split_ratio (float): Ratio of data to use for training.
+
+        Returns:
+            tuple: (train_data, test_data)
+        """
+        train_data, test_data = train_test_split(
+            self.data, 
+            test_size=1-split_ratio, 
+            stratify=self.data['target'],
+            random_state=42
+        )
+        return train_data, test_data
+    
+def get_data_loaders(csv_file, img_dir, batch_size=32, split_ratio=0.8):
+    """
+    Creates DataLoader objects for both training and testing datasets.
+
+    Args:
+        csv_file (str): Path to the csv file with annotations.
+        img_dir (str): Directory with all the images.
+        batch_size (int): How many samples per batch to load.
+        split_ratio (float): Ratio of data to use for training.
+
+    Returns:
+        tuple: (train_loader, test_loader)
+    """
+    # Define the transformations
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),  # Resize to a standard size
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizing with ImageNet stats
+    ])
+
+    # Create datasets
+    train_dataset = ISIC2020Dataset(csv_file, img_dir, transform=transform, mode='train', split_ratio=split_ratio)
+    test_dataset = ISIC2020Dataset(csv_file, img_dir, transform=transform, mode='test', split_ratio=split_ratio)
+
+    # Create data loaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    return train_loader, test_loader
+

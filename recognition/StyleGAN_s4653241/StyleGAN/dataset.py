@@ -1,7 +1,5 @@
-"""
-containing the data loader for loading and preprocessing your data
-"""
 
+# Importing libraries
 import os
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader

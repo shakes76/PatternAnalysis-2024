@@ -74,7 +74,7 @@ def train():
         # Training loop
         print("start training...")
         model.train()
-        for epoch in range(500):
+        for epoch in range(10000):
             optimizer.zero_grad()
             out = model(X_train, edges_train)
             loss = torch.nn.functional.nll_loss(out,y_train)

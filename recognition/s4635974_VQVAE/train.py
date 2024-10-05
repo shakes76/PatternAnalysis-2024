@@ -26,7 +26,7 @@ import modules
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 25
+num_epochs = 150
 batch_size = 32
 lr = 0.0004
 num_hiddens = 128

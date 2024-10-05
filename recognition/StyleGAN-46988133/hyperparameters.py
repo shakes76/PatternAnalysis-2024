@@ -5,6 +5,9 @@ hyperparameters.py created by Matthew Lockett 46988133
 # See torchvision ImageFolder class for the required dataset structure 
 ROOT = r"C:\Users\Mathew\AD_NC"
 
+# The relative path to a folder where all figures will be saved
+SAVED_FIGURES_DIR = r"recognition/StyleGAN-46988133/saved_figures/"
+
 # The IMAGE_SIZExIMAGE_SIZE pixel dimension of the images loaded into the model
 IMAGE_SIZE = 256
 

@@ -1,7 +1,7 @@
 import torch
-from modules import GCN  # Import GCN model
+from modules import GAT 
 from sklearn.model_selection import train_test_split
-from dataset import load_facebook_data  # Load the dataset
+from dataset import load_facebook_data  
 from torch.nn import functional as F
 import numpy as np
 
@@ -29,39 +29,28 @@ def train():
         print(f"Edge shape: {edges.shape}, features shape: {features.shape}, target shapes: {target.shape}")
 
         # Split the data into training (70%) and testing (30%)
-        X_train, X_test, y_train, y_test, train_indices, test_indices = train_test_split(features, target, range(features.shape[0]), test_size=0.3, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=42)
 
-        #Remap node indices in edges to match the reduced set of nodes in the training
-        train_node_map = {old_idx: new_idx for new_idx, old_idx in enumerate(train_indices)}
-        train_mask = np.isin(edges[:, 0], train_indices) & np.isin(edges[:, 1],train_indices)
-       
-        #Filter edged to only include edges where both nodes are in training set
-        edges_train = edges[train_mask]
-        
-        #Convert features, edges, and target to Pytorch tensors
-        X_train = torch.tensor(X_train,dtype=torch.float32)
+        # Convert split data to tensors
+        X_train = torch.tensor(X_train, dtype=torch.float32)
         X_test = torch.tensor(X_test, dtype=torch.float32)
         y_train = torch.tensor(y_train, dtype=torch.long)
         y_test = torch.tensor(y_test, dtype=torch.long)
         
+        edges= torch.tensor(edges, dtype=torch.long)
 
-        # Remap the edge indices based on the training set
-        edge_list= []
-        for edge in edges_train:
-            if edge[0] in train_node_map and edge[1] in train_node_map:
-                remapped_edge= [train_node_map[edge[0]], train_node_map[edge[1]]]
-                edge_list.append(remapped_edge)
-        
+        # Re-index the edges for training set
+        mask = (edges[:, 0]< X_train.size(0)) & (edges[:, 1] < X_train.size(0))
+        edge_reindex = edges[mask].t()
 
-        edges_train = np.array(edge_list).T
-        edges_train = torch.tensor(edges_train, dtype=torch.long)
         
         # Initialize the model
         print("Model starting...")
         input_dim = X_train.shape[1]
-        output_dim = torch.unique(y_train).size(0) #get number of unique class
-        model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
+        output_dim = len(torch.unique(y_train)) #get number of unique class
+        model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=3, heads=4,dropout=0.1)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0001)
+        loss_fn = torch.nn.CrossEntropyLoss()
 
         # learn rate scheduler
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.3,patience=10)
@@ -76,8 +65,8 @@ def train():
         model.train()
         for epoch in range(10000):
             optimizer.zero_grad()
-            out = model(X_train, edges_train)
-            loss = torch.nn.functional.nll_loss(out,y_train)
+            out = model(X_train.clone().detach(), edge_reindex.clone().detach())
+            loss = loss_fn(out,torch.tensor(y_train, dtype=torch.long))
             loss.backward()
             optimizer.step()
 

@@ -1,5 +1,5 @@
 import torch
-from modules import GCN  
+from modules import GAT
 from dataset import load_facebook_data  
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
@@ -7,9 +7,11 @@ from sklearn.model_selection import train_test_split
 from torch.nn import functional as F
 
 def visualize(embeddings, labels):
-    tsne = TSNE(n_components=2)
+    tsne = TSNE(n_components=2,perplexity=30,learning_rate=200)
     embeddings_2d = tsne.fit_transform(embeddings)
     plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=labels, cmap='Spectral')
+    plt.colorbar()
+    plt.title("t-SNE visualization of GAT embedding")
     plt.show()
 
 def predict():
@@ -29,10 +31,10 @@ def predict():
 
     # Set input nad output based on feature and target
     input_dim = X_test.shape[1] #Number of features per node
-    output_dim = len(set(target.numpy())) # number of unique classes
+    output_dim = len(torch.unique(y_test)) # number of unique classes
 
     # Initialize the model (same as in training)
-    model = GCN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim)
+    model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=3, heads=4,dropout=0.1)
 
     # Load pre-trained model
     model.load_state_dict(torch.load("gnn_model.pth", weights_only=True))

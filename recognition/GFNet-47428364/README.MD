@@ -28,13 +28,18 @@ GFNet(embed_dim=384, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth
 [Example Model Output](readme_support/train_output.txt)
 
 ## Example Model - Prediction
-*Not yet implemented*
 
 ### Inputs
-*Not yet implemented*
+This is how the model is being loaded
+```
+model = GFNet()
+model.load_state_dict(torch.load("GFNet-Model.pth"))
+```
 
 ### Outputs
-*Not yet implemented*
+```
+Test - Loss: 6.4041, Accuracy: 50.53%
+```
 
 ## Pre-Processing
 The data was already split into a test and train set so no splitting of the data was required.

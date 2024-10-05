@@ -58,26 +58,34 @@ def evaluate(model, dataloader, criterion):
 
     return avg_loss, accuracy
 
-# Get the dataloaders from dataset.py
-train_dataloader, test_dataloader = get_dataloaders()
+""" Main method """
+def main():
+    # Get the dataloaders from dataset.py
+    train_dataloader, test_dataloader = get_dataloaders()
 
-# Create the components nessesary for training
-model = GFNet().to(device)
-criterion = nn.CrossEntropyLoss()
-optimiser = optim.Adam(model.parameters(), lr=0.0001)
+    # Create the components nessesary for training
+    model = GFNet().to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimiser = optim.Adam(model.parameters(), lr=0.0001)
 
-epochs = 10
-# Loop through each of the epochs
-for epoch in range(epochs):
-    # Train the model in the current epoch
-    train_loss, train_accuracy = train(model, train_dataloader, criterion, optimiser)
+    epochs = 1
+    # Loop through each of the epochs
+    for epoch in range(epochs):
+        # Train the model in the current epoch
+        train_loss, train_accuracy = train(model, train_dataloader, criterion, optimiser)
 
-    # Print the results of the epoch
-    print(f"Epoch {epoch + 1}/{epochs}")
-    print(f"Train - Loss: {train_loss:.4f}, Accuracy: {100*train_accuracy:.2f}%")
+        # Print the results of the epoch
+        print(f"Epoch {epoch + 1}/{epochs}")
+        print(f"Train - Loss: {train_loss:.4f}, Accuracy: {100*train_accuracy:.2f}%")
 
-# Evaluate trained model on the test data
-test_loss, test_accuracy = evaluate(model, test_dataloader, criterion)
+    # Save the generated model
+    torch.save(model.state_dict(), "GFNet-Model.pth")
 
-# Print the results of the evaluation
-print(f"Test - Loss: {test_loss:.4f}, Accuracy: {100*test_accuracy:.2f}%")
+    # Evaluate trained model on the test data
+    test_loss, test_accuracy = evaluate(model, test_dataloader, criterion)
+
+    # Print the results of the evaluation
+    print(f"Test - Loss: {test_loss:.4f}, Accuracy: {100*test_accuracy:.2f}%")
+
+if __name__ == "__main__":
+    main()

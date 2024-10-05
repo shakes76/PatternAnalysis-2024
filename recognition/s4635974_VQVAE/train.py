@@ -16,13 +16,23 @@ import modules
 
 
 # Hyperparameters
-num_epochs = 200
+# num_epochs = 200
+# batch_size = 32
+# lr = 0.0002
+# num_hiddens = 128
+# num_residual_hiddens = 32
+# num_channels = 1
+# num_embeddings = 512
+# dim_embedding = 64
+# beta = 0.25
+
+num_epochs = 10
 batch_size = 32
-lr = 0.0002
-num_hiddens = 128
-num_residual_hiddens = 32
+lr = 1e-5
+num_hiddens = 256
+num_residual_hiddens = 64
 num_channels = 1
-num_embeddings = 512
+num_embeddings = 128
 dim_embedding = 64
 beta = 0.25
 
@@ -106,7 +116,7 @@ for epoch in range(num_epochs):
     epoch_training_output_loss.append(training_output_loss)
     training_vq_loss = np.mean(training_vq_error)
     epoch_training_vq_loss.append(training_vq_loss)
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Training output loss: {training_output_loss:.5f}, Training VQ loss: {training_vq_loss:.5f}')
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Training output loss: {training_output_loss:.5f}, Training VQ loss: {training_vq_loss}')
 
     # Evaluate on the validation dataset
     model.eval()

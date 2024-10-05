@@ -64,10 +64,10 @@ def train():
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
         # learn rate scheduler
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',factor=0.1,patience=10, verbose=True)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,factor=0.1,patience=10)
 
         # Early stop
-        early_stop_patience = 20
+        early_stop_patience = 10
         early_stop_counter = 0
         best_loss = float("inf")
 
@@ -96,8 +96,9 @@ def train():
                 print(f"early stop at epoch {epoch+1}")
                 break
             
-            # print the loss for each epoch
-            print(f'Epoch {epoch+1}, Loss: {loss.item()}')
+            #print current l-rate and loss for each epoch
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Epoch {epoch+1}, Loss: {loss.item()}, Learn rate: {current_lr}')
 
         # Save the trained model without training it again
         torch.save(model.state_dict(), 'gnn_model.pth', _use_new_zipfile_serialization=True)

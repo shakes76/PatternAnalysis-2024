@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 def get_dataloaders(batch_size=32, path="recognition/GFNet-47428364/AD_NC"):
     # Create transformer
     transform = transforms.Compose([
-        transforms.Resize((256, 256)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ])
 

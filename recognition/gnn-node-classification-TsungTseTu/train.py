@@ -49,7 +49,7 @@ def train():
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train)) #get number of unique class
         model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=3, heads=4,dropout=0.1)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 
         # learn rate scheduler
@@ -66,7 +66,7 @@ def train():
         for epoch in range(10000):
             optimizer.zero_grad()
             out = model(X_train.clone().detach(), edge_reindex.clone().detach())
-            loss = loss_fn(out,torch.tensor(y_train, dtype=torch.long))
+            loss = loss_fn(out,y_train)
             loss.backward()
             optimizer.step()
 

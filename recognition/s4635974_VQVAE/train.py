@@ -28,7 +28,7 @@ import modules
 
 num_epochs = 25
 batch_size = 32
-lr = 0.0001
+lr = 0.0004
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1

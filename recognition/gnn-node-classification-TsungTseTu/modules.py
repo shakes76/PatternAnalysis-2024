@@ -10,22 +10,25 @@ class GCN(torch.nn.Module):
 
 
         # Define layers
-        self.convs = torch.nn.Modulelist()
-        sef.convs.append(GCNConv(input_dim, hidden_dim) #first
-
-        for _ in range(num_layers -2): #middle layers
-            self.convs.append(GCNConv(hidden_dim, hidden_dim))
+        self.convs = torch.nn.ModuleList()
+        self.convs.append(GCNConv(input_dim, hidden_dim)) #first
+        
+        # only add if total layer is bigger than 2                  
+        if num_layers > 2 :
+            for _ in range(num_layers -2): #middle layers
+                self.convs.append(GCNConv(hidden_dim, hidden_dim))
 
         self.convs.append(GCNConv(hidden_dim, output_dim)) #Output
 
         # Batch Normalization layers
-        self.bns = torch.nn.ModuleList([torch.nn.BatchNorm1d(hidden_dim) for _in range(num_layers -1)])
+        if num_layers > 1:
+            self.bns = torch.nn.ModuleList([torch.nn.BatchNorm1d(hidden_dim) for _ in range(num_layers -1)])
 
         self.dropout = torch.nn.Dropout(dropout) # Add dropout with 50% prob
 
     def forward(self, x, edge_index):
         for i , conv in enumerate(self.convs[:-1]):
-            x = conv(x, edge_index0
+            x = conv(x, edge_index)
             x = self.bns[i](x) #apply batch normalization
             x = F.relu(x) #Activation
             x = self.dropout(x) #dropout while training

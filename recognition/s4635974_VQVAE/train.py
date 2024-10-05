@@ -28,9 +28,9 @@ import modules
 
 num_epochs = 25
 batch_size = 32
-lr = 1e-5
-num_hiddens = 256
-num_residual_hiddens = 64
+lr = 0.0001
+num_hiddens = 128
+num_residual_hiddens = 32
 num_channels = 1
 num_embeddings = 512
 dim_embedding = 64

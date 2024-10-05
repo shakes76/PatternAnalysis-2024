@@ -59,8 +59,6 @@ train_loader, validate_loader, data_variance = HipMRILoader(
     batch_size=batch_size, transform=transform
     ).get_loaders()
 
-
-
 # Create model
 model = modules.VQVAE(
     num_channels=num_channels,
@@ -77,6 +75,9 @@ optimizer = optim.Adam(
     model.parameters(), 
     lr=lr,
     amsgrad=False)
+
+# Define the scheduler
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
 # Training mectrics
 epoch_training_output_loss = []
@@ -184,6 +185,9 @@ for epoch in range(num_epochs):
         # Save the figure as a single PNG file with the epoch number in the filename
         plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
         plt.close()
+    
+    scheduler.step()
+    print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
 
 
 epochs = range(1, num_epochs + 1)

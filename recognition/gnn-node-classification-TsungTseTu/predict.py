@@ -34,7 +34,7 @@ def predict():
     output_dim = len(torch.unique(y_test)) # number of unique classes
 
     # Initialize the model (same as in training)
-    model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4,dropout=0.1)
+    model = GAT(input_dim=input_dim, hidden_dim=256, output_dim=output_dim, num_layers=4, heads=4,dropout=0.1)
 
     # Load pre-trained model
     model.load_state_dict(torch.load("gnn_model.pth", weights_only=True))

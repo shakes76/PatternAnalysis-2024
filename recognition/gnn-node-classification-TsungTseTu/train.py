@@ -48,7 +48,7 @@ def train():
         print("Model starting...")
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train)) #get number of unique class
-        model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4,dropout=0.1)
+        model = GAT(input_dim=input_dim, hidden_dim=256, output_dim=output_dim, num_layers=4, heads=4,dropout=0.1)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 

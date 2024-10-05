@@ -5,7 +5,7 @@ from torch_geometric.nn import GATConv
 print("GCN class loaded")
 
 class GAT(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers=4,heads=1,dropout=0.1):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers=4,heads=4,dropout=0.1):
         super(GAT, self).__init__()
 
 

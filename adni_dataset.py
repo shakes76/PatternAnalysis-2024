@@ -20,13 +20,13 @@ class ADNIDataset(Dataset):
         self.image_paths = []
         self.labels = []
         
-        # Define default transformations if None - TODO: Calc mean + stddev of dataset
+        # Define default transformations if None
         if transform is None:
             self.transform = transforms.Compose([
                 transforms.Grayscale(),
                 transforms.Resize((256, 240)),
                 transforms.ToTensor(),
-                transforms.Normalize([0.1156], [0.2200])  # Mean, stddev from train dataset
+                transforms.Normalize([0.1156], [0.2200])  # Mean, stddev from AD_NC train dataset
             ])
         else:
             self.transform = transform

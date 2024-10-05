@@ -513,7 +513,7 @@ class MiniBatchStdDev(nn.Module):
         grouped_input = x.view(G, -1, self.num_new_features, C // self.num_new_features, H, W)
 
         # Calc stddev for each group
-        # Add epsilon (1e-8) to prevent div by zero
+        # Add epsilon (1e-8) so no div by zero
         stddev = torch.sqrt(grouped_input.var(dim=1, unbiased=False) + 1e-8)
 
         # Avg stddev over the "num_new_features" and "C // num_new_features" dim
@@ -529,3 +529,73 @@ class MiniBatchStdDev(nn.Module):
         output = torch.cat([x, stddev], dim=1)
 
         return output
+    
+    
+class StyleGAN2Discriminator(nn.Module):
+    """
+    Discriminator for StyleGAN2.
+
+    Args:
+        image_size (tuple): Size of input image (H, W).
+        num_channels (int): Num input channels.
+        ndf (int): Num discriminator features.
+        num_layers (int): Num downsmapling layers.
+    """
+    def __init__(self, image_size, num_channels, ndf, num_layers):
+        super().__init__()
+        self.image_size = image_size
+        self.num_channels = num_channels
+        self.ndf = ndf
+        self.num_layers = num_layers
+        
+        self.descrim_network = nn.ModuleList()
+        
+        # Initial conv layer
+        self.descrim_network.append(nn.Conv2d(in_channels=1, out_channels=self.ndf, kernel_size=3, padding=1))
+        # Residual blocks
+        # Set up channel progression
+        in_channels = self.ndf
+        channel_multipliers = [1/8, 1/4, 1/2, 1, 2, 4, 8]  # Match generators progression
+        for i in range(num_layers):
+            out_channels = int(ndf * channel_multipliers[i])
+            downsample = i != 0  # No downsample first block
+            self.descrim_network.append(ResidualBlock(in_channels, out_channels, downsample=downsample))
+            in_channels = out_channels
+            
+        # Spatial dims after downsamples
+        final_height = image_size[0] // (2 ** (num_layers - 1))
+        final_width = image_size[1] // (2 ** (num_layers - 1))
+            
+        # Add MiniBatchStdDev layer (adds 1 to channel dim)
+        self.minibatch_stddev = MiniBatchStdDev()
+        
+        # Final conv layer
+        self.final_conv = nn.Conv2d(in_channels + 1, in_channels, kernel_size=3, padding=1)
+        # Flattening layer
+        self.flatten = nn.Flatten()
+        
+        # Dense layer - classifier
+        out_features = in_channels * final_height * final_width
+        self.final_linear = nn.Linear(out_features, 1)
+
+
+    def forward(self, x):
+        """
+        Forward pass of StyleGAN2 discriminator.
+
+        Args:
+            x (torch.Tensor): Input tensor - shape [batch_size, num_channels, height, width].
+
+        Returns:
+            torch.Tensor: Discriminator scores of shape (batch_size,).
+        """
+        for layer in self.descrim_network:
+            x = layer(x)
+        
+        x = self.minibatch_stddev(x)
+        x = self.final_conv(x)
+        x = self.flatten(x)
+        x = self.final_linear(x)
+
+        # Get single value per sample
+        return x.squeeze(1)

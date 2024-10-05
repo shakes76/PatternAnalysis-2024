@@ -64,3 +64,35 @@ class UNet(nn.Module):
         x = self.up4(x)                          # 3 x 64 x 64
 
         return x
+
+class Encoder(nn.Module):
+    def __init__(self, latent_dim=256):
+        super(Encoder, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1)
+        self.fc = nn.Linear(256 * 8 * 8, latent_dim)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+class Decoder(nn.Module):
+    def __init__(self, latent_dim=256):
+        super(Decoder, self).__init__()
+        self.fc = nn.Linear(latent_dim, 256 * 8 * 8)
+        self.conv3 = nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
+        self.conv2 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
+        self.conv1 = nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1)
+
+    def forward(self, x):
+        x = self.fc(x)
+        x = x.view(x.size(0), 256, 8, 8)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv2(x))
+        x = torch.sigmoid(self.conv1(x))
+        return x

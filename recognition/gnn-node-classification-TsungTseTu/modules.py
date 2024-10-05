@@ -5,7 +5,7 @@ from torch_geometric.nn import GCNConv
 print("GCN class loaded")
 
 class GCN(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers=3,dropout=0.2):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers=3,dropout=0.1):
         super(GCN, self).__init__()
 
 

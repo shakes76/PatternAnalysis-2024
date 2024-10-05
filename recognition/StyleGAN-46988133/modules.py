@@ -127,5 +127,37 @@ class AdaIN(nn.Module):
         shift = self.style_shift(w).unsqueeze(2).unsqueeze(3)
 
         return scale * x + shift
+    
+
+class Noise(nn.Module):
+    """
+    Within a StyleGAN model, the generator receives multiple injections of noise into each of
+    it's layers to improve the output image's finer details and quality. This class facilitates 
+    the noise injections, and even creates a learnable noise parameter to improve training further.
+
+    REF: This class was inspired by the following website:
+    REF: https://blog.paperspace.com/implementation-stylegan-from-scratch/
+    """
+
+    def __init__(self, channels):
+        """
+        An instance of the Noise class. A learnable noise parameter is created so that training can be
+        enhanced by learning an appropriate noise scale. 
+
+        Param: channels: The amount of channels within the input tensor x.
+        """
+        super(Noise, self).__init__()
+        self.learned_noise = nn.Parameter(torch.zeros(1, channels, 1, 1))
+
+
+    def forward(self, x):
+        """
+        Generates random noise and scales it by a learned factor, then applies it to the input tensor x.
+
+        Param: x: An input tensor x, representing the information within a layer of the generator. 
+        Return: The input tensor x with additional noise added.
+        """
+        noise = torch.randn((x.shape[0], 1, x.shape[2], x.shape[3]), device=x.device)
+        return x + self.learned_noise * noise
 
 

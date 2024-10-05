@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 class SinusoidalEmbedding(nn.Module):
     def __init__(self, embedding_dim, max_positions=10000):
         super(SinusoidalEmbedding, self).__init__()

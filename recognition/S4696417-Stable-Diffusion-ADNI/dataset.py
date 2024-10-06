@@ -1,8 +1,6 @@
 import cv2, os, torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-from torchvision import transforms
-
 
 class ADNIDataset(Dataset):
     """
@@ -13,7 +11,6 @@ class ADNIDataset(Dataset):
         transform (callable, optional): Optional transform to be applied
             on a sample.
     """
-
     def __init__(self, path, transform=None):
         self.path = path
         self.transform = transform
@@ -51,4 +48,5 @@ def get_dataloader(path, batch_size, transform=None, val_split=0.2):
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    
     return train_loader, val_loader

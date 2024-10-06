@@ -28,12 +28,13 @@ class StableDiffusion(nn.Module):
         predict_noise: Predict noise at each timestep
         sample: Generate samples from the model
     """
-    def __init__(self, unet, vae, noise_scheduler, image_size):
+    def __init__(self, unet, vae, noise_scheduler, image_size, device):
         super().__init__()
         self.unet = unet
         self.vae = vae
         self.noise_scheduler = noise_scheduler
         self.image_size = image_size
+        self.device = device
 
     def encode(self, x):
         return self.vae.encode(x)
@@ -78,7 +79,6 @@ class StableDiffusion(nn.Module):
         wandb.log({f"sample": wandb.Image(sample_images)})
         return sample_images
     
-
 class UNet(nn.Module):
     """
     Unet to predict noise at each timestep
@@ -164,111 +164,10 @@ class UNet(nn.Module):
             x = up_block(x, t)
         
         # Final linear layer
-        return self.conv_out(x)
-    
+        return self.conv_out(x) 
+
 
 ######### Model Components #########
-class SinusoidalPositionEmbeddings(nn.Module):
-    """
-    Convert timestep tensor to a vector representation
-
-    Args:
-        dim (int): number of channels in the input image
-
-    Model Call:
-        Input: time: [B] tensor of timesteps
-        Output: [B, dim] vector representation
-    """
-    def __init__(self, dim):
-        super().__init__()
-        self.dim = dim
-
-    def forward(self, time):
-        device = time.device
-        half_dim = self.dim // 2
-        embeddings = math.log(10000) / (half_dim - 1)
-        embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
-        embeddings = time[:, None] * embeddings[None, :]
-        embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
-        return embeddings
-    
-
-class VAEResidualBlock(nn.Module):
-    """
-    Residual block for VAE encoder/decoder
-
-    Args:
-        in_channels (int): number of channels in the input image
-        out_channels (int): number of channels in the output image
-    Model Call:
-        Input: x: [B, C, H, W] tensor of images
-        Output: [B, C, H, W] Reconstructed image tensor
-    """
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-
-        self.group_norm1 = nn.GroupNorm(32, in_channels)
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.group_norm2 = nn.GroupNorm(32, out_channels)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
-
-        if in_channels != out_channels:
-            self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        else:
-            self.shortcut = nn.Identity()
-
-
-    def forward(self, x):
-        residual = x
-
-        x = self.group_norm1(x)
-        x = F.silu(x)
-        x = self.conv1(x)
-
-        x = self.group_norm2(x)
-        x = F.silu(x)
-        x = self.conv2(x)
-
-        x += self.shortcut(residual)
-
-        return x
-
-
-class VAEAttentionBlock(nn.Module):
-    """
-    Attention block for VAE encoder/decoder
-
-    Args:
-        channels (int): number of channels in the input image
-    Model Call:
-        Input: x: [B, C, H, W] tensor of images
-        Output: [B, C, H, W] Reconstructed image tensor
-    """
-    def __init__(self, channels):
-        super().__init__()
-
-        self.group_norm = nn.GroupNorm(32, channels)
-        self.attention = SelfAttention(1, channels)
-
-    def forward(self, x):
-        
-        residual = x
-        x = self.group_norm(x)
-
-        # reshape to (B, C, H*W)
-        B, C, H, W = x.shape
-        x = x.view((B, C, H * W)) 
-        x = x.transpose(-1, -2) # (B, C, H*W) -> (B, H*W, C)
-
-        x = self.attention(x)
-        x = x.transpose(-1, -2) # (B, H*W, C) -> (B, C, H*W)
-        x = x.view((B, C, H, W)) # (B, C, H*W) -> (B, C, H, W)
-
-        x += residual
-
-        return x
-
-
 class AttentionBlock(nn.Module):
     """
     Self Attention block for Unet
@@ -309,8 +208,136 @@ class AttentionBlock(nn.Module):
         x = x_flat.transpose(1, 2).view(b, c, h, w)
         
         return x
-    
 
+class ResidualBlock(nn.Module):
+    """
+    Residual convolution block with time embedding for diffusion in Unet
+
+    Args:
+        in_channels (int): number of channels in the input image
+        out_channels (int): number of channels in the output image
+        time_emb_dim (int): number of channels in the time embedding
+
+    Model Call:
+        Input: x: [B, C_in, H, W] tensor of images
+        Output: [B, C_out, H, W] processed feature tensor
+    """
+    def __init__(self, in_channels, out_channels, time_emb_dim):
+        super().__init__()
+        num_groups = min(out_channels, 32)
+        self.time_mlp = nn.Linear(time_emb_dim, out_channels)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+        self.norm1 = nn.GroupNorm(num_groups, out_channels)
+        self.norm2 = nn.GroupNorm(num_groups, out_channels)
+        self.activation = nn.SiLU()
+        if in_channels != out_channels:
+            self.shortcut = nn.Conv2d(in_channels, out_channels, 1)
+        else:
+            self.shortcut = nn.Identity()
+
+    def forward(self, x, t):
+        h = self.conv1(x)
+        h = self.norm1(h)
+        h += self.time_mlp(t)[:, :, None, None]
+        h = self.activation(h)
+        h = self.conv2(h)
+        h = self.norm2(h)
+        return self.activation(h + self.shortcut(x))
+    
+class TimeEmbedding(nn.Module):
+    """
+    Time embeddings for Unet
+
+    Args:
+        n_emb (int): numberr of time embeddings
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+        self.layer = nn.Sequential(
+            nn.Linear(1, dim),
+            nn.SiLU(),
+            nn.Linear(dim, dim)
+        )
+
+    def forward(self, t):
+        return self.layer(t.unsqueeze(-1).float())
+
+class VAEResidualBlock(nn.Module):
+    """
+    Residual block for VAE encoder/decoder
+
+    Args:
+        in_channels (int): number of channels in the input image
+        out_channels (int): number of channels in the output image
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.group_norm1 = nn.GroupNorm(32, in_channels)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.group_norm2 = nn.GroupNorm(32, out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+
+        if in_channels != out_channels:
+            self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        else:
+            self.shortcut = nn.Identity()
+
+
+    def forward(self, x):
+        residual = x
+
+        x = self.group_norm1(x)
+        x = F.silu(x)
+        x = self.conv1(x)
+
+        x = self.group_norm2(x)
+        x = F.silu(x)
+        x = self.conv2(x)
+
+        x += self.shortcut(residual)
+
+        return x
+    
+class VAEAttentionBlock(nn.Module):
+    """
+    Attention block for VAE encoder/decoder
+
+    Args:
+        channels (int): number of channels in the input image
+    Model Call:
+        Input: x: [B, C, H, W] tensor of images
+        Output: [B, C, H, W] Reconstructed image tensor
+    """
+    def __init__(self, channels):
+        super().__init__()
+
+        self.group_norm = nn.GroupNorm(32, channels)
+        self.attention = SelfAttention(1, channels)
+
+    def forward(self, x):
+        
+        residual = x
+        x = self.group_norm(x)
+
+        # reshape to (B, C, H*W)
+        B, C, H, W = x.shape
+        x = x.view((B, C, H * W)) 
+        x = x.transpose(-1, -2) # (B, C, H*W) -> (B, H*W, C)
+
+        x = self.attention(x)
+        x = x.transpose(-1, -2) # (B, H*W, C) -> (B, C, H*W)
+        x = x.view((B, C, H, W)) # (B, C, H*W) -> (B, C, H, W)
+
+        x += residual
+
+        return x
+    
 class SelfAttention(nn.Module):
     """
     Self Attention block for VAE encoder/decoder
@@ -353,67 +380,19 @@ class SelfAttention(nn.Module):
         output = self.out_proj(output) 
 
         return output
-
-
-class ResidualBlock(nn.Module):
-    """
-    Residual convolution block with time embedding for diffusion in Unet
-
-    Args:
-        in_channels (int): number of channels in the input image
-        out_channels (int): number of channels in the output image
-        time_emb_dim (int): number of channels in the time embedding
-
-    Model Call:
-        Input: x: [B, C_in, H, W] tensor of images
-        Output: [B, C_out, H, W] processed feature tensor
-    """
-    def __init__(self, in_channels, out_channels, time_emb_dim):
-        super().__init__()
-        num_groups = min(out_channels, 32)
-        self.time_mlp = nn.Linear(time_emb_dim, out_channels)
-        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
-        self.norm1 = nn.GroupNorm(num_groups, out_channels)
-        self.norm2 = nn.GroupNorm(num_groups, out_channels)
-        self.activation = nn.SiLU()
-        if in_channels != out_channels:
-            self.shortcut = nn.Conv2d(in_channels, out_channels, 1)
-        else:
-            self.shortcut = nn.Identity()
-
-    def forward(self, x, t):
-        h = self.conv1(x)
-        h = self.norm1(h)
-        h += self.time_mlp(t)[:, :, None, None]
-        h = self.activation(h)
-        h = self.conv2(h)
-        h = self.norm2(h)
-        return self.activation(h + self.shortcut(x))
     
 
-class TimeEmbedding(nn.Module):
+######### Noise Schedulers / Optimizers / LR Schedulers #########
+class CosineAnnealingWarmupScheduler(_LRScheduler):
     """
-    Time embeddings for Unet
+    CosineAnnealing Warmup Scheduler with warmup stage
 
     Args:
-        n_emb (int): numberr of time embeddings
+        optimizer: Optimizer
+        warmup_steps: Number of warmup steps
+        total_steps: Total number of steps
+        min_lr: Minimum learning rate
     """
-    def __init__(self, dim):
-        super().__init__()
-        self.dim = dim
-        self.layer = nn.Sequential(
-            nn.Linear(1, dim),
-            nn.SiLU(),
-            nn.Linear(dim, dim)
-        )
-
-    def forward(self, t):
-        return self.layer(t.unsqueeze(-1).float())
-
-
-######### Noise Schedulers / Optimizers / LR Schedulers / Loss #########
-class CosineAnnealingWarmupScheduler(_LRScheduler):
     def __init__(self, optimizer, warmup_steps, total_steps, min_lr=0, last_epoch=-1):
         self.warmup_steps = warmup_steps
         self.total_steps = total_steps
@@ -429,8 +408,7 @@ class CosineAnnealingWarmupScheduler(_LRScheduler):
             progress = (self.last_epoch - self.warmup_steps) / (self.total_steps - self.warmup_steps)
             return [self.min_lr + (base_lr - self.min_lr) * 
                     (1 + math.cos(math.pi * progress)) / 2
-                    for base_lr in self.base_lrs]
-        
+                    for base_lr in self.base_lrs]  
 
 class NoiseScheduler_Fast_DDPM():
     """
@@ -526,8 +504,16 @@ class NoiseScheduler_Fast_DDPM():
                 setattr(self, key, value.to(device))
         return self
 
-
 class Lookahead(Optimizer):
+    """
+    Lookahead Optimizer 
+    Improved performance by using a slow weights for the optimizer and fast weights for the model
+
+    Args:
+        optimizer: optimizer to be used
+        k: number of lookahead steps
+        alpha: learning rate multiplier for slow weights
+    """
     def __init__(self, optimizer, k=5, alpha=0.5):
         self.optimizer = optimizer
         self.k = k
@@ -540,7 +526,6 @@ class Lookahead(Optimizer):
 
         self.defaults = self.optimizer.defaults
         
-
     def update(self, group):
         for fast in group["params"]:
             param_state = self.state[fast]

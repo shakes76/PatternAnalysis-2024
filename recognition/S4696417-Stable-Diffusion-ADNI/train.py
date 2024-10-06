@@ -1,17 +1,16 @@
 from torchvision import transforms
-from dataset import get_dataloader
 import torch, wandb, os
 import torch.nn as nn
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler
 from torch.amp import autocast
-from utils import visualize_denoising_process
+from utils import run_setup, get_warmup_steps, init_wandb
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
-from modules import StableDiffusion, UNet, CosineAnnealingWarmupScheduler, NoiseScheduler_Fast_DDPM
+from modules import CosineAnnealingWarmupScheduler
 
 # SETUP - Must Match Image Size of VAE
 IMAGE_SIZE = 256
-BATCH_SIZE = 16 # will affect training performance
+BATCH_SIZE = 16 
 method = 'Local'
 
 image_transform = transforms.Compose([
@@ -21,57 +20,30 @@ image_transform = transforms.Compose([
     transforms.Normalize((0.5,), (0.5,)),
 ])
 
-print("Loading data...")
-if method == 'Local':
-    os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
-    train_loader, val_loader = get_dataloader('data/train/AD', batch_size=BATCH_SIZE, transform=image_transform)
-elif method == 'Slurm':
-    train_loader, val_loader = get_dataloader('/home/groups/comp3710/ADNI/AD_NC/train/AD', batch_size=BATCH_SIZE, transform=image_transform)
-
-# Settings
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f'Using {device}')
-
-print("Loading model...") # Load Pretrained VAE and new Unet
-vae = torch.load(f'checkpoints/VAE/ADNI-vae_e85_b8_im{IMAGE_SIZE}.pt')
-vae.eval() 
-for param in vae.parameters():
-    param.requires_grad = False 
-
-unet = UNet(in_channels=vae.latent_dim, hidden_dims=[64, 128, 256, 512, 1024], time_emb_dim=256)
-noise_scheduler = NoiseScheduler_Fast_DDPM(num_timesteps=100).to(device)
-model = StableDiffusion(unet, vae, noise_scheduler, image_size=IMAGE_SIZE).to(device)
+train_loader, val_loader, model = run_setup(
+    method=method, 
+    batch_size=BATCH_SIZE, 
+    image_size=IMAGE_SIZE,
+    image_transform=image_transform,
+    hidden_dims=[64, 128, 256, 512, 1024],
+    time_emb_dim=256,
+    vae_path=f'checkpoints/VAE/ADNI-vae_e100_b8_im{IMAGE_SIZE}_l16.pt',
+    noise_timesteps=100
+)
 
 criterion = nn.MSELoss()
 scaler = GradScaler()
 
 lr = 1e-4
 epochs = 500
-steps_per_epoch = len(train_loader)
-total_steps = steps_per_epoch * epochs
-warmup_steps = int(0.1 * total_steps)
+warmup_steps, total_steps = get_warmup_steps(train_loader, epochs)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-
-#scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 scheduler = CosineAnnealingWarmupScheduler(optimizer, warmup_steps, total_steps)
 
-# initialise wandb
-wandb.init(
-    project="Stable-Diffusion-ADNI", 
-    entity="s1lentcs-uq",
-    config={
-        "learning rate": lr,
-        "epochs": epochs,
-        "optimizer": type(optimizer).__name__,
-        "scheduler": type(scheduler).__name__,
-        "loss": type(criterion).__name__,
-        "scaler": type(scaler).__name__,
-        "name": "SD-ADNI - VAE and Unet",
-        "image size": IMAGE_SIZE,
-        "batch size": BATCH_SIZE
-    })
+init_wandb(lr, epochs, optimizer, scheduler, criterion, scaler, IMAGE_SIZE, BATCH_SIZE)
 
+##### Training/Validation Loop #####
 print("Training model...")
 for epoch in range(epochs):
     model.train()
@@ -83,7 +55,7 @@ for epoch in range(epochs):
     for i, batch in enumerate(loop):
 
         images, _ = batch # retrieve clean image batch
-        images = images.to(device)
+        images = images.to(model.device)
         optimizer.zero_grad()
 
         # Encode images to latent space
@@ -92,14 +64,14 @@ for epoch in range(epochs):
             latents = model.sample_latent(mu, logvar)
         
         # Sample noise and timesteps
-        timesteps = torch.randint(0, noise_scheduler.num_timesteps, (latents.size(0),), device=device)
+        timesteps = torch.randint(0, model.noise_scheduler.num_timesteps, (latents.size(0),), device=model.device)
         noise = torch.randn_like(latents) 
 
         # Add noise to latents
-        noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+        noisy_latents = model.noise_scheduler.add_noise(latents, noise, timesteps)
         
         with torch.no_grad():
-            denoised_images = model.vae.decode(noise_scheduler.step(model.unet, noisy_latents, timesteps))
+            denoised_images = model.vae.decode(model.noise_scheduler.step(model.unet, noisy_latents, timesteps))
             ssim = structural_similarity_index_measure(denoised_images, images)
             psnr = peak_signal_noise_ratio(denoised_images, images)
 
@@ -136,24 +108,20 @@ for epoch in range(epochs):
 
     # Validation
     model.eval()
-    val_loss = 0
-    val_psnr = 0
-    val_ssim = 0
-
     with torch.no_grad():
         for images, _ in tqdm(val_loader, desc="Validating"):
-            images = images.to(device)
+            images = images.to(model.device)
 
             with torch.no_grad():
                 mu, logvar = model.encode(images)
                 latents = model.sample_latent(mu, logvar)
 
             noise = torch.randn_like(latents)
-            timesteps = torch.randint(0, noise_scheduler.num_timesteps, (images.size(0),), device=device)
+            timesteps = torch.randint(0, model.noise_scheduler.num_timesteps, (images.size(0),), device=model.device)
             
-            noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+            noisy_latents = model.noise_scheduler.add_noise(latents, noise, timesteps)
             with torch.no_grad():
-                denoised_images = model.vae.decode(noise_scheduler.step(model.unet, noisy_latents, timesteps))
+                denoised_images = model.vae.decode(model.noise_scheduler.step(model.unet, noisy_latents, timesteps))
                 ssim = structural_similarity_index_measure(denoised_images, images)
                 psnr = peak_signal_noise_ratio(denoised_images, images)
 
@@ -187,7 +155,7 @@ for epoch in range(epochs):
 
     # Generate and log sample images
     if (epoch) % 10 == 0: 
-        sample_images = model.sample(BATCH_SIZE, device=device)
+        sample_images = model.sample(BATCH_SIZE, device=model.device)
         ssim = structural_similarity_index_measure(sample_images, images)
         psnr = peak_signal_noise_ratio(sample_images, images)
         wandb.log({
@@ -196,15 +164,10 @@ for epoch in range(epochs):
         })
 
     if epoch == epochs: 
-        sample_images = model.sample(num_images=8, device=device)
+        sample_images = model.sample(num_images=8, device=model.device)
     
 
 print("Training complete")
 path = os.path.join(os.getcwd(), f'checkpoints/Diffusion/ADNI_diffusion_e{epoch+1}_im{IMAGE_SIZE}.pt')
 torch.save(model, path)
 wandb.finish()
-
-
-
-
-

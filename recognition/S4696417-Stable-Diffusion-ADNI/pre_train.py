@@ -150,13 +150,13 @@ def calculate_metrics(original, reconstructed):
 ######### Pre Train VAE Model #########
 
 method = 'Local'
-epochs = 80
+epochs = 100
 batch_size = 16 # will depend on image size and GPU memory
 image_size = 128 # width/height of image
 in_channels = 1 # monochrome image so 1 in channel
-latent_dim = 8 # latent dim is 8 as design choice (need ~16 for images @ 256x256)
+latent_dim = 16 # design choice (need ~16 for images @ 256x256)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # probably dont try this on a cpu
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if method == 'Slurm': 
               data_path='/home/groups/comp3710/ADNI/AD_NC/train/AD'
@@ -166,6 +166,7 @@ elif method == 'Local':
               ckp_path='recognition/S4696417-Stable-Diffusion-ADNI/checkpoints/VAE'
 
 
-pretrain_vae(epochs, in_channels, latent_dim, device, batch_size, image_size, data_path, ckp_path) 
+if __name__ == '__main__':
+    pretrain_vae(epochs, in_channels, latent_dim, device, batch_size, image_size, data_path, ckp_path) 
 
 

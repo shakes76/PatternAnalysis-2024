@@ -7,7 +7,6 @@ method = 'Local'
 if method == 'Local':
     os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
 
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 wandb.init(project="Stable-Diffusion-ADNI-Inference", name="Inference")
 

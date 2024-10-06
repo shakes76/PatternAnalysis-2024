@@ -167,8 +167,4 @@ class VAE_Decoder(nn.Sequential):
             x = layer(x)        
 
         return x
-
-
-    
-
-    
+     

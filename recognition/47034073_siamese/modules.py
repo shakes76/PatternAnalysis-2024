@@ -24,7 +24,7 @@ class HyperParams:
     weight_decay: float = 0.00001
 
 
-class TumorClassifier:
+class SiameseController:
     def __init__(self, hparams: HyperParams) -> None:
         self._model = EmbeddingNetwork().to(device)
         self._optim = torch.optim.Adam(

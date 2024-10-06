@@ -2,13 +2,13 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
 from dataset import create_adni_dataset, generate_random_inputs
-from sklearn.manifold import TSNE
 import numpy as np
 import wandb
 
+
 # Define training parameters
 BATCH_SIZE = 64
-EPOCHS = 10 
+EPOCHS = 30
 TARGET_SIZE = (64, 64)
 
 # Load the models
@@ -22,8 +22,10 @@ print("StyleGAN model loaded.")
 
 # Compile the models
 print("Compiling models...")
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.5)
+generator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=0.0002, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=0.00015, beta_1=0.5)
+
+
 print("Models compiled.")
 
 # Initialize Weights and Biases
@@ -35,7 +37,7 @@ wandb.init(
         "gen learning rate": 0.0002,
         "disc learning rate": 0.0001,
         "epochs": EPOCHS,
-        "optimizer": type(generator_optimizer).__name__,  # Use __name__ to get the name of the class
+        "optimizer": type(generator_optimizer).__name__,
         "scheduler": type(discriminator_optimizer).__name__,
         "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
         "name": "SD-ADNI - VAE and Unet",
@@ -66,7 +68,6 @@ def train_step(real_images):
 
     # Train discriminator
     with tf.GradientTape() as disc_tape:
-        generated_images = generator([latent_vectors, constant_inputs], training=True)
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
 
@@ -87,6 +88,7 @@ def train(epochs):
             gen_loss, disc_loss = train_step(batch)
         
         print(f"Epoch {epoch + 1} completed.")
+        print("Generator Loss", gen_loss, "Discriminator Loss", disc_loss)
 
         # Log losses to Weights and Biases
         wandb.log({"Generator Loss": gen_loss, "Discriminator Loss": disc_loss})
@@ -158,17 +160,6 @@ if __name__ == "__main__":
         print("t-SNE completed.")
     else:
         print("Not enough samples or features for t-SNE.")
-
-    # Plot the results
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=[0 if label == 'AD' else 1 for label in all_labels], cmap='viridis', alpha=0.5)
-    plt.title('t-SNE Visualization of Real and Generated Images')
-    plt.xlabel('t-SNE Component 1')
-    plt.ylabel('t-SNE Component 2')
-    plt.colorbar(scatter, ticks=[0, 1], label='Label')
-    plt.legend(['AD', 'NC', 'Generated'])
-    plt.savefig('t-SNE_visualization.png')
-    print("t-SNE visualization saved.")
 
     # After training, generate a sample image
     print("Generating a sample image...")

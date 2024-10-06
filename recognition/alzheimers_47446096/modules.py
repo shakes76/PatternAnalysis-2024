@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import torch.nn as nn
 from torch import Tensor
 
@@ -27,13 +28,30 @@ class PatchProcesser(nn.Module):
         Returns:
             Tensor - x with additional blank tokens for class predictions
         '''
-        print(x)
         pToken = torch.zeros(self.batchSize, 1, self.patchLen).to(self.device)
-        print(pToken)
         return torch.cat((pToken, x), dim = 1)
 
     def encodePos(self, x: Tensor):
-        pass
+        '''
+        Applies sinusoidal encoding to the given patches
+
+        Input:
+            x: Tensor - Pytorch Tensor of flattened imgs
+        Returns:
+            Tensor - x after sinusodial encoding
+        '''
+
+        def singleTokenArr(i):
+            return [i / np.power(10000, 2 * (j // 2) / self.patchLen) for j in range(self.patchLen)] 
+
+        posTable = np.array([singleTokenArr(i) for i in range(self.nPatches)])
+        posTable[:, 0::2] = np.sin(posTable[:, 0::2])
+        posTable[:, 1::2] = np.sin(posTable[:, 1::2])
+
+        posEncoding = torch.FloatTensor(posTable).unsqueeze(0).to(self.device)
+
+        return x + posEncoding
+
 
 class PatchSplitter(nn.Module):
     '''

@@ -1,4 +1,6 @@
-import torch, wandb, math
+import torch
+import wandb
+import math
 from collections import defaultdict
 import torch.nn as nn
 from torch.optim import Optimizer
@@ -6,9 +8,10 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.optim.lr_scheduler import _LRScheduler
 
+
 class StableDiffusion(nn.Module):
     """
-    Stable diffusion model. 
+    Stable diffusion model.
     Used to train noise prediction and generate new samples from diffusion process
 
      - Unet predicts noise at each timestep
@@ -38,17 +41,17 @@ class StableDiffusion(nn.Module):
 
     def encode(self, x):
         return self.vae.encode(x)
-    
+
     def decode(self, z):
         return self.vae.decode(z)
-    
+
     def sample_latent(self, mu, logvar):
         return self.vae.sample(mu, logvar)
 
     def predict_noise(self, z, t):
         pred_noise = self.unet(z, t)
         return pred_noise
-    
+
     @torch.no_grad()
     def sample(self, num_images, device='cuda'):
         """
@@ -61,7 +64,11 @@ class StableDiffusion(nn.Module):
         Returns:
             final_image: Generated images
         """
-        shape = (num_images, self.vae.latent_dim, int(self.image_size/8), int(self.image_size/8))
+        shape = (num_images,
+                 self.vae.latent_dim,
+                 int(self.image_size / 8),
+                 int(self.image_size / 8))
+
         x = torch.randn(shape, device=device)
         steps = reversed(range(self.noise_scheduler.num_timesteps))
         for i in tqdm(steps, desc="Sampling"):
@@ -69,16 +76,22 @@ class StableDiffusion(nn.Module):
             x = self.noise_scheduler.step(self.unet, x, t)
 
         final_image = self.vae.decode(x)
-        wandb.log({f"sample": wandb.Image(final_image)})
+        wandb.log({"sample": wandb.Image(final_image)})
         return final_image
-    
+
     def fast_sample(self, num_images, device='cuda', steps=80):
-        shape = (num_images, self.vae.latent_dim, int(self.image_size/8), int(self.image_size/8))
+        shape = (
+            num_images,
+            self.vae.latent_dim,
+            int(self.image_size / 8),
+            int(self.image_size / 8))
+
         samples = self.noise_scheduler.fast_sampling(self.unet, shape, device, steps)
         sample_images = self.vae.decode(samples)
-        wandb.log({f"sample": wandb.Image(sample_images)})
+        wandb.log({"sample": wandb.Image(sample_images)})
         return sample_images
-    
+
+
 class UNet(nn.Module):
     """
     Unet to predict noise at each timestep
@@ -95,47 +108,51 @@ class UNet(nn.Module):
         super().__init__()
         self.in_channels = in_channels
         self.hidden_dims = hidden_dims
-        
+
         # Time embedding and condition embedding
         self.time_embed = TimeEmbedding(time_emb_dim)
 
         # Initial conv and linear layer
         self.conv_in = nn.Conv2d(in_channels, hidden_dims[0], kernel_size=3, stride=1, padding=1)
-        
+
         # Encoder (Downsampling)
         self.down_blocks = nn.ModuleList()
         input_channel = hidden_dims[0]
         for hidden_dim in hidden_dims:
             self.down_blocks.append(ResidualBlock(input_channel, hidden_dim, time_emb_dim))
             input_channel = hidden_dim
-        
+
         # Attention blocks
         self.attn1 = AttentionBlock(hidden_dims[-1])
         self.attn2 = AttentionBlock(hidden_dims[-1])
-        
+
         # Bottleneck
         self.bottleneck1 = ResidualBlock(hidden_dims[-1], hidden_dims[-1], time_emb_dim)
         self.bottleneck2 = ResidualBlock(hidden_dims[-1], hidden_dims[-1], time_emb_dim)
-        
+
         # Decoder (Upsampling)
         self.up_blocks = nn.ModuleList()
         reversed_hidden_dims = list(reversed(hidden_dims))
         for i in range(len(reversed_hidden_dims) - 1):
             self.up_blocks.append(
-                ResidualBlock(reversed_hidden_dims[i] * 2, reversed_hidden_dims[i + 1], time_emb_dim)
+                ResidualBlock(reversed_hidden_dims[i] * 2,
+                              reversed_hidden_dims[i + 1],
+                              time_emb_dim)
             )
-        self.up_blocks.append(ResidualBlock(reversed_hidden_dims[-1] * 2, in_channels, time_emb_dim))
-        
+        self.up_blocks.append(ResidualBlock(reversed_hidden_dims[-1] * 2,
+                                            in_channels,
+                                            time_emb_dim))
+
         # Final conv layer
         self.conv_out = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x, t):
         # Time embedding
         t = self.time_embed(t)
-        
-        # Initial layers 
+
+        # Initial layers
         x = self.conv_in(x)
-        
+
         # Downsampling
         residuals = []
         for down_block in self.down_blocks:
@@ -143,17 +160,17 @@ class UNet(nn.Module):
             residuals.append(x)
             if x.size(-1) > 1:  # Only downsample if spatial dimensions are > 1
                 x = F.avg_pool2d(x, 2)
-        
+
         # Apply attention
         x = self.attn1(x)
-        
+
         # Bottleneck
         x = self.bottleneck1(x, t)
         x = self.bottleneck2(x, t)
-        
+
         # Apply attention
         x = self.attn2(x)
-        
+
         # Upsampling
         for i, up_block in enumerate(self.up_blocks):
             if len(residuals) > 0:
@@ -162,12 +179,16 @@ class UNet(nn.Module):
                     x = F.interpolate(x, size=residual.shape[-2:], mode='nearest')
                 x = torch.cat([x, residual], dim=1)
             x = up_block(x, t)
-        
+
         # Final linear layer
-        return self.conv_out(x) 
+        return self.conv_out(x)
 
 
-######### Model Components #########
+"""
+Model Components
+"""
+
+
 class AttentionBlock(nn.Module):
     """
     Self Attention block for Unet
@@ -193,21 +214,22 @@ class AttentionBlock(nn.Module):
 
     def forward(self, x):
         b, c, h, w = x.shape
-        
+
         # Flatten the spatial dimensions and transpose to (B, H*W, C)
         x_flat = x.view(b, c, -1).transpose(1, 2)
-        
+
         # Perform self-attention
         x_flat = self.mha(x_flat, x_flat, x_flat)[0]
-        
+
         # Apply layer norm and feedforward network
         x_flat = self.ln(x_flat)
         x_flat = self.ff_self(x_flat)
-        
+
         # Reshape back to original spatial dimensions
         x = x_flat.transpose(1, 2).view(b, c, h, w)
-        
+
         return x
+
 
 class ResidualBlock(nn.Module):
     """
@@ -244,7 +266,8 @@ class ResidualBlock(nn.Module):
         h = self.conv2(h)
         h = self.norm2(h)
         return self.activation(h + self.shortcut(x))
-    
+
+
 class TimeEmbedding(nn.Module):
     """
     Time embeddings for Unet
@@ -263,6 +286,7 @@ class TimeEmbedding(nn.Module):
 
     def forward(self, t):
         return self.layer(t.unsqueeze(-1).float())
+
 
 class VAEResidualBlock(nn.Module):
     """
@@ -288,7 +312,6 @@ class VAEResidualBlock(nn.Module):
         else:
             self.shortcut = nn.Identity()
 
-
     def forward(self, x):
         residual = x
 
@@ -303,7 +326,8 @@ class VAEResidualBlock(nn.Module):
         x += self.shortcut(residual)
 
         return x
-    
+
+
 class VAEAttentionBlock(nn.Module):
     """
     Attention block for VAE encoder/decoder
@@ -321,23 +345,24 @@ class VAEAttentionBlock(nn.Module):
         self.attention = SelfAttention(1, channels)
 
     def forward(self, x):
-        
+
         residual = x
         x = self.group_norm(x)
 
         # reshape to (B, C, H*W)
         B, C, H, W = x.shape
-        x = x.view((B, C, H * W)) 
-        x = x.transpose(-1, -2) # (B, C, H*W) -> (B, H*W, C)
+        x = x.view((B, C, H * W))
+        x = x.transpose(-1, -2)  # (B, C, H*W) -> (B, H*W, C)
 
         x = self.attention(x)
-        x = x.transpose(-1, -2) # (B, H*W, C) -> (B, C, H*W)
-        x = x.view((B, C, H, W)) # (B, C, H*W) -> (B, C, H, W)
+        x = x.transpose(-1, -2)  # (B, H*W, C) -> (B, C, H*W)
+        x = x.view((B, C, H, W))  # (B, C, H*W) -> (B, C, H, W)
 
         x += residual
 
         return x
-    
+
+
 class SelfAttention(nn.Module):
     """
     Self Attention block for VAE encoder/decoder
@@ -357,32 +382,35 @@ class SelfAttention(nn.Module):
         self.num_heads = num_heads
         self.d_head = d_embed // num_heads
 
-
     def forward(self, x):
         in_shape = x.shape
         B, seq_len, _ = in_shape
         interim_shape = (B, seq_len, self.num_heads, self.d_head)
-        
-        q, k, v = self.in_proj(x).chunk(3, dim=-1) # (B, seq_len) -> 3 x (B, seq_len, dim)
-        q = q.view(interim_shape).transpose(1, 2) # -> (B, num_heads, seq_len, dim / num_heads)
-        k = k.view(interim_shape).transpose(1, 2) 
-        v = v.view(interim_shape).transpose(1, 2) 
 
-        # (B, num_heads, seq_len, dim / num_heads) @ (B, num_heads, dim / num_heads, seq_len) -> (B, num_heads, seq_len, seq_len)
-        weight = q @ k.transpose(-2, -1) 
+        q, k, v = self.in_proj(x).chunk(3, dim=-1)  # (B, seq_len) -> 3 x (B, seq_len, dim)
+        q = q.view(interim_shape).transpose(1, 2)  # -> (B, num_heads, seq_len, dim / num_heads)
+        k = k.view(interim_shape).transpose(1, 2)
+        v = v.view(interim_shape).transpose(1, 2)
+
+        # (B, num_heads, seq_len, dim / num_heads) -> (B, num_heads, seq_len, seq_len)
+        weight = q @ k.transpose(-2, -1)
         weight /= math.sqrt(self.d_head)
         weight = F.softmax(weight, dim=-1)
 
-        # (B, num_heads, seq_len, seq_len) @ (B, num_heads, seq_len, dim / num_heads) -> (B, num_heads, seq_len, dim / num_heads)
+        # (B, num_heads, seq_len, seq_len) -> (B, num_heads, seq_len, dim / num_heads)
         output = weight @ v
-        output = output.transpose(1, 2) #  -> (B, seq_len, num_heads, dim / num_heads)
-        output = output.reshape(in_shape) #  -> (B, seq_len, dim)
-        output = self.out_proj(output) 
+        output = output.transpose(1, 2)  # -> (B, seq_len, num_heads, dim / num_heads)
+        output = output.reshape(in_shape)  # -> (B, seq_len, dim)
+        output = self.out_proj(output)
 
         return output
-    
 
-######### Noise Schedulers / Optimizers / LR Schedulers #########
+
+"""
+Noise Schedulers / Optimizers / LR Schedulers
+"""
+
+
 class CosineAnnealingWarmupScheduler(_LRScheduler):
     """
     CosineAnnealing Warmup Scheduler with warmup stage
@@ -402,13 +430,16 @@ class CosineAnnealingWarmupScheduler(_LRScheduler):
     def get_lr(self):
         if self.last_epoch < self.warmup_steps:
             # Linear warmup
-            return [base_lr * (self.last_epoch + 1) / self.warmup_steps for base_lr in self.base_lrs]
+            return [base_lr * (self.last_epoch + 1) / self.warmup_steps
+                    for base_lr in self.base_lrs]
         else:
             # Cosine annealing
-            progress = (self.last_epoch - self.warmup_steps) / (self.total_steps - self.warmup_steps)
-            return [self.min_lr + (base_lr - self.min_lr) * 
-                    (1 + math.cos(math.pi * progress)) / 2
-                    for base_lr in self.base_lrs]  
+            progress = (self.last_epoch - self.warmup_steps) / (
+                self.total_steps - self.warmup_steps)
+            return [self.min_lr + (base_lr - self.min_lr) * (
+                1 + math.cos(math.pi * progress)) / 2
+                for base_lr in self.base_lrs]
+
 
 class NoiseScheduler_Fast_DDPM():
     """
@@ -422,7 +453,7 @@ class NoiseScheduler_Fast_DDPM():
 
     Methods:
         step(model, noisy_latents, timesteps): Perform one step of the diffusion process
-        add_noise(x_0, noise, t): Add noise to the image    
+        add_noise(x_0, noise, t): Add noise to the image
         fast_sampling(model, shape, device, num_steps): Generate samples from the model
         to(device): Move all tensors in the class to the specified device
     """
@@ -434,69 +465,71 @@ class NoiseScheduler_Fast_DDPM():
 
         # Define beta schedule
         self.betas = torch.linspace(beta_start, beta_end, num_timesteps)
-        
+
         # Calculate alpha values
         self.alphas = 1 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
         self.alphas_cumprod_prev = F.pad(self.alphas_cumprod[:-1], (1, 0), value=1.0)
-        
+
         # Calculate diffusion coefficients
         self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1 - self.alphas_cumprod)
-        
+
         # Calculate posterior variance
-        self.posterior_variance = self.betas * (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod)
+        self.posterior_variance = self.betas * (1 - self.alphas_cumprod_prev) / (
+            1 - self.alphas_cumprod)
 
     def add_noise(self, x_0, noise, t):
         if noise is None:
             noise = torch.randn_like(x_0)
-        
+
         sqrt_alphas_cumprod_t = self.sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
         sqrt_one_minus_alphas_cumprod_t = self.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
-        
+
         return sqrt_alphas_cumprod_t * x_0 + sqrt_one_minus_alphas_cumprod_t * noise
 
     def step(self, model, noisy_latents, timesteps):
         # Ensure timesteps is a 1D tensor
         timesteps = timesteps.view(-1)
-        
+
         # Get the corresponding beta and alpha values
         betas = self.betas[timesteps]
         alphas = self.alphas[timesteps]
         alphas_cumprod = self.alphas_cumprod[timesteps]
-        
+
         # Expand dimensions for broadcasting
         betas = betas.view(-1, 1, 1, 1)
         alphas = alphas.view(-1, 1, 1, 1)
         alphas_cumprod = alphas_cumprod.view(-1, 1, 1, 1)
-        
+
         # Predict noise
         predicted_noise = model(noisy_latents, timesteps)
-        
+
         # Calculate mean
-        mean = (noisy_latents - betas * predicted_noise / torch.sqrt(1 - alphas_cumprod)) / torch.sqrt(alphas)
-        
+        noise_calc = (noisy_latents - betas * predicted_noise / torch.sqrt(1 - alphas_cumprod))
+        mean = noise_calc / torch.sqrt(alphas)
+
         # Calculate variance
         variance = betas * (1 - alphas_cumprod) / (1 - alphas_cumprod)
-        
+
         # Add noise only if not at the last step
         noise = torch.randn_like(noisy_latents)
         mask = (timesteps > 0).float().view(-1, 1, 1, 1)
-        
+
         denoised_latents = mean + mask * torch.sqrt(variance) * noise
-        
+
         return denoised_latents
 
     def fast_sampling(self, model, shape, device, num_steps=50):
         x_t = torch.randn(shape, device=device)
         timesteps = torch.linspace(self.num_timesteps - 1, 0, num_steps).long().to(device)
-        
+
         for t in tqdm(timesteps):
             t_batch = torch.full((shape[0],), t, device=device, dtype=torch.long)
             x_t = self.step(model, x_t, t_batch)
-        
+
         return x_t
-    
+
     def to(self, device):
         # Move all tensors in the class to the specified device
         for key, value in self.__dict__.items():
@@ -504,9 +537,10 @@ class NoiseScheduler_Fast_DDPM():
                 setattr(self, key, value.to(device))
         return self
 
+
 class Lookahead(Optimizer):
     """
-    Lookahead Optimizer 
+    Lookahead Optimizer
     Improved performance by using a slow weights for the optimizer and fast weights for the model
 
     Args:
@@ -525,7 +559,7 @@ class Lookahead(Optimizer):
             group["counter"] = 0
 
         self.defaults = self.optimizer.defaults
-        
+
     def update(self, group):
         for fast in group["params"]:
             param_state = self.state[fast]
@@ -549,7 +583,7 @@ class Lookahead(Optimizer):
             if group["counter"] >= self.k:
                 group["counter"] = 0
         return loss
-    
+
     def state_dict(self):
         fast_state_dict = self.optimizer.state_dict()
         slow_state = {
@@ -563,7 +597,7 @@ class Lookahead(Optimizer):
             "slow_state": slow_state,
             "param_groups": param_groups,
         }
-    
+
     def load_state_dict(self, state_dict):
         fast_state_dict = {
             "state": state_dict["fast_state"],
@@ -575,5 +609,3 @@ class Lookahead(Optimizer):
         }
         slow_state_new.update(state_dict["slow_state"])
         self.state = defaultdict(dict, slow_state_new)
-
-

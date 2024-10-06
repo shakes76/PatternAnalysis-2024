@@ -1,12 +1,13 @@
-import torch, wandb
+import torch
 import numpy as np
 from sklearn.manifold import TSNE
 from torchvision import transforms
 from dataset import get_dataloader
 import os
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+matplotlib.use('Agg')
 
 # Set up parameters
 IMAGE_SIZE = 128
@@ -30,6 +31,7 @@ image_transform = transforms.Compose([
 ad_loader, _ = get_dataloader('data/train/AD', batch_size=BATCH_SIZE, transform=image_transform)
 nc_loader, _ = get_dataloader('data/train/NC', batch_size=BATCH_SIZE, transform=image_transform)
 
+
 def get_latent_representations(loader, label):
     latents = []
     labels = []
@@ -42,6 +44,7 @@ def get_latent_representations(loader, label):
             latents.append(mu_flat)
             labels.extend([label] * images.shape[0])
     return np.concatenate(latents), np.array(labels)
+
 
 # Get latent representations for both classes
 ad_latents, ad_labels = get_latent_representations(ad_loader, 'AD')

@@ -7,7 +7,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 
-DATA_DIR = Path("../data")
+DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float = 0.8):

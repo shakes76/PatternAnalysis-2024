@@ -46,7 +46,7 @@ class CustomResNet(nn.Module):
         self.layer2 = self.make_layer(block, 128, num_blocks[1], stride=2)
         self.layer3 = self.make_layer(block, 256, num_blocks[2], stride=2)
         self.layer4 = self.make_layer(block, 512, num_blocks[3], stride=2)
-        self.avg_pool = nn.AdaptiveAvgPool1d((1, 1))
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
     def make_layer(self, block, out_channels, num_blocks, stride):
@@ -75,12 +75,27 @@ def ResNet18():
 
 # Siamese Network Class
 class SiameseNetwork(nn.Module):
-    def __init__(self, embedding_dim=128):
+    def __init__(self, embedding_dim=64):
         super(SiameseNetwork, self).__init__()
 
         # Custom ResNet18 inspired network as the feature extractor
-        resnet = ResNet18()
-        self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
+        #resnet = ResNet18()
+        #self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
+
+        self.feature_extractor = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1))
+        )
         # Fully connected layer to get the embeddings
         self.fc = nn.Linear(512, embedding_dim)
         # Classifier to classify the embeddings
@@ -122,7 +137,7 @@ class TripletLoss(nn.Module):
     
 
 # Basic helpers to later be imported in train.py
-def get_model(embedding_dim=128):
+def get_model(embedding_dim=64):
     return SiameseNetwork(embedding_dim=embedding_dim)
 
 def get_loss(margin=1.0):

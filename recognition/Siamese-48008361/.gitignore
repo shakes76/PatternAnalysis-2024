@@ -1,4 +1,5 @@
 ```git
 data/
 ISIC_2020_Training_GroundTruth_v2.csv
+preprocessed_data/
 ```

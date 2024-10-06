@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from data import get_data_loaders
-from modules import get_model, get_triplet_loss
+from modules import get_model, get_loss
 import torch.nn as nn
 import numpy as np
 from sklearn.manifold import TSNE
@@ -20,7 +20,7 @@ img_dir = 'data/ISIC_2020_Training_JPEG/train/'
 
 # Premilimary hyperparameters
 batch_size = 32
-embedding_dim = 128
+embedding_dim = 64
 learning_rate = 1e-3
 num_epochs = 50
 
@@ -29,7 +29,7 @@ train_loader, test_loader = get_data_loaders(csv_file=csv_file, img_dir=img_dir,
 
 # Siamese Initialization
 model = get_model(embedding_dim=embedding_dim).to(device)
-triplet_loss = get_triplet_loss(margin=1.0).to(device)
+triplet_loss = get_loss(margin=1.0).to(device)
 classifier_loss = nn.CrossEntropyLoss().to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
@@ -46,6 +46,9 @@ for epoch in range(num_epochs):
     runningLoss = 0.0
 
     for i, (anchor, positive, negative, labels) in enumerate(train_loader):
+        print("Entered Loop batch number: ", i)
+        if i > 10:
+            break
         anchor, positive, negative, labels = anchor.to(device), positive.to(device), negative.to(device), labels.to(device)
         optimizer.zero_grad()
 

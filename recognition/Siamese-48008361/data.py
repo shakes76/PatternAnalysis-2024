@@ -11,6 +11,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
+from functools import lru_cache
 
 
 class ISIC2020Dataset(Dataset):
@@ -64,6 +65,7 @@ class ISIC2020Dataset(Dataset):
         self.benign = self.data[self.data['target'] == 0]
         self.malignant = self.data[self.data['target'] == 1]
 
+
     def __len__(self):
         """Returns the number of samples in the dataset."""
         return len(self.data)
@@ -96,6 +98,7 @@ class ISIC2020Dataset(Dataset):
 
         return anchor_img, positive, negative, anchor_label
     
+    #@lru_cache(maxsize=1000)
     def get_image(self, row):
         """
         Loads and processes an image.
@@ -108,16 +111,17 @@ class ISIC2020Dataset(Dataset):
         """
         img_name = row['image_name']
         img_path = os.path.join(self.img_dir, img_name + '.jpg')
+        
         image = Image.open(img_path).convert('RGB')
         
         if self.transform:
             image = self.transform(image)
         
-        # Apply additional random augmentation for malignant samples in training mode
         if self.mode == 'train' and row['target'] == 1:
             image = self.random_augment(image)
         
         return image
+
     
     def random_augment(self, image):
         """
@@ -175,7 +179,7 @@ def get_data_loaders(csv_file, img_dir, batch_size=32, split_ratio=0.8):
     """
     # Define the transformations
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # Resize to a standard size
+        transforms.Resize((128, 128)),  # Resize to a standard size
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizing with ImageNet stats
     ])
@@ -185,8 +189,8 @@ def get_data_loaders(csv_file, img_dir, batch_size=32, split_ratio=0.8):
     test_dataset = ISIC2020Dataset(csv_file, img_dir, transform=transform, mode='test', split_ratio=split_ratio)
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=6, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)
 
     return train_loader, test_loader
 

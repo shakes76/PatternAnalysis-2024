@@ -1,14 +1,29 @@
 import torch
+import numpy as np
+import random
 from modules import GAT
 from sklearn.model_selection import train_test_split
 from dataset import load_facebook_data
 from torch.nn import functional as F
-import numpy as np
+
+# Set seed for reproducibility
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 print("script start")
 
 def train():
     try:
+        # Set the seed
+        set_seed(42)
+
         print("start training section")
 
         # Load data
@@ -53,59 +68,46 @@ def train():
         output_dim = len(torch.unique(y_train))  # Get number of unique classes
         model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4, dropout=0.2)
 
-        # Optimizer and loss function
         optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 
-        # Learning rate scheduler
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=5)
 
-        # Early stopping setup
         early_stop_patience = 20
         early_stop_counter = 0
         best_loss = float("inf")
 
-        # Training loop 
-        print("Start training ...")
+        print("Start training...")
         model.train()
         for epoch in range(10000):
             optimizer.zero_grad()
 
-            # Forward pass using the entire X_train and edge_reindex for every epoch
             out = model(X_train.clone().detach(), edge_reindex.clone().detach())
             loss = loss_fn(out, y_train)
 
-            # Backpropagation
             loss.backward()
             optimizer.step()
 
-            # Print current loss and learning rate
             current_lr = optimizer.param_groups[0]['lr']
             print(f'Epoch {epoch+1}, Loss: {loss.item()}, Learning Rate: {current_lr}')
 
-            # Scheduler step based on epoch loss
             scheduler.step(loss)
 
-            # Early stopping logic
             if loss.item() < best_loss:
                 best_loss = loss.item()
                 early_stop_counter = 0
             else:
                 early_stop_counter += 1
 
-            # If early stop counter hits patience threshold, stop training
             if early_stop_counter >= early_stop_patience:
                 print(f"Early stop at epoch {epoch+1}")
                 break
 
-        # Save the trained model
         torch.save(model.state_dict(), 'gnn_model.pth', _use_new_zipfile_serialization=True)
         print("Model saved to gnn_model.pth")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
-if __name__ == '__main__':
+if __name__ == '__main__':                                                                     
     train()
-
-

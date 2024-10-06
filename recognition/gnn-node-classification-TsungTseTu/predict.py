@@ -6,9 +6,24 @@ from sklearn.metrics import accuracy_score
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
+import random
+
+# Set seed for reproducibility
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def predict():
     try:
+        # Set the seed
+        set_seed(42)
+
         print("Loading data for prediction...")
         data = load_facebook_data()
 
@@ -16,52 +31,43 @@ def predict():
             print("Data loading error. Exiting...")
             return
 
-        # Extract edges, features, and target from the data
         edges = data['edges']
         features = data['features']
         target = data['target']
 
-        # Split the data into training (80%) and testing (20%)
         _, X_test, _, y_test = train_test_split(features, target, test_size=0.2, random_state=42, stratify=target)
 
-        # Convert the test data to tensors
         X_test = torch.tensor(X_test, dtype=torch.float32)
         y_test = torch.tensor(y_test, dtype=torch.long)
 
-        # Load the trained model
         print("Loading the trained model...")
-        input_dim = X_test.shape[1]  # Input dimension based on test data features
-        output_dim = len(torch.unique(y_test))  # Output dimension is number of unique classes
+        input_dim = X_test.shape[1]
+        output_dim = len(torch.unique(y_test))
         model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4, dropout=0.2)
 
         model.load_state_dict(torch.load('gnn_model.pth', weights_only=True))
         model.eval()
 
-        # Create a mapping of original node indices to reindexed node indices for X_test
         node_map = {old_idx: new_idx for new_idx, old_idx in enumerate(np.unique(edges.flatten())) if old_idx < X_test.size(0)}
 
-        # Re-index the edges for the testing set based on the node_map
         new_edges = []
         for edge in edges:
             if edge[0] in node_map and edge[1] in node_map:
                 new_edges.append([node_map[edge[0]], node_map[edge[1]]])
 
-        edge_reindex = torch.tensor(new_edges, dtype=torch.long).t()  # Transpose to match expected shape
+        edge_reindex = torch.tensor(new_edges, dtype=torch.long).t()
 
-        # Make predictions using the test data
         print("Making predictions on test data...")
         with torch.no_grad():
             out = model(X_test.clone().detach(), edge_reindex.clone().detach())
             preds = torch.argmax(out, dim=1)
 
-        # Calculate accuracy
         accuracy = accuracy_score(y_test.cpu(), preds.cpu())
         print(f"Test Accuracy: {accuracy * 100:.2f}%")
 
-        # t-SNE Visualization of the embeddings
         print("Generating t-SNE visualization...")
         tsne = TSNE(n_components=2)
-        embeddings = tsne.fit_transform(out.cpu().numpy())  # Assuming 'out' contains model's embeddings
+        embeddings = tsne.fit_transform(out.cpu().numpy())
 
         plt.figure(figsize=(8, 6))
         scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=y_test.cpu().numpy(), cmap='viridis', s=10)

@@ -22,8 +22,13 @@ BATCH_SIZE = 128
 # The amount of fully connected layers within the StyleGAN Mapping Network
 MAPPING_LAYERS = 8
 
-# The size of the latent space vectors within the StyleGAN Mapping Network
+# The size of the latent space vector and style vector within the StyleGAN Mapping Network
 LATENT_SIZE = 512
 
 # Controls the negative slope angle used for the leaky ReLu function
 LRELU_SLOPE_ANGLE = 0.2
+
+################################## Helper Functions and Classes ###############################
+
+# Represents
+EPSILON = 1e-8

@@ -9,32 +9,48 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-
-
 from dataset import HipMRILoader
 import modules
 
+class ValidationLossEarlyStopping:
+    def __init__(self, patience=1, min_delta=0.0):
+        self.patience = patience  # number of times to allow for no improvement before stopping the execution
+        self.min_delta = min_delta  # the minimum change to be counted as improvement
+        self.counter = 0  # count the number of times the validation accuracy not improving
+        self.min_validation_loss = np.inf
 
-# # Hyperparameters
-# num_epochs = 200
-# batch_size = 32
-# lr = 0.0002
-# num_hiddens = 128
-# num_residual_hiddens = 32
-# num_channels = 1
-# num_embeddings = 512
-# dim_embedding = 64
-# beta = 0.25
+    # return True when validation loss is not decreased by the `min_delta` for `patience` times 
+    def early_stop_check(self, validation_loss):
+        if ((validation_loss + self.min_delta) < self.min_validation_loss):
+            self.min_validation_loss = validation_loss
+            self.counter = 0  # reset the counter if validation loss decreased at least by min_delta
+        elif ((validation_loss+self.min_delta) > self.min_validation_loss):
+            self.counter += 1 # increase the counter if validation loss is not decreased by the min_delta
+            if self.counter >= self.patience:
+                return True
+        return False
 
-num_epochs = 400
-batch_size = 16
-lr = 0.001
+
+# Hyperparameters
+num_epochs = 200
+batch_size = 32
+lr = 0.0002
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
 num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
+
+# num_epochs = 400
+# batch_size = 16
+# lr = 0.001
+# num_hiddens = 128
+# num_residual_hiddens = 32
+# num_channels = 1
+# num_embeddings = 512
+# dim_embedding = 64
+# beta = 0.25
 
 # Configure Pytorch
 seed = 42
@@ -97,6 +113,8 @@ optimizer = optim.Adam(
 # # SequentialLR combines these two schedules, making the learning rate change in a piecewise linear manner. This combination helps with faster convergence while maintaining stability at the end of training.
 # scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[sched_linear_1, sched_linear_2], milestones=[40])
 
+early_stopper = ValidationLossEarlyStopping(20, 0.01)
+
 # Training mectrics
 epoch_training_output_loss = []
 epoch_training_vq_loss = []
@@ -106,7 +124,8 @@ epoch_validation_vq_loss = []
 epoch_ssim = []
 
 # Directory for saving images
-save_dir = 'saved_images'
+save_dir = 'early_stop'
+os.makedirs(os.path.dirname(save_dir), exist_ok=True)
 
 # Training loop
 for epoch in range(num_epochs):
@@ -202,6 +221,10 @@ for epoch in range(num_epochs):
         # Save the figure as a single PNG file with the epoch number in the filename
         plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
         plt.close()
+
+    if early_stopper.early_stop_check(average_validation_loss):
+        print(f"Stopped early at Epoch: {epoch +1}")
+        break
     
     # scheduler.step()
     # print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
@@ -262,8 +285,9 @@ plt.savefig(os.path.join(save_dir, 'ssim_per_epoch.png'))
 plt.close()
 
 # Define the save directory and ensure it exists
-model_dir = 'saved_model/model.pth'
+model_dir = 'saved_model/early.pth'
 os.makedirs(os.path.dirname(model_dir), exist_ok=True)
 
 # Save the model state_dict
 torch.save(model.state_dict(), model_dir)
+

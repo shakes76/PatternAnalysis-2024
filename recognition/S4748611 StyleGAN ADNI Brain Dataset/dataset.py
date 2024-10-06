@@ -2,26 +2,37 @@ import tensorflow as tf
 import numpy as np
 import os
 
-def load_and_preprocess_adni(data_dirs, target_size=(64, 64)):
-    images = []
+def load_and_preprocess_adni(data_dirs, target_size=(64, 64), batch_size=64):
+    def process_image(img_path):
+        img = tf.io.read_file(img_path)
+        img = tf.image.decode_png(img, channels=1)  # Assuming PNG images
+        img = tf.image.resize(img, target_size)
+        img = tf.cast(img, tf.float32)
+        img = (img - 127.5) / 127.5  # Normalize to [-1, 1]
+        return img
+
+    # Create a list of image paths
+    image_paths = []
     for data_dir in data_dirs:
         for img_name in os.listdir(data_dir):
             img_path = os.path.join(data_dir, img_name)
-            img = tf.io.read_file(img_path)
-            img = tf.image.decode_png(img, channels=1)  # Assuming PNG images, adjust if needed
-            img = tf.image.resize(img, target_size)
-            img = tf.cast(img, tf.float32)
-            images.append(img)
+            image_paths.append(img_path)
 
-    # Stack all images into a single tensor
-    image_tensor = tf.stack(images)
+    # Check if image_paths is not empty
+    if not image_paths:
+        raise ValueError("No images found in the specified directories.")
 
-    # Normalize images to [-1, 1] range
-    normalized_images = (image_tensor - 127.5) / 127.5
+    # Create a TensorFlow dataset from the image paths
+    dataset = tf.data.Dataset.from_tensor_slices(image_paths)
+    dataset = dataset.map(process_image, num_parallel_calls=tf.data.AUTOTUNE)  # Use parallel processing
+    dataset = dataset.cache()  # Cache the dataset in memory
+    dataset = dataset.shuffle(buffer_size=len(image_paths))  # Shuffle the dataset
+    dataset = dataset.batch(batch_size, drop_remainder=True)  # Batch the dataset
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch data for better performance
 
-    return normalized_images
+    return dataset
 
-def create_adni_dataset(batch_size, target_size=(64, 64)):
+def create_adni_dataset(batch_size=64, target_size=(64, 64)):
     data_dirs = [
         '/home/groups/comp3710/ADNI/AD_NC/test/AD',
         '/home/groups/comp3710/ADNI/AD_NC/test/NC',
@@ -30,15 +41,9 @@ def create_adni_dataset(batch_size, target_size=(64, 64)):
     ]
 
     # Load and preprocess all images
-    all_images = load_and_preprocess_adni(data_dirs, target_size)
+    all_images = load_and_preprocess_adni(data_dirs, target_size, batch_size)
 
-    # Create TensorFlow dataset
-    dataset = tf.data.Dataset.from_tensor_slices(all_images)
-    
-    # Shuffle and batch the dataset
-    dataset = dataset.shuffle(buffer_size=len(all_images)).batch(batch_size, drop_remainder=True)
-
-    return dataset
+    return all_images
 
 def generate_random_inputs(batch_size, latent_dim, initial_size):
     # Generate random latent vectors
@@ -51,7 +56,7 @@ def generate_random_inputs(batch_size, latent_dim, initial_size):
 
 # Example usage
 if __name__ == "__main__":
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     LATENT_DIM = 512
     INITIAL_SIZE = 4
     TARGET_SIZE = (64, 64)

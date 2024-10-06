@@ -44,13 +44,18 @@ class PatchProcesser(nn.Module):
         def singleTokenArr(i):
             return [i / np.power(10000, 2 * (j // 2) / self.patchLen) for j in range(self.patchLen)] 
 
-        posTable = np.array([singleTokenArr(i) for i in range(self.nPatches)])
+        posTable = np.array([singleTokenArr(i) for i in range(self.nPatches + 1)])
         posTable[:, 0::2] = np.sin(posTable[:, 0::2])
         posTable[:, 1::2] = np.sin(posTable[:, 1::2])
 
         posEncoding = torch.FloatTensor(posTable).unsqueeze(0).to(self.device)
 
         return x + posEncoding
+    
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.addPredToken(x)
+        x = self.encodePos(x)
+        return x
 
 
 class PatchSplitter(nn.Module):

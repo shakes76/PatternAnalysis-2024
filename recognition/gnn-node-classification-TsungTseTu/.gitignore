@@ -11,3 +11,6 @@ __pycache__/
 
 #ignore trained model
 gnn_model.pth
+
+# Ignore images folder
+/images/

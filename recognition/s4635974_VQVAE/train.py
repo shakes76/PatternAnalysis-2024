@@ -15,26 +15,26 @@ from dataset import HipMRILoader
 import modules
 
 
-# Hyperparameters
-num_epochs = 200
-batch_size = 32
-lr = 0.0002
-num_hiddens = 128
-num_residual_hiddens = 32
-num_channels = 1
-num_embeddings = 512
-dim_embedding = 64
-beta = 0.25
-
-# num_epochs = 150
-# batch_size = 16
-# lr = 0.001
+# # Hyperparameters
+# num_epochs = 200
+# batch_size = 32
+# lr = 0.0002
 # num_hiddens = 128
 # num_residual_hiddens = 32
 # num_channels = 1
 # num_embeddings = 512
 # dim_embedding = 64
 # beta = 0.25
+
+num_epochs = 200
+batch_size = 16
+lr = 0.001
+num_hiddens = 128
+num_residual_hiddens = 32
+num_channels = 1
+num_embeddings = 512
+dim_embedding = 64
+beta = 0.25
 
 # Configure Pytorch
 seed = 42
@@ -50,8 +50,8 @@ validate_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_
 # Define your transformations
 transform = transforms.Compose([
     transforms.ToTensor(),  
-    transforms.Normalize((0.5,), (0.5,)),
-    # transforms.Normalize((0,), (1,)) 
+    # transforms.Normalize((0.5,), (0.5,)),
+    transforms.Normalize((0,), (1,)) 
 ])
 
 # Get loaders (variance == 5)
@@ -121,7 +121,7 @@ for epoch in range(num_epochs):
         vq_loss, training_output_images = model(training_input_images)
 
         # Calculate reconstruction loss
-        output_loss = F.mse_loss(training_output_images, training_input_images) / data_variance
+        output_loss = F.mse_loss(training_output_images, training_input_images)
         loss = output_loss + vq_loss
         loss.backward()
 
@@ -157,7 +157,7 @@ for epoch in range(num_epochs):
             validation_ssim.append(similarity)
 
              # Calculate output loss for validation
-            validation_output_loss = F.mse_loss(validation_output_images, validation_input_images) / data_variance
+            validation_output_loss = F.mse_loss(validation_output_images, validation_input_images)
             validation_output_error.append(validation_output_loss.item())
             validation_vq_error.append(validation_vq_loss.item())
 

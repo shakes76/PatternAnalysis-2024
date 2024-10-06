@@ -73,13 +73,13 @@ class Generator(nn.Module):
 
         # Models all generator layers from a 4x4 feature map up to a scaled 256x256 feature map
         self.gen_layers = nn.ModuleList([
-            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE, upscale=False), # Output: 4x4 Feature Map
-            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE // 2),           # Output: 8x8 Feature Map
-            GenLayer(hp.LATENT_SIZE // 2, hp.LATENT_SIZE // 4),      # Output: 16x16 Feature Map
-            GenLayer(hp.LATENT_SIZE // 4, hp.LATENT_SIZE // 8),      # Output: 32x32 Feature Map
-            GenLayer(hp.LATENT_SIZE // 8, hp.LATENT_SIZE // 16),     # Output: 64x64 Feature Map
-            GenLayer(hp.LATENT_SIZE // 16, hp.LATENT_SIZE // 32),    # Output: 128x128 Feature Map
-            GenLayer(hp.LATENT_SIZE // 32, hp.LATENT_SIZE // 64),    # Output: 256x256 Feature Map
+            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE, first_layer=True), # Output: 4x4 Feature Map
+            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE // 2),              # Output: 8x8 Feature Map
+            GenLayer(hp.LATENT_SIZE // 2, hp.LATENT_SIZE // 4),         # Output: 16x16 Feature Map
+            GenLayer(hp.LATENT_SIZE // 4, hp.LATENT_SIZE // 8),         # Output: 32x32 Feature Map
+            GenLayer(hp.LATENT_SIZE // 8, hp.LATENT_SIZE // 16),        # Output: 64x64 Feature Map
+            GenLayer(hp.LATENT_SIZE // 16, hp.LATENT_SIZE // 32),       # Output: 128x128 Feature Map
+            GenLayer(hp.LATENT_SIZE // 32, hp.LATENT_SIZE // 64),       # Output: 256x256 Feature Map
         ])
 
         # Used to convert the feature map back into a greyscale image
@@ -120,7 +120,7 @@ class GenLayer(nn.Module):
     REF: https://blog.paperspace.com/implementation-stylegan-from-scratch/ 
     """
 
-    def __init__(self, in_channels, out_channels, upscale=True):
+    def __init__(self, in_channels, out_channels, first_layer=False):
         """
         An instance of one GenLayer class. Each layer consists of multiple convolutions,
         noise injections and AdaIN passes. 
@@ -131,12 +131,12 @@ class GenLayer(nn.Module):
         """
         super(GenLayer, self).__init__()
 
-        # Determines if the feature map needs to be upscaled within this layer
-        self.upscale = upscale
+        # Determines if this GenLayer is the first layer of the generator
+        self.first_layer = first_layer
 
         # Model both convolutions needed with a 3x3 kernel
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
 
         # Model the noise injection into each layer, after each convolution
         self.noise1 = Noise(out_channels)
@@ -152,19 +152,25 @@ class GenLayer(nn.Module):
 
     def forward(self, x, w):
         """
-        Performs a forward pass of one generator layer. This includes performing upscaling 
-        if needed. 
+        Performs a forward pass of one generator layer. There is a distinction between the first 
+        layer of the generator and subsequent layers, wherein the first layer does not need upscaling
+        and an extra convolution is not needed.
 
         Param: x: The input feature map into this generator layer. 
         Param: w: The input style vector into this generator layer.
         """
+        # This is the first layer of the generator, do not include upscaling or extra conv
+        if self.first_layer:
+            x = self.adain1(self.lrelu(self.noise1(x)), w)
 
-        # Double the resolution of the feature map
-        if self.upscale:
+        # Upscale by doubling the resolution of the feature map and apply extra conv
+        else:
             x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)
+            x = self.adain1(self.lrelu(self.noise1(self.conv1(x))), w)
 
-        x = self.adain1(self.lrelu(self.noise1(self.conv1(x))), w)
         x = self.adain2(self.lrelu(self.noise2(self.conv2(x))), w)
+
+        return x
         
 
 def fully_connected(in_channels, out_channels):

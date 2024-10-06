@@ -5,9 +5,9 @@ import numpy as np
 
 # Define constants
 LATENT_DIM = 512
-INITIAL_SIZE = 4
+INITIAL_SIZE = 16
 NUM_CHANNELS = 1
-FINAL_SIZE = 64
+FINAL_SIZE = 256  
 
 class AdaIN(Layer):
     def __init__(self, **kwargs):

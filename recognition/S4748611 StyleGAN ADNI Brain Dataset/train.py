@@ -5,11 +5,10 @@ from dataset import create_adni_dataset, generate_random_inputs
 import numpy as np
 import wandb
 
-
 # Define training parameters
-BATCH_SIZE = 64
+BATCH_SIZE = 16
 EPOCHS = 30
-TARGET_SIZE = (64, 64)
+TARGET_SIZE = (256, 256)  # Change target size to 256x256
 
 # Load the models
 print("Loading models...")
@@ -25,7 +24,6 @@ print("Compiling models...")
 generator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=0.0002, beta_1=0.5)
 discriminator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=0.00015, beta_1=0.5)
 
-
 print("Models compiled.")
 
 # Initialize Weights and Biases
@@ -35,7 +33,7 @@ wandb.init(
     entity="samwolfenden-university-of-queensland",
     config={
         "gen learning rate": 0.0002,
-        "disc learning rate": 0.0001,
+        "disc learning rate": 0.00015,
         "epochs": EPOCHS,
         "optimizer": type(generator_optimizer).__name__,
         "scheduler": type(discriminator_optimizer).__name__,
@@ -88,7 +86,7 @@ def train(epochs):
             gen_loss, disc_loss = train_step(batch)
         
         print(f"Epoch {epoch + 1} completed.")
-        print("Generator Loss", gen_loss, "Discriminator Loss", disc_loss)
+        print("Generator Loss", gen_loss.numpy(), "Discriminator Loss", disc_loss.numpy())
 
         # Log losses to Weights and Biases
         wandb.log({"Generator Loss": gen_loss, "Discriminator Loss": disc_loss})

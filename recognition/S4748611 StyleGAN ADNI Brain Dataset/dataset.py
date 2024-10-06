@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 
-def load_and_preprocess_adni(data_dirs, target_size=(64, 64), batch_size=64):
+def load_and_preprocess_adni(data_dirs, target_size=(256, 256), batch_size=64):  # Change target size to 256x256
     def process_image(img_path):
         img = tf.io.read_file(img_path)
         img = tf.image.decode_png(img, channels=1)  # Assuming PNG images
@@ -32,7 +32,7 @@ def load_and_preprocess_adni(data_dirs, target_size=(64, 64), batch_size=64):
 
     return dataset
 
-def create_adni_dataset(batch_size=64, target_size=(64, 64)):
+def create_adni_dataset(batch_size=64, target_size=(256, 256)):  # Change target size to 256x256
     data_dirs = [
         '/home/groups/comp3710/ADNI/AD_NC/test/AD',
         '/home/groups/comp3710/ADNI/AD_NC/test/NC',
@@ -56,10 +56,10 @@ def generate_random_inputs(batch_size, latent_dim, initial_size):
 
 # Example usage
 if __name__ == "__main__":
-    BATCH_SIZE = 64
+    BATCH_SIZE = 16
     LATENT_DIM = 512
     INITIAL_SIZE = 4
-    TARGET_SIZE = (64, 64)
+    TARGET_SIZE = (256, 256)
 
     # Create ADNI dataset
     adni_dataset = create_adni_dataset(BATCH_SIZE, TARGET_SIZE)

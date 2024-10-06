@@ -2,7 +2,7 @@ import time
 import logging
 from dataclasses import dataclass
 
-from torchvision.models import efficientnet_b0
+from torchvision.models import efficientnet_b0, resnet50
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -26,7 +26,7 @@ class HyperParams:
 
 class TumorClassifier:
     def __init__(self, hparams: HyperParams) -> None:
-        self._model = TumorTower().to(device)
+        self._model = EmbeddingNetwork().to(device)
         self._optim = torch.optim.Adam(
             params=self._model.parameters(),
             lr=hparams.learning_rate,
@@ -99,10 +99,10 @@ class TumorClassifier:
         self._losses.append(avg_loss)
 
 
-class TumorTower(nn.Module):
+class EmbeddingNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        self._backbone = efficientnet_b0()
+        self._backbone = resnet50()
 
         # Makes output in feature space
         self._backbone.classifer = nn.Identity()

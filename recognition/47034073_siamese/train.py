@@ -61,8 +61,8 @@ def main() -> None:
 
     # Prepare train classification data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
-    if args.debug:
-        train_meta_df = train_meta_df.sample(n=128)
+    # if args.debug:
+    #    train_meta_df = train_meta_df.sample(n=256)
 
     # Undersample to handle class imbalance
     benign = train_meta_df[train_meta_df["target"] == 0]
@@ -83,7 +83,9 @@ def main() -> None:
 
     logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier(n_neighbors=5, weights="distance", p=2)
+    knn = KNeighborsClassifier(
+        n_neighbors=2 if args.debug else 5, weights="distance", p=2
+    )
     scaler = StandardScaler()
     scaler = scaler.fit(embeddings)
     embeddings = scaler.transform(embeddings)
@@ -100,8 +102,8 @@ def main() -> None:
 
     # Prepare validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
-    if args.debug:
-        val_meta_df = val_meta_df.sample(n=128)
+    # if args.debug:
+    #     val_meta_df = val_meta_df.sample(n=256)
 
     val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
     val_loader = DataLoader(

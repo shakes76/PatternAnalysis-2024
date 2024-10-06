@@ -28,8 +28,8 @@ def train():
 
         print(f"Edge shape: {edges.shape}, features shape: {features.shape}, target shapes: {target.shape}")
 
-        # Split the data into training (70%) and testing (30%)
-        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=42)
+        # Split the data into training (80%) and testing (20%)
+        X_train, X_test, y_train, y_test = train_test_split(features,target, test_size=0.2, random_state=42, stratify=target)
 
         # Convert split data to tensors
         X_train = torch.tensor(X_train, dtype=torch.float32)
@@ -48,7 +48,7 @@ def train():
         print("Model starting...")
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train)) #get number of unique class
-        model = GAT(input_dim=input_dim, hidden_dim=512, output_dim=output_dim, num_layers=4, heads=4,dropout=0.3)
+        model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4,dropout=0.3)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 

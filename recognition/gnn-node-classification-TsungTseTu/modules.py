@@ -25,7 +25,7 @@ class GAT(torch.nn.Module):
         if num_layers > 1:
             self.bns = torch.nn.ModuleList([torch.nn.BatchNorm1d(hidden_dim*heads) for _ in range(num_layers -1)])
 
-        self.dropout = torch.nn.Dropout(dropout) # Add dropout with 50% prob
+        self.dropout = torch.nn.Dropout(dropout) # Add dropout with 
 
     def forward(self, x, edge_index):
         for i , conv in enumerate(self.convs[:-1]):

@@ -26,7 +26,7 @@ class UNet(nn.Module):
         self.time_embedding = SinusoidalEmbedding(embedding_dim=512)
 
         # Encoder (downsampling) path
-        self.down1 = nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)
+        self.down1 = nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1)
         self.down2 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
         self.down3 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1)
         self.down4 = nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1)
@@ -35,7 +35,7 @@ class UNet(nn.Module):
         self.up1 = nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1)
         self.up2 = nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
         self.up3 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
-        self.up4 = nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1)
+        self.up4 = nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1)
 
         # Activation
         self.relu = nn.ReLU()
@@ -61,8 +61,13 @@ class UNet(nn.Module):
 
         # Decoder
         x = self.relu(self.up1(x4))              # 256 x 8 x 8
-        x = self.relu(self.up2(x + x3))          # Skip connection from x3
-        x = self.relu(self.up3(x + x2))          # Skip connection from x2
+        # Ensure dimensions match for skip connection
+        x = F.interpolate(x, size=x3.shape[2:])  # Resize to match x3
+        x = self.relu(self.up2(x + x3))  # Skip connection from x3
+        
+        # Ensure dimensions match for skip connection
+        x = F.interpolate(x, size=x2.shape[2:])  # Resize to match x2
+        x = self.relu(self.up3(x + x2))  # Skip connection from x2
         x = self.up4(x)                          # 3 x 64 x 64
 
         return x

@@ -1,0 +1,14 @@
+# Ignore the data folder
+/data/
+
+# Ignore temporary and backup files
+*~
+*.un~
+*.py~
+
+# Ignore Python cache
+__pycache__/
+
+#ignore trained model
+gnn_model.pth
+

@@ -53,14 +53,12 @@ def main() -> None:
             break
 
     # Collect negative pairs
-    negative_pairs = []
-    for pair in itertools.product(
-        benign_train[IMAGE_NAME], malignant_train[IMAGE_NAME]
-    ):
-        negative_pairs.append(pair)
-
-        if len(negative_pairs) == len(malignant_pairs):
-            break
+    negative_pairs = list(
+        itertools.islice(
+            itertools.product(benign_train[IMAGE_NAME], malignant_train[IMAGE_NAME]),
+            len(malignant_pairs),
+        )
+    )
 
     all_pairs = malignant_pairs + benign_pairs + negative_pairs
     targets = (

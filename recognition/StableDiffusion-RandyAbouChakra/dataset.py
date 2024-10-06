@@ -31,3 +31,27 @@ def load_data(root):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                                 shuffle=True, num_workers=workers)
     return dataloader
+
+
+def test_load_data(root):
+    # Replace with the path to your dataset
+    dataset_root = root  # Ensure this path points to your image dataset
+
+    # Test load_data function
+    dataloader = load_data(dataset_root)
+
+    # Check if DataLoader loads data and inspect the first batch
+    for i, (images, labels) in enumerate(dataloader):
+        print(f"Batch {i+1}")
+        print(f"Image batch shape: {images.shape}")
+        print(f"Label batch shape: {labels.shape}")
+
+        # Visualize one image from the batch
+        img = transforms.ToPILImage()(images[0])
+        img.show()  # This will open the first image in the batch for inspection
+        
+        # Break after the first batch (for testing purposes)
+        break
+
+if __name__ == "__main__":
+    test_load_data("C:/Users/msi/Desktop/AD_NC")

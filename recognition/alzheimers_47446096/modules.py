@@ -9,8 +9,30 @@ class VisionTransformer(nn.Module):
         super().__init__()
 
 class TransformerEncBlk(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, dim: int, nHeads: int) -> None:
         super().__init__()
+        self.dim = dim
+        self.nHeads = nHeads
+
+        self.n1 = nn.LayerNorm(self.dim)
+        self.mha = nn.MultiheadAttention(
+            self.dim,
+            self.nHeads
+        )
+        self.n2 = nn.LayerNorm(self.dim)
+        self.l1 = nn.Linear(self.dim, 100)
+        self.activation = nn.GELU()
+        self.l2 = nn.Linear(100, self.dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        y = self.n1(x)
+        y, _ = self.mha(y, y, y)
+        y = y + x
+        z = self.l1(self.n2(y))
+        z = self.activation(z)
+        z = self.l2(z)
+        z = z + y
+        return z
 
 class PatchProcessor(nn.Module):
     '''

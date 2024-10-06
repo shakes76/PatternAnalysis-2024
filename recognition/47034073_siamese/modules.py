@@ -34,8 +34,6 @@ class TumorClassifier:
         )
         self._hparams = hparams
         self._losses: list[float] = []
-        self._benign_centroid = None
-        self._malignant_centroid = None
 
     def train(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
@@ -57,76 +55,6 @@ class TumorClassifier:
                 all_labels.append(labels)
 
             return torch.cat(all_embeddings), torch.cat(all_labels)
-
-    def compute_centroids(self, loader: DataLoader[tuple[torch.Tensor, int]]) -> None:
-        self._benign_centroid = None
-        self._malignant_centroid = None
-
-        num_benign = 0
-        num_malignant = 0
-        n = 0
-        start_time = time.time()
-        with torch.inference_mode():
-            for x, labels in loader:
-                x = x.to(device)
-                labels = labels.to(device)
-                n += len(labels)
-
-                embeddings = self._model.compute_embedding(x)
-
-                if self._benign_centroid is None:
-                    embedding_dim = embeddings.shape[1]
-                    self._benign_centroid = torch.zeros(embedding_dim).to(device)
-                if self._malignant_centroid is None:
-                    self._malignant_centroid = torch.zeros(embedding_dim).to(device)
-
-                benign = embeddings[labels == 0, :]
-                malignant = embeddings[labels == 1, :]
-
-                num_benign += len(benign)
-                num_malignant += len(malignant)
-
-                self._benign_centroid += benign.sum(dim=0)
-                self._malignant_centroid += malignant.sum(dim=0)
-
-                if time.time() - start_time > 60:
-                    start_time = time.time()
-                    logger.info("%d/%d", n, len(loader.dataset))
-
-            self._benign_centroid /= num_benign
-            self._malignant_centroid /= num_malignant
-
-    def evaluate(self, loader: DataLoader) -> dict:
-        with torch.inference_mode():
-            hits = 0
-            n = 0
-            start_time = time.time()
-            for x, labels in loader:
-                x = x.to(device)
-                labels = labels.to(device)
-
-                n += len(labels)
-
-                logger.debug("Shape of centroid %s", str(self._benign_centroid.shape))
-                embeddings = self._model.compute_embedding(x)
-                benign_distances = cosine_similarity(embeddings, self._benign_centroid)
-                malignant_distances = cosine_similarity(
-                    embeddings, self._malignant_centroid
-                )
-                logger.debug("%s", str(benign_distances.shape))
-                distances = torch.stack([benign_distances, malignant_distances], dim=1)
-                logger.debug("%s", str(distances.shape))
-                predictions = distances.argmax(dim=1)
-                logger.debug("Predictions %s", str(predictions))
-
-                hits += torch.sum(predictions == labels)
-
-                if time.time() - start_time > 60:
-                    start_time = time.time()
-                    logger.info("%d/%d", n, len(loader.dataset))
-
-            acc = hits / n
-            return acc
 
     def _train_epoch(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]

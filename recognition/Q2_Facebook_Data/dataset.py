@@ -16,7 +16,8 @@ def load_data(target_path):
     """
     Load the facebook dataset from the given target path 
     and return the processed data.
-    The function reads the data from the target_path, 
+
+    This function reads the data from the target_path, 
     maps the 'page_type' to 'category' using the predefined CATEGORY_MAPPING, 
     and extracts the relevant data to create a label tensor.
 
@@ -41,7 +42,8 @@ def load_facebook_data(features_path, edges_path, target_path, feature_dim=128):
     """
     Load and preprocess Facebook graph data, 
     including node features, edges and labels.
-    The function reads the node features from a JSON file,
+
+    This function reads the node features from a JSON file,
     edges from a CSV file, and labels from the _target.CSV.
     Pad or truncate the node features to the specified feature_dim.
     Create a Pytorch Geometric Data object with the node features, edge index.
@@ -88,6 +90,52 @@ def load_facebook_data(features_path, edges_path, target_path, feature_dim=128):
     data = Data(x=node_features_tensor, edge_index=edge_index, y=labels)
     return data
 
+def split_data (data, train_size = 0.8, val_size = 0.1):
+    """
+    Split the data into training, validation, and test sets.  
+
+    This function splits the data into training, validation, and test sets   
+    based on the given train_size and val_size.
+    It returns boolean masks for the training, validation, and test sets.
+
+    Parameters:
+    -----------
+    data : torch_geometric.data.Data
+        The Pytorch Geometric Data object
+    train_size : float
+        The proportion of the data to include in the training set (default=0.8)
+    val_size : float
+        The proportion of the data to include in the validation set (default=0.1)
+
+    Returns:
+    --------
+    train_mask : torch.tensor
+        The boolean mask for the training set, with True for training nodes
+    val_mask : torch.tensor
+        The boolean mask for the validation set, with True for validation nodes
+    test_mask : torch.tensor
+        The boolean mask for the test set, with True for test nodes
+    """
+    num_nodes = data.num_nodes
+    indices = list(range(num_nodes))
+
+    #split into tranning and remaining data (val + test)
+    train_idx, temp_idx = train_test_split(indices, train_size=train_size, random_state=42)
+
+    #split the remaining data into validation and test
+    val_size_adjusted = val_size / (1 - train_size) 
+    val_idx, test_idx = train_test_split(temp_idx, train_size=val_size_adjusted, random_state=42)
+
+    # create masks
+    train_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    val_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    test_mask = torch.zeros(num_nodes, dtype=torch.bool)
+
+    train_mask[train_idx] = True
+    val_mask[val_idx] = True
+    test_mask[test_idx] = True
+
+    return train_mask, val_mask, test_mask
 
 if __name__ == '__main__':
     """
@@ -112,6 +160,14 @@ if __name__ == '__main__':
 
     # Load the data
     data = load_facebook_data(features_path, edges_path, target_path)
+
+    # Split the data into training, validation, and test sets
+    train_mask, val_mask, test_mask = split_data(data)
+
+    # Add the masks to the PyTorch Geometric Data object
+    data.train_mask = train_mask
+    data.val_mask = val_mask
+    data.test_mask = test_mask
     
     # Display the PyTorch Geometric Data object
     print(data)

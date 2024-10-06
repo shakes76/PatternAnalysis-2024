@@ -28,7 +28,7 @@ import modules
 
 num_epochs = 150
 batch_size = 16
-lr = 0.0004
+lr = 0.001
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
@@ -63,7 +63,7 @@ train_loader, validate_loader, data_variance = HipMRILoader(
 dataset_size = len(train_loader.dataset)  # Size of the training dataset
 iterations_per_epoch = len(train_loader)   # Number of batches per epoch
 
-print(f"Training dataset size: {dataset_size}")
+print(f"Training dataset size: {dataset_size}") #11460
 print(f"Iterations per epoch: {iterations_per_epoch}")
 
 # Create model
@@ -83,8 +83,17 @@ optimizer = optim.Adam(
     lr=lr,
     amsgrad=False)
 
-# Define the scheduler
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+# # Define the scheduler
+# scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+
+# Piecewise Linear Schedule. Helps the optimiser frind the appropriate local minima without overshoooting. 
+# CyclicLR explores a range of learning rates in the early part of training. lr fluctuates between base_lr and max_lr
+sched_linear_1 = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.0004, max_lr=lr, step_size_up=715, step_size_down=715, mode="triangular", verbose=False)
+# LinearLR reduces the learning rate steadily in the latter part of training to help the model converge more smoothly.
+# Slowly decrease lr from start_factor to end_factor. Can make more fine adjstments toeards end of training. 
+sched_linear_2 = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=0.0004/lr, end_factor=0.0004/5, verbose=False)
+# SequentialLR combines these two schedules, making the learning rate change in a piecewise linear manner. This combination helps with faster convergence while maintaining stability at the end of training.
+scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[sched_linear_1, sched_linear_2], milestones=[40])
 
 # Training mectrics
 epoch_training_output_loss = []
@@ -192,8 +201,8 @@ for epoch in range(num_epochs):
         plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
         plt.close()
     
-    # scheduler.step()
-    # print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
+    scheduler.step()
+    print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
     
     print()
 

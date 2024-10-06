@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class SinusoidalEmbedding(nn.Module):
     def __init__(self, embedding_dim, max_positions=10000):
         super(SinusoidalEmbedding, self).__init__()
@@ -117,7 +119,7 @@ class LatentDiffusionModel(nn.Module):
         Add noise to the latent z space according to a variance schedule.
         """
         noise = torch.randn_like(z)
-        alpha_hat_t = self.alpha_hat[t][:, None, None, None]
+        alpha_hat_t = self.alpha_hat.to(z.device)[t][:, None, None, None]
         return torch.sqrt(alpha_hat_t) * z + torch.sqrt(1 - alpha_hat_t) * noise, noise
 
     def reverse_denoise(self, z_t, t):

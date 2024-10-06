@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 # Making our custom ResNet inspired by Resnet-18
 # Residual block of ResNet
-class ResBlock(nn.module):
+class ResBlock(nn.Module):
     expansion = 1
 
     # Constructor for the ResBlock
@@ -35,7 +35,7 @@ class ResBlock(nn.module):
         return out
 
 # Making the ResNet class   
-class CustomResNet(nn.module):
+class CustomResNet(nn.Module):
     
     def __init__(self, block, num_blocks, num_classes=2):
         super(CustomResNet, self).__init__()

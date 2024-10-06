@@ -140,3 +140,46 @@ def plot_confusion_matrix(y_true, y_pred, classes):
     plt.xticks(np.arange(len(classes)) + 0.5, classes)
     plt.yticks(np.arange(len(classes)) + 0.5, classes)
     save_plot(plt, "confusion_matrix.png")
+
+# Visualizing embeddings using t-SNE
+
+def visualize_embeddings(model, data_loader):
+    model.eval()
+    embeddings = []
+    labels = []
+    with torch.no_grad():
+        for anchor, _, _, label in data_loader:
+            anchor = anchor.to(device)
+            embedding = model.get_embedding(anchor).cpu().numpy()
+            embeddings.append(embedding)
+            labels.extend(label.numpy())
+    
+    embeddings = np.concatenate(embeddings)
+    tsne = TSNE(n_components=2, random_state=30)
+    embeddings_2d = tsne.fit_transform(embeddings)
+
+    # Plotting the embeddings
+    plt.figure(figsize=(10, 10))
+    scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=labels, cmap='jet')
+    plt.colorbar(scatter)
+    plt.title('2D t-SNE Visualization of Embeddings')
+    save_plot(plt, "embeddings.png")
+
+visualize_embeddings(model, test_loader)
+
+# Getting validation data for confusion matrix
+model.eval()
+predictions = []
+labels = []
+
+with torch.no_grad():
+    for anchor, _, _, label in test_loader:
+        anchor = anchor.to(device)
+        output = model.classify(anchor)
+        _, predicted = torch.max(output.data, 1)
+        predictions.extend(predicted.cpu().numpy())
+        labels.extend(label.cpu().numpy())
+
+classes = ['benign', 'malignant']
+plot_confusion_matrix(labels, predictions, classes)
+

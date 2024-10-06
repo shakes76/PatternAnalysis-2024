@@ -6,6 +6,7 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import scipy.ndimage
+from torchvision import datasets, transforms
 
 # Directories for datasets
 train_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -125,23 +126,23 @@ class HipMRILoader:
         self.validate_loader = DataLoader(self.validate_dataset, batch_size=self.batch_size, shuffle=False, num_workers=num_workers)
 
         # Calculate the variance for data normalization
-        self.train_variance = self.calculate_variance()
+        self.train_mean, self.train_variance = self.calculate_mean_variance()
 
-    def calculate_variance(self):
+    def calculate_mean_variance(self):
         mean = 0.0
         mean_sq = 0.0
         count = 0
 
         for index, data in enumerate(self.train_loader):
             data = data.float()  # Ensure the data is in the correct type
-            mean = data.sum()
-            mean_sq = mean_sq + (data ** 2).sum()
+            mean += data.sum()
+            mean_sq += (data ** 2).sum()
             count += np.prod(data.shape)
 
         total_mean = mean / count
         total_var = (mean_sq / count) - (total_mean ** 2)
         data_variance = float(total_var.item())  # Convert tensor to float
-        return data_variance
+        return total_mean.item(), data_variance
 
     def get_loaders(self):
         return self.train_loader, self.validate_loader, self.train_variance
@@ -150,6 +151,17 @@ class HipMRILoader:
         # Create a separate data loader for the test dataset
         test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=1)
         return test_loader
+    
+    def get_mean(self):
+        return self.train_mean
+    
+# Example usage:
+loader = HipMRILoader(train_dir, validate_dir, test_dir, batch_size=16)
+train_loader, validate_loader, variance = loader.get_loaders()
+mean = loader.get_mean()
+std = variance ** 0.5
+
+print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
     
 
 

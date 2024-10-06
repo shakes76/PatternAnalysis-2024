@@ -30,6 +30,14 @@ class ValidationLossEarlyStopping:
                 return True
         return False
 
+# Save directory
+save_dir = 'lr=0.005'
+os.makedirs(save_dir, exist_ok=True)  # Directly use save_dir
+
+# Define the save directory and ensure it exists
+model_dir = 'saved_model/lr=0.005.pth'
+os.makedirs(os.path.dirname(model_dir), exist_ok=True)
+
 
 # # Hyperparameters
 # num_epochs = 200
@@ -44,7 +52,7 @@ class ValidationLossEarlyStopping:
 
 num_epochs = 400
 batch_size = 16
-lr = 0.01
+lr = 0.005
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
@@ -52,11 +60,25 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
+print("==== Paramaters ====")
+print(f"Max Epochs: ", num_epochs)
+print(f"Batch size: ", batch_size)
+print(f"lr: ", lr)
+print(f"num_hiddens: ", num_hiddens)
+print(f"num_residual_hiddens: ", num_residual_hiddens)
+print(f"num_channels", num_channels)
+print(f"num_embeddings: ", num_embeddings)
+print(f"dim_embedding: ", dim_embedding)
+print(f"beta: ", beta)
+print()
+
+
 # Configure Pytorch
 seed = 42
 torch.manual_seed(seed)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Device: ", device)
+print()
 
 # Directories for datasets
 train_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -75,14 +97,14 @@ train_loader, validate_loader, data_variance = HipMRILoader(
     train_dir, validate_dir, test_dir,
     batch_size=batch_size, transform=transform
     ).get_loaders()
-print('Variance: ', data_variance)
+# print('Variance: ', data_variance)
 
 # Assuming you have a DataLoader defined as train_loader
-dataset_size = len(train_loader.dataset)  # Size of the training dataset
-iterations_per_epoch = len(train_loader)   # Number of batches per epoch
+# dataset_size = len(train_loader.dataset)  # Size of the training dataset
+# iterations_per_epoch = len(train_loader)   # Number of batches per epoch
 
-print(f"Training dataset size: {dataset_size}") #11460
-print(f"Iterations per epoch: {iterations_per_epoch}")
+# print(f"Training dataset size: {dataset_size}") #11460
+# print(f"Iterations per epoch: {iterations_per_epoch}")
 
 # Create model
 model = modules.VQVAE(
@@ -123,8 +145,6 @@ epoch_validation_output_loss = []
 epoch_validation_vq_loss = []
 epoch_ssim = []
 
-save_dir = 'lr=0.01'
-os.makedirs(save_dir, exist_ok=True)  # Directly use save_dir
 
 # Training loop
 for epoch in range(num_epochs):
@@ -282,10 +302,6 @@ plt.legend()
 plt.grid(True)
 plt.savefig(os.path.join(save_dir, 'ssim_per_epoch.png'))
 plt.close()
-
-# Define the save directory and ensure it exists
-model_dir = 'saved_model/lr=0.01.pth'
-os.makedirs(os.path.dirname(model_dir), exist_ok=True)
 
 # Save the model state_dict
 torch.save(model.state_dict(), model_dir)

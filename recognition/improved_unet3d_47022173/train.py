@@ -4,9 +4,12 @@ from torch.utils.data import DataLoader, random_split
 import torchio as tio
 from utils import *
 from modules import *
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 images_path = "./data/semantic_MRs_anon/"
 masks_path = './data/semantic_labels_anon/'
+# images_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs/"
+# masks_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only/"
 
 # Data parameters
 batch_size = 2
@@ -16,7 +19,7 @@ epochs = 5
 
 # Model parameters
 in_channels = 1 # greyscale
-n_classes = 5 #5 different values in mask
+n_classes = 6 #6 different values in mask
 base_n_filter = 8
 
 # Optimizer parameters
@@ -32,9 +35,9 @@ if __name__ == '__main__':
     transforms = tio.Compose([
         tio.RescaleIntensity((0, 1)),
         tio.RandomFlip(),
+        tio.Resize((128,128,128)),
         tio.RandomAffine(degrees=10),
         tio.RandomElasticDeformation(),
-        tio.CropOrPad((128, 128, 128)),
         tio.ZNormalization(),
     ])
 
@@ -65,6 +68,9 @@ if __name__ == '__main__':
         for i, data in enumerate(dataloader):
             inputs, masks = data
             inputs, masks = inputs.to(device), masks.to(device)
+            if masks.dtype != torch.long:
+                masks = masks.long()
+
             optimizer.zero_grad()
             out, seg_layer, logits = model(inputs)
             masks = masks.view(-1)

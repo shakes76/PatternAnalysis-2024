@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 class Modified3DUNet(nn.Module):
-	def __init__(self, in_channels=1, n_classes=5, base_n_filter = 8):
+	def __init__(self, in_channels, n_classes, base_n_filter):
 		super(Modified3DUNet, self).__init__()
 		self.in_channels = in_channels
 		self.n_classes = n_classes

@@ -4,9 +4,9 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
 
-def load_data():
+def load_data(root):
     # Root directory for dataset
-    dataroot = ""
+    dataroot = root
 
 
     # Spatial size of training images

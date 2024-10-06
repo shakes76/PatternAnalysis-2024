@@ -121,4 +121,9 @@ class TripletLoss(nn.Module):
         return loss.mean()
     
 
+# Basic helpers to later be imported in train.py
+def get_model(embedding_dim=128):
+    return SiameseNetwork(embedding_dim=embedding_dim)
 
+def get_loss(margin=1.0):
+    return TripletLoss(margin)

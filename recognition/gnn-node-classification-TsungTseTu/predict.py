@@ -1,8 +1,10 @@
 import torch
 from modules import GAT
 from dataset import load_facebook_data
-from sklearn.model_selection import train_test_split 
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 import numpy as np
 
 def predict():
@@ -55,6 +57,17 @@ def predict():
         # Calculate accuracy
         accuracy = accuracy_score(y_test.cpu(), preds.cpu())
         print(f"Test Accuracy: {accuracy * 100:.2f}%")
+
+        # t-SNE Visualization of the embeddings
+        print("Generating t-SNE visualization...")
+        tsne = TSNE(n_components=2)
+        embeddings = tsne.fit_transform(out.cpu().numpy())  # Assuming 'out' contains model's embeddings
+
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=y_test.cpu().numpy(), cmap='viridis', s=10)
+        plt.colorbar(scatter)
+        plt.title('t-SNE visualization of GAT embeddings')
+        plt.show()
 
     except Exception as e:
         print(f"An error occurred during prediction: {e}")

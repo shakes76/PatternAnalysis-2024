@@ -52,7 +52,9 @@ def train():
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train))  # Get number of unique classes
         model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4, dropout=0.2)
-        optimizer = torch.optim.RMSprop(model.parameters(), lr=0.001, weight_decay=0.0001)
+
+        # Optimizer and loss function
+        optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 
         # Learning rate scheduler
@@ -63,8 +65,8 @@ def train():
         early_stop_counter = 0
         best_loss = float("inf")
 
-        # Training loop without batching (forward pass with full X_train)
-        print("Start training without batches...")
+        # Training loop 
+        print("Start training ...")
         model.train()
         for epoch in range(10000):
             optimizer.zero_grad()
@@ -105,3 +107,5 @@ def train():
 
 if __name__ == '__main__':
     train()
+
+

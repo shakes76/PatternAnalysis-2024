@@ -28,14 +28,20 @@ class GAT(torch.nn.Module):
         self.dropout = torch.nn.Dropout(dropout) # Add dropout with 
 
     def forward(self, x, edge_index):
-        for i , conv in enumerate(self.convs[:-1]):
+        # Print input shapes for debugging
+        print(f"Input x shape: {x.shape}, edge_index shape: {edge_index.shape}")
+
+        for i, conv in enumerate(self.convs[:-1]):
             x = conv(x, edge_index)
-            if i<len(self.bns): #apply batch norm for hidden layers
+            print(f"Layer {i} conv output shape: {x.shape}")
+            if i < len(self.bns):  # Apply batch norm for hidden layers
                 x = self.bns[i](x)
+                print(f"Layer {i} batch norm output shape: {x.shape}")
             x = F.relu(x)
             x = self.dropout(x)
-        
-        #final layer (no relu)
+
+        # Final layer (no ReLU)
         x = self.convs[-1](x, edge_index)
+        print(f"Final layer output shape: {x.shape}")
         return x
 

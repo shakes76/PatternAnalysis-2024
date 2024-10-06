@@ -31,26 +31,26 @@ class ValidationLossEarlyStopping:
         return False
 
 
-# Hyperparameters
-num_epochs = 200
-batch_size = 32
-lr = 0.0002
-num_hiddens = 128
-num_residual_hiddens = 32
-num_channels = 1
-num_embeddings = 512
-dim_embedding = 64
-beta = 0.25
-
-# num_epochs = 400
-# batch_size = 16
-# lr = 0.001
+# # Hyperparameters
+# num_epochs = 200
+# batch_size = 32
+# lr = 0.0002
 # num_hiddens = 128
 # num_residual_hiddens = 32
 # num_channels = 1
 # num_embeddings = 512
 # dim_embedding = 64
 # beta = 0.25
+
+num_epochs = 400
+batch_size = 16
+lr = 0.01
+num_hiddens = 128
+num_residual_hiddens = 32
+num_channels = 1
+num_embeddings = 512
+dim_embedding = 64
+beta = 0.25
 
 # Configure Pytorch
 seed = 42
@@ -123,7 +123,7 @@ epoch_validation_output_loss = []
 epoch_validation_vq_loss = []
 epoch_ssim = []
 
-save_dir = 'early_stop'
+save_dir = 'lr=0.01'
 os.makedirs(save_dir, exist_ok=True)  # Directly use save_dir
 
 # Training loop
@@ -284,7 +284,7 @@ plt.savefig(os.path.join(save_dir, 'ssim_per_epoch.png'))
 plt.close()
 
 # Define the save directory and ensure it exists
-model_dir = 'saved_model/early.pth'
+model_dir = 'saved_model/lr=0.01.pth'
 os.makedirs(os.path.dirname(model_dir), exist_ok=True)
 
 # Save the model state_dict

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=s4878126_VQVAE
-#SBATCH --partition=a100
+#--partition=comp3710
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
@@ -12,5 +12,5 @@ conda activate torch
 python utils.py
 python modules.py
 python dataset.py
-python train.py
-# python predict.py
+# python train.py
+python predict.py

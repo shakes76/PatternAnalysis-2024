@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from torch.utils.data import Dataset
+from torchvision.io import read_image
 
 DATA_DIR = Path("../data")
 
@@ -86,3 +88,39 @@ def _create_negative_pairs(md1: pd.DataFrame, md2: pd.DataFrame, seed: int = 42)
     pairs = pd.DataFrame.from_dict(pairs)
 
     return pairs
+
+
+class MelanomaSkinCancerDataset(Dataset):
+    """Custom dataset of melanoma skin cancer image pairs"""
+
+    def __init__(self, train, img_dir=DATA_DIR / "train-test-split", transform=None):
+        self.train = train
+        self.img_dir = img_dir
+        self.transform = transform
+        if self.train:
+            self.metadata = pd.read_csv(img_dir / "train-metadata.csv")
+        else:
+            self.metadata = pd.read_csv(img_dir / "test-metadata.csv")
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def __getitem__(self, idx):
+        img1_name = self.metadata.iloc[idx]["isic_id1"] + ".jpg"
+        img2_name = self.metadata.iloc[idx]["isic_id2"] + ".jpg"
+        label = self.metadata.iloc[idx]["target"]
+
+        if self.train:
+            img1_path = self.img_dir / f"train/{img1_name}"
+            img2_path = self.img_dir / f"train/{img2_name}"
+        else:
+            img1_path = self.img_dir / f"test/{img1_name}"
+            img2_path = self.img_dir / f"test/{img2_name}"
+        image1 = read_image(img1_path)
+        image2 = read_image(img2_path)
+
+        if self.transform:
+            image1 = self.transform(image1)
+            image2 = self.transform(image2)
+
+        return image1, image2, label

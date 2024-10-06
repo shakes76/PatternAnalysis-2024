@@ -6,7 +6,11 @@ from torchvision.models import efficientnet_b0
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torch.nn.functional import binary_cross_entropy_with_logits, cosine_similarity
+from torch.nn.functional import (
+    binary_cross_entropy_with_logits,
+    cosine_similarity,
+    cosine_embedding_loss,
+)
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -17,13 +21,16 @@ class HyperParams:
     num_epochs: int = 20
     batch_size: int = 32
     learning_rate: float = 0.001
+    weight_decay: float = 0.00001
 
 
 class TumorClassifier:
     def __init__(self, hparams: HyperParams) -> None:
         self._model = TumorTower().to(device)
         self._optim = torch.optim.Adam(
-            params=self._model.parameters(), lr=hparams.learning_rate
+            params=self._model.parameters(),
+            lr=hparams.learning_rate,
+            weight_decay=hparams.weight_decay,
         )
         self._hparams = hparams
         self._losses: list[float] = []
@@ -137,8 +144,15 @@ class TumorClassifier:
             num_observations += len(y)
 
             self._optim.zero_grad()
-            logits = self._model(x1, x2)
-            loss = binary_cross_entropy_with_logits(logits.flatten(), y)
+            # logits = self._model(x1, x2)
+            # loss = binary_cross_entropy_with_logits(logits.flatten(), y)
+            embed1 = self._model.compute_embedding(x1)
+            embed2 = self._model.compute_embedding(x2)
+
+            # Turn 0 targets into -1 for cosine_embedding_loss
+            y = y - (y == 0).float()
+
+            loss = cosine_embedding_loss(embed1, embed2, y)
             avg_loss += loss.item()
             loss.backward()
             self._optim.step()
@@ -165,7 +179,7 @@ class TumorTower(nn.Module):
         # Makes output in feature space
         self._backbone.classifer = nn.Identity()
 
-        self._embedder = nn.Sequential(nn.Linear(1000, 128), nn.PReLU())
+        self._embedder = nn.Sequential(nn.PReLU(), nn.Linear(1000, 128))
 
         # Weighted summation of component differencess
         self._component_adder = nn.Linear(128, 1, bias=False)

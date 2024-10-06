@@ -112,7 +112,7 @@ def _train() -> None:
 
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=128, num_epochs=20, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=10, learning_rate=0.0001)
     trainer = TumorClassifier(hparams)
 
     # Prepare train pair data
@@ -152,7 +152,7 @@ def _train() -> None:
 
     logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier(n_neighbors=100, weights="distance", p=1)
+    knn = KNeighborsClassifier(n_neighbors=5, weights="uniform", p=1)
     scaler = StandardScaler()
     scaler = scaler.fit(embeddings)
     embeddings = scaler.transform(embeddings)
@@ -160,8 +160,6 @@ def _train() -> None:
     fit_knn = knn.fit(embeddings, labels)
 
     logger.info("Evaluating classification on train data...")
-    # acc = trainer.evaluate(train_classification_loader)
-    # logger.info("Train acc: %e", acc)
 
     predictions = fit_knn.predict(embeddings)
     proba = fit_knn.predict_proba(embeddings)
@@ -179,7 +177,7 @@ def _train() -> None:
     logger.info("Evaluating classification on val data...")
 
     embeddings, labels = trainer.compute_all_embeddings(val_loader)
-    scaler.transform(embeddings)
+    embeddings = scaler.transform(embeddings)
     predictions = fit_knn.predict(embeddings)
     proba = fit_knn.predict_proba(embeddings)
 

@@ -30,89 +30,15 @@ def main() -> None:
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    if args.debug:
-        _debug()
-        return
-
-    _train()
-
-
-def _debug() -> None:
-    script_start_time = time.time()
-    hparams = HyperParams(batch_size=128, num_epochs=1)
-
-    trainer = TumorClassifier(hparams)
-
-    pairs_df = pd.read_csv(PAIRS_PATH)
-    pairs_df = pairs_df.sample(random_state=42, n=128)
-
-    dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
-
-    train_loader = DataLoader(
-        dataset,
-        shuffle=True,
-        pin_memory=True,
-        batch_size=hparams.batch_size,
-        num_workers=2,
-        drop_last=True,
-    )
-
-    logger.info("Starting training...")
-    trainer.train(train_loader)
-
-    logger.info("Fitting KNN")
-
-    train_meta_df = pd.read_csv(TRAIN_META_PATH)
-    train_meta_df = train_meta_df.sample(n=128)
-
-    train_classification_dataset = TumorClassificationDataset(
-        IMAGES_PATH, train_meta_df
-    )
-    train_classification_loader = DataLoader(
-        train_classification_dataset, batch_size=128, num_workers=2
-    )
-    # trainer.compute_centroids(train_classification_loader)
-    embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier()
-    fit_knn = knn.fit(embeddings, labels)
-
-    logger.debug(
-        "embeddings shape %s\nlabels shape %s", str(embeddings.shape), str(labels.shape)
-    )
-
-    predictions = fit_knn.predict(embeddings)
-    proba = fit_knn.predict_proba(embeddings)
-    report = classification_report(labels, predictions)
-    auc = roc_auc_score(labels, proba[:, 1])
-    logger.info("train data report:\n%s\nauc: %d", report, auc)
-
-    logger.info("Evaluating classification on train data...")
-    # acc = trainer.evaluate(train_classification_loader)
-    # logger.info("Train acc: %e", acc)
-
-    logger.info("Evaluating classification on val data...")
-    val_meta_df = pd.read_csv(VAL_META_PATH)
-    val_meta_df = val_meta_df.sample(n=128)
-    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
-    val_loader = DataLoader(val_dataset, batch_size=128, num_workers=2)
-    # val_acc = trainer.evaluate(val_loader)
-    # logger.info("Val acc: %e", val_acc)
-    embeddings, labels = trainer.compute_all_embeddings(val_loader)
-    predictions = fit_knn.predict(embeddings)
-
-    report = classification_report(labels, predictions)
-    logger.info("val data report\n%s", report)
-
-    total_script_time = time.time() - script_start_time
-    logger.info("Script done in %d seconds.", total_script_time)
-
-
-def _train() -> None:
     script_start_time = time.time()
 
     # Training params
     num_workers = 3
-    hparams = HyperParams(batch_size=128, num_epochs=10, learning_rate=0.0001)
+
+    hparams = HyperParams(batch_size=128, num_epochs=5, learning_rate=0.001)
+    if args.debug:
+        hparams = HyperParams(batch_size=128, num_epochs=1)
+
     trainer = TumorClassifier(hparams)
 
     # Prepare train pair data
@@ -184,6 +110,71 @@ def _train() -> None:
     report = classification_report(labels, predictions)
     auc = roc_auc_score(labels, proba[:, 1])
     logger.info("val data report\n%s\nauc: %d", report, auc)
+
+    total_script_time = time.time() - script_start_time
+    logger.info("Script done in %d seconds.", total_script_time)
+
+
+def _debug() -> None:
+    script_start_time = time.time()
+
+    trainer = TumorClassifier(hparams)
+
+    pairs_df = pd.read_csv(PAIRS_PATH)
+    pairs_df = pairs_df.sample(random_state=42, n=128)
+
+    dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
+
+    train_loader = DataLoader(
+        dataset,
+        shuffle=True,
+        pin_memory=True,
+        batch_size=hparams.batch_size,
+        num_workers=2,
+        drop_last=True,
+    )
+
+    logger.info("Starting training...")
+    trainer.train(train_loader)
+
+    logger.info("Fitting KNN")
+
+    train_meta_df = pd.read_csv(TRAIN_META_PATH)
+    train_meta_df = train_meta_df.sample(n=128)
+
+    train_classification_dataset = TumorClassificationDataset(
+        IMAGES_PATH, train_meta_df
+    )
+    train_classification_loader = DataLoader(
+        train_classification_dataset, batch_size=128, num_workers=2
+    )
+
+    embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
+    knn = KNeighborsClassifier()
+    fit_knn = knn.fit(embeddings, labels)
+
+    logger.debug(
+        "embeddings shape %s\nlabels shape %s", str(embeddings.shape), str(labels.shape)
+    )
+
+    predictions = fit_knn.predict(embeddings)
+    proba = fit_knn.predict_proba(embeddings)
+    report = classification_report(labels, predictions)
+    auc = roc_auc_score(labels, proba[:, 1])
+    logger.info("train data report:\n%s\nauc: %d", report, auc)
+
+    logger.info("Evaluating classification on train data...")
+
+    logger.info("Evaluating classification on val data...")
+    val_meta_df = pd.read_csv(VAL_META_PATH)
+    val_meta_df = val_meta_df.sample(n=128)
+    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
+    val_loader = DataLoader(val_dataset, batch_size=128, num_workers=2)
+    embeddings, labels = trainer.compute_all_embeddings(val_loader)
+    predictions = fit_knn.predict(embeddings)
+
+    report = classification_report(labels, predictions)
+    logger.info("val data report\n%s", report)
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)

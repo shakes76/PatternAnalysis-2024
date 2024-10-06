@@ -123,9 +123,8 @@ epoch_validation_output_loss = []
 epoch_validation_vq_loss = []
 epoch_ssim = []
 
-# Directory for saving images
 save_dir = 'early_stop'
-os.makedirs(os.path.dirname(save_dir), exist_ok=True)
+os.makedirs(save_dir, exist_ok=True)  # Directly use save_dir
 
 # Training loop
 for epoch in range(num_epochs):

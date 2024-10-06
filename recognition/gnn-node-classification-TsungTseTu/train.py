@@ -47,16 +47,12 @@ def train():
 
         edge_reindex = torch.tensor(new_edges, dtype=torch.long).t()  # Transpose to match expected shape
 
-        # Debugging: print shapes
-        print(f"X_train shape: {X_train.shape}")  # Expecting (17976, 128)
-        print(f"edge_reindex shape: {edge_reindex.shape}")  # Should be (2, num_edges)
-
         # Initialize the model
         print("Model starting...")
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train))  # Get number of unique classes
         model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4, dropout=0.2)
-        optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
+        optimizer = torch.optim.RMSprop(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 
         # Learning rate scheduler
@@ -81,7 +77,9 @@ def train():
             loss.backward()
             optimizer.step()
 
-            print(f'Epoch {epoch+1}, Loss: {loss.item()}')
+            # Print current loss and learning rate
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Epoch {epoch+1}, Loss: {loss.item()}, Learning Rate: {current_lr}')
 
             # Scheduler step based on epoch loss
             scheduler.step(loss)

@@ -4,29 +4,30 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
 
+def load_data():
+    # Root directory for dataset
+    dataroot = ""
 
-# Root directory for dataset
-dataroot = ""
 
+    # Spatial size of training images
+    image_size = 64
 
-# Spatial size of training images
-image_size = 64
+    # Number of workers for dataloader
+    workers = 2
 
-# Number of workers for dataloader
-workers = 2
+    # Batch size during training
+    batch_size = 128
 
-# Batch size during training
-batch_size = 128
+    # Dataset and DataLoader
+    dataset = dset.ImageFolder(root=dataroot,
+                                transform=transforms.Compose([
+                                    transforms.Resize(image_size),
+                                    transforms.CenterCrop(image_size),
+                                    transforms.ToTensor(),
+                                    transforms.RandomHorizontalFlip(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                ]))
 
-# Dataset and DataLoader
-dataset = dset.ImageFolder(root=dataroot,
-                            transform=transforms.Compose([
-                                transforms.Resize(image_size),
-                                transforms.CenterCrop(image_size),
-                                transforms.ToTensor(),
-                                transforms.RandomHorizontalFlip(),
-                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                            ]))
-
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-                                            shuffle=True, num_workers=workers)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                                shuffle=True, num_workers=workers)
+    return dataloader

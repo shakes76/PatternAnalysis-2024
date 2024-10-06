@@ -1,49 +1,32 @@
-import pandas as pd
+import numpy as np
 import torch
-import json
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, TensorDataset
 
 # Upload our dataset and transfer to tensor format, return those parameters
-def upload_dataset():
-    device = torch.cpu
-    # Check if the CUDA && MPS for our laptop is available
-    if torch.backends.mps.is_available():
-        device = torch.device("mps")
-        print("MPS is available!")
-    elif torch.cuda.is_available():
-        device = torch.device("cuda")
-        print("Cuda is available.")
-    else:
-        print("CPU usage.")
+def upload_dataset(device):
+    data = np.load("/Users/chenyihu/Desktop/Pycharm_Code/3710-PatternAnalysis-2024/facebook_large/facebook.npz")
+    tensor_edges = torch.tensor(data['edges'].T).to(device)
 
-    # Upload the edge, target and feature files
-    edge_df = pd.read_csv("/Users/chenyihu/Desktop/Pycharm_Code/"
-                          "3710-PatternAnalysis-2024/facebook_large/musae_facebook_edges.csv")
+    tensor_edges = tensor_edges[:, tensor_edges[0] != tensor_edges[1]]
+    tensor_targets = torch.tensor(data['target']).to(device)
+    tensor_features = torch.tensor(data['features']).to(device)
+    print("Nodes edges: ", tensor_edges)
+    print("Nodes targets: ", tensor_targets)
+    print("Nodes features: ", tensor_features)
 
-    target_df = pd.read_csv("/Users/chenyihu/Desktop/Pycharm_Code/"
-                            "3710-PatternAnalysis-2024/facebook_large/musae_facebook_target.csv")
+    # Define the assignment of training, testing and CV set
+    num_nodes = tensor_targets.shape[0]
+    node_indices = torch.arange(num_nodes)
+    train_id, test_id = train_test_split(node_indices, test_size=0.8, random_state=42)
 
-    with open("/Users/chenyihu/Desktop/Pycharm_Code/3710-PatternAnalysis-2024/facebook_large/"
-              "musae_facebook_features.json", 'r') as f:
-        feature_df = json.load(f)
+    train_features = tensor_features[train_id]
+    train_targets = tensor_targets[train_id]
 
-    # Data preprocess, check whether the format is correct
-    expected_vectors = 32
-    target_df['page_name'] = pd.Categorical(target_df['page_name']).codes
-    target_df['page_type'] = pd.Categorical(target_df['page_type']).codes
+    test_features = tensor_features[test_id]
+    test_targets = tensor_targets[test_id]
 
-    edges = torch.tensor([edge_df['id_1'], edge_df['id_2'].values], dtype=torch.long).to(device)
-
-    # Preprocess to avoid self-looping
-    tensor_edges = edges[:, edges[0] != edges[1]]
-    tensor_targets = torch.tensor(target_df['page_type'].values, dtype=torch.long).to(device)
-    tensor_features = torch.tensor(
-        [feature_df.get(str(node_id), [0] * expected_vectors)
-         if len(feature_df[str(node_id)]) == expected_vectors
-         else feature_df[str(node_id)] + [0] * (expected_vectors - len(feature_df[str(node_id)]))
-         for node_id in target_df['id'].values],
-        dtype=torch.float
-    ).to(device)
-
-    return tensor_edges, tensor_targets, tensor_features
-
+    train_set = TensorDataset(train_features, train_targets)
+    test_set = TensorDataset(test_features, test_targets)
+    return tensor_edges, train_set, test_set
 

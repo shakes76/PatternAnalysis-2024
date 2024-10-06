@@ -8,9 +8,25 @@ class VisionTransformer(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-class PatchProcesser(nn.Module):
-    
+class TransformerEncBlk(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+class PatchProcessor(nn.Module):
+    '''
+    PatchProcessor module for VisionTransformer.
+    Adds the class prediction token to the patches and then 
+    performs sinusoidal encoding to the result
+    '''
     def __init__(self, batchSize: int, nPatches:int, patchLen: int, device: str = "cpu") -> None:
+        '''
+        Inputs:
+            batchSize: int - number of images taken in the batch
+            nPatches: number of patches for each image
+            patchLen: int - Length/Width of the sqaure patches
+            device: CUDA device to be computed on
+        Returns: None
+        '''
         super().__init__()
         self.batchSize = batchSize
         self.nPatches = nPatches
@@ -53,10 +69,23 @@ class PatchProcesser(nn.Module):
         return x + posEncoding
     
     def forward(self, x: Tensor) -> Tensor:
+        '''
+        Compute the forward step of the Patch Processor,
+        adds the prediction token and performs positional 
+        encoding on the given tensor
+
+        Inputs:
+            x: Tensor - pytorch tensor of the flattened img patches
+        Returns:
+            Tensor - Computed values after patch processing
+        '''
+        #* Confirming Dimmensions Match
+        assert x.size()[0] == self.batchSize
+        assert x.size()[1] == self.nPatches
+        assert x.size()[2] == self.patchLen
         x = self.addPredToken(x)
         x = self.encodePos(x)
         return x
-
 
 class PatchSplitter(nn.Module):
     '''
@@ -99,7 +128,7 @@ class PatchSplitter(nn.Module):
                 match the dimmensions specified of the PatchSplitter
         Returns: Tensor - Computed values after the final linear Layer
         '''
-        #assert x.size() == self.imgDims #* Checking given img matches img dims
+        assert x.size() == self.imgDims #* Checking given img matches img dims
         x = self.partition(x).transpose(2, 1)
         x = self.linear(x)
         return x

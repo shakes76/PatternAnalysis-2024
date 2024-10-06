@@ -31,12 +31,11 @@ def upload_dataset():
     target_df['page_name'] = pd.Categorical(target_df['page_name']).codes
     target_df['page_type'] = pd.Categorical(target_df['page_type']).codes
 
-    tensor_edges = torch.tensor([edge_df['id_1'].values, edge_df['id_2'].values], dtype=torch.long).to(device)
+    edges = torch.tensor([edge_df['id_1'], edge_df['id_2'].values], dtype=torch.long).to(device)
 
-    tensor_targets = torch.tensor(
-        [target_df['id'].values, target_df['facebook_id'].values, target_df['page_name'].values,
-         target_df['page_type'].values], dtype=torch.long).to(device)
-
+    # Preprocess to avoid self-looping
+    tensor_edges = edges[:, edges[0] != edges[1]]
+    tensor_targets = torch.tensor(target_df['page_type'].values, dtype=torch.long).to(device)
     tensor_features = torch.tensor(
         [feature_df.get(str(node_id), [0] * expected_vectors)
          if len(feature_df[str(node_id)]) == expected_vectors
@@ -46,3 +45,5 @@ def upload_dataset():
     ).to(device)
 
     return tensor_edges, tensor_targets, tensor_features
+
+

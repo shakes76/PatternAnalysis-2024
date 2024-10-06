@@ -6,12 +6,11 @@ Benjamin Thatcher
 s4784738    
 """
 
-# train.py
 import torch
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import torch.nn as nn
-from modules import GFNetModel
+from modules import get_model
 from dataset import get_data_loader
 import matplotlib.pyplot as plt
 
@@ -58,7 +57,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, device=
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
 
-            print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
+            print(f'{phase} Loss: {epoch_loss:.4f} Accuracy: {epoch_acc:.4f}')
 
             if phase == 'train':
                 train_loss_history.append(epoch_loss)
@@ -71,21 +70,21 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, device=
 
     plt.figure()
     plt.plot(train_loss_history, label='Train Loss')
-    plt.plot(val_loss_history, label='Val Loss')
+    plt.plot(val_loss_history, label='Validation Loss')
     plt.legend()
     plt.savefig('training_loss.png')
     plt.show()
 
+
 if __name__ == "__main__":
-    # Specify the correct paths to your train and validation sets
+    # Paths to the training and validation datasets
     dataloaders = {
-        'train': get_data_loader("/home/groups/comp3710/ADNI/train", batch_size=32, shuffle=True),
-        'val': get_data_loader("/home/groups/comp3710/ADNI/test", batch_size=32, shuffle=False)
+        'train': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/train", batch_size = 32, shuffle = True),
+        'val': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/test", batch_size = 32, shuffle = False)
     }
 
-    model = GFNetModel(num_classes=2)
+    model = get_model(num_classes = 2, pretrained = False)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr = 0.001)
 
-    train_model(model, dataloaders, criterion, optimizer, num_epochs=25)
-
+    train_model(model, dataloaders, criterion, optimizer, num_epochs=10)

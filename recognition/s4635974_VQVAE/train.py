@@ -27,8 +27,8 @@ import modules
 # beta = 0.25
 
 num_epochs = 150
-batch_size = 32
-lr = 0.0004
+batch_size = 16
+lr = 0.0008
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
@@ -192,8 +192,9 @@ for epoch in range(num_epochs):
         plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
         plt.close()
     
-    scheduler.step()
-    print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
+    # scheduler.step()
+    # print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
+    
     print()
 
 

@@ -59,6 +59,13 @@ train_loader, validate_loader, data_variance = HipMRILoader(
     batch_size=batch_size, transform=transform
     ).get_loaders()
 
+# Assuming you have a DataLoader defined as train_loader
+dataset_size = len(train_loader.dataset)  # Size of the training dataset
+iterations_per_epoch = len(train_loader)   # Number of batches per epoch
+
+print(f"Training dataset size: {dataset_size}")
+print(f"Iterations per epoch: {iterations_per_epoch}")
+
 # Create model
 model = modules.VQVAE(
     num_channels=num_channels,
@@ -151,7 +158,6 @@ for epoch in range(num_epochs):
     average_ssim = np.mean(validation_ssim)
     epoch_ssim.append(average_ssim)
     print(f'Epoch [{epoch + 1}/{num_epochs}], Validation output loss: {average_validation_loss:.5f}, Validation VQ loss: {average_validation_vq_loss}, Average SSIM: {average_ssim:.5f}')
-    print()
 
     if (epoch + 1) % 10 == 0:
         # Number of images to save
@@ -188,6 +194,7 @@ for epoch in range(num_epochs):
     
     scheduler.step()
     print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
+    print()
 
 
 epochs = range(1, num_epochs + 1)

@@ -33,19 +33,22 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float =
     def create_split(idxs: np.ndarray, split_name: str):
         md_split = metadata.iloc[idxs]
 
-        md_split_benign = md_split[md_split["target"] == 0]
-        md_split_malign = md_split[md_split["target"] == 1]
+        if split_name == "train":
+            md_split_benign = md_split[md_split["target"] == 0]
+            md_split_malign = md_split[md_split["target"] == 1]
 
-        md = pd.concat(
-            [
-                _create_positive_pairs(md_split_benign, seed),
-                _create_positive_pairs(md_split_malign, seed),
-                _create_negative_pairs(md_split_malign, md_split_benign, seed),
-            ]
-        )
+            md = pd.concat(
+                [
+                    _create_positive_pairs(md_split_benign, seed),
+                    _create_positive_pairs(md_split_malign, seed),
+                    _create_negative_pairs(md_split_malign, md_split_benign, seed),
+                ]
+            )
 
-        md = md.sample(frac=1, random_state=seed).reset_index(drop=True)
-        md.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
+            md = md.sample(frac=1, random_state=seed).reset_index(drop=True)
+            md.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
+        else:
+            md_split.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
 
         for isic_id in md_split["isic_id"]:
             src = data_dir / f"train-image/image/{isic_id}.jpg"
@@ -105,21 +108,63 @@ class MelanomaSkinCancerDataset(Dataset):
         return len(self.metadata)
 
     def __getitem__(self, idx):
-        img1_name = self.metadata.iloc[idx]["isic_id1"] + ".jpg"
-        img2_name = self.metadata.iloc[idx]["isic_id2"] + ".jpg"
         label = self.metadata.iloc[idx]["target"]
+        subdir = "train" if self.train else "test"
 
         if self.train:
-            img1_path = self.img_dir / f"train/{img1_name}"
-            img2_path = self.img_dir / f"train/{img2_name}"
-        else:
-            img1_path = self.img_dir / f"test/{img1_name}"
-            img2_path = self.img_dir / f"test/{img2_name}"
-        image1 = read_image(img1_path) / 255
-        image2 = read_image(img2_path) / 255
+            img1_name = self.metadata.iloc[idx]["isic_id1"] + ".jpg"
+            img2_name = self.metadata.iloc[idx]["isic_id2"] + ".jpg"
+            img1_path = self.img_dir / f"{subdir}/{img1_name}"
+            img2_path = self.img_dir / f"{subdir}/{img2_name}"
+
+            image1 = read_image(img1_path) / 255
+            image2 = read_image(img2_path) / 255
+
+            if self.transform:
+                image1 = self.transform(image1)
+                image2 = self.transform(image2)
+
+            return image1, image2, label
+
+        # Test dataset
+        img_name = self.metadata.iloc[idx]["isic_id"] + ".jpg"
+        img_path = self.img_dir / f"{subdir}/{img_name}"
+
+        image = read_image(img_path) / 255
 
         if self.transform:
-            image1 = self.transform(image1)
-            image2 = self.transform(image2)
+            image = self.transform(image)
 
-        return image1, image2, label
+        return image, label
+
+
+class MelanomaSiameseReferenceDataset(Dataset):
+    """
+    Custom dataset of reference melanoma skin cancer images for Siamese network prediction
+    """
+
+    def __init__(self, img_dir=DATA_DIR / "train-test-split", size=256, seed: int = 42):
+        self.img_dir = img_dir
+        self.size = size
+
+        metadata = pd.read_csv(img_dir.parent / "train-metadata.csv")
+        benign = metadata[metadata["target"] == 0]
+        malign = metadata[metadata["target"] == 1]
+        benign_sample = benign.sample(size // 2, random_state=seed)
+        malign_sample = malign.sample(size // 2, random_state=seed)
+
+        metadata = pd.concat([benign_sample, malign_sample])
+        metadata = metadata.sample(frac=1, random_state=seed).reset_index(drop=True)
+        self.metadata = metadata
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def __getitem__(self, idx):
+        label = self.metadata.iloc[idx]["target"]
+        img_name = self.metadata.iloc[idx]["isic_id"] + ".jpg"
+        img_path = self.img_dir / f"train/{img_name}"
+
+        image = read_image(img_path) / 255
+
+        return image, label

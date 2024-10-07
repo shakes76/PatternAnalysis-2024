@@ -36,7 +36,7 @@ def main() -> None:
     # Training params
     num_workers = 3
 
-    hparams = HyperParams(batch_size=128, num_epochs=5, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=50, learning_rate=0.00001)
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=1)
 
@@ -52,26 +52,31 @@ def main() -> None:
     # dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
 
     sampler = MPerClassSampler(
-        labels=train_meta_df["target"], m=64, batch_size=hparams.batch_size
+        labels=train_meta_df["target"],
+        m=64,
+        # batch_size=hparams.batch_size,
+        length_before_new_iter=1_000 if args.debug else 30_000,
     )
     train_loader = DataLoader(
         dataset,
+        shuffle=True,
         pin_memory=True,
         num_workers=num_workers,
         drop_last=True,
         sampler=sampler,
+        batch_size=hparams.batch_size,
     )
 
     logger.info("Starting training...")
     trainer.train(train_loader)
 
     # Undersample to handle class imbalance
-    benign = train_meta_df[train_meta_df["target"] == 0]
-    malignant = train_meta_df[train_meta_df["target"] == 1]
-    num_malignant = len(malignant)
-    logger.debug("num malignant %d", num_malignant)
-    benign = benign.sample(random_state=42, n=num_malignant)
-    train_meta_df = pd.concat([benign, malignant])
+    # benign = train_meta_df[train_meta_df["target"] == 0]
+    # malignant = train_meta_df[train_meta_df["target"] == 1]
+    # num_malignant = len(malignant)
+    # logger.debug("num malignant %d", num_malignant)
+    # benign = benign.sample(random_state=42, n=num_malignant)
+    # train_meta_df = pd.concat([benign, malignant])
 
     train_classification_dataset = TumorClassificationDataset(
         IMAGES_PATH, train_meta_df
@@ -85,7 +90,7 @@ def main() -> None:
     logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     knn = KNeighborsClassifier(
-        n_neighbors=2 if args.debug else 5, weights="distance", p=2
+        n_neighbors=5 if args.debug else 5, weights="uniform", p=2
     )
     scaler = StandardScaler()
     scaler = scaler.fit(embeddings)

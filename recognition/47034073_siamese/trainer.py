@@ -31,7 +31,7 @@ class SiameseController:
         self._hparams = hparams
         self._losses: list[float] = []
         self._miner = miners.BatchHardMiner()
-        self._loss = losses.TripletMarginLoss()
+        self._loss = losses.TripletMarginLoss(margin=0.2)
 
     def train(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
@@ -48,7 +48,7 @@ class SiameseController:
             all_labels = []
             for x, labels in loader:
                 x = x.to(device)
-                embeddings = self._model.compute_embedding(x).cpu()
+                embeddings = self._model(x).cpu()
                 all_embeddings.append(embeddings)
                 all_labels.append(labels)
 
@@ -64,13 +64,13 @@ class SiameseController:
         for x, labels in train_loader:
             n += 1
             x = x.to(device)
-            labels = labels.float().to(device)
+            labels = labels.to(device)
             num_observations += len(labels)
 
             self._optim.zero_grad()
             embeddings = self._model(x)
-            miner_output = self._miner(embeddings, labels)
-            loss = self._loss(embeddings, labels, miner_output)
+            hard_triplets = self._miner(embeddings, labels)
+            loss = self._loss(embeddings, labels, hard_triplets)
 
             avg_loss += loss.item()
             loss.backward()

@@ -16,7 +16,7 @@ def train_model():
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
     criterion = nn.MSELoss()
     model = model.to(device)
-    dataloader = load_data("C:/Users/msi/Desktop/AD_NC")
+    dataloader = load_data("/home/groups/comp3710/ADNI")
     # Training loop
     epochs = 10
 
@@ -45,7 +45,6 @@ def train_model():
             progress_bar.set_postfix({'Loss': running_loss / len(dataloader)})
 
         print(f"Epoch [{epoch+1}/{epochs}] - Loss: {running_loss / len(dataloader)}")
-
 # Make sure this runs only when executed directly
 if __name__ == '__main__':
     train_model()

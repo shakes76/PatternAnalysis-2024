@@ -24,7 +24,6 @@ def load_data(root):
                                     transforms.Resize(image_size),
                                     transforms.CenterCrop(image_size),
                                     transforms.ToTensor(),
-                                    transforms.RandomHorizontalFlip(),
                                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                 ]))
 
@@ -54,4 +53,5 @@ def test_load_data(root):
         break
 
 if __name__ == "__main__":
-    test_load_data("C:/Users/msi/Desktop/AD_NC")
+    test_load_data("/home/groups/comp3710/ADNI")
+

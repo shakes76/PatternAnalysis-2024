@@ -14,8 +14,19 @@ IMAGE_SIZE = 256
 # The number of channels of the images loaded into the model (1 = Greyscale)
 NUM_CHANNELS = 1
 
+################################## Training Loop #################################
+
+# Set a seed for randomness for reproducibility
+RANDOM_SEED = 999
+
 # The total number of images trained on the model at any given time
 BATCH_SIZE = 128
+
+# The learning rate used by Adam optimisers
+LEARNING_RATE = 0.001
+
+# The number of epochs used during training
+NUM_OF_EPOCHS = 1
 
 ################################## Mapping Network ###############################
 
@@ -28,7 +39,7 @@ LATENT_SIZE = 512
 # Controls the negative slope angle used for the leaky ReLu function
 LRELU_SLOPE_ANGLE = 0.2
 
-################################## Helper Functions and Classes ###############################
+################################## Helper Functions and Classes ##################
 
-# Represents
+# Represents a small constant used to avoid division by zero
 EPSILON = 1e-8

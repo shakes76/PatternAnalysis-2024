@@ -153,11 +153,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["train", "test"], help="Training or testing")
     parser.add_argument(
-        "-o", "--out", type="str", default="out", help="Training output directory"
+        "-o", "--out", type=str, default="out", help="Training output directory"
     )
 
     # Training args
-    parser.add_argument("-e", "--epoch", type=int, default=10, help="Training epochs")
+    parser.add_argument(
+        "-e", "--epoch", type=int, default=10, help="Training epochs (default 10)"
+    )
     parser.add_argument(
         "-p", "--pretrained", action="store_true", help="Train using pretrained ResNet"
     )
@@ -167,7 +169,11 @@ if __name__ == "__main__":
 
     # Hyperparameters
     parser.add_argument(
-        "-m", "--margin", type=float, default=0.2, help="Margin for contrastive loss"
+        "-m",
+        "--margin",
+        type=float,
+        default=0.2,
+        help="Margin for contrastive loss (default 0.2)",
     )
 
     args = parser.parse_args()

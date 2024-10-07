@@ -65,8 +65,10 @@ class Generator(nn.Module):
         An instance of the Generator class. Each generator requires a mapping network, a series of generator layers
         and a final output of an image with the number of channels being hp.NUM_CHANNELS.
         """
+        super(Generator, self).__init__()
+
         # The first generator layer needs to start with a constant learned input feature map
-        self.constant = nn.Parameter(torch.randn(1, hp.LATENT_SIZE, 4, 4))
+        self.constant = nn.Parameter(torch.ones((1, hp.LATENT_SIZE, 4, 4)))
 
         # Initialise the mapping network for this generator 
         self.mapping = MappingNetwork()
@@ -351,8 +353,8 @@ class AdaIN(nn.Module):
         """
         super(AdaIN, self).__init__()
         self.instance_norm = nn.InstanceNorm2d(num_features=channels, eps=hp.EPSILON)
-        self.style_scale = fully_connected(hp.LATENT_SIZE, hp.LATENT_SIZE)
-        self.style_shift = fully_connected(hp.LATENT_SIZE, hp.LATENT_SIZE)
+        self.style_scale = fully_connected(hp.LATENT_SIZE, channels)
+        self.style_shift = fully_connected(hp.LATENT_SIZE, channels)
 
     def forward(self, x, w):
         """
@@ -399,6 +401,3 @@ class Noise(nn.Module):
         """
         noise = torch.randn((x.shape[0], 1, x.shape[2], x.shape[3]), device=x.device)
         return x + self.learned_noise * noise
-
-
-

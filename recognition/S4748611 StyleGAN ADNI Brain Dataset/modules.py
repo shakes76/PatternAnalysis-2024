@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, Dropout, BatchNormalization
+from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, BatchNormalization, Add
 from tensorflow.keras.models import Model
 import numpy as np
 
@@ -28,6 +28,11 @@ class AdaIN(Layer):
         
         return normalized * (1 + style_scale[:, None, None, :]) + style_shift[:, None, None, :]
 
+def apply_noise(x):
+    noise = tf.random.normal(shape=tf.shape(x), mean=0.0, stddev=1.0)
+    noise_weight = tf.Variable(initial_value=tf.zeros(shape=(x.shape[-1],)), trainable=True)
+    return x + noise * noise_weight
+
 def build_mapping_network():
     latent_input = Input(shape=(LATENT_DIM,))
     x = latent_input
@@ -44,6 +49,7 @@ def build_synthesis_network():
     
     # Initial convolution
     x = Conv2D(512, 3, padding='same')(x)
+    x = apply_noise(x)  # Apply noise before AdaIN
     x = AdaIN()([x, style_input])
     x = LeakyReLU(0.2)(x)
 
@@ -51,12 +57,14 @@ def build_synthesis_network():
     for i, filters in enumerate([512, 256, 128, 64]):
         x = UpSampling2D()(x)
         x = Conv2D(filters, 3, padding='same')(x)
+        x = apply_noise(x)  # Apply noise before AdaIN
         x = BatchNormalization()(x)  # Added Batch Normalization
         x = AdaIN()([x, style_input])
         x = LeakyReLU(0.2)(x)
 
         # Adding an additional convolutional layer for more complexity
         x = Conv2D(filters, 3, padding='same')(x)
+        x = apply_noise(x)  # Apply noise before activation
         x = BatchNormalization()(x)  # Added Batch Normalization
         x = LeakyReLU(0.2)(x)
 
@@ -84,17 +92,14 @@ def build_discriminator():
     
     x = Conv2D(64, 3, strides=2, padding='same')(input_image)
     x = LeakyReLU(0.2)(x)
-    # x = Dropout(0.3)(x) 
 
     x = Conv2D(128, 3, strides=2, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    # x = Dropout(0.3)(x)  
 
     x = Flatten()(x)
     
     x = Dense(256)(x)
     x = LeakyReLU(0.2)(x)
-    # x = Dropout(0.3)(x)  
 
     x = Dense(1, activation='sigmoid')(x)
 

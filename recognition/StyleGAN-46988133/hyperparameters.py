@@ -26,7 +26,7 @@ BATCH_SIZE = 128
 LEARNING_RATE = 0.001
 
 # The number of epochs used during training
-NUM_OF_EPOCHS = 1
+NUM_OF_EPOCHS = 3
 
 ################################## Mapping Network ###############################
 

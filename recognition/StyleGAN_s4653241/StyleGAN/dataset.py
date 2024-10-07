@@ -44,7 +44,7 @@ class ImageDataset(Dataset):
             PIL.Image: Raw image without any transformations.
         """
         img_path = os.path.join(self.root, self.files[index])
-        raw_img = Image.open(img_ath).convert("L")  # Always return the raw image in RGB format
+        raw_img = Image.open(img_path).convert("L")  # Always return the raw image in RGB format
         return raw_img
     
     def compare(self, index):

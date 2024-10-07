@@ -32,6 +32,7 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float =
 
     def create_split(idxs: np.ndarray, split_name: str):
         md_split = metadata.iloc[idxs]
+        md_split.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
 
         if split_name == "train":
             md_split_benign = md_split[md_split["target"] == 0]
@@ -46,9 +47,7 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float =
             )
 
             md = md.sample(frac=1, random_state=seed).reset_index(drop=True)
-            md.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
-        else:
-            md_split.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
+            md.to_csv(out_dir / f"{split_name}-pairs-metadata.csv", index=False)
 
         for isic_id in md_split["isic_id"]:
             src = data_dir / f"train-image/image/{isic_id}.jpg"
@@ -100,7 +99,7 @@ class MelanomaSkinCancerDataset(Dataset):
         self.img_dir = img_dir
         self.transform = transform
         if self.train:
-            self.metadata = pd.read_csv(img_dir / "train-metadata.csv")
+            self.metadata = pd.read_csv(img_dir / "train-pairs-metadata.csv")
         else:
             self.metadata = pd.read_csv(img_dir / "test-metadata.csv")
 
@@ -147,7 +146,7 @@ class MelanomaSiameseReferenceDataset(Dataset):
         self.img_dir = img_dir
         self.size = size
 
-        metadata = pd.read_csv(img_dir.parent / "train-metadata.csv")
+        metadata = pd.read_csv(img_dir / "train-metadata.csv")
         benign = metadata[metadata["target"] == 0]
         malign = metadata[metadata["target"] == 1]
         benign_sample = benign.sample(size // 2, random_state=seed)

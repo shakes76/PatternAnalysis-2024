@@ -242,6 +242,7 @@ Potential areas for improvement and expansion include:
 - hkproj. (March 2024). pytorch-stable-diffusion. GitHub. https://github.com/hkproj/pytorch-stable-diffusion
 - Jiang, H., Imran, M., Ma, L., Zhang, T., Zhou, Y., Liang, M., Gong, K., & Shao, W. (2024). Fast-DDPM: Fast Denoising Diffusion Probabilistic Models for Medical Image-to-Image Generation. arXiv preprint arXiv:2405.14802. https://arxiv.org/abs/2405.14802
 - Joshi, Manoj & Pant, Dibakar & Karn, Rupesh & Heikkonen, Jukka & Kanth, Rajeev. (2022). Meta-Learning, Fast Adaptation, and Latent Representation for Head Pose Estimation. Proceedings of the XXth Conference of Open Innovations Association FRUCT. 31. 10.23919/FRUCT54823.2022.9770932. 
+- Rombach, R., Blattmann, A., Lorenz, D., Esser, P., & Ommer, B. (2022). High-Resolution Image Synthesis with Latent Diffusion Models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (pp. 10684-10695). https://arxiv.org/abs/2112.10752
 - Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation. arXiv preprint arXiv:1505.04597. https://arxiv.org/abs/1505.04597
 - Wikipedia contributors. (2024, March 8). Kullback–Leibler divergence. In Wikipedia, The Free Encyclopedia. https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 

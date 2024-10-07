@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, Dropout
+from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, Dropout, BatchNormalization
 from tensorflow.keras.models import Model
 import numpy as np
 
@@ -47,11 +47,17 @@ def build_synthesis_network():
     x = AdaIN()([x, style_input])
     x = LeakyReLU(0.2)(x)
 
-    # Upsampling blocks
+    # Upsampling blocks with increased complexity
     for i, filters in enumerate([512, 256, 128, 64]):
         x = UpSampling2D()(x)
         x = Conv2D(filters, 3, padding='same')(x)
+        x = BatchNormalization()(x)  # Added Batch Normalization
         x = AdaIN()([x, style_input])
+        x = LeakyReLU(0.2)(x)
+
+        # Adding an additional convolutional layer for more complexity
+        x = Conv2D(filters, 3, padding='same')(x)
+        x = BatchNormalization()(x)  # Added Batch Normalization
         x = LeakyReLU(0.2)(x)
 
     # Final convolution to get the desired number of channels
@@ -78,21 +84,22 @@ def build_discriminator():
     
     x = Conv2D(64, 3, strides=2, padding='same')(input_image)
     x = LeakyReLU(0.2)(x)
-    x = Dropout(0.3)(x)
+    # x = Dropout(0.3)(x) 
 
     x = Conv2D(128, 3, strides=2, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Dropout(0.3)(x)
+    # x = Dropout(0.3)(x)  
 
     x = Flatten()(x)
     
     x = Dense(256)(x)
     x = LeakyReLU(0.2)(x)
-    x = Dropout(0.3)(x)
+    # x = Dropout(0.3)(x)  
 
     x = Dense(1, activation='sigmoid')(x)
 
     return Model(input_image, x, name="discriminator")
+
 
 def build_stylegan():
     latent_input = Input(shape=(LATENT_DIM,))

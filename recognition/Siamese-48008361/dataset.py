@@ -11,8 +11,33 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import logging
 import numpy as np
+import pandas as pd
+import shutil
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+def preprocess_dataset(csv_file, img_dir, output_dir):
+    # Read the CSV file
+    df = pd.read_csv(csv_file)
+
+    # Create output directories
+    benign_dir = os.path.join(output_dir, 'benign')
+    malignant_dir = os.path.join(output_dir, 'malignant')
+    os.makedirs(benign_dir, exist_ok=True)
+    os.makedirs(malignant_dir, exist_ok=True)
+
+    # Process each image
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing images"):
+        img_name = row['image_name'] + '.jpg'
+        src_path = os.path.join(img_dir, img_name)
+        
+        if row['target'] == 0:  # Benign
+            dst_path = os.path.join(benign_dir, img_name)
+        else:  # Malignant
+            dst_path = os.path.join(malignant_dir, img_name)
+        
+        shutil.copy(src_path, dst_path)
+
+    print(f"Preprocessing complete. Images organized in {output_dir}")
 
 class ISIC2020Dataset(Dataset):
     def __init__(self, data_dir, transform=None, mode='train', split_ratio=0.8, cache_size=1000):
@@ -240,6 +265,11 @@ def get_data_loaders(data_dir, batch_size=32, split_ratio=0.8, num_workers=4):
 
 if __name__ == '__main__':
     # Test the data loading
+    csv_file = 'ISIC_2020_Training_GroundTruth_v2.csv'
+    img_dir = 'data/ISIC_2020_Training_JPEG/train/'
+    output_dir = 'preprocessed_data'
+    
+    preprocess_dataset(csv_file, img_dir, output_dir)
     data_dir = 'preprocessed_data'
     train_loader, test_loader = get_data_loaders(data_dir, batch_size=32)
     

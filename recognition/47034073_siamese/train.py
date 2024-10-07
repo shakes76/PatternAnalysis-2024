@@ -59,7 +59,6 @@ def main() -> None:
     )
     train_loader = DataLoader(
         dataset,
-        shuffle=True,
         pin_memory=True,
         num_workers=num_workers,
         drop_last=True,

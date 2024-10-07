@@ -142,7 +142,7 @@ class MelanomaSiameseReferenceDataset(Dataset):
     Custom dataset of reference melanoma skin cancer images for Siamese network prediction
     """
 
-    def __init__(self, img_dir=DATA_DIR / "train-test-split", size=256, seed: int = 42):
+    def __init__(self, img_dir=DATA_DIR / "train-test-split", size=8, seed: int = 42):
         self.img_dir = img_dir
         self.size = size
 

@@ -135,7 +135,7 @@ optimizer = optim.Adam(
 # # SequentialLR combines these two schedules, making the learning rate change in a piecewise linear manner. This combination helps with faster convergence while maintaining stability at the end of training.
 # scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[sched_linear_1, sched_linear_2], milestones=[40])
 
-early_stopper = ValidationLossEarlyStopping(30, 0.01)
+early_stopper = ValidationLossEarlyStopping(40, 0.01)
 
 # Training mectrics
 epoch_training_output_loss = []

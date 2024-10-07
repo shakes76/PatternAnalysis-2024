@@ -22,11 +22,15 @@ RANDOM_SEED = 999
 # The total number of images trained on the model at any given time
 BATCH_SIZE = 128
 
-# The learning rate used by Adam optimisers
-LEARNING_RATE = 0.001
+# The learning rates used by Adam optimisers
+GEN_LEARNING_RATE = 0.001
+DISC_LEARNING_RATE = 0.001
+
+# Controls the T_Max variable of the Cosine Annealing Scheduler
+COSINE_ANNEALING_RATE = 0.75 
 
 # The number of epochs used during training
-NUM_OF_EPOCHS = 3
+NUM_OF_EPOCHS = 1
 
 ################################## Mapping Network ###############################
 

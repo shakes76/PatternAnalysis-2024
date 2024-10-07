@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from dataset import MelanomaSkinCancerDataset
 from modules import SiameseNetwork
 from torch.utils.data import DataLoader
+from torchvision import transforms
 from util import OUT_DIR
 
 
@@ -38,7 +39,7 @@ def contrastive_loss_threshold(margin):
 
 
 def train(
-    net, dataset, device, nepochs=10, batch_size=128, num_workers=0, start_epoch=0
+    net, dataset, device, nepochs=10, batch_size=128, num_workers=4, start_epoch=0
 ):
     data_loader = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
@@ -112,13 +113,9 @@ def test(net, dataset, device):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["train", "test"], help="Training or testing")
+    parser.add_argument("-e", "--epoch", type=int, default=10, help="Training epochs")
     parser.add_argument(
-        "--tr-nepoch", type=int, default=10, help="Number of training epochs"
-    )
-    parser.add_argument(
-        "--tr-resume",
-        action="store_true",
-        help="Whether to train from existing weights",
+        "-r", "--resume", action="store_true", help="Resume training from weights"
     )
     args = parser.parse_args()
 
@@ -128,40 +125,38 @@ def main():
 
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    if args.action == "train":
-        net = SiameseNetwork()
-        train_set = MelanomaSkinCancerDataset(train=True)
+    train_transform = transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(256, padding=4, padding_mode="reflect"),
+        ]
+    )
 
+    net = SiameseNetwork()
+    train_set = MelanomaSkinCancerDataset(train=True, transform=train_transform)
+    test_set = MelanomaSkinCancerDataset(train=False)
+
+    if args.action == "train":
         start_epoch = 0
-        if args.tr_resume:
+        if args.resume:
             checkpoint = torch.load(
                 OUT_DIR / "checkpoint.pt", weights_only=False, map_location=device
             )
             net.load_state_dict(checkpoint["state_dict"])
             start_epoch = checkpoint["epoch"]
 
-        print(f"Training on {device} for {args.tr_nepoch} epochs...")
-        train(
-            net,
-            train_set,
-            device,
-            nepochs=args.tr_nepoch,
-            start_epoch=start_epoch,
-            num_workers=4,
-        )
+        print(f"Training on {device} for {args.epoch} epochs...")
+        train(net, train_set, device, nepochs=args.epoch, start_epoch=start_epoch)
+
+        print("Test accuracy:", test(net, test_set, device))
 
     else:  # args.action == "test"
-        net = SiameseNetwork()
-        train_set = MelanomaSkinCancerDataset(train=True)
-        test_set = MelanomaSkinCancerDataset(train=False)
-
         checkpoint = torch.load(
             OUT_DIR / "checkpoint.pt", weights_only=False, map_location=device
         )
         net.load_state_dict(checkpoint["state_dict"])
 
-        print("Training accuracy:", test(net, train_set, device))
-        print("Test accuracy    :", test(net, test_set, device))
+        print("Test accuracy:", test(net, test_set, device))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D
+from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, Dropout
 from tensorflow.keras.models import Model
 import numpy as np
 
@@ -78,15 +78,18 @@ def build_discriminator():
     
     x = Conv2D(64, 3, strides=2, padding='same')(input_image)
     x = LeakyReLU(0.2)(x)
-    
+    x = Dropout(0.3)(x)
+
     x = Conv2D(128, 3, strides=2, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    
+    x = Dropout(0.3)(x)
+
     x = Flatten()(x)
     
     x = Dense(256)(x)
     x = LeakyReLU(0.2)(x)
-    
+    x = Dropout(0.3)(x)
+
     x = Dense(1, activation='sigmoid')(x)
 
     return Model(input_image, x, name="discriminator")

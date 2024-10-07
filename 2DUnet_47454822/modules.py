@@ -2,6 +2,7 @@
 
 from keras import layers, models, Sequential
 from keras.src.backend import shape
+from torch.ao.nn.quantized import Dropout
 
 FULL_SIZE_IMG = 1  # set to 2 to use full size image
 INPUT_SHAPE = (32, 32, 3)
@@ -9,6 +10,8 @@ num_classes = 4  # numb of classes in segmentation
 
 def unet_model(input_size=(128, 128, 1), batch_size=12):
     inputs = layers.Input(input_size)
+
+    # dropped = layers.Dropout(0.25)(inputs)
 
     # Encoder
     conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)  # padding same accounts for the shrinkage that occurs from kernal

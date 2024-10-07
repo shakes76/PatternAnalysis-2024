@@ -5,6 +5,7 @@ import os
 import numpy as np
 import nibabel as nib
 from keras.src.utils import to_categorical, load_img, img_to_array
+from setuptools.errors import FileError
 from tqdm import tqdm
 def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
     channels = np . unique ( arr )
@@ -57,7 +58,10 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
             inImage = to_channels(inImage, dtype=dtype)
             images[i, :, :, :] = inImage
         else:
-            images[i, :, :] = inImage
+            try:
+                images[i, :, :] = inImage
+            except FileError:
+                print(inName)
 
         affines.append(affine)
         if i > 20 and early_stop:

@@ -53,7 +53,7 @@ class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
         return image, target
 
 
-class AllTumorDataset(Dataset[torch.Tensor]):
+class AllTumorDataset(Dataset[tuple[torch.Tensor, str]]):
     def __init__(self, image_path: pathlib.Path) -> None:
         self._image_paths = sorted(list(image_path.iterdir()))
         self._len = len(self._image_paths)
@@ -62,7 +62,7 @@ class AllTumorDataset(Dataset[torch.Tensor]):
         return self._len
 
     @override
-    def __getitem__(self, index: int) -> torch.Tensor:
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, str]:
         return (
             transforms.CenterCrop(224)(
                 transforms.Resize(256)(io.read_image(self._image_paths[index]) / 255)

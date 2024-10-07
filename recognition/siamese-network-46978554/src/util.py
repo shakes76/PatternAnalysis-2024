@@ -32,6 +32,6 @@ def contrastive_loss(margin):
 def contrastive_loss_threshold(margin):
     def f(x1, x2):
         dist = F.pairwise_distance(x1, x2)
-        return (dist < margin).float()
+        return (dist >= margin).float()
 
     return f

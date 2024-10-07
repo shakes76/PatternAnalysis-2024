@@ -16,6 +16,10 @@ NUM_CHANNELS = 1
 
 ################################## Training Loop #################################
 
+# Mixing Regularisation ratio and probability
+MIXING_RATIO = 0.5
+MIXING_PROB = 0.5
+
 # Set a seed for randomness for reproducibility
 RANDOM_SEED = 999
 
@@ -30,7 +34,7 @@ DISC_LEARNING_RATE = 0.001
 COSINE_ANNEALING_RATE = 0.75 
 
 # The number of epochs used during training
-NUM_OF_EPOCHS = 1
+NUM_OF_EPOCHS = 5
 
 ################################## Mapping Network ###############################
 

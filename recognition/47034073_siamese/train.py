@@ -11,12 +11,12 @@ from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
 
 from trainer import SiameseController, HyperParams
-from dataset import TumorClassificationDataset, TumorPairDataset
+from dataset import TumorClassificationDataset
 
 logger = logging.getLogger(__name__)
 
 DATA_PATH = pathlib.Path(
-    "/home/Student/s4703407/PatternAnalysis-2024/recognition/47034073_siamese/data"
+    "C:/Users/Mitch/GitHub/PatternAnalysis-2024/recognition/47034073_siamese/data"
 )
 PAIRS_PATH = DATA_PATH / "pairs.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
@@ -36,25 +36,18 @@ def main() -> None:
     # Training params
     num_workers = 3
 
-    hparams = HyperParams(batch_size=128, num_epochs=50, learning_rate=0.00001)
+    hparams = HyperParams(batch_size=128, num_epochs=3, learning_rate=0.0001)
     if args.debug:
-        hparams = HyperParams(batch_size=128, num_epochs=1)
+        hparams = HyperParams(batch_size=128, num_epochs=2)
 
     trainer = SiameseController(hparams)
 
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
 
-    # Prepare train pair data
-    # pairs_df = pd.read_csv(PAIRS_PATH)
-    # if args.debug:
-    #     pairs_df = pairs_df.sample(random_state=42, n=128)
-    # dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
-
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
         m=64,
-        # batch_size=hparams.batch_size,
         length_before_new_iter=1_000 if args.debug else 30_000,
     )
     train_loader = DataLoader(
@@ -107,8 +100,6 @@ def main() -> None:
 
     # Prepare validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
-    # if args.debug:
-    #     val_meta_df = val_meta_df.sample(n=256)
 
     val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
     val_loader = DataLoader(

@@ -33,9 +33,7 @@ class SiameseController:
         self._miner = miners.BatchHardMiner()
         self._loss = losses.TripletMarginLoss(margin=0.2)
 
-    def train(
-        self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
-    ) -> None:
+    def train(self, train_loader: DataLoader) -> None:
         for epoch in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
             logger.info("Epoch %d / loss %e", epoch, self._losses[-1])

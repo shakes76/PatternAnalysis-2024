@@ -21,7 +21,7 @@ def train(net, dataset, device, nepochs=10, batch_size=128, start_epoch=0):
     net = net.to(device)
     net.train()
 
-    loss_func = contrastive_loss(margin=1.0)
+    loss_func = contrastive_loss(margin=0.2)
     optimizer = torch.optim.Adam(net.parameters())
 
     losses = []
@@ -80,7 +80,7 @@ def test(net, dataset, ref_set, device):
 
 def classify(net, x, device, ref_set, prob=True):
     batch_size = x.shape[0]
-    threshold = contrastive_loss_threshold(margin=1.0)
+    threshold = contrastive_loss_threshold(margin=0.2)
     with torch.no_grad():
         preds = []
         ref_set_loader = DataLoader(ref_set, batch_size=1)

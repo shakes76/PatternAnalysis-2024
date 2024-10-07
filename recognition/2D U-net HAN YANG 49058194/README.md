@@ -144,17 +144,17 @@ The project requires the following dependencies[^5]:
   #### 2. Output:
   - **Prediction**: <br />The output of the model is a binary segmentation mask of the same shape as the input image.
     - Original Image：<br />This image is the original MRI slice image input to the model, usually a grayscale image, showing the cross-section of the human body with relatively clear structure.
-    - Prediction Image：<br />This is the probability map output by the model, usually with values between `[0,1]`, representing the probability that each pixel belongs to the prostate (or other target). After using the `torch. sigmoid ()` function, the prediction obtained is a grayscale image, where:
+    - Prediction Image：<br />This is the probability map output by the model, usually with values between `[0,1]`, representing the probability that each pixel belongs to the prostate (or other target). After using the `torch. sigmoid ()` function, the prediction obtained is a grayscale image, where[^7]:
       - The `target area` (such as the prostate) will be displayed as a brighter area.
       - The `background area` is a darker (almost black) region.
       - The bright spots in the prediction should cover the target area in the original image well, and the boundaries may be slightly blurred, but the overall shape should be close to the contour of the target organ.
-    - Prediction results:
+    - Prediction results[^8]:
       - `Target area`: The prostate or other targets are highlighted and clearly segmented from the background, with slightly blurred edges.
       - `Background area`: The background pixels remain close to black because they do not belong to the target area.
       - `Prediction error`: When the loss is 0.2, there are some false positive or false negative areas (i.e. the model incorrectly predicts certain backgrounds as target areas or misses a part of the target), but the overall effect is still close to the true target.<br />
       ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/Prediction%20figure.png "DBSCAN Performance Comparison")
 In the prediction results, the prostate area seems to be well identified and segmented by the model, especially the white area in the middle should be the target area. The background parts of other areas were not misclassified, as expected, indicating that the model has good ability to distinguish between the background and the target area. Although there are slight differences and noise, especially on some bright spots in the lower right corner (white spots), the overall segmentation effect is reasonable.
-  - **Evaluation**: <br />The Dice score is computed to evaluate the quality of the segmentation. The predicted segmentation mask is compared to the ground truth mask (if available) to compute this metric[^7].
+  - **Evaluation**: <br />The Dice score is computed to evaluate the quality of the segmentation. The predicted segmentation mask is compared to the ground truth mask (if available) to compute this metric[^9].
     - The `Dice score` (or `Dice similarity coefficient`) measures how well the predicted segmentation mask matches the ground truth mask. It ranges between 0 and 1, where:
       - `0` means no overlap between the prediction and ground truth.
       - `1` means perfect overlap between the prediction and ground truth.
@@ -180,4 +180,6 @@ With `test_driver.py` output: `Model achieved the desired Dice score of 0.75 or 
 [^4]: Çiçek, Ö., Abdulkadir, A., Lienkamp, S. S., Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning dense volumetric segmentation from sparse annotation. *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 424-432.
 [^5]: Paszke, Adam, et al. "PyTorch: An imperative style, high-performance deep learning library." *Advances in neural information processing systems* 32 (2019).
 [^6]: Taha, A. Asem, and Allan Hanbury. "Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool." *BMC medical imaging* 15.1 (2015): 29.
-[^7]: Sudre, Carole H., et al. "Generalised dice overlap as a deep learning loss function for highly unbalanced segmentations." *Deep learning in medical image analysis and multimodal learning for clinical decision support*. Springer, Cham, 2017.
+[^7]: Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation. Medical Image Computing and Computer-Assisted Intervention (MICCAI). Springer, LNCS, Vol. 9351, pp. 234–241. 
+[^8]: Isensee, F., Jaeger, P. F., Kohl, S. A. A., Petersen, J., & Maier-Hein, K. H. (2021). nnU-Net: A self-configuring method for deep learning-based biomedical image segmentation. Nature Methods, 18(2), 203–211. 
+[^9]: Sudre, Carole H., et al. "Generalised dice overlap as a deep learning loss function for highly unbalanced segmentations." *Deep learning in medical image analysis and multimodal learning for clinical decision support*. Springer, Cham, 2017.

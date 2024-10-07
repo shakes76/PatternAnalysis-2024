@@ -43,22 +43,23 @@ def main() -> None:
     trainer = SiameseController(hparams)
 
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
+    dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
 
     # Prepare train pair data
-    pairs_df = pd.read_csv(PAIRS_PATH)
-    if args.debug:
-        pairs_df = pairs_df.sample(random_state=42, n=128)
+    # pairs_df = pd.read_csv(PAIRS_PATH)
+    # if args.debug:
+    #     pairs_df = pairs_df.sample(random_state=42, n=128)
+    # dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
 
-    dataset = TumorPairDataset(IMAGES_PATH, pairs_df)
-    if args.debug:
-        sampler = MPerClassSampler(labels=train_meta_df["target"], m=64)
+    sampler = MPerClassSampler(
+        labels=train_meta_df["target"], m=64, batch_size=hparams.batch_size
+    )
     train_loader = DataLoader(
         dataset,
-        shuffle=True,
         pin_memory=True,
-        batch_size=hparams.batch_size,
         num_workers=num_workers,
         drop_last=True,
+        sampler=sampler,
     )
 
     logger.info("Starting training...")

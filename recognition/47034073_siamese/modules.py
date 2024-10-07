@@ -2,15 +2,11 @@ import time
 import logging
 from dataclasses import dataclass
 
-from torchvision.models import efficientnet_b0, resnet50
+from torchvision.models import resnet50
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torch.nn.functional import (
-    binary_cross_entropy_with_logits,
-    cosine_similarity,
-    cosine_embedding_loss,
-)
+from pytorch_metric_learning import miners, losses
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,6 +30,8 @@ class SiameseController:
         )
         self._hparams = hparams
         self._losses: list[float] = []
+        self._miner = miners.BatchHardMiner()
+        self._loss = losses.TripletMarginLoss()
 
     def train(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]
@@ -63,24 +61,17 @@ class SiameseController:
         avg_loss = 0.0
         n = 0
         num_observations = 0
-        for x1, x2, y in train_loader:
+        for x, labels in train_loader:
             n += 1
-            logger.debug("start train loop")
-            x1 = x1.to(device)
-            x2 = x2.to(device)
-            y = y.float().to(device)
-            num_observations += len(y)
+            x = x.to(device)
+            labels = labels.float().to(device)
+            num_observations += len(labels)
 
             self._optim.zero_grad()
-            # logits = self._model(x1, x2)
-            # loss = binary_cross_entropy_with_logits(logits.flatten(), y)
-            embed1 = self._model.compute_embedding(x1)
-            embed2 = self._model.compute_embedding(x2)
+            embeddings = self._model(x)
+            miner_output = self._miner(embeddings, labels)
+            loss = self._loss(embeddings, labels, miner_output)
 
-            # Turn 0 targets into -1 for cosine_embedding_loss
-            y = y - (y == 0).float()
-
-            loss = cosine_embedding_loss(embed1, embed2, y)
             avg_loss += loss.item()
             loss.backward()
             self._optim.step()
@@ -109,15 +100,5 @@ class EmbeddingNetwork(nn.Module):
 
         self._embedder = nn.Sequential(nn.PReLU(), nn.Linear(1000, 128))
 
-        # Weighted summation of component differencess
-        self._component_adder = nn.Linear(128, 1, bias=False)
-
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
-        embeddings1 = self._embedder(self._backbone(x1))
-        embeddings2 = self._embedder(self._backbone(x2))
-        component_diffs = torch.abs(embeddings1 - embeddings2)
-        distances = self._component_adder(component_diffs)
-        return distances
-
-    def compute_embedding(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._embedder(self._backbone(x))

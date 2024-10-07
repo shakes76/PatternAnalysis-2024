@@ -138,7 +138,7 @@ def main():
         print(f"Training on {device} for {args.epoch} epochs...")
         train(net, train_set, device, nepochs=args.epoch, start_epoch=start_epoch)
 
-        print("Test accuracy:", test(net, test_set, ref_set, device))
+        print("AUROC:", test(net, test_set, ref_set, device))
 
     else:  # args.action == "test"
         checkpoint = torch.load(
@@ -146,7 +146,7 @@ def main():
         )
         net.load_state_dict(checkpoint["state_dict"])
 
-        print("Test accuracy:", test(net, test_set, ref_set, device))
+        print("AUROC:", test(net, test_set, ref_set, device))
 
 
 if __name__ == "__main__":

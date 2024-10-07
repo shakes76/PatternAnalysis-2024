@@ -40,7 +40,7 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
-    - `dice_score(pred, target)`: Calculates the Dice score[^5].
+    - `dice_score(pred, target)`: Calculates the Dice score.
     - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
 - `test_driver.py`
   - **Purpose**: Test driver script that calls and runs algorithm.
@@ -52,7 +52,7 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
   - **Purpose**: Project documentation.
  
 ## Dependencies
-The project requires the following dependencies[^6]:
+The project requires the following dependencies[^5]:
 - `torch==1.10.0`: PyTorch for building and training the model.
 - `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
 - `nibabel==3.2.1`: Nibabel for loading Nifti files.
@@ -75,7 +75,7 @@ The project requires the following dependencies[^6]:
 ## Details
 - **Loss function**: `Binary cross entropy with Logits`.
 - **Optimizer**: `Adam`.
-- **Evaluation metric**: `Dice similarity coefficient`[^7].
+- **Evaluation metric**: `Dice similarity coefficient`[^6].
   ### Training
   #### 1. Inputs:
   The inputs to the `train.py` script include:
@@ -154,7 +154,7 @@ The project requires the following dependencies[^6]:
       - `Prediction error`: When the loss is 0.2, there are some false positive or false negative areas (i.e. the model incorrectly predicts certain backgrounds as target areas or misses a part of the target), but the overall effect is still close to the true target.<br />
       ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/Prediction%20figure.png "DBSCAN Performance Comparison")
 In the prediction results, the prostate area seems to be well identified and segmented by the model, especially the white area in the middle should be the target area. The background parts of other areas were not misclassified, as expected, indicating that the model has good ability to distinguish between the background and the target area. Although there are slight differences and noise, especially on some bright spots in the lower right corner (white spots), the overall segmentation effect is reasonable.
-  - **Evaluation**: <br />The Dice score is computed to evaluate the quality of the segmentation. The predicted segmentation mask is compared to the ground truth mask (if available) to compute this metric[^8].
+  - **Evaluation**: <br />The Dice score is computed to evaluate the quality of the segmentation. The predicted segmentation mask is compared to the ground truth mask (if available) to compute this metric[^7].
     - The `Dice score` (or `Dice similarity coefficient`) measures how well the predicted segmentation mask matches the ground truth mask. It ranges between 0 and 1, where:
       - `0` means no overlap between the prediction and ground truth.
       - `1` means perfect overlap between the prediction and ground truth.
@@ -178,7 +178,6 @@ With `test_driver.py` output: `Model achieved the desired Dice score of 0.75 or 
 [^2]: Sudre, C. H., Li, W., Vercauteren, T., Ourselin, S., & Cardoso, M. J. (2017). Generalised Dice Overlap as a Deep Learning Loss Function for Highly Unbalanced Segmentations. 2017 International Workshop on Deep Learning in Medical Image Analysis (DLMIA). 
 [^3]: Milletari, F., Navab, N., & Ahmadi, S. A. (2016). V-Net: Fully convolutional neural networks for volumetric medical image segmentation. *2016 Fourth International Conference on 3D Vision (3DV)*, 565-571.
 [^4]: Çiçek, Ö., Abdulkadir, A., Lienkamp, S. S., Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning dense volumetric segmentation from sparse annotation. *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 424-432.
-[^5]: Dice, L. R. "Measures of the amount of ecologic association between species." *Ecology* 26.3 (1945): 297-302.
-[^6]: Paszke, Adam, et al. "PyTorch: An imperative style, high-performance deep learning library." *Advances in neural information processing systems* 32 (2019).
-[^7]: Taha, A. Asem, and Allan Hanbury. "Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool." *BMC medical imaging* 15.1 (2015): 29.
-[^8]: Sudre, Carole H., et al. "Generalised dice overlap as a deep learning loss function for highly unbalanced segmentations." *Deep learning in medical image analysis and multimodal learning for clinical decision support*. Springer, Cham, 2017.
+[^5]: Paszke, Adam, et al. "PyTorch: An imperative style, high-performance deep learning library." *Advances in neural information processing systems* 32 (2019).
+[^6]: Taha, A. Asem, and Allan Hanbury. "Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool." *BMC medical imaging* 15.1 (2015): 29.
+[^7]: Sudre, Carole H., et al. "Generalised dice overlap as a deep learning loss function for highly unbalanced segmentations." *Deep learning in medical image analysis and multimodal learning for clinical decision support*. Springer, Cham, 2017.

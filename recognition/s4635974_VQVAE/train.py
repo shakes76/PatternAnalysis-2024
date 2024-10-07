@@ -30,14 +30,6 @@ class ValidationLossEarlyStopping:
                 return True
         return False
 
-# Save directory
-save_dir = 'lr=0.005'
-os.makedirs(save_dir, exist_ok=True)  # Directly use save_dir
-
-# Define the save directory and ensure it exists
-model_dir = 'saved_model/lr=0.005.pth'
-os.makedirs(os.path.dirname(model_dir), exist_ok=True)
-
 
 # # Hyperparameters
 # num_epochs = 200
@@ -52,13 +44,21 @@ os.makedirs(os.path.dirname(model_dir), exist_ok=True)
 
 num_epochs = 400
 batch_size = 16
-lr = 0.005
+lr = 0.001
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
 num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
+
+# Save directory
+save_dir = f'lr={lr}'
+os.makedirs(save_dir, exist_ok=True)  # Directly use save_dir
+
+# Define the save directory and ensure it exists
+model_dir = f'saved_model/lr={lr}.pth'
+os.makedirs(os.path.dirname(model_dir), exist_ok=True)
 
 print("==== Paramaters ====")
 print(f"Max Epochs: ", num_epochs)

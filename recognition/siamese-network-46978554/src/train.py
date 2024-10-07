@@ -4,45 +4,16 @@ import argparse
 import os
 
 import torch
-import torch.nn.functional as F
 from dataset import MelanomaSiameseReferenceDataset, MelanomaSkinCancerDataset
 from modules import SiameseNetwork
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from util import OUT_DIR
+from util import OUT_DIR, contrastive_loss, contrastive_loss_threshold
 
 
-def contrastive_loss(margin):
-    """
-    REF: https://www.sciencedirect.com/topics/computer-science/contrastive-loss
-    """
-
-    def f(x1, x2, y):
-        dist = F.pairwise_distance(x1, x2)
-        dist_sq = torch.pow(dist, 2)
-
-        loss = (1 - y) * dist_sq + y * torch.pow(torch.clamp(margin - dist, min=0.0), 2)
-        loss = torch.mean(loss / 2.0, dim=0)
-
-        return loss
-
-    return f
-
-
-def contrastive_loss_threshold(margin):
-
-    def f(x1, x2):
-        dist = F.pairwise_distance(x1, x2)
-        return (dist < margin).float()
-
-    return f
-
-
-def train(
-    net, dataset, device, nepochs=10, batch_size=128, num_workers=4, start_epoch=0
-):
+def train(net, dataset, device, nepochs=10, batch_size=128, start_epoch=0):
     data_loader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
 
     # Put network in training mode
@@ -72,6 +43,7 @@ def train(
             epoch_loss += float(loss)
             nbatches += 1
 
+        # Save model weights and losses every 10 epochs
         if epoch % 10 == 9:
             torch.save(torch.Tensor(losses), OUT_DIR / "loss.pt")
             torch.save(
@@ -86,7 +58,6 @@ def train(
 
 
 def test(net, dataset, ref_set, device):
-
     data_loader = DataLoader(dataset, batch_size=128, shuffle=False)
 
     # Put network in eval mode
@@ -121,13 +92,13 @@ def classify(net, x, device, ref_set):
 
             # y_batch is the actual label of the image.
             # net() returns 0 if the pair are similar, and 1 otherwise.
-            # To get the label prediction from net(), use an XOR!
+            # To get the label prediction from net(), we do an XOR
             y_hat = threshold(*net(x, x_batch))
             pred = torch.logical_xor(y_hat, y_batch).float()
             preds.append(pred)
         preds = torch.concat(preds)
 
-    return preds.mean() >= 0.5
+    return torch.squeeze(preds.mean() >= 0.5)
 
 
 def main():
@@ -135,7 +106,7 @@ def main():
     parser.add_argument("action", choices=["train", "test"], help="Training or testing")
     parser.add_argument("-e", "--epoch", type=int, default=10, help="Training epochs")
     parser.add_argument(
-        "-r", "--resume", action="store_true", help="Resume training from weights"
+        "-c", "--checkpoint", action="store_true", help="Train from checkpoint"
     )
     args = parser.parse_args()
 

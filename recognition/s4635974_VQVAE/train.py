@@ -42,9 +42,9 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 400
+num_epochs = 150
 batch_size = 16
-lr = 0.004
+lr = 0.003
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
@@ -135,7 +135,7 @@ optimizer = optim.Adam(
 # # SequentialLR combines these two schedules, making the learning rate change in a piecewise linear manner. This combination helps with faster convergence while maintaining stability at the end of training.
 # scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[sched_linear_1, sched_linear_2], milestones=[40])
 
-early_stopper = ValidationLossEarlyStopping(40, 0.01)
+# early_stopper = ValidationLossEarlyStopping(40, 0.01)
 
 # Training mectrics
 epoch_training_output_loss = []
@@ -241,9 +241,9 @@ for epoch in range(num_epochs):
         plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
         plt.close()
 
-    if early_stopper.early_stop_check(average_validation_loss):
-        print(f"Stopped early at Epoch: {epoch +1}")
-        break
+    # if early_stopper.early_stop_check(average_validation_loss):
+    #     print(f"Stopped early at Epoch: {epoch +1}")
+    #     break
     
     # scheduler.step()
     # print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")

@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 ## Data Preparation
 
-The ADNI dataset should be organized in the following structure:
+The ADNI dataset should be organised in the following structure:
 
 ```
 data/
@@ -71,7 +71,7 @@ data/
 ```
 
 Where AD represents Alzheimer's Disease samples and NC represents Normal Control samples. 
-Funcitonality has also been implemented to utilise the data paths on Rangpur with the 'Slurm' method
+Funcitonality has also been implemented to utilise the data paths on Rangpur with the 'Slurm' method.
 
 ## Model Architecture
 
@@ -84,7 +84,7 @@ The Stable Diffusion model consists of three main components:
 The below is an overview of the model architecture. In this implementation there is no conditioning component, only a time embedding.
 This also means that the KV cross attention blocks are replaced with Self Attention blocks. 
 
-<a href="https://jalammar.github.io/illustrated-stable-diffusion/" target="_blank"><img src="visualisations/diffusion_architecture.png" height=400 width=650></a>
+<a href="https://jalammar.github.io/illustrated-stable-diffusion/" target="_blank"><img src="visualisations/diffusion_architecture.png" width=650></a>
 
 ### Variational Autoencoder (VAE)
 
@@ -113,7 +113,7 @@ The noise scheduler ([`NoiseScheduler_Fast_DDPM`](modules.py#L444)) is based on 
 
 The forward and backward process of diffusion are also shwon below. 
 
-<a href="https://link.springer.com/article/10.1007/s00259-023-06417-8" target="_blank"><img src="visualisations/ddpm_process.png" height=200 width=650></a>
+<a href="https://link.springer.com/article/10.1007/s00259-023-06417-8" target="_blank"><img src="visualisations/ddpm_process.png" width=650></a>
 
 <a href="https://arxiv.org/pdf/2405.14802" target="_blank"><img src="visualisations/fast-ddpm.png" width=650></a>
 
@@ -124,8 +124,8 @@ The training process is divided into two main stages:
 1. **VAE Pre-training**: The VAE is pre-trained separately to ensure good reconstruction quality. This is done using [`pre_train.py`](pre_train.py).
 
     To help with convergence and reconstruction quality, a combination of MSE loss and [KLD](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence) loss were used.
-    The AdamW optimiser was used with weight decay for fast convergence. The ReduceLROnPlateau scheduler was used to ensure the reconstructions ocntinuedd to improve in later training. 
-    <p>The pre-training was run for 100 epochs when an accetable reconstruction quality was obtained. The final reconstruction quality is shown below
+    The AdamW optimiser was used with weight decay for fast convergence. The ReduceLROnPlateau scheduler was used to ensure the reconstructions continued to improve in later training. 
+    <p>The pre-training was run for 100 epochs when an acceptable reconstruction quality was obtained. The final reconstruction quality is shown below.
 
     <img src="visualisations/vae_reconstructions.gif" width=1000>
 
@@ -148,7 +148,7 @@ The training process is divided into two main stages:
 
     #### Results
 
-    <p> Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure were the two primary metrics used to assess the quality of the image generations
+    <p> Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM) were the two primary metrics used to assess the quality of the image generations.
 
     - PSNR is a metric used to measure the quality of reconstructed or generated images compared to a reference image. It is expressed in decibels (dB) and is commonly used to assess how much noise or distortion has been introduced during the image generation or compression process. This will help to determine how much of original nois eis still present in the output image. At the end of training the PSNR was 15.707. This is considered a low PSNR and implies a poor reconstruction quality, so there is still room for improvement in the model. 
     
@@ -171,7 +171,7 @@ The training process is divided into two main stages:
   - A warm-up phase to gradually increase the learning rate, helping with training stability. (Set to 10% of epochs)
   - A cosine annealing schedule to gradually decrease the learning rate, allowing for better convergence.
 
-- **Gradient Clipping**: I used gradient clipping to prevent exploding gradients, which is crucial for training stability in deep networks. Imgage generation commonly results to gray boxes when gradients explode. 
+- **Gradient Clipping**: I used gradient clipping to prevent exploding gradients, which is crucial for training stability in deep networks. Image generation commonly results to gray boxes when gradients explode. 
 
 - **Automatic Mixed Precision (AMP)**: I utilised AMP to speed up training and reduce memory usage without sacrificing model accuracy.
 
@@ -197,7 +197,7 @@ There are two sampling methods which have been implemented.
     <img src="visualisations/tsne_plot.png" width=500>
 
     <p> This representation seems to show a large degree of overlap between the two classes and no clear separation or clustering. 
-    This would indicate that the VAE has not been able to learn significant disinguishing features between the Alzheimer's (AD) and Nomral Control (NC) classes.  
+    This would indicate that the VAE has not been able to learn significant distinguishing features between the Alzheimer's (AD) and Nomral Control (NC) classes.  
 
 - **Denoising Process**: The [`visualise_denoising_process`](utils.py#L9) function allows for visualisation of the image generation process, showing intermediate steps.
 

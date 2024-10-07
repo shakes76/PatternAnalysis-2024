@@ -99,6 +99,7 @@ network.summary()
 
 network.enable_tensorboard()
 network.enable_wandb("mnist-siamese")
+network.enable_model_checkpoints("./checkpoints", save_best_only=True)
 
 network.set_batch_size(batch_size)
 network.set_epochs(epochs)
@@ -123,6 +124,7 @@ classifier_model.set_batch_size(128)
 classifier_model.set_optimisation("adam")
 classifier_model.add_metric("accuracy")
 classifier_model.enable_tensorboard("./tensorboard-classi.keras")
+classifier_model.enable_model_checkpoints("./checkpoints-classi", save_best_only=True)
 classifier_model.enable_wandb("mnist-siamese-classi")
 
 classifier_model.compile_model()

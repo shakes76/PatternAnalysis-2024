@@ -17,7 +17,7 @@ class HyperParams:
     num_epochs: int = 20
     batch_size: int = 32
     learning_rate: float = 0.001
-    weight_decay: float = 0.00001
+    weight_decay: float = 0.000001
 
 
 class SiameseController:

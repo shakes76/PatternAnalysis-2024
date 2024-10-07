@@ -36,15 +36,14 @@ def main() -> None:
     # Training params
     num_workers = 3
 
-    hparams = HyperParams(batch_size=128, num_epochs=3, learning_rate=0.0001)
+    hparams = HyperParams(batch_size=128, num_epochs=10, learning_rate=0.0001)
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2)
-
     trainer = SiameseController(hparams)
 
+    # Prepare data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
-
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
         m=64,
@@ -70,11 +69,8 @@ def main() -> None:
     # benign = benign.sample(random_state=42, n=num_malignant)
     # train_meta_df = pd.concat([benign, malignant])
 
-    train_classification_dataset = TumorClassificationDataset(
-        IMAGES_PATH, train_meta_df
-    )
     train_classification_loader = DataLoader(
-        train_classification_dataset,
+        dataset,
         batch_size=hparams.batch_size,
         num_workers=num_workers,
     )

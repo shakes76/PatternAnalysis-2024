@@ -5,8 +5,40 @@ from torch import Tensor
 
 class VisionTransformer(nn.Module):
 
-    def __init__(self) -> None:
+    def __init__(self, batchSize:int,  patchDim: int, imgDims: tuple[int, int, int], patchLen: int, mhaHeadFactor:int, device: str = "cpu") -> None:
         super().__init__()
+        self.pDim = patchDim
+        self.imgDims = imgDims
+        self.pLen = patchLen
+        self.device = device
+        self.mhaHeadFactor = mhaHeadFactor
+
+        self.pSplitter = PatchSplitter(self.pDim, self.imgDims, self.pLen)
+
+        self.batchSize = batchSize
+        self.nPatches  = self.pSplitter.nPatches
+
+        self.n1 = nn.LayerNorm(self.pLen)
+        self.l1 = nn.Linear(self.pLen, 1)
+
+        self.pProcessor = PatchProcessor(
+            self.batchSize,
+            self.nPatches,
+            self.pLen,
+            self.device
+        )
+
+        assert self.pLen % self.mhaHeadFactor == 0
+        self.transformer = TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor)
+    
+    def forward(self, x):
+        y = self.pSplitter(x)
+        y = self.pProcessor(y)
+        y = self.transformer(y)
+        y = self.n1(y)
+        y = self.l1(y[:, 0])
+        return y
+
 
 class TransformerEncBlk(nn.Module):
     def __init__(self, dim: int, nHeads: int) -> None:
@@ -45,7 +77,7 @@ class PatchProcessor(nn.Module):
         Inputs:
             batchSize: int - number of images taken in the batch
             nPatches: number of patches for each image
-            patchLen: int - Length/Width of the sqaure patches
+            patchLen: int - Length of flattened patches
             device: CUDA device to be computed on
         Returns: None
         '''
@@ -127,11 +159,11 @@ class PatchSplitter(nn.Module):
         self.patchLen = patchLen
         self.imgDims = imgDims
         self.tokenOut = dimOut
-        b, channels, height, width = self.imgDims
+        channels, height, width = self.imgDims
         #* Ensure that the image can be correctly split into patches
         assert height % self.patchLen == 0
         assert width % self.patchLen == 0
-        self.nPatches = (height / self.patchLen) * (width / self.patchLen)
+        self.nPatches = (height // self.patchLen) * (width // self.patchLen)
         self.partition = nn.Unfold(
             kernel_size = self.patchLen,
             stride = self.patchLen,
@@ -150,7 +182,7 @@ class PatchSplitter(nn.Module):
                 match the dimmensions specified of the PatchSplitter
         Returns: Tensor - Computed values after the final linear Layer
         '''
-        assert x.size() == self.imgDims #* Checking given img matches img dims
+        assert x.size()[1:] == self.imgDims #* Checking given img matches img dims
         x = self.partition(x).transpose(2, 1)
         x = self.linear(x)
         return x

@@ -20,6 +20,7 @@ This project implements a Stable Diffusion model for generating brain MRI images
 9. [Key Components](#key-components)
 10. [Performance Metrics](#performance-metrics)
 11. [Future Work](#future-work)
+12. [References](#references)
 
 ## Project Structure
 
@@ -233,3 +234,14 @@ Potential areas for improvement and expansion include:
 1. Experimenting with different U-Net architectures or attention mechanisms.
 2. Incorporating conditional generation to control for specific attributes (e.g., age, disease progression).
 3. Exploring other diffusion model variants or noise schedules.
+
+## References
+
+- Alammar, J (2018). The Illustrated Transformer [Blog post]. https://jalammar.github.io/illustrated-transformer/
+- Gong, K., Johnson, K., El Fakhri, G. et al. PET image denoising based on denoising diffusion probabilistic model. Eur J Nucl Med Mol Imaging 51, 358–368 (2024). https://doi.org/10.1007/s00259-023-06417-8
+- hkproj. (March 2024). pytorch-stable-diffusion. GitHub. https://github.com/hkproj/pytorch-stable-diffusion
+- Jiang, H., Imran, M., Ma, L., Zhang, T., Zhou, Y., Liang, M., Gong, K., & Shao, W. (2024). Fast-DDPM: Fast Denoising Diffusion Probabilistic Models for Medical Image-to-Image Generation. arXiv preprint arXiv:2405.14802. https://arxiv.org/abs/2405.14802
+- Joshi, Manoj & Pant, Dibakar & Karn, Rupesh & Heikkonen, Jukka & Kanth, Rajeev. (2022). Meta-Learning, Fast Adaptation, and Latent Representation for Head Pose Estimation. Proceedings of the XXth Conference of Open Innovations Association FRUCT. 31. 10.23919/FRUCT54823.2022.9770932. 
+- Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation. arXiv preprint arXiv:1505.04597. https://arxiv.org/abs/1505.04597
+- Wikipedia contributors. (2024, March 8). Kullback–Leibler divergence. In Wikipedia, The Free Encyclopedia. https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+

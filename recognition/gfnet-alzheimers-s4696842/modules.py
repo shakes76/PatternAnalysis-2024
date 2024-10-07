@@ -49,9 +49,9 @@ class GFNetBlock(nn.Module):
 
 
 class GFNet(nn.Module):
-    def __init__(self, num_classes=10, height=32, width=32):
+    def __init__(self, in_channels, num_classes, height, width):
         super(GFNet, self).__init__()
-        self.layer1 = GFNetBlock(3, 64, height, width)
+        self.layer1 = GFNetBlock(in_channels, 64, height, width)
         self.layer2 = GFNetBlock(64, 128, height, width)
         self.layer3 = GFNetBlock(128, 256, height, width)
         self.fc = nn.Linear(256 * height * width, num_classes)

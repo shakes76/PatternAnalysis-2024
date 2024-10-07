@@ -2,6 +2,7 @@ from os import path
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
+# (Height, Width)
 ADNI_IMAGE_DIMENSIONS = (256, 240)
 
 

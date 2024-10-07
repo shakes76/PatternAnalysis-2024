@@ -6,7 +6,7 @@ from modules import StableDiffusion, UNet, NoiseScheduler_Fast_DDPM
 
 
 @torch.no_grad()
-def visualize_denoising_process(model, noise_scheduler, num_inference_steps=10, num_images=5):
+def visualise_denoising_process(model, noise_scheduler, num_inference_steps=10, num_images=5):
     """
     Function to visualise the denoising process when generating samples from the model.
     Will log the process to wandb

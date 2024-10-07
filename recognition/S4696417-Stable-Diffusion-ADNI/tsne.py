@@ -72,7 +72,7 @@ nc_mask = labels == 'NC'
 plt.scatter(latents_2d[ad_mask, 0], latents_2d[ad_mask, 1], c='red', alpha=0.6, label='AD')
 plt.scatter(latents_2d[nc_mask, 0], latents_2d[nc_mask, 1], c='blue', alpha=0.6, label='NC')
 
-plt.title("t-SNE visualization of VAE latent space", fontsize=16)
+plt.title("t-SNE visualisation of VAE latent space", fontsize=16)
 plt.xlabel("t-SNE 1", fontsize=12)
 plt.ylabel("t-SNE 2", fontsize=12)
 plt.legend(fontsize=10)
@@ -81,7 +81,7 @@ plt.legend(fontsize=10)
 plt.tight_layout()
 
 # Save the plot to a file
-os.makedirs('visualizations', exist_ok=True)
-plot_path = 'visualizations/tsne_plot.png'
+os.makedirs('visualisations', exist_ok=True)
+plot_path = 'visualisations/tsne_plot.png'
 plt.savefig(plot_path, dpi=300)
 plt.close()

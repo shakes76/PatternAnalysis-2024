@@ -1,5 +1,6 @@
 import torch
 import wandb
+import time
 import math
 from collections import defaultdict
 import torch.nn as nn
@@ -64,6 +65,7 @@ class StableDiffusion(nn.Module):
         Returns:
             final_image: Generated images
         """
+        start_time = time.time()
         shape = (num_images,
                  self.vae.latent_dim,
                  int(self.image_size / 8),
@@ -77,9 +79,12 @@ class StableDiffusion(nn.Module):
 
         final_image = self.vae.decode(x)
         wandb.log({"sample": wandb.Image(final_image)})
+        end_time = time.time()
+        print(f"Total time taken for sampling: {end_time - start_time:.2f} seconds")
         return final_image
 
     def fast_sample(self, num_images, device='cuda', steps=80):
+        start_time = time.time()
         shape = (
             num_images,
             self.vae.latent_dim,
@@ -89,6 +94,8 @@ class StableDiffusion(nn.Module):
         samples = self.noise_scheduler.fast_sampling(self.unet, shape, device, steps)
         sample_images = self.vae.decode(samples)
         wandb.log({"sample": wandb.Image(sample_images)})
+        end_time = time.time()
+        print(f"Total time taken for fast sampling: {end_time - start_time:.2f} seconds")
         return sample_images
 
 

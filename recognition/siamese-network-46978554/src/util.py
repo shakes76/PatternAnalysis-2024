@@ -8,9 +8,6 @@ import torch.nn.functional as F
 # https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-# Model and loss output directory
-OUT_DIR = Path(__file__).parent.parent / "out"
-
 
 def contrastive_loss(margin):
     """

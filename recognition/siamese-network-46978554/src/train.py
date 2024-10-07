@@ -1,12 +1,9 @@
 """Code for training, validating, testing, and saving model"""
 
-from pathlib import Path
-
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-
-OUT_DIR = Path(__file__).parent.parent / "out"
+from util import OUT_DIR
 
 
 def contrastive_loss(margin):

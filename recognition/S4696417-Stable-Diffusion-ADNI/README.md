@@ -1,5 +1,8 @@
 # Stable Diffusion for ADNI (Alzheimer's Disease Neuroimaging Initiative)
 
+#### COMP3710 - Pattern Analysis 2024
+**Task 8** - Generative model of the ADNI brain dataset using Stable Diffusion.
+
 ## Project Overview
 
 This project implements a Stable Diffusion model for generating brain MRI images, specifically trained on the ADNI dataset. The goal is to create a generative model capable of producing realistic brain MRI images, which could potentially be used for data augmentation, research, or as a tool for studying Alzheimer's Disease progression.
@@ -7,15 +10,16 @@ This project implements a Stable Diffusion model for generating brain MRI images
 ## Table of Contents
 
 1. [Project Structure](#project-structure)
-2. [Installation](#installation)
-3. [Data Preparation](#data-preparation)
-4. [Model Architecture](#model-architecture)
-5. [Training Process](#training-process)
-6. [Inference](#inference)
-7. [Visualisations](#visualisations)
-8. [Key Components](#key-components)
-9. [Performance Metrics](#performance-metrics)
-10. [Future Work](#future-work)
+2. [Dependencies](#dependencies)
+3. [Installation](#installation)
+4. [Data Preparation](#data-preparation)
+5. [Model Architecture](#model-architecture)
+6. [Training Process](#training-process)
+7. [Inference](#inference)
+8. [Visualisations](#visualisations)
+9. [Key Components](#key-components)
+10. [Performance Metrics](#performance-metrics)
+11. [Future Work](#future-work)
 
 ## Project Structure
 
@@ -29,6 +33,16 @@ The project consists of several key scripts:
 - [`utils.py`](utils.py): Utility functions for data loading, visualization, etc.
 - [`dataset.py`](dataset.py): Custom dataset class for ADNI data
 - [`tsne.py`](tsne.py): Script for t-SNE visualization of the latent space
+
+## Dependencies
+```
+- OpenCV >= 4.10
+- Torch >= 2.1.2
+- Torchmetrics >= 1.4.2
+- Torchvision >= 0.16.1
+- tqdm >= 4.66.5
+- wandb >= 0.12.4
+```
 
 ## Installation
 
@@ -80,7 +94,7 @@ The VAE is implemented in [`vae.py`](vae.py) and consists of an encoder and deco
 
 The VAE uses residual blocks and attention mechanisms to improve performance.
 
-<a href="https://www.researchgate.net/figure/The-basic-architecture-of-variational-autoencoder-VAE_fig3_359471754" target="_blank"><img src="https://www.researchgate.net/profile/Manoj-Joshi-12/publication/359471754/figure/fig3/AS:1149483693940748@1651069677337/The-basic-architecture-of-variational-autoencoder-VAE.png" alt="The basic architecture of variational autoencoder (VAE)" width=650/></a>
+<a href="https://www.researchgate.net/figure/The-basic-architecture-of-variational-autoencoder-VAE_fig3_359471754" target="_blank"><img src="visualisations/The-basic-architecture-of-variational-autoencoder-VAE.png" width=650/></a>
 
 ### U-Net
 
@@ -132,7 +146,21 @@ The training process is divided into two main stages:
     - Scheduler: CosineAnnealingWarmupScheduler
 
     #### Results
+
+    <p> Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure were the two primary metrics used to assess the quality of the image generations
+
+    - PSNR is a metric used to measure the quality of reconstructed or generated images compared to a reference image. It is expressed in decibels (dB) and is commonly used to assess how much noise or distortion has been introduced during the image generation or compression process. This will help to determine how much of original nois eis still present in the output image. At the end of training the PSNR was 15.707. This is considered a low PSNR and implies a poor reconstruction quality, so there is still room for improvement in the model. 
+    
+    - SSIM is a method for predicting the perceived quality of digital television and cinematic pictures, as well as other kinds of digital images. At the end of training the model produced a value of 0.702 from a possible range of 0 to 1, with 1 meaning the reference and sample are identical. This is considered moderate to good for a generatedd image, considerring we do not want the generated sample to be identical to the reference image.
+
     <img src="visualisations/diffusion_training.gif" width=1000>
+
+    #### Metrics and Stats
+    <img src="visualisations/stable-diffusion-avg-train-loss.png" width=400>
+    <img src="visualisations/stable-diffusion-avg-val-loss.png" width=400>
+    <img src="visualisations/stable-diffusion-generated-psnr.png" width=400>
+    <img src="visualisations/stable-diffusion-generated-ssim.png" width=400>
+    <img src="visualisations/stable-diffusion-lr.png" width=400>
 
 ### Optimisation Choices
 
@@ -149,6 +177,7 @@ The training process is divided into two main stages:
 ## Inference
 
 To generate new images using the trained model, use the [`predict.py`](predict.py) script. This script loads the trained model and generates a specified number of images.
+The pretrained Diffusion model checkpoint can be downloaded from [here](https://file.io/nP9xLiDerWfB).
 
 There are two sampling methods which have been implemented. 
 

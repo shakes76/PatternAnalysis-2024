@@ -25,6 +25,9 @@ class SiameseNetwork(NeuralNetwork.FunctionalNetwork):
 
     def set_contrastivemodel(self, model: NeuralNetwork.FunctionalNetwork):
         self.contrastivemodel = model.get_model()
+    
+    def set_input_shape(self, shape):
+        self.shape = shape
 
     def generate_functional_model(self):
         def euclid_dis(vects):
@@ -36,8 +39,8 @@ class SiameseNetwork(NeuralNetwork.FunctionalNetwork):
             shape1, shape2 = shapes
             return (shape1[0], 1)
 
-        input1 = tf.keras.layers.Input(shape=self.x_train.shape[1:])
-        input2 = tf.keras.layers.Input(shape=self.x_train.shape[1:])
+        input1 = tf.keras.layers.Input(shape=self.shape)
+        input2 = tf.keras.layers.Input(shape=self.shape)
         output1 = self.basemodel(input1)
         output2 = self.basemodel(input2)
         distance_layer = tf.keras.layers.Lambda(euclid_dis, output_shape=eucl_dist_output_shape)([output1, output2])

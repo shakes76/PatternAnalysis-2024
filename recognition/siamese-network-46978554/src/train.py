@@ -1,7 +1,12 @@
 """Code for training, validating, testing, and saving model"""
 
+import argparse
+import os
+
 import torch
 import torch.nn.functional as F
+from dataset import MelanomaSkinCancerDataset
+from modules import SiameseNetwork
 from torch.utils.data import DataLoader
 from util import OUT_DIR
 
@@ -67,3 +72,49 @@ def train(
             )
 
         print("Epoch %3d: %10f" % (epoch + 1, epoch_loss / nbatches))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=["train", "test"], help="Training or testing")
+    parser.add_argument(
+        "--tr-nepoch", type=int, default=10, help="Number of training epochs"
+    )
+    parser.add_argument(
+        "--tr-resume",
+        action="store_true",
+        help="Whether to train from existing weights",
+    )
+    args = parser.parse_args()
+
+    torch.manual_seed(3710)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("PyTorch version", torch.__version__, "on device", device)
+
+    os.makedirs(OUT_DIR, exist_ok=True)
+
+    if args.action == "train":
+        net = SiameseNetwork()
+        train_set = MelanomaSkinCancerDataset(train=True)
+
+        start_epoch = 0
+        if args.tr_resume:
+            checkpoint = torch.load(
+                OUT_DIR / "checkpoint.pt", weights_only=False, map_location=device
+            )
+            net.load_state_dict(checkpoint["state_dict"])
+            start_epoch = checkpoint["epoch"]
+
+        print(f"Training on {device} for {args.tr_nepoch} epochs...")
+        train(
+            net,
+            train_set,
+            device,
+            nepochs=args.tr_nepoch,
+            start_epoch=start_epoch,
+            num_workers=4,
+        )
+
+
+if __name__ == "__main__":
+    main()

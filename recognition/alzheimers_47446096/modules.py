@@ -19,14 +19,15 @@ class VisionTransformer(nn.Module):
         self.nPatches  = self.pSplitter.nPatches
 
         self.n1 = nn.LayerNorm(self.pLen)
-        self.l1 = nn.Linear(self.pLen, 1)
+        self.l1 = nn.Linear(self.pLen, 2)
 
         self.pProcessor = PatchProcessor(
-            self.batchSize,
             self.nPatches,
             self.pLen,
             self.device
         )
+
+        self.softMax = nn.Softmax(dim = -1)
 
         assert self.pLen % self.mhaHeadFactor == 0
         self.transformer = TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor)
@@ -72,7 +73,7 @@ class PatchProcessor(nn.Module):
     Adds the class prediction token to the patches and then 
     performs sinusoidal encoding to the result
     '''
-    def __init__(self, batchSize: int, nPatches:int, patchLen: int, device: str = "cpu") -> None:
+    def __init__(self, nPatches:int, patchLen: int, device: str = "cpu") -> None:
         '''
         Inputs:
             batchSize: int - number of images taken in the batch
@@ -82,7 +83,6 @@ class PatchProcessor(nn.Module):
         Returns: None
         '''
         super().__init__()
-        self.batchSize = batchSize
         self.nPatches = nPatches
         self.patchLen = patchLen
         self.device = device
@@ -98,7 +98,7 @@ class PatchProcessor(nn.Module):
         Returns:
             Tensor - x with additional blank tokens for class predictions
         '''
-        pToken = torch.zeros(self.batchSize, 1, self.patchLen).to(self.device)
+        pToken = torch.zeros(x.size()[0], 1, self.patchLen).to(self.device)
         return torch.cat((pToken, x), dim = 1)
 
     def encodePos(self, x: Tensor):
@@ -134,7 +134,6 @@ class PatchProcessor(nn.Module):
             Tensor - Computed values after patch processing
         '''
         #* Confirming Dimmensions Match
-        assert x.size()[0] == self.batchSize
         assert x.size()[1] == self.nPatches
         assert x.size()[2] == self.patchLen
         x = self.addPredToken(x)

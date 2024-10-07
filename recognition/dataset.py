@@ -1,9 +1,9 @@
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-import os
 import skimage.transform as skTrans
 from pathlib import Path
+import matplotlib.pyplot as plt  
 
 
 
@@ -73,18 +73,29 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
+
+
 baseDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/'
 testDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/keras_slices_test/'
 trainDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/keras_slices_train/'
 validateDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/keras_slices_validate/'
+
+testSegDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_test/'
+trainSegDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_train/'
+validateSegDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_validate/'
 
 # Uncomment for rangpur and comment for local
 # baseDir = /home/groups/comp3710/HipMRI_Study_open/keras_slices_data/
 # testDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test/'
 # trainDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train/'
 # validateDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate/'
+# 
+# testSegDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test/'
+# trainSegDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train/'
+# validateSegDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate/'
 
-# Load the data from the directories above
+
+# Load the scans 
 testListNii = list(Path(testDir).glob('*.nii'))
 testImages = load_data_2D(testListNii, normImage=True, categorical=False)
 
@@ -94,12 +105,13 @@ trainImages = load_data_2D(trainListNii, normImage=True, categorical=False)
 validateListNii = list(Path(validateDir).glob('*.nii'))
 validateImages = load_data_2D(validateListNii, normImage=True, categorical=False)
 
-# Return number of images as well as the dims
-print(testImages.shape)
-print(trainImages.shape)
-print(validateImages.shape)
+#Load the segmented scans 
+testSegListNii = list(Path(testSegDir).glob('*.nii'))
+testSegImages = load_data_2D(testSegListNii, normImage=True, categorical=False)
 
+trainSegListNii = list(Path(trainSegDir).glob('*.nii'))
+trainSegImages = load_data_2D(trainSegListNii, normImage=True, categorical=False)
 
-
-
+validateSegListNii = list(Path(validateSegDir).glob('*.nii'))
+validateSegImages = load_data_2D(validateSegListNii, normImage=True, categorical=False)
 

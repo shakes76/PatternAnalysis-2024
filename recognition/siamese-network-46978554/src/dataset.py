@@ -116,8 +116,8 @@ class MelanomaSkinCancerDataset(Dataset):
         else:
             img1_path = self.img_dir / f"test/{img1_name}"
             img2_path = self.img_dir / f"test/{img2_name}"
-        image1 = read_image(img1_path)
-        image2 = read_image(img2_path)
+        image1 = read_image(img1_path) / 255
+        image2 = read_image(img2_path) / 255
 
         if self.transform:
             image1 = self.transform(image1)

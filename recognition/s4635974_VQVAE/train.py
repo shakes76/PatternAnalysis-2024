@@ -44,7 +44,7 @@ class ValidationLossEarlyStopping:
 
 num_epochs = 400
 batch_size = 16
-lr = 0.002
+lr = 0.003
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1

@@ -5,8 +5,9 @@ import os
 
 import torch
 import torch.nn.functional as F
-from dataset import MelanomaSkinCancerDataset
+from dataset import MelanomaSiameseReferenceDataset, MelanomaSkinCancerDataset
 from modules import SiameseNetwork
+from predict import classify
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from util import OUT_DIR
@@ -85,25 +86,24 @@ def train(
         print("Epoch %3d: %10f" % (epoch + 1, epoch_loss / nbatches))
 
 
-def test(net, dataset, device):
+def test(net, dataset, ref_set, device):
+
     data_loader = DataLoader(dataset, batch_size=128, shuffle=False)
 
     # Put network in eval mode
     net = net.to(device)
     net.eval()
 
-    threshold = contrastive_loss_threshold(margin=1.0)
-
     with torch.no_grad():  # Disable gradient computation for efficiency
         y = []
         y_hat = []
-        for i, (x1_batch, x2_batch, y_batch) in enumerate(data_loader):
-            x1_batch = x1_batch.to(device)
-            x2_batch = x2_batch.to(device)
+        for i, (x_batch, y_batch) in enumerate(data_loader):
+            x_batch = x_batch.to(device)
             y_batch = y_batch.to(device)
 
             y.append(y_batch)
-            y_hat.append(threshold(*net(x1_batch, x2_batch)))
+            y_hat.append(classify(net, x_batch, device, ref_set))
+
         y = torch.concat(y)
         y_hat = torch.concat(y_hat)
 
@@ -134,6 +134,7 @@ def main():
 
     net = SiameseNetwork()
     train_set = MelanomaSkinCancerDataset(train=True, transform=train_transform)
+    ref_set = MelanomaSiameseReferenceDataset()
     test_set = MelanomaSkinCancerDataset(train=False)
 
     if args.action == "train":
@@ -148,7 +149,7 @@ def main():
         print(f"Training on {device} for {args.epoch} epochs...")
         train(net, train_set, device, nepochs=args.epoch, start_epoch=start_epoch)
 
-        print("Test accuracy:", test(net, test_set, device))
+        print("Test accuracy:", test(net, test_set, ref_set, device))
 
     else:  # args.action == "test"
         checkpoint = torch.load(
@@ -156,7 +157,7 @@ def main():
         )
         net.load_state_dict(checkpoint["state_dict"])
 
-        print("Test accuracy:", test(net, test_set, device))
+        print("Test accuracy:", test(net, test_set, ref_set, device))
 
 
 if __name__ == "__main__":

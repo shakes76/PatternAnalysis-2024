@@ -10,7 +10,7 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
 
-from modules import SiameseController, HyperParams
+from trainer import SiameseController, HyperParams
 from dataset import TumorClassificationDataset, TumorPairDataset
 
 logger = logging.getLogger(__name__)

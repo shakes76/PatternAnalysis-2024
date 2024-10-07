@@ -88,7 +88,7 @@ def classify(net, x, device, ref_set):
         ref_set_loader = DataLoader(ref_set, batch_size=1)
         for i, (x_batch, y_batch) in enumerate(ref_set_loader):
             x_batch = x_batch.repeat(batch_size, 1, 1, 1).to(device)
-            y_batch = y_batch.repeat(batch_size, 1, 1, 1).to(device)
+            y_batch = y_batch.repeat(batch_size).to(device)
 
             # y_batch is the actual label of the image.
             # net() returns 0 if the pair are similar, and 1 otherwise.
@@ -96,9 +96,9 @@ def classify(net, x, device, ref_set):
             y_hat = threshold(*net(x, x_batch))
             pred = torch.logical_xor(y_hat, y_batch).float()
             preds.append(pred)
-        preds = torch.concat(preds)
+        preds = torch.stack(preds, dim=1)
 
-    return torch.squeeze(preds.mean() >= 0.5)
+    return (preds.mean(dim=1) >= 0.5).float()
 
 
 def main():

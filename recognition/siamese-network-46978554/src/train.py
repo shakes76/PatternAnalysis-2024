@@ -7,6 +7,7 @@ import torch
 from dataset import MelanomaSiameseReferenceDataset, MelanomaSkinCancerDataset
 from modules import SiameseNetwork
 from torch.utils.data import DataLoader
+from torcheval.metrics import BinaryAUROC
 from torchvision import transforms
 from util import OUT_DIR, contrastive_loss, contrastive_loss_threshold
 
@@ -63,24 +64,21 @@ def test(net, dataset, ref_set, device):
     # Put network in eval mode
     net = net.to(device)
     net.eval()
+    metric = BinaryAUROC()
 
     with torch.no_grad():  # Disable gradient computation for efficiency
-        y = []
-        y_hat = []
         for i, (x_batch, y_batch) in enumerate(data_loader):
             x_batch = x_batch.to(device)
             y_batch = y_batch.to(device)
 
-            y.append(y_batch)
-            y_hat.append(classify(net, x_batch, device, ref_set))
+            pred = classify(net, x_batch, device, ref_set)
+            target = y_batch
+            metric.update(pred, target)
 
-        y = torch.concat(y)
-        y_hat = torch.concat(y_hat)
-
-    return (y_hat == y).float().mean()
+    return metric.compute()
 
 
-def classify(net, x, device, ref_set):
+def classify(net, x, device, ref_set, prob=True):
     batch_size = x.shape[0]
     threshold = contrastive_loss_threshold(margin=1.0)
     with torch.no_grad():
@@ -98,6 +96,8 @@ def classify(net, x, device, ref_set):
             preds.append(pred)
         preds = torch.stack(preds, dim=1)
 
+    if prob:
+        return preds.mean(dim=1)
     return (preds.mean(dim=1) >= 0.5).float()
 
 
@@ -105,6 +105,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["train", "test"], help="Training or testing")
     parser.add_argument("-e", "--epoch", type=int, default=10, help="Training epochs")
+    parser.add_argument(
+        "-p", "--pretrained", action="store_true", help="Train using pretrained ResNet"
+    )
     parser.add_argument(
         "-c", "--checkpoint", action="store_true", help="Train from checkpoint"
     )
@@ -123,14 +126,14 @@ def main():
         ]
     )
 
-    net = SiameseNetwork()
+    net = SiameseNetwork(pretrained=args.pretrained)
     train_set = MelanomaSkinCancerDataset(train=True, transform=train_transform)
     ref_set = MelanomaSiameseReferenceDataset()
     test_set = MelanomaSkinCancerDataset(train=False)
 
     if args.action == "train":
         start_epoch = 0
-        if args.resume:
+        if args.checkpoint:
             checkpoint = torch.load(
                 OUT_DIR / "checkpoint.pt", weights_only=False, map_location=device
             )

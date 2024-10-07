@@ -28,6 +28,15 @@ def contrastive_loss(margin):
     return f
 
 
+def contrastive_loss_threshold(margin):
+
+    def f(x1, x2):
+        dist = F.pairwise_distance(x1, x2)
+        return (dist < margin).float()
+
+    return f
+
+
 def train(
     net, dataset, device, nepochs=10, batch_size=128, num_workers=0, start_epoch=0
 ):
@@ -35,6 +44,7 @@ def train(
         dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
 
+    # Put network in training mode
     net = net.to(device)
     net.train()
 
@@ -72,6 +82,31 @@ def train(
             )
 
         print("Epoch %3d: %10f" % (epoch + 1, epoch_loss / nbatches))
+
+
+def test(net, dataset, device):
+    data_loader = DataLoader(dataset, batch_size=128, shuffle=False)
+
+    # Put network in eval mode
+    net = net.to(device)
+    net.eval()
+
+    threshold = contrastive_loss_threshold(margin=1.0)
+
+    with torch.no_grad():  # Disable gradient computation for efficiency
+        y = []
+        y_hat = []
+        for i, (x1_batch, x2_batch, y_batch) in enumerate(data_loader):
+            x1_batch = x1_batch.to(device)
+            x2_batch = x2_batch.to(device)
+            y_batch = y_batch.to(device)
+
+            y.append(y_batch)
+            y_hat.append(threshold(*net(x1_batch, x2_batch)))
+        y = torch.concat(y)
+        y_hat = torch.concat(y_hat)
+
+    return (y_hat == y).float().mean()
 
 
 def main():
@@ -114,6 +149,19 @@ def main():
             start_epoch=start_epoch,
             num_workers=4,
         )
+
+    else:  # args.action == "test"
+        net = SiameseNetwork()
+        train_set = MelanomaSkinCancerDataset(train=True)
+        test_set = MelanomaSkinCancerDataset(train=False)
+
+        checkpoint = torch.load(
+            OUT_DIR / "checkpoint.pt", weights_only=False, map_location=device
+        )
+        net.load_state_dict(checkpoint["state_dict"])
+
+        print("Training accuracy:", test(net, train_set, device))
+        print("Test accuracy    :", test(net, test_set, device))
 
 
 if __name__ == "__main__":

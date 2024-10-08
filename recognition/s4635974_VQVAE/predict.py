@@ -96,7 +96,15 @@ def predict(
         batch_SSIM = []
 
         for i, training_images in enumerate(test_loader):
+
+            # Check input shape before passing to the model
+            print(f"Batch {i} input shape: {training_images.shape}")
             training_images = training_images.to(device)
+
+            if training_images.shape[1] != 1:
+            # If the input has more than 1 channel, something went wrong
+                print(f"Error: Expected 1 channel, but got {training_images.shape[1]} channels.")
+                continue             
             # Run batch through model
             _, test_output_images = model(training_images)
 

@@ -14,7 +14,7 @@ from dataset import *
 from sklearn import metrics
 
 # Set Hyperparameters
-num_epochs = 20
+num_epochs = 2
 
 learning_rate = 0.001
 
@@ -83,9 +83,9 @@ def train(device, asset_dir, model, criterion, optimizer, train_loader, val_load
     plt.ylabel('Loss')
     plt.legend()
     plt.savefig(os.path.join(asset_dir, 'training_and_validation_losses.png'))
-    plt.show()
     output_image_path = os.path.join(asset_dir, 'training_and_validation_losses.png')
     plt.savefig(output_image_path)
+    plt.show()
     plt.close()
 
     # Plot validation accuracies
@@ -95,9 +95,9 @@ def train(device, asset_dir, model, criterion, optimizer, train_loader, val_load
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.show()
     output_image_path = os.path.join(asset_dir, 'validation_accuracies.png')
     plt.savefig(output_image_path)
+    plt.show()
     plt.close()
 
 # for validating
@@ -173,9 +173,9 @@ def test(device, asset_dir, model, criterion, test_loader):
     plt.figure(figsize=(8, 8))
     disp.plot(cmap=plt.cm.Blues)
     plt.title("Confusion Matrix")
-    plt.show()
     output_image_path = os.path.join(asset_dir, 'confusion_matrix.png')
     plt.savefig(output_image_path)
+    plt.show()
     plt.close
     
 
@@ -195,7 +195,7 @@ def main():
         num_classes=2,
         in_channels=3,
         drop_rate=0.5,
-        depth=8,
+        depth=2,
         mlp_ratio=4.,
         drop_path_rate=0.6
         ).to(device)
@@ -207,9 +207,9 @@ def main():
     train(device, asset_dir, model, criterion, optimizer, train_loader, val_loader)
 
     # Save the model after training
-    #model_save_path = "trained_model.pth"
-    #torch.save(model.state_dict(), model_save_path)
-    #print(f"Model saved to {model_save_path}")
+    model_save_path = "trained_model.pth"
+    torch.save(model.state_dict(), model_save_path)
+    print(f"Model saved to {model_save_path}")
 
     # Test the model on the test set
     test(device, asset_dir, model, criterion, test_loader)

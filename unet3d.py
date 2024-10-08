@@ -19,12 +19,60 @@ You may begin with the original 3D UNet [5]. You will need to load Nifti file fo
 [Normal Difficulty- 3D UNet] [Hard Difficulty- 3D Improved UNet]
 
 """
+# Function to convert labels to one-hot encoded channels
+def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
+    channels = np.unique(arr)
+    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
+    for c in channels:
+        c = int(c)
+        res[..., c:c+1][arr == c] = 1
+    return res
 
+# Load 3D Nifti images
+def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, early_stop=False):
+    num = len(image_names)
+    first_case = nib.load(image_names[0]).get_fdata(caching='unchanged')
+    
+    if len(first_case.shape) == 4:
+        first_case = first_case[:, :, :, 0]  # Remove extra dim
+    
+    if categorical:
+        first_case = to_channels(first_case, dtype=dtype)
+        rows, cols, depth, channels = first_case.shape
+        images = np.zeros((num, rows, cols, depth, channels), dtype=dtype)
+    else:
+        rows, cols, depth = first_case.shape
+        images = np.zeros((num, rows, cols, depth), dtype=dtype)
+
+    for i, image_name in enumerate(tqdm(image_names)):
+        nifti_image = nib.load(image_name)
+        in_image = nifti_image.get_fdata(caching='unchanged')
+        
+        if len(in_image.shape) == 4:
+            in_image = in_image[:, :, :, 0]  # Remove extra dim
+        in_image = in_image.astype(dtype)
+        
+        if norm_image:
+            in_image = (in_image - in_image.mean()) / in_image.std()  # Normalization
+        
+        if categorical:
+            in_image = to_channels(in_image, dtype=dtype)
+            images[i, :in_image.shape[0], :in_image.shape[1], :in_image.shape[2], :] = in_image  # With padding if necessary
+        else:
+            images[i, :in_image.shape[0], :in_image.shape[1], :in_image.shape[2]] = in_image  # With padding if necessary
+        
+        if early_stop and i > 20:
+            break
+
+    return images
+
+# Custom dataset class for PyTorch with transformations for 3D data
 class CustomDataset(Dataset):
-    def __init__(self, img_dir, labels, transform=None):
+    def __init__(self, image_filenames, labels, img_dir, labels_dir, transform=None):
+        self.image_filenames = image_filenames
+        self.labels = labels
         self.img_dir = img_dir
-        self.image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii') or f.endswith('.nii.gz')]
-        self.labels = labels  
+        self.labels_dir = labels_dir
         self.transform = transform
 
     def __len__(self):
@@ -32,41 +80,62 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.image_filenames[idx])
-        label_path = os.path.join(self.img_dir, self.labels[idx])  
+        image = load_data_3D([img_path])[0]
+        
+        label_filename = self.image_filenames[idx].replace("MR", "SEMANTIC_LFOV")
+        label_path = os.path.join(self.labels_dir, label_filename)
+        label = nib.load(label_path).get_fdata()
 
-        # Load Nifti images
-        image = nib.load(img_path).get_fdata()  
-        label = nib.load(label_path).get_fdata()  
-
-        #  apply transformations 
+        # Apply transformations to the image
         if self.transform:
             image = self.transform(image)
 
-        # Convert to torch tensors
-        image = torch.tensor(image, dtype=torch.float32).unsqueeze(0) 
-        label = torch.tensor(label, dtype=torch.long) 
+        # Convert to tensor
+        label = torch.tensor(label, dtype=torch.float32)  # Ensure label is tensor
+        return torch.tensor(image, dtype=torch.float32), label
 
-        return image, label
+# Define custom transformation for 3D data
+class Compose3D:
+    def __init__(self, transforms):
+        self.transforms = transforms
 
-# Function to split the dataset into train and test
-def split_dataset(img_dir, labels, test_size=0.2, random_state=42):
-    # List all Nifti filenames in the directory
-    image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii') or f.endswith('.nii.gz')]
+    def __call__(self, sample):
+        for transform in self.transforms:
+            sample = transform(sample)
+        return sample
 
-    # Split the filenames and labels into train and test sets
-    train_filenames, test_filenames, train_labels, test_labels = train_test_split(
-        image_filenames, labels, test_size=test_size, random_state=random_state
-    )
+class Resize3D:
+    def __init__(self, new_shape):
+        self.new_shape = new_shape
 
-    return train_filenames, test_filenames, train_labels, test_labels
+    def __call__(self, volume):
+        # Resize volume to the new shape
+        return np.resize(volume, self.new_shape)
 
+class Normalize3D:
+    def __call__(self, volume):
+        # Normalize the volume
+        return (volume - np.mean(volume)) / np.std(volume)
+
+# Example usage of the dataset with transformations
 def main():
-    img_dir = "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon"
-    labels_dir = "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon"
-      
+    img_dir = "Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon"
+    labels_dir = "Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_labels_anon"
+    
     image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii.gz')]
     
-    train_filenames, test_filenames, train_labels, test_labels = split_dataset(img_dir, labels_dir)
+    # Define transformations
+    transform = Compose3D([
+        Resize3D((128, 128, 64)),  # Resize to (depth, height, width)
+        Normalize3D()  # Normalize
+    ])
 
-    dataset = CustomDataset(image_filenames, labels=None, img_dir=img_dir, labels_dir=labels_dir, load_3d=False) #! check if 2d or 3d
-    data_loader = DataLoader(dataset, batch_size=8, shuffle=True)
+    # Create dataset
+    dataset = CustomDataset(image_filenames, labels=None, img_dir=img_dir, labels_dir=labels_dir, transform=transform)
+
+    # DataLoader for batching
+    data_loader = DataLoader(dataset, batch_size=4, shuffle=True)
+
+
+if __name__ == "__main__":
+    main()

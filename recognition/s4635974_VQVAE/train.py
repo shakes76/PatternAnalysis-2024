@@ -43,7 +43,7 @@ class ValidationLossEarlyStopping:
 # beta = 0.25
 
 num_epochs = 3
-batch_size = 16
+batch_size = 2
 lr = 0.003
 num_hiddens = 128
 num_residual_hiddens = 32
@@ -341,5 +341,7 @@ def train_model(
 
 
 if (__name__ == "__main__"):
-    model = train_model(save_dir=save_dir, model_dir=model_dir)
+    model = train_model(
+        save_dir=save_dir, 
+        model_dir=model_dir)
 

@@ -24,6 +24,7 @@ DATA_PATH = pathlib.Path("data")
 ALL_META_PATH = DATA_PATH / "all.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
 VAL_META_PATH = DATA_PATH / "val.csv"
+TEST_META_PATH = DATA_PATH / "test.csv"
 IMAGES_PATH = DATA_PATH / "small_images"
 
 
@@ -31,6 +32,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("-c", "--continue-training", action="store_true")
+    parser.add_argument("-t", "--test", action="store_true")
     parser.add_argument("-l", "--load-model")
     args = parser.parse_args()
 
@@ -84,15 +86,15 @@ def main() -> None:
         trainer.train(train_loader)
 
     # Undersample to alleviate class imbalance
-    # benign = train_meta_df[train_meta_df["target"] == 0]
-    # malignant = train_meta_df[train_meta_df["target"] == 1]
-    # benign = benign.sample(random_state=42, n=len(malignant))
-    # balanced_df = pd.concat([benign, malignant])
-    # balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
+    benign = train_meta_df[train_meta_df["target"] == 0]
+    malignant = train_meta_df[train_meta_df["target"] == 1]
+    benign = benign.sample(random_state=42, n=len(malignant))
+    balanced_df = pd.concat([benign, malignant])
+    balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
 
     # Undersample dataloader for KNN embeddings
     train_classification_loader = DataLoader(
-        dataset,
+        balanced_ds,
         batch_size=hparams.batch_size,
         num_workers=num_workers,
     )
@@ -104,12 +106,12 @@ def main() -> None:
     pca = PCA(n_components=2)
     pca_projections = pca.fit_transform(embeddings)
     logger.info("Plotting pca...")
-    plt.scatter(pca_projections[:, 0], pca_projections[:, 1], c=train_meta_df["target"])
+    plt.scatter(pca_projections[:, 0], pca_projections[:, 1], c=balanced_df["target"])
     logger.info("Writing image")
     plt.savefig("plots/train_pca")
 
     # Fit KNN
-    knn = KNeighborsClassifier(n_neighbors=374, weights="distance", p=2)
+    knn = KNeighborsClassifier(n_neighbors=100, weights="distance", p=2)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
 
@@ -129,6 +131,20 @@ def main() -> None:
     # Eval on validation
     logger.info("Evaluating classification on val data...")
     _evaluate_classification(fit_knn, embeddings, labels, data_name="val")
+
+    if args.test:
+        test_meta_df = pd.read_csv(TEST_META_PATH)
+        test_dataset = TumorClassificationDataset(
+            IMAGES_PATH, test_meta_df, transform=False
+        )
+        test_loader = DataLoader(
+            test_dataset, batch_size=hparams.batch_size, num_workers=num_workers
+        )
+        embeddings, labels = trainer.compute_all_embeddings(test_loader)
+        embeddings = normalize(embeddings)
+
+        logger.info("Evaluating classification on test data...")
+        _evaluate_classification(fit_knn, embeddings, labels, data_name="test")
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)

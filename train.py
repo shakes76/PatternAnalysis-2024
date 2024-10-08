@@ -1,3 +1,28 @@
+"""
+REFERENCES:
+
+(1) This code was developed with assistance from the Claude AI assistant,
+    created by Anthropic, PBC. Claude provided guidance on implementing
+    StyleGAN2 architecture and training procedures.
+
+    Date of assistance: 8/10/2024
+    Claude version: Claude-3.5 Sonnet
+    For more information about Claude: https://www.anthropic.com
+
+(2) GitHub Repository: stylegan2-ada-pytorch
+    URL: https://github.com/NVlabs/stylegan2-ada-pytorch/tree/main
+    Accessed on: 29/09/24 - 8/10/24
+    
+(3) Karras, T., Laine, S., Aittala, M., Hellsten, J., Lehtinen, J., & Aila, T. (2020). 
+    Analyzing and improving the image quality of StyleGAN.
+    arXiv. https://arxiv.org/abs/1912.04958
+
+(4) Karras, T., Laine, S., & Aila, T. (2019).
+    A Style-Based Generator Architecture for Generative Adversarial Networks.
+    arXiv. https://arxiv.org/abs/1812.04948
+"""
+
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -89,8 +114,10 @@ def plot_umap(generator, discriminator, dataloader, epoch):
     with torch.no_grad():
         for real_imgs, lbls in dataloader:
             real_imgs, lbls = real_imgs.to(device), lbls.to(device)
+            # Gen real image features from discrim
             real_feats.append(discriminator(real_imgs, feature_output=True).cpu())
             labels.extend(lbls.cpu().numpy())
+            # Gen fake image features from gen
             z = torch.randn(real_imgs.size(0), z_dim).to(device)
             fake_imgs = generator(z, lbls)
             fake_feats.append(discriminator(fake_imgs, feature_output=True).cpu())
@@ -102,7 +129,7 @@ def plot_umap(generator, discriminator, dataloader, epoch):
     combined_labels = np.concatenate([labels, labels])
     is_real = np.concatenate([np.ones(len(real_feats)), np.zeros(len(fake_feats))])
     
-    # Apply UMAP
+    # Normalise + apply UMAP
     normalised_feats = StandardScaler().fit_transform(combined_feats)
     embeddings = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42).fit_transform(normalised_feats)
     

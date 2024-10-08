@@ -1,11 +1,27 @@
 """
-A implementation of a Style Generative Adversarial Network 2 (StyleGAN2) designed for 256x256 greyscale images.
-References:
-https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
-https://github.com/indiradutta/DC_GAN
-https://arxiv.org/abs/1511.06434
-https://github.com/NVlabs/stylegan3
-https://arxiv.org/pdf/1812.04948 
+A implementation of a Style Generative Adversarial Network 2 (StyleGAN2) designed for 256x240 greyscale images.
+
+REFERENCES:
+
+(1) This code was developed with assistance from the Claude AI assistant,
+    created by Anthropic, PBC. Claude provided guidance on implementing
+    StyleGAN2 architecture and training procedures.
+
+    Date of assistance: 8/10/2024
+    Claude version: Claude-3.5 Sonnet
+    For more information about Claude: https://www.anthropic.com
+
+(2) GitHub Repository: stylegan2-ada-pytorch
+    URL: https://github.com/NVlabs/stylegan2-ada-pytorch/tree/main
+    Accessed on: 29/09/24 - 8/10/24
+    
+(3) Karras, T., Laine, S., Aittala, M., Hellsten, J., Lehtinen, J., & Aila, T. (2020). 
+    Analyzing and improving the image quality of StyleGAN.
+    arXiv. https://arxiv.org/abs/1912.04958
+
+(4) Karras, T., Laine, S., & Aila, T. (2019).
+    A Style-Based Generator Architecture for Generative Adversarial Networks.
+    arXiv. https://arxiv.org/abs/1812.04948
 """
 
 
@@ -420,19 +436,15 @@ class StyleGAN2Generator(nn.Module):
             torch.Tensor: Generated grayscale image of size 256x240.
         """
         batch_size = z.shape[0]
-        
         # Generate w from z
         w = self.mapping_network(z, labels)
-        
         # Start with learned constant - repeated for batch
         x = self.const.repeat(batch_size, 1, 1, 1)
-        
         # Apply synthesis blocks
         for block in self.synthesis_network:
             x = block(x, w)
-
+            
         x = self.to_rgb(x) # Force greyscale and 1 channel
-        
         return torch.tanh(x)  # Force output range [-1, 1]
     
     
@@ -511,20 +523,15 @@ class MiniBatchStdDev(nn.Module):
         # M: num images per group
         # C: input channels
         grouped_input = x.view(G, -1, self.num_new_features, C // self.num_new_features, H, W)
-
         # Calc stddev for each group
         # Add epsilon (1e-8) so no div by zero
         stddev = torch.sqrt(grouped_input.var(dim=1, unbiased=False) + 1e-8)
-
         # Avg stddev over the "num_new_features" and "C // num_new_features" dim
         stddev = stddev.mean(dim=[2, 3])
-
         # Expand stddev tensor - match input tensor spatial dim
         stddev = stddev.expand(G, -1, H, W).contiguous()
-        
         # Reshape stddev - match input batch size
         stddev = stddev.view(N, -1, H, W)
-
         # Concat calcd stddev to original input
         output = torch.cat([x, stddev], dim=1)
 
@@ -568,12 +575,10 @@ class StyleGAN2Discriminator(nn.Module):
             
         # Add MiniBatchStdDev layer (adds 1 to channel dim)
         self.minibatch_stddev = MiniBatchStdDev()
-        
         # Final conv layer
         self.final_conv = nn.Conv2d(in_channels + 1, in_channels, kernel_size=3, padding=1)
         # Flattening layer
         self.flatten = nn.Flatten()
-        
         # Dense layer - classifier
         out_features = in_channels * final_height * final_width
         self.final_linear = nn.Linear(out_features, 1)

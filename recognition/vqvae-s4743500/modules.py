@@ -136,3 +136,39 @@ class Decoder(nn.Module):
         h = self.residual_stack(h)
         x_recon = self.upconv(h)
         return x_recon
+    
+class VectorQuantizer(nn.Module):
+    def __init__(self, embedding_dim, num_embeddings, decay=0.99, epsilon=1e-5):
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+        self.decay = decay
+        self.epsilon = epsilon
+
+        # Initialises embeddings randomly
+        limit = 3 ** 0.5
+        self.embeddings = nn.Parameter(torch.FloatTensor(embedding_dim, num_embeddings).uniform_(-limit, limit))
+
+    def forward(self, x):
+        flat_x = x.permute(0, 2, 3, 1).reshape(-1, self.embedding_dim)
+
+        # Computes distances to embedding vectors to find the closest match to the input
+        distances = (
+            (flat_x ** 2).sum(1, keepdim=True)
+            - 2 * flat_x @ self.embeddings
+            + (self.embeddings ** 2).sum(0, keepdim=True)
+        )
+
+        # Gets the closest embedding index
+        encoding_indices = distances.argmin(1)
+        quantized_x = F.embedding(
+            encoding_indices.view(x.shape[0], *x.shape[2:]), self.embeddings.transpose(0, 1)
+        ).permute(0, 3, 1, 2)
+
+        # Calculates the commitment loss
+        commitment_loss = ((x - quantized_x.detach()) ** 2).mean()
+
+        # Straight-through estimator
+        quantized_x = x + (quantized_x - x).detach()
+
+        return quantized_x, commitment_loss, encoding_indices.view(x.shape[0], -1)

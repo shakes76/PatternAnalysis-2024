@@ -1,5 +1,3 @@
-# “dataset.py" containing the data loader for loading and preprocessing your data
-# we need to load the nmist datasetf
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 

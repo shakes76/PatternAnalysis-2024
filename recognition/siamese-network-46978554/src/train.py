@@ -180,24 +180,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["train", "test"], help="Training or testing")
     parser.add_argument(
-        "-o", "--out", type=str, default="out", help="Training output directory"
+        "-o", "--out", type=str, default="out", help="(TR/TE) output directory"
     )
 
     # Training args
     parser.add_argument(
-        "-e", "--epoch", type=int, default=10, help="Training epochs (default 10)"
+        "-e", "--epoch", type=int, default=10, help="(TR) Epochs, default 10"
     )
     parser.add_argument(
-        "-l", "--lr", type=float, default=0.001, help="Learning rate (default 0.001)"
+        "-l",
+        "--lr",
+        type=float,
+        default=0.001,
+        help="(TR) Learning rate, default 0.001",
     )
     parser.add_argument(
-        "-b", "--batch", type=int, default=128, help="Training batch size (default 128)"
+        "-b", "--batch", type=int, default=128, help="(TR) batch size, default 128"
     )
     parser.add_argument(
-        "-p", "--pretrained", action="store_true", help="Train using pretrained ResNet"
+        "-p",
+        "--pretrained",
+        action="store_true",
+        help="(TR/TE) Whether ResNet base is pretrained or not",
     )
     parser.add_argument(
-        "-c", "--checkpoint", action="store_true", help="Train from checkpoint"
+        "-c", "--checkpoint", action="store_true", help="(TR) Train from checkpoint"
     )
 
     # Hyperparameters
@@ -206,7 +213,7 @@ if __name__ == "__main__":
         "--margin",
         type=float,
         default=0.2,
-        help="Margin for contrastive loss (default 0.2)",
+        help="(TR/TE) Margin for contrastive loss, default 0.2",
     )
 
     args = parser.parse_args()

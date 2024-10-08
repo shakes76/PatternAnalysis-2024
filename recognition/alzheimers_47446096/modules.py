@@ -5,17 +5,18 @@ from torch import Tensor
 
 class VisionTransformer(nn.Module):
 
-    def __init__(self, batchSize:int,  patchDim: int, imgDims: tuple[int, int, int], patchLen: int, mhaHeadFactor:int, device: str = "cpu") -> None:
+    def __init__(self, depth:int,  patchDim: int, imgDims: tuple[int, int, int], patchLen: int, mhaHeadFactor:int, hiddenMul: int, device: str = "cpu") -> None:
         super().__init__()
         self.pDim = patchDim
         self.imgDims = imgDims
         self.pLen = patchLen
         self.device = device
         self.mhaHeadFactor = mhaHeadFactor
+        self.depth = depth
+        self.hiddenMul = hiddenMul
 
         self.pSplitter = PatchSplitter(self.pDim, self.imgDims, self.pLen)
 
-        self.batchSize = batchSize
         self.nPatches  = self.pSplitter.nPatches
 
         self.n1 = nn.LayerNorm(self.pLen)
@@ -30,42 +31,46 @@ class VisionTransformer(nn.Module):
         self.softMax = nn.Softmax(dim = -1)
 
         assert self.pLen % self.mhaHeadFactor == 0
-        self.transformer = TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor)
+        self.blocks = nn.ModuleList([TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor, self.hiddenMul) for i in range(self.depth)])
     
     def forward(self, x):
-        y = self.pSplitter(x)
-        y = self.pProcessor(y)
-        y = self.transformer(y)
-        y = self.n1(y)
-        y = self.l1(y[:, 0])
-        return y
+        x= self.pSplitter(x)
+        x = self.pProcessor(x)
+        for block in self.blocks:
+            x = block(x)
+        x = self.n1(x)
+        x = self.l1(x[:, 0])
+        return x
 
 
 class TransformerEncBlk(nn.Module):
-    def __init__(self, dim: int, nHeads: int) -> None:
+    def __init__(self, dim: int, nHeads: int, hiddenMul:int ) -> None:
         super().__init__()
         self.dim = dim
         self.nHeads = nHeads
+        self.hiddenMul = hiddenMul
 
         self.n1 = nn.LayerNorm(self.dim)
         self.mha = nn.MultiheadAttention(
             self.dim,
-            self.nHeads
+            self.nHeads,
+            dropout = 0,
+            batch_first = True
         )
         self.n2 = nn.LayerNorm(self.dim)
-        self.l1 = nn.Linear(self.dim, 100)
+        self.l1 = nn.Linear(self.dim, self.dim * self.hiddenMul)
         self.activation = nn.GELU()
-        self.l2 = nn.Linear(100, self.dim)
+        self.l2 = nn.Linear(self.dim * self.hiddenMul, self.dim)
 
     def forward(self, x: Tensor) -> Tensor:
         y = self.n1(x)
         y, _ = self.mha(y, y, y)
-        y = y + x
-        z = self.l1(self.n2(y))
+        x = x + y
+        z = self.l1(self.n2(x))
         z = self.activation(z)
         z = self.l2(z)
-        z = z + y
-        return z
+        x = x + z
+        return x
 
 class PatchProcessor(nn.Module):
     '''
@@ -185,3 +190,6 @@ class PatchSplitter(nn.Module):
         x = self.partition(x).transpose(2, 1)
         x = self.linear(x)
         return x
+    
+
+

@@ -34,9 +34,12 @@ class TumorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor, int]]):
 
 
 class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
-    def __init__(self, image_path: pathlib.Path, meta_df: pd.DataFrame) -> None:
+    def __init__(
+        self, image_path: pathlib.Path, meta_df: pd.DataFrame, transform: bool = True
+    ) -> None:
         self._image_path = image_path
         self._meta_df = meta_df
+        self._transform = transform
 
     def __len__(self) -> int:
         return len(self._meta_df)
@@ -48,7 +51,9 @@ class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
         target = observation_data[TARGET]
 
         image = io.read_image(self._image_path / f"{image_name}.jpg") / 255
-        image = _transform(image)
+
+        if self._transform:
+            image = _transform(image)
 
         return image, target
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import torch
 from torch.utils.data import DataLoader
-from pytorch_metric_learning import losses, miners
+from pytorch_metric_learning import losses, miners, distances
 
 from modules import EmbeddingNetwork
 
@@ -39,10 +39,13 @@ class SiameseController:
         )
         self._hparams = hparams
         self._losses: list[float] = []
+        self._distance = distances.CosineSimilarity()
         self._miner = miners.TripletMarginMiner(
-            margin=hparams.margin, type_of_triplets="semihard"
+            margin=hparams.margin, type_of_triplets="semihard", distance=self._distance
         )
-        self._loss = losses.TripletMarginLoss(margin=hparams.margin)
+        self._loss = losses.TripletMarginLoss(
+            margin=hparams.margin, distance=self._distance
+        )
         self._epoch = 0
         self._model_name = model_name
 
@@ -52,6 +55,7 @@ class SiameseController:
             self._train_epoch(train_loader)
             logger.info("Epoch %d / loss %e", self._epoch, self._losses[-1])
 
+            self._epoch += 1
             self.save_model(self._model_name)
 
             # if self._miner.type_of_triplets == "semihard":
@@ -60,8 +64,6 @@ class SiameseController:
             # elif self._miner.type_of_triplets == "all":
             #     logger.info("Switching to semihard triplets")
             #     self._miner.type_of_triplets = "semihard"
-
-            self._epoch += 1
 
     def compute_all_embeddings(
         self, loader: DataLoader

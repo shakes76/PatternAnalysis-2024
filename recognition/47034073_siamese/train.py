@@ -30,6 +30,7 @@ IMAGES_PATH = DATA_PATH / "small_images"
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
+    parser.add_argument("-c", "--continue-training", action="store_true")
     parser.add_argument("-l", "--load-model")
     args = parser.parse_args()
 
@@ -38,15 +39,15 @@ def main() -> None:
     script_start_time = time.time()
 
     # Training params
-    num_workers = 3
-    learning_rate = 0.000001
+    num_workers = 2
+    learning_rate = 0.0001
     model_name = "most_recent"
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=3,
+        num_epochs=1,
         learning_rate=learning_rate,
-        weight_decay=0.000001,
+        weight_decay=0,
         margin=0.2,
     )
     if args.debug:
@@ -62,7 +63,7 @@ def main() -> None:
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
         m=hparams.batch_size / 2,
-        length_before_new_iter=1_000 if args.debug else 30_000,
+        length_before_new_iter=1_000 if args.debug else 10_000,
     )
     train_loader = DataLoader(
         dataset,
@@ -77,7 +78,8 @@ def main() -> None:
     if args.load_model is not None:
         logger.info("Loading model...")
         trainer.load_model(args.load_model)
-    else:
+
+    if args.load_model is None or args.continue_training:
         logger.info("Starting training...")
         trainer.train(train_loader)
 

@@ -6,14 +6,12 @@ from torch import nn
 class EmbeddingNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        self._backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
+        self._backbone = resnet50()
 
         # Makes output in feature space
         self._backbone.fc = nn.Identity()
 
-        self._embedder = nn.Sequential(
-            nn.Dropout(p=0.3), nn.Linear(2048, 512), nn.Linear(512, 128)
-        )
+        self._embedder = nn.Sequential(nn.Dropout(p=0.3), nn.Linear(2048, 128))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._embedder(self._backbone(x))

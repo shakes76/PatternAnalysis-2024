@@ -47,19 +47,19 @@ class SiameseController:
         self._model_name = model_name
 
     def train(self, train_loader: DataLoader) -> None:
-        logger.info("Using semihard triplets")
+        # logger.info("Using semihard triplets")
         for _ in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
             logger.info("Epoch %d / loss %e", self._epoch, self._losses[-1])
 
             self.save_model(self._model_name)
 
-            if self._miner.type_of_triplets == "semihard":
-                logger.info("Switching to all triplets which violate margin")
-                self._miner.type_of_triplets = "all"
-            elif self._miner.type_of_triplets == "all":
-                logger.info("Switching to semihard triplets")
-                self._miner.type_of_triplets = "semihard"
+            # if self._miner.type_of_triplets == "semihard":
+            #     logger.info("Switching to all triplets which violate margin")
+            #     self._miner.type_of_triplets = "all"
+            # elif self._miner.type_of_triplets == "all":
+            #     logger.info("Switching to semihard triplets")
+            #     self._miner.type_of_triplets = "semihard"
 
             self._epoch += 1
 
@@ -124,11 +124,11 @@ class SiameseController:
             if time.time() - start_time > 60:
                 start_time = time.time()
                 logger.info(
-                    "step %d / loss %e / progress %d/%d",
+                    "step %d / loss %e / progress %d / num mined triplets %d",
                     n,
                     avg_loss / n,
                     num_observations,
-                    len(train_loader.dataset),
+                    self._miner.num_triplets,
                 )
 
         avg_loss /= n

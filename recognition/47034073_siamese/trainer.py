@@ -54,9 +54,13 @@ class SiameseController:
 
             self.save_model(self._model_name)
 
-            # Switch to all margin violating triplets after warmed up
-            logger.info("Switching to all triplets which violate margin")
-            self._miner.type_of_triplets = "all"
+            if self._miner.type_of_triplets == "semihard":
+                logger.info("Switching to all triplets which violate margin")
+                self._miner.type_of_triplets = "all"
+            elif self._miner.type_of_triplets == "all":
+                logger.info("Switching to semihard triplets")
+                self._miner.type_of_triplets = "semihard"
+
             self._epoch += 1
 
     def compute_all_embeddings(

@@ -23,10 +23,10 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
                              std=[0.229, 0.224, 0.225]),
     ])
     
-    # Load the dataset without any transforms initially
+    # Load the dataset
     full_dataset = datasets.ImageFolder(root=train_dir, transform=None)
     
-    # Mapping from patient ID to image indices
+    # Map each image to its corresponding patient ID 
     patient_to_indices = {}
     for idx, (path, _) in enumerate(full_dataset.samples):
         filename = os.path.basename(path)
@@ -50,8 +50,7 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     # Gather all image indices for training and validation
     train_indices = []
     for pid in train_patient_ids:
-        train_indices.extend(patient_to_indices[pid])
-    
+        train_indices.extend(patient_to_indices[pid]) 
     val_indices = []
     for pid in val_patient_ids:
         val_indices.extend(patient_to_indices[pid])
@@ -59,25 +58,48 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     # Create subsets for training and validation
     train_subset = Subset(full_dataset, train_indices)
     val_subset = Subset(full_dataset, val_indices)
-    
-    # Assign transforms
+
     train_subset.dataset.transform = train_transform
     val_subset.dataset.transform = val_test_transform
     
-    # Compute class weights for the training set
+    # Calculate class weights for balanced sampling
     train_labels = [full_dataset.targets[i] for i in train_indices]
-    class_sample_count = np.array([len(np.where(train_labels == t)[0]) for t in np.unique(train_labels)])
-    weight = 1. / class_sample_count
-    samples_weight = np.array([weight[t] for t in train_labels])
-    samples_weight = torch.from_numpy(samples_weight)
-    sampler = WeightedRandomSampler(samples_weight.type('torch.DoubleTensor'), len(samples_weight))
+    class_counts = torch.bincount(torch.tensor(train_labels))
+    class_weights = 1. / class_counts.float()
+    sample_weights = [class_weights[t] for t in train_labels]
+    sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
 
     train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=sampler, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     test_dataset = datasets.ImageFolder(root=test_dir, transform=val_test_transform)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     
+    #print_class_distribution(full_dataset, train_indices, val_indices)
+
     return train_loader, val_loader, test_loader
 
+# from collections import Counter
+# def print_class_distribution(full_dataset, train_indices, val_indices):
+#     train_labels = [full_dataset.targets[i] for i in train_indices]
+#     val_labels = [full_dataset.targets[i] for i in val_indices]
 
+#     train_counter = Counter(train_labels)
+#     val_counter = Counter(val_labels)
+
+#     print("\nClass Distribution:")
+#     print("------------------")
+#     print("Training Set:")
+#     for class_idx, count in train_counter.items():
+#         class_name = full_dataset.classes[class_idx]
+#         print(f"  Class '{class_name}' (Index {class_idx}): {count} samples")
+
+#     print("\nValidation Set:")
+#     for class_idx, count in val_counter.items():
+#         class_name = full_dataset.classes[class_idx]
+#         print(f"  Class '{class_name}' (Index {class_idx}): {count} samples")
+
+#     print("\nTotal:")
+#     total_counter = train_counter + val_counter
+#     for class_idx, count in total_counter.items():
+#         class_name = full_dataset.classes[class_idx]
 

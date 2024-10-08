@@ -9,6 +9,7 @@ from torch.utils.data import Dataset
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
+import nibabel as nib
 """
 Brief:
 Segment the (downsampled) Prostate 3D data set (see Appendix for link) with the 3D Improved UNet3D [3] 
@@ -19,10 +20,10 @@ You may begin with the original 3D UNet [5]. You will need to load Nifti file fo
 
 """
 
-class CustomImageDataset(Dataset):
+class CustomDataset(Dataset):
     def __init__(self, img_dir, labels, transform=None):
         self.img_dir = img_dir
-        self.image_filenames = [f for f in os.listdir(img_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        self.image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii') or f.endswith('.nii.gz')]
         self.labels = labels  
         self.transform = transform
 
@@ -31,31 +32,26 @@ class CustomImageDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.image_filenames[idx])
-        image = Image.open(img_path).convert("L")  # Convert to grayscale
-        label = self.labels[idx]  # Get the corresponding label
+        label_path = os.path.join(self.img_dir, self.labels[idx])  
 
+        # Load Nifti images
+        image = nib.load(img_path).get_fdata()  
+        label = nib.load(label_path).get_fdata()  
+
+        #  apply transformations 
         if self.transform:
             image = self.transform(image)
 
-        return image, label  # Return both image and label
+        # Convert to torch tensors
+        image = torch.tensor(image, dtype=torch.float32).unsqueeze(0) 
+        label = torch.tensor(label, dtype=torch.long) 
 
-# Transforms for data augmentation and normalization
-transform_train = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,)),  # Normalization values for grayscale
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomCrop(32, padding=4, padding_mode='reflect'),
-])
-
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))  # Normalization values for grayscale
-])
+        return image, label
 
 # Function to split the dataset into train and test
 def split_dataset(img_dir, labels, test_size=0.2, random_state=42):
-    # List all image filenames in the directory
-    image_filenames = [f for f in os.listdir(img_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+    # List all Nifti filenames in the directory
+    image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii') or f.endswith('.nii.gz')]
 
     # Split the filenames and labels into train and test sets
     train_filenames, test_filenames, train_labels, test_labels = train_test_split(
@@ -64,9 +60,13 @@ def split_dataset(img_dir, labels, test_size=0.2, random_state=42):
 
     return train_filenames, test_filenames, train_labels, test_labels
 
-train_filenames, test_filenames, train_labels, test_labels = split_dataset("ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon", 
-                                                                        "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon")
+def main():
+    img_dir = "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon"
+    labels_dir = "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon"
+      
+    image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii.gz')]
+    
+    train_filenames, test_filenames, train_labels, test_labels = split_dataset(img_dir, labels_dir)
 
-# Create datasets for training and testing
-train_dataset = CustomImageDataset(train_filenames, train_labels, "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon")
-test_dataset = CustomImageDataset(test_filenames, test_labels, "ass\comp3710-ass1\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon")
+    dataset = CustomDataset(image_filenames, labels=None, img_dir=img_dir, labels_dir=labels_dir, load_3d=False) #! check if 2d or 3d
+    data_loader = DataLoader(dataset, batch_size=8, shuffle=True)

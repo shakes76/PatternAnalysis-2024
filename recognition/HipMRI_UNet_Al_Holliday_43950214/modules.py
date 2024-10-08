@@ -36,11 +36,15 @@ class UNetBasicBlock(nn.Module):
 
     """
     def __init__(self, inDim, dim, kernSz):
-        self.conv1 = nn.Conv2d(inDim, dim, kernel_size = kernSz)
+        super().__init__()
+        self.conv1 = nn.Conv2d(inDim, dim, kernel_size = kernSz, bias = False)
         self.act1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(dim, dim, kernel_size = kernSz, bias = False)
+        self.act2 = nn.ReLU()
     
     def forward(self, x):
-        return self.act1(self.conv1(x))
+        c1 = self.act1(self.conv1(x))
+        return self.act2(self.conv2(c1))
 
 class UNet(nn.Module):
     """
@@ -48,7 +52,11 @@ class UNet(nn.Module):
     diagram from the U-Net paper).
     """
     def __init__(self):
+        # self.blk1 = UNetBasicBlock()
         pass
     
     def forward(self, x):
+        # blk1 = self.blk1(x)
+        # maxPool1 = F.max_pool2d(blk1)
+        # skip == blk1 + blk of some other level
         pass

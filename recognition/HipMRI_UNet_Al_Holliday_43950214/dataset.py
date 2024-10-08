@@ -20,7 +20,7 @@ class HipMRI2d(torch.utils.data.Dataset):
             self.setFile = "hipmri_slices_seg_test.txt"
         elif imgSet == "seg_train":
             self.setPath = "keras_slices_seg_train"
-            self.setFile = "hipmri_slices_seg_train.txt"
+            self.setFile = "hipmri_slices_seg_train_128.txt"
         elif imgSet == "seg_validate":
             self.setPath = "keras_slices_seg_validate"
             self.setFile = "hipmri_slices_seg_validate.txt"
@@ -39,6 +39,8 @@ class HipMRI2d(torch.utils.data.Dataset):
         with open(self.setFile) as f:
             for pic in f:
                 self.pics.append(pic.strip())
+        # TODO: change what trans represents. Something like:
+        # trans = torchvision.transforms.Compose([transforms.ToTensor(), transforms.Resize()])
         self.trans = None
         self.applyTrans = transform
     
@@ -61,5 +63,7 @@ class HipMRI2d(torch.utils.data.Dataset):
             self.trans = niftiImg.affine
         # turn it back into 3D because PyTorch demands a channel dimension (and it demands that it be the first dim)
         img = img[np.newaxis,:,:]
+        
+        img = img.astype(np.float32)
         imgTensor = torch.tensor(img)
         return imgTensor, 0

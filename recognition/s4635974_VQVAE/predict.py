@@ -11,6 +11,8 @@ import random
 
 import train
 from dataset import HipMRILoader
+import modules
+
 
 # Model path if using existing model
 model_path = 'saved_model/lr=0.003.pth'
@@ -52,7 +54,7 @@ def predict(
     print()
     
     # Create a new instance of your model
-    model = train.VQVAE(
+    model = modules.VQVAE(
         num_hiddens=num_hiddens,
         num_residual_hiddens=num_residual_hiddens,
         num_channels=num_channels,

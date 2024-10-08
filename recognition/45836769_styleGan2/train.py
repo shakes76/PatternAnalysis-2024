@@ -95,9 +95,11 @@ def g_path_regularise(fake_img, latents, mean_path_length, decay=0.01):
     """Path length regularisation for generator"""
     noise = torch.randn_like(fake_img) / np.sqrt(fake_img.shape[2] * fake_img.shape[3])
     grad, = torch.autograd.grad(outputs=(fake_img * noise).sum(), inputs=latents, create_graph=True)
-    path_lengths = torch.sqrt(grad.pow(2).sum(2).mean(1))
+    path_lengths = torch.sqrt(grad.pow(2).sum(1))
     path_mean = mean_path_length + decay * (path_lengths.mean() - mean_path_length)
-    return (path_lengths - path_mean).pow(2).mean(), path_mean.detach()
+    path_penalty = (path_lengths - path_mean).pow(2).mean()
+    
+    return path_penalty, path_mean.detach()
 
 def save_images(generator, z, labels, epoch, batch=None):
     """Save generated images, categorise AD and NC"""

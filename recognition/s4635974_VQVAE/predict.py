@@ -51,7 +51,18 @@ def predict(
     print("Device: ", device)
     print()
     
-    model = torch.load(model_path)
+    # Create a new instance of your model
+    model = train.VQVAE(
+        num_hiddens=num_hiddens,
+        num_residual_hiddens=num_residual_hiddens,
+        num_channels=num_channels,
+        num_embeddings=num_embeddings,
+        dim_embedding=dim_embedding,
+        beta=beta
+    ).to(device)
+
+    # Load the saved state_dict into the model
+    model.load_state_dict(torch.load(model_path))
     print('Using saved model\n')
 
     model.to(device)

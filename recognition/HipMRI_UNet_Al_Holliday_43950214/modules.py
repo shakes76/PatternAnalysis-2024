@@ -11,6 +11,8 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
+import torchvision.transforms as transforms
+import torchvision.transforms.functional as TF
 
 
 class UNetBasicBlock(nn.Module):
@@ -61,17 +63,40 @@ class UNet(nn.Module):
         # latent
         self.latent = UNetBasicBlock(512, 1024, 3)
         # decoder
+        # A note to Ronneberger et. al.: Why didn't you explicitly say that the up convolutions also
+        # had a stride of 2 in your paper? I was scratching my head over why my upconvs were not
+        # doing much upsizing.
+        self.up1 = nn.ConvTranspose2d(1024, 512, 2, stride = 2) 
+        self.dec1 = UNetBasicBlock(1024, 512, 3)
+        self.up2 = nn.ConvTranspose2d(512, 256, 2, stride = 2)
+        self.dec2 = UNetBasicBlock(512, 256, 3)
+        self.up3 = nn.ConvTranspose2d(256, 128, 2, stride = 2)
+        self.dec3 = UNetBasicBlock(256, 128, 3)
+        self.up4 = nn.ConvTranspose2d(128, 64, 2, stride = 2)
+        self.dec4 = UNetBasicBlock(128, 64, 3)
+        self.out = nn.Conv2d(64, 2, kernel_size = 1)
     
     def forward(self, x):
-        # just the encoder pass first
-        enc1 = self.blk1(x)
-        maxPool1 = F.max_pool2d(enc1, 2)
-        enc2 = self.blk2(maxPool1)
-        maxPool2 = F.max_pool2d(enc2, 2)
-        enc3 = self.blk3(maxPool2)
-        maxPool3 = F.max_pool2d(enc3, 2)
-        enc4 = self.blk4(maxPool3)
-        maxPool4 = F.max_pool2d(enc4, 2)
-        #return maxPool4
-        return self.latent(maxPool4)
+        enc1 = self.blk1(x) # size (64, 252, 252)
+        maxPool1 = F.max_pool2d(enc1, 2) # size (64, 126, 126)
+        enc2 = self.blk2(maxPool1) # size (128, 122, 122)
+        maxPool2 = F.max_pool2d(enc2, 2) # size (128, 61, 61)
+        enc3 = self.blk3(maxPool2) # size (256, 57, 57)
+        maxPool3 = F.max_pool2d(enc3, 2) # size (256, 28, 28)
+        enc4 = self.blk4(maxPool3) # size (512, 24, 24)
+        maxPool4 = F.max_pool2d(enc4, 2) # size (512, 12, 12)
+        lat = self.latent(maxPool4) # size (1024, 8, 8)
+        up1 = self.up1(lat) # size (512, 16, 16)
+        dec1 = self.dec1(torch.concat(
+            (TF.center_crop(enc4, output_size=up1.size(1)), up1), 0)) # size (512, 12, 12)
+        up2 = self.up2(dec1) # size (256, 24, 24)
+        dec2 = self.dec2(torch.concat(
+            (TF.center_crop(enc3, output_size=up2.size(1)), up2), 0)) # size (256, 20, 20)
+        up3 = self.up3(dec2) # size (128, 40, 40)
+        dec3 = self.dec3(torch.concat(
+            (TF.center_crop(enc2, output_size=up3.size(1)), up3), 0)) # size (128, 36, 36)
+        up4 = self.up4(dec3) # size (64, 72, 72)
+        dec4 = self.dec4(torch.concat(
+            (TF.center_crop(enc1, output_size=up4.size(1)), up4), 0)) # size (64, 68, 68)
+        return self.out(dec4) # size (2, 68, 68)
         # skip == blk1 + blk of some other level

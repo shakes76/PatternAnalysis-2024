@@ -72,6 +72,6 @@ class UNet(nn.Module):
         maxPool3 = F.max_pool2d(enc3, 2)
         enc4 = self.blk4(maxPool3)
         maxPool4 = F.max_pool2d(enc4, 2)
-        return maxPool4
-        #return self.latent(maxPool4)
+        #return maxPool4
+        return self.latent(maxPool4)
         # skip == blk1 + blk of some other level

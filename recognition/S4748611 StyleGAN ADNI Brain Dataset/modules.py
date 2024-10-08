@@ -5,9 +5,9 @@ import numpy as np
 
 # Define constants
 LATENT_DIM = 512
-INITIAL_SIZE = 16
+INITIAL_SIZE = 8
 NUM_CHANNELS = 1
-FINAL_SIZE = 256  
+FINAL_SIZE = 128
 
 class AdaIN(Layer):
     def __init__(self, **kwargs):
@@ -49,7 +49,7 @@ def build_synthesis_network():
     
     # Initial convolution
     x = Conv2D(512, 3, padding='same')(x)
-    x = apply_noise(x)  # Apply noise before AdaIN
+    x = apply_noise(x)
     x = AdaIN()([x, style_input])
     x = LeakyReLU(0.2)(x)
 
@@ -57,15 +57,15 @@ def build_synthesis_network():
     for i, filters in enumerate([512, 256, 128, 64]):
         x = UpSampling2D()(x)
         x = Conv2D(filters, 3, padding='same')(x)
-        x = apply_noise(x)  # Apply noise before AdaIN
-        x = BatchNormalization()(x)  # Added Batch Normalization
+        x = apply_noise(x)
+        x = BatchNormalization()(x)  
         x = AdaIN()([x, style_input])
         x = LeakyReLU(0.2)(x)
 
         # Adding an additional convolutional layer for more complexity
         x = Conv2D(filters, 3, padding='same')(x)
-        x = apply_noise(x)  # Apply noise before activation
-        x = BatchNormalization()(x)  # Added Batch Normalization
+        x = apply_noise(x)
+        x = BatchNormalization()(x)
         x = LeakyReLU(0.2)(x)
 
     # Final convolution to get the desired number of channels

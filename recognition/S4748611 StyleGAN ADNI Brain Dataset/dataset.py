@@ -25,14 +25,13 @@ def load_and_preprocess_adni(data_dirs, target_size=(256, 256), batch_size=64): 
     # Create a TensorFlow dataset from the image paths
     dataset = tf.data.Dataset.from_tensor_slices(image_paths)
     dataset = dataset.map(process_image, num_parallel_calls=tf.data.AUTOTUNE)  # Use parallel processing
-    dataset = dataset.cache()  # Cache the dataset in memory
     dataset = dataset.shuffle(buffer_size=len(image_paths))  # Shuffle the dataset
     dataset = dataset.batch(batch_size, drop_remainder=True)  # Batch the dataset
     dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch data for better performance
 
     return dataset
 
-def create_adni_dataset(batch_size=64, target_size=(256, 256)):  # Change target size to 256x256
+def create_adni_dataset(batch_size, target_size=(256, 256)):  # Change target size to 256x256
     data_dirs = [
         '/home/groups/comp3710/ADNI/AD_NC/test/AD',
         '/home/groups/comp3710/ADNI/AD_NC/test/NC',
@@ -59,7 +58,7 @@ if __name__ == "__main__":
     BATCH_SIZE = 16
     LATENT_DIM = 512
     INITIAL_SIZE = 4
-    TARGET_SIZE = (256, 256)
+    TARGET_SIZE = (128, 128)
 
     # Create ADNI dataset
     adni_dataset = create_adni_dataset(BATCH_SIZE, TARGET_SIZE)

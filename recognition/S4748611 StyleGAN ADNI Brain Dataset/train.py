@@ -7,13 +7,22 @@ import wandb
 
 # Define training parameters
 BATCH_SIZE = 16
-EPOCHS = 30
-TARGET_SIZE = (256, 256)  # Change target size to 256x256
+EPOCHS = 200
+TARGET_SIZE = (128, 128)  # Change target size to 256x256
+
+# Load the models
+print("Loading models...")
+generator = build_generator()
+print("Generator model loaded.")
+discriminator = build_discriminator()
+print("Discriminator model loaded.")
+stylegan = build_stylegan()
+print("StyleGAN model loaded.")
 
 # Define initial learning rate and decay parameters for the generator
-initial_learning_rate = 0.0001
+initial_learning_rate = 0.00005
 decay_steps = 100 
-decay_rate = 1.05  
+decay_rate = 1
 
 # Create a learning rate schedule for the generator
 generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -26,7 +35,7 @@ generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 # Define initial learning rate and decay parameters for the discriminator
 initial_discriminator_learning_rate = 0.00001  
 discriminator_decay_steps = 100 
-discriminator_decay_rate = 0.95
+discriminator_decay_rate = 1
 
 # Create a learning rate schedule for the discriminator
 discriminator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -36,18 +45,10 @@ discriminator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
     staircase=True
 )
 
-# Load the models
-print("Loading models...")
-generator = build_generator()
-print("Generator model loaded.")
-discriminator = build_discriminator()
-print("Discriminator model loaded.")
-stylegan = build_stylegan()
-print("StyleGAN model loaded.")
-
-# Compile the models with the learning rate schedule for the generator and discriminator
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate=generator_lr_schedule, beta_1=0.5)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=discriminator_lr_schedule, beta_1=0.5)
+# Compile the models
+print("Compiling models...")
+generator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=generator_lr_schedule, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=discriminator_lr_schedule, beta_1=0.5)
 
 print("Models compiled.")
 
@@ -57,11 +58,11 @@ wandb.init(
     project="StyleGAN ADNI Test", 
     entity="samwolfenden-university-of-queensland",
     config={
-        "gen learning rate": initial_learning_rate,
-        "disc learning rate": initial_discriminator_learning_rate,
+        "gen learning rate": generator_lr_schedule,
+        "disc learning rate": discriminator_lr_schedule,
         "epochs": EPOCHS,
         "optimizer": type(generator_optimizer).__name__,
-        "scheduler": "ExponentialDecay",
+        "scheduler": type(discriminator_optimizer).__name__,
         "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
         "name": "SD-ADNI - VAE and Unet",
         "image size": TARGET_SIZE,
@@ -77,55 +78,41 @@ print("ADNI dataset loaded.")
 cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
 @tf.function
-def train_step(real_images, update_counter):
+def train_step(real_images):
     latent_vectors, constant_inputs = generate_random_inputs(BATCH_SIZE, LATENT_DIM, INITIAL_SIZE)
 
     # Train generator
     with tf.GradientTape() as gen_tape:
         generated_images = generator([latent_vectors, constant_inputs], training=True)
         fake_output = discriminator(generated_images, training=True)
-        
-        # Adversarial loss for generator
-        gen_loss = cross_entropy(tf.ones_like(fake_output), fake_output)  # No smoothing for generator
+        gen_loss = cross_entropy(tf.ones_like(fake_output), fake_output)
 
     gen_gradients = gen_tape.gradient(gen_loss, generator.trainable_variables)
     generator_optimizer.apply_gradients(zip(gen_gradients, generator.trainable_variables))
 
-    # Update discriminator only if the counter reaches 4
-    if update_counter % 16 == 0:
-        with tf.GradientTape() as disc_tape:
-            real_output = discriminator(real_images, training=True)
-            fake_output = discriminator(generated_images, training=True)
+    # Train discriminator
+    with tf.GradientTape() as disc_tape:
+        real_output = discriminator(real_images, training=True)
+        fake_output = discriminator(generated_images, training=True)
 
-            real_loss = cross_entropy(tf.ones_like(real_output), real_output)
-            fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
-            disc_loss = real_loss + fake_loss
+        real_loss = cross_entropy(tf.ones_like(real_output), real_output)
+        fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
+        disc_loss = real_loss + fake_loss
 
-        disc_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
-        discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
+    disc_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+    discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
 
-        return gen_loss, disc_loss
-    else:
-        return gen_loss, None  # Return None for disc_loss if not updated
+    return gen_loss, disc_loss
 
 def train(epochs):
     print("Starting training...")
-    update_counter = 0  # Initialize the update counter
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}...")
-        for step, real_images in enumerate(adni_dataset):
-            gen_loss, disc_loss = train_step(real_images, update_counter)  # Pass the update counter
-            
-            # Log losses to Weights and Biases
-            wandb.log({
-                "Generator Loss": gen_loss.numpy(),
-                "Discriminator Loss": disc_loss.numpy() if disc_loss is not None else None
-            })
-            
-            update_counter += 1  # Increment the update counter
+        for batch in adni_dataset:
+            gen_loss, disc_loss = train_step(batch)
         
         print(f"Epoch {epoch + 1} completed.")
-        print("Generator Loss", gen_loss.numpy(), "Discriminator Loss", disc_loss.numpy() if disc_loss is not None else None)
+        print("Generator Loss", gen_loss.numpy(), "Discriminator Loss", disc_loss.numpy())
 
         # Log losses to Weights and Biases
         wandb.log({"Generator Loss": gen_loss, "Discriminator Loss": disc_loss})

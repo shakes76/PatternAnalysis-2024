@@ -53,13 +53,14 @@ def predict(
 
     # Import save model or create a new one
     if retrain_model:
+        model = train.train_model(
+        train_save_image_dir=train_save_image_dir, 
+        train_save_model_dir=train_save_model_dir)
+        print('Training new model\n')
+    else:
         model = torch.load(model_path)
         print('Using saved model\n')
-    else:
-        model = train.train_model(
-            train_save_image_dir=train_save_image_dir, 
-            train_save_model_dir=train_save_model_dir)
-        print('Training new model\n')
+        
 
     model.to(device)
     model.eval()

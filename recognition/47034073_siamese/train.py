@@ -18,7 +18,6 @@ from dataset import TumorClassificationDataset
 logger = logging.getLogger(__name__)
 
 DATA_PATH = pathlib.Path("data")
-PAIRS_PATH = DATA_PATH / "pairs.csv"
 ALL_META_PATH = DATA_PATH / "all.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
 VAL_META_PATH = DATA_PATH / "val.csv"
@@ -42,7 +41,7 @@ def main() -> None:
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=4,
+        num_epochs=2,
         learning_rate=learning_rate,
         weight_decay=0.000001,
         margin=0.2,
@@ -53,17 +52,11 @@ def main() -> None:
         hparams, model_name="debug" if args.debug else model_name
     )
 
-    # Prepare data
-    # all_df = pd.read_csv(ALL_META_PATH)
-    # train_meta_df, val_meta_df = train_test_split(
-    #     all_df, random_state=42, test_size=0.2
-    # )
-
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
-        m=64,
+        m=hparams.batch_size / 2,
         length_before_new_iter=1_000 if args.debug else 30_000,
     )
     train_loader = DataLoader(
@@ -75,19 +68,19 @@ def main() -> None:
         batch_size=hparams.batch_size,
     )
 
-    logger.info("Starting training...")
-
     if args.load_model is not None:
+        logger.info("Loading model...")
         trainer.load_model(args.load_model)
     else:
+        logger.info("Starting training...")
         trainer.train(train_loader)
 
-    # Undersample to handle class imbalance
+    # Undersample to alleviate class imbalance
     benign = train_meta_df[train_meta_df["target"] == 0]
     malignant = train_meta_df[train_meta_df["target"] == 1]
-    num_malignant = len(malignant)
-    logger.debug("num malignant %d", num_malignant)
-    benign = benign.sample(random_state=42, n=num_malignant)
+    logger.info("num malignant %d", len(malignant))
+
+    benign = benign.sample(random_state=42, n=len(malignant))
     balanced_df = pd.concat([benign, malignant])
     balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
 
@@ -96,7 +89,6 @@ def main() -> None:
         batch_size=hparams.batch_size,
         num_workers=num_workers,
     )
-
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     embeddings = normalize(embeddings)
 
@@ -116,11 +108,10 @@ def main() -> None:
     val_loader = DataLoader(
         val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
     )
-
-    logger.info("Evaluating classification on val data...")
-
     embeddings, labels = trainer.compute_all_embeddings(val_loader)
     embeddings = normalize(embeddings)
+
+    logger.info("Evaluating classification on val data...")
     _evaluate_classification(fit_knn, embeddings, labels, data_name="val")
 
     total_script_time = time.time() - script_start_time

@@ -21,6 +21,7 @@ class HyperParams:
     batch_size: int = 32
     learning_rate: float = 0.001
     weight_decay: float = 0.000001
+    margin: float = 0.2
 
 
 class LesionClassifier:
@@ -38,19 +39,23 @@ class SiameseController:
         )
         self._hparams = hparams
         self._losses: list[float] = []
-        self._miner = miners.TripletMarginMiner(margin=0.2, type_of_triplets="semihard")
-        self._loss = losses.TripletMarginLoss(margin=0.2)
+        self._miner = miners.TripletMarginMiner(
+            margin=hparams.margin, type_of_triplets="semihard"
+        )
+        self._loss = losses.TripletMarginLoss(margin=hparams.margin)
         self._epoch = 0
         self._model_name = model_name
 
     def train(self, train_loader: DataLoader) -> None:
-        for epoch in range(self._hparams.num_epochs):
+        logger.info("Using semihard triplets")
+        for _ in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
             logger.info("Epoch %d / loss %e", self._epoch, self._losses[-1])
 
             self.save_model(self._model_name)
 
             # Switch to all margin violating triplets after warmed up
+            logger.info("Switching to all triplets which violate margin")
             self._miner.type_of_triplets = "all"
             self._epoch += 1
 
@@ -76,6 +81,7 @@ class SiameseController:
             "optim_state": self._optim.state_dict(),
             "losses": self._losses,
             "epoch": self._epoch,
+            "hparams": self._hparams,
         }
 
         torch.save(state, MODEL_DIR / f"{name}.pt")

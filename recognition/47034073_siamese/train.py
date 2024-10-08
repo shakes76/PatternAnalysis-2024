@@ -6,8 +6,8 @@ import pathlib
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import normalize
 from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
-from sklearn.model_selection import train_test_split
 import pandas as pd
+import torch
 from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
 import matplotlib.pyplot as plt
@@ -17,9 +17,7 @@ from dataset import TumorClassificationDataset
 
 logger = logging.getLogger(__name__)
 
-DATA_PATH = pathlib.Path(
-    "C:/Users/Mitch/GitHub/PatternAnalysis-2024/recognition/47034073_siamese/data"
-)
+DATA_PATH = pathlib.Path("data")
 PAIRS_PATH = DATA_PATH / "pairs.csv"
 ALL_META_PATH = DATA_PATH / "all.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
@@ -40,14 +38,19 @@ def main() -> None:
     # Training params
     num_workers = 3
     learning_rate = 0.0001
+    model_name = "most_recent"
 
     hparams = HyperParams(
-        batch_size=128, num_epochs=2, learning_rate=learning_rate, weight_decay=0
+        batch_size=128,
+        num_epochs=4,
+        learning_rate=learning_rate,
+        weight_decay=0.000001,
+        margin=0.2,
     )
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2, learning_rate=learning_rate)
     trainer = SiameseController(
-        hparams, model_name="debug" if args.debug else "most_recent"
+        hparams, model_name="debug" if args.debug else model_name
     )
 
     # Prepare data
@@ -55,6 +58,7 @@ def main() -> None:
     # train_meta_df, val_meta_df = train_test_split(
     #     all_df, random_state=42, test_size=0.2
     # )
+
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
     sampler = MPerClassSampler(
@@ -79,41 +83,31 @@ def main() -> None:
         trainer.train(train_loader)
 
     # Undersample to handle class imbalance
-    # benign = train_meta_df[train_meta_df["target"] == 0]
-    # malignant = train_meta_df[train_meta_df["target"] == 1]
-    # num_malignant = len(malignant)
-    # logger.debug("num malignant %d", num_malignant)
-    # benign = benign.sample(random_state=42, n=num_malignant)
-    # balanced_df = pd.concat([benign, malignant])
-    # balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
+    benign = train_meta_df[train_meta_df["target"] == 0]
+    malignant = train_meta_df[train_meta_df["target"] == 1]
+    num_malignant = len(malignant)
+    logger.debug("num malignant %d", num_malignant)
+    benign = benign.sample(random_state=42, n=num_malignant)
+    balanced_df = pd.concat([benign, malignant])
+    balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
 
     train_classification_loader = DataLoader(
-        dataset,
+        balanced_ds,
         batch_size=hparams.batch_size,
         num_workers=num_workers,
     )
 
-    logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
-    knn = KNeighborsClassifier(
-        n_neighbors=50 if args.debug else 26, weights="distance", p=2
-    )
     embeddings = normalize(embeddings)
 
+    knn = KNeighborsClassifier(
+        n_neighbors=26 if args.debug else 26, weights="distance", p=2
+    )
+    logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
-    logger.debug("KNN classes %s", fit_knn.classes_)
 
     logger.info("Evaluating classification on train data...")
-
-    predictions = fit_knn.predict(embeddings)
-    proba = fit_knn.predict_proba(embeddings)
-    report = classification_report(labels, predictions)
-    print(proba)
-    print(labels)
-    auc = roc_auc_score(labels, proba[:, 1])
-    logger.info("train data report:\n%s\nauc: %f", report, auc)
-    RocCurveDisplay.from_predictions(labels, proba[:, 1])
-    plt.savefig("plots/train_roc")
+    _evaluate_classification(fit_knn, embeddings, labels, data_name="train")
 
     # Prepare validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
@@ -127,18 +121,25 @@ def main() -> None:
 
     embeddings, labels = trainer.compute_all_embeddings(val_loader)
     embeddings = normalize(embeddings)
-    predictions = fit_knn.predict(embeddings)
-    proba = fit_knn.predict_proba(embeddings)
-    print(proba)
-
-    report = classification_report(labels, predictions)
-    auc = roc_auc_score(labels, proba[:, 1])
-    logger.info("val data report\n%s\nauc: %f", report, auc)
-    RocCurveDisplay.from_predictions(labels, proba[:, 1])
-    plt.savefig("plots/val_roc")
+    _evaluate_classification(fit_knn, embeddings, labels, data_name="val")
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)
+
+
+def _evaluate_classification(
+    knn: KNeighborsClassifier,
+    embeddings: torch.Tensor,
+    labels: torch.Tensor,
+    data_name: str = "train",
+) -> None:
+    predictions = knn.predict(embeddings)
+    proba = knn.predict_proba(embeddings)
+    report = classification_report(labels, predictions)
+    auc = roc_auc_score(labels, proba[:, 1])
+    logger.info("%s data report:\n%s\nauc: %f", data_name, report, auc)
+    RocCurveDisplay.from_predictions(labels, proba[:, 1])
+    plt.savefig(f"plots/{data_name}_roc")
 
 
 if __name__ == "__main__":

@@ -8,12 +8,12 @@ The main purpose of this project is to improve upon the limitations of a standar
 
 (SHOW EXAMPLE OF VAE Architecture here and discuss this)
 
-Refering to the image below [[2]](#2), it shows a simple illustration of a VQ-VAE architecture. The data flow through a VQ-VAE model is made up of 5 key components:
-    1. Encoder  
-    2. Embedding Space  
-    3. Quantization  
-    4. Decoder  
-    5. Training Signal (Backpropagation Path)  
+Refering to the image below [[2]](#2), it shows a simple illustration of a VQ-VAE architecture. The data flow through a VQ-VAE model is made up of 5 key components:  
+&nbsp;1. Encoder  
+&nbsp;2. Embedding Space  
+&nbsp;3. Quantization  
+&nbsp;4. Decoder  
+&nbsp;5. Training Signal (Backpropagation Path)  
 Firstly, the process starts with an input image being **encoded** into a latent representation using a convolutional neural network (CNN). This CNN maps the image to a latent representation denoted as \( z_e(x) \), where each spatial location of the latent map is transformed into a vector representing the features of that region. The latent representation is then quantized using a set of discrete embedding vectors stored in an **embedding space**. The **quantization** process involves mapping each vector in the latent representation to its closest embedding vector in the codebook. This quantized representation, \( z_q(x) \), is passed to the **decoder** (which is another CNN) where its job is to reconstruct the image from its compressed representation. The output of the decoder is an approximation of what it thinks the original input looked like \( p(x \mid z_q) \). Furthermore, the red arrow in the image indicates the gradient flow used for training. During training, **backpropogration** is perfored to continually update the encoder and embedding vectors in order to try minimise the reconstruction loss. 
 
 ![VQ-VAE Model Architecture](resources/VQ-VAEArchitecture.png)

@@ -243,10 +243,8 @@ class ModulatedConv2d(nn.Module):
         self.weight = nn.Parameter(torch.randn(out_channels, in_channels, kernel_size, kernel_size))
         # Linear layer for style modulation
         self.modulation = nn.Linear(style_dim, in_channels, bias=False)
-        # Noise injection layer
-        self.noise_injection = NoiseInjection(out_channels)
 
-    def forward(self, x, style, noise):
+    def forward(self, x, style):
         """
         Forward pass of modulated convolution layer.
         
@@ -292,9 +290,6 @@ class ModulatedConv2d(nn.Module):
         out = F.conv2d(x, weight, padding=padding, stride=stride, groups=batch)
         # Reshape output to original batch size
         out = out.view(batch, self.out_channels, out.size(2), out.size(3))
-        
-        # Inject noise
-        out = self.noise_injection(out, noise)
 
         return out
 

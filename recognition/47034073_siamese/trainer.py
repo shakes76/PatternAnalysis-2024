@@ -1,5 +1,6 @@
 import time
 import logging
+import pathlib
 from dataclasses import dataclass
 
 import torch
@@ -7,6 +8,8 @@ from torch.utils.data import DataLoader
 from pytorch_metric_learning import losses, miners
 
 from modules import EmbeddingNetwork
+
+MODEL_DIR = pathlib.Path("models")
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -20,8 +23,13 @@ class HyperParams:
     weight_decay: float = 0.000001
 
 
+class LesionClassifier:
+    def __init__(self) -> None:
+        pass
+
+
 class SiameseController:
-    def __init__(self, hparams: HyperParams) -> None:
+    def __init__(self, hparams: HyperParams, model_name: str) -> None:
         self._model = EmbeddingNetwork().to(device)
         self._optim = torch.optim.Adam(
             params=self._model.parameters(),
@@ -32,11 +40,19 @@ class SiameseController:
         self._losses: list[float] = []
         self._miner = miners.TripletMarginMiner(margin=0.2, type_of_triplets="semihard")
         self._loss = losses.TripletMarginLoss(margin=0.2)
+        self._epoch = 0
+        self._model_name = model_name
 
     def train(self, train_loader: DataLoader) -> None:
         for epoch in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
-            logger.info("Epoch %d / loss %e", epoch, self._losses[-1])
+            logger.info("Epoch %d / loss %e", self._epoch, self._losses[-1])
+
+            self.save_model(self._model_name)
+
+            # Switch to all hard triplets after warmed up
+            self._miner.type_of_triplets = "all"
+            self._epoch += 1
 
     def compute_all_embeddings(
         self, loader: DataLoader
@@ -51,6 +67,26 @@ class SiameseController:
                 all_labels.append(labels)
 
             return torch.cat(all_embeddings), torch.cat(all_labels)
+
+    def save_model(self, name: str) -> None:
+        MODEL_DIR.mkdir(exist_ok=True)
+
+        state = {
+            "model_state": self._model.state_dict(),
+            "optim_state": self._optim.state_dict(),
+            "losses": self._losses,
+            "epoch": self._epoch,
+        }
+
+        torch.save(state, MODEL_DIR / f"{name}.pt")
+
+    def load_model(self, name: str) -> None:
+        state = torch.load(MODEL_DIR / f"{name}.pt", weights_only=False)
+
+        self._model.load_state_dict(state["model_state"])
+        self._optim.load_state_dict(state["optim_state"])
+        self._losses = state["losses"]
+        self._epoch = state["epoch"]
 
     def _train_epoch(
         self, train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor, int]]

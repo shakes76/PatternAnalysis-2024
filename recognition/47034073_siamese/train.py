@@ -4,12 +4,13 @@ import logging
 import pathlib
 
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler, normalize
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.preprocessing import normalize
+from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
+import matplotlib.pyplot as plt
 
 from trainer import SiameseController, HyperParams
 from dataset import TumorClassificationDataset
@@ -29,6 +30,7 @@ IMAGES_PATH = DATA_PATH / "small_images"
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
+    parser.add_argument("-l", "--load-model")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
@@ -37,14 +39,16 @@ def main() -> None:
 
     # Training params
     num_workers = 3
-    learning_rate = 0.00001
+    learning_rate = 0.0001
 
     hparams = HyperParams(
         batch_size=128, num_epochs=2, learning_rate=learning_rate, weight_decay=0
     )
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2, learning_rate=learning_rate)
-    trainer = SiameseController(hparams)
+    trainer = SiameseController(
+        hparams, model_name="debug" if args.debug else "most_recent"
+    )
 
     # Prepare data
     all_df = pd.read_csv(ALL_META_PATH)
@@ -68,7 +72,11 @@ def main() -> None:
     )
 
     logger.info("Starting training...")
-    trainer.train(train_loader)
+
+    if args.load_model is not None:
+        trainer.load_model(args.load_model)
+    else:
+        trainer.train(train_loader)
 
     # Undersample to handle class imbalance
     benign = train_meta_df[train_meta_df["target"] == 0]
@@ -101,8 +109,11 @@ def main() -> None:
     proba = fit_knn.predict_proba(embeddings)
     report = classification_report(labels, predictions)
     print(proba)
+    print(labels)
     auc = roc_auc_score(labels, proba[:, 1])
-    logger.info("train data report:\n%s\nauc: %d", report, auc)
+    logger.info("train data report:\n%s\nauc: %f", report, auc)
+    RocCurveDisplay.from_predictions(labels, proba[:, 1])
+    plt.savefig("plots/train_roc")
 
     # Prepare validation data
     # val_meta_df = pd.read_csv(VAL_META_PATH)
@@ -122,7 +133,9 @@ def main() -> None:
 
     report = classification_report(labels, predictions)
     auc = roc_auc_score(labels, proba[:, 1])
-    logger.info("val data report\n%s\nauc: %d", report, auc)
+    logger.info("val data report\n%s\nauc: %f", report, auc)
+    RocCurveDisplay.from_predictions(labels, proba[:, 1])
+    plt.savefig("plots/val_roc")
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)

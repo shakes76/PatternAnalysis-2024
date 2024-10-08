@@ -16,17 +16,23 @@ epochs = 20
 batch_size = 256
 margin = 1  # Margin for contrastive loss.
 
+
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
 # Change the data type to a floating point format
 x_train = x_train.astype("float32")
 x_test = x_test.astype("float32")
 
-dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+x_train = x_train.reshape(*x_train.shape, 1)
+x_test = x_test.reshape(*x_test.shape, 1)
 
+dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 dataset_val = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 
-def pairify(x, y):
+def pairify_dataset(df):
+    x = np.asarray(list(map(lambda x: x[0], tfds.as_numpy(df))))
+    y = np.asarray(list(map(lambda x: x[1], tfds.as_numpy(df))))
+
     num_classes = max(y) + 1
     digit_indices = [np.where(y == i)[0] for i in range(num_classes)]
 
@@ -56,16 +62,8 @@ def pairify(x, y):
 
     return np.array(pairs)[:, 0], np.array(pairs)[:, 1], np.array(labels).astype("float32")
 
-dataset = dataset.shuffle(60000).prefetch(tf.data.AUTOTUNE)
-dataset_val = dataset_val.prefetch(tf.data.AUTOTUNE)
-
-X = np.asarray(list(map(lambda x: x[0], tfds.as_numpy(dataset))))
-y = np.asarray(list(map(lambda x: x[1], tfds.as_numpy(dataset))))
-class1, class2, similarity_label = pairify(X, y)
-
-X_val = np.asarray(list(map(lambda x: x[0], tfds.as_numpy(dataset_val))))
-y_val = np.asarray(list(map(lambda x: x[1], tfds.as_numpy(dataset_val))))
-class1_val, class2_val, similarity_label_val = pairify(X_val, y_val)
+class1, class2, similarity_label = pairify_dataset(dataset)
+class1_val, class2_val, similarity_label_val = pairify_dataset(dataset_val)
 
 dataset_paired = tf.data.Dataset.from_tensor_slices(((class1, class2), similarity_label)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
 dataset_paired_val = tf.data.Dataset.from_tensor_slices(((class1_val, class2_val), similarity_label_val)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
@@ -90,7 +88,7 @@ contrastive_model.add_dense_layer(1, activation="sigmoid")
 contrastive_model.generate_functional_model()
 
 network = SiameseNetwork()
-network.set_input_shape(shape=(28, 28, 1))
+network.set_input_shape((28, 28, 1))
 
 network.set_basemodel(base_model)
 network.set_contrastivemodel(contrastive_model)
@@ -106,24 +104,14 @@ network.enable_tensorboard()
 network.enable_wandb("mnist-siamese")
 network.enable_model_checkpoints("./checkpoints", save_best_only=True)
 
-network.set_batch_size(batch_size)
 network.set_epochs(epochs)
-network.set_validation_split_size(0.3)
-
-network.model.fit(
-    dataset_paired, 
-    validation_data=dataset_paired_val,
-    batch_size=batch_size,
-    verbose=1,
-    epochs=10
-    )
-
+network.fit_model_batches(dataset_paired, dataset_paired_val, verbose=1)
 network.visualise_training()
 
 base_model.model.trainable = False
 classifier_model = NeuralNetwork.NeuralNetwork()
-classifier_model.add_training_data(x_train.reshape(*x_train.shape, 1), keras.utils.to_categorical(y_train, num_classes=10))
-classifier_model.add_testing_data(x_test.reshape(*x_test.shape, 1), keras.utils.to_categorical(y_test, num_classes=10))
+classifier_model.add_training_data(x_train, keras.utils.to_categorical(y_train, num_classes=10))
+classifier_model.add_testing_data(x_test, keras.utils.to_categorical(y_test, num_classes=10))
 classifier_model.add_generic_layer(base_model.model)
 classifier_model.add_dense_layer(32)
 classifier_model.add_dense_layer(16)

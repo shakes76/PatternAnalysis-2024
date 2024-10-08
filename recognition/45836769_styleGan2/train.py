@@ -62,7 +62,7 @@ for dir in ["results/AD", "results/NC", "results/UMAP", "checkpoints"]:
     os.makedirs(dir, exist_ok=True)
 
 # Init dataset and loader
-dataset = ADNIDataset(root_dir="/home/groups/comp3710/ADNI", split="train") # CHANGE DIR
+dataset = ADNIDataset(root_dir="/home/groups/comp3710/ADNI/AD_NC", split="train") # CHANGE DIR
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
 # Init generator and discriminator

@@ -166,9 +166,7 @@ class MappingNetwork(nn.Module):
         self.net = nn.Sequential(*layers)
 
     def forward(self, z, labels):
-        """
-        Transform the input latent code z and labels to the intermediate latent code w.
-        """
+        """Transform the input latent code z and labels to the intermediate latent code w."""
         embedded_labels = self.label_embedding(labels)
         z_prime = z + embedded_labels  # Combine latent and label information
         return self.net(z_prime)
@@ -223,8 +221,8 @@ class ModulatedConv2d(nn.Module):
     def __init__(self,
                  in_channels,
                  out_channels,
-                 kernel_size,
                  style_dim,
+                 kernel_size,
                  demodulate=True,
                  up=1,
                  down=1,
@@ -333,6 +331,7 @@ class SynthesisBlock(nn.Module):
         self.activate = nn.LeakyReLU(0.2)
 
     def forward(self, x, style, noise=None):
+        """Forward pass of the Synthesis block."""
         # Decerease channel num first - transform features first, then upsample
         x = self.conv1(x, style)
         x = self.noise1(x, noise=noise)

@@ -5,8 +5,6 @@ from itertools import repeat
 import numpy as np
 from torch.nn import functional as F
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 class diceLoss(torch.nn.Module):
 	def init(self):
 		super(diceLoss, self).init()
@@ -14,7 +12,6 @@ class diceLoss(torch.nn.Module):
 	def forward(self, pred, target):
 		smooth = 1e-5
 		target = F.one_hot(target, num_classes=6)
-		print(target.shape, pred.shape)
 		iflat = pred.contiguous().view(-1)
 		tflat = target.contiguous().view(-1)
 		intersection = (iflat * tflat).sum()

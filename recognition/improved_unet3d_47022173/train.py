@@ -7,7 +7,7 @@ from modules import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 images_path = "./data/semantic_MRs_anon/"
-masks_path = './data/semantic_labels_anon/'
+masks_path = "./data/semantic_labels_anon/"
 # images_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs/"
 # masks_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only/"
 
@@ -15,11 +15,11 @@ masks_path = './data/semantic_labels_anon/'
 batch_size = 2
 shuffle = True
 num_workers = 1
-epochs = 5
+epochs = 2
 
 # Model parameters
 in_channels = 1 # greyscale
-n_classes = 6 #6 different values in mask
+n_classes = 6 # 6 different values in mask
 base_n_filter = 8
 
 # Optimizer parameters
@@ -82,4 +82,4 @@ if __name__ == '__main__':
         print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(dataloader)}")
     
     # save model
-    # torch.save(model.state_dict(), 'model.pth')
+    torch.save(model.state_dict(), 'model.pth')

@@ -92,28 +92,43 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
         )
     return alpha  # Return updated alpha for progressive growing
 
+# our generator
 gen = Generator(
     Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG
 ).to(DEVICE)
+
+# our discriminator
 critic = Discriminator(IN_CHANNELS, CHANNELS_IMG).to(DEVICE)
+
+# set up optimizer for generator using adam optim; for params with (deflault lr) and without map in name (lower lr)
 opt_gen = optim.Adam([{'params': [param for name, param in gen.named_parameters() if 'map' not in name]},
                      {'params': gen.map.parameters(), 'lr': 1e-5}], lr=LR, betas=(0.0, 0.99))
+
+# set up optimizer for discriminator using adam optim and default lr
 opt_critic = optim.Adam(
     critic.parameters(), lr=LR, betas=(0.0, 0.99)
 )
 
+# train gen and discrim
 gen.train()
 critic.train()
+
+# step depends on image size
 step = int(log2(START_TRAIN_IMG_SIZE / 4))
+
+# loop over all epochs
 for num_epochs in PROGRESSIVE_EPOCHS[step:]:
     alpha = 1e-7
     loader, dataset = get_loader(4 * 2**step)
     print('Current image size: ' + str(4 * 2**step))
 
+    # loop over specified # epochs
     for epoch in range(num_epochs):
         print(f'Epoch [{epoch + 1}/ {num_epochs}')
+
+        # train generators and discriminator
         alpha = train_fn(
             critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen
         )
     generate_examples(gen, step)
-    step += 1
+    step += 1 # iterate step w/ increased image size for next iteration

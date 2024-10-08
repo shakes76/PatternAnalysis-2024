@@ -72,7 +72,6 @@ class ProstateDataset3D(Dataset):
 
 		raw_images = load_data_3D(self.image_names[:10]) # TODO remove, load 10 for testing
 		raw_masks = load_data_3D(self.mask_names[:10]) # TODO remove, load 10 for testing
-
 		subject = tio.Subject(
 			image=tio.ScalarImage(tensor=raw_images),
 			mask=tio.LabelMap(tensor=raw_masks),
@@ -81,7 +80,6 @@ class ProstateDataset3D(Dataset):
 		transformed = transforms(subject)
 		self.images = transformed['image'].data
 		self.masks = transformed['mask'].data
-		
     
 	def __len__(self):
 		return len(self.images)

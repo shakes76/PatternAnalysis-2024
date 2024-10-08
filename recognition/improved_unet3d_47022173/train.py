@@ -58,8 +58,7 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
     # Loss function
-    criterion = torch.nn.CrossEntropyLoss() #TODO consider dice cross entropy from paper
-
+    criterion = diceLoss()
 
     # Training loop
     for epoch in range(epochs):

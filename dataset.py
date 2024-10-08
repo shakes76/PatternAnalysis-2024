@@ -27,7 +27,7 @@ def show_example_images(dataloader):
         axes[i].axis("off")                      
 
     plt.suptitle("Training Images")
-    plt.savefig(f'./outputs/test_images.png')
+    plt.savefig(f'./outputs/test_images3.png')
 
 def load_data():
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
@@ -38,12 +38,11 @@ def load_data():
     train_file_list = sorted(glob.glob(f"{train_folder_path}/**.nii.gz", recursive=True))
     test_file_list = sorted(glob.glob(f"{test_folder_path}/**.nii.gz", recursive=True))
     
-    train_dataset = utils.load_data_2D(train_file_list[1:]) # trim list as root file is included
-    test_dataset = utils.load_data_2D(test_file_list[1:])
+    train_dataset = utils.load_data_2D(train_file_list)
+    test_dataset = utils.load_data_2D(test_file_list)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64,
                                             shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=64,
                                             shuffle=True)
    
     return train_dataloader, test_dataloader
-    

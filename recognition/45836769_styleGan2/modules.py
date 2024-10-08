@@ -418,16 +418,18 @@ class StyleGAN2Generator(nn.Module):
         # Add final conv layer - force greyscale output and 1 channel
         self.to_rgb = nn.Conv2d(in_channels, 1, kernel_size=1)
 
-    def forward(self, z, labels):
+    def forward(self, z, labels, return_latents=False):
         """
         Forward pass of the StyleGAN2 generator.
 
         Args:
             z (torch.Tensor): Input latent vector.
             labels (torch.Tensor): Class labels for conditional generation.
+            return_latents (bool): If True, return both generated images and w latents.
 
         Returns:
-            torch.Tensor: Generated grayscale image of size 256x240.
+            torch.Tensor: Generated grayscale image of size 256x240,
+                          and w latents if return_latents is True.
         """
         batch_size = z.shape[0]
         # Generate w from z
@@ -439,7 +441,11 @@ class StyleGAN2Generator(nn.Module):
             x = block(x, w)
             
         x = self.to_rgb(x) # Force greyscale and 1 channel
-        return torch.tanh(x)  # Force output range [-1, 1]
+        x = torch.tanh(x)  # Force output range [-1, 1]
+        
+        if return_latents:
+            return x, w
+        return x
     
     
 class ResidualBlock(nn.Module):

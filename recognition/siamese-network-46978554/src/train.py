@@ -7,13 +7,21 @@ from pathlib import Path
 import torch
 from dataset import MelanomaSiameseReferenceDataset, MelanomaSkinCancerDataset
 from modules import SiameseNetwork
+from sklearn.metrics import classification_report, roc_auc_score
 from torch.utils.data import DataLoader
-from torcheval.metrics import BinaryAUROC
 from torchvision import transforms
 from util import contrastive_loss, contrastive_loss_threshold
 
 
-def train(net, dataset, device, nepochs=10, batch_size=128, start_epoch=0):
+def train(
+    net,
+    dataset,
+    device,
+    checkpoint_func=None,
+    nepochs=10,
+    batch_size=128,
+    start_epoch=0,
+):
     data_loader = DataLoader(dataset, batch_size, shuffle=True, num_workers=4)
 
     # Put network in training mode
@@ -22,7 +30,7 @@ def train(net, dataset, device, nepochs=10, batch_size=128, start_epoch=0):
 
     # Define loss function and optimiser
     loss_func = contrastive_loss(margin=args.margin)
-    optimizer = torch.optim.Adam(net.parameters())
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
 
     losses = []
     for epoch in range(start_epoch, nepochs + start_epoch):
@@ -52,6 +60,9 @@ def train(net, dataset, device, nepochs=10, batch_size=128, start_epoch=0):
             save_obj = {"epoch": epoch, "state_dict": net.state_dict()}
             torch.save(save_obj, out_dir / "checkpoint.pt")
 
+            if checkpoint_func:
+                checkpoint_func(net)
+
 
 def test(net, dataset, ref_set, device):
     batch_size = 128
@@ -61,8 +72,9 @@ def test(net, dataset, ref_set, device):
     net = net.to(device)
     net.eval()
 
-    # Define metric
-    metric = BinaryAUROC()
+    # Define metrics
+    preds = []
+    targets = []
 
     with torch.no_grad():  # Disable gradient computation for efficiency
         for i, (x_batch, y_batch) in enumerate(data_loader):
@@ -71,15 +83,18 @@ def test(net, dataset, ref_set, device):
 
             # For AUC, we want the model to output probabilities
             pred = classify(net, x_batch, device, ref_set, prob=True)
-            target = y_batch
-            metric.update(pred, target)
+            preds.append(pred)
+            targets.append(y_batch)
 
-    return metric.compute()
+    report = classification_report(targets, preds, target_names=["benign", "malignant"])
+    auc = roc_auc_score(targets, preds)
+
+    return report, auc
 
 
 def classify(net, x, device, ref_set, prob=True):
     batch_size = x.shape[0]
-    threshold = contrastive_loss_threshold(margin=0.2)
+    threshold = contrastive_loss_threshold(margin=args.margin)
     preds = []
 
     with torch.no_grad():
@@ -122,9 +137,13 @@ def main():
     )
     train_set = MelanomaSkinCancerDataset(train=True, transform=train_transform)
     test_set = MelanomaSkinCancerDataset(train=False)
-    ref_set = MelanomaSiameseReferenceDataset()
+    ref_set = MelanomaSiameseReferenceDataset(size=16)
 
     net = SiameseNetwork(pretrained=args.pretrained)
+
+    def test_net(network):
+        report = test(network, test_set, ref_set, device)
+        print(report)
 
     if args.action == "train":
         start_epoch = 0
@@ -136,9 +155,17 @@ def main():
             start_epoch = checkpoint["epoch"]
 
         print(f"Training on {device} for {args.epoch} epochs...")
-        train(net, train_set, device, nepochs=args.epoch, start_epoch=start_epoch)
+        train(
+            net,
+            train_set,
+            device,
+            batch_size=args.batch,
+            checkpoint_func=test_net,
+            nepochs=args.epoch,
+            start_epoch=start_epoch,
+        )
 
-        print("AUROC:", test(net, test_set, ref_set, device))
+        test_net(net)
 
     else:  # args.action == "test"
         checkpoint = torch.load(
@@ -146,7 +173,7 @@ def main():
         )
         net.load_state_dict(checkpoint["state_dict"])
 
-        print("AUROC:", test(net, test_set, ref_set, device))
+        test_net(net)
 
 
 if __name__ == "__main__":
@@ -159,6 +186,12 @@ if __name__ == "__main__":
     # Training args
     parser.add_argument(
         "-e", "--epoch", type=int, default=10, help="Training epochs (default 10)"
+    )
+    parser.add_argument(
+        "-l", "--lr", type=float, default=0.001, help="Learning rate (default 0.001)"
+    )
+    parser.add_argument(
+        "-b", "--batch", type=int, default=128, help="Training batch size (default 128)"
     )
     parser.add_argument(
         "-p", "--pretrained", action="store_true", help="Train using pretrained ResNet"
@@ -177,6 +210,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    print(args)
 
     out_dir = Path(__file__).parent.parent / args.out
     os.makedirs(out_dir, exist_ok=True)

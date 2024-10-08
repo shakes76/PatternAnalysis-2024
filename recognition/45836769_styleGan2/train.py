@@ -28,8 +28,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
-from stylegan2_network import StyleGAN2Generator, StyleGAN2Discriminator
-from adni_dataset import ADNIDataset
+from modules import StyleGAN2Generator, StyleGAN2Discriminator
+from dataset import ADNIDataset
 import os
 import numpy as np
 import matplotlib.pyplot as plt

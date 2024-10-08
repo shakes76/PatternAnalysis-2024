@@ -223,7 +223,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.disc_layers = nn.ModuleList([
-            DiscLayer(hp.NUM_CHANNELS, hp.LATENT_SIZE // 64),        # Output: 128x128 Feature Map
+            DiscLayer(hp.NUM_CHANNELS, hp.LATENT_SIZE // 64),       # Output: 128x128 Feature Map
             DiscLayer(hp.LATENT_SIZE // 64, hp.LATENT_SIZE // 32),  # Output: 64x64 Feature Map
             DiscLayer(hp.LATENT_SIZE // 32, hp.LATENT_SIZE // 16),  # Output: 32x32 Feature Map
             DiscLayer(hp.LATENT_SIZE // 16, hp.LATENT_SIZE // 8),   # Output: 16x16 Feature Map

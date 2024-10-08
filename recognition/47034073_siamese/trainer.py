@@ -50,7 +50,7 @@ class SiameseController:
 
             self.save_model(self._model_name)
 
-            # Switch to all hard triplets after warmed up
+            # Switch to all margin violating triplets after warmed up
             self._miner.type_of_triplets = "all"
             self._epoch += 1
 

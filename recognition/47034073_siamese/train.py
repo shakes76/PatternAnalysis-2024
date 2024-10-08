@@ -51,11 +51,11 @@ def main() -> None:
     )
 
     # Prepare data
-    all_df = pd.read_csv(ALL_META_PATH)
-    train_meta_df, val_meta_df = train_test_split(
-        all_df, random_state=42, test_size=0.2
-    )
-    # train_meta_df = pd.read_csv(TRAIN_META_PATH)
+    # all_df = pd.read_csv(ALL_META_PATH)
+    # train_meta_df, val_meta_df = train_test_split(
+    #     all_df, random_state=42, test_size=0.2
+    # )
+    train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
@@ -79,16 +79,16 @@ def main() -> None:
         trainer.train(train_loader)
 
     # Undersample to handle class imbalance
-    benign = train_meta_df[train_meta_df["target"] == 0]
-    malignant = train_meta_df[train_meta_df["target"] == 1]
-    num_malignant = len(malignant)
-    logger.debug("num malignant %d", num_malignant)
-    benign = benign.sample(random_state=42, n=num_malignant)
-    balanced_df = pd.concat([benign, malignant])
-    balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
+    # benign = train_meta_df[train_meta_df["target"] == 0]
+    # malignant = train_meta_df[train_meta_df["target"] == 1]
+    # num_malignant = len(malignant)
+    # logger.debug("num malignant %d", num_malignant)
+    # benign = benign.sample(random_state=42, n=num_malignant)
+    # balanced_df = pd.concat([benign, malignant])
+    # balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
 
     train_classification_loader = DataLoader(
-        balanced_ds,
+        dataset,
         batch_size=hparams.batch_size,
         num_workers=num_workers,
     )
@@ -96,7 +96,7 @@ def main() -> None:
     logger.info("Fitting KNN...")
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     knn = KNeighborsClassifier(
-        n_neighbors=26 if args.debug else 26, weights="uniform", p=2
+        n_neighbors=50 if args.debug else 26, weights="distance", p=2
     )
     embeddings = normalize(embeddings)
 
@@ -116,7 +116,7 @@ def main() -> None:
     plt.savefig("plots/train_roc")
 
     # Prepare validation data
-    # val_meta_df = pd.read_csv(VAL_META_PATH)
+    val_meta_df = pd.read_csv(VAL_META_PATH)
 
     val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df)
     val_loader = DataLoader(

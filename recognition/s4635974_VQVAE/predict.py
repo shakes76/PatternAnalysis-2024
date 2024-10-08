@@ -50,17 +50,9 @@ def predict(
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("Device: ", device)
     print()
-
-    # Import save model or create a new one
-    if retrain_model:
-        model = train.train_model(
-        train_save_image_dir=train_save_image_dir, 
-        train_save_model_dir=train_save_model_dir)
-        print('Training new model\n')
-    else:
-        model = torch.load(model_path)
-        print('Using saved model\n')
-        
+    
+    model = torch.load(model_path)
+    print('Using saved model\n')
 
     model.to(device)
     model.eval()

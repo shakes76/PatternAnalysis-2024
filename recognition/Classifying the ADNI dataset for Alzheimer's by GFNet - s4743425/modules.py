@@ -17,7 +17,7 @@ from collections import OrderedDict
 import math
 
 #Hyperparmeters
-image_size = 224
+image_size = 256
 
 # MLP Block similar to the example
 class MLP(nn.Module):

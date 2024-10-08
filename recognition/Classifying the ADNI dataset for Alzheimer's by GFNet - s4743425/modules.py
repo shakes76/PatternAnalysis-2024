@@ -16,9 +16,6 @@ from functools import partial
 from collections import OrderedDict
 import math
 
-#Hyperparmeters
-image_size = 256
-
 # MLP Block similar to the example
 class MLP(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.4):
@@ -91,7 +88,7 @@ class Block(nn.Module):
 
 # Patch embedding from image to flattened patches
 class PatchEmbed(nn.Module):
-    def __init__(self, img_size=image_size, patch_size=16, in_channels=3, embed_dim=768):
+    def __init__(self, img_size=256, patch_size=16, in_channels=3, embed_dim=768):
         super().__init__()
         self.img_size = (img_size, img_size)
         self.patch_size = (patch_size, patch_size)
@@ -108,7 +105,7 @@ class PatchEmbed(nn.Module):
 # GFNet main, follows block stacking with dropout
 class GFNet(nn.Module):
     #images are set 256 x 265 with RGB # change depth ect
-    def __init__(self, img_size=image_size, patch_size= 16, embed_dim=768, num_classes=2, in_channels=3, drop_rate=0.5, depth=2, mlp_ratio=4., drop_path_rate=0.6, norm_layer=None):
+    def __init__(self, img_size=256, patch_size= 16, embed_dim=768, num_classes=2, in_channels=3, drop_rate=0.5, depth=6, mlp_ratio=4., drop_path_rate=0.6, norm_layer=None):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim

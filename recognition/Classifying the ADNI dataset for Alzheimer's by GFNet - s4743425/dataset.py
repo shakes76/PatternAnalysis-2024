@@ -19,21 +19,22 @@ data_directory = '../../../AD_NC'
 #data_directory = '/home/groups/comp3710/ADNI/AD_NC'
 
 #Set Hyperparameters
-image_size = 256
+image_size = (256, 256) # image size (length and width)
+batchsize = 64
 
 # the mean and std values are hardcoded here, previously calculated in utils.py from the training data
 transform = {
     'train': transforms.Compose([
-        transforms.Resize((image_size,image_size)),
+        transforms.Resize(image_size),
         transforms.RandAugment(num_ops=4),
         transforms.CenterCrop(image_size),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.2253, 0.2253, 0.2253))
+        transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
     ]),
     'test': transforms.Compose([
-        transforms.Resize((image_size,image_size)),
+        transforms.Resize(image_size),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.2253, 0.2253, 0.2253))
+        transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
     ]),
 }
 
@@ -89,7 +90,7 @@ def dataloader(batch_size, train_size=0.8):
 
     # DataLoader for batching
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
-    val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+    val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
     print(f"Number of training images: {len(train_dataset)}")
@@ -101,7 +102,7 @@ def dataloader(batch_size, train_size=0.8):
 
 
 if __name__ == "__main__":
-    datasets, dataloaders = dataloader(32)
+    datasets, dataloaders = dataloader(batch_size=batchsize)
 
     # iterate over DataLoader
     data_iter = iter(dataloaders[0])

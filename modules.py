@@ -7,6 +7,8 @@ from einops import rearrange
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
+
 
 class VQVAE(nn.Module):
     def __init__(self):
@@ -83,14 +85,16 @@ def train_vqvae():
     train_loader, test_loader = load_data()
     model = VQVAE().to(device)
     
-    num_epochs = 20
+    num_epochs = 7
     optimizer = Adam(model.parameters(), lr=1E-3)
     criterion = torch.nn.MSELoss()
     
+    train_losses = []
+
     for epoch_idx in range(num_epochs):
+        epoch_loss = 0
         for im in tqdm(train_loader):
             im = im.float().unsqueeze(1).to(device)
-            # print(im.shape) => torch.Size([64, 1, 256, 128])
             optimizer.zero_grad()
             out, quantize_loss = model(im)
             
@@ -98,23 +102,34 @@ def train_vqvae():
             loss = recon_loss + quantize_loss
             loss.backward()
             optimizer.step()
-        print('Finished epoch {}'.format(epoch_idx+1))
+            epoch_loss += loss.item()
+        
+        avg_epoch_loss = epoch_loss / len(train_loader)
+        train_losses.append(avg_epoch_loss)
+        print('Finished epoch {}'.format(epoch_idx + 1))
+
     print('Done Training...')
-    
-    # Reconstruction part
-    
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, num_epochs + 1), train_losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss over Epochs')
+    plt.legend()
+    plt.grid()
+    plt.savefig('training_loss.png')
+    plt.close()
+
     model.eval()
     n = 50
-    with torch.no_grad():  # Disable gradient calculation
+    with torch.no_grad():
         idxs = torch.randint(0, len(test_loader.dataset), (n, ))
         
         for im in test_loader:
             ims = im.float().unsqueeze(1).to(device)
             break
-        print(ims.shape, "ims")
 
         generated_im, _ = model(ims)
-        print(generated_im.shape, "gen")
 
         ims = (ims + 1) / 2
         generated_im = 1 - (generated_im + 1) / 2
@@ -126,8 +141,8 @@ def train_vqvae():
         img = torchvision.transforms.ToPILImage()(grid)
         img.save('reconstruction2.png')
 
-
     print('Done Reconstruction ...')
+
 
 if __name__ == "__main__":
     train_vqvae()

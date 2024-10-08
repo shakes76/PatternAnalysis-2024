@@ -4,6 +4,7 @@ import argparse
 import os
 from pathlib import Path
 
+import numpy as np
 import torch
 from dataset import MelanomaSiameseReferenceDataset, MelanomaSkinCancerDataset
 from modules import SiameseNetwork
@@ -74,20 +75,30 @@ def test(net, dataset, ref_set, device):
 
     # Define metrics
     preds = []
+    preds_proba = []
     targets = []
 
     with torch.no_grad():  # Disable gradient computation for efficiency
         for i, (x_batch, y_batch) in enumerate(data_loader):
             x_batch = x_batch.to(device)
-            y_batch = y_batch.to(device)
 
             # For AUC, we want the model to output probabilities
-            pred = classify(net, x_batch, device, ref_set, prob=True)
-            preds.append(pred)
-            targets.append(y_batch)
+            # pred = classify(net, x_batch, device, ref_set, prob=True)
+            # preds.append(pred.cpu().numpy())
+            # targets.append(y_batch.cpu().numpy())
+            pred_proba = classify(net, x_batch, device, ref_set, prob=True)
+            pred = (pred_proba >= 0.5).float()
+
+            preds.append(pred.cpu().numpy())
+            preds_proba.append(pred_proba.cpu().numpy())
+            targets.append(y_batch.numpy())
+
+        preds = np.concatenate(preds)
+        preds_proba = np.concatenate(preds_proba)
+        targets = np.concatenate(targets)
 
     report = classification_report(targets, preds, target_names=["benign", "malignant"])
-    auc = roc_auc_score(targets, preds)
+    auc = roc_auc_score(targets, preds_proba)
 
     return report, auc
 
@@ -103,13 +114,16 @@ def classify(net, x, device, ref_set, prob=True):
         ref_set_loader = DataLoader(ref_set, batch_size=1)
         for i, (x_ref, y_ref) in enumerate(ref_set_loader):
             # Replicate x_ref and y_ref to do a batch prediction
-            x_ref = x_ref.repeat(batch_size, 1, 1, 1).to(device)
-            y_ref = y_ref.repeat(batch_size).to(device)
+            x_ref = x_ref.to(device)
+            y_ref = y_ref.to(device)
 
             # The model returns 0 if the pair is similar, and 1 otherwise
             # However, we need the actual label (0 for benign, 1 for malign)
             # An XOR with the ground truth label (y_ref) will give us the actual label!
-            y_hat = threshold(*net(x, x_ref))
+            out = net.forward_one(x)
+            out_ref = net.forward_one(x_ref).repeat(batch_size)
+
+            y_hat = threshold(out, out_ref)
             pred = torch.logical_xor(y_hat, y_ref).float()
             preds.append(pred)
         # Stack predictions so that the dimensions are [batch_size, num_ref_imgs]
@@ -142,8 +156,9 @@ def main():
     net = SiameseNetwork(pretrained=args.pretrained)
 
     def test_net(network):
-        report = test(network, test_set, ref_set, device)
+        report, auc = test(network, test_set, ref_set, device)
         print(report)
+        print("Test AUROC:", auc)
 
     if args.action == "train":
         start_epoch = 0

@@ -184,10 +184,12 @@ if __name__ == "__main__":
 
     height, width = ADNI_IMAGE_DIMENSIONS
     model = GFNet(in_channels=1, num_classes=2, height=height, width=width)
+    print("Creating loaders")
     train_loader, test_loader = get_train_test_dataloaders(
         root_dir=args.data, train_batch_size=args.batch_size, test_batch_size=args.batch_size
     )
     try:
+        print(f"Starting training loop: root_dir={args.data}, batch_size={args.batch_size}, epochs={args.epochs}, test={args.test}, plot={args.plot}")
         main(model, train_loader, test_loader, num_epochs=args.epochs, test=args.test, plot=args.plot)
         torch.save(model.state_dict(), args.save_to)
     except:

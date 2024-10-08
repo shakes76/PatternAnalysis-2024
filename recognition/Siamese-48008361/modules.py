@@ -24,11 +24,11 @@ class SiameseNetwork(nn.Module):
         self.fc_layers = nn.Sequential(
             nn.Linear(resnet_output_features, 512),
             nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate),
+            nn.Dropout(0.5),
             
             nn.Linear(512, 256),
             nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate),
+            nn.Dropout(0.5),
             
             nn.Linear(256, embedding_dim)
         )
@@ -68,7 +68,7 @@ class TripletLoss(nn.Module):
         return loss.mean()
 
 # Basic helpers to later be imported in train.py
-def get_model(embedding_dim=64):
+def get_model(embedding_dim=128):
     return SiameseNetwork(embedding_dim=embedding_dim)
 
 def get_loss(margin=1.0):

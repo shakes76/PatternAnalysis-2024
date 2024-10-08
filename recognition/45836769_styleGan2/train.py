@@ -148,9 +148,21 @@ def plot_umap(generator, discriminator, dataloader, epoch):
         plt.savefig(f"results/UMAP/umap_{plot_type}_e{epoch+1}.png")
         plt.close()
 
+def plot_losses(d_losses, g_losses):
+    plt.figure(figsize=(10, 5))
+    plt.title("Generator and Discriminator Loss During Training")
+    plt.plot(g_losses, label="Generator", alpha=0.5)
+    plt.plot(d_losses, label="Discriminator", alpha=0.5)
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig("results/loss_plot.png")
+    plt.close()
+
+
 # Training loop
 total_batches = len(dataloader)
-print_interval = 100
+print_interval = 1
 save_interval = 5 # Every 5 epochs save and gen progress images
 fixed_z = {
     'AD': torch.randn(8, z_dim).to(device),
@@ -161,6 +173,8 @@ fixed_labels = {
     'NC': torch.ones(8, dtype=torch.long).to(device)
 }
 mean_path_length = 0
+d_losses = []
+g_losses = []
 
 for epoch in range(num_epochs):
     for i, (real_images, labels) in enumerate(dataloader):
@@ -177,7 +191,8 @@ for epoch in range(num_epochs):
             fake_output = discriminator(fake_images.detach()) # Want these predictions close to 0 for Discrim
             real_output = discriminator(real_images) # Want these predictions clsoe to 1
             d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
-        
+            d_losses.append(d_loss.item())
+            
         d_optim.zero_grad()
         scaler.scale(d_loss).backward()
         scaler.step(d_optim)
@@ -204,6 +219,7 @@ for epoch in range(num_epochs):
             fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
             # Generator loss
             g_loss = criterion(fake_pred, torch.ones_like(fake_pred))
+            g_losses.append(g_loss.item())
         
         g_optim.zero_grad()
         scaler.scale(g_loss).backward()
@@ -241,5 +257,7 @@ for epoch in range(num_epochs):
         }, f"checkpoints/stylegan2_checkpoint_epoch_{epoch+1}.pth")
 
     print(f"Epoch [{epoch+1}/{num_epochs}] completed")
+    
+plot_losses(d_losses, g_losses)
 
 print("Training complete!")

@@ -32,14 +32,16 @@ train_save_image_dir = f'train_images'
 # Model save diretory if training again
 train_save_model_dir = f'saved_model/train.pth'
 
+# Retrain bool. Set to true if retaining
+retrain_model = False
+
 # Directory for saving test images
 test_save_dir = f'test_images'
 os.makedirs(test_save_dir, exist_ok=True)
 
-def train_model(
+def predict(
         model_path=model_path, 
-        train_save_image_dir=train_save_image_dir, 
-        train_save_model_dir=train_save_model_dir, 
+        retrain_model=retrain_model 
         ):
     
     # Configure Pytorch
@@ -50,7 +52,7 @@ def train_model(
     print()
 
     # Import save model or create a new one
-    if type(model_path) == str:
+    if retrain_model:
         model = torch.load(model_path)
         print('Using saved model\n')
     else:
@@ -140,7 +142,8 @@ def train_model(
     plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
     plt.show()
 
-
+if (__name__ == "__main__"):
+    predict(model_path=model_path)
 
 
 

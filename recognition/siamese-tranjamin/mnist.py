@@ -13,7 +13,7 @@ from modules import SiameseNetwork, ContrastiveLoss
 from Modules import NeuralNetwork
 
 epochs = 20
-batch_size = 256
+batch_size = 128
 margin = 1  # Margin for contrastive loss.
 
 
@@ -65,7 +65,7 @@ def pairify_dataset(df):
 class1, class2, similarity_label = pairify_dataset(dataset)
 class1_val, class2_val, similarity_label_val = pairify_dataset(dataset_val)
 
-dataset_paired = tf.data.Dataset.from_tensor_slices(((class1, class2), similarity_label)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+dataset_paired = tf.data.Dataset.from_tensor_slices(((class1, class2), similarity_label)).shuffle(60000).batch(batch_size).prefetch(tf.data.AUTOTUNE)
 dataset_paired_val = tf.data.Dataset.from_tensor_slices(((class1_val, class2_val), similarity_label_val)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
 base_model = NeuralNetwork.FunctionalNetwork()
@@ -101,7 +101,7 @@ network.compile_functional_model()
 network.summary()
 
 network.enable_tensorboard()
-network.enable_wandb("mnist-siamese")
+network.enable_wandb("mnist-siamese-pipelined")
 network.enable_model_checkpoints("./checkpoints", save_best_only=True)
 
 network.set_epochs(epochs)

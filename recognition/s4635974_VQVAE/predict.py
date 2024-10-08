@@ -96,15 +96,7 @@ def predict(
 
         for i, training_images in enumerate(test_loader):
 
-            # Check input shape before passing to the model
-            print(f"Batch {i} input shape: {training_images.shape}")
             training_images = training_images.to(device)
-
-            if training_images.shape[1] != 1:
-            # If the input has more than 1 channel, something went wrong
-                print(f"Error: Expected 1 channel, but got {training_images.shape[1]} channels.")
-                continue             
-            # Run batch through model
             _, test_output_images = model(training_images)
 
             # Reshape images for SSIM calculation
@@ -122,22 +114,24 @@ def predict(
     average_SSIM = np.mean(SSIM)
     print("Average SSIM on training set: ", average_SSIM)
 
-    # Visulise 4 random images through the model and save in test_save_dir
-    # Select 4 random indices from the test set
-    random_indices = random.sample(range(len(test_loader.dataset)), 4)
-
+    # Visualize 4 random images through the model and save in test_save_dir
     # Create a figure to plot the images
     fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(10, 10))
 
-    for idx, rand_idx in enumerate(random_indices):
-        # Get the real image and pass it through the model to get the decoded image
-        real_image = test_loader.dataset[rand_idx]
-        real_image = real_image.unsqueeze(0).to(device)  # Add batch dimension and send to device
+    # Loop through random indices to visualize
+    for idx, (real_image, _) in enumerate(test_loader):  # Get batch from DataLoader
+        if idx >= 4:  # We only need 4 images
+            break
+
+        # Ensure the real_image is on the device and unsqueeze if necessary
+        real_image = real_image.to(device)
+
+        # Pass it through the model to get the decoded image
         _, decoded_image = model(real_image)
 
-        # Detach and move to CPU for visualization
-        real_image = real_image.squeeze().cpu().numpy().transpose(1, 2, 0)  # Squeeze and rearrange for plotting
-        decoded_image = decoded_image.squeeze().cpu().detach().numpy().transpose(1, 2, 0)
+        # Detach and move to CPU for visualization (select only the first in the batch)
+        real_image = real_image[0].cpu().numpy().squeeze()  # Assuming it's a single-channel image
+        decoded_image = decoded_image[0].cpu().detach().numpy().squeeze()
 
         # Plot real image on the left
         axes[idx, 0].imshow(real_image, cmap='gray')
@@ -149,10 +143,10 @@ def predict(
         axes[idx, 1].set_title('Decoded Image')
         axes[idx, 1].axis('off')
 
-    # Save the figure
-    plt.tight_layout()
-    plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
-    plt.show()
+        # Save the figure
+        plt.tight_layout()
+        plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
+        plt.show()
 
 if (__name__ == "__main__"):
     predict(model_path=model_path)

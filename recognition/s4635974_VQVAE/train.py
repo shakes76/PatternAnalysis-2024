@@ -59,17 +59,17 @@ save_dir = f'test'
 model_dir = f'saved_model/test.pth'
 
 def train_model(
-        save_dir=save_dir | None, 
-        model_dir=model_dir | None, 
-        num_epochs=num_epochs,
-        batch_size=batch_size,
-        lr=lr,
-        num_hiddens=num_hiddens,
-        num_residual_hiddens=num_residual_hiddens,
-        num_channels=num_channels,
-        num_embeddings=num_embeddings,
-        dim_embedding=dim_embedding,
-        beta=beta
+        save_dir: str | None = None, 
+        model_dir: str | None = None, 
+        num_epochs: int = num_epochs,
+        batch_size: int = batch_size,
+        lr: float = lr,
+        num_hiddens: int = num_hiddens,
+        num_residual_hiddens: int = num_residual_hiddens,
+        num_channels: int = num_channels,
+        num_embeddings: int = num_embeddings,
+        dim_embedding: int = dim_embedding,
+        beta: float = beta
         ):
 
     # Hyperparameters

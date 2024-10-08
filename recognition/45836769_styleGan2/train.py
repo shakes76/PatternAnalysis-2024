@@ -78,7 +78,7 @@ d_optim = optim.Adam(discriminator.parameters(), lr=lr, betas=(beta1, beta2))
 criterion = nn.BCEWithLogitsLoss()
 
 # Init GradScaler
-scaler = amp.GradScaler(device_type='cuda')
+scaler = amp.GradScaler()
 
 # Helper funcs
 def requires_grad(model, flag=True):

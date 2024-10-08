@@ -26,6 +26,7 @@ REFERENCES:
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.cuda.amp as amp
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 from modules import StyleGAN2Generator, StyleGAN2Discriminator
@@ -37,15 +38,15 @@ from umap import UMAP
 from sklearn.preprocessing import StandardScaler
 
 # Hyperparams - mostly following StyleGAN2 paper
-z_dim = 512 # Latent dims (z: input, w: intermediate)
-w_dim = 512  
+z_dim = 256 # Latent dims (z: input, w: intermediate)
+w_dim = 256  
 num_mapping_layers = 8
 mapping_dropout = 0.1
 label_dim = 2  # AD and NC
 num_layers = 7
 ngf = 256 # Num generator features
 ndf = 256 # Num disciminator features
-batch_size = 32
+batch_size = 16
 num_epochs = 100
 lr = 0.002
 beta1 = 0.0
@@ -76,6 +77,9 @@ d_optim = optim.Adam(discriminator.parameters(), lr=lr, betas=(beta1, beta2))
 # Loss function
 criterion = nn.BCEWithLogitsLoss()
 
+# Init GradScaler
+scaler = amp.GradScaler()
+
 # Helper funcs
 def requires_grad(model, flag=True):
     """Enable/disable gradients for model params"""
@@ -97,12 +101,12 @@ def g_path_regularise(fake_img, latents, mean_path_length, decay=0.01):
 
 def save_images(generator, z, labels, epoch, batch=None):
     """Save generated images, categorise AD and NC"""
-    with torch.no_grad():
+    with torch.no_grad(), amp.autocast():
         fakes = generator(z, labels)
         for i, (img, lbl) in enumerate(zip(fakes, labels)):
             label_str = "AD" if lbl == 0 else "NC"
             filename = f"results/{label_str}/fake_e{epoch+1}_" + (f"b{batch}_" if batch else "") + f"s{i+1}.png"
-            save_image(img, filename, normalize=True)
+            save_image(img.float(), filename, normalize=True)  # Ensure float32 for save_image
 
 def plot_umap(generator, discriminator, dataloader, epoch):
     """Generate UMAP plot to visualise latent space"""
@@ -111,16 +115,16 @@ def plot_umap(generator, discriminator, dataloader, epoch):
     real_feats, fake_feats, labels = [], [], []
     
     # Collect features from real and fake
-    with torch.no_grad():
+    with torch.no_grad(), amp.autocast():
         for real_imgs, lbls in dataloader:
             real_imgs, lbls = real_imgs.to(device), lbls.to(device)
             # Gen real image features from discrim
-            real_feats.append(discriminator(real_imgs, feature_output=True).cpu())
+            real_feats.append(discriminator(real_imgs, feature_output=True).float().cpu())  # Ensure float32
             labels.extend(lbls.cpu().numpy())
             # Gen fake image features from gen
             z = torch.randn(real_imgs.size(0), z_dim).to(device)
             fake_imgs = generator(z, lbls)
-            fake_feats.append(discriminator(fake_imgs, feature_output=True).cpu())
+            fake_feats.append(discriminator(fake_imgs, feature_output=True).float().cpu())  # Ensure float32
     
     # Prepare data for UMAP
     real_feats, fake_feats = torch.cat(real_feats).numpy(), torch.cat(fake_feats).numpy()
@@ -164,47 +168,54 @@ for epoch in range(num_epochs):
         requires_grad(generator, False)
         requires_grad(discriminator, True)
         
-        # Generate fake images
-        z = torch.randn(real_images.size(0), z_dim).to(device)
-        fake_images = generator(z, labels)
-        fake_output = discriminator(fake_images.detach()) # Want these predictions close to 0 for Discrim
-        real_output = discriminator(real_images) # Want these predictions clsoe to 1
-        d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
+        with amp.autocast(): # Use mixed precision
+            # Generate fake images
+            z = torch.randn(real_images.size(0), z_dim).to(device)
+            fake_images = generator(z, labels)
+            fake_output = discriminator(fake_images.detach()) # Want these predictions close to 0 for Discrim
+            real_output = discriminator(real_images) # Want these predictions clsoe to 1
+            d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
         
         d_optim.zero_grad()
-        d_loss.backward()
-        d_optim.step()
+        scaler.scale(d_loss).backward()
+        scaler.step(d_optim)
         
         # Discrimnator R1 regularisation 
         if i % d_reg_interval == 0:
             real_images.requires_grad = True
-            real_pred = discriminator(real_images)
-            r1_loss = d_r1_loss(real_pred, real_images)
+            with amp.autocast():
+                real_pred = discriminator(real_images)
+                r1_loss = d_r1_loss(real_pred, real_images)
             d_optim.zero_grad()
-            (r1_gamma / 2 * r1_loss * d_reg_interval).backward()
-            d_optim.step()
+            scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward()
+            scaler.step(d_optim)
         
         ### Train Generator ###
         requires_grad(generator, True)
         requires_grad(discriminator, False)
         
-        z = torch.randn(real_images.size(0), z_dim).to(device)
-        fake_images = generator(z, labels)
-        fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
-        # Generator loss
-        g_loss = criterion(fake_pred, torch.ones_like(fake_pred))
+        with amp.autocast():
+            z = torch.randn(real_images.size(0), z_dim).to(device)
+            fake_images = generator(z, labels)
+            fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
+            # Generator loss
+            g_loss = criterion(fake_pred, torch.ones_like(fake_pred))
         
         g_optim.zero_grad()
-        g_loss.backward()
-        g_optim.step()
+        scaler.scale(g_loss).backward()
+        scaler.step(g_optim)
         
         # Generator path length regularisation
         if i % g_reg_interval == 0:
-            fake_images, latents = generator(z, labels, return_latents=True)
-            path_loss, mean_path_length = g_path_regularise(fake_images, latents, mean_path_length, pl_decay)
+            with amp.autocast():
+                fake_images, latents = generator(z, labels, return_latents=True)
+                path_loss, mean_path_length = g_path_regularise(fake_images, latents, mean_path_length, pl_decay)
             g_optim.zero_grad()
-            (pl_weight * path_loss * g_reg_interval).backward()
-            g_optim.step()
+            scaler.scale(pl_weight * path_loss * g_reg_interval).backward()
+            scaler.step(g_optim)
+            
+        # Update scaler
+        scaler.update()
 
         # Print losses
         if i % print_interval == 0:

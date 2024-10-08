@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --partition=a100
+#SBATCH --partition=comp3710
+#SBATCH --account=comp3710 
 #SBATCH --gres=gpu:1
 #SBATCH --time=0-00:00:00
 #SBATCH --mail-type=ALL

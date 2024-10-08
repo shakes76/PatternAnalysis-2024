@@ -76,9 +76,7 @@ def predict(
 
     # Define your transformations
     transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
         transforms.ToTensor(),  
-        # transforms.Normalize((0.5,), (0.5,)),
         transforms.Normalize((0,), (1,)) 
     ])
 

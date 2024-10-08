@@ -104,6 +104,10 @@ class HipMRIDataset(Dataset):
 
         # Extract the 2D array of the first (and only) image
         image = image_data[0]  # load_data_2D returns a list
+
+        # Conditionally add the channel dimension only if no transform is provided
+        if self.transform is None:
+            image = image[None, :, :]  # Add channel dimension (from [H, W] to [1, H, W])
         
         if self.transform:
             image = self.transform(image)
@@ -112,7 +116,7 @@ class HipMRIDataset(Dataset):
 
 # Dataloader class for HipMRI data
 class HipMRILoader:
-    def __init__(self, train_dir, validate_dir, test_dir, batch_size=128, transform=None, num_workers=1):
+    def __init__(self, train_dir, validate_dir, test_dir, batch_size=16, transform=None, num_workers=1):
         self.batch_size = batch_size
         self.transform = transform
         

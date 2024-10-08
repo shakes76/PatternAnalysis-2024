@@ -9,7 +9,8 @@ IMG_SIZE = 256
 
 TRAIN_TRANSFORM = transforms.Compose([
     transforms.Resize(IMG_SIZE),
-    transforms.CenterCrop(IMG_SIZE),
+    transforms.RandomCrop(IMG_SIZE),
+    transforms.RandAugment(num_ops = 3),
     transforms.ToTensor()
 ])
 TEST_TRANSFORM = transforms.Compose([

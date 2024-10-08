@@ -1,13 +1,14 @@
 from modules import VisionTransformer
 from dataset import *
 import torch
+from torchsummary import summary
 
-NUM_EPOCH = 5
-LEARNING_RATE = 0.001
+NUM_EPOCH = 200
+LEARNING_RATE = 0.0005
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = VisionTransformer(128, 16, (3, 256, 256), 200, 4, device).to(device)
-trainLoader = getTrainLoader()
+model = VisionTransformer(6, 32, (3, 256, 256), 128, 4, 2, device).to(device)
+#print(summary(model, (3, 256, 256)))
 testLoader = getTestLoader()
 trainLossList = []
 
@@ -17,7 +18,7 @@ opt = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
 for epoch in range(NUM_EPOCH):
     print(f'Epoch {epoch+1}/{NUM_EPOCH}:', end = ' ')
     trainLoss = 0
-
+    trainLoader = getTrainLoader()
     model.train()
     for i, data in enumerate(trainLoader):
         imgs = data[0].to(device)
@@ -32,18 +33,19 @@ for epoch in range(NUM_EPOCH):
     trainLossList.append(trainLoss/len(trainLoader)) 
     print(f"Training loss = {trainLossList[-1]}")  
     
+    if (epoch % 5 == 0):
+        model.eval()
+        testAcc = 0
+        torch.no_grad()
+        for i, (imgs, trueLabels) in enumerate(testLoader):
+            
+            imgs = imgs.to(device)
+            trueLabels = trueLabels.to(device)
 
-model.eval()
-testAcc = 0
-torch.no_grad()
-for i, (imgs, trueLabels) in enumerate(testLoader):
-    
-    imgs = imgs.to(device)
-    trueLabels = trueLabels.to(device)
+            outputs = model(imgs)
 
-    outputs = model(imgs)
-
-    a, predLabels = torch.max(outputs.data, 1)
-    testAcc += (trueLabels == predLabels).sum().item()
-
-print(f"Test set accuracy = {100 * testAcc / (len(testLoader) * testLoader.batch_size)} %")
+            a, predLabels = torch.max(outputs.data, 1)
+            testAcc += (trueLabels == predLabels).sum().item()
+        print(f"Test set accuracy = {100 * testAcc / (len(testLoader) * testLoader.batch_size)} %")
+    if (epoch % 20 == 0):
+        torch.save(model, f"model_epoch_{epoch}")

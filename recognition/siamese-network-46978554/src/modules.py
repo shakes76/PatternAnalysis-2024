@@ -26,6 +26,9 @@ class SiameseNetwork(nn.Module):
             for param in self.net[:-3].parameters():
                 param.requires_grad = False
 
+    def forward_one(self, x):
+        return self.net(x)
+
     def forward(self, x1, x2):
         out1 = self.net(x1)
         out2 = self.net(x2)

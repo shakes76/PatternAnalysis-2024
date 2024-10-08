@@ -7,14 +7,14 @@ import keras
 from keras import ops
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import tensorflow_datasets as tfds
 
 from modules import SiameseNetwork, ContrastiveLoss
 from Modules import NeuralNetwork
 
 epochs = 20
-batch_size = 256
+batch_size = 16
 margin = 1  # Margin for contrastive loss.
+
 
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -22,11 +22,10 @@ margin = 1  # Margin for contrastive loss.
 x_train = x_train.astype("float32")
 x_test = x_test.astype("float32")
 
-dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+x_train = x_train.reshape(*x_train.shape, 1)
+x_test = x_test.reshape(*x_test.shape, 1)
 
-dataset_val = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-
-def pairify(x, y):
+def make_pairs(x, y):
     num_classes = max(y) + 1
     digit_indices = [np.where(y == i)[0] for i in range(num_classes)]
 
@@ -54,21 +53,22 @@ def pairify(x, y):
         pairs += [[x1, x2]]
         labels += [1]
 
-    return np.array(pairs)[:, 0], np.array(pairs)[:, 1], np.array(labels).astype("float32")
+    return np.array(pairs), np.array(labels).astype("float32")
 
-dataset = dataset.shuffle(60000).prefetch(tf.data.AUTOTUNE)
-dataset_val = dataset_val.prefetch(tf.data.AUTOTUNE)
+# make train pairs
+pairs_train, labels_train = make_pairs(x_train, y_train)
 
-X = np.asarray(list(map(lambda x: x[0], tfds.as_numpy(dataset))))
-y = np.asarray(list(map(lambda x: x[1], tfds.as_numpy(dataset))))
-class1, class2, similarity_label = pairify(X, y)
+# make test pairs
+pairs_test, labels_test = make_pairs(x_test, y_test)
 
-X_val = np.asarray(list(map(lambda x: x[0], tfds.as_numpy(dataset_val))))
-y_val = np.asarray(list(map(lambda x: x[1], tfds.as_numpy(dataset_val))))
-class1_val, class2_val, similarity_label_val = pairify(X_val, y_val)
+x_train_1 = pairs_train[:, 0]  # x_train_1.shape is (60000, 28, 28)
+x_train_2 = pairs_train[:, 1]
 
-dataset_paired = tf.data.Dataset.from_tensor_slices(((class1, class2), similarity_label)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-dataset_paired_val = tf.data.Dataset.from_tensor_slices(((class1_val, class2_val), similarity_label_val)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+x_test_1 = pairs_test[:, 0]  # x_test_1.shape = (20000, 28, 28)
+x_test_2 = pairs_test[:, 1]
+
+train_dataset = tf.data.Dataset.from_tensor_slices(((x_train_1, x_train_2), labels_train)).batch(batch_size)
+test_dataset = tf.data.Dataset.from_tensor_slices(((x_test_1, x_test_2), labels_test)).batch(batch_size)
 
 base_model = NeuralNetwork.FunctionalNetwork()
 base_model.add_generic_layer(tf.keras.layers.Input(shape=(28, 28, 1)))
@@ -90,7 +90,7 @@ contrastive_model.add_dense_layer(1, activation="sigmoid")
 contrastive_model.generate_functional_model()
 
 network = SiameseNetwork()
-network.set_input_shape(shape=(28, 28, 1))
+network.set_input_shape((28, 28, 1))
 
 network.set_basemodel(base_model)
 network.set_contrastivemodel(contrastive_model)
@@ -111,12 +111,12 @@ network.set_epochs(epochs)
 network.set_validation_split_size(0.3)
 
 network.model.fit(
-    dataset_paired, 
-    validation_data=dataset_paired_val,
-    batch_size=batch_size,
+    train_dataset, 
+    validation_data=test_dataset,
+    # batch_size=batch_size,
     verbose=1,
-    epochs=10
-    )
+    epochs=20
+)
 
 network.visualise_training()
 

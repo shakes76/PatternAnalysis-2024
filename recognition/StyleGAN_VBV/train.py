@@ -22,7 +22,7 @@ PROGRESSIVE_EPOCHS = [30, 30, 30, 30, 30, 30]  # Number of epochs for each progr
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
 
 def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
-    # Calculate the gradient penalty for the WGAN-GP
+    """ Calculate the gradient penalty for the WGAN-GP """
     BATCH_SIZE, C, H, W = real.shape  # Get dimensions of the real images
     beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)  # Random weighting factor
     # Create interpolated images between real and fake
@@ -44,7 +44,7 @@ def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
     return gradient_penalty  # Return the calculated penalty
 
 def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
-    # Main training function for one training step
+    """Main training function for one training step"""
     loop = tqdm(loader, leave=True)  # Progress bar for loading batches
 
     for batch_idx, (real, _) in enumerate(loop):

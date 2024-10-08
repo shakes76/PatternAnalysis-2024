@@ -30,7 +30,7 @@ class GlobalFilterLayer(nn.Module):
 
 class GFNetBlock(nn.Module):
     def __init__(
-        self, in_channels, out_channels, height, width, kernel_size=3, padding=1
+        self, in_channels, out_channels, height, width, dropout, kernel_size=3, padding=1
     ):
         super(GFNetBlock, self).__init__()
         self.conv = nn.Conv2d(
@@ -39,27 +39,31 @@ class GFNetBlock(nn.Module):
         self.global_filter = GlobalFilterLayer(out_channels, height, width)
         self.bn = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout2d(p=dropout)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
         x = self.global_filter(x)
+        x = self.dropout(x)
         return x
 
 
 class GFNet(nn.Module):
-    def __init__(self, in_channels, num_classes, height, width):
+    def __init__(self, in_channels, num_classes, height, width, dropout):
         super(GFNet, self).__init__()
-        self.layer1 = GFNetBlock(in_channels, 64, height, width)
-        self.layer2 = GFNetBlock(64, 128, height, width)
-        self.layer3 = GFNetBlock(128, 256, height, width)
+        self.layer1 = GFNetBlock(in_channels, 64, height, width, dropout)
+        self.layer2 = GFNetBlock(64, 128, height, width, dropout)
+        self.layer3 = GFNetBlock(128, 256, height, width, dropout)
         self.fc = nn.Linear(256 * height * width, num_classes)
+        self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = x.view(x.size(0), -1)
+        x = self.dropout(x)
         x = self.fc(x)
         return x

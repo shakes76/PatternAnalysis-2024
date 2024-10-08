@@ -3,10 +3,13 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from matplotlib import pyplot as plt
 
 from .modules import GFNet
 from .dataset import get_train_test_dataloaders, ADNI_IMAGE_DIMENSIONS
+
+learning_rate = 1e-3
+weight_decay = 1e-4
+accuracy_threshold = 0.8
 
 
 def train(
@@ -47,7 +50,9 @@ def train(
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-            print(f"Batch {batch}/{n_batches}, Cum. Loss: {epoch_loss/batch+1}, Cum. Accuracy: {correct/total}")
+            print(
+                f"Batch {batch}/{n_batches}, Cum. Loss: {epoch_loss/(batch+1)}, Cum. Accuracy: {correct/total}"
+            )
 
         scheduler.step()
 
@@ -66,6 +71,10 @@ def train(
             test_loss, test_acc = run_test(model, test_loader, criterion, device)
             test_loss_history.append(test_loss)
             test_acc_history.append(test_acc)
+            if test_acc > accuracy_threshold:
+                torch.save(model.state_dict(), "over_80.pth")
+                print("Model got over 80. Saved.")
+                break
 
     return train_loss_history, train_acc_history, test_loss_history, test_acc_history
 
@@ -100,6 +109,8 @@ def run_test(model, test_loader, criterion, device):
 def plot_metrics(
     train_loss_history, train_acc_history, test_loss_history=None, test_acc_history=None
 ):
+    from matplotlib import pyplot as plt
+
     epochs = range(1, len(train_loss_history) + 1)
 
     plt.figure(figsize=(14, 6))
@@ -137,13 +148,16 @@ def get_device():
 
 
 def get_optimizer(model):
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = optim.AdamW(
+        model.parameters(), lr=learning_rate, weight_decay=weight_decay
+    )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
     return optimizer, scheduler
 
 
 def main(model, train_loader, test_loader, num_epochs=10, test=True, plot=True):
     device = torch.device(get_device())
+    print(f"device={get_device()}")
     model.to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -174,23 +188,42 @@ def main(model, train_loader, test_loader, num_epochs=10, test=True, plot=True):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("data", type=str, help="Path to train and test data directories")
+    parser.add_argument(
+        "data", type=str, help="Path to train and test data directories"
+    )
     parser.add_argument("--plot", action="store_true", help="Display plot")
-    parser.add_argument("--save-to", type=str, help="Path to save model output", default="model.pth")
-    parser.add_argument("--epochs", type=int, help="Path to save model output", default=2)
+    parser.add_argument(
+        "--save-to", type=str, help="Path to save model output", default="model.pth"
+    )
+    parser.add_argument(
+        "--epochs", type=int, help="Path to save model output", default=2
+    )
     parser.add_argument("--test", action="store_true", help="Path to save model output")
-    parser.add_argument("--batch-size", type=int, help="Path to save model output", default=32)
+    parser.add_argument(
+        "--batch-size", type=int, help="Path to save model output", default=32
+    )
     args = parser.parse_args()
 
     height, width = ADNI_IMAGE_DIMENSIONS
-    model = GFNet(in_channels=1, num_classes=2, height=height, width=width)
-    print("Creating loaders")
+    model = GFNet(in_channels=1, num_classes=2, height=height, width=width, dropout=0.3)
     train_loader, test_loader = get_train_test_dataloaders(
-        root_dir=args.data, train_batch_size=args.batch_size, test_batch_size=args.batch_size
+        root_dir=args.data,
+        train_batch_size=args.batch_size,
+        test_batch_size=args.batch_size,
     )
     try:
-        print(f"Starting training loop: root_dir={args.data}, batch_size={args.batch_size}, epochs={args.epochs}, test={args.test}, plot={args.plot}")
-        main(model, train_loader, test_loader, num_epochs=args.epochs, test=args.test, plot=args.plot)
+        print(
+            f"Starting training loop: root_dir={args.data}, batch_size={args.batch_size}, epochs={args.epochs}, test={args.test}, plot={args.plot}"
+        )
+        main(
+            model,
+            train_loader,
+            test_loader,
+            num_epochs=args.epochs,
+            test=args.test,
+            plot=args.plot,
+        )
         torch.save(model.state_dict(), args.save_to)
     except:
         torch.save(model.state_dict(), "error_" + args.save_to)
+        raise

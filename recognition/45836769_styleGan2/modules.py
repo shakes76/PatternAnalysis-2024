@@ -490,7 +490,7 @@ class MiniBatchStdDev(nn.Module):
     Args:
             group_size (int, optional): Num images per group for std calc. Defaults to 4.
                               If None - use whole batch.
-            num_new_features (int, optional): Num stddev features per pixel. Defaults to 1.
+            num_new_features (int, optional): Num stddev features to add. Defaults to 1.
     """
     def __init__(self, group_size=4, num_new_features=1):
         super().__init__()
@@ -505,29 +505,33 @@ class MiniBatchStdDev(nn.Module):
             x (torch.Tensor): Input tensor - shape [N, C, H, W]
 
         Returns:
-            torch.Tensor: Output tensor with stddev features - shape [N, C+1, H, W]
+            torch.Tensor: Output tensor with stddev features - shape [N, C+num_new_features, H, W]
         """
         N, C, H, W = x.shape
         
         # Calc group size
-        G = min(self.group_size or N, N)
-
-        # Reshape input: [G, M, num_new_features, C // num_new_features, H, W]
-        # G: num groups
-        # M: num images per group
-        # C: input channels
-        grouped_input = x.view(G, -1, self.num_new_features, C // self.num_new_features, H, W)
+        G = min(self.group_size or N, N) # Determine group size, default to N
+        F = self.num_new_features
+        c = C // F # Number of channels per feature
+        
+        # Reshape input: [G, M, F, c, H, W]
+        # G: num groups, M: num images per group (N/G), F: num new features, c: channels per feature
+        y = x.reshape(G, -1, F, c, H, W)
+        # Minus group mean
+        y = y - y.mean(dim=0)
+        # Calc variance of group
+        y = y.square().mean(dim=0) # [M, F, c, H, W]
         # Calc stddev for each group
         # Add epsilon (1e-8) so no div by zero
-        stddev = torch.sqrt(grouped_input.var(dim=1, unbiased=False) + 1e-8)
-        # Avg stddev over the "num_new_features" and "C // num_new_features" dim
-        stddev = stddev.mean(dim=[2, 3])
-        # Expand stddev tensor - match input tensor spatial dim
-        stddev = stddev.expand(G, -1, H, W).contiguous()
-        # Reshape stddev - match input batch size
-        stddev = stddev.view(N, -1, H, W)
+        y = (y + 1e-8).sqrt()           # [M, F, c, H, W]
+        # Avg over channels and spatial dims
+        y = y.mean(dim=[2,3,4])         # [M, F]
+        # Reshape - add singular dims
+        y = y.reshape(-1, F, 1, 1)      # [M, F, 1, 1]
+        # Match input spatial dims
+        y = y.repeat(G, 1, H, W)        # [N, F, H, W]
         # Concat calcd stddev to original input
-        output = torch.cat([x, stddev], dim=1)
+        output = torch.cat([x, y], dim=1)    # [N, C+F, H, W]
 
         return output
     
@@ -568,23 +572,23 @@ class StyleGAN2Discriminator(nn.Module):
             in_channels = out_channels
             
         # Spatial dims after downsamples
-        # 6 downsamples: 256/(2^6) = 4, 240/(2^6) = 3.75 (rounds to 4)
-        final_height = image_size[0] // (2 ** (num_layers - 1)) # 4
-        final_width = image_size[1] // (2 ** (num_layers - 1)) # 4
+        # 6 downsamples: 256/(2^6) = 4, 240/(2^6) = 3.75 (rounds down)
+        final_height = image_size[0] // (2 ** (num_layers - 1))  # 4
+        final_width = image_size[1] // (2 ** (num_layers - 1))   # 3
             
         # Add MiniBatchStdDev layer (adds 1 to channel dim)
-        # In: [batch_size, 2048 (256 * 8), 4, 4]
-        # Out: [batch_size, 2049, 4, 4]
+        # In: [batch_size, 2048 (256 * 8), 4, 3]
+        # Out: [batch_size, 2049, 4, 3]
         self.minibatch_stddev = MiniBatchStdDev()
         # Final conv layer
         self.final_conv = nn.Conv2d(in_channels + 1, in_channels, kernel_size=3, padding=1)
         # Flattening layer
-        # In: [batch_size, 2048, 4, 4]
-        # Out: [batch_size, 2048 * 4 * 4] = 32,768
+        # In: [batch_size, 2048, 4, 3]
+        # Out: [batch_size, 2048 * 4 * 3] = 24576
         self.flatten = nn.Flatten()
         # Dense layer - classifier
         out_features = in_channels * final_height * final_width
-        # In: [batch_size, 32768]
+        # In: [batch_size, 24576]
         # Out: [batch_size, 1]
         self.final_linear = nn.Linear(out_features, 1)
 
@@ -599,18 +603,12 @@ class StyleGAN2Discriminator(nn.Module):
         Returns:
             torch.Tensor: Discriminator scores of shape (batch_size,).
         """
-        print(f"Input shape: {x.shape}")
-        for i, layer in enumerate(self.descrim_network):
+        for layer in self.descrim_network:
             x = layer(x)
-            print(f"After layer {i}: {x.shape}")
         x = self.minibatch_stddev(x)
-        print(f"After MiniBatchStdDev: {x.shape}")
         x = self.final_conv(x)
-        print(f"After final conv: {x.shape}")
         x = self.flatten(x)
-        print(f"After flatten: {x.shape}")
         x = self.final_linear(x)
-        print(f"After final linear: {x.shape}")
 
         # Get single value per sample
         return x.squeeze(1)

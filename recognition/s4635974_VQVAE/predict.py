@@ -119,11 +119,11 @@ def predict(
     fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(10, 10))
 
     # Loop through random indices to visualize
-    for idx, (real_image, _) in enumerate(test_loader):  # Get batch from DataLoader
+    for idx, real_image in enumerate(test_loader):  # Get batch from DataLoader
         if idx >= 4:  # We only need 4 images
             break
 
-        # Ensure the real_image is on the device and unsqueeze if necessary
+        # Ensure the real_image is on the device
         real_image = real_image.to(device)
 
         # Pass it through the model to get the decoded image
@@ -143,10 +143,12 @@ def predict(
         axes[idx, 1].set_title('Decoded Image')
         axes[idx, 1].axis('off')
 
-        # Save the figure
-        plt.tight_layout()
-        plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
-        plt.show()
+    # Save the figure
+    plt.tight_layout()
+    plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
+    plt.show()
+    
+    print("End")
 
 if (__name__ == "__main__"):
     predict(model_path=model_path)

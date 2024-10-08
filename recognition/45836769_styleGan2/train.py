@@ -26,7 +26,7 @@ REFERENCES:
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.cuda.amp as amp
+import torch.amp as amp
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 from modules import StyleGAN2Generator, StyleGAN2Discriminator
@@ -78,7 +78,7 @@ d_optim = optim.Adam(discriminator.parameters(), lr=lr, betas=(beta1, beta2))
 criterion = nn.BCEWithLogitsLoss()
 
 # Init GradScaler
-scaler = amp.GradScaler()
+scaler = amp.GradScaler(device_type='cuda')
 
 # Helper funcs
 def requires_grad(model, flag=True):
@@ -101,7 +101,7 @@ def g_path_regularise(fake_img, latents, mean_path_length, decay=0.01):
 
 def save_images(generator, z, labels, epoch, batch=None):
     """Save generated images, categorise AD and NC"""
-    with torch.no_grad(), amp.autocast():
+    with torch.no_grad(), amp.autocast(device_type='cuda'):
         fakes = generator(z, labels)
         for i, (img, lbl) in enumerate(zip(fakes, labels)):
             label_str = "AD" if lbl == 0 else "NC"
@@ -115,7 +115,7 @@ def plot_umap(generator, discriminator, dataloader, epoch):
     real_feats, fake_feats, labels = [], [], []
     
     # Collect features from real and fake
-    with torch.no_grad(), amp.autocast():
+    with torch.no_grad(), amp.autocast(device_type='cuda'):
         for real_imgs, lbls in dataloader:
             real_imgs, lbls = real_imgs.to(device), lbls.to(device)
             # Gen real image features from discrim
@@ -168,7 +168,7 @@ for epoch in range(num_epochs):
         requires_grad(generator, False)
         requires_grad(discriminator, True)
         
-        with amp.autocast(): # Use mixed precision
+        with amp.autocast(device_type='cuda'): # Use mixed precision
             # Generate fake images
             z = torch.randn(real_images.size(0), z_dim).to(device)
             fake_images = generator(z, labels)
@@ -179,22 +179,24 @@ for epoch in range(num_epochs):
         d_optim.zero_grad()
         scaler.scale(d_loss).backward()
         scaler.step(d_optim)
+        scaler.update()
         
         # Discrimnator R1 regularisation 
         if i % d_reg_interval == 0:
             real_images.requires_grad = True
-            with amp.autocast():
+            with amp.autocast(device_type='cuda'):
                 real_pred = discriminator(real_images)
                 r1_loss = d_r1_loss(real_pred, real_images)
             d_optim.zero_grad()
             scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward()
             scaler.step(d_optim)
+            scaler.update()
         
         ### Train Generator ###
         requires_grad(generator, True)
         requires_grad(discriminator, False)
         
-        with amp.autocast():
+        with amp.autocast(device_type='cuda'):
             z = torch.randn(real_images.size(0), z_dim).to(device)
             fake_images = generator(z, labels)
             fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
@@ -204,18 +206,17 @@ for epoch in range(num_epochs):
         g_optim.zero_grad()
         scaler.scale(g_loss).backward()
         scaler.step(g_optim)
+        scaler.update()
         
         # Generator path length regularisation
         if i % g_reg_interval == 0:
-            with amp.autocast():
+            with amp.autocast(device_type='cuda'):
                 fake_images, latents = generator(z, labels, return_latents=True)
                 path_loss, mean_path_length = g_path_regularise(fake_images, latents, mean_path_length, pl_decay)
             g_optim.zero_grad()
             scaler.scale(pl_weight * path_loss * g_reg_interval).backward()
             scaler.step(g_optim)
-            
-        # Update scaler
-        scaler.update()
+            scaler.update()
 
         # Print losses
         if i % print_interval == 0:

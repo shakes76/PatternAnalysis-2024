@@ -18,12 +18,14 @@ class ResidualStack(nn.Module):
                         in_channels=num_hiddens,
                         out_channels=num_residual_hiddens,
                         kernel_size=3,
+                        stride=1,
                         padding=1,
                     ),
                     nn.ReLU(),
                     nn.Conv2d(
                         in_channels=num_residual_hiddens,
                         out_channels=num_hiddens,
+                        stride=1,
                         kernel_size=1,
                     ),
                 )
@@ -36,3 +38,52 @@ class ResidualStack(nn.Module):
             # Adds identity mapping (skip connection)
             h = h + layer(h)
         return torch.relu(h)
+    
+class Encoder(nn.Module):
+    def __init__(
+            self,
+            in_channels,
+            num_hiddens, 
+            num_downsampling_layers, 
+            num_residual_layers, 
+            num_residual_hiddens
+    ):
+        super().__init__()
+        conv = nn.Sequential()
+        for downsampling_layer in range(num_downsampling_layers):
+            if downsampling_layer == 0:
+                out_channels = num_hiddens // 2
+            elif downsampling_layer == 1:
+                (in_channels, out_channels) = (num_hiddens // 2, num_hiddens)
+            else:
+                (in_channels, out_channels) = (num_hiddens, num_hiddens)
+
+            conv.add_module(
+                f"down{downsampling_layer}",
+                nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=4, # Try switch to 3 to see the affects 
+                    stride=2, # Stride 2 downsamples by half 
+                    padding=1
+                ),
+            )
+            conv.add_module(f"relu{downsampling_layer}", nn.ReLU())
+            
+        conv.add_module(
+            "final_conv",
+            nn.Conv2d(
+                in_channels=num_hiddens,
+                out_channels=num_hiddens,
+                kernel_size=3,
+                padding=1
+            ),
+        )
+        self.conv = conv
+        self.residual_stack = ResidualStack(
+            num_hiddens, num_residual_layers, num_residual_hiddens
+        )
+
+    def forward(self, x):
+        h = self.conv(x)
+        return self.residual_stack(h)

@@ -30,7 +30,7 @@ class SiameseController:
         )
         self._hparams = hparams
         self._losses: list[float] = []
-        self._miner = miners.BatchHardMiner()
+        self._miner = miners.TripletMarginMiner(margin=0.2, type_of_triplets="semihard")
         self._loss = losses.TripletMarginLoss(margin=0.2)
 
     def train(self, train_loader: DataLoader) -> None:
@@ -60,12 +60,13 @@ class SiameseController:
         n = 0
         num_observations = 0
         for x, labels in train_loader:
+            self._optim.zero_grad()
+
             n += 1
             x = x.to(device)
             labels = labels.to(device)
             num_observations += len(labels)
 
-            self._optim.zero_grad()
             embeddings = self._model(x)
             hard_triplets = self._miner(embeddings, labels)
             loss = self._loss(embeddings, labels, hard_triplets)

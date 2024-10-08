@@ -1,0 +1,5 @@
+Python==3.11
+torch==2.0.1
+monai==1.2.0
+numpy==1.21.2
+matplotlib==3.4.3

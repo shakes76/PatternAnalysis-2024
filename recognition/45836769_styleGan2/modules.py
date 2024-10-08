@@ -544,14 +544,16 @@ class StyleGAN2Discriminator(nn.Module):
     """
     def __init__(self, image_size, num_channels, ndf, num_layers):
         super().__init__()
-        self.image_size = image_size
-        self.num_channels = num_channels
-        self.ndf = ndf
-        self.num_layers = num_layers
+        self.image_size = image_size # (256, 240)
+        self.num_channels = num_channels # 1
+        self.ndf = ndf # 256
+        self.num_layers = num_layers # 7
         
         self.descrim_network = nn.ModuleList()
         
         # Initial conv layer
+        # In: [batch_size, 1, 256, 240]
+        # Out: [batch_size, 256, 256, 240]
         self.descrim_network.append(nn.Conv2d(in_channels=1, out_channels=self.ndf, kernel_size=3, padding=1))
         # Residual blocks
         # Set up channel progression
@@ -560,21 +562,30 @@ class StyleGAN2Discriminator(nn.Module):
         for i in range(num_layers):
             out_channels = int(ndf * channel_multipliers[i])
             downsample = i != 0  # No downsample first block
+            # In: [batch_size, in_channels, H, W]
+            # Out: [batch_size, out_channels, H/2, W/2] (if downsampled)
             self.descrim_network.append(ResidualBlock(in_channels, out_channels, downsample=downsample))
             in_channels = out_channels
             
         # Spatial dims after downsamples
-        final_height = image_size[0] // (2 ** (num_layers - 1))
-        final_width = image_size[1] // (2 ** (num_layers - 1))
+        # 6 downsamples: 256/(2^6) = 4, 240/(2^6) = 3.75 (rounds to 4)
+        final_height = image_size[0] // (2 ** (num_layers - 1)) # 4
+        final_width = image_size[1] // (2 ** (num_layers - 1)) # 4
             
         # Add MiniBatchStdDev layer (adds 1 to channel dim)
+        # In: [batch_size, 2048 (256 * 8), 4, 4]
+        # Out: [batch_size, 2049, 4, 4]
         self.minibatch_stddev = MiniBatchStdDev()
         # Final conv layer
         self.final_conv = nn.Conv2d(in_channels + 1, in_channels, kernel_size=3, padding=1)
         # Flattening layer
+        # In: [batch_size, 2048, 4, 4]
+        # Out: [batch_size, 2048 * 4 * 4] = 32,768
         self.flatten = nn.Flatten()
         # Dense layer - classifier
         out_features = in_channels * final_height * final_width
+        # In: [batch_size, 32768]
+        # Out: [batch_size, 1]
         self.final_linear = nn.Linear(out_features, 1)
 
 
@@ -588,13 +599,18 @@ class StyleGAN2Discriminator(nn.Module):
         Returns:
             torch.Tensor: Discriminator scores of shape (batch_size,).
         """
-        for layer in self.descrim_network:
+        print(f"Input shape: {x.shape}")
+        for i, layer in enumerate(self.descrim_network):
             x = layer(x)
-        
+            print(f"After layer {i}: {x.shape}")
         x = self.minibatch_stddev(x)
+        print(f"After MiniBatchStdDev: {x.shape}")
         x = self.final_conv(x)
+        print(f"After final conv: {x.shape}")
         x = self.flatten(x)
+        print(f"After flatten: {x.shape}")
         x = self.final_linear(x)
+        print(f"After final linear: {x.shape}")
 
         # Get single value per sample
         return x.squeeze(1)

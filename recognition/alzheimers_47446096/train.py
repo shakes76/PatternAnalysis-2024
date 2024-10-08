@@ -7,7 +7,7 @@ NUM_EPOCH = 200
 LEARNING_RATE = 0.0005
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = VisionTransformer(6, 32, (3, 256, 256), 128, 4, 2, device).to(device)
+model = VisionTransformer(10, 32, (3, 256, 256), 256, 4, 2, device).to(device)
 #print(summary(model, (3, 256, 256)))
 testLoader = getTestLoader()
 trainLossList = []
@@ -33,7 +33,7 @@ for epoch in range(NUM_EPOCH):
     trainLossList.append(trainLoss/len(trainLoader)) 
     print(f"Training loss = {trainLossList[-1]}")  
     
-    if (epoch % 5 == 0):
+    if ((epoch + 1) % 5 == 0):
         model.eval()
         testAcc = 0
         torch.no_grad()
@@ -47,5 +47,5 @@ for epoch in range(NUM_EPOCH):
             a, predLabels = torch.max(outputs.data, 1)
             testAcc += (trueLabels == predLabels).sum().item()
         print(f"Test set accuracy = {100 * testAcc / (len(testLoader) * testLoader.batch_size)} %")
-    if (epoch % 20 == 0):
-        torch.save(model, f"model_epoch_{epoch}")
+    if ((epoch + 1) % 20 == 0):
+        torch.save(model, f"model_epoch_{epoch + 1}")

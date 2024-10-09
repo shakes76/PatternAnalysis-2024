@@ -1,62 +1,57 @@
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import dataset as ds
-import models as m
+import modules
+from timm.utils import ModelEmaV3
+from tqdm import tqdm
 
-def training_loop(diffusion, dataloader, n_epochs, optim, device, display=False, dir="diffusion.pt"):
-    mse = nn.MSELoss()
-    best_loss = float("inf")
-    n_steps = diffusion.n_steps
+def train(batch_size: int=4,
+          num_time_steps: int=1000,
+          num_epochs: int=15,
+          seed: int=-1,
+          ema_decay: float=0.9999,
+          lr=2e-5,
+          checkpoint_path: str=None):
 
-    for epoch in range(n_epochs):
-        epoch_loss = 0.0
-        for step, batch in enumerate(dataloader):
-            print(f"Epoch {epoch + 1}/{n_epochs}")
-            # Loading data
-            x_0 = batch[0].to(device)
-            n = len(x_0)
+    # Create the dataloader
+    train_loader = torch.utils.data.DataLoader(ds.dataset, batch_size=batch_size,
+                                               shuffle=True, drop_last=True, num_workers=2)
 
-            # Picking some noise for each of the images in the batch, a timestep and the respective alpha_bars
-            zeta = torch.randn_like(x_0).to(device)
-            t = torch.randint(0, n_steps, (n,)).to(device)
+    scheduler = modules.DiffusionScheduler(num_time_steps=num_time_steps)
+    model = modules.UNET().cuda()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    ema = ModelEmaV3(model, decay=ema_decay)
+    if checkpoint_path is not None:
+        checkpoint = torch.load(checkpoint_path)
+        model.load_state_dict(checkpoint['weights'])
+        ema.load_state_dict(checkpoint['ema'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+    criterion = nn.MSELoss(reduction='mean')
 
-            # Computing the noisy image based on x_0 and the time-step (forward process)
-            noisy_imgs = diffusion(x_0, t, zeta)
-
-            # Getting model estimation of noise based on the images and the time-step
-            zeta_tau = diffusion.backward(noisy_imgs, t.reshape(n, -1))
-
-            # Optimizing the MSE between the noise plugged and the predicted noise
-            loss = mse(zeta_tau, zeta)
-            optim.zero_grad()
+    for i in range(num_epochs):
+        total_loss = 0
+        for bidx, (x,_) in enumerate(tqdm(train_loader, desc=f"Epoch {i+1}/{num_epochs}")):
+            x = x.cuda()
+            # x = F.pad(x, (2,2,2,2))
+            t = torch.randint(0,num_time_steps,(batch_size,))
+            e = torch.randn_like(x, requires_grad=False)
+            a = scheduler.alpha[t].view(batch_size,1,1,1).cuda()
+            x = (torch.sqrt(a)*x) + (torch.sqrt(1-a)*e)
+            output = model(x, t)
+            optimizer.zero_grad()
+            loss = criterion(output, e)
+            total_loss += loss.item()
             loss.backward()
-            optim.step()
+            optimizer.step()
+            ema.update(model)
+        print(f'Epoch {i+1} | Loss {total_loss / (60000/batch_size):.5f}')
 
-            epoch_loss += loss.item() * len(x_0) / len(dataloader.dataset)
+    checkpoint = {
+        'weights': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'ema': ema.state_dict()
+    }
+    torch.save(checkpoint, '/content/ddpm_checkpoint')
 
-        # Display images generated at this epoch
-        # if display:
-        #     dataset.show_images(models.generate_new_images(diffusion, device=device), f"Images generated at epoch {epoch + 1}")
-
-        log_string = f"Loss at epoch {epoch + 1}: {epoch_loss:.3f}"
-
-        # Storing the model
-        if best_loss > epoch_loss:
-            best_loss = epoch_loss
-            torch.save(diffusion.state_dict(), dir)
-
-        print(log_string)
-
-# Defining model
-n_steps, min_beta, max_beta = 10000, 10 ** -4, 0.02  # More steps than paper
-ddpm = m.Diffusion(m.UNet(n_steps), n_steps=n_steps, min_beta=min_beta, max_beta=max_beta, device=ds.device)
-
-m.show_forward(ddpm, ds.dataloader, ds.device)
-
-
-optimizer = torch.optim.Adam(ddpm.parameters(), lr=0.001)
-training_loop(ddpm, ds.dataloader, ds.n_epochs, optimizer, ds.device)
-
-generated = m.generate_new_images(ddpm)
-ds.show_images(generated, "Images")
-
+train(checkpoint_path=None, lr=2e-5, num_epochs=1)

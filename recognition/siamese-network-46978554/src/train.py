@@ -90,12 +90,13 @@ def test(net, dataset, ref_set, device):
         ref_set_loader = DataLoader(ref_set, batch_size=8)
         for i, (x_ref_batch, y_ref_batch) in enumerate(ref_set_loader):
             x_ref_batch = x_ref_batch.to(device)
+            y_ref_batch = y_ref_batch.to(device)
             out_ref = net.forward_one(x_ref_batch)
 
             targets_ref.append(y_ref_batch)
             outs_ref.append(out_ref)
 
-        targets_ref = np.concatenate(targets_ref)
+        targets_ref = torch.concat(targets_ref)
         outs_ref = torch.concat(outs_ref)
 
         # Do prediction on test set
@@ -108,7 +109,7 @@ def test(net, dataset, ref_set, device):
             pred = (pred_proba >= 0.5).float()
 
             targets.append(y_batch.numpy())
-            outs.append(outs)
+            outs.append(out.cpu().numpy())
             preds.append(pred.cpu().numpy())
             preds_proba.append(pred_proba.cpu().numpy())
 
@@ -132,6 +133,7 @@ def classify(out, outs_ref, targets_ref, device, prob=True):
     preds = []
     for out_ref, target_ref in zip(outs_ref, targets_ref):
         out_ref = out_ref.repeat(batch_size, 1)
+        target_ref = target_ref.repeat(batch_size)
         pair_pred = threshold(out, out_ref)
 
         # The model returns 0 if the pair is similar, and 1 otherwise

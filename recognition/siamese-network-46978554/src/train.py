@@ -54,12 +54,12 @@ def train(
             epoch_loss += float(loss)
             nbatches += 1
 
-        print("Epoch %3d: %10f" % (start_epoch + epoch + 1, epoch_loss / nbatches))
+        print("Epoch %3d: %10f" % (epoch + 1, epoch_loss / nbatches))
 
         # Save model weights and losses every 10 epochs and at the last epoch
         if epoch % 10 == 9 or epoch == nepochs + start_epoch - 1:
             torch.save(torch.Tensor(losses), out_dir / "loss.pt")
-            save_obj = {"epoch": epoch, "state_dict": net.state_dict()}
+            save_obj = {"epoch": epoch + 1, "state_dict": net.state_dict()}
             torch.save(save_obj, out_dir / "checkpoint.pt")
 
             if test_func:

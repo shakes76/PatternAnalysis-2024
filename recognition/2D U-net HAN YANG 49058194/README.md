@@ -93,8 +93,8 @@ The project requires the following dependencies[^5]:
   - **Training data**: <br />Preprocessed images (such as slices from MRI scans) and corresponding ground truth segmentation masks.
     - Images: `[batch_size, 1, 128, 128]`, where `batch_size=128` <br />`1` represents the grayscale channel, and `128x128` are the spatial dimensions of the image.
       - Example: `torch.Size([128, 1, 128, 128])`
-    - Masks (ground truth): `[batch_size, 1, 128, 128]`, similarly structured as the images, but representing the ground truth segmentation masks. <br />
- Thus, the masks and images will both have the same dimensions: `[128, 1, 128, 128]` for a batch of 128 grayscale images with corresponding binary masks.
+    - Masks (ground truth): `[batch_size, 1, 128, 128]`, similarly structured as the images, but representing the ground truth segmentation masks.Thus, the masks and images will both have the same dimensions
+      -Example : `[128, 1, 128, 128]` for a batch of 128 grayscale images with corresponding binary masks.
   - **Hyperparameters**: <br />Training settings like the learning rate, number of epochs, batch size, etc. These could be specified within the script or passed via a configuration file or command-line arguments. 
     - `learning_rate = 0.001`
     - `num_epochs = 30`

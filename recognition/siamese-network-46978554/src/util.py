@@ -44,5 +44,10 @@ def plot_pca_embeddings(embeddings, targets):
     comp1 = embeddings_pca[:, 0]
     comp2 = embeddings_pca[:, 1]
 
-    plt.scatter(comp1, comp2, c=targets)
+    plt.scatter(comp1[targets == 0], comp2[targets == 0], label="benign")
+    plt.scatter(comp1[targets == 1], comp2[targets == 1], label="malignant")
+    plt.xlabel("PC Direction 1")
+    plt.ylabel("PC Direction 2")
+    plt.title("Model Embeddings (Test Set) in Principal Component Space")
+    plt.legend()
     plt.show()

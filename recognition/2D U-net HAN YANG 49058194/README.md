@@ -16,7 +16,7 @@ Also known as the extension path or upsampling path, it is symmetrical to the en
 - **Skip Connection**：<br />
 Located between the encoder and decoder, it typically consists of two 3x3 convolutional layers. Its function is to further extract and fuse features, providing more useful information for the decoder.
 <br />
-The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].
+The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].<br />
 
 ## How It Works
 This U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images[^3].<br />

@@ -7,11 +7,11 @@ import torch
 save_dir = "data_viz"
 os.makedirs(save_dir, exist_ok=True)
 
-# Load the saved data
+# Load the saved data and map tensors to CPU
 with open('training_data.pkl', 'rb') as f:
-    data = pickle.load(f)  # No map_location needed
+    data = torch.load(f, map_location=torch.device('cpu'))
 
-# Access the lists
+# Now you can access your lists
 training_output_loss = data["training_output_loss"]
 training_vq_loss = data["training_vq_loss"]
 validation_output_loss = data["validation_output_loss"]

@@ -6,6 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 import tensorflow as tf
 import tensorflow_addons as tfa
 import torchvision.transforms as transforms
+import random
 
 
 mrs_dir = "/Users/zhangxiangxu/Downloads/3710_data/data/HipMRI_study_complete_release_v1/semantic_MRs_anon"
@@ -45,3 +46,18 @@ class MRIDataset(Dataset):
 
         return mr_image, label_image  # 返回 MRI 图像和对应的标签
     
+
+
+# 自定义 3D 随机翻转类，用于数据增强
+class RandomFlip3D:
+    def __call__(self, sample):
+        # 随机选择一个轴进行翻转
+        axis = random.choice([1, 2, 3])  # 选择深度、高度或宽度轴
+        sample = torch.flip(sample, dims=[axis])
+        return sample  # 返回翻转后的样本
+    
+    
+# 自定义保持不变类，用于不做任何增强
+class Identity:
+    def __call__(self, imgs):
+        return imgs  # 直接返回输入图像，无任何增强

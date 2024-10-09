@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+# Define dataset, loading prostate MRI image data
 class ProstateMRIDataset(Dataset):
     def __init__(self, root_dir):
         self.root_dir = root_dir

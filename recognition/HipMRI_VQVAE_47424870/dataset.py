@@ -89,19 +89,3 @@ if __name__ == '__main__':
 
     for batch_idx, (images, _) in enumerate(dataloader):
         print(f"Batch {batch_idx + 1} | Image Batch Shape: {images.shape}")
-
-    '''
-    import matplotlib.pyplot as plt
-    # Visualize some of the batches
-    def visualize_batch(batch, num_images=4):
-        fig, axes = plt.subplots(1, num_images, figsize=(15, 5))
-        for i, img in enumerate(batch[:num_images]):
-            axes[i].imshow(img.squeeze().numpy(), cmap='gray')
-            axes[i].axis('off')
-        plt.show()
-
-    for batch_idx, (images, _) in enumerate(dataloader):
-        if batch_idx == 0:  # Visualize only the first batch
-            visualize_batch(images)
-            break
-            '''

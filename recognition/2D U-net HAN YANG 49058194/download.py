@@ -29,14 +29,14 @@ def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
                 img_data = nii_img.get_fdata()
                 print(f"Image shape: {img_data.shape}")  # Print the shape of the image to check its dimensions
                 
-                if len(img_data.shape) == 3:  # 3D 图像，正常处理
-                    for i in range(img_data.shape[2]):  # 对于每个切片
+                if len(img_data.shape) == 3:  # 3D images
+                    for i in range(img_data.shape[2]):  # For each slice
                         slice_2d = img_data[:, :, i]
                         resized_slice = resize(slice_2d, target_size, preserve_range=True)
                         save_path = os.path.join(save_dir, f"{file_name}_slice_{i}.npy")
                         np.save(save_path, resized_slice)
                         print(f"Saved {save_path}")
-                elif len(img_data.shape) == 2:  # 2D 图像，直接处理
+                elif len(img_data.shape) == 2:  # 2D images
                     resized_slice = resize(img_data, target_size, preserve_range=True)
                     save_path = os.path.join(save_dir, f"{file_name}_slice.npy")
                     np.save(save_path, resized_slice)

@@ -17,7 +17,7 @@ Also known as the extension path or upsampling path, it is symmetrical to the en
 Located between the encoder and decoder, it typically consists of two 3x3 convolutional layers. Its function is to further extract and fuse features, providing more useful information for the decoder.
 <br />
 The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].<br />
-
+  
 ## How It Works
 This U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images[^3].<br />
 <br />
@@ -186,7 +186,7 @@ With `test_driver.py` output: `Model achieved the desired Dice score of 0.75 or 
 
 ## References
 [^1]: Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional networks for biomedical image segmentation. *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 234-241.
-[^2]: Sudre, C. H., Li, W., Vercauteren, T., Ourselin, S., & Cardoso, M. J. (2017). Generalised Dice Overlap as a Deep Learning Loss Function for Highly Unbalanced Segmentations. 2017 International Workshop on Deep Learning in Medical Image Analysis (DLMIA). 
+[^2]: Sudre, C. H., Li, W., Vercauteren, T., Ourselin, S., & Cardoso, M. J. (2017). Generalised Dice Overlap as a Deep Learning Loss Function for Highly Unbalanced Segmentations. 2017 International Workshop on Deep Learning in Medical Image Analysis (DLMIA).
 [^3]: Milletari, F., Navab, N., & Ahmadi, S. A. (2016). V-Net: Fully convolutional neural networks for volumetric medical image segmentation. *2016 Fourth International Conference on 3D Vision (3DV)*, 565-571.
 [^4]: Paszke, Adam, et al. "PyTorch: An imperative style, high-performance deep learning library." *Advances in neural information processing systems* 32 (2019).
 [^5]: Taha, A. Asem, and Allan Hanbury. "Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool." *BMC medical imaging* 15.1 (2015): 29.

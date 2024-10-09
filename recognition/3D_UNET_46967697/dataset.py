@@ -1,3 +1,5 @@
+from utils import *
+
 import numpy as np
 import nibabel as nib
 import tqdm 
@@ -20,6 +22,19 @@ class Prostate3DDataset(torch.utils.data.Dataset):
         label = self.labels[idx]
 
         return mr, label
+    
+
+def get_data_loaders():
+    # Data
+    data = Prostate3DDataset(SEMANTIC_MRS_PATH, SEMANTIC_LABELS_PATH)
+    generator = torch.Generator().manual_seed(RANDOM_SEED)
+    train_data, test_data = torch.utils.data.random_split(data, [TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT], generator=generator)
+
+    # Data loaders
+    train_loader = torch.utils.data.DataLoader(dataset=train_data)
+    test_loader = torch.utils.data.DataLoader(dataset=test_data)
+
+    return train_loader, test_loader
 
 
 def to_channels(arr: np.ndarray, dtype=np.uint8):

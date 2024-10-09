@@ -10,14 +10,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not torch.cuda.is_available():
     print("WARNING: CUDA is not available. Running on CPU")
 
-# Data
-data = Prostate3DDataset(SEMANTIC_MRS_PATH, SEMANTIC_LABELS_PATH)
-generator = torch.Generator().manual_seed(RANDOM_SEED)
-train_data, test_data = torch.utils.data.random_split(data, [TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT], generator=generator)
-
-# Data loader
-train_loader = torch.utils.data.DataLoader(dataset=train_data)
-test_loader = torch.utils.data.DataLoader(dataset=test_data)
+# Data loaders
+train_loader, test_loader = get_data_loaders()
 
 # Model
 model = Unet3D(IN_DIM, NUM_CLASSES, NUM_FILTERS).to(device)

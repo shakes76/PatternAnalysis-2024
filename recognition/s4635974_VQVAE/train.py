@@ -42,7 +42,7 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 50
+num_epochs = 100
 batch_size = 8
 lr = 0.003
 num_hiddens = 128

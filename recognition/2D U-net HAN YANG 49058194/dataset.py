@@ -18,7 +18,8 @@ class ProstateMRIDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.file_list[idx]
         image = np.load(img_path)
-        # 将图像数据标准化到 [0, 1] 范围
-        image = image / np.max(image)  # 假设图像的最大值是 255
+        
+        # Normalize image data to the range of [0,1]
+        image = image / np.max(image)  、
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
         return image

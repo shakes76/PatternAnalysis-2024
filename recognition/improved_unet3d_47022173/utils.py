@@ -1,2 +1,3 @@
 TRAIN_SIZE = 0.8
 SEED = 42
+IS_RANGPUR = False

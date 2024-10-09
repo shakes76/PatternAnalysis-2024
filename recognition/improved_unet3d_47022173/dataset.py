@@ -1,10 +1,18 @@
 import numpy as np
 import tqdm
 import nibabel as nib
-import torch
+from utils import *
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 import torchio as tio
+
+if IS_RANGPUR:
+	end = '.nii.gz'
+	cutoff = 211
+else:
+	end = '.nii'
+	cutoff = 24
+
 
 def load_data_3D(imageNames, normImage=False, dtype=np.float32, 
 				getAffines=False, early_stop=False):
@@ -67,19 +75,19 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 
 class ProstateDataset3D(Dataset):
 	def __init__(self, images_path, masks_path, transforms):
-		self.image_names = [images_path + f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith('.nii')]
-		self.mask_names = [masks_path + f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith('.nii')]
+		self.image_names = [images_path + f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith(end)]
+		self.mask_names = [masks_path + f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith(end)]
 
-		raw_images = load_data_3D(self.image_names[:10]) # TODO remove, load 10 for testing
-		raw_masks = load_data_3D(self.mask_names[:10]) # TODO remove, load 10 for testing
+		raw_images = load_data_3D(self.image_names[:cutoff]) # TODO remove, load 10 for testing
+		raw_masks = load_data_3D(self.mask_names[:cutoff]) # TODO remove, load 10 for testing
 		subject = tio.Subject(
 			image=tio.ScalarImage(tensor=raw_images),
 			mask=tio.LabelMap(tensor=raw_masks),
 		)
-
+		
 		transformed = transforms(subject)
 		self.images = transformed['image'].data
-		self.masks = transformed['mask'].data
+		self.masks = transformed['mask'].data # 10 , 1 ,128 ,128 ,128
     
 	def __len__(self):
 		return len(self.images)
@@ -87,4 +95,5 @@ class ProstateDataset3D(Dataset):
 	def __getitem__(self, idx):
 		image = self.images[idx].unsqueeze(0)
 		mask = self.masks[idx].unsqueeze(0)
+		#TODO move mask shit here
 		return image, mask

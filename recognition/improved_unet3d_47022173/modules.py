@@ -5,19 +5,23 @@ from itertools import repeat
 import numpy as np
 from torch.nn import functional as F
 
-class diceLoss(torch.nn.Module):
+class DiceLoss(torch.nn.Module):
 	def init(self):
-		super(diceLoss, self).init()
+		super(DiceLoss, self).init()
 
-	def forward(self, pred, target):
-		smooth = 1e-5
-		target = F.one_hot(target, num_classes=6)
-		iflat = pred.contiguous().view(-1)
-		tflat = target.contiguous().view(-1)
-		intersection = (iflat * tflat).sum()
-		A_sum = torch.sum(iflat * iflat)
-		B_sum = torch.sum(tflat * tflat)
-		return 1 - ((2. * intersection + smooth) / (A_sum + B_sum + smooth) )   
+	def forward(self, pred, masks):
+		return 1 - self.dice_coefficient(pred, masks)
+
+	def dice_coefficient(self,  pred, masks):
+		smooth = 1e-6 # Avoid divide by zero
+
+		# Flatten
+		pred = pred.contiguous().view(-1)
+		masks = masks.contiguous().view(-1)
+
+		intersection = (pred * masks).sum()
+		dice = (2. * intersection + smooth) / (pred.sum() + masks.sum() + smooth)
+		return dice
 
 
 class Modified3DUNet(nn.Module):
@@ -82,8 +86,6 @@ class Modified3DUNet(nn.Module):
 
 		self.ds2_1x1_conv3d = nn.Conv3d(self.base_n_filter*8, self.n_classes, kernel_size=1, stride=1, padding=0, bias=False)
 		self.ds3_1x1_conv3d = nn.Conv3d(self.base_n_filter*4, self.n_classes, kernel_size=1, stride=1, padding=0, bias=False)
-
-
 
 
 	def conv_norm_lrelu(self, feat_in, feat_out):
@@ -205,8 +207,12 @@ class Modified3DUNet(nn.Module):
 		ds1_ds2_sum_upscale_ds3_sum_upscale = self.upsample(ds1_ds2_sum_upscale_ds3_sum)
 
 		out = out_pred + ds1_ds2_sum_upscale_ds3_sum_upscale
-		seg_layer = out
 		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes)
 		logits = out
-		out = self.softmax(out)
-		return out, seg_layer, logits
+		softmax_logits = self.softmax(out)
+
+		prediction_indices = torch.argmax(softmax_logits, dim=1)
+		predictions = torch.zeros_like(softmax_logits)
+		predictions.scatter_(1, prediction_indices.unsqueeze(1), 1)
+
+		return softmax_logits, predictions, logits

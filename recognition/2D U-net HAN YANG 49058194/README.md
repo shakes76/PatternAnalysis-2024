@@ -6,12 +6,16 @@ of 0.75 on the test set on the prostate label.
 
 ## Model Architecture and Introduction
 This model is a 2D UNet with encoder decoder structure and skip connections[^1].<br />
+<br />
 The encoder captures contextual information through downsampling, while the decoder restores spatial resolution using upsampling, guided by skip connections that help retain fine details. <br />
+<br />
 The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].
 
 ## How It Works
 The U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images[^3][^4].<br />
+<br />
 The process begins with loading Nifti files containing MRI slices using the Nibabel library, converting them into NumPy arrays for preprocessing. Each slice is then resized and normalized to ensure uniform input dimensions of `[1, 1, 128, 128]` for grayscale images. <br />
+<br />
 During training, the model minimizes the binary cross-entropy loss, using the Dice similarity coefficient as a metric for evaluation. Once trained, the model can predict segmentation masks for new MRI slices, providing a clear delineation of the prostate gland against the surrounding tissues, which is crucial for accurate diagnosis and treatment planning.
 
 

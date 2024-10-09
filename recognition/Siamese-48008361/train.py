@@ -26,7 +26,7 @@ def train_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, d
     pbar = tqdm(train_loader, desc="Training")
     for batch_idx, (anchor, positive, negative, labels) in enumerate(pbar):
         anchor, positive, negative, labels = anchor.to(device), positive.to(device), negative.to(device), labels.to(device)
-
+        optimizer.zero_grad()
         with autocast():
             anchor_out, positive_out, negative_out = model(anchor, positive, negative)
             triplet_loss_val = triplet_loss(anchor_out, positive_out, negative_out)
@@ -37,7 +37,7 @@ def train_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, d
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-        optimizer.zero_grad()
+        #optimizer.zero_grad()
 
         running_loss += loss.item()
         probs = torch.softmax(classifier_out, dim=1)[:, 1]  # Probability of positive class
@@ -129,13 +129,13 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, train_aucs, val
 def main():
     # Hyperparameters
     batch_size = 32
-    embedding_dim = 128
-    learning_rate = 1e-4  
+    embedding_dim = 256
+    learning_rate = 1e-3 
     num_epochs = 20
     data_dir = 'preprocessed_data/'
 
     # Early stopping threshold for validation AUC-ROC
-    early_stopping_threshold = 0.85
+    early_stopping_threshold = 0.84
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device: {device}")
 
@@ -171,10 +171,10 @@ def main():
     for epoch in range(num_epochs):
         logging.info(f"Epoch {epoch+1}/{num_epochs}")
 
-        if epoch == 5:
-            for param in model.feature_extractor.parameters():
-                param.requires_grad = True
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        # if epoch == 5:
+        #     for param in model.feature_extractor.parameters():
+        #         param.requires_grad = True
+        #     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         
         train_loss, train_acc, train_auc = train_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, device, scaler)
         val_loss, val_acc, val_auc = validate(model, val_loader, triplet_loss, classifier_loss, device)
@@ -196,9 +196,10 @@ def main():
             torch.save(model.state_dict(), 'best_model.pth')
             logging.info(f"New best model saved with validation AUC-ROC: {best_val_auc:.4f}")
 
-        if val_auc >= early_stopping_threshold and epoch > 5:
-            logging.info(f"Early stopping triggered. Validation AUC-ROC {val_auc:.4f} exceeds threshold of {early_stopping_threshold}")
-            break
+        if val_auc >= early_stopping_threshold and epoch >= 10:
+            if val_acc > 0.80:
+                logging.info(f"Early stopping triggered. Validation AUC-ROC {val_auc:.4f} exceeds threshold of {early_stopping_threshold}")
+                break
 
     logging.info("Training completed")
 

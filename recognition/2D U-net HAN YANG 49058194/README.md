@@ -7,7 +7,14 @@ of 0.75 on the test set on the prostate label.
 ## Model Architecture and Introduction
 This model is a 2D UNet with encoder decoder structure and skip connections[^1].<br />
 <br />
-The encoder captures contextual information through downsampling, while the decoder restores spatial resolution using upsampling, guided by skip connections that help retain fine details. <br />
+       ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/%E8%81%94%E6%83%B3%E6%88%AA%E5%9B%BE_20241009103621.png "DBSCAN Performance Comparison")
+### The core components of U-Net
+- **Encoder**：<br />
+Also known as compression path or downsampling path, it is mainly used to build deep network structures and extract deep semantic information. It includes multiple program blocks, each typically consisting of a 3x3 convolution (using Relu activation function) and a 2x2 pooling layer with a stride of 2 (downsampling). After each program block is processed, the size of the feature map will gradually decrease.
+- **Decoder**：<br />
+Also known as the extension path or upsampling path, it is symmetrical to the encoder part. It also includes multiple program blocks, each of which increases the size of the feature map through a 2x2 upsampling operation with a step size of 2, and then concatenates the feature maps with the corresponding levels of the encoder, i.e. concatenation. Finally, further processing is performed through two 3x3 convolutions (Relu).
+- **Skip Connection**：<br />
+Located between the encoder and decoder, it typically consists of two 3x3 convolutional layers. Its function is to further extract and fuse features, providing more useful information for the decoder.
 <br />
 The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].
 

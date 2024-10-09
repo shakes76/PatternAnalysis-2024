@@ -11,8 +11,7 @@ from modules import SiameseNetwork
 from sklearn.metrics import classification_report, roc_auc_score
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from util import (contrastive_loss, contrastive_loss_threshold,
-                  plot_pca_embeddings)
+from util import contrastive_loss, contrastive_loss_threshold
 
 
 def train(
@@ -118,7 +117,10 @@ def test(net, dataset, ref_set, device):
         preds = np.concatenate(preds)
         preds_proba = np.concatenate(preds_proba)
 
-    plot_pca_embeddings(outs, targets)
+    if args.plot:
+        from util import plot_pca_embeddings
+
+        plot_pca_embeddings(outs, targets)
 
     report = classification_report(targets, preds, target_names=["benign", "malignant"])
     auc = roc_auc_score(targets, preds_proba)
@@ -260,6 +262,11 @@ if __name__ == "__main__":
         type=str,
         default="checkpoint.pt",
         help="(TS) checkpoint file (in output directory) to test from, default checkpoint.pt",
+    )
+
+    # Testing args
+    parser.add_argument(
+        "--plot", action="store_true", help="(TS) whether to display diagnostic plots"
     )
 
     args = parser.parse_args()

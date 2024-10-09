@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+# Two layers of convolutions
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
@@ -23,7 +24,7 @@ class Down(nn.Module):
             nn.MaxPool2d(2),
             DoubleConv(in_channels, out_channels)
         )
-
+    # Forward propagation
     def forward(self, x):
         return self.maxpool_conv(x)
 

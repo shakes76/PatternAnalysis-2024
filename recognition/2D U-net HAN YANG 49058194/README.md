@@ -15,7 +15,7 @@ Also known as compression path or downsampling path, it is mainly used to build 
 Also known as the extension path or upsampling path, it is symmetrical to the encoder part. It also includes multiple program blocks, each of which increases the size of the feature map through a 2x2 upsampling operation with a step size of 2, and then concatenates the feature maps with the corresponding levels of the encoder, i.e. concatenation. Finally, further processing is performed through two 3x3 convolutions (Relu).
 - **Skip Connection**：<br />
 Located between the encoder and decoder, it typically consists of two 3x3 convolutional layers. Its function is to further extract and fuse features, providing more useful information for the decoder.
-<br />
+
 The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].<br />
   
 ## How It Works

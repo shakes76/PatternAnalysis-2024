@@ -124,3 +124,39 @@ class VectorQuantizer(nn.Module):
         z_q = z_q.permute(batch, width, channel, height).contiguous()
         return loss, z_q, perplexity, min_encodings,min_encoding_idx 
 
+class VQVAE(nn.Module):
+    """
+    VQ-VAE network
+    - h_dim: hidden layer dimension
+    - res_h_dim: hidden dimension of residual block
+    - n_res_layers: number of layers to stack
+    - n_emb: number of embeddings
+    - e_dim: dimension of embedding
+    - commit_cost: commitmen_cost
+    -save_img_embedding_map: saves image embedding map
+    """
+    def __init__(self, h_dim, res_h_dim, n_res_layers, e_emb, e_dim, commit_cost, save_img_embedding_map=False):
+        super(VQVAE, self).__init__()
+        # encode image
+        self.encoder=Encoder(1, h_dim, n_res_layers, res_h_dim)
+        self.pre_quantization_conv = nn.Conv2d(h_dim, e_dim, kernel_size=1, stride=1)
+        # pass latent vector through quantizer discretization bottleneck
+        self.vector_quantizaton = VectorQuantizer(n_emb, e_dim, commit_cost)
+        # decode discrete latent vector
+        self.decoder = Decoder(e_dim, h_dim, n_res_layers, res_h_dim)
+
+        if save_img_embedding_map:
+            self.img_to_embedding_map = {i: [] for i in range(n_emb)}
+        else:
+            self.img_to_embedding_map = None
+
+    def forward(self, x, verbose=False):
+        embed_loss, z_q, perplexity, _, _ = self.vector_quantization(self.pre_quantization_conv(self.encoder(x)))
+        x_hat = self.decoder(z_q)
+        
+        print("original shape: ", x.shape)
+        print("encoded shape: ", z_e.shape)
+        
+        return embed_loss, x_hat, perplexity
+
+

@@ -1,4 +1,5 @@
 from torch import nn
+import torch
 
 class AnalysisLayer(nn.Module):
     "Generalized analysis layer class to perform analysis."
@@ -34,3 +35,36 @@ class AnalysisLayer(nn.Module):
         if self.pooling is not None:
             x = self.pooling(x)
         x = self.sequence(x)
+
+class SynthesisLayer(nn.Module):
+    "Generalized Synthesis Layer class to perform the synthesis path"
+    def __init__(self, *args,base_width=512,target_width=256, conv_size=3, stride=1, padding=0, **kwargs) -> None:
+        """
+        Initializer for synthesis layer. Allows for general alterations including altering the
+        number of features in and out, the size of kernels for convolutions, and stride and padding
+        for convolutions.
+
+        Args:
+            base_width (int, optional): The number of input features. Defaults to 512.
+            target_width (int, optional): The number of output features. Defaults to 256.
+            conv_size (int, optional): The size of kernels for convolutions. Defaults to 3.
+            stride (int, optional): The stride for convolutional layers. Defaults to 1.
+            padding (int, optional): The padding for convolutional layers. Defaults to 0.
+        """
+        super(SynthesisLayer, self).__init__(*args, **kwargs)
+        self.upconv = nn.ConvTranspose3d(in_channels=base_width,out_channels=base_width,kernel_size=2,stride=2,padding=0)
+        self.sequence = nn.Sequential(
+            nn.Conv3d(in_channels=base_width+target_width,out_channels=target_width,kernel_size=conv_size,stride=stride,padding=padding),
+            nn.BatchNorm3d(num_features=target_width),
+            nn.ReLU(),
+            nn.Conv3d(in_channels=target_width,out_channels=target_width,kernel_size=conv_size,stride=stride,padding=padding),
+            nn.BatchNorm3d(num_features=target_width),
+            nn.ReLU(),
+        )
+
+
+    def forward(self, shortcut, x):
+        x = self.upconv(x)
+        torch.cat(shortcut, x)
+        x = self.sequence(x)
+        return x

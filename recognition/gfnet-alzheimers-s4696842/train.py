@@ -8,7 +8,7 @@ from .modules import GFNet
 from .dataset import get_train_test_dataloaders, ADNI_IMAGE_DIMENSIONS
 
 learning_rate = 1e-3
-weight_decay = 1e-4
+weight_decay = 1e-2
 accuracy_threshold = 0.8
 
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     height, width = ADNI_IMAGE_DIMENSIONS
-    model = GFNet(in_channels=1, num_classes=2, height=height, width=width, dropout=0.3)
+    model = GFNet(in_channels=1, num_classes=2, height=height, width=width, dropout=0.2)
     train_loader, test_loader = get_train_test_dataloaders(
         root_dir=args.data,
         train_batch_size=args.batch_size,

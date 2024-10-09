@@ -78,7 +78,7 @@ class Decoder(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers),
             nn.ConvTranspose2d(h_dim, h_dim//2, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
-            nn.ConvTranpose2d(h_dim//2, 1, kernel_size=4, stride=2, padding=1)
+            nn.ConvTranspose2d(h_dim//2, 1, kernel_size=4, stride=2, padding=1)
             )
     def forward(self, x):
         return self.inverse_conv_stack(x)

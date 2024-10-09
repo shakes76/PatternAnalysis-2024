@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import ResidualStack
+import numpy as np
 
 class Encoder(nn.Module):
     """
@@ -20,3 +20,24 @@ class Encoder(nn.Module):
         x = F.relu(self.conv2(x))
         x = self.conv3(x)
         return x
+
+class ResidualLayer(nn.Module):
+    """
+    One residual layer inputs:
+    - in_dim: input dimension
+    - h_dim: hidden layer dimension
+    - res_h_dim: hidden dimension of residual block
+    """
+
+    def __init__(self, in_dim, h_dim, res_h_dim):
+        super(ResidualLayer, self).__init__()
+        self.res_block = nn.Sequential(
+                nn.ReLU(True),
+                nn.Conv2d(in_dim, res_h_dim, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.ReLU(True)
+                nn.Conv2d(res_h_dim, h_dim, kernel_size=1, stride=1, bias=False)
+
+        def forward(self, x):
+        x = x + self.res_block(x)
+        return x
+

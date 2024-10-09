@@ -63,7 +63,7 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
   - **Purpose**: Project documentation.
  
 ## Dependencies
-The project requires the following dependencies[^5]:
+The project requires the following dependencies[^4]:
 - `torch==1.10.0`: PyTorch for building and training the model.
 - `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
 - `nibabel==3.2.1`: Nibabel for loading Nifti files.
@@ -86,7 +86,7 @@ The project requires the following dependencies[^5]:
 ## Details
 - **Loss function**: `Binary cross entropy with Logits`.
 - **Optimizer**: `Adam`.
-- **Evaluation metric**: `Dice similarity coefficient`[^6].
+- **Evaluation metric**: `Dice similarity coefficient`[^5].
   ### Training
   #### 1. Inputs:
   The inputs to the `train.py` script include:
@@ -155,11 +155,11 @@ The project requires the following dependencies[^5]:
   #### 2. Output:
   - **Prediction**: <br />The output of the model is a binary segmentation mask of the same shape as the input image.
     - Original Image：<br />This image is the original MRI slice image input to the model, usually a grayscale image, showing the cross-section of the human body with relatively clear structure.
-    - Prediction Image：<br />This is the probability map output by the model, usually with values between `[0,1]`, representing the probability that each pixel belongs to the prostate (or other target). After using the `torch. sigmoid ()` function, the prediction obtained is a grayscale image, where[^7]:
+    - Prediction Image：<br />This is the probability map output by the model, usually with values between `[0,1]`, representing the probability that each pixel belongs to the prostate (or other target). After using the `torch. sigmoid ()` function, the prediction obtained is a grayscale image, where[^6]:
       - The `target area` (such as the prostate) will be displayed as a brighter area.
       - The `background area` is a darker (almost black) region.
       - The bright spots in the prediction should cover the target area in the original image well, and the boundaries may be slightly blurred, but the overall shape should be close to the contour of the target organ.
-    - Prediction results[^8]:
+    - Prediction results[^7]:
       - `Target area`: The prostate or other targets are highlighted and clearly segmented from the background, with slightly blurred edges.
       - `Background area`: The background pixels remain close to black because they do not belong to the target area.
       - `Prediction error`: When the loss is 0.2, there are some false positive or false negative areas (i.e. the model incorrectly predicts certain backgrounds as target areas or misses a part of the target), but the overall effect is still close to the true target.<br />

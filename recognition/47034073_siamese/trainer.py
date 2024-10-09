@@ -24,11 +24,6 @@ class HyperParams:
     margin: float = 0.2
 
 
-class LesionClassifier:
-    def __init__(self) -> None:
-        pass
-
-
 class SiameseController:
     def __init__(self, hparams: HyperParams, model_name: str) -> None:
         self._model = EmbeddingNetwork().to(device)
@@ -39,13 +34,15 @@ class SiameseController:
         )
         self._hparams = hparams
         self._losses: list[float] = []
-        self._distance = distances.CosineSimilarity()
+        self._distance = distances.LpDistance(normalize_embeddings=True, p=2, power=1)
         self._miner = miners.TripletMarginMiner(
             margin=hparams.margin, type_of_triplets="semihard", distance=self._distance
         )
+        # self._miner = miners.BatchHardMiner()
         self._loss = losses.TripletMarginLoss(
             margin=hparams.margin, distance=self._distance
         )
+        # self._loss = losses.ContrastiveLoss()
         self._epoch = 0
         self._model_name = model_name
 
@@ -58,13 +55,6 @@ class SiameseController:
             self._epoch += 1
             self.save_model(self._model_name)
 
-            # if self._miner.type_of_triplets == "semihard":
-            #     logger.info("Switching to all triplets which violate margin")
-            #     self._miner.type_of_triplets = "all"
-            # elif self._miner.type_of_triplets == "all":
-            #     logger.info("Switching to semihard triplets")
-            #     self._miner.type_of_triplets = "semihard"
-
     def compute_all_embeddings(
         self, loader: DataLoader
     ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -73,9 +63,9 @@ class SiameseController:
             all_labels = []
             for x, labels in loader:
                 x = x.to(device)
-                embeddings = self._model(x).cpu()
+                embeddings = self._model(x).cpu().detach()
                 all_embeddings.append(embeddings)
-                all_labels.append(labels)
+                all_labels.append(labels.detach())
 
             return torch.cat(all_embeddings), torch.cat(all_labels)
 
@@ -110,6 +100,8 @@ class SiameseController:
         for x, labels in train_loader:
             self._optim.zero_grad()
 
+            if n == 0:
+                logger.debug("labels %s\n%s", labels.shape, labels)
             n += 1
             x = x.to(device)
             labels = labels.to(device)
@@ -118,6 +110,7 @@ class SiameseController:
             embeddings = self._model(x)
             hard_triplets = self._miner(embeddings, labels)
             loss = self._loss(embeddings, labels, hard_triplets)
+            loss = self._loss(embeddings, labels)
 
             avg_loss += loss.item()
             loss.backward()
@@ -130,7 +123,7 @@ class SiameseController:
                     n,
                     avg_loss / n,
                     num_observations,
-                    self._miner.num_triplets,
+                    self._miner.num_triplets if self._miner is not None else -1,
                 )
 
         avg_loss /= n

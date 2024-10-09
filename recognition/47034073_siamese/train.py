@@ -13,7 +13,7 @@ import torch
 from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
 import matplotlib.pyplot as plt
-import plotly.express as px
+import numpy as np
 
 from trainer import SiameseController, HyperParams
 from dataset import TumorClassificationDataset
@@ -29,6 +29,7 @@ IMAGES_PATH = DATA_PATH / "small_images"
 
 
 def main() -> None:
+    """Handle training, validation and testing."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("-c", "--continue-training", action="store_true")
@@ -62,6 +63,14 @@ def main() -> None:
     # Training data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df)
+
+    # Undersample to alleviate class imbalance
+    benign = train_meta_df[train_meta_df["target"] == 0]
+    malignant = train_meta_df[train_meta_df["target"] == 1]
+    benign = benign.sample(random_state=42, n=len(malignant))
+    balanced_df = pd.concat([benign, malignant])
+    balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df, transform=True)
+
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
         m=hparams.batch_size / 2,
@@ -71,7 +80,7 @@ def main() -> None:
         dataset,
         pin_memory=True,
         num_workers=num_workers,
-        drop_last=True,
+        # drop_last=True,
         sampler=sampler,
         batch_size=hparams.batch_size,
     )
@@ -81,16 +90,11 @@ def main() -> None:
         logger.info("Loading model...")
         trainer.load_model(args.load_model)
 
-    if args.load_model is None or args.continue_training:
+    if args.load_model is None or (
+        args.continue_training and args.load_model is not None
+    ):
         logger.info("Starting training...")
         trainer.train(train_loader)
-
-    # Undersample to alleviate class imbalance
-    benign = train_meta_df[train_meta_df["target"] == 0]
-    malignant = train_meta_df[train_meta_df["target"] == 1]
-    benign = benign.sample(random_state=42, n=len(malignant))
-    balanced_df = pd.concat([benign, malignant])
-    balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df)
 
     # Undersample dataloader for KNN embeddings
     train_classification_loader = DataLoader(
@@ -102,13 +106,31 @@ def main() -> None:
     logger.info("Embeddings \n%s", embeddings)
     embeddings = normalize(embeddings)
 
+    zero_sums = np.sum(embeddings, axis=1)
+    num_zero = np.sum(np.abs(zero_sums) < 1e-10)
+    logger.info("Num collapsed to zero %f", num_zero)
+
+    # PCA
     logger.info("Fitting pca...")
     pca = PCA(n_components=2)
     pca_projections = pca.fit_transform(embeddings)
     logger.info("Plotting pca...")
     plt.scatter(pca_projections[:, 0], pca_projections[:, 1], c=balanced_df["target"])
+    plt.xlabel("component1")
+    plt.ylabel("component2")
     logger.info("Writing image")
     plt.savefig("plots/train_pca")
+
+    # tsne
+    logger.info("Fitting tsne...")
+    tsne = TSNE(random_state=42)
+    tsne_projections = tsne.fit_transform(embeddings)
+    logger.info("Plotting tsne...")
+    plt.scatter(tsne_projections[:, 0], tsne_projections[:, 1], c=balanced_df["target"])
+    plt.xlabel("component1")
+    plt.ylabel("component2")
+    logger.info("Writing image")
+    plt.savefig("plots/train_tsne")
 
     # Fit KNN
     knn = KNeighborsClassifier(n_neighbors=100, weights="distance", p=2)

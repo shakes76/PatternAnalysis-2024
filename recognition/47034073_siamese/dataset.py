@@ -78,7 +78,8 @@ class AllTumorDataset(Dataset[tuple[torch.Tensor, str]]):
 
 _transform = transforms.Compose(
     [
-        v2.RandomResizedCrop(size=(224, 224), antialias=True),
+        v2.RandomRotation(degrees=(0, 360)),
+        v2.RandomCrop(size=(224, 224)),
         v2.RandomHorizontalFlip(p=0.5),
         v2.RandomVerticalFlip(p=0.5),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),

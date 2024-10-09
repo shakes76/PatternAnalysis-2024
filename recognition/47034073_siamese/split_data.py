@@ -25,6 +25,14 @@ def main() -> None:
         train, test_size=0.2, random_state=42, stratify=train[TARGET]
     )
 
+    logger.info(
+        "Size of sets\nall %d\ntrain %d\nval %d\ntest %d",
+        len(metadata),
+        len(train),
+        len(val),
+        len(test),
+    )
+
     train.to_csv(pathlib.Path("data/train.csv"), index=False)
     val.to_csv(pathlib.Path("data/val.csv"), index=False)
     test.to_csv(pathlib.Path("data/test.csv"), index=False)

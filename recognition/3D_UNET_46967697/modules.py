@@ -17,6 +17,7 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.double_conv(x)
 
+
 class Down(nn.Module):
     def __init__(self, in_dim, out_dim):
         super().__init__()
@@ -28,6 +29,7 @@ class Down(nn.Module):
     def forward(self, x):
         return self.maxpool_conv(x)
     
+
 class Up(nn.Module):
     def __init__(self, in_dim, out_dim):
         super().__init__()
@@ -38,6 +40,7 @@ class Up(nn.Module):
         x1 = self.up(x1)
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
+
 
 class Unet3D(nn.Module):
     def __init__(self, in_dim, num_classes, num_filters):
@@ -61,7 +64,6 @@ class Unet3D(nn.Module):
         self.up_4 = Up(num_filters*2, num_filters)
 
         self.output = nn.Conv3d(num_filters, num_classes, kernel_size=1)
-
 
     def forward(self, x):
         # Down sampling

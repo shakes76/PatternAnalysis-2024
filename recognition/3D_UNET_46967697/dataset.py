@@ -6,14 +6,11 @@ import os
 
 class Prostate3DDataset(torch.utils.data.Dataset):
     def __init__(self, semantic_MRs_path, semantic_labels_path, transforms=None):
-        self.semantic_MRs_files = [file for file in os.listdir(semantic_MRs_path) if file.endswith('.nii')]
-        self.semantic_labels_files = [file for file in os.listdir(semantic_labels_path) if file.endswith('.nii')]
+        semantic_MRs_files = [file for file in os.listdir(semantic_MRs_path)]
+        semantic_labels_files = [file for file in os.listdir(semantic_labels_path)]
 
-        MRs = load_data_3D(self.semantic_MRs_files)
-        labels = load_data_3D(self.semantic_labels_files)
-
-        self.MRs = None
-        self.labels = None
+        self.MRs = load_data_3D(semantic_MRs_files)
+        self.labels = load_data_3D(semantic_labels_files)
 
     def __len__(self):
         return len(self.MRs)

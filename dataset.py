@@ -19,7 +19,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
 # Placeholder for the orientation correction function
 def applyOrientation(nifti_image, interpolation='linear', scale=1):
-    # Implement or import your orientation correction logic here
+    # Implement or import orientation correction logic here
     return nifti_image  # Replace with actual implementation
 
 class NiftiDataset(Dataset):
@@ -85,7 +85,8 @@ class NiftiDataset(Dataset):
         if len(labelImage.shape) == 4:
             labelImage = labelImage[:, :, :, 0]  # Remove extra dimension if present
 
-        labelImage = labelImage.astype(self.dtype)
+        # labelImage = labelImage.astype(self.dtype)
+        labelImage = labelImage.astype(np.int64)
 
         if self.categorical:
             labelImage = to_channels(labelImage, dtype=self.dtype)
@@ -96,6 +97,8 @@ class NiftiDataset(Dataset):
         labelImage = torch.from_numpy(labelImage)
 
         # **Add channels dimension to label**
+        # labelImage = torch.from_numpy(to_channels(labelImage, dtype=self.dtype))
+
         labelImage = labelImage.unsqueeze(0)  # Shape becomes (1, D, H, W)
 
         # print(f"inImage shape after adding channels dimension: {inImage.shape}")
@@ -196,5 +199,4 @@ class NiftiDataset(Dataset):
 #         return images, affines
 #     else:
 #         return images
-    
 

@@ -13,13 +13,11 @@ from torch.utils.data import DataLoader
 
 def train_loop():
     # Define device
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     if not torch.cuda.is_available():
         print("Warning: No access to CUDA, model being trained on CPU.")
-
-    model = UNet3D().to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
     
     # Paths to your images and labels
     images_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
@@ -138,7 +136,7 @@ def train_loop():
         transform=None
     )
 
-    batch_size = 2  # Adjust based on your GPU memory
+    batch_size = 1  # Adjust based on your GPU memory
     num_workers = 1  # Adjust based on your CPU cores
 
     train_loader = DataLoader(
@@ -162,8 +160,11 @@ def train_loop():
         num_workers=num_workers
     )
 
-    num_epochs = 10
+    model = UNet3D().to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
 
+    num_epochs = 10
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}/{num_epochs}")
 
@@ -171,22 +172,18 @@ def train_loop():
         model.train()
         running_loss = 0.0
         for batch_images, batch_labels in train_loader:
-            print(f"batch_images shape: {batch_images.shape}")
-            print(f"batch_labels shape before squeeze: {batch_labels.shape}")
 
             batch_images = batch_images.to(device)
             batch_labels = batch_labels.to(device)
 
             # Remove the channels dimension from labels
             batch_labels = batch_labels.squeeze(1)  # Shape becomes (batch_size, D, H, W)
-            print(f"batch_labels shape after squeeze: {batch_labels.shape}")
 
             # Ensure labels are of type torch.long
-            batch_labels = batch_labels.long()
+            # batch_labels = batch_labels.long().permute(0, 4, 1, 2, 3)
 
             optimizer.zero_grad()
             outputs = model(batch_images)  # Should output shape: (batch_size, num_classes, D, H, W)
-
             loss = criterion(outputs, batch_labels)
             loss.backward()
             optimizer.step()
@@ -203,6 +200,7 @@ def train_loop():
             for batch_images, batch_labels in val_loader:
                 batch_images = batch_images.to(device)
                 batch_labels = batch_labels.to(device)
+                batch_labels = batch_labels.squeeze(1)  # Shape becomes (batch_size, D, H, W)
                 outputs = model(batch_images)
                 loss = criterion(outputs, batch_labels)
                 val_loss += loss.item() * batch_images.size(0)

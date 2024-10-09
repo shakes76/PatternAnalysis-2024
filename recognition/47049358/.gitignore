@@ -1,0 +1,11 @@
+semantic_labels_anon
+semantic_MRs_anon
+
+**__pycache__**
+
+
+*.ipynb
+
+*.pkl
+
+*.txt

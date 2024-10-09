@@ -13,6 +13,7 @@ import torch
 from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 
 from trainer import SiameseController, HyperParams
@@ -43,14 +44,14 @@ def main() -> None:
 
     # Training params
     num_workers = 2
-    learning_rate = 0.0001
+    learning_rate = 0.00001
     model_name = "most_recent"
 
     hparams = HyperParams(
         batch_size=128,
         num_epochs=1,
         learning_rate=learning_rate,
-        weight_decay=0,
+        weight_decay=0.00001,
         margin=0.2,
     )
     if args.debug:
@@ -80,19 +81,22 @@ def main() -> None:
         dataset,
         pin_memory=True,
         num_workers=num_workers,
-        # drop_last=True,
+        drop_last=True,
         sampler=sampler,
         batch_size=hparams.batch_size,
     )
+
+    if args.continue_training and args.load_model is None:
+        raise ValueError(
+            "Cannot continue training without loading a model use -l option"
+        )
 
     # Train or load embedding model
     if args.load_model is not None:
         logger.info("Loading model...")
         trainer.load_model(args.load_model)
 
-    if args.load_model is None or (
-        args.continue_training and args.load_model is not None
-    ):
+    if args.load_model is None or args.continue_training:
         logger.info("Starting training...")
         trainer.train(train_loader)
 
@@ -115,9 +119,17 @@ def main() -> None:
     pca = PCA(n_components=2)
     pca_projections = pca.fit_transform(embeddings)
     logger.info("Plotting pca...")
-    plt.scatter(pca_projections[:, 0], pca_projections[:, 1], c=balanced_df["target"])
+    plt.scatter(
+        pca_projections[:, 0],
+        pca_projections[:, 1],
+        c=balanced_df["target"],
+        cmap="coolwarm",
+    )
     plt.xlabel("component1")
     plt.ylabel("component2")
+    benign_patch = mpatches.Patch(color="blue", label="Benign")
+    malignant_patch = mpatches.Patch(color="red", label="Malignant")
+    plt.legend(handles=[benign_patch, malignant_patch])
     logger.info("Writing image")
     plt.savefig("plots/train_pca")
 
@@ -126,14 +138,22 @@ def main() -> None:
     tsne = TSNE(random_state=42)
     tsne_projections = tsne.fit_transform(embeddings)
     logger.info("Plotting tsne...")
-    plt.scatter(tsne_projections[:, 0], tsne_projections[:, 1], c=balanced_df["target"])
+    plt.scatter(
+        tsne_projections[:, 0],
+        tsne_projections[:, 1],
+        c=balanced_df["target"],
+        cmap="coolwarm",
+    )
     plt.xlabel("component1")
     plt.ylabel("component2")
+    benign_patch = mpatches.Patch(color="blue", label="Benign")
+    malignant_patch = mpatches.Patch(color="red", label="Malignant")
+    plt.legend(handles=[benign_patch, malignant_patch])
     logger.info("Writing image")
     plt.savefig("plots/train_tsne")
 
     # Fit KNN
-    knn = KNeighborsClassifier(n_neighbors=100, weights="distance", p=2)
+    knn = KNeighborsClassifier(n_neighbors=10, weights="distance", p=2)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import torch
 from torch.utils.data import DataLoader
-from pytorch_metric_learning import losses, miners, distances
+from pytorch_metric_learning import losses, miners, distances, regularizers
 
 from modules import EmbeddingNetwork
 
@@ -38,11 +38,11 @@ class SiameseController:
         self._miner = miners.TripletMarginMiner(
             margin=hparams.margin, type_of_triplets="semihard", distance=self._distance
         )
-        # self._miner = miners.BatchHardMiner()
         self._loss = losses.TripletMarginLoss(
-            margin=hparams.margin, distance=self._distance
+            margin=hparams.margin,
+            distance=self._distance,
+            embedding_regularizer=regularizers.LpRegularizer(),
         )
-        # self._loss = losses.ContrastiveLoss()
         self._epoch = 0
         self._model_name = model_name
 
@@ -110,7 +110,6 @@ class SiameseController:
             embeddings = self._model(x)
             hard_triplets = self._miner(embeddings, labels)
             loss = self._loss(embeddings, labels, hard_triplets)
-            loss = self._loss(embeddings, labels)
 
             avg_loss += loss.item()
             loss.backward()

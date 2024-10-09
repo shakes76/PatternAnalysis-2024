@@ -81,7 +81,37 @@ class NiftiDataset(Dataset):
         return torch.tensor(image, dtype=torch.float32)
 
 
-# Function to return 3 dataloaders: train, validation, and test
+    # Function to return 3 dataloaders: train, validation, and test
+    @staticmethod
+    def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, transform=None, normImage=True):
+        # List of paths for each set
+        train_images = [os.path.join(train_dir, f) for f in os.listdir(train_dir) if f.endswith('.nii.gz')]
+        val_images = [os.path.join(val_dir, f) for f in os.listdir(val_dir) if f.endswith('.nii.gz')]
+        test_images = [os.path.join(test_dir, f) for f in os.listdir(test_dir) if f.endswith('.nii.gz')]
+
+        # Datasets
+        train_dataset = NiftiDataset(image_paths=train_images, transform=transform, normImage=normImage)
+        val_dataset = NiftiDataset(image_paths=val_images, transform=transform, normImage=normImage)
+        test_dataset = NiftiDataset(image_paths=test_images, transform=transform, normImage=normImage)
+
+        # Dataloaders
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+
+        return train_loader, val_loader, test_loader
+
+# Example usage:
+train_dir = "../../../keras_slices_data/keras_slices_train"
+val_dir = "../../../keras_slices_data/keras_slices_validate"
+test_dir = "../../../keras_slices_data/keras_slices_test"
+
+# Transforms (optional)
+data_transforms = transforms.Compose([
+    transforms.ToTensor(),  # Convert to PyTorch tensor
+])
+
+# Get the DataLoaders
 def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, transform=None, normImage=True):
     # List of paths for each set
     train_images = [os.path.join(train_dir, f) for f in os.listdir(train_dir) if f.endswith('.nii.gz')]
@@ -100,17 +130,6 @@ def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, t
 
     return train_loader, val_loader, test_loader
 
-# Example usage:
-train_dir = "../../../keras_slices_data/keras_slices_train"
-val_dir = "../../../keras_slices_data/keras_slices_validate"
-test_dir = "../../../keras_slices_data/keras_slices_test"
-
-# Transforms (optional)
-data_transforms = transforms.Compose([
-    transforms.ToTensor(),  # Convert to PyTorch tensor
-])
-
-# Get the DataLoaders
 train_loader, val_loader, test_loader = get_dataloaders(train_dir, val_dir, test_dir, batch_size=16, num_workers=4, transform=data_transforms)
 
 

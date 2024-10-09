@@ -44,5 +44,18 @@ class VectorQuantizer(nn.Module):
 
         return z_q, quantization_loss
     
+class Decoder(nn.Module):
+    def __init__(self, embedding_dim, hidden_dim, output_dim):
+        super(Decoder, self).__init__()
+        self.conv1 = nn.ConvTranspose2d(embedding_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1)
+        self.conv2 = nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1)
+        self.conv3 = nn.ConvTranspose2d(hidden_dim, output_dim, kernel_size=4, stride=2, padding=1)
 
-# Define other components: Decoder, VQVAE.
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = torch.sigmoid(self.conv3(x))
+        return x
+    
+
+# Define other components: VQVAE.

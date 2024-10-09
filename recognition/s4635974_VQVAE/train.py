@@ -280,6 +280,20 @@ def train_model(
         
         print()
 
+    import pickle
+
+    # After training, save the lists to a file
+    data = {
+        "training_output_loss": training_output_loss,
+        "training_vq_loss": training_vq_loss,
+        "validation_output_loss": validation_output_loss,
+        "validation_vq_loss": validation_vq_loss,
+        "ssim": ssim
+    }
+
+    with open('training_data.pkl', 'wb') as f:
+        pickle.dump(data, f)
+
     if type(save_dir) == str:
         epochs = range(1, len(epoch_training_output_loss) + 1)
 

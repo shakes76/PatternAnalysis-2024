@@ -112,7 +112,7 @@ def predict(
         SSIM.append(batch_ssim)
 
     average_SSIM = np.mean(SSIM)
-    print("Average SSIM on training set: ", average_SSIM)
+    print("Average SSIM on test set: ", average_SSIM)
 
     # Visualize 4 random images through the model and save in test_save_dir
     # Create a figure to plot the images

@@ -284,11 +284,11 @@ def train_model(
 
     # After training, save the lists to a file
     data = {
-        "training_output_loss": training_output_loss,
-        "training_vq_loss": training_vq_loss,
-        "validation_output_loss": validation_output_loss,
-        "validation_vq_loss": validation_vq_loss,
-        "ssim": ssim
+        "training_output_loss": epoch_training_output_loss,
+        "training_vq_loss": epoch_training_vq_loss,
+        "validation_output_loss": epoch_validation_output_loss,
+        "validation_vq_loss": epoch_validation_vq_loss,
+        "ssim": epoch_ssim
     }
 
     with open('training_data.pkl', 'wb') as f:

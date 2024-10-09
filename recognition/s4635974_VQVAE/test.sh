@@ -6,4 +6,4 @@
 #SBATCH --output=train_a100-test.out
 
 conda activate torch
-python data_visualisation.py
+python train.py

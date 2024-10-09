@@ -172,3 +172,45 @@ class VectorQuantizer(nn.Module):
         quantized_x = x + (quantized_x - x).detach()
 
         return quantized_x, commitment_loss, encoding_indices.view(x.shape[0], -1)
+
+class VQVAE(nn.Module):
+    def __init__(
+            self, 
+            in_channels=1, # Grayscale MRI slices
+            num_hiddens=128,
+            num_downsampling_layers=3, # Adjust this to see if it improves generated images (256x256 -> 32x32)
+            num_residual_layers=2,
+            num_residual_hiddens=32,
+            embedding_dim=64,
+            num_embeddings=256,
+            decay=0.99,
+            epsilon=1e-5
+    ):
+        super().__init__()
+        self.encoder = Encoder(
+            in_channels,
+            num_hiddens,
+            num_downsampling_layers,
+            num_residual_layers,
+            num_residual_hiddens
+        )
+        self.pre_vq_conv = nn.Conv2d(
+            in_channels=num_hiddens, out_channels=embedding_dim, kernel_size=1
+        )
+        self.vq = VectorQuantizer(
+            embedding_dim, num_embeddings, decay, epsilon
+        )
+        self.decoder = Decoder(
+            embedding_dim,
+            num_hiddens,
+            num_upsampling_layers=num_downsampling_layers, # Should match downsampling layers
+            num_residual_layers=num_residual_layers,
+            num_residual_hiddens=num_residual_hiddens
+        )
+
+    def forward(self, x):
+        z = self.pre_vq_conv(self.encoder(x))
+        z_quantized, commitment_loss, _ = self.vq(z)
+        x_recon = self.decoder(z_quantized)
+        return {"commitment_loss": commitment_loss, "x_recon": x_recon}
+

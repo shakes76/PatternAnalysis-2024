@@ -135,7 +135,7 @@ class VQVAE(nn.Module):
     - commit_cost: commitmen_cost
     -save_img_embedding_map: saves image embedding map
     """
-    def __init__(self, h_dim, res_h_dim, n_res_layers, e_emb, e_dim, commit_cost, save_img_embedding_map=False):
+    def __init__(self, h_dim, res_h_dim, n_res_layers, n_emb, e_dim, commit_cost, save_img_embedding_map=False):
         super(VQVAE, self).__init__()
         # encode image
         self.encoder=Encoder(1, h_dim, n_res_layers, res_h_dim)

@@ -11,14 +11,15 @@ from modules import SiameseNetwork
 from sklearn.metrics import classification_report, roc_auc_score
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from util import contrastive_loss, contrastive_loss_threshold
+from util import (contrastive_loss, contrastive_loss_threshold,
+                  plot_pca_embeddings)
 
 
 def train(
     net,
     dataset,
     device,
-    checkpoint_func=None,
+    test_func=None,
     nepochs=10,
     batch_size=128,
     start_epoch=0,
@@ -61,41 +62,62 @@ def train(
             save_obj = {"epoch": epoch, "state_dict": net.state_dict()}
             torch.save(save_obj, out_dir / "checkpoint.pt")
 
-            if checkpoint_func:
-                checkpoint_func(net)
+            if test_func:
+                test_func(net)
 
 
 def test(net, dataset, ref_set, device):
     batch_size = 128
     data_loader = DataLoader(dataset, batch_size, shuffle=False)
 
+    # Reference set is used for classification - we compare each new image to an
+    # image with an already known label
+
     # Put network in eval mode
     net = net.to(device)
     net.eval()
 
-    # Define metrics
+    targets_ref = []
+    outs_ref = []
+
     preds = []
     preds_proba = []
     targets = []
+    outs = []
 
     with torch.no_grad():  # Disable gradient computation for efficiency
+        # Run reference images through network to get reference outputs
+        ref_set_loader = DataLoader(ref_set, batch_size=8)
+        for i, (x_ref_batch, y_ref_batch) in enumerate(ref_set_loader):
+            x_ref_batch = x_ref_batch.to(device)
+            out_ref = net.forward_one(x_ref_batch)
+
+            targets_ref.append(y_ref_batch)
+            outs_ref.append(out_ref)
+
+        targets_ref = np.concatenate(targets_ref)
+        outs_ref = torch.concat(outs_ref)
+
+        # Do prediction on test set
         for i, (x_batch, y_batch) in enumerate(data_loader):
             x_batch = x_batch.to(device)
-
+            out = net.forward_one(x_batch)
             # For AUC, we want the model to output probabilities
-            # pred = classify(net, x_batch, device, ref_set, prob=True)
-            # preds.append(pred.cpu().numpy())
-            # targets.append(y_batch.cpu().numpy())
-            pred_proba = classify(net, x_batch, device, ref_set, prob=True)
+            pred_proba = classify(out, outs_ref, targets_ref, device, prob=True)
+            # For classification report, we want the hard classifications
             pred = (pred_proba >= 0.5).float()
 
+            targets.append(y_batch.numpy())
+            outs.append(outs)
             preds.append(pred.cpu().numpy())
             preds_proba.append(pred_proba.cpu().numpy())
-            targets.append(y_batch.numpy())
 
+        targets = np.concatenate(targets)
+        outs = np.concatenate(outs)
         preds = np.concatenate(preds)
         preds_proba = np.concatenate(preds_proba)
-        targets = np.concatenate(targets)
+
+    plot_pca_embeddings(outs, targets)
 
     report = classification_report(targets, preds, target_names=["benign", "malignant"])
     auc = roc_auc_score(targets, preds_proba)
@@ -103,34 +125,25 @@ def test(net, dataset, ref_set, device):
     return report, auc
 
 
-def classify(net, x, device, ref_set, prob=True):
-    batch_size = x.shape[0]
+def classify(out, outs_ref, targets_ref, device, prob=True):
+    batch_size = out.shape[0]
     threshold = contrastive_loss_threshold(margin=args.margin)
+
     preds = []
+    for out_ref, target_ref in zip(outs_ref, targets_ref):
+        out_ref = out_ref.repeat(batch_size, 1)
+        pair_pred = threshold(out, out_ref)
 
-    with torch.no_grad():
-        # Compare x against each reference image and get prediction from net
-        # x is batched, so the reference images can't be, i.e. we set batch_size to 1
-        ref_set_loader = DataLoader(ref_set, batch_size=1)
-        for i, (x_ref, y_ref) in enumerate(ref_set_loader):
-            # Replicate x_ref and y_ref to do a batch prediction
-            x_ref = x_ref.to(device)
-            y_ref = y_ref.to(device)
+        # The model returns 0 if the pair is similar, and 1 otherwise
+        # However, we need the actual label (0 for benign, 1 for malign)
+        # An XOR with the ground truth label (y_ref) will give us the actual label!
+        pred = torch.logical_xor(pair_pred, target_ref).float()
+        preds.append(pred)
 
-            # The model returns 0 if the pair is similar, and 1 otherwise
-            # However, we need the actual label (0 for benign, 1 for malign)
-            # An XOR with the ground truth label (y_ref) will give us the actual label!
-            out = net.forward_one(x)
-            out_ref = net.forward_one(x_ref).repeat(batch_size, 1)
+    # Stack predictions so that the dimensions are [batch_size, num_ref_imgs]
+    preds = torch.stack(preds, dim=1)
 
-            y_hat = threshold(out, out_ref)
-            pred = torch.logical_xor(y_hat, y_ref).float()
-            preds.append(pred)
-        # Stack predictions so that the dimensions are [batch_size, num_ref_imgs]
-        preds = torch.stack(preds, dim=1)
-
-    # Probability output is the mean label prediction, which is valid since this is
-    # binary classification
+    # Probability output is the mean label prediction
     if prob:
         return preds.mean(dim=1)
     # For "hard" classification, use 0.5 as decision boundary
@@ -179,8 +192,6 @@ def main():
             nepochs=args.epoch,
             start_epoch=start_epoch,
         )
-
-        test_net(net)
 
     else:  # args.action == "test"
         checkpoint = torch.load(

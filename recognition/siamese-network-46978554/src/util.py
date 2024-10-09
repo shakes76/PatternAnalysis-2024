@@ -32,3 +32,17 @@ def contrastive_loss_threshold(margin):
         return (dist >= margin).float()
 
     return f
+
+
+def plot_pca_embeddings(embeddings, targets):
+    import matplotlib.pyplot as plt
+    from sklearn.decomposition import PCA
+
+    pca = PCA(n_components=2)
+    embeddings_pca = pca.fit_transform(embeddings)
+
+    comp1 = embeddings_pca[:, 0]
+    comp2 = embeddings_pca[:, 1]
+
+    plt.scatter(comp1, comp2, c=targets)
+    plt.show()

@@ -4,6 +4,7 @@ import nibabel as nib
 from tqdm import tqdm
 import os
 from torchvision import transforms
+from torchvision.transforms import functional as F
 import numpy as np
 
 # Custom dataset class (similar to the one discussed previously)
@@ -30,11 +31,15 @@ class NiftiDataset(Dataset):
             images = np.zeros((num, rows, cols), dtype=dtype)
 
         for i, image_name in enumerate(tqdm(image_names)):
+
             nifti_image = nib.load(image_name)
             image_data = nifti_image.get_fdata(caching='unchanged')
             if len(image_data.shape) == 3:
                 image_data = image_data[:, :, 0]
             image_data = image_data.astype(dtype)
+            
+            if image_data.shape[1] != 256 or image_data.shape[2] != 128:
+                image_data = self.resize_image(image_data)
 
             if normImage:
                 image_data = (image_data - image_data.mean()) / image_data.std()
@@ -49,6 +54,14 @@ class NiftiDataset(Dataset):
                 break
 
         return images
+    def resize_image(self, image_data):
+        if image_data.ndim == 2:
+            image_data = image_data[np.newaxis, ...]
+        if image_data.ndim == 3:
+            image_data = F.resize(torch.tensor(image_data), (256, 128))
+            return image_data.numpy()
+        else:
+            raise ValueError(f"Unsupported image data shape: {image_data.shape}")
 
     def to_channels(self, arr, dtype=np.uint8):
         channels = np.unique(arr)

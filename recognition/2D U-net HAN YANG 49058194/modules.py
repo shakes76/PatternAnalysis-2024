@@ -65,7 +65,7 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-
+# U-net model
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
         super(UNet, self).__init__()

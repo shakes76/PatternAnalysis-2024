@@ -121,7 +121,7 @@ def classify(net, x, device, ref_set, prob=True):
             # However, we need the actual label (0 for benign, 1 for malign)
             # An XOR with the ground truth label (y_ref) will give us the actual label!
             out = net.forward_one(x)
-            out_ref = net.forward_one(x_ref).repeat(batch_size)
+            out_ref = net.forward_one(x_ref).repeat(batch_size, 1)
 
             y_hat = threshold(out, out_ref)
             pred = torch.logical_xor(y_hat, y_ref).float()

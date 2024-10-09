@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
  #import the trained model architecture
 from modules import GFNet 
 # Import the data loader
-from dataset import dataloader
+from dataset import *
 import numpy as np
-import torchvision.utils as vutils
+import random
 
 
 ## for local testing
@@ -65,42 +65,43 @@ def visualisations(images, labels, predictions, save_path):
     plt.show()
 
 # function for making predictions of the trained model (use test dataset)
-def predict(model, test_loader):
+def predict(model, test_dataset):
     print("Generating Predictions for test data...")
     with torch.no_grad():
 
-        for i, (images, labels) in enumerate(test_loader):
-            images, labels = images.to(device), labels.to(device)
+        # Randomly sample 4 indices from the entire test set
+        rand_indices = random.sample(range(len(test_dataset)), 4)
+        selected_samples = [test_dataset[i] for i in rand_indices]
 
-            # Forward pass
-            outputs = model(images)
-            _, predictions = torch.max(outputs, 1)
-            
-            # Randomly select 4 images from the batch
-            # REF:Gervais, N. (2024). Random Choice with Pytorch? Stack Overflow.
-            # https://stackoverflow.com/questions/59461811/random-choice-with-pytorch
-            rand_indices = torch.randperm(images.size(0))[:4]
-            selected_images = images[rand_indices]
-            selected_labels = labels[rand_indices]
-            selected_predictions = predictions[rand_indices]
-             # Produce visualisations of the selected images
-            visualisations(selected_images, selected_labels.cpu(), selected_predictions.cpu(), os.path.join(assets_dir, f'predictions_{i}.png'))
-            # print predictions for the current batch
-            print(f"Batch {i}:")
-            print(f"True labels: {labels.cpu().numpy()}")
-            print(f"Predicted labels: {predictions.cpu().numpy()}")
-            
-            if i == 0:  # Limit to one batch for demonstration, you can modify this
-                break
+        # Separate images and labels
+        selected_images = torch.stack([sample[0] for sample in selected_samples])  # Stack images
+        selected_labels = torch.tensor([sample[1] for sample in selected_samples])  # Stack labels
+
+        # Move images to device
+        selected_images = selected_images.to(device)
+        
+        # Forward pass
+        outputs = model(selected_images)
+        _, selected_predictions = torch.max(outputs, 1)
+
+        saved_path = os.path.join(assets_dir, 'random_test_predictions.png')
+
+        # Produce visualisations
+        visualisations(selected_images, selected_labels.cpu(), selected_predictions.cpu(), saved_path)
+        
+        # Print selected indices and predictions
+        print(f"Randomly selected indices: {rand_indices}")
+        print(f"True labels: {selected_labels.cpu().numpy()}")
+        print(f"Predicted labels: {selected_predictions.cpu().numpy()}")
 
 # Main function to load the model and perform predictions
 def main():
     # Load the test dataset
-    (_, _, test_loader) = dataloader(batch_size=64)
+    test_loader, test_dataset = test_dataloader(batch_size=64)
     # Load trained model
     model = load_model(model_path)
     # produce predictions
-    predict(model, test_loader)
+    predict(model, test_dataset)
 
 if __name__ == "__main__":
     main()

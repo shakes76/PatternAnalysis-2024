@@ -19,7 +19,7 @@ Located between the encoder and decoder, it typically consists of two 3x3 convol
 The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].
 
 ## How It Works
-The U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images[^3].<br />
+This U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images[^3].<br />
 <br />
 The process begins with loading Nifti files containing MRI slices using the Nibabel library, converting them into NumPy arrays for preprocessing. Each slice is then resized and normalized to ensure uniform input dimensions of `[1, 1, 128, 128]` for grayscale images. <br />
 <br />

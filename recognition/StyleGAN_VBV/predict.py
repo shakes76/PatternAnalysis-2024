@@ -1,5 +1,5 @@
 import torch
-from torchvision.utils import save_image 
+from torchvision.utils import save_image, make_grid
 from modules import Generator
 import os 
 
@@ -22,18 +22,24 @@ def generate_examples(gen, steps, n=100):
     gen.eval()  # Set the generator to evaluation mode
     alpha = 1.0  # Set alpha to 1 for full resolution generation
 
-    for i in range(n):  # Loop to generate 'n' images
+    # Create a directory for saving images if it doesn't exist
+    save_dir = f'saved_examples/step{steps}'
+    os.makedirs(save_dir, exist_ok=True)
+
+    images = []  # List to hold generated images
+
+    for _ in range(n):  # Generate 'n' images
         with torch.no_grad():  # Disable gradient calculation for inference
             # Generate random noise input for the generator
             noise = torch.randn(1, Z_DIM).to(DEVICE)
             # Generate an image from the noise input using the generator
             img = gen(noise, alpha, steps)
+            images.append(img)   
 
-            # Create a directory for saving images if it doesn't exist
-            if not os.path.exists(f'saved_examples/step{steps}'):
-                os.makedirs(f'saved_examples/step{steps}')
+    # Create a grid of images (3x3 for 9 images)
+    grid = make_grid(torch.cat(images, dim=0), nrow=3)
 
-            # Save the generated image; rescale to [0, 1] for saving
-            save_image(img * 0.5 + 0.5, f"saved_examples/step{steps}/img_{i}.png")
+    # Save the generated grid image; rescale to [0, 1] for saving
+    save_image(grid * 0.5 + 0.5, os.path.join(save_dir, f"grid_step{steps}.png"))
     
     gen.train()  # Set the generator back to training mode

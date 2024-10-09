@@ -63,7 +63,7 @@ class Improved3DUnet(nn.Module):
         self.decoder1_upsample = Upsample(self.FILTER_BASE * 2, self.FILTER_BASE, self.LEAKY_RELU_SLOPE)
         self.decoder1_conv = Conv(self.FILTER_BASE, self.FILTER_BASE)
         self.decoder1_segment = Segment(self.FILTER_BASE, self.FILTER_BASE)
-        self.decoder1_sum = Sum(self.FILTER_BASE)
+        self.decoder1_sum = Sum(self.FILTER_BASE, self.LEAKY_RELU_SLOPE)
 
         # output uses softmax
         self.convert = Segment(self.FILTER_BASE, num_classes)

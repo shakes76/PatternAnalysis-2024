@@ -20,7 +20,6 @@ data_directory = '../../../AD_NC'
 
 #Set Hyperparameters
 image_size = (256, 256) # image size (length and width)
-batchsize = 64
 
 # the mean and std values are hardcoded here, previously calculated in utils.py from the training data
 transform = {
@@ -45,8 +44,10 @@ class ADNIDataset(Dataset):
         self.mode = mode
         # Use the transform specific to the mode (train, test)
         self.transform = transform[mode]  
-
-        # assumes that the dataset is structured in subfolders (AD and NC)
+        # Get the class names based on folder structure
+        self.classes = sorted([d for d in os.listdir(self.data_dir) if os.path.isdir(os.path.join(self.data_dir, d))])
+        # Map class names to indices
+        self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(self.classes)}
         self.image_filenames = []
         for label_dir in os.listdir(self.data_dir):
             label_path = os.path.join(self.data_dir, label_dir)
@@ -69,14 +70,14 @@ class ADNIDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        # Map label to an index (AD -> 0, NC -> 1)
-        label_idx = 0 if label == 'AD' else 1
+        # Map label to an index 
+        label_idx = self.class_to_idx[label]
         
         return image, label_idx
 
 
 # for loading and returning the train, validation and test data.
-def dataloader(batch_size, train_size=0.8):
+def train_dataloader(batch_size, train_size=0.8):
     print("Start DataLoading ...")
     # Create the complete dataset for training (includes validation)
     complete_train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=transform, mode='train')
@@ -85,40 +86,27 @@ def dataloader(batch_size, train_size=0.8):
     train_size = int(train_size * len(complete_train_dataset))
     val_size = len(complete_train_dataset) - train_size
     train_dataset, val_dataset = random_split(complete_train_dataset, [train_size, val_size])
-    # Create test data set
-    test_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'test'), transform=transform, mode='test')
+    
 
     # DataLoader for batching
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
-
+    # print class names and their indices
+    print(f"Classes in dataset: {complete_train_dataset.class_to_idx}")
     print(f"Number of training images: {len(train_dataset)}")
     print(f"Number of validation images: {len(val_dataset)}")
+
+
+    return train_loader, val_loader
+
+def test_dataloader(batch_size):
+    # Create test data set
+    test_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'test'), transform=transform, mode='test')
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+    print(f"Classes in dataset: {test_dataset.class_to_idx}")
     print(f"Number of testing images: {len(test_dataset)}")
-    print(f"Classes in dataset: AD (0), NC (1)")
 
-    return (train_loader, val_loader, test_loader)
-
-
-if __name__ == "__main__":
-    datasets, dataloaders = dataloader(batch_size=batchsize)
-
-    # iterate over DataLoader
-    data_iter = iter(dataloaders[0])
-    images, labels = next(data_iter)
-
-    print(f"Batch size: {images.size(0)}")
-    print(f"Image size: {images.size()}")  # (batch_size, channels, height, width)
-    print(f"Labels: {labels}")  # Tensor containing the class indices
-
-    # visual to check if we can see the images
-    def imshow(img):
-        
-        np_img = img.numpy()
-        plt.imshow(np.transpose(np_img, (1, 2, 0)))
-        plt.show()
-
-    imshow(torchvision.utils.make_grid(images[:4]))
+    # Also return the dataset for visualisation
+    return test_loader, test_dataset
 
 

@@ -20,12 +20,11 @@ learning_rate = 0.001
 
 batch_size = 64
 
-def initalise():
-    # Set device 
+def initialise():
+    # Set up thee device 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Set directory to save plots
     asset_dir = 'assets'
-    
     if not os.path.exists(asset_dir):
         os.makedirs(asset_dir)
     return device, asset_dir
@@ -184,9 +183,11 @@ def test(device, asset_dir, model, criterion, test_loader):
 # Main function to start training
 def main():
     #intitialse the startup
-    device, asset_dir = initalise()
-    # Load dataset
-    (train_loader, val_loader, test_loader) = dataloader(batch_size=batch_size)
+    device, asset_dir = initialise()
+    # Load datasets
+    train_loader, val_loader = train_dataloader(batch_size=batch_size)
+    test_loader, _ = test_dataloader(batch_size=batch_size)
+
     #load model
     model = GFNet(
         img_size=256,

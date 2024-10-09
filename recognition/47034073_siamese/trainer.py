@@ -36,7 +36,7 @@ class SiameseController:
         self._losses: list[float] = []
         self._distance = distances.LpDistance(normalize_embeddings=True, p=2, power=1)
         self._miner = miners.TripletMarginMiner(
-            margin=hparams.margin, type_of_triplets="semihard", distance=self._distance
+            margin=hparams.margin, type_of_triplets="all", distance=self._distance
         )
         self._loss = losses.TripletMarginLoss(
             margin=hparams.margin,

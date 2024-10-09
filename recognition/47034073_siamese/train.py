@@ -44,7 +44,7 @@ def main() -> None:
 
     # Training params
     num_workers = 2
-    learning_rate = 0.00001
+    learning_rate = 0.0001
     model_name = "most_recent"
 
     hparams = HyperParams(
@@ -108,11 +108,12 @@ def main() -> None:
     )
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     logger.info("Embeddings \n%s", embeddings)
-    embeddings = normalize(embeddings)
+    is_zero = np.abs(embeddings < 1e-14)
+    num_zero = np.sum(is_zero, axis=1)
+    np.abs(num_zero - embeddings.shape[1]) < 1e-14
 
-    zero_sums = np.sum(embeddings, axis=1)
-    num_zero = np.sum(np.abs(zero_sums) < 1e-10)
-    logger.info("Num collapsed to zero %f", num_zero)
+    # logger.info("Num collapsed to zero %f", num_zero)
+    embeddings = normalize(embeddings)
 
     # PCA
     logger.info("Fitting pca...")
@@ -153,7 +154,7 @@ def main() -> None:
     plt.savefig("plots/train_tsne")
 
     # Fit KNN
-    knn = KNeighborsClassifier(n_neighbors=10, weights="distance", p=2)
+    knn = KNeighborsClassifier(n_neighbors=5, weights="distance", p=2)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
 

@@ -43,7 +43,7 @@ class ValidationLossEarlyStopping:
 # beta = 0.25
 
 num_epochs = 100
-batch_size = 8
+batch_size = 16
 lr = 0.003
 num_hiddens = 128
 num_residual_hiddens = 32

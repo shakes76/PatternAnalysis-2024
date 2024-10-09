@@ -17,6 +17,7 @@ def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    # Traverse each folder to find. nii files
     for root, dirs, files in os.walk(root_dir):
         for file_name in files:
             if file_name.lower().endswith('.nii') or file_name.lower().endswith('.nii.gz'):

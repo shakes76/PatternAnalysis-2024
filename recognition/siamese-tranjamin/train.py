@@ -147,20 +147,47 @@ network.visualise_training()
 
 base_model.model.trainable = False
 classifier_model = NeuralNetwork.NeuralNetwork()
-classifier_model.add_training_data(x_train, keras.utils.to_categorical(y_train, num_classes=10))
-classifier_model.add_testing_data(x_test, keras.utils.to_categorical(y_test, num_classes=10))
+# classifier_model.add_training_data(x_train, keras.utils.to_categorical(y_train, num_classes=10))
+# classifier_model.add_testing_data(x_test, keras.utils.to_categorical(y_test, num_classes=10))
 classifier_model.add_generic_layer(base_model.model)
 classifier_model.add_dense_layer(32)
 classifier_model.add_dense_layer(16)
-classifier_model.add_dense_layer(10, activation="softmax")
-classifier_model.set_loss_function(tf.keras.losses.CategoricalCrossentropy())
+classifier_model.add_dense_layer(1, activation="sigmoid")
+classifier_model.set_loss_function(tf.keras.losses.BinaryCrossentropy())
 classifier_model.set_epochs(50)
 classifier_model.set_batch_size(128)
 classifier_model.set_optimisation("adam")
 classifier_model.add_metric("accuracy")
-classifier_model.enable_tensorboard("./tensorboard-classi.keras")
-classifier_model.enable_model_checkpoints("./checkpoints-classi", save_best_only=True)
-classifier_model.enable_wandb("mnist-siamese-classi")
+# classifier_model.enable_tensorboard("./tensorboard-classi.keras")
+# classifier_model.enable_model_checkpoints("./checkpoints-classi", save_best_only=True)
+# classifier_model.enable_wandb("mnist-siamese-classi")
+
+dataset = tf.keras.preprocessing.image_dataset_from_directory(
+    "datasets/balanced", 
+    labels="inferred", 
+    label_mode="binary",
+    shuffle=True,
+    validation_split=0.2,
+    subset="training",
+    seed=0,
+    image_size=image_shape,
+    batch_size=128
+)
+
+dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
+    "datasets/balanced", 
+    labels="inferred", 
+    label_mode="binary",
+    shuffle=True,
+    validation_split=0.2,
+    subset="validation",
+    seed=0,
+    image_size=image_shape,
+    batch_size=128
+    )
+
+dataset = dataset.shuffle(10000).prefetch(tf.data.AUTOTUNE)
+dataset_val = dataset.prefetch(tf.data.AUTOTUNE)
 
 classifier_model.compile_model()
-classifier_model.fit(verbose=1)
+classifier_model.fit_model_batches(dataset, dataset_val, verbose=1)

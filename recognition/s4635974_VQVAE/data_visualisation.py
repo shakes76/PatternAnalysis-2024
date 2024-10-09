@@ -44,7 +44,7 @@ plt.close()  # Close the plot to prevent it from displaying
 plt.plot(epochs, training_vq_loss, label="Training VQ Loss")
 plt.plot(epochs, validation_vq_loss, label="Validation VQ Loss")
 # plt.ylim(0, max(max(training_vq_loss), max(validation_vq_loss)))  # 
-plt.ylim(0, 0.1) 
+plt.ylim(0, 50000) 
 plt.xlabel('Epoch')
 plt.ylabel('VQ Loss')
 plt.title('VQ Loss over Epochs')

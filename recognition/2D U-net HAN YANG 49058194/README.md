@@ -91,7 +91,7 @@ The project requires the following dependencies[^5]:
   #### 1. Inputs:
   The inputs to the `train.py` script include:
   - **Training data**: <br />Preprocessed images (such as slices from MRI scans) and corresponding ground truth segmentation masks.
-    - Images: `[batch_size, 1, 128, 128]`, where `batch_size=128` <br /><br />`1` represents the grayscale channel, and `128x128` are the spatial dimensions of the image.
+    - Images: `[batch_size, 1, 128, 128]`, where `batch_size=128` , `1` represents the grayscale channel, and `128x128` are the spatial dimensions of the image.
       - Example: `torch.Size([128, 1, 128, 128])`
     - Masks (ground truth): `[batch_size, 1, 128, 128]`, similarly structured as the images, but representing the ground truth segmentation masks. Thus, the masks and images will both have the same dimensions.<br />
       - Example : `[128, 1, 128, 128]` for a batch of 128 grayscale images with corresponding binary masks.

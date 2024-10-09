@@ -1,6 +1,7 @@
 import pickle
 import matplotlib.pyplot as plt
 import os
+import torch
 
 # Ensure save_dir exists
 save_dir = "data_viz"
@@ -8,7 +9,7 @@ os.makedirs(save_dir, exist_ok=True)
 
 # Load the saved data
 with open('training_data.pkl', 'rb') as f:
-    data = pickle.load(f)
+    data = pickle.load(f, map_location=torch.device('cpu'))  # Map storage to CPU
 
 # Access the lists
 training_output_loss = data["training_output_loss"]

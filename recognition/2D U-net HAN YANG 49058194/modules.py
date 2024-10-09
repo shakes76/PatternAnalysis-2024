@@ -13,10 +13,11 @@ class DoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
-
+    # Forward propagation
     def forward(self, x):
         return self.conv(x)
-
+        
+# Downsampling operation of U-Net
 class Down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Down, self).__init__()

@@ -27,8 +27,8 @@ def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
                 # Using nibabel to load nii files
                 nii_img = nib.load(file_path)
                 img_data = nii_img.get_fdata()
-                print(f"Image shape: {img_data.shape}")  # 打印图像的形状以检查维度
-
+                print(f"Image shape: {img_data.shape}")  # Print the shape of the image to check its dimensions
+                
                 if len(img_data.shape) == 3:  # 3D 图像，正常处理
                     for i in range(img_data.shape[2]):  # 对于每个切片
                         slice_2d = img_data[:, :, i]

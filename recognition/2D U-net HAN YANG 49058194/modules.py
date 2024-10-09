@@ -13,6 +13,7 @@ class DoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
+        
     # Forward propagation
     def forward(self, x):
         return self.conv(x)
@@ -25,16 +26,19 @@ class Down(nn.Module):
             nn.MaxPool2d(2),
             DoubleConv(in_channels, out_channels)
         )
+        
     # Forward propagation
     def forward(self, x):
         return self.maxpool_conv(x)
 
+# Upsampling operation of U-Net
 class Up(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Up, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
         self.conv = DoubleConv(in_channels, out_channels)
 
+    # Forward propagation
     def forward(self, x1, x2):
         x1 = self.up(x1)
         # Ensure x1 and x2 are the same size by cropping x2
@@ -43,6 +47,7 @@ class Up(nn.Module):
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
+    # Upsampling and downsampling feature concatenation
     def _crop_tensor(self, tensor, target_tensor):
         target_size = target_tensor.size()[2:]
         tensor_size = tensor.size()[2:]

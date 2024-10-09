@@ -6,13 +6,13 @@ import nibabel as nib
 from skimage.transform import resize
 import numpy as np
 
-# 下载并解压数据
+# Download and extract data
 def download_and_extract(url, extract_to='HipMRI_project_data'):
     response = requests.get(url)
     zip_file = zipfile.ZipFile(io.BytesIO(response.content))
     zip_file.extractall(extract_to)
 
-# 处理nii文件为npy格式
+# Process nii files in npy format
 def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -45,15 +45,15 @@ def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
 
 
 if __name__ == "__main__":
-    # 下载链接
+    # download url
     url = "https://filesender.aarnet.edu.au/download.php?token=76f406fd-f55d-497a-a2ae-48767c8acea2&files_ids=23102543"
 
-    # 解压和处理
+    # Extract and processing
     root_dir = 'HipMRI_study_keras_slices_data'  # 最终保存 .nii 文件的路径
     processed_dir = os.path.join(root_dir, 'processed_nii_files')  # 保存 .npy 文件的路径
 
-    # 下载并解压文件
+    # Download and extract files
     download_and_extract(url, root_dir)
 
-    # 加载并处理nii文件
+    # Load and process nii files
     load_and_process_nii_files(root_dir, processed_dir)

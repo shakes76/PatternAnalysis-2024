@@ -42,8 +42,8 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 3
-batch_size = 2
+num_epochs = 50
+batch_size = 8
 lr = 0.003
 num_hiddens = 128
 num_residual_hiddens = 32
@@ -53,10 +53,12 @@ dim_embedding = 64
 beta = 0.25
 
 # Save directory
-save_dir = f'test'
+save_dir = f'lr=0.003_bs=8'
 
 # Define the save directory and ensure it exists
-model_dir = f'saved_model/test.pth'
+model_dir = f'saved_model/lr=0.003_bs=8.pth'
+
+save_data_dir = 'lr=0.003_bs=8.pkl'
 
 def train_model(
         save_dir: str | None = None, 
@@ -291,7 +293,7 @@ def train_model(
         "ssim": epoch_ssim
     }
 
-    with open('training_data.pkl', 'wb') as f:
+    with open(save_data_dir, 'wb') as f:
         pickle.dump(data, f)
 
     if type(save_dir) == str:

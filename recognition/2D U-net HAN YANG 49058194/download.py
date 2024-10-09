@@ -50,8 +50,8 @@ if __name__ == "__main__":
     url = "https://filesender.aarnet.edu.au/download.php?token=76f406fd-f55d-497a-a2ae-48767c8acea2&files_ids=23102543"
 
     # Extract and processing
-    root_dir = 'HipMRI_study_keras_slices_data'  # 最终保存 .nii 文件的路径
-    processed_dir = os.path.join(root_dir, 'processed_nii_files')  # 保存 .npy 文件的路径
+    root_dir = 'HipMRI_study_keras_slices_data'  # Final path to save the. nii file
+    processed_dir = os.path.join(root_dir, 'processed_nii_files')  # The path to save the. npy file
 
     # Download and extract files
     download_and_extract(url, root_dir)

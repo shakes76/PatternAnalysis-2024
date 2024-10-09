@@ -89,8 +89,8 @@ def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, t
 
 # Example usage:
 train_dir = "../../../keras_slices_data/keras_slices_train"
-#val_dir = "path/to/keras_slices_validate"
-#test_dir = "path/to/keras_slices_test"
+val_dir = "../../../keras_slices_data/keras_slices_validate"
+test_dir = "../../../keras_slices_data/keras_slices_test"
 
 # Transforms (optional)
 data_transforms = transforms.Compose([
@@ -98,8 +98,7 @@ data_transforms = transforms.Compose([
 ])
 
 # Get the DataLoaders
-#train_loader, val_loader, test_loader = get_dataloaders(train_dir, val_dir, test_dir, batch_size=16, num_workers=4, transform=data_transforms)
+train_loader, val_loader, test_loader = get_dataloaders(train_dir, val_dir, test_dir, batch_size=16, num_workers=4, transform=data_transforms)
 
 
 
-print("Got the Training Set!")

@@ -81,3 +81,19 @@ class Unet3D(nn.Module):
 
         # Output layer
         return self.output(x)
+    
+
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1e-6):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, inputs, targets):
+        inputs = inputs.contiguous().view(-1)
+        targets = targets.contiguous().view(-1)
+        
+        intersection = (inputs * targets).sum()
+        
+        dice_coefficient = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)
+        
+        return 1 - dice_coefficient

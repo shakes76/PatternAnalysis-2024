@@ -5,7 +5,7 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 
-def to_channels(arr: np.ndarray, dtype=np. uint8) -> np.ndarray:
+def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
     for c in channels:
@@ -14,13 +14,13 @@ def to_channels(arr: np.ndarray, dtype=np. uint8) -> np.ndarray:
     return res
 
 # load medical image functions
-def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
+def load_data_2D(imageNames: list[str], normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False) -> np.ndarray:
     '''
-    Load medical image data from names , cases list provided into a list for each.
+    Load medical image data from names, cases list provided into a list for each.
 
     This function pre-allocates 4D arrays for conv2d to avoid excessive memory usage.
 
-    normImage: bool(normalise the image 0.0 -1.0)
+    normImage: bool (normalise the image 0.0 -1.0)
     early_stop: Stop loading pre-maturely, leaves arrays mostly empty, for quick loading and testing scripts.
     '''
     affines = []
@@ -70,7 +70,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
-def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False):
+def load_data_3D(imageNames: list[str], normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False) -> np.ndarray:
     '''
     Load medical image data from names, cases list provided into a list for each.
 
@@ -83,7 +83,7 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
     '''
     affines = []
 
-    #~ interp = 'continuous '
+    #~ interp = 'continuous'
     interp = 'linear'
     if dtype == np.uint8: # assume labels
         interp = 'nearest'
@@ -91,16 +91,17 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
     #get fixed size
     num = len(imageNames)
     niftiImage = nib.load(imageNames[0])
-    
+
     if orient:
-        niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
+        # niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
+        pass
         #~ testResultName = "oriented.nii.gz"
         #~ niftiImage.to_filename(testResultName)
     
     first_case = niftiImage.get_fdata(caching='unchanged')
     if len(first_case.shape) == 4:
-        first_case = first_case [:, :, :, 0] # sometimes extra dims , remove
-    
+        first_case = first_case[:, :, :, 0] # sometimes extra dims , remove
+
     if categorical:
         first_case = to_channels(first_case, dtype=dtype)
         rows, cols, depth, channels = first_case.shape
@@ -109,10 +110,11 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
         rows, cols, depth = first_case.shape
         images = np.zeros((num, rows, cols, depth), dtype=dtype)
 
-    for i, inName in enumerate ( tqdm ( imageNames )):
+    for i, inName in enumerate(tqdm(imageNames)):
         niftiImage = nib.load(inName)
         if orient:
-            niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
+            # niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
+            pass
         
         inImage = niftiImage.get_fdata(caching='unchanged') # read disk only
         affine = niftiImage.affine

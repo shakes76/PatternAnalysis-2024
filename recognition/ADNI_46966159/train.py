@@ -6,17 +6,13 @@ import modules
 from timm.utils import ModelEmaV3
 from tqdm import tqdm
 
-def train(batch_size: int=4,
+def train(batch_size: int=ds.batch_size,
           num_time_steps: int=1000,
           num_epochs: int=15,
           seed: int=-1,
           ema_decay: float=0.9999,
           lr=2e-5,
           checkpoint_path: str=None):
-
-    # Create the dataloader
-    train_loader = torch.utils.data.DataLoader(ds.dataset, batch_size=batch_size,
-                                               shuffle=True, drop_last=True, num_workers=2)
 
     scheduler = modules.DiffusionScheduler(num_time_steps=num_time_steps)
     model = modules.UNET().cuda()
@@ -31,9 +27,8 @@ def train(batch_size: int=4,
 
     for i in range(num_epochs):
         total_loss = 0
-        for bidx, (x,_) in enumerate(tqdm(train_loader, desc=f"Epoch {i+1}/{num_epochs}")):
+        for bidx, (x,_) in enumerate(tqdm(ds.dataloader, desc=f"Epoch {i+1}/{num_epochs}")):
             x = x.cuda()
-            # x = F.pad(x, (2,2,2,2))
             t = torch.randint(0,num_time_steps,(batch_size,))
             e = torch.randn_like(x, requires_grad=False)
             a = scheduler.alpha[t].view(batch_size,1,1,1).cuda()
@@ -54,4 +49,4 @@ def train(batch_size: int=4,
     }
     torch.save(checkpoint, '/content/ddpm_checkpoint')
 
-train(checkpoint_path=None, lr=2e-5, num_epochs=1)
+train(checkpoint_path=None, lr=2e-5, num_epochs=30)

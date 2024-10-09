@@ -1,5 +1,5 @@
 ```git
-__pycache__/
+__pycache__/*
 data/
 ISIC_2020_Training_GroundTruth_v2.csv
 preprocessed_data/

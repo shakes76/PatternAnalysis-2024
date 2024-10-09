@@ -35,6 +35,7 @@ class AnalysisLayer(nn.Module):
         if self.pooling is not None:
             x = self.pooling(x)
         x = self.sequence(x)
+        return x
 
 class SynthesisLayer(nn.Module):
     "Generalized Synthesis Layer class to perform the synthesis path"

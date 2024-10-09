@@ -8,7 +8,7 @@ of 0.75 on the test set on the prostate label.
 This model is a 2D UNet with encoder decoder structure and skip connections[^1].<br />
 <br />
        ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/%E8%81%94%E6%83%B3%E6%88%AA%E5%9B%BE_20241009103621.png "DBSCAN Performance Comparison")
-### The core components of U-Net
+### The core components of U-Net：
 - **Encoder**：<br />
 Also known as compression path or downsampling path, it is mainly used to build deep network structures and extract deep semantic information. It includes multiple program blocks, each typically consisting of a 3x3 convolution (using Relu activation function) and a 2x2 pooling layer with a stride of 2 (downsampling). After each program block is processed, the size of the feature map will gradually decrease.
 - **Decoder**：<br />

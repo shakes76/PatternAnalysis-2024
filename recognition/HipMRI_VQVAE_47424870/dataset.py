@@ -101,7 +101,6 @@ if __name__ == '__main__':
         plt.show()
 
     for batch_idx, (images, _) in enumerate(dataloader):
-        print(f"Batch {batch_idx + 1} | Image Batch Shape: {images.shape}")
         if batch_idx == 0:  # Visualize only the first batch
             visualize_batch(images)
             break

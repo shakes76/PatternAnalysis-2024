@@ -15,6 +15,7 @@ import torch.fft
 from functools import partial
 from collections import OrderedDict
 import math
+from timm.models.layers import DropPath, trunc_normal_ # extra library for improving training
 
 # MLP Block similar to the example
 class MLP(nn.Module):
@@ -34,7 +35,6 @@ class MLP(nn.Module):
         x = self.act(x)
         x = self.drop(x)
         x = self.fc2(x)
-#        x = self.act(x)  
         x = self.drop(x)
         return x
     
@@ -54,10 +54,8 @@ class Global_Filter(nn.Module):
             a = b = int(math.sqrt(N))
         else:
             a, b = spatial_size
-        
-  #      x = x.to(torch.float32)
+
         x = x.view(B, a, b, C)
-#        x = x.view(B, self.h, self.w, self.dim)
         # Forward FFT
         x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
@@ -74,8 +72,10 @@ class Block(nn.Module):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.filter = Global_Filter(dim=dim, h=h, w=w)
-        # setting to Identity regardless, can include a drop path later
-        self.drop_path = nn.Identity()
+        if drop_path > 0.:
+            self.drop_path = DropPath(drop_path)
+        else:
+            self.drop_path = nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim*mlp_ratio)
         self.mlp = MLP(in_features=dim, hidden_features=mlp_hidden_dim,
@@ -104,8 +104,8 @@ class PatchEmbed(nn.Module):
 
 # GFNet main, follows block stacking with dropout
 class GFNet(nn.Module):
-    #images are set 256 x 265 with RGB # change depth ect
-    def __init__(self, img_size=256, patch_size= 16, embed_dim=768, num_classes=2, in_channels=3, drop_rate=0.5, depth=6, mlp_ratio=4., drop_path_rate=0.6, norm_layer=None):
+    #images are set 256 x 256 with RGB # change depth ect
+    def __init__(self, img_size=256, patch_size= 16, embed_dim=768, num_classes=2, in_channels=3, drop_rate=0.5, depth=8, mlp_ratio=4., drop_path_rate=0.6, norm_layer=None):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim
@@ -136,7 +136,8 @@ class GFNet(nn.Module):
     # Now check where it belongs and apply the constants
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
- #           trunc_normal_(m.weight, std=.02)
+            # Clip values outside 2 stds from the mean (of normal distribution)
+            trunc_normal_(m.weight, std=.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -157,5 +158,4 @@ class GFNet(nn.Module):
         x = self.head(x)
         return x
 
-#### Include some form of truncated normal distribution to tensors
 

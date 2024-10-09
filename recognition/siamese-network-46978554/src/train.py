@@ -54,7 +54,7 @@ def train(
             epoch_loss += float(loss)
             nbatches += 1
 
-        print("Epoch %3d: %10f" % (epoch + 1, epoch_loss / nbatches))
+        print("Epoch %3d: %10f" % (start_epoch + epoch + 1, epoch_loss / nbatches))
 
         # Save model weights and losses every 10 epochs and at the last epoch
         if epoch % 10 == 9 or epoch == nepochs + start_epoch - 1:
@@ -177,14 +177,19 @@ def main():
 
     if args.action == "train":
         start_epoch = 0
-        if args.checkpoint:
+        if args.checkpoint_tr:
             checkpoint = torch.load(
-                out_dir / "checkpoint.pt", weights_only=False, map_location=device
+                out_dir / args.checkpoint_tr, weights_only=False, map_location=device
             )
             net.load_state_dict(checkpoint["state_dict"])
             start_epoch = checkpoint["epoch"]
 
-        print(f"Training on {device} for {args.epoch} epochs...")
+        if start_epoch == 0:
+            print(f"Training on {device} for {args.epoch} epochs...")
+        else:
+            print(
+                f"Training on {device} from checkpoint ({start_epoch} epochs) for {args.epoch} epochs..."
+            )
         train(
             net,
             train_set,
@@ -197,7 +202,7 @@ def main():
 
     else:  # args.action == "test"
         checkpoint = torch.load(
-            out_dir / "checkpoint.pt", weights_only=False, map_location=device
+            out_dir / args.checkpoint_ts, weights_only=False, map_location=device
         )
         net.load_state_dict(checkpoint["state_dict"])
 
@@ -208,40 +213,53 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["train", "test"], help="Training or testing")
     parser.add_argument(
-        "-o", "--out", type=str, default="out", help="(TR/TE) output directory"
+        "-o",
+        "--out",
+        type=str,
+        default="out",
+        help="(TR/TS) output directory, default out",
+    )
+
+    # Model args, hyperparameters
+    parser.add_argument(
+        "-p",
+        "--pretrained",
+        action="store_true",
+        help="(TR/TS) whether ResNet base is pretrained or not",
+    )
+    parser.add_argument(
+        "-m",
+        "--margin",
+        type=float,
+        default=0.2,
+        help="(TR/TS) margin for contrastive loss, default 0.2",
     )
 
     # Training args
     parser.add_argument(
-        "-e", "--epoch", type=int, default=10, help="(TR) Epochs, default 10"
+        "-e", "--epoch", type=int, default=10, help="(TR) epochs, default 10"
     )
     parser.add_argument(
         "-l",
         "--lr",
         type=float,
         default=0.001,
-        help="(TR) Learning rate, default 0.001",
+        help="(TR) learning rate, default 0.001",
     )
     parser.add_argument(
         "-b", "--batch", type=int, default=128, help="(TR) batch size, default 128"
     )
     parser.add_argument(
-        "-p",
-        "--pretrained",
-        action="store_true",
-        help="(TR/TE) Whether ResNet base is pretrained or not",
+        "--checkpoint-tr",
+        type=str,
+        default="",
+        help="(TR) checkpoint file to train from, default none (train from scratch)",
     )
     parser.add_argument(
-        "-c", "--checkpoint", action="store_true", help="(TR) Train from checkpoint"
-    )
-
-    # Hyperparameters
-    parser.add_argument(
-        "-m",
-        "--margin",
-        type=float,
-        default=0.2,
-        help="(TR/TE) Margin for contrastive loss, default 0.2",
+        "--checkpoint-ts",
+        type=str,
+        default="checkpoint.pt",
+        help="(TS) checkpoint file (in output directory) to test from, default checkpoint.pt",
     )
 
     args = parser.parse_args()

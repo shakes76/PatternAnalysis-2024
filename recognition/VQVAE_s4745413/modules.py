@@ -7,20 +7,19 @@ class Encoder(nn.Module):
     """
     Reduces dimensionality of input MRI image
     """
-    def __init__(self, in_channels, hidden_channels, latent_dim):
+    def __init__(self, in_dim, h_dim, n_res_layers, res_h_dim):
         super(Encoder, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, hidden_channels, kernel_size=4, stride=2, padding=1) # downamplng
-        self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(hidden_channels, latent_dim, kernel_size=3, stride=1, padding=1)
-        self.res1 = ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers) # change param names of rest of code
-
-        # Need to add Residual Stack here
+        self.conv_stack = nn.Sequential(
+                nn.Conv2d(in_dim, h_dim // 2, kernel_size=4, stride=2, padding=1), # downsampling
+                nn.ReLU(),
+                nn.Conv2d(h_dim // 2, h_dim, kernel_size=4, stride=2, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(h_dim, h_dim, kernel_size=3, stride=1, padding=1),
+                ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers)
+                )
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = self.conv3(x)
-        return x
+        return self.conv_stack(x)
 
 class ResidualLayer(nn.Module):
     """

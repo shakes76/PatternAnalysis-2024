@@ -21,6 +21,7 @@ LAMBDA_GP = 10  # Weight for the gradient penalty term
 PROGRESSIVE_EPOCHS = [30, 30, 30, 30, 30, 30]  # Number of epochs for each progressive training stage
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
 
+# Function to calculate the gradient penalty for the WGAN-GP
 def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
     """ Calculate the gradient penalty for the WGAN-GP """
     BATCH_SIZE, C, H, W = real.shape  # Get dimensions of the real images
@@ -43,9 +44,14 @@ def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
     gradient_penalty = torch.mean((gradient_norm - 1) ** 2)  # Calculate the gradient penalty
     return gradient_penalty  # Return the calculated penalty
 
+# Function to train the generator and discriminator for one step
 def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
     """Main training function for one training step"""
     loop = tqdm(loader, leave=True)  # Progress bar for loading batches
+
+    # Initialize lists to store losses for plotting
+    losses_critic = []
+    losses_gen = []
 
     for batch_idx, (real, _) in enumerate(loop):
         real = real.to(DEVICE)  # Move real images to the device
@@ -80,55 +86,84 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
         opt_gen.step()  # Update the generator's parameters
 
         # Update alpha for progressive training
-        alpha += cur_batch_size / (
-            PROGRESSIVE_EPOCHS[step] * 0.5 * len(dataset)
-        )
+        alpha += cur_batch_size / (PROGRESSIVE_EPOCHS[step] * 0.5 * len(dataset))
         alpha = min(alpha, 1)  # Ensure alpha doesn't exceed 1
 
+        # Store losses for plotting later
+        losses_critic.append(loss_critic.item())
+        losses_gen.append(loss_gen.item())
+
         # Update progress bar with current losses
-        loop.set_postfix(
-            gp=gp.item(),
-            loss_critic=loss_critic.item()
-        )
-    return alpha  # Return updated alpha for progressive growing
+        loop.set_postfix(gp=gp.item(), loss_critic=loss_critic.item())
+    
+    return alpha, losses_critic, losses_gen  # Return updated alpha and losses
 
-# our generator
-gen = Generator(
-    Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG
-).to(DEVICE)
+# Function to save the generator and critic models
+def save_model(gen, critic, step):
+    """Save the generator and critic models to disk."""
+    torch.save(gen.state_dict(), f'models/generator_step{step}.pth')  # Save generator's state
+    torch.save(critic.state_dict(), f'models/critic_step{step}.pth')  # Save critic's state
 
-# our discriminator
-critic = Discriminator(IN_CHANNELS, CHANNELS_IMG).to(DEVICE)
+# Function to plot and save the loss curves
+def plot_loss(losses_critic, losses_gen, step):
+    """Generate and save a loss plot for the generator and critic."""
+    plt.figure(figsize=(10, 5))  # Set the figure size
+    plt.plot(losses_critic, label='Critic Loss')  # Plot critic loss
+    plt.plot(losses_gen, label='Generator Loss')  # Plot generator loss
+    plt.title(f'Losses at Step {step}')  # Title for the plot
+    plt.xlabel('Batch Number')  # X-axis label
+    plt.ylabel('Loss')  # Y-axis label
+    plt.legend()  # Show the legend
+    plt.savefig(f'loss_plots/loss_step{step}.png')  # Save the plot to disk
+    plt.close()  # Close the plot to free up memory
 
-# set up optimizer for generator using adam optim; for params with (deflault lr) and without map in name (lower lr)
-opt_gen = optim.Adam([{'params': [param for name, param in gen.named_parameters() if 'map' not in name]},
-                     {'params': gen.map.parameters(), 'lr': 1e-5}], lr=LR, betas=(0.0, 0.99))
+# Initialize generator and critic
+gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create generator
+critic = Discriminator(IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create critic
 
-# set up optimizer for discriminator using adam optim and default lr
-opt_critic = optim.Adam(
-    critic.parameters(), lr=LR, betas=(0.0, 0.99)
-)
+# Set up optimizer for generator and critic
+opt_gen = optim.Adam(
+    [{'params': [param for name, param in gen.named_parameters() if 'map' not in name]},
+     {'params': gen.map.parameters(), 'lr': 1e-5}], lr=LR, betas=(0.0, 0.99))  # Adam for generator
+opt_critic = optim.Adam(critic.parameters(), lr=LR, betas=(0.0, 0.99))  # Adam for critic
 
-# train gen and discrim
+# Set models to training mode
 gen.train()
 critic.train()
 
-# step depends on image size
+# Calculate initial step based on starting image size
 step = int(log2(START_TRAIN_IMG_SIZE / 4))
 
-# loop over all epochs
+# Loop over all specified epochs for each progressive step
 for num_epochs in PROGRESSIVE_EPOCHS[step:]:
-    alpha = 1e-7
-    loader, dataset = get_loader(4 * 2**step)
-    print('Current image size: ' + str(4 * 2**step))
+    alpha = 1e-7  # Initialize alpha for progressive growing
+    loader, dataset = get_loader(4 * 2**step)  # Load dataset for current resolution
+    print('Current image size: ' + str(4 * 2**step))  # Print current image size
 
-    # loop over specified # epochs
+    # Initialize lists to store losses for this step
+    losses_critic = []
+    losses_gen = []
+
+    # Loop over the specified number of epochs
     for epoch in range(num_epochs):
-        print(f'Epoch [{epoch + 1}/ {num_epochs}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}]')  # Print epoch info
 
-        # train generators and discriminator
-        alpha = train_fn(
+        # Train the generator and discriminator, and get updated alpha and losses
+        alpha, step_losses_critic, step_losses_gen = train_fn(
             critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen
         )
+
+        # Append losses from this epoch to the total losses
+        losses_critic.extend(step_losses_critic)
+        losses_gen.extend(step_losses_gen)
+
+    # Save models after each set of epochs
+    save_model(gen, critic, step)
+
+    # Plot and save losses after training
+    plot_loss(losses_critic, losses_gen, step)
+
+    # Generate and save example images from the generator
     generate_examples(gen, step)
-    step += 1 # iterate step w/ increased image size for next iteration
+    
+    step += 1  # Increment step for the next iteration (increased image size)

@@ -11,6 +11,8 @@ import torch
 import os
 import torchvision.transforms as transforms
 
+# TODO: may be treating 'seg_*' wrong; these may be the segment map LABELS as opposed to their own
+# image set
 class HipMRI2d(torch.utils.data.Dataset):
     def __init__(self, root, imgSet = "seg_train", transform = None, applyTrans = False):
         self.root = root

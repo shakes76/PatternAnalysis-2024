@@ -37,6 +37,9 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float =
         if split_name == "train":
             md_split_benign = md_split[md_split["target"] == 0]
             md_split_malign = md_split[md_split["target"] == 1]
+            md_split_malign = md_split_malign.sample(
+                n=len(md_split_benign), random_state=seed, replace=True
+            ).reset_index(drop=True)
 
             md = pd.concat(
                 [
@@ -47,7 +50,7 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float =
             )
 
             md = md.sample(frac=1, random_state=seed).reset_index(drop=True)
-            md.to_csv(out_dir / f"{split_name}-pairs-metadata.csv", index=False)
+            md.to_csv(out_dir / "train-pairs-metadata.csv", index=False)
 
         for isic_id in md_split["isic_id"]:
             src = data_dir / f"train-image/image/{isic_id}.jpg"

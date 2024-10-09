@@ -10,7 +10,7 @@ IN_CHANNELS = 512  # Number of input channels for the generator
 CHANNELS_IMG = 3  # Number of output channels for images (RGB)
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available, otherwise use CPU
 
-def generate_examples(gen, steps, n=100):
+def generate_examples(gen, steps, n=9):
     """
     Generate and save example images using the trained generator model.
 

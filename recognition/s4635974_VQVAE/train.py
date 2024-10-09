@@ -353,6 +353,8 @@ def train_model(
 
     return model
 
+print("End")
+
 
 if (__name__ == "__main__"):
     model = train_model(

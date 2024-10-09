@@ -55,13 +55,16 @@ class Up(nn.Module):
         delta_w = tensor_size[1] - target_size[1]
         return tensor[:, :, delta_h // 2:tensor_size[0] - delta_h // 2, delta_w // 2:tensor_size[1] - delta_w // 2]
 
+# Out convolution
 class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
+    # Forward propagation
     def forward(self, x):
         return self.conv(x)
+
 
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):

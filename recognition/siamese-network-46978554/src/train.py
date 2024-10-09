@@ -195,7 +195,7 @@ def main():
             train_set,
             device,
             batch_size=args.batch,
-            checkpoint_func=test_net,
+            test_func=test_net,
             nepochs=args.epoch,
             start_epoch=start_epoch,
         )

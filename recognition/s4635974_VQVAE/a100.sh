@@ -4,7 +4,7 @@
 #SBATCH --time=0-00:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s4635974@student.uq.edu.au
-#SBATCH --output=100_epochs.out
+#SBATCH --output=lr=0.003_bs=16.out.out
 
 conda activate torch
 python train.py

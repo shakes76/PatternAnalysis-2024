@@ -28,7 +28,7 @@ epochs = range(1, epochs)
 
 plt.plot(epochs, training_output_loss, label="Training Output Loss")
 plt.plot(epochs, validation_output_loss, label="Validation Output Loss")
-plt.ylim(0, 0.01)  # Set the y-axis limits between 0 and 1
+plt.ylim(0, 0.1)  # Set the y-axis limits between 0 and 1
 plt.xlabel('Epoch')
 plt.ylabel('Training Output Loss')
 plt.title('Training Output Loss over Epochs')
@@ -44,7 +44,7 @@ plt.close()  # Close the plot to prevent it from displaying
 plt.plot(epochs, training_vq_loss, label="Training VQ Loss")
 plt.plot(epochs, validation_vq_loss, label="Validation VQ Loss")
 # plt.ylim(0, max(max(training_vq_loss), max(validation_vq_loss)))  # 
-plt.ylim(0, 0.01) 
+plt.ylim(0, 0.1) 
 plt.xlabel('Epoch')
 plt.ylabel('VQ Loss')
 plt.title('VQ Loss over Epochs')
@@ -58,7 +58,7 @@ plt.close()  # Close the plot to prevent displaying
 
 # Plot SSIM over epochs
 plt.plot(epochs, ssim, label="SSIM")
-plt.ylim(0, 1)  # SSIM values typically range between 0 and 1
+# plt.ylim(0, 1)  # SSIM values typically range between 0 and 1
 plt.xlabel('Epoch')
 plt.ylabel('SSIM')
 plt.title('SSIM over Epochs')

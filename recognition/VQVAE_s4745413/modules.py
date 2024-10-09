@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class Encoder(nn.Module):
     """
     Reduces dimensionality of input MRI image
@@ -61,4 +63,23 @@ class ResidualStack(nn.Module):
             x = F.relu(x)
         return x
 
+class Decoder(nn.Module):
+    """
+    p_phi (x|z) network, given a latent sample z p_phi maps back to original space.
+    - in_dim: input dimension
+    - h_dim: hidden layer dimensino
+    - res_h_dim: hidden dimension of residual block
+    - n_res_layers: number of layers to stack
+    """
+    def __init__(self, in_dim, h_dim, n_res_layers, res_h_dim):
+        super(Decoder, self).__init__()
+        self.inverse_conv_stack = nn.Sequential(
+            nn.ConvTranspose2d(in_dim, h_dim, kernel_size=3, stride=1, padding=1),
+            ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers),
+            nn.ConvTranspose2d(h_dim, h_dim//2, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranpose2d(h_dim//2, 1, kernel_size=4, stride=2, padding=1)
+            )
+    def forward(self, x):
+        return self.inverse_conv_stack(x)
 

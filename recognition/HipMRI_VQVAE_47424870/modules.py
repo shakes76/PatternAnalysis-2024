@@ -16,4 +16,33 @@ class Encoder(nn.Module):
         x = F.relu(self.conv3(x))
         return x
 
-# Define other components: Decoder, Vector Quantizer, VQVAE.
+class VectorQuantizer(nn.Module):
+    def __init__(self, num_embeddings, embedding_dim):
+        super(VectorQuantizer, self).__init__()
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+        self.embeddings = nn.Parameter(torch.randn(num_embeddings, embedding_dim))
+
+    def forward(self, x):
+        # Flatten the input
+        b, c, h, w = x.size()
+        x = x.view(b, c, -1).transpose(1, 2)  # [B, H*W, C]
+
+        # Calculate distances
+        distances = (x.unsqueeze(2) - self.embeddings.unsqueeze(0).unsqueeze(0)) ** 2
+        distances = distances.sum(dim=1)  # [B, H*W, num_embeddings]
+        
+        # Get the nearest embeddings
+        indices = distances.argmin(dim=2)  # [B, H*W]
+        z_q = self.embeddings[indices]  # [B, H*W, embedding_dim]
+        
+        # Reshape to original dimensions
+        z_q = z_q.transpose(1, 2).view(b, self.embedding_dim, h, w)
+
+        # Calculate the quantization loss
+        quantization_loss = F.mse_loss(z_q.detach(), x) + F.mse_loss(z_q, x.detach())
+
+        return z_q, quantization_loss
+    
+
+# Define other components: Decoder, VQVAE.

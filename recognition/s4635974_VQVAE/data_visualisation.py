@@ -9,7 +9,7 @@ os.makedirs(save_dir, exist_ok=True)
 
 # Load the saved data
 with open('training_data.pkl', 'rb') as f:
-    data = pickle.load(f, map_location=torch.device('cpu'))  # Map storage to CPU
+    data = pickle.load(f)  # No map_location needed
 
 # Access the lists
 training_output_loss = data["training_output_loss"]

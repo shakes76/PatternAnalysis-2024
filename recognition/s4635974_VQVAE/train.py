@@ -53,12 +53,12 @@ dim_embedding = 64
 beta = 0.25
 
 # Save directory
-save_dir = f'lr=0.003_bs=8'
+save_dir = f'lr=0.003_bs=16'
 
 # Define the save directory and ensure it exists
-model_dir = f'saved_model/lr=0.003_bs=8.pth'
+model_dir = f'saved_model/lr=lr=0.003_bs=16.pth'
 
-save_data_dir = 'lr=0.003_bs=8.pkl'
+save_data_dir = 'lr=0.003_bs=16.pkl'
 
 def train_model(
         save_dir: str | None = None, 

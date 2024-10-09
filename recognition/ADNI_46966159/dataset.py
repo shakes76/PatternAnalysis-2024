@@ -54,4 +54,6 @@ def show_first_batch(loader):
         show_images(batch[0], "Images in the first batch")
         break
 
-show_first_batch(dataloader)
+
+if __name__ == '__main__':
+    show_first_batch(dataloader)

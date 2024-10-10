@@ -9,10 +9,13 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from dataset import ADNIDataset
+from dataset import ADNIDataset, ADNIDatasetTest
 from utils import get_transform, train, test, set_seed
 from modules import GFNet
 from functools import partial
+import copy
+import numpy as np
+from sklearn.metrics import accuracy_score
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', default='/home/lcz/PatternAnalysis-2024/data/ADNI/AD_NC', type=str)
@@ -82,7 +85,8 @@ if __name__ == "__main__":
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             patience_counter = 0
-            torch.save(model.state_dict(), os.path.join(log_dir, 'best_gfnet.pt'))
+            best_model = copy.deepcopy(model)
+            torch.save(best_model.state_dict(), os.path.join(log_dir, 'best_gfnet.pt'))
         else:
             patience_counter += 1
         
@@ -91,3 +95,31 @@ if __name__ == "__main__":
             break
         
     print('Training complete.')
+    
+    # test
+    print('-'*15)
+    print('Testing...')
+    test_dataset = ADNIDatasetTest(root=args.data_path, transform=get_transform(train=False))
+    
+    best_model.eval()
+    preds_list = []
+    true_list = []
+
+    # test
+    for data, labels in test_dataset:
+        data, labels = data.to(device), labels.float().to(device)
+        
+        outputs = best_model(data)
+        
+        outputs = torch.sigmoid(outputs).mean().item()
+        preds = 1 if outputs > 0.5 else 0
+
+        preds_list.append(preds)
+        true_list.append(labels.item())
+        
+    preds_list = np.array(preds_list)
+    true_list = np.array(true_list)
+
+    # Calculate accuracy
+    accuracy = accuracy_score(true_list, preds_list)
+    print(f"Test Accuracy: {accuracy * 100:.2f}%")

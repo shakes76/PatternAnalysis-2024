@@ -44,13 +44,13 @@ Two dataset classes are provided for loading the data. Both classes automaticall
 
 ### Additional Remarks on the Implementation
 
-I attempted to use patient-level information during the training phase, but this significantly reduced the number of training samples and made it harder for the model to learn the relationships between images, leading to unstable and challenging training. The test accuracy (~76%) did not improve significantly compared to our final implementation.
+I attempted to use patient-level information during the training phase by either using Conv3D to capture sequential information or treating a set of images as a 20-channel input for GFNet. However, both methods significantly reduced the number of training samples, and it was also difficult for the model to learn the relationships between the images, leading to challenging training. The test accuracies were both below ~76% and did not improve significantly compared to our final implementation.
 
 In the final approach, we simplified the process. The model learns from single images to focus on the features within each image. This approach was easier to implement and resulted in a more stable training process. The model learns the probability that a given MRI image indicates Alzheimer's disease.
 
 During testing, we load all 20 images from the same patient and calculate the probability that each image is diseased. The patient's diagnosis is determined by the average probability across the 20 images. If this value exceeds 0.5, the patient is classified as having Alzheimer's disease.
 
-Although it is possible that a single MRI image may not conclusively diagnose Alzheimer's (since it may not reflect the lesion area), we assume this phenomenon is rare given that the dataset was provided by medical experts. Furthermore, since this effect could occur in both the positive (AD) and negative (NC) subsets, it may cause the model to be more cautious when making predictions, which can help prevent overfitting. By averaging the 20 predictions, we mitigate this issue, and our approach achieved higher-than-required test accuracy in this assignment.
+Although a single MRI image may not conclusively diagnose Alzheimer's (as it may not capture the lesion area), averaging the 20 predictions helps mitigate this issue. Using this approach, we achieved a test accuracy that exceeded the required level for this assignment.
 
 
 ## Training

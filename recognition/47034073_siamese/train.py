@@ -73,7 +73,8 @@ def main() -> None:
         dataset,
         pin_memory=True,
         num_workers=num_workers,
-        sampler=sampler,
+        # sampler=sampler,
+        shuffle=True,
         batch_size=hparams.batch_size,
     )
 
@@ -99,12 +100,15 @@ def main() -> None:
     benign = train_meta_df[train_meta_df["target"] == 0]
     malignant = train_meta_df[train_meta_df["target"] == 1]
     benign = benign.sample(random_state=42, n=len(malignant))
-    balanced_df = pd.concat([benign, malignant])
-    balanced_ds = TumorClassificationDataset(IMAGES_PATH, balanced_df, transform=False)
+    knn_df = pd.concat([benign, malignant])
+
+    knn_df = train_meta_df
+
+    knn_ds = TumorClassificationDataset(IMAGES_PATH, knn_df, transform=False)
 
     # Undersample dataloader for KNN embeddings
     train_classification_loader = DataLoader(
-        balanced_ds,
+        knn_ds,
         batch_size=hparams.batch_size,
         num_workers=num_workers,
     )
@@ -122,8 +126,10 @@ def main() -> None:
     plt.scatter(
         pca_projections[:, 0],
         pca_projections[:, 1],
-        c=balanced_df["target"],
+        c=knn_df["target"],
         cmap="coolwarm",
+        marker=".",
+        s=0.5,
     )
     plt.xlabel("component1")
     plt.ylabel("component2")
@@ -134,27 +140,28 @@ def main() -> None:
     plt.savefig("plots/train_pca")
 
     # tsne
-    logger.info("Fitting tsne...")
-    tsne = TSNE(random_state=42)
-    tsne_projections = tsne.fit_transform(embeddings)
-    logger.info("Plotting tsne...")
-    plt.figure()
-    plt.scatter(
-        tsne_projections[:, 0],
-        tsne_projections[:, 1],
-        c=balanced_df["target"],
-        cmap="coolwarm",
-    )
-    plt.xlabel("component1")
-    plt.ylabel("component2")
-    benign_patch = mpatches.Patch(color="blue", label="Benign")
-    malignant_patch = mpatches.Patch(color="red", label="Malignant")
-    plt.legend(handles=[benign_patch, malignant_patch])
-    logger.info("Writing image")
-    plt.savefig("plots/train_tsne")
+    # logger.info("Fitting tsne...")
+    # tsne = TSNE(random_state=42)
+    # tsne_projections = tsne.fit_transform(embeddings)
+    # logger.info("Plotting tsne...")
+    # plt.figure()
+    # plt.scatter(
+    #     tsne_projections[:, 0],
+    #     tsne_projections[:, 1],
+    #     c=knn_df["target"],
+    #     cmap="coolwarm",
+    #     marker=".",
+    # )
+    # plt.xlabel("component1")
+    # plt.ylabel("component2")
+    # benign_patch = mpatches.Patch(color="blue", label="Benign")
+    # malignant_patch = mpatches.Patch(color="red", label="Malignant")
+    # plt.legend(handles=[benign_patch, malignant_patch])
+    # logger.info("Writing image")
+    # plt.savefig("plots/train_tsne")
 
     # Fit KNN
-    knn = KNeighborsClassifier(n_neighbors=50, weights="distance", p=2)
+    knn = KNeighborsClassifier(n_neighbors=5, weights="distance", p=2)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
 

@@ -39,7 +39,7 @@ class SiameseController:
 
         self._distance = distances.LpDistance(normalize_embeddings=True, p=2, power=1)
         self._miner = miners.TripletMarginMiner(
-            margin=hparams.margin, type_of_triplets="semihard", distance=self._distance
+            margin=hparams.margin, type_of_triplets="all", distance=self._distance
         )
         self._loss = losses.TripletMarginLoss(
             margin=hparams.margin,
@@ -119,7 +119,7 @@ class SiameseController:
                 logger.info(
                     "step %d / loss %e / progress %d / num mined %d",
                     n,
-                    avg_loss / n,
+                    loss.item(),
                     num_observations,
                     self._miner.num_triplets,
                 )

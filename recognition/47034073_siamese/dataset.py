@@ -55,10 +55,6 @@ class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
         if self._transform:
             image = _transform(image)
 
-        print(observation_data)
-
-        print(image_name)
-
         return image, target
 
 

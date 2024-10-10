@@ -117,7 +117,8 @@ class SiameseController:
             if time.time() - start_time > 60:
                 start_time = time.time()
                 logger.info(
-                    "step %d / loss %e / progress %d / num mined %d",
+                    "epoch %d / step %d / loss %e / progress %d / num mined %d",
+                    self._epoch,
                     n,
                     loss.item(),
                     num_observations,

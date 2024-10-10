@@ -4,7 +4,7 @@ import logging
 import pathlib
 
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, scale
 from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -44,12 +44,12 @@ def main() -> None:
 
     # Training params
     num_workers = 2
-    learning_rate = 0.0001
+    learning_rate = 0.00001
     model_name = "most_recent"
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=1,
+        num_epochs=10,
         learning_rate=learning_rate,
         margin=0.1,
     )
@@ -73,8 +73,7 @@ def main() -> None:
         dataset,
         pin_memory=True,
         num_workers=num_workers,
-        # sampler=sampler,
-        shuffle=True,
+        sampler=sampler,
         batch_size=hparams.batch_size,
     )
 
@@ -115,12 +114,13 @@ def main() -> None:
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     logger.info("Embeddings \n%s", embeddings)
 
+    standard_embeddings = scale(embeddings)
     embeddings = normalize(embeddings)
 
     # PCA
     logger.info("Fitting pca...")
     pca = PCA(n_components=2)
-    pca_projections = pca.fit_transform(embeddings)
+    pca_projections = pca.fit_transform(standard_embeddings)
     logger.info("Plotting pca...")
     plt.figure()
     plt.scatter(

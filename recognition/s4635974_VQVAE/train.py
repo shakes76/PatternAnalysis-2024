@@ -121,8 +121,9 @@ def train_model(
 
     # Define your transformations
     transform = transforms.Compose([
-        transforms.ToTensor(),  
-        transforms.Normalize((0.5,), (0.5,)),
+        transforms.ToTensor(),
+        transforms.Normalize((0,), (1,)),
+        # transforms.Normalize((0.5,), (0.5,)),
         # transforms.Normalize((72.56,), (81.27,))
     ])
 

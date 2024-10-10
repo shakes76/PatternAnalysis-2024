@@ -234,9 +234,9 @@ def validate(epoch):
         for batch, (x, _) in enumerate(val_loader):
             x = x.to(device)
             
-            x_hat, _, _ = model(x)
+            _, decoded_output, _, _ = model(x)
             
-            total_ssim += utils.calc_ssim(x_hat, x)
+            total_ssim += utils.calc_ssim(decoded_output, x)
         
     epoch_ssim_score = total_ssim/(batch+1)
     ssim_scores.append(epoch_ssim_score)
@@ -246,11 +246,26 @@ def validate(epoch):
         print(f"Achieved an SSIM score of {epoch_ssim_score}, NEW BEST! saving model")
     else:
         print(f"Achieved an SSIM score of {epoch_ssim_score}")
+
+def test():
+    model.load_state_dict(torch.load(f'models/checkpoint_epoch{best_epoch}_vqvae.pt'))
+    model.eval()
+    total_ssim = 0
+    
+    with torch.no_grad():
+        for batch, (x, _) in enumerate(test_loader):
+            x = x.to(device)
+            
+            _, decoded_output, _, _ = model(x)
+            
+            total_ssim += utils.calc_ssim(decoded_output, x)
+        
+    total_test_ssim = total_ssim/(batch + 1)
+    return total_test_ssim
     
 
 def reconstruct_images():
     model.eval()
-    n = 50
     with torch.no_grad():        
         for im in test_loader:
             ims = im.float().unsqueeze(1).to(device)
@@ -274,3 +289,5 @@ def reconstruct_images():
 if __name__ == "__main__":    
     train_vqvae()
     reconstruct_images()
+    test_ssim = test()
+    print("Test SSIM achieved as {test_ssim}")

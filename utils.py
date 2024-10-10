@@ -2,6 +2,11 @@ from tqdm import tqdm
 import nibabel as nib
 import numpy as np
 import cv2
+import torch
+import os
+import numpy as np
+import time
+import matplotlib as plt
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -61,3 +66,21 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+
+def calc_ssim(x, y):
+    # Ensure that the tensors are detached and moved to the CPU
+    x = x.cpu().detach().numpy()
+    y = y.cpu().detach().numpy()   
+    # Get batch size
+    size = x.shape[0]
+    # Initialize a list to store SSIM values for each image in the batch
+    ssim_values = []
+    # Calculate SSIM for each image in the batch
+    for i in range(size):
+        # Assuming the images are (batch, channel, height, width), and channel=1 for grayscale
+        ssim_val = ssim(x[i, 0], y[i, 0], data_range=1)  
+        ssim_values.append(ssim_val)   
+    # Calculate mean SSIM for the batch
+    mean_ssim = np.mean(ssim_values)
+    return mean_ssim
+    

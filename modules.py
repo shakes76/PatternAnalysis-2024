@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import time
-
-device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+import utils
+import os
 
 class ResidualBlock(nn.Module):
     """
@@ -165,19 +165,25 @@ class VQVAE(nn.Module):
         
         return encoded_output, decoded_output, latents, quantize_loss
 
+# Initialize
+device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+train_loader, test_loader, val_loader = load_data()
+model = VQVAE().to(device)
+if not os.path.exists('models'):
+    os.makedirs('models')
+
+ssim_scores = []
+train_losses = []
+best_epoch = 0
 
 def train_vqvae():
-    train_loader, test_loader = load_data()
-    model = VQVAE().to(device)
-    
     num_epochs = 7
     optimizer = Adam(model.parameters(), lr=1E-3)
     criterion = torch.nn.MSELoss()
     
-    train_losses = []
-
     for epoch_idx in range(num_epochs):
         epoch_loss = 0
+        epoch_start = time.time()
         for batch, im in enumerate(tqdm(train_loader)):
             start_time = time.time()
             im = im.float().unsqueeze(1).to(device)
@@ -185,7 +191,7 @@ def train_vqvae():
             
             encoded_output, decoded_output, latents, quantize_loss = model(im)
             
-            model_loss = F.mse_loss(encoded_output, decoded_output)            
+            model_loss = criterion(encoded_output, decoded_output)            
             loss = model_loss + quantize_loss
             loss.backward()
             optimizer.step()
@@ -193,7 +199,7 @@ def train_vqvae():
             
             if (batch + 1) % 50 == 0:
                 print('\tIter [{}/{} ({:.0f}%)]\tLoss: {} Time: {}'.format(
-                    batch * len(x), len(train_loader.dataset),
+                    batch * len(im), len(train_loader.dataset),
                     50 * batch / len(train_loader),
                     epoch_loss/batch, axis=0),
                     time.time() - start_time
@@ -201,7 +207,10 @@ def train_vqvae():
         
         avg_epoch_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_epoch_loss)
-        print('Finished epoch {}'.format(epoch_idx + 1))
+        print('Finished epoch {} in time: {} with loss:'.format(
+            epoch_idx + 1, epoch_start - time.time(), avg_epoch_loss))
+        
+        validate(epoch_idx+1)
 
     print('Done Training...')
 
@@ -215,9 +224,31 @@ def train_vqvae():
     plt.savefig('training_loss.png')
     plt.close()
     
-    return model, test_loader
+    return model
 
-def reconstruct_images(model, test_loader):
+def validate(epoch):
+    model.eval()
+    total_ssim = 0
+    
+    with torch.no_grad():
+        for batch, (x, _) in enumerate(val_loader):
+            x = x.to(device)
+            
+            x_hat, _, _ = model(x)
+            
+            total_ssim += utils.calc_ssim(x_hat, x)
+        
+    epoch_ssim_score = total_ssim/(batch+1)
+    ssim_scores.append(epoch_ssim_score)
+    if epoch_ssim_score > max(ssim_scores):
+        torch.save(model.state_dict(), f'models/checkpoint_epoch{epoch}_vqvae.pt')
+        best_epoch = epoch
+        print(f"Achieved an SSIM score of {epoch_ssim_score}, NEW BEST! saving model")
+    else:
+        print(f"Achieved an SSIM score of {epoch_ssim_score}")
+    
+
+def reconstruct_images():
     model.eval()
     n = 50
     with torch.no_grad():        
@@ -240,6 +271,6 @@ def reconstruct_images(model, test_loader):
     print('Done Reconstruction ...')
 
 
-if __name__ == "__main__":
-    model, test_loader = train_vqvae()
-    reconstruct_images(model)
+if __name__ == "__main__":    
+    train_vqvae()
+    reconstruct_images()

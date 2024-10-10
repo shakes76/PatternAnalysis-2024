@@ -11,6 +11,7 @@ import utils as utils
 import glob
 import nibabel as nab
 import torchvision
+import random
 
 def show_example_images(dataloader):
     # Get image batch
@@ -35,14 +36,20 @@ def load_data():
     train_folder_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
     test_folder_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 
-    train_file_list = sorted(glob.glob(f"{train_folder_path}/**.nii.gz", recursive=True))
-    test_file_list = sorted(glob.glob(f"{test_folder_path}/**.nii.gz", recursive=True))
+    train_file_list = sorted(glob.glob(f"{train_folder_path[:500]}/**.nii.gz", recursive=True))
+    test_file_list = sorted(glob.glob(f"{test_folder_path[:200]}/**.nii.gz", recursive=True))
+    # random picking for validation
+    val_file_list = random.sample(test_file_list, 50)
+    test_file_list = [f for f in test_file_list if f not in val_file_list]
     
     train_dataset = utils.load_data_2D(train_file_list)
     test_dataset = utils.load_data_2D(test_file_list)
+    val_dataset = utils.load_data_2D(val_file_list)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64,
                                             shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=64,
-                                            shuffle=True)
+                                            shuffle=False)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=64,
+                                                 shuffle=False)
    
-    return train_dataloader, test_dataloader
+    return train_dataloader, test_dataloader, val_dataloader

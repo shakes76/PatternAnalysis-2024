@@ -180,3 +180,4 @@ scikit_learn_data
 .gitconfig
 .ssh
 run_model
+dataset/

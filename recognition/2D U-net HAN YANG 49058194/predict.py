@@ -14,13 +14,15 @@ def dice_score(pred, target, threshold=0.5, eps=1e-6):
     dice = (2 * intersection + eps) / (torch.sum(pred) + torch.sum(target) + eps)
     return dice.item()  # Return a scalar
 
-
+# Predicting images and evaluating model performance
 def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
+    # Load dataset
     dataset = ProstateMRIDataset(root_dir)
     model = UNet(n_channels=1, n_classes=1)
     model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
 
+    # initialization
     total_dice_score = 0
     num_samples = len(dataset)
 

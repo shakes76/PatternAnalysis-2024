@@ -3,40 +3,32 @@ This file shows the example usage of the trained model for making predictions an
 """
 
 import torch
+import torch.nn as nn
 import os
 import matplotlib.pyplot as plt
- #import the trained model architecture
 from modules import GFNet 
-# Import the data loader
 from dataset import *
 import numpy as np
 import random
-
-
-## for local testing
-model_path = "trained_model.pth"
+import argparse
+from functools import partial
 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Directory to save plots
-assets_dir = 'assets'
-if not os.path.exists(assets_dir):
-    os.makedirs(assets_dir)
-
 
 # Function to load the trained model
 def load_model(model_path):
     model = GFNet(
         img_size=256,
         patch_size= 16,
-        embed_dim=768,
+        embed_dim=1000,
         num_classes=2,
-        in_channels=3,
+        in_channels=1,
         drop_rate=0.5,
-        depth=2,
+        depth=1,
         mlp_ratio=4.,
-        drop_path_rate=0.6
+        drop_path_rate=0.15,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6)
         ).to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()  # Set the model to evaluation mode
@@ -65,7 +57,7 @@ def visualisations(images, labels, predictions, save_path):
     plt.show()
 
 # function for making predictions of the trained model (use test dataset)
-def predict(model, test_dataset):
+def predict(model, test_dataset, output_dir):
     print("Generating Predictions for test data...")
     with torch.no_grad():
 
@@ -84,7 +76,11 @@ def predict(model, test_dataset):
         outputs = model(selected_images)
         _, selected_predictions = torch.max(outputs, 1)
 
-        saved_path = os.path.join(assets_dir, 'random_test_predictions.png')
+        # Ensure the output directory exists
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        saved_path = os.path.join(output_dir, 'random_test_predictions.png')
 
         # Produce visualisations
         visualisations(selected_images, selected_labels.cpu(), selected_predictions.cpu(), saved_path)
@@ -96,12 +92,24 @@ def predict(model, test_dataset):
 
 # Main function to load the model and perform predictions
 def main():
+
+       # Argument parser to handle user inputs
+    parser = argparse.ArgumentParser(description="Prediction for Alzheimer's Disease classification")
+    
+    # Add arguments for model path and output directory
+    parser.add_argument('--model-path', type=str, required=False, default="trained_model.pth",
+                        help="Path to the trained model file (default: 'trained_model.pth')")
+    parser.add_argument('--output-dir', type=str, required=False, default="prediction_outputs",
+                        help="Directory to save the prediction images (default: 'prediction_outputs')")
+
+    # parse the arguments
+    args = parser.parse_args()
     # Load the test dataset
     test_loader, test_dataset = test_dataloader(batch_size=64)
     # Load trained model
-    model = load_model(model_path)
+    model = load_model(args.model_path)
     # produce predictions
-    predict(model, test_dataset)
+    predict(model, test_dataset, args.output_dir)
 
 if __name__ == "__main__":
     main()

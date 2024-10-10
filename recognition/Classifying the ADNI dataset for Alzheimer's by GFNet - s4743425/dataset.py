@@ -2,15 +2,9 @@
 For loading the ADNI dataset and pre processing the data
 """
 
-import torch
 import os
-import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader, random_split
-from torchvision.datasets import ImageFolder
-import torchvision.utils as vutils
-import numpy as np
-import torchvision
 from PIL import Image
 
 # The path when running locally
@@ -27,13 +21,15 @@ transform = {
         transforms.Resize(image_size),
         transforms.RandAugment(num_ops=4),
         transforms.CenterCrop(image_size),
+        transforms.Grayscale(),  # Convert to grayscale
         transforms.ToTensor(),
-        transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
+         transforms.Normalize((0.1156,), (0.2202,))
     ]),
     'test': transforms.Compose([
         transforms.Resize(image_size),
+        transforms.Grayscale(),  # Convert to grayscale
         transforms.ToTensor(),
-        transforms.Normalize((0.1156, 0.1156, 0.1156), (0.2253, 0.2253, 0.2253))
+         transforms.Normalize((0.1156,), (0.2202,))
     ]),
 }
 
@@ -53,7 +49,7 @@ class ADNIDataset(Dataset):
             label_path = os.path.join(self.data_dir, label_dir)
             if os.path.isdir(label_path):
                 for file_name in os.listdir(label_path):
-                    if file_name.endswith(('.jpeg')):
+                    if file_name.endswith(('.jpeg', '.jpg')):
                         self.image_filenames.append((os.path.join(label_dir, file_name), label_dir))
 
     def __len__(self):
@@ -64,7 +60,7 @@ class ADNIDataset(Dataset):
         img_path = os.path.join(self.data_dir, img_name)
 
         # Open the image and check all same
-        image = Image.open(img_path).convert("RGB")
+        image = Image.open(img_path).convert("L")
 
         # Apply the transformation based on the mode (train, test)
         if self.transform:

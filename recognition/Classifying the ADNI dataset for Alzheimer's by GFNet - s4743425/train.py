@@ -14,7 +14,7 @@ from dataset import *
 from sklearn import metrics
 
 # Set Hyperparameters
-num_epochs = 2
+num_epochs = 1
 
 learning_rate = 0.001
 
@@ -176,7 +176,6 @@ def test(device, asset_dir, model, criterion, test_loader):
     plt.savefig(output_image_path)
     plt.show()
     plt.close
-    
 
     return test_loss, test_accuracy
 
@@ -192,13 +191,14 @@ def main():
     model = GFNet(
         img_size=256,
         patch_size= 16,
-        embed_dim=768,
+        embed_dim=1000,
         num_classes=2,
-        in_channels=3,
+        in_channels=1,
         drop_rate=0.5,
-        depth=2,
+        depth=10,
         mlp_ratio=4.,
-        drop_path_rate=0.6
+        drop_path_rate=0.15,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6)
         ).to(device)
 
     criterion = nn.CrossEntropyLoss()

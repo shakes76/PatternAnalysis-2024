@@ -18,6 +18,7 @@ batch_size = 64
 transform =  {
     'no_norm': transforms.Compose([
         transforms.Resize(image_size),
+         transforms.Grayscale(),
         transforms.ToTensor(),
     ]),
 }
@@ -30,14 +31,13 @@ data_directory = os.path.join('../../../AD_NC')
 def get_mean_std(dataset):
     """Compute the mean and std value of the dataset"""
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
-    mean = torch.zeros(3)
-    std = torch.zeros(3)
+    mean = torch.zeros(1)
+    std = torch.zeros(1)
 
     # Calculate mean and std for each
     for inputs, _ in dataloader:
-        for i in range(3):
-            mean[i] += inputs[:, i, :, :].mean()
-            std[i] += inputs[:, i, :, :].std()
+        mean[0] += inputs.mean()
+        std[0] += inputs.std()
     
     mean.div_(len(dataset))
     std.div_(len(dataset))

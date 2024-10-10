@@ -123,6 +123,6 @@ if __name__ == '__main__':
     # 验证 DataLoader 和 Transform 是否正确工作
     for batch in train_loader:
         images, labels = batch['image'], batch['label']
-        print(f"Image batch shape: {images.shape}")  # 应该是 (batch_size, channels, height, width, depth)
-        print(f"Label batch shape: {labels.shape}")  # 应该是 (batch_size, channels, height, width, depth)
+        print(f"Image batch shape: {images.shape}")
+        print(f"Label batch shape: {labels.shape}")
         break

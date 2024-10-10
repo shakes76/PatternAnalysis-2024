@@ -52,6 +52,7 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
+# Used for saving files
 model_description = 'ColorJitter'
 
 # Save directory

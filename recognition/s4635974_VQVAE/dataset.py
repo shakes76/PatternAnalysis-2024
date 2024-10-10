@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import scipy.ndimage
 from torchvision import datasets, transforms
+from PIL import Image
 
 # Directories for datasets
 train_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -105,6 +106,9 @@ class HipMRIDataset(Dataset):
         # Extract the 2D array of the first (and only) image
         image = image_data[0]  # load_data_2D returns a list
 
+        # Convert the numpy array to a PIL image
+        image = Image.fromarray(image)
+
         # Conditionally add the channel dimension only if no transform is provided
         if self.transform is None:
             image = image[None, :, :]  # Add channel dimension (from [H, W] to [1, H, W])
@@ -122,7 +126,7 @@ class HipMRILoader:
         
         # Create datasets
         self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)
-        self.validate_dataset = HipMRIDataset(validate_dir, transform=self.transform, normImage=True)
+        self.validate_dataset = HipMRIDataset(validate_dir, transform=None, normImage=True)
         self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=True)  # No transforms for test data
         
         # Create data loaders

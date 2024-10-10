@@ -5,20 +5,44 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from tqdm import tqdm
-from GFNet.gfnet import GFNet, GFNetPyramid
 
-sys.path.append(os.path.abspath('/home/Student/s4763354/comp3710/GFNet'))
-
-from modules import load_pretrained_model
+from modules import GFNet, GFNetPyramid
 from dataset import get_data_loaders
 
-def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
+def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     # Set up device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Load data
     train_loader, val_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
-    model = load_pretrained_model(num_classes=2, img_size=224)  
+
+    # Load the pretrained model
+    model = GFNetPyramid(img_size=224, patch_size=4, num_classes=1000)  # Original number of classes
+    # Load the state dict and extract the model weights
+    state_dict = torch.load("gfnet-h-ti.pth")
+    if "model" in state_dict:
+        state_dict = state_dict["model"]
+
+    # # Load the pretrained model gfnet-h-b
+    # model = GFNetPyramid(
+    #     img_size=224, 
+    #     patch_size=4, 
+    #     num_classes=1000,
+    #     embed_dim=[96, 192, 384, 768],  # GFNet-H-B dimensions
+    #     depth=[2, 2, 10, 2],  # GFNet-H-B depths
+    #     mlp_ratio=[4, 4, 4, 4],
+    #     drop_path_rate=0.3,
+    # )
+    
+    # # Load the pretrained model gfnet-xs
+    # model = GFNet(img_size=224, patch_size=16, num_classes=1000, embed_dim=384)  # GFNet-XS configuration
+    # # # Load the state dict
+    # state_dict = torch.load("gfnet-xs.pth", map_location=torch.device('cpu'))
+    # # Remove the 'model.' prefix if it exists in the state dict keys
+    # state_dict = {k.replace('model.', ''): v for k, v in state_dict.items()}
+    
+    # Load the weights, ignoring mismatched keys
+    model.load_state_dict(state_dict, strict=False)
     
     # Modify the final layer for binary classification
     num_features = model.head.in_features
@@ -32,11 +56,20 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
     
     model = model.to(device)
 
+    # Freeze all layers initially------------------
+    for param in model.parameters():
+        param.requires_grad = False
+    
+    # Unfreeze the head (always trainable)
+    for param in model.head.parameters():
+        param.requires_grad = True
+    # Freeze all layers initially------------------
+
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)  
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-8)  
 
     # Initialize the learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=5, verbose=True,min_lr=1e-6)
 
     # Initialize lists to store metrics
     train_losses = []
@@ -48,8 +81,30 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
     patience = 5
     no_improve = 0
 
+    # Define unfreezing stages----------
+    unfreezing_stages = [
+        model.blocks[-1],  # Last block
+        model.blocks[-2],  # Second to last block
+        model.blocks[-3],  # Third to last block
+        model.blocks[:-3]  # All remaining blocks
+    ]
+    epochs_per_stage = epochs // (len(unfreezing_stages) + 1)  # +1 for initial training of just the head
+    stage = 0
+    # Define unfreezing stages----------
+
     actual_epochs = 0
     for epoch in range(epochs):
+        # Unfreeze next stage if it's time-------
+        if epoch % epochs_per_stage == 0 and stage < len(unfreezing_stages):
+            print(f"Unfreezing stage {stage + 1}")
+            for param in unfreezing_stages[stage].parameters():
+                param.requires_grad = True
+            stage += 1
+            # Reset optimizer and scheduler for the new set of trainable parameters
+            optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=1e-4)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
+        # Unfreeze next stage if it's time-------
+
         model.train()
         running_loss = 0.0
         correct = 0
@@ -98,7 +153,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
             best_val_acc = val_accuracy
             no_improve = 0
             # Save the best model
-            torch.save(model.state_dict(), 'best_model_h_ti_lr.pth')
+            torch.save(model.state_dict(), 'new_mod.pth')
         else:
             no_improve += 1
 
@@ -122,7 +177,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
         print(f'Current Learning Rate: {current_lr}')
 
     # Load the best model for testing
-    model.load_state_dict(torch.load('best_model_h_ti_lr.pth', weights_only=True))
+    model.load_state_dict(torch.load('new_mod.pth', weights_only=True))
 
     # Testing loop
     model.eval()
@@ -149,7 +204,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("loss_pretrain_h_ti_lr.png") 
+    plt.savefig("loss_pretrain_h_ti_new_mod.png") 
     #plt.show()  
 
     # Plotting training and validation accuracy
@@ -162,15 +217,12 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("acc_pretrain_h_ti_lr.png")  
-    plt.show() 
+    plt.savefig("acc_pretrain_h_ti_new_mod.png")  
+    #plt.show() 
 
-    torch.save(model.state_dict(), 'gfnet-h-b_50.pth')
+    # torch.save(model.state_dict(), 'gfnet-h-b_50.pth')
 
 if __name__ == "__main__":
     train_and_evaluate(train_dir='/home/groups/comp3710/ADNI/AD_NC/train', 
-                    test_dir='/home/groups/comp3710/ADNI/AD_NC/test', 
-                    epochs=50, 
-                    batch_size=128, 
-                    lr=1e-5)
+                    test_dir='/home/groups/comp3710/ADNI/AD_NC/test', epochs=50)
 

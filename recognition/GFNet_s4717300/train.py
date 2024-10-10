@@ -19,11 +19,12 @@ learning_rate = 0.0001
 step_size = 10
 gamma = 0.1
 dropout = 0.3
+drop_path = 0.3
 
 batches = 512
 patch_size = 16
-embed_dim = 384
-depth = 12
+embed_dim = 256
+depth = 5
 ff_ratio = 4.0
 epochs = 30
 
@@ -43,7 +44,7 @@ num_classes = 2
 img_shape = (channels, image_size, image_size)
 
 
-model = GFNet(img_size=image_size, patch_size=patch_size, in_chans=channels, num_classes=num_classes, embed_dim=embed_dim, depth=depth, ff_ratio=ff_ratio, dropout=dropout)
+model = GFNet(img_size=image_size, patch_size=patch_size, in_chans=channels, num_classes=num_classes, embed_dim=embed_dim, depth=depth, ff_ratio=ff_ratio, dropout=dropout, drop_path_rate=drop_path)
 model.to(device)
 model.train()
 
@@ -56,7 +57,7 @@ losses = []
 val_losses = []
 
 # TODO: Move this to predict
-def evaluate_model():
+def evaluate_model(final=False):
     # Test the model
     print("==Testing====================")
     start = time.time() #time generation
@@ -73,7 +74,9 @@ def evaluate_model():
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
             val_loss = criterion(outputs, labels)
-            val_losses.append(val_loss.item())
+            if not final:
+                break
+        val_losses.append(val_loss.item())
 
         accuracy = (100 * correct / total)
         print('Test Accuracy: {} %'.format(accuracy))
@@ -103,10 +106,11 @@ def train_model():
             if i % 100 == 0:
                 print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, total_step, loss.item()))
 
-            losses.append(loss.item())
-            result = evaluate_model() 
+        losses.append(loss.item())
+        result = evaluate_model() 
 
         scheduler.step() 
+    result = evaluate_model(final=True) 
     torch.save(model.state_dict(), 'GFNET-{}.pth'.format(round(result, 4)))
     # Save losses to a CSV file
     with open('losses.csv', 'w', newline='') as f:

@@ -40,6 +40,8 @@ class GFNetDataloader():
                 transforms.Grayscale(num_output_channels=1),
                 transforms.Resize(240),
                 transforms.Pad((0, 8), fill=0),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
                 transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
             ])
             self.img_size = 256
@@ -48,6 +50,8 @@ class GFNetDataloader():
                 transforms.ToTensor(),
                 transforms.Grayscale(num_output_channels=1),
                 transforms.Resize((img_size, img_size)),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
                 transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
             ])
             self.img_size = img_size

@@ -53,7 +53,7 @@ dim_embedding = 64
 beta = 0.25
 
 # Used for saving files
-model_description = 'ColorJitter'
+model_description = 'transforms=None.out'
 
 # Save directory
 save_dir = model_description

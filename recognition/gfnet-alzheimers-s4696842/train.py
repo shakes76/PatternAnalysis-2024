@@ -205,7 +205,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     height, width = ADNI_IMAGE_DIMENSIONS
-    model = GFNet(in_channels=1, num_classes=2, height=height, width=width, dropout=0.2)
+    model = GFNet(
+        img_size=height * width,
+        in_chans=1,
+        num_classes=2,
+        depth=4,
+        embed_dim=32,
+        drop_rate=0.1,
+        drop_path_rate=0.1,
+        patch_size=16,
+    )
     train_loader, test_loader = get_train_test_dataloaders(
         root_dir=args.data,
         train_batch_size=args.batch_size,

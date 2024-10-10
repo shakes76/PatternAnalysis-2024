@@ -51,3 +51,41 @@ criterion = nn.MSELoss()
 eval_every = 100
 model_save_path = './saved_models'
 os.makedirs(model_save_path, exist_ok=True)
+
+# Training loop
+def train():
+    print("Starting training loop")
+    model.train()
+    for epoch in range(num_epochs):
+        total_loss = 0
+        for batch_idx, images in enumerate(dataloader):
+            images = images.to(device)  # Move images to the appropriate device
+
+            # Forward pass through the VQ-VAE model
+            outputs = model(images)
+            x_recon = outputs['x_recon']
+            commitment_loss = outputs['commitment_loss']
+
+            # Compute reconstruction loss (mean squared error)
+            recon_loss = criterion(x_recon, images)
+
+            # Total loss is the sum of reconstruction loss and commitment loss
+            loss = recon_loss + commitment_loss
+
+            # Backpropagation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+            # Print log info
+            if batch_idx % eval_every == 0:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{batch_idx}/{len(dataloader)}], '
+                      f'Loss: {loss.item():.4f}, Recon Loss: {recon_loss.item():.4f}, '
+                      f'Commitment Loss: {commitment_loss.item():.4f}')
+
+        # Save the model checkpoint after every epoch
+        torch.save(model.state_dict(), os.path.join(model_save_path, f'vqvae_epoch_{epoch + 1}.pth'))
+
+# TO DO LIST: ADD FUNCTION HERE TO VISUALISE RECONSTRUCTED IMAGES

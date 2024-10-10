@@ -21,6 +21,6 @@ class ProstateMRIDataset(Dataset):
         image = np.load(img_path)
         
         # Normalize image data to the range of [0,1]
-        image = image / np.max(image)  、
+        image = image / np.max(image) 
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
         return image

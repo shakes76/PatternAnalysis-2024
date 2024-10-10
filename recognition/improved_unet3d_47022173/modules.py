@@ -5,6 +5,18 @@ from itertools import repeat
 import numpy as np
 from torch.nn import functional as F
 
+def init_weights(m):
+	if isinstance(m, nn.Conv3d):
+		nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
+		if hasattr(m, 'bias') and m.bias is not None:
+			nn.init.constant_(m.bias, 0)
+	elif isinstance(m, nn.InstanceNorm3d):
+		if hasattr(m, 'weight') and m.weight is not None:
+			nn.init.constant_(m.weight, 1)
+
+		if hasattr(m, 'bias') and m.bias is not None:
+			nn.init.constant_(m.bias, 0)
+
 class DiceLoss(torch.nn.Module):
 	def init(self):
 		super(DiceLoss, self).init()

@@ -15,7 +15,7 @@ if IS_RANGPUR:
 else:
     images_path = "./data/semantic_MRs_anon/"
     masks_path = "./data/semantic_labels_anon/"
-    epochs = 25
+    epochs = 5
     batch_size = 2
 
 # Data parameters
@@ -47,17 +47,18 @@ if __name__ == '__main__':
         tio.RandomElasticDeformation(),
         tio.ZNormalization(),
     ])
+    
+    valid_dataset = ProstateDataset3D(images_path, masks_path, transforms, "valid")
+    valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
-    dataset = ProstateDataset3D(images_path, masks_path, transforms)
-    fixed_gen = torch.Generator().manual_seed(SEED)
-    train_dataset, test_dataset = random_split(dataset, [TRAIN_SIZE, 1 - TRAIN_SIZE], generator=fixed_gen)
+    train_dataset = ProstateDataset3D(images_path, masks_path, transforms, "debug")
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
     # Model
     model = Modified3DUNet(in_channels, n_classes, base_n_filter)
     model.to(device)
-    #INIT model weights
-    
+    model.apply(init_weights)
+        
     # Optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -81,7 +82,7 @@ if __name__ == '__main__':
             masks = F.one_hot(masks, num_classes=6) # [batch * l * w * h, 6]
             
             optimizer.zero_grad()
-            softmax_logits, predictions, logits = model(inputs) # Shapes: [4194304, 6], [4194304, 6], [4194304, 6]
+            softmax_logits, predictions, logits = model(inputs) # All shapes: [batch * l * w * h, 6]
             loss = criterion(logits, masks)
             loss.backward()
             optimizer.step()
@@ -94,13 +95,12 @@ if __name__ == '__main__':
     torch.save(model.state_dict(), 'model.pth')
 
     # Test loop
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     model.eval()  
     test_loss = 0.0
     dice_scores = [0] * n_classes 
 
     with torch.no_grad():
-        for i, data in enumerate(test_dataloader):  
+        for i, data in enumerate(valid_dataloader):  
             inputs, masks = data
             inputs, masks = inputs.to(device), masks.to(device)
             if masks.dtype != torch.long:
@@ -125,8 +125,8 @@ if __name__ == '__main__':
             
 
     # Average loss and dice score
-    avg_test_loss = test_loss / len(test_dataloader)
+    avg_test_loss = test_loss / len(valid_dataloader)
 
     print(f"Test Loss: {avg_test_loss}")
-    print(f"Average Dice Score: {list(map(lambda x: float(x / len(test_dataloader)), dice_scores))}")
+    print(f"Average Dice Score: {list(map(lambda x: float(x / len(valid_dataloader)), dice_scores))}")
 

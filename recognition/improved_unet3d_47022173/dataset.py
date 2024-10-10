@@ -5,13 +5,18 @@ from utils import *
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 import torchio as tio
+import torch
 
 if IS_RANGPUR:
-	end = '.nii.gz'
 	cutoff = 211
+	end = 'nii.gz'
+	split = 6
+	length = 9
 else:
-	end = '.nii'
 	cutoff = 24
+	end = 'nii'
+	split = 3
+	length = 14
 
 
 def load_data_3D(imageNames, normImage=False, dtype=np.float32, 
@@ -74,26 +79,63 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 
 
 class ProstateDataset3D(Dataset):
-	def __init__(self, images_path, masks_path, transforms):
-		self.image_names = [images_path + f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith(end)]
-		self.mask_names = [masks_path + f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith(end)]
-
-		raw_images = load_data_3D(self.image_names[:cutoff]) # TODO remove, load 10 for testing
-		raw_masks = load_data_3D(self.mask_names[:cutoff]) # TODO remove, load 10 for testing
-		subject = tio.Subject(
-			image=tio.ScalarImage(tensor=raw_images),
-			mask=tio.LabelMap(tensor=raw_masks),
-		)
+	def __init__(self, images_path, masks_path, transforms, mode):
+		image_names = [f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith(end)]
+		mask_names = [f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith(end)]
 		
-		transformed = transforms(subject)
-		self.images = transformed['image'].data
-		self.masks = transformed['mask'].data # 10 , 1 ,128 ,128 ,128
+		# Sort to ensure correct matching of image to mask
+		image_names.sort()
+		mask_names.sort()
+
+		image_names = list(map(lambda x: images_path + x, image_names))
+		mask_names = list(map(lambda x: masks_path + x, mask_names))
+
+		match mode:
+			case "train":
+				self.image_names = image_names[:VALID_START]
+				self.mask_names = mask_names[:VALID_START]
+			case "valid":
+				self.image_names = image_names[VALID_START:TEST_START]
+				self.mask_names = mask_names[VALID_START:TEST_START]
+			case "test":
+				self.image_names = image_names[TEST_START:]
+				self.mask_names = mask_names[TEST_START:]
+			case "debug":
+				self.image_names = image_names[:DEBUG]
+				self.mask_names = mask_names[:DEBUG]
+			case _:
+				raise ValueError(f"Invalid mode: {mode}")
+
+		self.images = torch.empty(0, 128, 128, 128)
+		self.masks = torch.empty(0, 128, 128, 128)
+
+		# TODO REMOVE THIS. Checks for matching image and mask names
+		for image, mask in zip(self.image_names, self.mask_names):
+			if image.split('/')[split][:length] != mask.split('/')[split][:length]:
+				print(image, mask)
+				raise ValueError("Image and mask do not match")
+
+		# Load and transform LOAD_SIZE (50) images at a time due to memory constraints
+		loaded = 0
+		while len(self.images) < len(self.image_names):
+			raw_images = load_data_3D(self.image_names[loaded:loaded + LOAD_SIZE])
+			raw_masks = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE])
+			subject = tio.Subject(
+				image=tio.ScalarImage(tensor=raw_images),
+				mask=tio.LabelMap(tensor=raw_masks),
+			)
+			
+			transformed = transforms(subject)
+			self.images = torch.cat((self.images, transformed['image'].data), dim=0) # Batch, 128 ,128 ,128
+			self.masks = torch.cat((self.masks, transformed['mask'].data), dim=0)
+
+			loaded = len(self.images)
+			print(f"Loaded {len(self.images)} / {len(self.image_names)}")
     
 	def __len__(self):
 		return len(self.images)
 
 	def __getitem__(self, idx):
-		image = self.images[idx].unsqueeze(0)
+		image = self.images[idx].unsqueeze(0) # Add channel dimension
 		mask = self.masks[idx].unsqueeze(0)
-		#TODO move mask shit here
 		return image, mask

@@ -8,6 +8,9 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+import time
+
+device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
 class ResidualBlock(nn.Module):
     """
@@ -31,6 +34,62 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         x = x + self.res_block(x)
         return x
+    
+class VectorQuantizer(nn.Module):
+    """
+    Discretization bottleneck part of the VQ-VAE.
+
+    Inputs:
+    - n_e : number of embeddings
+    - dim_e : dimension of embedding
+    - beta : commitment cost used in loss term, beta * ||z_e(x)-sg[e]||^2
+    """
+
+    def __init__(self, n_e, dim_e, beta=0.25):
+        super(VectorQuantizer, self).__init__()
+        self.n_e = n_e
+        self.dim_e = dim_e
+        self.beta = beta # The paper uses 0.25
+
+        self.embedding = nn.Embedding(self.n_e, self.dim_e)
+        self.embedding.weight.data.uniform_(-1.0 / self.n_e, 1.0 / self.n_e)
+
+    def forward(self, z):
+        """
+        Inputs the output of the encoder network z and maps it to a discrete 
+        one-hot vector that is the index of the closest embedding vector e_j
+
+        z (continuous) -> z_q (discrete)
+
+        z.shape = (batch, channel, height, width)
+
+        quantization pipeline:
+
+            1. get encoder input (B,C,H,W)
+            2. flatten input to (B*H*W,C)
+
+        """
+        # reshape z -> (batch, height, width, channel) and flatten
+        embeddings = self.embedding.weight
+        z_shaped = z.permute(0, 2, 3, 1).contiguous().view(-1, self.dim_e)
+        # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
+
+        distances = torch.sum(z_shaped ** 2, dim=1, keepdim=True) + \
+            torch.sum(embeddings**2, dim=1) - 2 * \
+            torch.matmul(z_shaped, embeddings.t())
+
+        # find closest encodings
+        min_encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+        min_encodings = torch.zeros(
+            min_encoding_indices.shape[0], self.n_e).to(device)
+        min_encodings.scatter_(1, min_encoding_indices, 1)
+        
+        loss = torch.mean((z_q.detach()-z)**2) + self.beta * \
+            torch.mean((z_q - z.detach()) ** 2)
+        
+        dists = dists.view(z.shape[0], z.shape[2], z.shape[3], -1)
+        z_q = dists.min(-1)[1]
+        return z_q, loss
 
 
 class ResidualStack(nn.Module):
@@ -55,7 +114,7 @@ class ResidualStack(nn.Module):
         return x
 
 class VQVAE(nn.Module):
-    def __init__(self, in_dim, n_res_layers):
+    def __init__(self, in_dim, dim, n_res_layers, num_embeddings=512):
         super(VQVAE, self).__init__()
         
         # Adjust the input channels in the encoder from 1 to 64
@@ -71,7 +130,7 @@ class VQVAE(nn.Module):
         )
         
         self.pre_quant_conv = nn.Conv2d(4, 2, kernel_size=1)
-        self.embedding = nn.Embedding(num_embeddings=3, embedding_dim=2)
+        self.codebook = VectorQuantizer(num_embeddings, dim)
         self.post_quant_conv = nn.Conv2d(2, 4, kernel_size=1)
         
         # Commitment Loss Beta
@@ -96,42 +155,18 @@ class VQVAE(nn.Module):
         # Pre-quantization convolution
         quant_input = self.pre_quant_conv(encoded_output)  # Still 4D: [B, C, H', W']
         
-        # Reshape to flatten the spatial dimensions for quantization process
-        B, C, H, W = quant_input.shape  # Extract batch size, channels, height, width
-        quant_input_flattened = quant_input.view(B, C, -1).permute(0, 2, 1)  # Flatten to [B, L, C], where L = H * W
-        
-        # Compute pairwise distances for quantization
-        dist = torch.cdist(quant_input_flattened, self.embedding.weight[None, :].repeat((B, 1, 1)))
-        
-        # Find index of nearest embedding
-        min_encoding_indices = torch.argmin(dist, dim=-1)
-        
-        # Select the embedding weights
-        quant_out = torch.index_select(self.embedding.weight, 0, min_encoding_indices.view(-1))
-        quant_out = quant_out.view(B, -1, C)  # Reshape back to [B, L, C]
-        
-        # Compute losses
-        commitment_loss = torch.mean((quant_out.detach() - quant_input_flattened) ** 2)
-        codebook_loss = torch.mean((quant_out - quant_input_flattened.detach()) ** 2)
-        quantize_losses = codebook_loss + self.beta * commitment_loss
-        
-        # Ensure straight-through gradient estimator
-        quant_out = quant_input_flattened + (quant_out - quant_input_flattened).detach()
-        
-        # Reshape quantized output back to 4D for decoding
-        quant_out_4d = quant_out.permute(0, 2, 1).view(B, C, H, W)  # Reshape back to [B, C, H', W']
+        latents, quantize_loss = self.codebook(quant_input)  # Output shape: [B, H', W']
         
         # Post-quantization convolution
-        decoder_input = self.post_quant_conv(quant_out_4d)
+        decoder_input = self.post_quant_conv(latents)
         
         # Decoder part: input to decoder must be 4D
-        output = self.decoder(decoder_input)  # Decoder output in 4D
+        decoded_output = self.decoder(decoder_input)  # Decoder output in 4D
         
-        return output, quantize_losses
+        return encoded_output, decoded_output, latents, quantize_loss
 
 
 def train_vqvae():
-    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
     train_loader, test_loader = load_data()
     model = VQVAE().to(device)
     
@@ -143,16 +178,26 @@ def train_vqvae():
 
     for epoch_idx in range(num_epochs):
         epoch_loss = 0
-        for im in tqdm(train_loader):
+        for batch, im in enumerate(tqdm(train_loader)):
+            start_time = time.time()
             im = im.float().unsqueeze(1).to(device)
             optimizer.zero_grad()
-            out, quantize_loss = model(im)
             
-            recon_loss = criterion(out, im)
-            loss = recon_loss + quantize_loss
+            encoded_output, decoded_output, latents, quantize_loss = model(im)
+            
+            model_loss = F.mse_loss(encoded_output, decoded_output)            
+            loss = model_loss + quantize_loss
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
+            
+            if (batch + 1) % 50 == 0:
+                print('\tIter [{}/{} ({:.0f}%)]\tLoss: {} Time: {}'.format(
+                    batch * len(x), len(train_loader.dataset),
+                    50 * batch / len(train_loader),
+                    epoch_loss/batch, axis=0),
+                    time.time() - start_time
+                )
         
         avg_epoch_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_epoch_loss)
@@ -172,14 +217,12 @@ def train_vqvae():
 
     model.eval()
     n = 50
-    with torch.no_grad():
-        idxs = torch.randint(0, len(test_loader.dataset), (n, ))
-        
+    with torch.no_grad():        
         for im in test_loader:
             ims = im.float().unsqueeze(1).to(device)
             break
 
-        generated_im, _ = model(ims)
+        generated_im, _, _, _ = model(ims)
 
         ims = (ims + 1) / 2
         generated_im = 1 - (generated_im + 1) / 2
@@ -196,5 +239,3 @@ def train_vqvae():
 
 if __name__ == "__main__":
     train_vqvae()
-    # train_loader, _ = load_data()
-    # show_example_images(train_loader)

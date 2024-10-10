@@ -214,7 +214,7 @@ if __name__ == "__main__":
         embed_dim=32,
         drop_rate=0.1,
         drop_path_rate=0.1,
-        patch_size=16,
+        patch_size=(16, 16),
     )
     train_loader, test_loader = get_train_test_dataloaders(
         root_dir=args.data,

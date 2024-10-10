@@ -69,12 +69,10 @@ class PatchEmbed(nn.Module):
     def __init__(self, img_size=(224, 224), patch_size=(16, 16), in_chans=3,
                  embed_dim=768):
         super().__init__()
-        if isinstance(img_size, int):
-            img_size = (img_size, img_size)
-        if isinstance(patch_size, int):
-            patch_size = (patch_size, patch_size)
         self.img_size = img_size
         self.patch_size = patch_size
+
+        print("patch embed img size", img_size)
 
         self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
         num_patches = self.grid_size[0] * self.grid_size[1]
@@ -101,11 +99,8 @@ class GFNet(nn.Module):
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
-
-        if isinstance(img_size, int):
-            img_size = (img_size, img_size)
-        if isinstance(patch_size, int):
-            patch_size = (patch_size, patch_size)
+        
+        print("img size", img_size)
 
         self.patch_embed = PatchEmbed(
             img_size=img_size, patch_size=patch_size,

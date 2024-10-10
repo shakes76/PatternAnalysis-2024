@@ -53,7 +53,7 @@ dim_embedding = 64
 beta = 0.25
 
 # Used for saving files
-model_description = 'transforms=None.out'
+model_description = 'transforms=None'
 
 # Save directory
 save_dir = model_description

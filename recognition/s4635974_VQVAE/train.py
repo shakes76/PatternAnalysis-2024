@@ -44,7 +44,7 @@ class ValidationLossEarlyStopping:
 
 num_epochs = 100
 batch_size = 16
-lr = 0.003
+lr = 0.002
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
@@ -53,12 +53,12 @@ dim_embedding = 64
 beta = 0.25
 
 # Save directory
-save_dir = f'lr=0.003_bs=16'
+save_dir = f'lr = 0.002'
 
 # Define the save directory and ensure it exists
-model_dir = f'saved_model/lr=lr=0.003_bs=16.pth'
+model_dir = f'saved_model/lr = 0.002.pth'
 
-save_data_dir = 'lr=0.003_bs=16.pkl'
+save_data_dir = 'lr = 0.002.pkl'
 
 def train_model(
         save_dir: str | None = None, 

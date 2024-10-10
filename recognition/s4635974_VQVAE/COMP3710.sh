@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s4635974@student.uq.edu.au
-#SBATCH --output=lr=0.003_bs=16.out
+#SBATCH --output=lr=0.002.out
 
 conda activate torch
 python train.py

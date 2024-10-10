@@ -210,11 +210,11 @@ if __name__ == "__main__":
         img_size=(height, width),
         in_chans=1,
         num_classes=2,
-        depth=4,
-        embed_dim=32,
+        depth=8,
+        embed_dim=196,
         drop_rate=0.1,
         drop_path_rate=0.1,
-        patch_size=(16, 16),
+        patch_size=(8, 8),
     )
     train_loader, test_loader = get_train_test_dataloaders(
         root_dir=args.data,

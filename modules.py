@@ -11,17 +11,18 @@ import matplotlib.pyplot as plt
 
 
 class VQVAE(nn.Module):
-    def __init__(self):
+    def __init__(self, in_dim):
         super(VQVAE, self).__init__()
         
         # Adjust the input channels in the encoder from 1 to 64
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 16, 4, stride=2, padding=1),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(in_dim, in_dim // 2, 4, 2, 1),
+            nn.BatchNorm2d(in_dim),
             nn.ReLU(),
-            nn.Conv2d(16, 4, 4, stride=2, padding=1),
-            nn.BatchNorm2d(4),
+            nn.Conv2d(in_dim // 2, in_dim, 4, 2, 1),
             nn.ReLU(),
+            # here we have stride of 1, kernal of 2
+            nn.Conv2d(in_dim, in_dim, 3, 1, 1),
         )
         
         self.pre_quant_conv = nn.Conv2d(4, 2, kernel_size=1)
@@ -29,13 +30,16 @@ class VQVAE(nn.Module):
         self.post_quant_conv = nn.Conv2d(2, 4, kernel_size=1)
         
         # Commitment Loss Beta
-        self.beta = 0.2
+        self.beta = 0.25 # From paper
         
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(4, 16, 4, stride=2, padding=1),  # Adjust input channels from 16 to 4
-            nn.BatchNorm2d(16),
+            nn.ConvTranspose2d(
+                    in_dim, in_dim, 3, 1, 1),
+            nn.ConvTranspose2d(in_dim, in_dim//2, 4, 2, 1),
+            nn.BatchNorm2d(in_dim),
             nn.ReLU(),
-            nn.ConvTranspose2d(16, 1, 4, stride=2, padding=1),  # Final output with 1 channel (if your output is grayscale)
+            nn.ConvTranspose2d(in_dim//2, 3, 4, 2, 1),
+            nn.Tanh()
         )
 
         

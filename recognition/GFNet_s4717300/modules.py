@@ -12,7 +12,7 @@ from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 class GFNet(nn.Module):
     
     def __init__(self, img_size, patch_size, in_chans=3, num_classes=10, embed_dim=768, depth=12,
-                 ff_ratio=4., norm_layer=None):
+                 ff_ratio=4., norm_layer=None, dropout=0.3):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
@@ -27,11 +27,13 @@ class GFNet(nn.Module):
 
         h = img_size // patch_size
         w = h // 2 + 1
+        # h = img_size[0] // patch_size[0]
+        # w = h // 2 + 1
 
         self.blocks = nn.ModuleList([
             Block(
                 dim=embed_dim, ff_ratio=ff_ratio,
-                norm_layer=norm_layer, h=h, w=w) #type: ignore
+                norm_layer=norm_layer, h=h, w=w, drop=dropout) #type: ignore
             for i in range(depth)])
         
         self.norm = norm_layer(embed_dim)

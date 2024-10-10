@@ -16,13 +16,16 @@ class ProstateMRIDataset(Dataset):
                     # Save files that end with .npy
                     self.file_list.append(os.path.join(root, file_name))
 
+    
     # Return the number of MRI files in the dataset
     def __len__(self):
         return len(self.file_list)
 
+    
+    # Load and process MRI images with specified index
     def __getitem__(self, idx):
-        img_path = self.file_list[idx]
-        image = np.load(img_path)
+        img_path = self.file_list[idx] # Retrieve the path to the MRI file
+        image = np.load(img_path) # Load MRI image data.
         
         # Normalize image data to the range of [0,1]
         image = image / np.max(image) 

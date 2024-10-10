@@ -123,7 +123,7 @@ def train_model(
     transform = transforms.Compose([
         transforms.ToTensor(),  
         # transforms.Normalize((0.5,), (0.5,)),
-        transforms.Normalize((0,), (1,)) 
+        transforms.Normalize((72.56,), (81.27,))
     ])
 
     # Get loaders (variance == 5)
@@ -194,7 +194,7 @@ def train_model(
             vq_loss, training_output_images = model(training_input_images)
 
             # Calculate reconstruction loss
-            output_loss = F.mse_loss(training_output_images, training_input_images)
+            output_loss = F.mse_loss(training_output_images, training_input_images) / data_variance
             loss = output_loss + vq_loss
             loss.backward()
 
@@ -230,7 +230,7 @@ def train_model(
                 validation_ssim.append(similarity)
 
                 # Calculate output loss for validation
-                validation_output_loss = F.mse_loss(validation_output_images, validation_input_images)
+                validation_output_loss = F.mse_loss(validation_output_images, validation_input_images) / data_variance
                 validation_output_error.append(validation_output_loss.item())
                 validation_vq_error.append(validation_vq_loss.item())
 

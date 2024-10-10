@@ -101,7 +101,7 @@ def main() -> None:
     benign = benign.sample(random_state=42, n=len(malignant))
     knn_df = pd.concat([benign, malignant])
 
-    knn_df = train_meta_df
+    # knn_df = train_meta_df
 
     knn_ds = TumorClassificationDataset(IMAGES_PATH, knn_df, transform=False)
 

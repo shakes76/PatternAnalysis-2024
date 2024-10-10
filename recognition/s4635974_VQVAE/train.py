@@ -120,19 +120,19 @@ def train_model(
     test_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test'
     validate_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate'
 
-    # Define your transformations
-    transform = transforms.Compose([
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
-        transforms.ToTensor(),
-        transforms.Normalize((0,), (1,)),
-        # transforms.Normalize((0.5,), (0.5,)),
-        # transforms.Normalize((72.56,), (81.27,))
-    ])
+    # # Define your training transformations, including conversion to PIL and back to tensor
+    # transform = transforms.Compose([
+    #     transforms.ToPILImage(),  # Convert NumPy array to PIL Image
+    #     transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Augmentations for training
+    #     transforms.ToTensor(),  # Convert back to tensor
+    #     transforms.Normalize((0,), (1,)),  # Normalize
+    # ])
+
 
     # Get loaders (variance == 5)
     train_loader, validate_loader, data_variance = HipMRILoader(
         train_dir, validate_dir, test_dir,
-        batch_size=batch_size, transform=transform
+        batch_size=batch_size, transform=None
         ).get_loaders()
     print('Variance: ', data_variance)
     print()

@@ -7,8 +7,10 @@ import torch
 save_dir = "data_viz"
 os.makedirs(save_dir, exist_ok=True)
 
+open_dir = 'lr=0.002.pkl'
+
 # Load the saved data using pickle
-with open('lr=0.003_bs=8.pkl', 'rb') as f:
+with open(open_dir, 'rb') as f:
     data = pickle.load(f)
 
 # Access the lists

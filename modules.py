@@ -9,9 +9,53 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
+class ResidualBlock(nn.Module):
+    """
+    One residual layer inputs:
+    - in_dim : the input dimension
+    - h_dim : the hidden layer dimension
+    - res_h_dim : the hidden dimension of the residual block
+    """
+
+    def __init__(self, in_dim):
+        super(ResidualBlock, self).__init__()
+        self.res_block = nn.Sequential(
+            nn.ReLU(True),
+            nn.Conv2d(in_dim, in_dim, 3, 1, 1),
+            nn.BatchNorm2d(in_dim),
+            nn.ReLU(True),
+            nn.Conv2d(in_dim, in_dim, 1),
+            nn.BatchNorm2d(in_dim),
+        )
+
+    def forward(self, x):
+        x = x + self.res_block(x)
+        return x
+
+
+class ResidualStack(nn.Module):
+    """
+    A stack of residual layers inputs:
+    - in_dim : the input dimension
+    - h_dim : the hidden layer dimension
+    - res_h_dim : the hidden dimension of the residual block
+    - n_res_layers : number of layers to stack
+    """
+
+    def __init__(self, in_dim, n_res_blocks):
+        super(ResidualStack, self).__init__()
+        self.n_res_blocks = n_res_blocks
+        self.stack = nn.ModuleList(
+            [ResidualBlock(in_dim)]*n_res_blocks)
+
+    def forward(self, x):
+        for layer in self.stack:
+            x = layer(x)
+        x = F.relu(x)
+        return x
 
 class VQVAE(nn.Module):
-    def __init__(self, in_dim):
+    def __init__(self, in_dim, n_res_layers):
         super(VQVAE, self).__init__()
         
         # Adjust the input channels in the encoder from 1 to 64
@@ -23,6 +67,7 @@ class VQVAE(nn.Module):
             nn.ReLU(),
             # here we have stride of 1, kernal of 2
             nn.Conv2d(in_dim, in_dim, 3, 1, 1),
+            ResidualStack(in_dim, n_res_layers)
         )
         
         self.pre_quant_conv = nn.Conv2d(4, 2, kernel_size=1)
@@ -34,7 +79,8 @@ class VQVAE(nn.Module):
         
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(
-                    in_dim, in_dim, 3, 1, 1),
+                in_dim, in_dim, 3, 1, 1),
+            ResidualStack(in_dim, n_res_layers),
             nn.ConvTranspose2d(in_dim, in_dim//2, 4, 2, 1),
             nn.BatchNorm2d(in_dim),
             nn.ReLU(),

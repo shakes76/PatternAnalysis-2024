@@ -19,7 +19,7 @@ learning_rate = 0.001
 step_size = 5
 gamma = 0.1
 
-batches = 16
+batches = 128
 patch_size = 16
 embed_dim = 768
 depth = 12

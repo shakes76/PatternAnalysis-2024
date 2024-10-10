@@ -19,8 +19,8 @@ class GFNetDataloader():
             transforms.ToTensor(),
         ])
 
-        dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform_complete)
-        loader = DataLoader(dataset, batch_size=64, shuffle=False)
+        dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=transform_complete)
+        loader = DataLoader(dataset, batch_size=128, shuffle=False)
 
         for images, _ in loader:
             # Compute the mean and std per batch
@@ -53,8 +53,10 @@ class GFNetDataloader():
             self.img_size = img_size
 
 
-        train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
-        test_images = datasets.ImageFolder(root='./AD_NC/test', transform=_transform)
+        # train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
+        # test_images = datasets.ImageFolder(root='./AD_NC/test', transform=_transform)
+        train_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
+        test_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=_transform)
 
         self.train_loader = DataLoader(train_images, batch_size=self.batch_size, shuffle=True)
         self.test_loader = DataLoader(test_images, batch_size=self.batch_size, shuffle=False)

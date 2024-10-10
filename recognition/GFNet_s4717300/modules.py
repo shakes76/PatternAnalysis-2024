@@ -27,8 +27,6 @@ class GFNet(nn.Module):
 
         h = img_size // patch_size
         w = h // 2 + 1
-        # h = img_size[0] // patch_size[0]
-        # w = h // 2 + 1
 
         self.blocks = nn.ModuleList([
             Block(

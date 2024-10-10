@@ -22,7 +22,7 @@ def generate_examples(gen, steps, n=9):
     gen.eval()  # Set the generator to evaluation mode
     alpha = 1.0  # Set alpha to 1 for full resolution generation
 
-    # Create a directory for saving images if it doesn't exist
+    # Create a directory for saving images
     save_dir = f'saved_examples/step{steps}'
     os.makedirs(save_dir, exist_ok=True)
 

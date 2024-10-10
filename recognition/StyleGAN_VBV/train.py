@@ -101,12 +101,21 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
 # Function to save the generator and critic models
 def save_model(gen, critic, step):
     """Save the generator and critic models to disk."""
-    torch.save(gen.state_dict(), f'models/generator_step{step}.pth')  # Save generator's state
-    torch.save(critic.state_dict(), f'models/critic_step{step}.pth')  # Save critic's state
+    # Create a directory for saving models
+    saved_models = f'saved_examples/step{step}'
+    os.makedirs(saved_models, exist_ok=True)
+
+    # Save them
+    torch.save(gen.state_dict(), f'saved_models/generator_step{step}.pth')  # Save generator's state
+    torch.save(critic.state_dict(), f'saved_models/critic_step{step}.pth')  # Save critic's state
 
 # Function to plot and save the loss curves
 def plot_loss(losses_critic, losses_gen, step):
     """Generate and save a loss plot for the generator and critic."""
+    # Create a directory for saving models
+    saved_loss_plots = f'saved_examples/step{step}'
+    os.makedirs(saved_loss_plots, exist_ok=True)
+
     plt.figure(figsize=(10, 5))  # Set the figure size
     plt.plot(losses_critic, label='Critic Loss')  # Plot critic loss
     plt.plot(losses_gen, label='Generator Loss')  # Plot generator loss
@@ -114,7 +123,7 @@ def plot_loss(losses_critic, losses_gen, step):
     plt.xlabel('Batch Number')  # X-axis label
     plt.ylabel('Loss')  # Y-axis label
     plt.legend()  # Show the legend
-    plt.savefig(f'loss_plots/loss_step{step}.png')  # Save the plot to disk
+    plt.savefig(f'saved_loss_plots/loss_step{step}.png')  # Save the plot to disk
     plt.close()  # Close the plot to free up memory
 
 # Initialize generator and critic

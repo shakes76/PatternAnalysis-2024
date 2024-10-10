@@ -80,6 +80,7 @@ class UNet(nn.Module):
         self.up4 = Up(128, 64)
         self.outc = OutConv(64, n_classes)
 
+    # Forward propagation
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)

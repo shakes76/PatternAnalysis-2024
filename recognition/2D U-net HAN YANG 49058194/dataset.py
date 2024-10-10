@@ -16,6 +16,7 @@ class ProstateMRIDataset(Dataset):
                     # Save files that end with .npy
                     self.file_list.append(os.path.join(root, file_name))
 
+    # Return the number of MRI files in the dataset
     def __len__(self):
         return len(self.file_list)
 

@@ -214,7 +214,10 @@ def train_vqvae():
     plt.grid()
     plt.savefig('training_loss.png')
     plt.close()
+    
+    return model, test_loader
 
+def reconstruct_images(model, test_loader):
     model.eval()
     n = 50
     with torch.no_grad():        
@@ -238,4 +241,5 @@ def train_vqvae():
 
 
 if __name__ == "__main__":
-    train_vqvae()
+    model, test_loader = train_vqvae()
+    reconstruct_images(model)

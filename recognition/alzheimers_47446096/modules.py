@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torch import Tensor
-
+import functools
 class VisionTransformer(nn.Module):
 
     def __init__(self, depth:int,  patchDim: int, imgDims: tuple[int, int, int], patchLen: int, mhaHeadFactor:int, hiddenMul: int, device: str = "cpu") -> None:
@@ -54,11 +54,12 @@ class TransformerEncBlk(nn.Module):
         self.mha = nn.MultiheadAttention(
             self.dim,
             self.nHeads,
-            dropout = 0,
+            dropout = 0.2,
             batch_first = True
         )
         self.n2 = nn.LayerNorm(self.dim)
         self.l1 = nn.Linear(self.dim, self.dim * self.hiddenMul)
+        self.d1 = nn.Dropout(p = 0.2)
         self.activation = nn.GELU()
         self.l2 = nn.Linear(self.dim * self.hiddenMul, self.dim)
 
@@ -68,6 +69,7 @@ class TransformerEncBlk(nn.Module):
         x = x + y
         z = self.l1(self.n2(x))
         z = self.activation(z)
+        z = self.d1(z)
         z = self.l2(z)
         x = x + z
         return x
@@ -190,6 +192,5 @@ class PatchSplitter(nn.Module):
         x = self.partition(x).transpose(2, 1)
         x = self.linear(x)
         return x
-    
 
 

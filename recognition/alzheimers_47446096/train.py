@@ -3,18 +3,20 @@ from dataset import *
 import torch
 from torchsummary import summary
 
-NUM_EPOCH = 200
-LEARNING_RATE = 0.0005
+NUM_EPOCH = 600
+LEARNING_RATE = 0.0003
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = VisionTransformer(10, 32, (3, 256, 256), 256, 4, 2, device).to(device)
+model = VisionTransformer(4, 16, (3, 256, 256), 128, 8, 3, device).to(device)
 #print(summary(model, (3, 256, 256)))
+valLoader = getValLoader()
 testLoader = getTestLoader()
 trainLossList = []
 
 crit = torch.nn.CrossEntropyLoss()
 opt = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
 
+print("Beginning Training")
 for epoch in range(NUM_EPOCH):
     print(f'Epoch {epoch+1}/{NUM_EPOCH}:', end = ' ')
     trainLoss = 0
@@ -35,9 +37,9 @@ for epoch in range(NUM_EPOCH):
     
     if ((epoch + 1) % 5 == 0):
         model.eval()
-        testAcc = 0
+        valAcc = 0
         torch.no_grad()
-        for i, (imgs, trueLabels) in enumerate(testLoader):
+        for i, (imgs, trueLabels) in enumerate(valLoader):
             
             imgs = imgs.to(device)
             trueLabels = trueLabels.to(device)
@@ -45,7 +47,7 @@ for epoch in range(NUM_EPOCH):
             outputs = model(imgs)
 
             a, predLabels = torch.max(outputs.data, 1)
-            testAcc += (trueLabels == predLabels).sum().item()
-        print(f"Test set accuracy = {100 * testAcc / (len(testLoader) * testLoader.batch_size)} %")
+            valAcc += (trueLabels == predLabels).sum().item()
+        print(f"Validation set accuracy = {100 * valAcc / len(valLoader.dataset)} %")
     if ((epoch + 1) % 20 == 0):
         torch.save(model, f"model_epoch_{epoch + 1}")

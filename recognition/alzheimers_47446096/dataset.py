@@ -2,6 +2,8 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 import os
+import shutil
+from random import sample
 
 ROOT = "../../../AD_NC"
 NEW_ROOT = "../../../PatientSplit"
@@ -75,9 +77,6 @@ def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):
     )
     trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
     return trainLoader
-
-import shutil
-from random import sample
 
 def formatByPatient(path = ROOT, newPath = NEW_ROOT):
     if os.path.exists(newPath):

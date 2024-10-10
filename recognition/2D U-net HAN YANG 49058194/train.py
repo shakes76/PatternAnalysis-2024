@@ -53,6 +53,7 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
     plt.legend()
     plt.show()
 
+# Input
 if __name__ == "__main__":
     root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'  
     train_model(root_dir)

@@ -109,12 +109,12 @@ class HipMRIDataset(Dataset):
         # Convert the numpy array to a PIL image
         image = Image.fromarray(image)
 
-        # Conditionally add the channel dimension only if no transform is provided
-        if self.transform is None:
-            image = image[None, :, :]  # Add channel dimension (from [H, W] to [1, H, W])
-        
+        # Apply transforms (if any)
         if self.transform:
             image = self.transform(image)
+
+        # Convert back to tensor after applying the transform
+        image = transforms.ToTensor()(image)
 
         return image
 
@@ -125,7 +125,7 @@ class HipMRILoader:
         self.transform = transform
         
         # Create datasets
-        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)
+        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)        
         self.validate_dataset = HipMRIDataset(validate_dir, transform=None, normImage=True)
         self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=True)  # No transforms for test data
         

@@ -4,11 +4,9 @@ from modules import UNet
 from dataset import ProstateMRIDataset
 import matplotlib.pyplot as plt
 
-
+# Dice_score
 def dice_score(pred, target, threshold=0.5, eps=1e-6):
-    """
-    Compute the Dice Similarity Coefficient (DSC).
-    """
+    # Compute the Dice Similarity Coefficient (DSC).
     pred = (pred > threshold).float()  # Binarize predictions
     target = target.float()  # Ensure target is also float
 

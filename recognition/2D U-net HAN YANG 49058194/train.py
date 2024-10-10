@@ -22,6 +22,7 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     train_losses = []
 
+    # Training cycle
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -37,10 +38,11 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
             running_loss += loss.item()
         print("end of one epoch.")
 
+        # Record and output losses
         epoch_loss = running_loss / len(dataloader)
         train_losses.append(epoch_loss)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}")
-   
+
     torch.save(model.state_dict(), 'unet_model.pth')
 
     # Plotting training loss in PC

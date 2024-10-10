@@ -26,6 +26,7 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
     total_dice_score = 0
     num_samples = len(dataset)
 
+    # Not calculating gradient inference
     with torch.no_grad():
         for i in range(num_samples):
             image, ground_truth = dataset[i]

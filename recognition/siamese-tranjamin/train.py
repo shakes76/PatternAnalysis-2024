@@ -15,36 +15,13 @@ from Modules import NeuralNetwork
 
 epochs = 50
 batch_size = 16
-image_shape = (28, 28)
+image_shape = (128, 128)
 margin = 1  # Margin for contrastive loss.
 
-# labels = pd.read_csv("datasets/train_labels.csv")
-# dataset = tf.keras.preprocessing.image_dataset_from_directory(
-#     "datasets/images", 
-#     labels=list(labels.sort_values("image_name")["target"]), 
-#     label_mode="binary",
-#     shuffle=True,
-#     validation_split=0.2,
-#     subset="training",
-#     seed=0,
-#     image_size=(28, 28),
-#     batch_size=None
-#     )
-# dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
-#     "datasets/images", 
-#     labels=list(labels.sort_values("image_name")["target"]), 
-#     label_mode="binary",
-#     shuffle=True,
-#     validation_split=0.2,
-#     subset="validation",
-#     seed=0,
-#     image_size=(28, 28),
-#     batch_size=None
-#     )
-
+labels = pd.read_csv("datasets/train_labels.csv")
 dataset = tf.keras.preprocessing.image_dataset_from_directory(
-    "datasets/balanced", 
-    labels="inferred", 
+    "datasets/images", 
+    labels=list(labels.sort_values("image_name")["target"]), 
     label_mode="binary",
     shuffle=True,
     validation_split=0.2,
@@ -52,11 +29,10 @@ dataset = tf.keras.preprocessing.image_dataset_from_directory(
     seed=0,
     image_size=image_shape,
     batch_size=None
-)
-
+    )
 dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
-    "datasets/balanced", 
-    labels="inferred", 
+    "datasets/images", 
+    labels=list(labels.sort_values("image_name")["target"]), 
     label_mode="binary",
     shuffle=True,
     validation_split=0.2,
@@ -65,6 +41,30 @@ dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=image_shape,
     batch_size=None
     )
+
+# dataset = tf.keras.preprocessing.image_dataset_from_directory(
+#     "datasets/balanced", 
+#     labels="inferred", 
+#     label_mode="binary",
+#     shuffle=True,
+#     validation_split=0.2,
+#     subset="training",
+#     seed=0,
+#     image_size=image_shape,
+#     batch_size=None
+# )
+
+# dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
+#     "datasets/balanced", 
+#     labels="inferred", 
+#     label_mode="binary",
+#     shuffle=True,
+#     validation_split=0.2,
+#     subset="validation",
+#     seed=0,
+#     image_size=image_shape,
+#     batch_size=None
+#     )
 
 def pairify_dataset(df):
     x = np.asarray(list(map(lambda x: x[0], tfds.as_numpy(df))))
@@ -111,6 +111,10 @@ base_model.add_batch_norm()
 base_model.add_conv2D_layer((5, 5), 4, activation="tanh")
 base_model.add_pooling2D_layer("average", (2,2))
 base_model.add_conv2D_layer((5, 5), 16, activation="tanh")
+base_model.add_pooling2D_layer("average", (2,2))
+base_model.add_conv2D_layer((5, 5), 32, activation="tanh")
+base_model.add_pooling2D_layer("average", (2, 2))
+base_model.add_conv2D_layer((5, 5), 128, activation="tanh")
 base_model.add_pooling2D_layer("average", (2, 2))
 base_model.add_flatten_layer()
 base_model.add_batch_norm()

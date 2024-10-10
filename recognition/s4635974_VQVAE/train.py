@@ -52,7 +52,7 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
-model_description = 'normImage=True'
+model_description = 'ColorJitter'
 
 # Save directory
 save_dir = model_description

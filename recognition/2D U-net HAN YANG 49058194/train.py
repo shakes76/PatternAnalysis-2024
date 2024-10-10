@@ -7,6 +7,7 @@ from modules import UNet
 from dataset import ProstateMRIDataset
 import matplotlib.pyplot as plt
 
+# Check if the device GPU is available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def train_model(root_dir, num_epochs=30, lr=0.001):

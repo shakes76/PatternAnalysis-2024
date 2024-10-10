@@ -12,11 +12,7 @@ class EmbeddingNetwork(nn.Module):
         self._backbone.fc = nn.Identity()
 
         self._embedder = nn.Sequential(
-            nn.Dropout(p=0.3),
-            nn.Linear(2048, 1024, bias=False),
-            nn.BatchNorm1d(num_features=1024),
-            nn.LeakyReLU(),
-            nn.Linear(1024, 512, bias=True),
+            nn.Linear(2048, 1024),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

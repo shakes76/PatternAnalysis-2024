@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import torch
 from torch.utils.data import DataLoader
-from pytorch_metric_learning import losses, miners, distances, regularizers
+from pytorch_metric_learning import losses, miners, distances, regularizers, reducers
 
 from modules import EmbeddingNetwork
 
@@ -33,24 +33,23 @@ class SiameseController:
             weight_decay=hparams.weight_decay,
         )
         self._hparams = hparams
-        self._losses: list[float] = []
+        self.losses: list[float] = []
+        self._epoch = 0
+        self._model_name = model_name
+
         self._distance = distances.LpDistance(normalize_embeddings=True, p=2, power=1)
         self._miner = miners.TripletMarginMiner(
-            margin=hparams.margin, type_of_triplets="all", distance=self._distance
+            margin=hparams.margin, type_of_triplets="semihard", distance=self._distance
         )
         self._loss = losses.TripletMarginLoss(
             margin=hparams.margin,
             distance=self._distance,
-            embedding_regularizer=regularizers.LpRegularizer(),
         )
-        self._epoch = 0
-        self._model_name = model_name
 
     def train(self, train_loader: DataLoader) -> None:
-        # logger.info("Using semihard triplets")
         for _ in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
-            logger.info("Epoch %d / loss %e", self._epoch, self._losses[-1])
+            logger.info("Epoch %d / loss %e", self._epoch, self.losses[-1])
 
             self._epoch += 1
             self.save_model(self._model_name)
@@ -75,7 +74,7 @@ class SiameseController:
         state = {
             "model_state": self._model.state_dict(),
             "optim_state": self._optim.state_dict(),
-            "losses": self._losses,
+            "losses": self.losses,
             "epoch": self._epoch,
             "hparams": self._hparams,
         }
@@ -87,7 +86,7 @@ class SiameseController:
 
         self._model.load_state_dict(state["model_state"])
         self._optim.load_state_dict(state["optim_state"])
-        self._losses = state["losses"]
+        self.losses = state["losses"]
         self._epoch = state["epoch"]
 
     def _train_epoch(
@@ -118,12 +117,20 @@ class SiameseController:
             if time.time() - start_time > 60:
                 start_time = time.time()
                 logger.info(
-                    "step %d / loss %e / progress %d / num mined triplets %d",
+                    "step %d / loss %e / progress %d / num mined %d",
                     n,
                     avg_loss / n,
                     num_observations,
-                    self._miner.num_triplets if self._miner is not None else -1,
+                    self._miner.num_triplets,
                 )
+                # logger.info(
+                #     "step %d / loss %e / progress %d / num mined negatives %d / num mined positives %d",
+                #     n,
+                #     avg_loss / n,
+                #     num_observations,
+                #     self._miner.num_neg_pairs,
+                #     self._miner.num_pos_pairs,
+                # )
 
         avg_loss /= n
-        self._losses.append(avg_loss)
+        self.losses.append(avg_loss)

@@ -8,9 +8,12 @@ class ProstateMRIDataset(Dataset):
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.file_list = []
+
+        # Traverse every root directory
         for root, dirs, files in os.walk(root_dir):
             for file_name in files:
                 if file_name.endswith('.npy'):
+                    # Save files that end with .npy
                     self.file_list.append(os.path.join(root, file_name))
 
     def __len__(self):

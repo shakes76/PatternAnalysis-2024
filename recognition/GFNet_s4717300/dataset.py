@@ -11,9 +11,11 @@ class GFNetDataloader():
         self._total_images = 0
         self.train_loader = None
         self.test_loader = None
+        self.img_size = None
 
-    def load(self):
+    def load(self, img_size=None):
         transform_complete = transforms.Compose([
+            transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
         ])
 
@@ -32,23 +34,61 @@ class GFNetDataloader():
         self._mean /= self._total_images
         self._std /= self._total_images
 
-        # TODO: Add more transformations into this
-        _transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
-        ])
+        if not img_size:
+            _transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.Resize(240),
+                transforms.Pad((0, 8), fill=0),
+                transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
+            ])
+            self.img_size = 256
+        else:
+            _transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.Resize((img_size, img_size)),
+                transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
+            ])
+            self.img_size = img_size
 
 
-        # Load MNIST dataset
-        train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=_transform)
-        test_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=_transform)
+        train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
+        test_images = datasets.ImageFolder(root='./AD_NC/test', transform=_transform)
 
-        # Create data loaders for batching
-        self.train_loader = DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.test_loader = DataLoader(dataset=test_dataset, batch_size=self.batch_size, shuffle=False)
+        self.train_loader = DataLoader(train_images, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(test_images, batch_size=self.batch_size, shuffle=False)
 
     def get_data(self):
         return self.train_loader, self.test_loader
 
     def get_meta(self):
-        return {"total_images": self._total_images, "mean": self._mean, "std": self._std} 
+        return {"total_images": self._total_images,
+                "mean": self._mean,
+                "std": self._std,
+                "img_size": self.img_size,
+                "channels": 1,
+                } 
+
+# if __name__ == '__main__':
+#     print('Loading Dataset')
+#     data = GFNetDataloader()
+#     data.load()
+#     train, test = data.get_data()
+#     data_iter = iter(train)
+#     images, labels = next(data_iter)
+
+#     # Undo normalization for display (normalize back to [0, 1] range)
+#     unnormalize = transforms.Compose([
+#         transforms.Normalize(mean=[-data._mean / data._std],
+#                              std=[1.0 / data._std]),
+#         ToPILImage()
+#     ])
+
+#     # Display the first image in the batch
+#     image = unnormalize(images[0])  # Unnormalize and convert to PIL
+#     plt.imshow(image, cmap='gray')
+#     plt.show()
+#     for thing in train:
+#         print(thing[0].shape)
+#         exit()

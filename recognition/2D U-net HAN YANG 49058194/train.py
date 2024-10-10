@@ -43,6 +43,7 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
         train_losses.append(epoch_loss)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}")
 
+    # Save model
     torch.save(model.state_dict(), 'unet_model.pth')
 
     # Plotting training loss in PC

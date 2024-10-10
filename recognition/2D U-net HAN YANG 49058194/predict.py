@@ -54,6 +54,8 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
 # Program entrance
 if __name__ == "__main__":
     root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
+
+    # Call and calculate Dice coefficient
     dice = predict_and_evaluate(root_dir)
     if dice >= 0.75:
         print(f"Model achieved the desired Dice score of 0.75 or above: {dice:.2f}")

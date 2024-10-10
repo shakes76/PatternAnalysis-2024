@@ -199,6 +199,7 @@ if __name__ == "__main__":
         "--epochs", type=int, help="Path to save model output", default=2
     )
     parser.add_argument("--test", action="store_true", help="Path to save model output")
+    parser.add_argument("--save-error", action="store_true", help="Should store model on error")
     parser.add_argument(
         "--batch-size", type=int, help="Path to save model output", default=32
     )
@@ -234,5 +235,6 @@ if __name__ == "__main__":
         )
         torch.save(model.state_dict(), args.save_to)
     except:
-        torch.save(model.state_dict(), "error_" + args.save_to)
+        if args.save_error:
+            torch.save(model.state_dict(), "error_" + args.save_to)
         raise

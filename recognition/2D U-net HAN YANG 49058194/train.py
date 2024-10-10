@@ -10,9 +10,13 @@ import matplotlib.pyplot as plt
 # Check if the device GPU is available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# Training model
 def train_model(root_dir, num_epochs=30, lr=0.001):
+    # Load dataset
     dataset = ProstateMRIDataset(root_dir)
     dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+
+    # Create models, define loss functions, and optimizers
     model = UNet(n_channels=1, n_classes=1).to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)

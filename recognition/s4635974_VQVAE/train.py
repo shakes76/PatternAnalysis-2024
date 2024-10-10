@@ -121,6 +121,7 @@ def train_model(
 
     # Define your transformations
     transform = transforms.Compose([
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor(),
         transforms.Normalize((0,), (1,)),
         # transforms.Normalize((0.5,), (0.5,)),

@@ -8,6 +8,7 @@ from collections import OrderedDict
 from functools import partial
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
+
 class GFNet(nn.Module):
     
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=10, embed_dim=768, depth=12,
@@ -30,7 +31,7 @@ class GFNet(nn.Module):
         self.blocks = nn.ModuleList([
             Block(
                 dim=embed_dim, ff_ratio=ff_ratio,
-                drop=drop_rate, drop_path=dpr[i], norm_layer=norm_layer, h=h, w=w) #type: ignore
+                norm_layer=norm_layer, h=h, w=w) #type: ignore
             for i in range(depth)])
         
         self.norm = norm_layer(embed_dim)
@@ -65,7 +66,7 @@ class GFNet(nn.Module):
         B = x.shape[0]
         x = self.patch_embed(x)
         x = x + self.pos_embed
-        x = self.pos_drop(x)
+        # x = self.pos_drop(x)
 
         for blk in self.blocks:
             x = blk(x)
@@ -75,7 +76,7 @@ class GFNet(nn.Module):
 
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.final_dropout(x)
+        # x = self.final_dropout(x)
         x = self.head(x)
         return x
 
@@ -121,9 +122,9 @@ class FeedFowardNetwork(nn.Module):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.fc1 = nn.Linear(in_features, hidden_features)
-        self.act = act_layer()
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
+        self.act_layer = act_layer()
             
     def forward(self, x):
         x = self.fc1(x)

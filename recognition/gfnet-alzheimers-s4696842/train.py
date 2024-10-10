@@ -207,7 +207,7 @@ if __name__ == "__main__":
 
     height, width = ADNI_IMAGE_DIMENSIONS
     model = GFNet(
-        img_size=height * width,
+        img_size=(height, width),
         in_chans=1,
         num_classes=2,
         depth=4,

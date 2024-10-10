@@ -121,9 +121,9 @@ class HipMRILoader:
         self.transform = transform
         
         # Create datasets
-        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=False)
-        self.validate_dataset = HipMRIDataset(validate_dir, transform=self.transform, normImage=False)
-        self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=False)  # No transforms for test data
+        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)
+        self.validate_dataset = HipMRIDataset(validate_dir, transform=self.transform, normImage=True)
+        self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=True)  # No transforms for test data
         
         # Create data loaders
         self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=num_workers)

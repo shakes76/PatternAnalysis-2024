@@ -43,7 +43,7 @@ class ValidationLossEarlyStopping:
 # beta = 0.25
 
 num_epochs = 150
-batch_size = 8
+batch_size = 16
 lr = 0.002
 num_hiddens = 128
 num_residual_hiddens = 32
@@ -52,7 +52,7 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
-model_description = 'lr=0.002_bs=8_norm=False'
+model_description = 'normImage=True'
 
 # Save directory
 save_dir = model_description
@@ -122,8 +122,8 @@ def train_model(
     # Define your transformations
     transform = transforms.Compose([
         transforms.ToTensor(),  
-        # transforms.Normalize((0.5,), (0.5,)),
-        transforms.Normalize((72.56,), (81.27,))
+        transforms.Normalize((0.5,), (0.5,)),
+        # transforms.Normalize((72.56,), (81.27,))
     ])
 
     # Get loaders (variance == 5)
@@ -194,7 +194,7 @@ def train_model(
             vq_loss, training_output_images = model(training_input_images)
 
             # Calculate reconstruction loss
-            output_loss = F.mse_loss(training_output_images, training_input_images) / data_variance
+            output_loss = F.mse_loss(training_output_images, training_input_images)
             loss = output_loss + vq_loss
             loss.backward()
 
@@ -230,7 +230,7 @@ def train_model(
                 validation_ssim.append(similarity)
 
                 # Calculate output loss for validation
-                validation_output_loss = F.mse_loss(validation_output_images, validation_input_images) / data_variance
+                validation_output_loss = F.mse_loss(validation_output_images, validation_input_images)
                 validation_output_error.append(validation_output_loss.item())
                 validation_vq_error.append(validation_vq_loss.item())
 

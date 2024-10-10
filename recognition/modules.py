@@ -1,6 +1,5 @@
 import dataset
 import modules
-from dataset import testImages, trainImages, validateImages, testSegImages, trainSegImages, validateSegImages
 
 import tensorflow
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Conv2DTranspose, concatenate
@@ -58,7 +57,7 @@ def bottleneck(inputTensor):
 # Function that Applies the encoder, bottleneck and decoder into one unet model
 # Returns a keras model of the unet
 def unet(): 
-    inputs = Input(shape = (256,128))
+    inputs = Input(shape = (256, 128, 1))
     encodedResult, skipConnectionList = encoder(inputs)
     bottleneckResult = bottleneck(encodedResult)
     decodedResult = decoder(skipConnectionList, bottleneckResult)

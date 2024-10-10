@@ -42,8 +42,8 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 100
-batch_size = 16
+num_epochs = 150
+batch_size = 8
 lr = 0.002
 num_hiddens = 128
 num_residual_hiddens = 32
@@ -52,13 +52,15 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
+model_description = 'lr=0.002_bs=8_norm=False'
+
 # Save directory
-save_dir = f'lr=0.002'
+save_dir = model_description
 
 # Define the save directory and ensure it exists
-model_dir = f'saved_model/lr=0.002.pth'
+model_dir = f'saved_model/{model_description}.pth'
 
-save_data_dir = 'lr=0.002.pkl'
+save_data_dir = f'{model_description}.pkl'
 
 def train_model(
         save_dir: str | None = None, 
@@ -129,7 +131,8 @@ def train_model(
         train_dir, validate_dir, test_dir,
         batch_size=batch_size, transform=transform
         ).get_loaders()
-    # print('Variance: ', data_variance)
+    print('Variance: ', data_variance)
+    print()
 
     # Assuming you have a DataLoader defined as train_loader
     # dataset_size = len(train_loader.dataset)  # Size of the training dataset

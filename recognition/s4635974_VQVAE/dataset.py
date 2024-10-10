@@ -121,9 +121,9 @@ class HipMRILoader:
         self.transform = transform
         
         # Create datasets
-        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)
-        self.validate_dataset = HipMRIDataset(validate_dir, transform=self.transform, normImage=True)
-        self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=True)  # No transforms for test data
+        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=False)
+        self.validate_dataset = HipMRIDataset(validate_dir, transform=self.transform, normImage=False)
+        self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=False)  # No transforms for test data
         
         # Create data loaders
         self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=num_workers)
@@ -159,13 +159,13 @@ class HipMRILoader:
     def get_mean(self):
         return self.train_mean
     
-# # Example usage:
-# loader = HipMRILoader(train_dir, validate_dir, test_dir, batch_size=16)
-# train_loader, validate_loader, variance = loader.get_loaders()
-# mean = loader.get_mean()
-# std = variance ** 0.5
+# Example usage:
+loader = HipMRILoader(train_dir, validate_dir, test_dir, batch_size=16)
+train_loader, validate_loader, variance = loader.get_loaders()
+mean = loader.get_mean()
+std = variance ** 0.5
 
-# print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
+print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
 # Training Mean: -2.7069713723903988e-06, Training Std: 0.9999692733335542, variance = 0.9999385476112366
     
 

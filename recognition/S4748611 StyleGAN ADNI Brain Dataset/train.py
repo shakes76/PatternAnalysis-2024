@@ -20,7 +20,7 @@ stylegan = build_stylegan()
 print("StyleGAN model loaded.")
 
 # Define initial learning rate and decay parameters for the generator
-initial_learning_rate = 0.00005
+initial_learning_rate = 0.00002
 decay_steps = 100 
 decay_rate = 1
 
@@ -33,7 +33,7 @@ generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 )
 
 # Define initial learning rate and decay parameters for the discriminator
-initial_discriminator_learning_rate = 0.00001  
+initial_discriminator_learning_rate = 0.00001
 discriminator_decay_steps = 100 
 discriminator_decay_rate = 1
 
@@ -77,6 +77,21 @@ print("ADNI dataset loaded.")
 # Define the loss function
 cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
+# Gradient penalty for the discriminator
+
+def gradient_penalty(real_images, fake_images):
+    alpha = tf.random.uniform([real_images.shape[0], 1, 1, 1], 0.0, 1.0)
+    interpolated_images = alpha * real_images + (1 - alpha) * fake_images
+    with tf.GradientTape() as gp_tape:
+        gp_tape.watch(interpolated_images)
+        interpolated_output = discriminator(interpolated_images, training=True)
+    gradients = gp_tape.gradient(interpolated_output, [interpolated_images])[0]
+    gradients_l2 = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3]))
+    gradient_penalty = tf.reduce_mean((gradients_l2 - 1.0) ** 2)
+    return gradient_penalty
+
+
+# Modifications in train_step
 @tf.function
 def train_step(real_images):
     latent_vectors, constant_inputs = generate_random_inputs(BATCH_SIZE, LATENT_DIM, INITIAL_SIZE)
@@ -95,14 +110,20 @@ def train_step(real_images):
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
 
+        
         real_loss = cross_entropy(tf.ones_like(real_output), real_output)
         fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
         disc_loss = real_loss + fake_loss
+
+        # Add gradient penalty
+        gp = gradient_penalty(real_images, generated_images)
+        disc_loss += 10.0 * gp  # Weighted penalty
 
     disc_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
     discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
 
     return gen_loss, disc_loss
+
 
 def train(epochs):
     print("Starting training...")
@@ -118,7 +139,7 @@ def train(epochs):
         wandb.log({"Generator Loss": gen_loss, "Discriminator Loss": disc_loss})
         print("Logged losses to Weights and Biases.")
 
-        if (epoch + 1) % 2 == 0:
+        if (epoch + 1) % 10 == 0:
             generate_and_save_images(generator, epoch + 1)
 
     return gen_loss, disc_loss
@@ -133,7 +154,7 @@ def generate_and_save_images(model, epoch):
         plt.subplot(4, 4, i + 1)
         plt.imshow(predictions[i, :, :, 0] * 0.5 + 0.5, cmap='gray')
         plt.axis('off')
-    plt.savefig(f'image_at_epoch_{epoch:04d}.png')
+    plt.savefig(f'finished_image_at_epoch_{epoch:04d}.png')
     plt.close()
     print(f"Images saved for epoch {epoch}.")
 
@@ -152,9 +173,9 @@ def extract_features(dataset, model):
 
 def save_models(generator, discriminator, stylegan):
     print("Saving models...")
-    generator.save('stylegan_generator.h5')
-    discriminator.save('stylegan_discriminator.h5')
-    stylegan.save('stylegan_model.h5')
+    # generator.save('stylegan_generator.h5')
+    # discriminator.save('stylegan_discriminator.h5')
+    # stylegan.save('stylegan_model.h5')
     print("Models saved successfully.")
 
 if __name__ == "__main__":
@@ -201,7 +222,7 @@ if __name__ == "__main__":
     print("Final generated image saved.")
 
     # Save the models
-    save_models(generator, discriminator, stylegan)
+    # save_models(generator, discriminator, stylegan)
 
     # Log final outputs to Weights and Biases
     wandb.log({"Generated Image": wandb.Image(generated_image[0])})

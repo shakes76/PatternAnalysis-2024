@@ -45,10 +45,10 @@ if __name__ == "__main__":
     
     # load the dataset
     train_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=True), 
-                                val=False, seed=0, split_ratio=0.8)
+                                val=False, seed=0, split_ratio=0.9)
     
     val_dataset = ADNIDataset(root=args.data_path, split="train", transform=get_transform(train=False), 
-                              val=True, seed=0, split_ratio=0.8)
+                              val=True, seed=0, split_ratio=0.9)
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=6, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=6, pin_memory=True)

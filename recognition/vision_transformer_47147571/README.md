@@ -1,6 +1,6 @@
 # Alzheimer's Disease Classification using GFNet
 
-A GFNet was used to train a binary classifier to identify Alzheimer's disease from MRI brain scans. The [ADNI dataset](https://adni.loni.usc.edu/) was used for both training and testing of our model. We achieved a test accuracy of 80.89%, which exceeds the accuracy requirement outlined in the project specifications.
+A GFNet was used to train a binary classifier to identify Alzheimer's disease from MRI brain scans. The [ADNI dataset](https://adni.loni.usc.edu/) was used for both training and testing of our model. We achieved a test accuracy of 80.67%, which exceeds the accuracy requirement outlined in the project specifications.
 
 ## Model Architecture
 
@@ -18,7 +18,7 @@ We directly used the dataset processed and provided by the COMP3710 course. Two 
 
 ### Data Preprocessing
 
-We observed that the brain in the MRI scan images is not centered, and different images may show variations in brain size. Furthermore, the surrounding large black background contains no useful information, making it challenging for the model to locate and learn features from the brain. Therefore, we used the `cv2` package to crop the valid region. A rectangular boundary is assigned to the valid area, which is then resized and padded to 210x210 before being saved to the `AD_processed` or `NC_processed` folders. We chose 210x210 because no image in the dataset exceeds this size in terms of valid region, and our implementation supports downsampling to ensure the robustness of our code and its ability to process images of any size.
+We observed slight variations in brain size across different MRI scan images. Furthermore, the surrounding large black background contains no useful information, making it challenging for the model to locate and learn features from the brain. Therefore, we used the `cv2` package to crop the valid region. A rectangular boundary is assigned to the valid area, which is then resized and padded to 210x210 before being saved to the `AD_processed` or `NC_processed` folders. We chose 210x210 because no image in the dataset exceeds this size in terms of valid region, and our implementation supports downsampling to ensure the robustness of our code and its ability to process images of any size.
 
 <div style="display: flex; justify-content: center; gap: 10px;">
   <div style="text-align: center;">
@@ -38,7 +38,7 @@ This data preprocessing is handled automatically by our dataset classes. *Please
 Two dataset classes are provided for loading the data. Both classes automatically crop the valid area in the original images and save the processed images to the `processed` folders. Both dataset classes support a `transform` parameter for applying image transformations. Additionally, the labels are assigned with AD as 1 and NC as 0.
 
 
-- **`ADNIDataset`**: This dataset loads each image as a single-channel grayscale image. The dataset splits the data into training and validation sets based on the `seed` and `split_ratio` provided. By setting `val=True`, you can load the validation set. When `seed` and `split_ratio` are fixed, the dataset provides a consistent and complementary split between the training and validation sets, ensuring all data is loaded correctly. The `split` parameter determines which subset (train or test) is being loaded. In our implementation, we used `seed=0` and `split_ratio=0.8`.
+- **`ADNIDataset`**: This dataset loads each image as a single-channel grayscale image. The dataset splits the data into training and validation sets based on the `seed` and `split_ratio` provided. By setting `val=True`, you can load the validation set. When `seed` and `split_ratio` are fixed, the dataset provides a consistent and complementary split between the training and validation sets, ensuring all data is loaded correctly. The `split` parameter determines which subset (train or test) is being loaded. In our implementation, we used `seed=0` and `split_ratio=0.9`.
   
 - **`ADNIDatasetTest`**: This dataset loads patient-level batches of 20 grayscale images from the same patient based on their patient ID.
 
@@ -74,7 +74,7 @@ Several techniques were used during the training phase.
 
 ## Results
 
-We provided our trained model. You can download the **model** and **tensorboard event file** from [Google Drive](https://drive.google.com/drive/folders/1RUhFyJrzHR0Rm5UYrUytsMD3Ht17Vy2N?usp=sharing). Please place the `log` folder under the `vision_transformer_47147571` directory.
+We provided our trained model. You can download the **model** and **tensorboard event file** from [Dropbox](https://www.dropbox.com/scl/fo/i683tej1l5i5yok4smnmz/ANG_mNtO6PRg-dywu7zuSUU?rlkey=3pllz6j1nrvod35u4jh08wmwp&st=coir7fak&dl=0). Please place the `logs` folder under the `vision_transformer_47147571` directory.
 
 We also visualized the training/validation accuracy and average training/validation loss per batch over the epochs below.
 
@@ -87,16 +87,16 @@ It is noticeable that the validation accuracy is almost consistently higher than
 Running `predict.py` will output the following:
 ```
 using linear droppath with expect rate 0.0
-100%|███████████████████████████████████████████████████████████████████████| 450/450 [00:19<00:00, 23.51it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 450/450 [00:19<00:00, 23.45it/s]
 Confusion Matrix:
 TN      FP
-213     14
+211     16
 FN      TP
-72      151
-Precision: 0.92
+71      152
+Precision: 0.90
 Recall: 0.68
 F1 Score: 0.78
-Test Accuracy: 80.89%
+Test Accuracy: 80.67%
 ```
 
 

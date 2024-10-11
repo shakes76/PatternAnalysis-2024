@@ -1,5 +1,7 @@
 """
 Train and save the model.
+The model will be saved to `recognition/vision_transformer_47147571/logs/GFNet/best_gfnet.pt`, 
+and a corresponding TensorBoard event will be generated in the same directory.
 """
 
 import argparse

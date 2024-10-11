@@ -22,7 +22,8 @@ dataset = tf.keras.preprocessing.image_dataset_from_directory(
     subset="training",
     seed=0,
     image_size=image_shape,
-    batch_size=batch_size
+    batch_size=batch_size,
+    class_names=["positive", "negative"]
 )
 
 dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
@@ -34,7 +35,8 @@ dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
     subset="validation",
     seed=0,
     image_size=image_shape,
-    batch_size=batch_size
+    batch_size=batch_size,
+    class_names=["positive", "negative"]
     )
 
 dataset = dataset.shuffle(10000).prefetch(tf.data.AUTOTUNE)

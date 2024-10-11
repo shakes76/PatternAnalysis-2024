@@ -2,10 +2,7 @@ from torchvision import datasets, transforms
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from dataset import IMAGE_DIM, PATCH_SIZE, NUM_PATCHES, D_MODEL
 
-import torch
-import torch.nn as nn
 
 class PatchEmbedding(nn.Module):
     def __init__(self, in_channels=1, patch_size=16, embed_size=768):
@@ -33,7 +30,7 @@ class TransformerEncoder(nn.Module):
         super(TransformerEncoder, self).__init__()
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
-        self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads)
+        self.self_attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, batch_first=True)
         self.mlp = nn.Sequential(
             nn.Linear(d_model, d_mlp),
             nn.GELU(),

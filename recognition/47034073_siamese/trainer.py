@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import torch
 from torch.utils.data import DataLoader
-from pytorch_metric_learning import losses, miners, distances, regularizers, reducers
+from pytorch_metric_learning import losses, miners, distances
 
 from modules import EmbeddingNetwork
 
@@ -78,6 +78,7 @@ class SiameseController:
             "losses": self.losses,
             "epoch": self._epoch,
             "hparams": self._hparams,
+            "mined_each_step": self.mined_each_step,
         }
 
         torch.save(state, MODEL_DIR / f"{name}.pt")
@@ -88,6 +89,7 @@ class SiameseController:
         self._model.load_state_dict(state["model_state"])
         self._optim.load_state_dict(state["optim_state"])
         self.losses = state["losses"]
+        self.mined_each_step = state["mined_each_step"]
         self._epoch = state["epoch"]
 
     def _train_epoch(
@@ -95,14 +97,12 @@ class SiameseController:
     ) -> None:
         start_time = time.time()
         avg_loss = 0.0
-        n = 0
+        num_steps = 0
         num_observations = 0
         for x, labels in train_loader:
             self._optim.zero_grad()
 
-            if n == 0:
-                logger.debug("labels %s\n%s", labels.shape, labels)
-            n += 1
+            num_steps += 1
             x = x.to(device)
             labels = labels.to(device)
             num_observations += len(labels)
@@ -121,11 +121,11 @@ class SiameseController:
                 logger.info(
                     "epoch %d / step %d / loss %e / progress %d / num mined %d",
                     self._epoch,
-                    n,
+                    num_steps,
                     loss.item(),
                     num_observations,
                     self._miner.num_triplets,
                 )
 
-        avg_loss /= n
+        avg_loss /= num_steps
         self.losses.append(avg_loss)

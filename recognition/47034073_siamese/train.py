@@ -15,7 +15,6 @@ from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import numpy as np
 
 from trainer import SiameseController, HyperParams
 from dataset import TumorClassificationDataset
@@ -50,7 +49,7 @@ def main() -> None:
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=100,
+        num_epochs=10,
         learning_rate=learning_rate,
         margin=0.5,
     )
@@ -95,6 +94,10 @@ def main() -> None:
     plt.figure()
     plt.plot(trainer.losses)
     plt.savefig("plots/train_loss")
+
+    plt.figure()
+    plt.plot(trainer.mined_each_step)
+    plt.savefig("plots/mined")
 
     # Undersample to alleviate class imbalance
     benign = train_meta_df[train_meta_df["target"] == 0]

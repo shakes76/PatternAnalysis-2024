@@ -30,22 +30,14 @@ if __name__ == "__main__":
     out_path = "~/project/outputs/"
 
     # get data from the dataset.py file
-    images_path = "~/.kaggle/train-image/image"
-    csv_path = "~/.kaggle/train-metadata.csv"
+    #images_path = "~/.kaggle/train-image/image" -> for rangpur
+    #csv_path = "~/.kaggle/train-metadata.csv" -> for rangpur
+    images_path = "~/archive/train-image/image
+    csv_path = "~/archive/train-metadata.csv
 
     train_data = None
     val_data = None
     test_data = None
-
-
-
-
-
-
-
-
-
-
 
     model = SiameseNetwork()
     model.to(device)

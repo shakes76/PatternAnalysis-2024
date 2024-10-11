@@ -3,7 +3,7 @@ import torch
 from torchvision.transforms import v2
 import torchvision
 import pandas as pd
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 import os
 from PIL import Image
 import torchvision.transforms as transforms
@@ -143,7 +143,14 @@ class ISICDataLoader:
         # Augment malignant multiple times to balance it
         augmented_malignant_dataset = self.AugmentedISICDataset(malignant_dataset, self.num_augmentations)
 
-        # Create data loaders
+        # Split the data
+        train_benign, remaining_benign = random_split(benign_dataset, [0.7, 0.3])
+        test_benign, val_benign = random_split(remaining_benign, [0.5, 0.5])
+
+        train_malignant, remaining_malignant = random_split(malignant_dataset, [0.7, 0.3])
+        test_malignant, val_malignant = random_split(remaining_malignant, [0.5, 0.5])
+
+        # Create data loaders  ---- fix
         benign_loader = DataLoader(benign_dataset, batch_size=self.batch_size, shuffle=True)
         malignant_loader = DataLoader(augmented_malignant_dataset, batch_size=self.batch_size, shuffle=True)
 
@@ -152,4 +159,5 @@ class ISICDataLoader:
         # We want to change this function to return data loaders for train, validation and test data
         # I think that there's a way to imbed the classification onto each item in the data loader (means we can dilute)
 
+    def
 

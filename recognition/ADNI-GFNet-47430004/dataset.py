@@ -1,8 +1,4 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import torchvision.transforms as tf
-import torchvision
 from torchvision.utils.data import Dataset, DataLoader
 from PIL import Image
 import os

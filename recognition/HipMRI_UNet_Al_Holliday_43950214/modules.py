@@ -74,7 +74,7 @@ class UNet(nn.Module):
         self.dec3 = UNetBasicBlock(256, 128, 3)
         self.up4 = nn.ConvTranspose2d(128, 64, 2, stride = 2)
         self.dec4 = UNetBasicBlock(128, 64, 3)
-        self.out = nn.Conv2d(64, 2, kernel_size = 1)
+        self.out = nn.Conv2d(64, 1, kernel_size = 1)
     
     def forward(self, x):
         enc1 = self.blk1(x) # size (64, 252, 252)

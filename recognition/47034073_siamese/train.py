@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import normalize, scale
 from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
 from sklearn.manifold import TSNE
+from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import pandas as pd
 import torch
@@ -44,14 +45,14 @@ def main() -> None:
 
     # Training params
     num_workers = 2
-    learning_rate = 0.00001
+    learning_rate = 0.0001
     model_name = "most_recent"
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=10,
+        num_epochs=100,
         learning_rate=learning_rate,
-        margin=0.1,
+        margin=0.5,
     )
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2, learning_rate=learning_rate)
@@ -161,7 +162,8 @@ def main() -> None:
     # plt.savefig("plots/train_tsne")
 
     # Fit KNN
-    knn = KNeighborsClassifier(n_neighbors=5, weights="distance", p=2)
+    # knn = KNeighborsClassifier(n_neighbors=5, weights="uniform", p=2)
+    knn = SVC(probability=True)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
 

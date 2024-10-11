@@ -9,6 +9,7 @@ from torchvision import transforms # type: ignore
 import matplotlib.pyplot as plt
 from modules import VQVAE # type: ignore # Import your VQVAE model
 from dataset import ProstateMRIDataset  # Import the custom dataset
+from skimage.metrics import structural_similarity as ssim
 
 # Hyperparameters
 image_size = 256  # Image size for resizing
@@ -88,4 +89,55 @@ def train():
         # Save the model checkpoint after every epoch
         torch.save(model.state_dict(), os.path.join(model_save_path, f'vqvae_epoch_{epoch + 1}.pth'))
 
+        # Visualize and save reconstructed images 
+        visualize_reconstruction(images, x_recon, epoch)
+
 # TO DO LIST: ADD FUNCTION HERE TO VISUALISE RECONSTRUCTED IMAGES
+# Function to visualize and save reconstructed images
+def visualize_reconstruction(original_images, reconstructed_images, epoch):
+    original_images = original_images.cpu().data
+    reconstructed_images = reconstructed_images.cpu().data
+
+    # Denormalize images from [-1, 1] to [0, 1]
+    original_images = (original_images + 1) / 2
+    reconstructed_images = (reconstructed_images + 1) / 2
+
+    # Create the directory for saving images if it doesn't exist
+    recon_save_dir = './reconstructions'
+    os.makedirs(recon_save_dir, exist_ok=True)
+
+    # Plot original and reconstructed images side by side
+    num_images = min(8, original_images.size(0))  # Show at most 8 images
+    fig, axes = plt.subplots(2, num_images, figsize=(num_images * 2, 4))
+
+    ssim_scores = []
+    for i in range(num_images):
+        # Converts images to numpy for SSIM calculation
+        original_np = original_images[i][0].numpy()
+        reconstructed_np = reconstructed_images[i][0].numpy()
+
+        # Computes the SSIM score for the current image
+        ssim_score = ssim(original_np, reconstructed_np, data_range=reconstructed_np.max() - reconstructed_np.min())
+        ssim_scores.append(ssim_score)
+
+        # Original images
+        axes[0, i].imshow(original_images[i][0], cmap='gray')  # Assuming grayscale
+        axes[0, i].axis('off')
+        # Reconstructed images
+        axes[1, i].imshow(reconstructed_images[i][0], cmap='gray')  # Assuming grayscale
+        axes[1, i].axis('off')
+
+    # Calculates the average SSIM score for this batch (can also use np.mean() below if we wanted)
+    avg_ssim = sum(ssim_scores) / len(ssim_scores)
+    print(f'Epoch [{epoch + 1}]: Average SSIM score: {avg_ssim:.4f}')
+
+    # # Calculate the average SSIM score for this batch using np.mean()
+    # avg_ssim = np.mean(ssim_scores)
+    # print(f'Epoch [{epoch + 1}]: Average SSIM score: {avg_ssim:.4f}')
+
+    # Save the plot
+    plt.savefig(f'{recon_save_dir}/epoch_{epoch + 1}.png')
+    plt.close()
+
+if __name__ == "__main__":
+    train()

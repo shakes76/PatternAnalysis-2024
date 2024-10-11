@@ -101,7 +101,6 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
 # Function to save the generator and critic models
 def save_model(gen, critic, step):
     """Save the generator and critic models to disk."""
-    # Create a directory for saving models
 
     # Save them
     torch.save(gen.state_dict(), f'generator_step{step}.pth')  # Save generator's state

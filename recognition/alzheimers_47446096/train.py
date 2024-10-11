@@ -3,6 +3,7 @@ from dataset import *
 import torch
 from torchsummary import summary
 import matplotlib.pyplot as plt
+from torch.cuda.amp import GradScaler
 
 def train(device: str = "cpu"):
     NUM_EPOCH = 600
@@ -12,7 +13,8 @@ def train(device: str = "cpu"):
     print(summary(model, (3, 256, 256)))
     trainLoader = getTrainLoader(gpu = True)
     valLoader = getValLoader(gpu = True)
-    testLoader = getTestLoader()
+
+    scaler = GradScaler()
 
     trainAccList = []
     trainLossList = []
@@ -29,16 +31,23 @@ def train(device: str = "cpu"):
         trainAcc = 0
         trainLoss = 0
         for i, data in enumerate(trainLoader):
+            opt.zero_grad()
+            
             imgs = data[0].to(device)
             labels = data[1].to(device)
-            outputs = model(imgs)
+            
+            with torch.autocast(device_type = device, dtype = torch.float16):
+                outputs = model(imgs)
+                loss = crit(outputs, labels)
+                
+            scaler.scale(loss).backward()
+            scaler.step(opt)
+            scaler.update()
+
             a, predLabels = torch.max(outputs.data, 1)
-            trainAcc += (labels == predLabels).sum().item()
-            loss = crit(outputs, labels)
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
+            trainAcc += (labels == predLabels).sum().item()            
             trainLoss += loss.item()
+
         trainAcc /= len(trainLoader.dataset)
         trainLoss /= len(trainLoader)
         trainAccList.append(trainAcc)

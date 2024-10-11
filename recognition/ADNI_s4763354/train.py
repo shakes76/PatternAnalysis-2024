@@ -5,9 +5,13 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from tqdm import tqdm
+from torch.optim.lr_scheduler import CosineAnnealingLR
+#from GFNet.gfnet import GFNet, GFNetPyramid
 
-from modules import GFNet, GFNetPyramid
-from dataset import get_data_loaders
+#sys.path.append(os.path.abspath('/home/Student/s4763354/comp3710/GFNet'))
+
+from modules_BEST import GFNet, GFNetPyramid
+from dataset_balance import get_data_loaders
 
 def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     # Set up device
@@ -16,23 +20,27 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     # Load data
     train_loader, val_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
 
-    # Load the pretrained model
-    model = GFNetPyramid(img_size=224, patch_size=4, num_classes=1000)  # Original number of classes
+    # Load the pretrained model gfnet-h-ti
+    #model = GFNetPyramid(img_size=224, patch_size=4, num_classes=1000)  # Original number of classes
     # Load the state dict and extract the model weights
-    state_dict = torch.load("gfnet-h-ti.pth")
+    # state_dict = torch.load("gfnet-h-ti.pth")
+    # if "model" in state_dict:
+    #     state_dict = state_dict["model"]
+
+    # Load the pretrained model gfnet-h-b
+    model = GFNetPyramid(
+        img_size=224, 
+        patch_size=4, 
+        num_classes=1000,
+        embed_dim=[96, 192, 384, 768],  # GFNet-H-B dimensions
+        depth=[2, 2, 10, 2],  # GFNet-H-B depths
+        mlp_ratio=[4, 4, 4, 4],
+        drop_path_rate=0.3,
+    )
+    # Load the state dict and extract the model weights
+    state_dict = torch.load("gfnet-h-b.pth")
     if "model" in state_dict:
         state_dict = state_dict["model"]
-
-    # # Load the pretrained model gfnet-h-b
-    # model = GFNetPyramid(
-    #     img_size=224, 
-    #     patch_size=4, 
-    #     num_classes=1000,
-    #     embed_dim=[96, 192, 384, 768],  # GFNet-H-B dimensions
-    #     depth=[2, 2, 10, 2],  # GFNet-H-B depths
-    #     mlp_ratio=[4, 4, 4, 4],
-    #     drop_path_rate=0.3,
-    # )
     
     # # Load the pretrained model gfnet-xs
     # model = GFNet(img_size=224, patch_size=16, num_classes=1000, embed_dim=384)  # GFNet-XS configuration
@@ -66,11 +74,12 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     # Freeze all layers initially------------------
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-8)  
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-8)  
 
     # Initialize the learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=5, verbose=True,min_lr=1e-6)
-
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=5, verbose=True,min_lr=1e-6)
+    scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
+    
     # Initialize lists to store metrics
     train_losses = []
     val_losses = []
@@ -101,8 +110,9 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
                 param.requires_grad = True
             stage += 1
             # Reset optimizer and scheduler for the new set of trainable parameters
-            optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=1e-4)
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
+            optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=1e-4)
+            #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
+            scheduler_cosine = CosineAnnealingLR(optimizer, T_max=epochs - epoch, eta_min=1e-6)
         # Unfreeze next stage if it's time-------
 
         model.train()
@@ -153,7 +163,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
             best_val_acc = val_accuracy
             no_improve = 0
             # Save the best model
-            torch.save(model.state_dict(), 'new_mod.pth')
+            torch.save(model.state_dict(), 'new_mod_hb_adamw_cosine.pth')
         else:
             no_improve += 1
 
@@ -177,7 +187,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
         print(f'Current Learning Rate: {current_lr}')
 
     # Load the best model for testing
-    model.load_state_dict(torch.load('new_mod.pth', weights_only=True))
+    model.load_state_dict(torch.load('new_mod_hb_adamw_cosine.pth', weights_only=True))
 
     # Testing loop
     model.eval()
@@ -204,7 +214,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("loss_pretrain_h_ti_new_mod.png") 
+    plt.savefig("loss_pretrain_hb_new_mod_adamw_cosine.png") 
     #plt.show()  
 
     # Plotting training and validation accuracy
@@ -217,7 +227,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("acc_pretrain_h_ti_new_mod.png")  
+    plt.savefig("acc_pretrain_hb_new_mod_adamw_cosine.png")  
     #plt.show() 
 
     # torch.save(model.state_dict(), 'gfnet-h-b_50.pth')

@@ -15,7 +15,7 @@ class AnalysisLayer(nn.Module):
             conv_size (int, optional): The size of kernels for convolutional layers. Defaults to 3.
             stride (int, optional): The stride of convolutional layers. Defaults to 1.
             padding (int, optional): The padding for convolutional layers. Defaults to 0.
-            pool (bool, optional): The . Defaults to False.
+            pool (bool, optional): The option on weather or not to include a pooling layer. Defaults to False.
         """
         super(AnalysisLayer, self).__init__()
         mid_width = max(base_width, target_width//2)

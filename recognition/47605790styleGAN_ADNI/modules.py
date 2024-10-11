@@ -128,3 +128,100 @@ class SynthesisBlock(nn.Module):
 
         # Add residual connection
         return x + residual  # Add residual connection for better gradient flow
+
+class StyleGANGenerator(nn.Module):
+    def __init__(self, z_dim=512, w_dim=512, initial_channels=512, max_resolution=128):
+        """
+        StyleGAN Generator with complex synthesis blocks and a deep mapping network
+        Args:
+            z_dim: Dimension of input latent code z
+            w_dim: Dimension of output latent space w
+            initial_channels: Number of channels for the first (smallest) resolution.
+            max_resolution: Maximum resolution for the generated images
+        """
+        super(StyleGANGenerator, self).__init__()
+        self.mapping = MappingNetwork(z_dim, w_dim)  
+
+        # Define the synthesis blocks for different resolutions
+        self.synthesis = nn.ModuleList()
+        resolutions = [4, 8, 16, 32, 64, max_resolution]
+        channels = [initial_channels, initial_channels//2, initial_channels//4, initial_channels//8, initial_channels//16, initial_channels//32]
+
+        for i in range(len(resolutions) - 1):
+            self.synthesis.append(SynthesisBlock(channels[i], channels[i+1], w_dim, upsample=(i > 0)))  
+
+        self.to_rgb = nn.Conv2d(channels[-1], 3, kernel_size=1)  # Convert final feature map to RGB image
+
+    def forward(self, z):
+        """
+        Forward pass of the generator. It takes z as input and returns a generated image
+        Args:
+            z: Latent vector from a normal distribution
+        Returns:
+            Generated RGB image
+        """
+        w = self.mapping(z)  # Map z to disentangled latent space w
+        x = torch.randn(1, self.synthesis[0].conv1.in_channels, 4, 4).to(z.device)  # Start with a random 4x4 feature map
+
+        for block in self.synthesis:
+            x = block(x, w)
+
+        # Convert final feature map to an RGB image
+        return torch.tanh(self.to_rgb(x))  # Output image scaled to [-1, 1]
+
+class MinibatchStdDev(nn.Module):
+    def __init__(self):
+        """
+        Minibatch Standard Deviation Layer to capture feature variations across the batch
+        """
+        super(MinibatchStdDev, self).__init__()
+
+    def forward(self, x):
+        """
+        Compute the standard deviation across the batch and add it as a feature map
+        Args:
+            x: Input feature map
+        Returns:
+            Feature map with minibatch standard deviation
+        """
+        batch_std = torch.std(x, dim=0, keepdim=True)  # Standard deviation across batch
+        batch_std = batch_std.mean(dim=[1, 2, 3], keepdim=True)  # Mean of the std for each channel
+        batch_std = batch_std.repeat(x.size(0), 1, x.size(2), x.size(3))  # Replicate to match input size
+        return torch.cat([x, batch_std], dim=1)  # Add as an additional feature map
+
+class StyleGANDiscriminator(nn.Module):
+    def __init__(self, initial_channels=512, max_resolution=128):
+        """
+        Discriminator for StyleGAN
+        Args:
+            initial_channels: Number of input channels for the largest resolution
+            max_resolution: Maximum resolution of the input images
+        """
+        super(StyleGANDiscriminator, self).__init__()
+
+        # Define the downsampling blocks
+        resolutions = [max_resolution, 64, 32, 16, 8, 4]
+        channels = [initial_channels//32, initial_channels//16, initial_channels//8, initial_channels//4, initial_channels//2, initial_channels]
+
+        self.blocks = nn.ModuleList()
+        for i in range(len(resolutions) - 1):
+            self.blocks.append(SynthesisBlock(channels[i], channels[i+1], style_dim=initial_channels, upsample=False))  
+
+        self.fc = nn.Linear(initial_channels * 4 * 4, 1)
+        self.minibatch_stddev = MinibatchStdDev()  # Add minibatch stddev layer to capture variations
+
+    def forward(self, x):
+        """
+        Forward pass of the discriminator
+        Args:
+            x: Input image (real or generated)
+        Returns:
+            Prediction score (real or fake)
+        """
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.minibatch_stddev(x)  # Add minibatch standard deviation
+        x = x.view(x.size(0), -1)  # Flatten the output
+        return torch.sigmoid(self.fc(x))  # Binary classification output 
+    

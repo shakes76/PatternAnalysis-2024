@@ -70,26 +70,32 @@ class VectorQuantizer(nn.Module):
 
         """
         # reshape z -> (batch, height, width, channel) and flatten
-        embeddings = self.embedding.weight
-        z_shaped = z.permute(0, 2, 3, 1).contiguous().view(-1, self.dim_e)
+        z = z.permute(0, 2, 3, 1).contiguous()
+        z_flattened = z.view(-1, self.dim_e)
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
 
-        distances = torch.sum(z_shaped ** 2, dim=1, keepdim=True) + \
-            torch.sum(embeddings**2, dim=1) - 2 * \
-            torch.matmul(z_shaped, embeddings.t())
+        d = torch.sum(z_flattened ** 2, dim=1, keepdim=True) + \
+            torch.sum(self.embedding.weight**2, dim=1) - 2 * \
+            torch.matmul(z_flattened, self.embedding.weight.t())
 
         # find closest encodings
-        min_encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+        min_encoding_indices = torch.argmin(d, dim=1).unsqueeze(1)
         min_encodings = torch.zeros(
             min_encoding_indices.shape[0], self.n_e).to(device)
         min_encodings.scatter_(1, min_encoding_indices, 1)
-        
-        loss = torch.mean((z_q.detach()-z)**2) + self.beta * \
-            torch.mean((z_q - z.detach()) ** 2)
-        
-        dists = dists.view(z.shape[0], z.shape[2], z.shape[3], -1)
-        z_q = dists.min(-1)[1]
-        return z_q, loss
+
+        # get quantized latent vectors
+        latents = torch.matmul(min_encodings, self.embedding.weight).view(z.shape)
+
+        # compute loss for embedding
+        loss = torch.mean((latents.detach()-z)**2) + self.beta * \
+            torch.mean((latents - z.detach()) ** 2)
+
+        # preserve gradients
+        latents = z + (latents - z).detach()
+        latents = latents.permute(0, 3, 1, 2).contiguous()
+
+        return latents, loss
 
 
 class ResidualStack(nn.Module):
@@ -119,31 +125,29 @@ class VQVAE(nn.Module):
         
         # Adjust the input channels in the encoder from 1 to 64
         self.encoder = nn.Sequential(
-            nn.Conv2d(in_dim, in_dim // 2, 4, 2, 1),
-            nn.BatchNorm2d(in_dim),
+            nn.Conv2d(in_dim, dim, 4, 2, 1),
+            nn.BatchNorm2d(dim),
             nn.ReLU(),
-            nn.Conv2d(in_dim // 2, in_dim, 4, 2, 1),
+            nn.Conv2d(dim, dim, 4, 2, 1),
             nn.ReLU(),
-            # here we have stride of 1, kernal of 2
-            nn.Conv2d(in_dim, in_dim, 3, 1, 1),
-            ResidualStack(in_dim, n_res_layers)
+            nn.Conv2d(dim, dim, 3, 1, 1),  # Keep the number of channels as 512
+            ResidualStack(dim, n_res_layers)
         )
         
-        self.pre_quant_conv = nn.Conv2d(4, 2, kernel_size=1)
+        # self.pre_quant_conv = nn.Conv2d(dim, 2, kernel_size=1)
         self.codebook = VectorQuantizer(num_embeddings, dim)
-        self.post_quant_conv = nn.Conv2d(2, 4, kernel_size=1)
+        # self.post_quant_conv = nn.Conv2d(dim, 4, kernel_size=1)
         
         # Commitment Loss Beta
         self.beta = 0.25 # From paper
         
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(
-                in_dim, in_dim, 3, 1, 1),
-            ResidualStack(in_dim, n_res_layers),
-            nn.ConvTranspose2d(in_dim, in_dim//2, 4, 2, 1),
-            nn.BatchNorm2d(in_dim),
+            nn.ConvTranspose2d(dim, dim, 3, 1, 1),
+            ResidualStack(dim, n_res_layers),
+            nn.ConvTranspose2d(dim, dim, 4, 2, 1),
+            nn.BatchNorm2d(dim),
             nn.ReLU(),
-            nn.ConvTranspose2d(in_dim//2, 3, 4, 2, 1),
+            nn.ConvTranspose2d(dim, in_dim, 4, 2, 1),
             nn.Tanh()
         )
 
@@ -153,22 +157,24 @@ class VQVAE(nn.Module):
         encoded_output = self.encoder(x)  # Output shape: [B, C, H', W']
         
         # Pre-quantization convolution
-        quant_input = self.pre_quant_conv(encoded_output)  # Still 4D: [B, C, H', W']
+        # quant_input = self.pre_quant_conv(encoded_output)  # Still 4D: [B, C, H', W']
+        # print("Yes")
         
-        latents, quantize_loss = self.codebook(quant_input)  # Output shape: [B, H', W']
+        latents, quantize_loss = self.codebook(encoded_output)  # Output shape: [B*H*W,C]
         
         # Post-quantization convolution
-        decoder_input = self.post_quant_conv(latents)
+        # decoder_input = self.post_quant_conv(latents)
+        # print("Yes")
         
         # Decoder part: input to decoder must be 4D
-        decoded_output = self.decoder(decoder_input)  # Decoder output in 4D
+        decoded_output = self.decoder(latents)  # Decoder output in 4D
         
         return encoded_output, decoded_output, latents, quantize_loss
 
 # Initialize
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 train_loader, test_loader, val_loader = load_data()
-model = VQVAE().to(device)
+model = VQVAE(1, 512, 3).to(device)
 if not os.path.exists('models'):
     os.makedirs('models')
 
@@ -191,7 +197,7 @@ def train_vqvae():
             
             encoded_output, decoded_output, latents, quantize_loss = model(im)
             
-            model_loss = criterion(encoded_output, decoded_output)            
+            model_loss = criterion(im, decoded_output)            
             loss = model_loss + quantize_loss
             loss.backward()
             optimizer.step()
@@ -227,20 +233,25 @@ def train_vqvae():
     return model
 
 def validate(epoch):
+    global best_epoch
     model.eval()
     total_ssim = 0
     
     with torch.no_grad():
-        for batch, (x, _) in enumerate(val_loader):
-            x = x.to(device)
+        for batch, im in enumerate(val_loader):
+            im = im.float().unsqueeze(1).to(device)
             
-            _, decoded_output, _, _ = model(x)
+            _, decoded_output, _, _ = model(im)
             
-            total_ssim += utils.calc_ssim(decoded_output, x)
+            total_ssim += utils.calc_ssim(decoded_output, im)
         
     epoch_ssim_score = total_ssim/(batch+1)
     ssim_scores.append(epoch_ssim_score)
-    if epoch_ssim_score > max(ssim_scores):
+    print(max(ssim_scores), "best epoch")
+    print(best_epoch)
+    print(epoch_ssim_score, "epoch score")
+    print(epoch)
+    if epoch_ssim_score == max(ssim_scores):
         torch.save(model.state_dict(), f'models/checkpoint_epoch{epoch}_vqvae.pt')
         best_epoch = epoch
         print(f"Achieved an SSIM score of {epoch_ssim_score}, NEW BEST! saving model")
@@ -253,12 +264,12 @@ def test():
     total_ssim = 0
     
     with torch.no_grad():
-        for batch, (x, _) in enumerate(test_loader):
-            x = x.to(device)
+        for batch, im in enumerate(test_loader):
+            im = im.float().unsqueeze(1).to(device)
             
-            _, decoded_output, _, _ = model(x)
+            _, decoded_output, _, _ = model(im)
             
-            total_ssim += utils.calc_ssim(decoded_output, x)
+            total_ssim += utils.calc_ssim(decoded_output, im)
         
     total_test_ssim = total_ssim/(batch + 1)
     return total_test_ssim
@@ -271,17 +282,20 @@ def reconstruct_images():
             ims = im.float().unsqueeze(1).to(device)
             break
 
-        generated_im, _, _, _ = model(ims)
+        _, generated_im, _, _ = model(ims)
 
         ims = (ims + 1) / 2
         generated_im = 1 - (generated_im + 1) / 2
 
-        out = torch.hstack([ims, generated_im])
+        print(ims.shape, "og ims")
+        print(generated_im.shape)
+        generated_im_resized = F.interpolate(generated_im, size=(256, 128), mode='bilinear')
+        out = torch.hstack([ims, generated_im_resized])
         output = rearrange(out, 'b c h w -> b () h (c w)')
 
         grid = torchvision.utils.make_grid(output.detach().cpu(), nrow=10)
         img = torchvision.transforms.ToPILImage()(grid)
-        img.save('reconstruction2.png')
+        img.save('reconstruction3.png')
 
     print('Done Reconstruction ...')
 
@@ -290,4 +304,4 @@ if __name__ == "__main__":
     train_vqvae()
     reconstruct_images()
     test_ssim = test()
-    print("Test SSIM achieved as {test_ssim}")
+    print(f"Test SSIM achieved as {test_ssim}")

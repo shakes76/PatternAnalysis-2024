@@ -4,7 +4,7 @@ from tqdm import tqdm
 import skimage.transform as skTrans
 from pathlib import Path
 import matplotlib.pyplot as plt  
-
+import tensorflow as tf
 
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:

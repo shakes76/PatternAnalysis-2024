@@ -141,25 +141,25 @@ def main() -> None:
     plt.savefig("plots/train_pca")
 
     # tsne
-    # logger.info("Fitting tsne...")
-    # tsne = TSNE(random_state=42)
-    # tsne_projections = tsne.fit_transform(embeddings)
-    # logger.info("Plotting tsne...")
-    # plt.figure()
-    # plt.scatter(
-    #     tsne_projections[:, 0],
-    #     tsne_projections[:, 1],
-    #     c=knn_df["target"],
-    #     cmap="coolwarm",
-    #     marker=".",
-    # )
-    # plt.xlabel("component1")
-    # plt.ylabel("component2")
-    # benign_patch = mpatches.Patch(color="blue", label="Benign")
-    # malignant_patch = mpatches.Patch(color="red", label="Malignant")
-    # plt.legend(handles=[benign_patch, malignant_patch])
-    # logger.info("Writing image")
-    # plt.savefig("plots/train_tsne")
+    logger.info("Fitting tsne...")
+    tsne = TSNE(random_state=42)
+    tsne_projections = tsne.fit_transform(embeddings)
+    logger.info("Plotting tsne...")
+    plt.figure()
+    plt.scatter(
+        tsne_projections[:, 0],
+        tsne_projections[:, 1],
+        c=knn_df["target"],
+        cmap="coolwarm",
+        marker=".",
+    )
+    plt.xlabel("component1")
+    plt.ylabel("component2")
+    benign_patch = mpatches.Patch(color="blue", label="Benign")
+    malignant_patch = mpatches.Patch(color="red", label="Malignant")
+    plt.legend(handles=[benign_patch, malignant_patch])
+    logger.info("Writing image")
+    plt.savefig("plots/train_tsne")
 
     # Fit KNN
     # knn = KNeighborsClassifier(n_neighbors=5, weights="uniform", p=2)

@@ -34,6 +34,7 @@ class SiameseController:
         )
         self._hparams = hparams
         self.losses: list[float] = []
+        self.mined_each_step: list[int] = []
         self._epoch = 0
         self._model_name = model_name
 
@@ -108,6 +109,7 @@ class SiameseController:
 
             embeddings = self._model(x)
             hard_triplets = self._miner(embeddings, labels)
+            self.mined_each_step.append(self._miner.num_triplets)
             loss = self._loss(embeddings, labels, hard_triplets)
 
             avg_loss += loss.item()
@@ -124,14 +126,6 @@ class SiameseController:
                     num_observations,
                     self._miner.num_triplets,
                 )
-                # logger.info(
-                #     "step %d / loss %e / progress %d / num mined negatives %d / num mined positives %d",
-                #     n,
-                #     avg_loss / n,
-                #     num_observations,
-                #     self._miner.num_neg_pairs,
-                #     self._miner.num_pos_pairs,
-                # )
 
         avg_loss /= n
         self.losses.append(avg_loss)

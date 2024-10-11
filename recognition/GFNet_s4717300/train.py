@@ -3,10 +3,11 @@
 # sure to plot the losses and metrics during training
 from dataset import GFNetDataloader
 from modules import GFNet
-import torch.optim.adam 
+import torch.optim.adamw
 import torch
 import time
 from utils import bcolors
+from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
 import csv
 
 
@@ -16,17 +17,17 @@ print(device)
 
 # hyper-parameters
 learning_rate = 0.0001
-step_size = 10
-gamma = 0.1
-dropout = 0.3
-drop_path = 0.3
+weight_decay = 0.05
+dropout = 0.0
+drop_path = 0.1
 
-batches = 512
+batches = 64
 patch_size = 16
-embed_dim = 256
-depth = 5
+embed_dim = 384
+depth = 12
 ff_ratio = 4.0
-epochs = 30
+epochs = 100
+warmup_epochs = 5
 
 ## Load data
 gfDataloader = GFNetDataloader(batches)
@@ -49,9 +50,14 @@ model.to(device)
 model.train()
 
 criterion = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate) #type: ignore
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 total_step = len(training)
+cosine_t_max = epochs - warmup_epochs
+warmup_scheduler = LinearLR(optimizer, start_factor=0.01, end_factor=1.0, total_iters=warmup_epochs)
+cosine_scheduler = CosineAnnealingLR(optimizer, T_max=cosine_t_max)
+
+scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_epochs])
 
 losses = []
 val_losses = []
@@ -65,6 +71,8 @@ def evaluate_model(final=False):
     with torch.no_grad():
         correct = 0
         total = 0
+        avg_loss = 0 
+        count = 0
         for images, labels in test:
             images = images.to(device)
             labels = labels.to(device)
@@ -72,11 +80,10 @@ def evaluate_model(final=False):
             outputs = model(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
+            count += 1
             correct += (predicted == labels).sum().item()
-            val_loss = criterion(outputs, labels)
-            if not final:
-                break
-        val_losses.append(val_loss.item())
+            avg_loss += criterion(outputs, labels)
+        val_losses.append(avg_loss / count)
 
         accuracy = (100 * correct / total)
         print('Test Accuracy: {} %'.format(accuracy))
@@ -86,7 +93,7 @@ def evaluate_model(final=False):
     print("Testing took " + str(elapsed) + " secs or " + str(elapsed/60) + " mins in total")
     model.train()
     print("=============================")
-    return accuracy
+    return accuracy, (avg_loss / count)
 
 def train_model():
     ## Start training loop
@@ -106,11 +113,28 @@ def train_model():
             if i % 100 == 0:
                 print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, total_step, loss.item()))
 
+
         losses.append(loss.item())
-        result = evaluate_model() 
+        result, v_loss = evaluate_model() 
+        if epoch % 10 == 0:
+            torch.save(model.state_dict(), 'GFNET-e{}-{}.pth'.format(epoch, round(result, 4)))
+
+        if abs(v_loss - loss.item()) > 0.35:
+            print('=======OVERFITTED-TERMINATED======')
+            torch.save(model.state_dict(), 'GFNET-{}.pth'.format(round(result, 4)))
+            # Save losses to a CSV file
+            with open('losses.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(losses)
+
+            # Save acc_hist to a CSV file
+            with open('val_loss.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(val_losses)
+            exit(2)
 
         scheduler.step() 
-    result = evaluate_model(final=True) 
+    result, _ = evaluate_model(final=True) 
     torch.save(model.state_dict(), 'GFNET-{}.pth'.format(round(result, 4)))
     # Save losses to a CSV file
     with open('losses.csv', 'w', newline='') as f:

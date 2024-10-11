@@ -23,7 +23,7 @@ class GFNet(nn.Module):
         num_patches = self.patch_embed.num_patches
 
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
-        # self.pos_drop = nn.Dropout(p=drop_rate)
+        self.pos_drop = nn.Dropout(p=dropout)
 
         h = img_size // patch_size
         w = h // 2 + 1
@@ -69,7 +69,7 @@ class GFNet(nn.Module):
         B = x.shape[0]
         x = self.patch_embed(x)
         x = x + self.pos_embed
-        # x = self.pos_drop(x)
+        x = self.pos_drop(x)
 
         for blk in self.blocks:
             x = blk(x)

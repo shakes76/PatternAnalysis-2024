@@ -19,7 +19,8 @@ class GFNetDataloader():
             transforms.ToTensor(),
         ])
 
-        dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=transform_complete)
+        # dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=transform_complete)
+        dataset = datasets.ImageFolder(root='./AD_NC/train', transform=transform_complete)
         loader = DataLoader(dataset, batch_size=128, shuffle=False)
 
         for images, _ in loader:
@@ -40,12 +41,17 @@ class GFNetDataloader():
                 transforms.Grayscale(num_output_channels=1),
                 transforms.Resize(240),
                 transforms.Pad((0, 8), fill=0),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
-                transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
-            ])
+                transforms.RandomHorizontalFlip(),              # Flip horizontally
+                transforms.RandomVerticalFlip(p=0.5),           # Flip vertically with 50% probability
+                transforms.RandomRotation(30),                  # Random rotation within ±30 degrees
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Randomly change brightness/contrast
+                transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # Random translation
+                transforms.RandomCrop(256, padding=8, padding_mode='reflect')
+                # transforms.Normalize(mean=self._mean, std=self._std),  # Use computed mean and std
+                ])
             self.img_size = 256
         else:
+            exit(1)
             _transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Grayscale(num_output_channels=1),
@@ -57,10 +63,10 @@ class GFNetDataloader():
             self.img_size = img_size
 
 
-        # train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
-        # test_images = datasets.ImageFolder(root='./AD_NC/test', transform=_transform)
-        train_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
-        test_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=_transform)
+        train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
+        test_images = datasets.ImageFolder(root='./AD_NC/test', transform=_transform)
+        # train_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
+        # test_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=_transform)
 
         self.train_loader = DataLoader(train_images, batch_size=self.batch_size, shuffle=True)
         self.test_loader = DataLoader(test_images, batch_size=self.batch_size, shuffle=False)

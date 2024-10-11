@@ -59,7 +59,7 @@ class UNet(nn.Module):
         self.blk1 = UNetBasicBlock(1, 64, 3)
         self.blk2 = UNetBasicBlock(64, 128, 3)
         self.blk3 = UNetBasicBlock(128, 256, 3)
-        self.blk4 = UNetBasicBlock(256, 512, 3)
+        #self.blk4 = UNetBasicBlock(256, 512, 3)
         # latent
         #self.latent = UNetBasicBlock(512, 1024, 3)
         self.latent = UNetBasicBlock(256, 512, 3)
@@ -84,6 +84,7 @@ class UNet(nn.Module):
         maxPool2 = F.max_pool2d(enc2, 2) # size (128, 61, 61)
         enc3 = self.blk3(maxPool2) # size (256, 57, 57)
         maxPool3 = F.max_pool2d(enc3, 2) # size (256, 28, 28)
+        # bypassing the lowest layer in the 'U' before the latent space, that's why it's commented out
         #enc4 = self.blk4(maxPool3) # size (512, 24, 24)
         #maxPool4 = F.max_pool2d(enc4, 2) # size (512, 12, 12)
         #lat = self.latent(maxPool4) # size (1024, 8, 8)
@@ -93,13 +94,32 @@ class UNet(nn.Module):
         #    (TF.center_crop(enc4, output_size=up1.size(1)), up1), 0)) # size (512, 12, 12)
         #up2 = self.up2(dec1) # size (256, 24, 24)
         up2 = self.up2(lat)
+        # to handle batches properly
+        if len(up2.size()) == 4:
+            cropSz = up2.size(2)
+            chanDim = 1
+        else:
+            cropSz = up2.size(1)
+            chanDim = 0
         dec2 = self.dec2(torch.concat(
-            (TF.center_crop(enc3, output_size=up2.size(1)), up2), 0)) # size (256, 20, 20)
+            (TF.center_crop(enc3, output_size=cropSz), up2), chanDim)) # size (256, 20, 20)
         up3 = self.up3(dec2) # size (128, 40, 40)
+        if len(up3.size()) == 4:
+            cropSz = up3.size(2)
+            chanDim = 1
+        else:
+            cropSz = up3.size(1)
+            chanDim = 0
         dec3 = self.dec3(torch.concat(
-            (TF.center_crop(enc2, output_size=up3.size(1)), up3), 0)) # size (128, 36, 36)
+            (TF.center_crop(enc2, output_size=cropSz), up3), chanDim)) # size (128, 36, 36)
         up4 = self.up4(dec3) # size (64, 72, 72)
+        if len(up4.size()) == 4:
+            cropSz = up4.size(2)
+            chanDim = 1
+        else:
+            cropSz = up4.size(1)
+            chanDim = 0
         dec4 = self.dec4(torch.concat(
-            (TF.center_crop(enc1, output_size=up4.size(1)), up4), 0)) # size (64, 68, 68)
+            (TF.center_crop(enc1, output_size=cropSz), up4), chanDim)) # size (64, 68, 68)
         return self.out(dec4) # size (2, 68, 68)
         # skip == blk1 + blk of some other level

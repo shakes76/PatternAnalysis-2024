@@ -26,7 +26,7 @@ hipmri2dtest = dataset.HipMRI2d("H:\\HipMRI", imgSet = "test", transform = trans
 # for Rangpur
 #hipmri2dtrain = dataset.HipMRI2d("/home/groups/comp3710/HipMRI_Study_open/keras_slices_data", imgSet = "train", transform = trans, applyTrans = True)
 #hipmri2dtest = dataset.HipMRI2d("/home/groups/comp3710/HipMRI_Study_open/keras_slices_data", imgSet = "test", transform = trans, applyTrans = True)
-trainLoader = DataLoader(hipmri2dtrain, batch_size=64, shuffle = False)
+trainLoader = DataLoader(hipmri2dtrain, batch_size=8, shuffle = False)
 
 net = modules.UNet()
 net = net.to(dev)
@@ -35,21 +35,30 @@ lossFunc = nn.CrossEntropyLoss()
 optm = torch.optim.SGD(net.parameters())
 
 net.train()
-#for epoch in range(epochs):
-#    for i, (img, zero) in enumerate(trainLoader):
-#        img = img.to(dev)
+for epoch in range(epochs):
+    for i, (img, seg) in enumerate(trainLoader):
+        print(i)
+        img = img.to(dev)
+        seg = seg.to(dev)
+        out = net(img)
+        seg = TF.center_crop(seg, output_size = out.size(2))
+        # I FUCKING HATE PYTORCH SO MUCH. WHY IS THIS NECESSARY?
+        loss = lossFunc(out[:,0,:,:], seg[:,0,:,:])
+        optm.zero_grad()
+        loss.backward()
+        optm.step()
 
 # test Cross Entropy Loss
-imgBatch, segBatch = next(iter(trainLoader))
-img = imgBatch[0].to(dev)
-seg = segBatch[0].to(dev)
+#imgBatch, segBatch = next(iter(trainLoader))
+#img = imgBatch[0].to(dev)
+#seg = segBatch[0].to(dev)
 
-out = net(img)
+#out = net(img)
 # one option is to upsize the output to the size of the original.
 # this probably won't work well as it's just blowing up a smaller image
 # and won't line up exactly with the target segment map.
 #out = trans(out)
 # Another option is to crop the target. This will probably work better
-seg = TF.center_crop(seg, output_size = out.size(1))
-loss = lossFunc(out[0], seg[0]) # probably will not work
+#seg = TF.center_crop(seg, output_size = out.size(1))
+#loss = lossFunc(out[0], seg[0]) # probably will not work
     

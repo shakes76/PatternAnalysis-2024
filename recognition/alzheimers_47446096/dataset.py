@@ -24,7 +24,7 @@ TEST_TRANSFORM = transforms.Compose([
     transforms.ToTensor()
 ])
 
-def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuffle: bool = True):
+def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuffle: bool = True, gpu = False):
     '''
     Get Pytorch DataLoader with ADNI training DATA
 
@@ -39,10 +39,10 @@ def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuff
         root = path,
         transform = TRAIN_TRANSFORM
     )
-    trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
+    trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle, num_workers=4, pin_memory = gpu)
     return trainLoader
 
-def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True):
+def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True, gpu = False):
     '''
     Get Pytorch DataLoader with ADNI test DATA
 
@@ -57,7 +57,7 @@ def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True):
         root = path,
         transform = TEST_TRANSFORM
     )
-    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle)
+    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=4, pin_memory = gpu)
     return valLoader
 
 def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):

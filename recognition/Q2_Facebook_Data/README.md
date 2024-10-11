@@ -3,15 +3,14 @@
 ## Question 2: Facebook Graph Data Analysis is attempted 
 
 ### Algorithm Description
-This -------
+This repo contain a multi-layer GNN model to carry out a semi supervised miltu-class node classfication using Facebook Large Page-Page Network dataset
 
 ### How It Works 
-
 
 ### File Overview
 The following file can be find:
 - `dataset.py`-  data loader for the dataset facebook_large folder
-- `modules.py`- model code
+- `modules.py`- GNN model code
 - `train.py`- training process
 - `predict.py`- testing process
 
@@ -24,3 +23,4 @@ The following file can be find:
 
 ### Dependencies
 This project contains following dependenies:
+

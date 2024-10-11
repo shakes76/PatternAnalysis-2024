@@ -3,7 +3,7 @@ import torch
 
 class AnalysisLayer(nn.Module):
     "Generalized analysis layer class to perform analysis."
-    def __init__(self, *args, base_width=32,target_width=64, conv_size=3, stride=1, padding=0, pool=False, **kwargs) -> None:
+    def __init__(self, base_width=32,target_width=64, conv_size=3, stride=1, padding=0, pool=False) -> None:
         """
         Initializer for Analysis layer. Allows for general alterations including changing the
         input channels and output channels, the convolution size, stride and padding, as well as an
@@ -39,7 +39,7 @@ class AnalysisLayer(nn.Module):
 
 class SynthesisLayer(nn.Module):
     "Generalized Synthesis Layer class to perform the synthesis path"
-    def __init__(self, *args,base_width=512,target_width=256, conv_size=3, stride=1, padding=0, **kwargs) -> None:
+    def __init__(self,base_width=512,target_width=256, conv_size=3, stride=1, padding=0) -> None:
         """
         Initializer for synthesis layer. Allows for general alterations including altering the
         number of features in and out, the size of kernels for convolutions, and stride and padding
@@ -52,7 +52,7 @@ class SynthesisLayer(nn.Module):
             stride (int, optional): The stride for convolutional layers. Defaults to 1.
             padding (int, optional): The padding for convolutional layers. Defaults to 0.
         """
-        super(SynthesisLayer, self).__init__(*args, **kwargs)
+        super(SynthesisLayer, self).__init__()
         self.upconv = nn.ConvTranspose3d(in_channels=base_width,out_channels=base_width,kernel_size=2,stride=2,padding=0)
         self.sequence = nn.Sequential(
             nn.Conv3d(in_channels=base_width+target_width,out_channels=target_width,kernel_size=conv_size,stride=stride,padding=padding),

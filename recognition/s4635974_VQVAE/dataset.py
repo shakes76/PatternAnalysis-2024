@@ -121,7 +121,7 @@ class HipMRILoader:
         self.transform = transform
         
         # Create datasets
-        self.train_dataset = HipMRIDataset(train_dir, transform=None, normImage=True)
+        self.train_dataset = HipMRIDataset(train_dir, transform=self.transform, normImage=True)
         self.validate_dataset = HipMRIDataset(validate_dir, transform=None, normImage=True)
         self.test_dataset = HipMRIDataset(test_dir, transform=None, normImage=True)  # No transforms for test data
         

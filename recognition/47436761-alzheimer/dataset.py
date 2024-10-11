@@ -1,28 +1,19 @@
 import os
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 import torch
 
-# Define the paths
-train_dir = 'dataset/AD_NC/train'
-test_dir = 'dataset/AD_NC/test'
-batch_size = 32
 
 IMAGE_DIM = 224 
-PATCH_SIZE = 8
-NUM_PATCHES = (IMAGE_DIM // PATCH_SIZE) ** 2
-D_MODEL = (PATCH_SIZE ** 2) * 3
 
 transform = transforms.Compose([
     transforms.Resize((IMAGE_DIM, IMAGE_DIM)),
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
     transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(15),
-    transforms.RandomResizedCrop(IMAGE_DIM, scale=(0.8, 1.0)),
-    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-    transforms.Grayscale(num_output_channels=1),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5]),
+    transforms.Normalize(mean=[0.485], std=[0.229]) # Imagenet values
 ])
+
 
 def create_data_loader(root_dir, batch_size=32, train=True, val=False, val_split=0.2, seed=69):
     """
@@ -40,10 +31,19 @@ def create_data_loader(root_dir, batch_size=32, train=True, val=False, val_split
         (train_loader, val_loader) if `val=True`.
     """
     dataset = datasets.ImageFolder(root=root_dir, transform=transform)
-    print(f"Using the full dataset from {root_dir} with {len(dataset)} samples")
+    
 
     # Create a local generator for reproducibility
     generator = torch.Generator().manual_seed(seed)
+
+
+    fraction = 0.7 # 0.3
+    subset_size = int(len(dataset) * fraction)
+
+    # Generate a random permutation of indices
+    indices = torch.randperm(len(dataset), generator=generator)[:subset_size]
+    dataset = Subset(dataset, indices)
+    print(f"Using the full dataset from {root_dir} with {len(dataset)} samples")
 
     # If val is True, split the dataset into training and validation sets
     if val:
@@ -78,16 +78,3 @@ def create_data_loader(root_dir, batch_size=32, train=True, val=False, val_split
     )
     return loader
 
-
-if __name__ == "__main__":
-    # Specify the subset size (e.g., 100 samples)
-    train_subset_size = 100  # Set to None to use the full training set
-    test_subset_size = 50    # Set to None to use the full test set
-
-    # Create DataLoaders for training and testing
-    train_loader = create_data_loader(train_dir, batch_size=batch_size, train=True, subset_size=train_subset_size)
-    test_loader = create_data_loader(test_dir, batch_size=batch_size, train=False, subset_size=test_subset_size)
-
-    print(f"Class-to-index mapping: {train_loader.dataset.dataset.class_to_idx}")
-    print(f"Number of training samples: {len(train_loader.dataset)}")
-    print(f"Number of testing samples: {len(test_loader.dataset)}")

@@ -175,6 +175,8 @@ class VQVAE(nn.Module):
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 train_loader, test_loader, val_loader = load_data()
 model = VQVAE(1, 512, 3).to(device)
+opt = torch.optim.Adam(model.parameters(), lr=1e-3, amsgrad=True)
+scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.9)
 if not os.path.exists('models'):
     os.makedirs('models')
 
@@ -183,24 +185,25 @@ train_losses = []
 best_epoch = 0
 
 def train_vqvae():
-    num_epochs = 7
-    optimizer = Adam(model.parameters(), lr=1E-3)
+    num_epochs = 20
+    opt = Adam(model.parameters(), lr=1E-3)
     criterion = torch.nn.MSELoss()
     
     for epoch_idx in range(num_epochs):
+        model.train()
         epoch_loss = 0
         epoch_start = time.time()
         for batch, im in enumerate(tqdm(train_loader)):
             start_time = time.time()
             im = im.float().unsqueeze(1).to(device)
-            optimizer.zero_grad()
+            opt.zero_grad()
             
             encoded_output, decoded_output, latents, quantize_loss = model(im)
             
             model_loss = criterion(im, decoded_output)            
             loss = model_loss + quantize_loss
             loss.backward()
-            optimizer.step()
+            opt.step()
             epoch_loss += loss.item()
             
             if (batch + 1) % 50 == 0:

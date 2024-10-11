@@ -42,7 +42,7 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 150
+num_epochs = 1
 batch_size = 16
 lr = 0.002
 num_hiddens = 128
@@ -53,7 +53,7 @@ dim_embedding = 64
 beta = 0.25
 
 # Used for saving files
-model_description = 'transforms=None'
+model_description = 'jitter_test'
 
 # Save directory
 save_dir = model_description
@@ -128,11 +128,18 @@ def train_model(
     #     transforms.Normalize((0,), (1,)),  # Normalize
     # ])
 
+    # Define your training transformations, including conversion to PIL and back to tensor
+    train_transform = transforms.Compose([
+        transforms.ToPILImage(),  # Convert NumPy array to PIL Image
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Augmentations for training
+        transforms.ToTensor(),  # Convert back to tensor
+        transforms.Normalize((0,), (1,)),  # Normalize
+    ])
 
     # Get loaders (variance == 5)
     train_loader, validate_loader, data_variance = HipMRILoader(
         train_dir, validate_dir, test_dir,
-        batch_size=batch_size, transform=None
+        batch_size=batch_size, transform=train_transform
         ).get_loaders()
     print('Variance: ', data_variance)
     print()

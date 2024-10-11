@@ -14,8 +14,8 @@ from skimage.metrics import structural_similarity as ssim
 # Hyperparameters
 image_size = 256  # Image size for resizing
 batch_size = 32  # Adjust this based on available memory
-num_epochs = 35  # Number of training epochs
-learning_rate = 0.0001  # Learning rate for optimizer
+num_epochs = 20  # Number of training epochs
+learning_rate = 0.001  # Learning rate for optimizer
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define data transformations
@@ -38,7 +38,7 @@ model = VQVAE(
     num_downsampling_layers=3,  # Adjustable for image size
     num_residual_layers=2,
     num_residual_hiddens=32,
-    embedding_dim=64, # Set to 64, but try 128 if images are not clear enough
+    embedding_dim=128, # Set to 64, but try 128 if images are not clear enough
     num_embeddings=256,
     decay=0.99,
     epsilon=1e-5

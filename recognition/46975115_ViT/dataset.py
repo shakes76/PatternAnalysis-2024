@@ -5,8 +5,8 @@ from torchvision.datasets import ImageFolder
 
 def get_dataloaders(base_data_dir, batch_size=16, val_split=0.15):
     """
-    This function loads the datasets from the given base_data_dir, splitting the train folder 
-    into training and validation sets. The directory structure is assumed to be:
+    This function loads the datasets from the data directory, splitting the train folder 
+    into training and validation sets. The directory structure is as follows:
     - base_data_dir/train/AD
     - base_data_dir/train/NC
     - base_data_dir/test/AD

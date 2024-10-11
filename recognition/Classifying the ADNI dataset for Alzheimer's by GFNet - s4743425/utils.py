@@ -4,24 +4,23 @@ Extra functions and classes that have been used to create this model.
 This code does not been to be included to run the actual model. Much of the processing here
 has been hardcoded into the model.
 
-REF: 
 """
 import torch
 import os
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 from dataset import *
+import torchvision
+from torchvision.datasets import ImageFolder
 
 image_size = 256
 batch_size = 64
     # used for calculating mean and std
-transform =  {
-    'no_norm': transforms.Compose([
+transform =   transforms.Compose([
         transforms.Resize(image_size),
          transforms.Grayscale(),
         transforms.ToTensor(),
-    ]),
-}
+    ])
 
 # The path when running locally
 data_directory = os.path.join('../../../AD_NC')

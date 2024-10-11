@@ -6,6 +6,11 @@ import os
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader, random_split
 from PIL import Image
+import matplotlib.pyplot as plt
+import torchvision
+from torchvision.datasets import ImageFolder
+import numpy
+from torchvision.utils import make_grid
 
 # The path when running locally
 data_directory = '../../../AD_NC'
@@ -19,8 +24,9 @@ image_size = (256, 256) # image size (length and width)
 transform = {
     'train': transforms.Compose([
         transforms.Resize(image_size),
-        transforms.RandAugment(num_ops=4),
+        transforms.RandAugment(num_ops=2),
         transforms.CenterCrop(image_size),
+        transforms.RandomHorizontalFlip(),
         transforms.Grayscale(),  # Convert to grayscale
         transforms.ToTensor(),
          transforms.Normalize((0.1156,), (0.2202,))
@@ -35,11 +41,10 @@ transform = {
 
 # Class to load and process the images
 class ADNIDataset(Dataset):
-    def __init__(self, data_dir, transform=None, mode='train'):
+    def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
-        self.mode = mode
         # Use the transform specific to the mode (train, test)
-        self.transform = transform[mode]  
+        self.transform = transform 
         # Get the class names based on folder structure
         self.classes = sorted([d for d in os.listdir(self.data_dir) if os.path.isdir(os.path.join(self.data_dir, d))])
         # Map class names to indices
@@ -59,8 +64,8 @@ class ADNIDataset(Dataset):
         img_name, label = self.image_filenames[idx]
         img_path = os.path.join(self.data_dir, img_name)
 
-        # Open the image and check all same
-        image = Image.open(img_path).convert("L")
+     #   # Open the image and check all same
+        image = Image.open(img_path)
 
         # Apply the transformation based on the mode (train, test)
         if self.transform:
@@ -70,20 +75,23 @@ class ADNIDataset(Dataset):
         label_idx = self.class_to_idx[label]
         
         return image, label_idx
-
+    
 
 # for loading and returning the train, validation and test data.
 def train_dataloader(batch_size, train_size=0.8):
     print("Start DataLoading ...")
     # Create the complete dataset for training (includes validation)
-    complete_train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=transform, mode='train')
+    complete_train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=None)
 
     # Split the training dataset: 80% training, 20% validation
     train_size = int(train_size * len(complete_train_dataset))
     val_size = len(complete_train_dataset) - train_size
     train_dataset, val_dataset = random_split(complete_train_dataset, [train_size, val_size])
-    
 
+    # Apply transformations after the split
+    train_dataset.dataset.transform = transform['train']
+    val_dataset.dataset.transform = transform['test']
+    
     # DataLoader for batching
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
@@ -92,17 +100,14 @@ def train_dataloader(batch_size, train_size=0.8):
     print(f"Number of training images: {len(train_dataset)}")
     print(f"Number of validation images: {len(val_dataset)}")
 
-
     return train_loader, val_loader
 
 def test_dataloader(batch_size):
     # Create test data set
-    test_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'test'), transform=transform, mode='test')
+    test_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'test'), transform=transform['test'])
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
     print(f"Classes in dataset: {test_dataset.class_to_idx}")
     print(f"Number of testing images: {len(test_dataset)}")
 
     # Also return the dataset for visualisation
     return test_loader, test_dataset
-
-

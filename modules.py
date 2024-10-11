@@ -207,9 +207,9 @@ def train_vqvae():
                 print('\tIter [{}/{} ({:.0f}%)]\tLoss: {} Time: {}'.format(
                     batch * len(im), len(train_loader.dataset),
                     50 * batch / len(train_loader),
-                    epoch_loss/batch, axis=0),
+                    epoch_loss/batch,
                     time.time() - start_time
-                )
+                ))
         
         avg_epoch_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_epoch_loss)

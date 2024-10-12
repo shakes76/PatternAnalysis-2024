@@ -3,73 +3,41 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-class SinusoidalEmbedding(nn.Module):
-    def __init__(self, embedding_dim, max_positions=10000):
-        super(SinusoidalEmbedding, self).__init__()
-        self.embedding_dim = embedding_dim
 
-        position = torch.arange(0, max_positions).unsqueeze(1).float()
-        div_term = torch.exp(torch.arange(0, embedding_dim, 2).float() * (-torch.log(torch.tensor(10000.0)) / embedding_dim))
-        pe = torch.zeros(max_positions, embedding_dim)
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe)
+# Noise scheduler for adding noise to latent representations at various timesteps
+class NoiseScheduler:
+    def __init__(self, timesteps=1000):
+        self.timesteps = timesteps
+        self.betas = torch.linspace(1e-4, 0.02, timesteps)
+        self.alphas = torch.cumprod(1 - self.betas, dim=0)
 
-    def forward(self, timestep):
-        return self.pe[timestep]
+    def add_noise(self, x, t):
+        noise = torch.randn_like(x)
+        alpha_t = self.alphas[t].view(-1, 1, 1, 1)
+        return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise
 
+# UNet: Processes data in latent space with skip connections (simplified for demonstration)
 class UNet(nn.Module):
-    def __init__(self):
+    def __init__(self, latent_dim=128):
         super(UNet, self).__init__()
+        # Define downsampling and upsampling layers
+        self.down1 = nn.Conv2d(latent_dim, latent_dim, 3, padding=1)
+        self.down2 = nn.Conv2d(latent_dim, latent_dim, 3, padding=1)
+        self.up1 = nn.ConvTranspose2d(latent_dim, latent_dim, 3, padding=1)
+        self.up2 = nn.ConvTranspose2d(latent_dim, latent_dim, 3, padding=1)
 
-        # Sinusoidal embedding for timesteps
-        self.time_embedding = SinusoidalEmbedding(embedding_dim=512)
+    def forward(self, x, t):
+        # Add a simple time embedding to encoded features
+        timestep_embedding = torch.sin(t.float() * 1e-4).view(-1, 1, 1, 1)
+        x = x + timestep_embedding  # Inject time embedding
 
-        # Encoder (downsampling) path
-        self.down1 = nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1)
-        self.down2 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
-        self.down3 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1)
-        self.down4 = nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1)
+        # Downsample (encode path)
+        x1 = F.relu(self.down1(x))
+        x2 = F.relu(self.down2(x1))
 
-        # Decoder (upsampling) path
-        self.up1 = nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1)
-        self.up2 = nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
-        self.up3 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
-        self.up4 = nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1)
-
-        # Activation
-        self.relu = nn.ReLU()
-
-        # Batch normalization
-        self.bn1 = nn.BatchNorm2d(64)
-        self.bn2 = nn.BatchNorm2d(128)
-        self.bn3 = nn.BatchNorm2d(256)
-        self.bn4 = nn.BatchNorm2d(512)
-        
-    def forward(self, x, timestep):
-        # Get timestep embedding
-        time_emb = self.time_embedding(timestep).view(-1, 512, 1, 1)  # Reshape to match input shape
-        
-        # Encoder
-        x1 = self.relu(self.bn1(self.down1(x)))  # 64 x 32 x 32
-        x2 = self.relu(self.bn2(self.down2(x1))) # 128 x 16 x 16
-        x3 = self.relu(self.bn3(self.down3(x2))) # 256 x 8 x 8
-        x4 = self.relu(self.bn4(self.down4(x3))) # 512 x 4 x 4
-
-        # Add timestep embedding to the bottleneck
-        x4 = x4 + time_emb
-
-        # Decoder
-        x = self.relu(self.up1(x4))              # 256 x 8 x 8
-        # Ensure dimensions match for skip connection
-        x = F.interpolate(x, size=x3.shape[2:])  # Resize to match x3
-        x = self.relu(self.up2(x + x3))  # Skip connection from x3
-        
-        # Ensure dimensions match for skip connection
-        x = F.interpolate(x, size=x2.shape[2:])  # Resize to match x2
-        x = self.relu(self.up3(x + x2))  # Skip connection from x2
-        x = self.up4(x)                          # 3 x 64 x 64
-
+        # Upsample (decode path with skip connection)
+        x = F.relu(self.up1(x2)) + x1
+        x = F.relu(self.up2(x))
         return x
 
 # Encoder: reduces the image to a latent representation

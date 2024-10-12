@@ -72,52 +72,22 @@ class Decoder(nn.Module):
         return self.layers(x)
     
 
-class LatentDiffusionModel(nn.Module):
-    def __init__(self, encoder, decoder, unet, timesteps=1000):
-        super(LatentDiffusionModel, self).__init__()
-        self.encoder = encoder
-        self.decoder = decoder
-        self.unet = unet
+# Main StableDiffusionModel class that integrates all components
+class StableDiffusionModel(nn.Module):
+    def __init__(self, latent_dim=128, timesteps=1000):
+        super(StableDiffusionModel, self).__init__()
+        self.encoder = Encoder(latent_dim=latent_dim)
+        self.unet = UNet(latent_dim=latent_dim)
+        self.decoder = Decoder(latent_dim=latent_dim)
+        self.noise_scheduler = NoiseScheduler(timesteps=timesteps)
         self.timesteps = timesteps
-        self.betas = self._linear_beta_schedule(timesteps)
-        self.alphas = 1.0 - self.betas
-        self.alpha_hat = torch.cumprod(self.alphas, 0)
-
-    def _linear_beta_schedule(self, timesteps):
-        return torch.linspace(0.0001, 0.02, timesteps)
-
-    def forward_diffusion(self, z, t):
-        """
-        Add noise to the latent z space according to a variance schedule.
-        """
-        noise = torch.randn_like(z)
-        alpha_hat_t = self.alpha_hat.to(z.device)[t][:, None, None, None]
-        return torch.sqrt(alpha_hat_t) * z + torch.sqrt(1 - alpha_hat_t) * noise, noise
-
-    def reverse_denoise(self, z_t, t):
-        """
-        Apply the reverse process to denoise the latent code.
-        """
-        pred_noise = self.unet(z_t, t)
-        return pred_noise
 
     def forward(self, x, t):
-        """
-        Full forward pass from image to noise prediction.
-        """
         # Encode image to latent space
-        z = self.encoder(x)
-        
-        # Apply forward diffusion in latent space
-        z_noisy, noise = self.forward_diffusion(z, t)
-        
-        # Predict noise added in latent space
-        pred_noise = self.reverse_denoise(z_noisy, t)
-        
-        return pred_noise, noise
-
-    def decode_latent(self, z):
-        """
-        Decode latent space back to image.
-        """
-        return self.decoder(z)
+        latent = self.encoder(x)
+        # Add noise to the latent representation
+        noisy_latent = self.noise_scheduler.add_noise(latent, t)
+        # Denoise the noisy latent representation with UNet
+        denoised_latent = self.unet(noisy_latent, t)
+        # Decode latent space back to image
+        return latent, noisy_latent, denoised_latent, self.decoder(denoised_latent)

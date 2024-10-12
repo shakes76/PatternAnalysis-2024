@@ -71,7 +71,8 @@ class SiameseNetwork(nn.Module):
         final_vector = torch.cat((feat1, feat2, combined_features), dim=1)
 
         # Flatten the 3xN tensor to 1x(3*N) -> the MLP requires a flat input vector
-        flattened_combined = final_vector.view(-1)
+        #flattened_combined = final_vector.view(-1)
+        flattened_combined = final_vector.view(final_vector.size(0), -1)
 
         # Pass the final feature vector through classification head to get similarity value in the range of 0 to 1.
         output = self.cls_head(flattened_combined)

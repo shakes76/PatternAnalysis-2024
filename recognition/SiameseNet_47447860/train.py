@@ -3,11 +3,9 @@
 # Make sure to plot the losses and metrics during training
 
 import os
-import argparse
 
 # import cv2
 import numpy as np
-# from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -15,6 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from modules import SiameseNetwork
 from dataset_3 import Dataset
+from predict import PredictData
 
 if __name__ == "__main__":
     # Set device to CUDA if a CUDA device is available, else CPU
@@ -64,19 +63,6 @@ if __name__ == "__main__":
 
     best_val = 10000000000  # big value -> any new validation loss will be better
 
-    for (img1, img2), target, (class1, class2) in train_loader:
-        print(f"{img1}\n\n")
-        print(f"{img2}\n\n")
-        print(f"{target}\n\n")
-        print(f"{class1}\n\n")
-        print(f"{class2}\n\n")
-        break
-
-    print("done")
-    exit(0)
-
-    """
-    # Will have to change the format of the data to fit these for-loop structures
     for epoch in range(num_epochs):
         print("[{} / {}]".format(epoch, num_epochs))
         # puts the model into training mode -> enables dropout, and batch normalization uses mini-batch statistics
@@ -114,7 +100,7 @@ if __name__ == "__main__":
         correct = 0
         total = 0
 
-        for (img1, img2), target, (class1, class2) in val_data:
+        for (img1, img2), target, (class1, class2) in val_loader:
             img1, img2, target = map(lambda x: x.to(device), [img1, img2, target])
 
             similarity = model(img1, img2)
@@ -156,10 +142,6 @@ if __name__ == "__main__":
                 os.path.join(out_path, "epoch_{}.pth".format(epoch + 1))
             )
 
-
     # need to run the predict.py code to test the accuracy of the model on the test data
-    prediction = PredictData(test_data)
+    prediction = PredictData(test_loader)
     prediction.predict()
-    
-    """
-

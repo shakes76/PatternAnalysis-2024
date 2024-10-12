@@ -1,7 +1,7 @@
 import os
 import argparse
 
-import cv2
+#import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,8 +9,8 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from siamese import SiameseNetwork
-from libs.dataset import Dataset
+from modules import SiameseNetwork
+from dataset_3 import Dataset
 
 class PredictData:
     def __init__(self, test_data, show_images=False):

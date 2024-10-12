@@ -19,7 +19,6 @@ class Dataset(torch.utils.data.IterableDataset):
         self.path = path
         self.augment = augment
 
-        self.feed_shape = [3, 256, 256]
         self.shuffle_pairs = shuffle_pairs
 
         self.train_portion = 0.7
@@ -128,6 +127,7 @@ class Dataset(torch.utils.data.IterableDataset):
             self.indices1 = indices1
             self.indices2 = indices2
             self.augment = augment
+            self.feed_shape = [3, 256, 256]
 
             # Define transforms
             self.transform = transforms.Compose([
@@ -135,11 +135,11 @@ class Dataset(torch.utils.data.IterableDataset):
                 transforms.RandomHorizontalFlip(p=0.5),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                transforms.Resize((224, 224))
+                transforms.Resize(self.feed_shape[1:])
             ]) if augment else transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                transforms.Resize((224, 224))
+                transforms.Resize(self.feed_shape[1:])
             ])
 
         def __iter__(self):

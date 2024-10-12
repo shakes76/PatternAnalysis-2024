@@ -1,5 +1,5 @@
 import torchvision.transforms as tf
-from torchvision.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import os
 
@@ -12,6 +12,8 @@ class ADNIDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.train = train
+
+        self.images, self.labels = self.load_data()
     
     def load_data(self):
         images = []
@@ -50,8 +52,8 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         tf.CenterCrop(crop_size),
         tf.Resize((image_size, image_size)),
         tf.ToTensor(),
-        tf.Normalize(mean=[0.5],
-                     std=[0.5]),
+        tf.Normalize(mean=[0.1415],
+                     std=[0.2385]),
         tf.RandomHorizontalFlip(),
         tf.RandomVerticalFlip()
     ])
@@ -66,35 +68,40 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
     
     return train_loader, test_loader
 
-def get_mean_std():
+# Running this code prints:
+# tensor(0.1415) tensor(0.2385), so mean = 0.1415, std = 0.2385.
+# This is where the "magic values" in the above section come from.
 
-    data_dir = "/home/groups/comp3710/ADNI/AD_NC"
+# def get_mean_std():
 
-    transform = tf.Compose([
-        tf.Grayscale(num_output_channels=1),
-        tf.CenterCrop(224),
-        tf.Resize((224, 224)),
-        tf.ToTensor(),
-    ])
+#     data_dir = "/home/groups/comp3710/ADNI/AD_NC"
+#     batch_size = 32
+
+#     transform = tf.Compose([
+#         tf.Grayscale(num_output_channels=1),
+#         tf.CenterCrop(224),
+#         tf.Resize((224, 224)),
+#         tf.ToTensor(),
+#     ])
     
-    train_dataset = ADNIDataset(root_dir=data_dir, transform=transform, train=True)
+#     train_dataset = ADNIDataset(root_dir=data_dir, transform=transform, train=True)
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+#     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
-    num_images = 0
-    mean = 0.0
-    std = 0.0
-    for images, _ in train_loader:
-        batch_size = images.size(0)
-        images = images.view(batch_size, -1)
-        mean += images.mean(1).sum(0)
-        std += images.std(1).sum(0)
-        num_images += batch_size
+#     num_images = 0
+#     mean = 0.0
+#     std = 0.0
+#     for images, _ in train_loader:
+#         batch_size = images.size(0)
+#         images = images.view(batch_size, -1)
+#         mean += images.mean(1).sum(0)
+#         std += images.std(1).sum(0)
+#         num_images += batch_size
     
-    mean /= num_images
-    std /= num_images
+#     mean /= num_images
+#     std /= num_images
 
-    print(mean, std)
+#     print(mean, std)
 
-if __name__ == '__main__':
-    get_mean_std()
+# if __name__ == '__main__':
+#     get_mean_std()

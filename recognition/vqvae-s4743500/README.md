@@ -27,7 +27,7 @@ The following sections provide an overview of the deep learning pipeline used fo
 &nbsp;&nbsp;&nbsp;&nbsp; 4. Testing procedure  
 
 ## 1. Data Loading & Preprocessing  
-The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#3). 
+The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#here). 
 DISCUSS HOW IT IS A BLACK AND WHITE IMAGE 
 
 ## Reference List  

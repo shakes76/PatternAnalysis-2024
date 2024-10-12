@@ -3,7 +3,7 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import os
 
-# Got inspiration from infer.py file of github repo:
+# Got inspiration from infer.py file of the following github repo:
 # https://github.com/shakes76/GFNet
 # and my demo 2 brain gan data-loading code
 
@@ -52,6 +52,7 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         tf.CenterCrop(crop_size),
         tf.Resize((image_size, image_size)),
         tf.ToTensor(),
+        # Hardcoded to value found below
         tf.Normalize(mean=[0.1415],
                      std=[0.2385]),
         tf.RandomHorizontalFlip(),

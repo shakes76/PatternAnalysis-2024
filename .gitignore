@@ -1,1 +1,9 @@
 resources/
+__pycache__/
+test/
+
+# SLURM script for rangpur for checking if it compiles
+compile_checker
+
+# Result
+compile.out

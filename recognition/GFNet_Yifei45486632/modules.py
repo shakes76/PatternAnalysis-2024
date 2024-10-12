@@ -2,7 +2,6 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.applications import EfficientNetB0
 
 # Build a GFNet model
-# 
 def build_model(input_shape=(224,224,3)):
     base_model = EfficientNetB0(include_top=False, input_shape=input_shape, pooling='avg')
     x = base_model.output

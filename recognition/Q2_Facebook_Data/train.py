@@ -154,5 +154,5 @@ if __name__ == '__main__':
 
 
     # save the model
-    modelName = "recognition/modelEnhance1.pth"
+    modelName = "recognition/Q2_Facebook_Data/modelEnhance1.pth"
     torch.save(model.state_dict(), modelName)

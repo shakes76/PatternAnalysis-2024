@@ -1,21 +1,52 @@
 # Contains components of model.
-
+import keras
 from keras import layers, models, Sequential
 from keras.src.backend import shape
-from torch.ao.nn.quantized import Dropout
+from keras.src.losses import Dice
+from keras.src.optimizers import AdamW
+from keras.src import backend
+from keras.src import ops
+
 
 FULL_SIZE_IMG = 1  # set to 2 to use full size image
 INPUT_SHAPE = (32, 32, 3)
 num_classes = 4  # numb of classes in segmentation
 
-def unet_model(input_size=(128, 128, 1), batch_size=12):
+def dice_loss(y_true, y_pred, axis=None):
+    # this is the Dice() code
+    y_pred = ops.convert_to_tensor(y_pred)
+    y_true = ops.cast(y_true, y_pred.dtype)
+
+    inputs = y_true
+    targets = y_pred
+
+    intersection = ops.sum(inputs * targets, axis=axis)
+    dice = ops.divide(
+        2.0 * intersection,
+        ops.sum(y_true, axis=axis)
+        + ops.sum(y_pred, axis=axis)
+        + backend.epsilon(),
+    )
+
+    return 1 - dice
+
+def unet_model(input_size=(128, 128, 1), batch_size=12, preprocessing=None):
+    keras.backend.clear_session()
+
     inputs = layers.Input(input_size)
 
-    # dropped = layers.Dropout(0.25)(inputs)
 
+    # flattened = layers.Flatten(inputs)
+
+    # rand_crop = layers.RandomCrop()(inputs)
+    rand_flip = layers.RandomFlip(mode="horizontal_and_vertical")(inputs)
+
+    norm = layers.Normalization()(rand_flip)
+
+    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(norm)  # padding same accounts for the shrinkage that occurs from kernal
+    dropped = layers.Dropout(0.25)(conv1)
     # Encoder
-    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)  # padding same accounts for the shrinkage that occurs from kernal
-    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv1)
+    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(dropped)
     pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
 
     conv2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
@@ -65,9 +96,22 @@ def unet_model(input_size=(128, 128, 1), batch_size=12):
 
     model = models.Model(inputs=[inputs], outputs=[outputs])
     model.summary()
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=AdamW(learning_rate=0.0001), loss=Dice, metrics=['accuracy'])
+    # keras_cv.losses.IoULoss("xyxy", mode="quadratic")
 
     return model
+
+# def dice_coef(y_true, y_pred, smooth=1):
+#     """
+#     Dice = (2*|X & Y|)/ (|X|+ |Y|)
+#          =  2*sum(|A*B|)/(sum(A^2)+sum(B^2))
+#     ref: https://arxiv.org/pdf/1606.04797v1.pdf
+#     """
+#     intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
+#     return (2. * intersection + smooth) / (K.sum(K.square(y_true),-1) + K.sum(K.square(y_pred),-1) + smooth)
+#
+# def dice_coef_loss(y_true, y_pred):
+#     return 1-dice_coef(y_true, y_pred)
 
 
 # read: https://keras.io/examples/vision/oxford_pets_image_segmentation/

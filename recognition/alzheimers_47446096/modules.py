@@ -18,6 +18,11 @@ class VisionTransformer(nn.Module):
         self.pSplitter = PatchSplitter(self.pDim, self.imgDims, self.pLen, device = self.device)
 
         self.nPatches  = self.pSplitter.nPatches
+        
+        self.d1 = nn.Dropout(p= 0.2)
+        self.n2 = nn.LayerNorm(self.pLen, device = self.device)
+        self.l2 = nn.Linear(self.pLen, self.pLen, device = self.device)
+        self.activation = nn.GELU()
 
         self.n1 = nn.LayerNorm(self.pLen, device = self.device)
         self.l1 = nn.Linear(self.pLen, 2, device = self.device)
@@ -31,13 +36,16 @@ class VisionTransformer(nn.Module):
         self.softMax = nn.Softmax(dim = -1)
 
         assert self.pLen % self.mhaHeadFactor == 0
-        self.blocks = nn.ModuleList([TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor, self.hiddenMul, device = self.device) for i in range(self.depth)])
+        self.blocks = nn.ModuleList(
+            [TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor, self.hiddenMul, device = self.device) for i in range(self.depth)]
+        )
     
     def forward(self, x):
         x= self.pSplitter(x)
         x = self.pProcessor(x)
         for block in self.blocks:
             x = block(x)
+        x = self.d1(self.activation(self.l2(self.n2(x))))
         x = self.l1(self.n1(x)[:, 0])
         return x
 
@@ -62,6 +70,9 @@ class TransformerEncBlk(nn.Module):
         self.l1 = nn.Linear(self.dim, self.dim * self.hiddenMul, device = self.device)
         self.d1 = nn.Dropout(p = 0.2)
         self.activation = nn.GELU()
+        self.n3 = nn.LayerNorm(self.dim * self.hiddenMul, device = self.device)
+        self.l3 = nn.Linear(self.dim * self.hiddenMul, self.dim * self.hiddenMul, device = self.device)
+        self.d3 = nn.Dropout(p = 0.2)
         self.l2 = nn.Linear(self.dim * self.hiddenMul, self.dim, device = self.device)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -69,6 +80,7 @@ class TransformerEncBlk(nn.Module):
         y, _ = self.mha(y, y, y)
         x = x + y
         z = self.d1(self.activation(self.l1(self.n2(x))))
+        z = self.d3(self.activation(self.l3(self.n3(z))))
         z = self.l2(z)
         x = x + z
         return x

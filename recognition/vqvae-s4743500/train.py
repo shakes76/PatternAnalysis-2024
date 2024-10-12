@@ -15,7 +15,8 @@ from skimage.metrics import structural_similarity as ssim
 image_size = 256  # Image size for resizing
 batch_size = 32  # Adjust this based on available memory
 num_epochs = 20  # Number of training epochs
-learning_rate = 0.001  # Learning rate for optimizer
+learning_rate = 0.001  # PLAY AROUND WITH 0.001 or 0.0001 Learning rate for optimizer
+beta = 0.25
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define data transformations
@@ -71,7 +72,7 @@ def train():
             recon_loss = criterion(x_recon, images)
 
             # Total loss is the sum of reconstruction loss and commitment loss
-            loss = recon_loss + commitment_loss
+            loss = recon_loss + beta * commitment_loss
 
             # Backpropagation
             optimizer.zero_grad()

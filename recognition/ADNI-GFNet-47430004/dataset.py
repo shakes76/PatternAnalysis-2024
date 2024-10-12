@@ -73,6 +73,11 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
 # This is where the "magic values" in the above section come from.
 # Inspired by Yuvraj Fowdar's edstem post: https://edstem.org/au/courses/18266/discussion/2253272.
 
+# Other values for potential future reference (above is with centercrop and resize):
+# No centercrop and no resize: tensor(0.1155) tensor(0.2224) 
+# No centercrop but resize: tensor(0.1156) tensor(0.2198) 
+# Centercrop and no resize: tensor(0.1415) tensor(0.2385) 
+
 # def get_mean_std():
 
 #     data_dir = "/home/groups/comp3710/ADNI/AD_NC"

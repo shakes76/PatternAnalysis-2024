@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
 
+# Got inspiration from main_gfnet.py, gfnet.py files of the github repo:
+# https://github.com/shakes76/GFNet
+
 # Hyperparameters
+hyperparameter_1 = None
 
 class mlp(nn.Module):
     pass
@@ -32,7 +36,7 @@ class GFNet(nn.Module):
     pass
 
 def main():
-    print("Main")
+    print("Main of Modules")
 
 if __name__ == '__main__':
     main()

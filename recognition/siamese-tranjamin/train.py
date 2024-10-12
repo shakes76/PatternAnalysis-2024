@@ -5,42 +5,23 @@ import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_addons as tfa
-import pandas as pd
+
+from dataset import BalancedMelanomaDataset
 
 from Modules import NeuralNetwork
 
 batch_size = 64
 margin = 1  # Margin for contrastive loss.
-image_shape = (64, 64)
+image_shape = (128, 128)
 
-dataset = tf.keras.preprocessing.image_dataset_from_directory(
-    "datasets/balanced", 
-    labels="inferred", 
-    label_mode="binary",
-    shuffle=True,
-    validation_split=0.2,
-    subset="training",
-    seed=0,
-    image_size=image_shape,
-    batch_size=batch_size,
-    class_names=["positive", "negative"]
+df = BalancedMelanomaDataset(
+    image_shape=image_shape,
+    batch_size=64,
+    validation_split=0.2
 )
 
-dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
-    "datasets/balanced", 
-    labels="inferred", 
-    label_mode="binary",
-    shuffle=True,
-    validation_split=0.2,
-    subset="validation",
-    seed=0,
-    image_size=image_shape,
-    batch_size=batch_size,
-    class_names=["positive", "negative"]
-    )
-
-dataset = dataset.prefetch(tf.data.AUTOTUNE)
-dataset_val = dataset.prefetch(tf.data.AUTOTUNE)
+dataset = df.training_dataset()
+dataset_val = df.validation_dataset()
 
 base_model = NeuralNetwork.FunctionalNetwork()
 base_model.add_generic_layer(tf.keras.layers.Input(shape=(*image_shape, 3)))
@@ -63,10 +44,10 @@ base_model.set_optimisation("adam")
 base_model.compile_functional_model()
 base_model.summary()
 
-base_model.set_epochs(60)
+base_model.set_epochs(300)
 base_model.set_early_stopping("val_loss", patience=20, min_delta=0.01)
 base_model.fit_model_batches(dataset, dataset_val, verbose=1)
-base_model.visualise_training()
+base_model.visualise_training(to_file=True, filename="similarity.png")
 plt.show()
 
 base_model.model.trainable = False
@@ -97,5 +78,5 @@ classifier_model.fit_model_batches(dataset, dataset_val, verbose=1)
 print("--- Testing Performance ---")
 classifier_model.model.evaluate(dataset_val)
 
-classifier_model.visualise_training()
+classifier_model.visualise_training(to_file=True, filename="classification.png")
 plt.show()

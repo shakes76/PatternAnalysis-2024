@@ -2,16 +2,17 @@ import os
 
 import numpy as np
 import nibabel as nib
-from tqdm import tqdm
+import torch
 from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as T
 
 class MRIDataset(Dataset):
     """
     Loads the directory of HipMRI prostate cancer nifti images into
     a PyTorch compatible dataset.
     """
-    def __init__(self, directory: str, norm_image: bool=True, 
-                 get_affines: bool=False, early_stop: bool=False, dtype = np.float32):
+    def __init__(self, directory: str, norm_image: bool=True, target_shape=(256, 128),
+                 get_affines: bool=False, early_stop: bool=False, dtype = torch.float32):
         """Initialize the image dataset
 
         Args:
@@ -26,6 +27,8 @@ class MRIDataset(Dataset):
         self.norm_image = norm_image
         self.get_affines = get_affines
         self.dtype = dtype
+        self.resize = T.Resize(target_shape)
+        self.normalize = T.Normalize((0.5), (0.5))
  
     def __len__(self):
         """Return length of the image dataset."""
@@ -49,12 +52,13 @@ class MRIDataset(Dataset):
         if len(in_image.shape) == 3:
             in_image = in_image[:,:,0] # Remove extra dims
         
-        # Update image datatype
-        in_image = in_image.astype(self.dtype) # Update datatype
-
+        # Resize the image
+        in_image = torch.tensor(in_image, dtype=self.dtype).unsqueeze(0)
+        in_image = self.resize(in_image)
+        
         # Normalize
         if self.norm_image:
-            in_image = (in_image - in_image.mean()) / in_image.std()
+            in_image = self.normalize(in_image)
         
         # Get image affines
         if self.get_affines:

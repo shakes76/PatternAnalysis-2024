@@ -1,11 +1,15 @@
 import torch
 from modules import GFNet
 from dataset import ADNIDataset
-from PIL import Image
-import torchvision.transforms as transforms
 
 # Got inspiration from infer.py file of github repo:
 # https://github.com/shakes76/GFNet
+
+class AverageMeter(object):
+    pass
+
+class ProgressMeter(object):
+    pass
 
 def accuracy(output, target ,topk=(1,)):
     pass

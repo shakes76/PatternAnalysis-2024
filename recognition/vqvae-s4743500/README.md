@@ -8,9 +8,7 @@ The main purpose of this project is to improve upon the limitations of a standar
 
 ![VAE Model Architecture](resources/VAEArchitecture.png)  
 
-On the other hand, VQ-VAEs uses discrete latent variabes instead of continuous ones by incorporating vector quantization. This creates clearer and better image reconstructions.  
-
-Refering to the image below [[2]](#2), it shows a simple illustration of a VQ-VAE architecture. The data flow through a VQ-VAE model is made up of 5 key components:  
+On the other hand, VQ-VAEs uses discrete latent variabes instead of continuous ones by incorporating vector quantization. This creates clearer and better image reconstructions. Refering to the image below [[2]](#2), it shows a simple illustration of a VQ-VAE architecture. The data flow through a VQ-VAE model is made up of 5 key components:  
 &nbsp;&nbsp;&nbsp;&nbsp;1. Encoder  
 &nbsp;&nbsp;&nbsp;&nbsp;2. Embedding Space  
 &nbsp;&nbsp;&nbsp;&nbsp;3. Quantization  

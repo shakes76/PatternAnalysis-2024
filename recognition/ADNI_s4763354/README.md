@@ -1,30 +1,48 @@
 # Alzheimer’s disease Image Classification Task
 
-## Introduction
 This project aims to classify brain images from the Alzheimer's Disease Neuroimaging Initiative (ADNI) dataset into two categories: normal and Alzheimer's disease (AD) using the GFNet vision transformer. The objective is to understand the use of Transformer model and its effectiveness on image classification. Ultimately, I hope to achieve an accuracy close to 0.8 on the test set. The GFNet architecture is selected for its efficiency and effectiveness in handling image classification tasks using Global Filters.
-
-## Principle of GFNet
-
-GFNet (Global Filter Network) is a cutting-edge vision transformer model that leverage global filter layers to replace self-attention layers in traditional transformer model. It uses Fourier transforms to handle spatial features effectively by converting it to freqeuncy domains. It therefore learns long-term spatial dependencies in images efficiently. Unlike traditional CNNs, which typically depend on local receptive fields, GFNet applies frequency-domain filtering, performing element-wise multiplication between frequency-domain features and the global filter to capture global relationships across an entire image.  The global filtering mechanism allows the model to focus on both fine details and larger structural patterns in brain scans, making it an ideal choice for medical imaging tasks such as Alzheimer's disease classification. The uses of global features and fourier transform in GFNet reduces the number of parameters and result in faster training times and improved generalization which helps in differentiating the subtle differences between normal and AD brain images.
-
 
 ## Problem
 Alzheimer's disease is a progressive neurodegenerative disorder that leads to cognitive decline and the dementia symptoms will get worse gradually year by year. Therefore, early and accurate diagnosis is very crucial to identify the cause and utilize effective treatment as early as possible. However, brain images could be complex to analyse and classify using simple models. This project addresses the challenge of classifying brain images to assist in the diagnosis of Alzheimer's disease using state-of-the-art Vision Transformer model - GFNet. This also provides a valuable tool for clinicians for automation and efficiency in medical dialogsis.
 
+## Principle of GFNet
 
-## Methodology
-It should also list any dependencies required, including versions and address reproduciblility of results, if applicable.
+GFNet (Global Filter Network) is a cutting-edge vision transformer model that leverage global filter layers to replace self-attention layers in traditional transformer model [1]. It uses Fourier transforms to handle spatial features effectively by converting it to freqeuncy domains. It therefore learns long-term spatial dependencies in images efficiently. Unlike traditional CNNs, which typically depend on local receptive fields, GFNet applies frequency-domain filtering, performing element-wise multiplication between frequency-domain features and the global filter to capture global relationships across an entire image.  The global filtering mechanism allows the model to focus on both fine details and larger structural patterns in brain scans, making it an ideal choice for medical imaging tasks such as Alzheimer's disease classification. Its architecture is shown in the below figure. The uses of global features and fourier transform in GFNet reduces the number of parameters and result in faster training times and improved generalization which helps in differentiating the subtle differences between normal and AD brain images.
+
+ <img src="images/gfnet.png" alt="description" width="300" height="200">
 
 
 
-Two approaches
-1. Train from scratch
-2. Transfer learning 
-### Download Model
-Download the pre-trained [GFNet_H_TI](https://drive.google.com/file/d/1Nrq5sfHD9RklCMl6WkcVrAWI5vSVzwSm/view?usp=sharing) and [GFNet_H_B](https://drive.google.com/file/d/1F900_-yPH7GFYfTt60xn4tu5a926DYL0/view?usp=sharing) and place them in the `ADNI_s4763354/` directory.
+## Data Pre-processing 
 
-## Result
+### Dataset
+The [ADNI brain dataset](https://adni.loni.usc.edu/) is used. It consists of 2D MRI slices labeled as either normal or Alzheimer's disease. Each 2D image is 256 x 240 pixels and represents one of 20 slices from a MRI scan collection. The dataset available in Rangpur is already divided into train and test sets, with 21520 and 9000 images respectively.  
 
+### Preprocessing
+For the pre-processing stage, it is carried out in 'dataset.py'. 
+1. **Transformations** on training set to ensure model robustness:
+   - **Resize**: All images are resized to 224x224 pixels to match the input size required by the GFNet model.
+   - **Data Augmentation**: Random horizontal flipping, random rotations, and color jittering by adjusting brightness are used.
+   - **Normalization**: Pixel values are normalized to standardize the input. 
+
+   For the validation and test datasets, only resizing and normalization are applied, as no augmentation and shuffling is necessary for evaluation.
+
+2. **Train-validation split**: Patient-wise splitting approach is used. Data is split based on unique patient IDs so that all images from the same patient do not appear in both sets. This prevents overfitting. The train-validation ratio is 8:2. 
+
+3. **Balanced Sampling**: Below shows the class distribution of the original training dataset which is slightly imbalanced, with more NC samples than AD samples. To balanace the training set, class weights are first calculated based on the frequency of each class in the training set and a weighted random sampler is used to reduce the overrepresented class (NC) and to slightly increase the representation of the underrepresented class (AD) relative to the total. 
+```
+Class distribution before balancing:
+------------------------------------
+  Class 'AD' (Index 0): 10400 samples
+  Class 'NC' (Index 1): 11120 samples
+Total samples: 21520
+
+Class distribution after balancing:
+------------------------------------
+  Class 'AD' (Index 0): 8563 samples
+  Class 'NC' (Index 1): 8637 samples
+Total samples: 17200
+```
 
 
   Pretrain gfnet_h_ti model using Adam: 
@@ -40,7 +58,13 @@ Download the pre-trained [GFNet_H_TI](https://drive.google.com/file/d/1Nrq5sfHD9
 
    Pretrain gfnet_h_ti model using AdamW: 
 
-
+   <img src="images/image-9.png" alt="description" width="300" height="200">
+   <img src="images/image-10.png" alt="description" width="300" height="200">
+   newmod_hti_adamw.out
+   Early stopping triggered after 39 epochs
+   Final Train Loss: 0.0001, Train Acc: 100.00%
+   Final Val Loss: 0.4848, Val Acc: 92.96%
+   Test Accuracy: 72.17%
 
    Pretrain gfnet_h_b model using Adam optimizer:
 
@@ -77,8 +101,7 @@ Download the pre-trained [GFNet_H_TI](https://drive.google.com/file/d/1Nrq5sfHD9
 
 
 ## References
-- [1] GFNet GitHub: https://github.com/raoyongming/GFNet.git
-
+- [1] Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification. Advances in neural information processing systems, 34, 980-993.
 
 
 

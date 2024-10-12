@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
+from torchvision.models import ResNet18_Weights
 
 
 class SiameseNetwork(nn.Module):
@@ -18,7 +19,7 @@ class SiameseNetwork(nn.Module):
             raise Exception("No model named {} exists in torchvision.models.".format(backbone))
 
         # Create a feature extractor network from the pretrained models
-        self.backbone = models.__dict__[backbone](pretrained=True, progress=True)
+        self.backbone = models.__dict__[backbone](weights=ResNet18_Weights.DEFAULT, progress=True)
 
         # Get the number of features that are outputted by the last layer of feature extractor network
         out_features = list(self.backbone.modules())[-1].out_features

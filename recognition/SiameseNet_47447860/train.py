@@ -5,16 +5,16 @@
 import os
 import argparse
 
-import cv2
+# import cv2
 import numpy as np
-from tqdm import tqdm
+# from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from siamese import SiameseNetwork
-from libs.dataset import Dataset
+from modules import SiameseNetwork
+from dataset_3 import Dataset
 
 if __name__ == "__main__":
     # Set device to CUDA if a CUDA device is available, else CPU
@@ -27,17 +27,31 @@ if __name__ == "__main__":
     save_after = 20  # save the model's image every {20} epoch
 
     # path to write things to - includes summary writer, checkpoints,
-    out_path = "~/project/outputs/"
+    # out_path = "~/project/outputs/"
+    out_path = r'C:\Users\sebas\project\outputs'
 
+    """
     # get data from the dataset.py file
     #images_path = "~/.kaggle/train-image/image" -> for rangpur
     #csv_path = "~/.kaggle/train-metadata.csv" -> for rangpur
     images_path = "~/archive/train-image/image
     csv_path = "~/archive/train-metadata.csv
+    """
 
-    train_data = None
-    val_data = None
-    test_data = None
+    data_path = r'C:\Users\sebas\archive'
+
+    dataset = Dataset(data_path, augment=False)
+    dataloader = DataLoader(dataset, batch_size=8, drop_last=True)
+
+    # Get the splits
+    train_dataset = dataset.get_split('train')
+    val_dataset = dataset.get_split('val')
+    test_dataset = dataset.get_split('test')
+
+    # Create DataLoader for each split
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, num_workers=1)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, num_workers=1)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, num_workers=1)
 
     model = SiameseNetwork()
     model.to(device)
@@ -50,6 +64,18 @@ if __name__ == "__main__":
 
     best_val = 10000000000  # big value -> any new validation loss will be better
 
+    for (img1, img2), target, (class1, class2) in train_loader:
+        print(f"{img1}\n\n")
+        print(f"{img2}\n\n")
+        print(f"{target}\n\n")
+        print(f"{class1}\n\n")
+        print(f"{class2}\n\n")
+        break
+
+    print("done")
+    exit(0)
+
+    """
     # Will have to change the format of the data to fit these for-loop structures
     for epoch in range(num_epochs):
         print("[{} / {}]".format(epoch, num_epochs))
@@ -61,7 +87,7 @@ if __name__ == "__main__":
         total = 0
 
         # Training Loop Start
-        for (img1, img2), target, (class1, class2) in train_data:
+        for (img1, img2), target, (class1, class2) in train_loader:
             img1, img2, target = map(lambda x: x.to(device), [img1, img2, target])
 
             similarity = model(img1, img2)
@@ -134,4 +160,6 @@ if __name__ == "__main__":
     # need to run the predict.py code to test the accuracy of the model on the test data
     prediction = PredictData(test_data)
     prediction.predict()
+    
+    """
 

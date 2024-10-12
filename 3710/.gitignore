@@ -5,3 +5,5 @@ tmp
 *.pyc
 .DS_Store
 __pycache__
+model.pth
+.DS_Store

@@ -26,3 +26,4 @@ if __name__ == "__main__":
 
     # Train model
     train(data, model, optimizer, loss_fn)
+    torch.save(model.state_dict(), "model.pth")

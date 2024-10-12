@@ -9,7 +9,7 @@ import skimage.transform as sk
 
 def to_channels(arr:np.ndarray, dtype = np.uint8) -> np.ndarray:
     channels = np.unique(arr)
-    res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
+    res = np.zeros(arr.shape + (5,), dtype = dtype)
     for c in channels:
         c = int(c)
         res [... , c : c +1][arr == c] = 1
@@ -30,7 +30,8 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     # get fixed size
     num = len (imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching="unchanged")
-    first_case = sk.resize(first_case, (256,144), order=1, preserve_range=True)
+    if not categorical:
+        first_case = sk.resize(first_case, (256,128), order=1, preserve_range=True)
     if len(first_case.shape) == 3:
         first_case = first_case [: ,: ,0] # sometimes extra dims , remove
     if categorical:
@@ -44,7 +45,8 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     for i, inName in enumerate (tqdm(imageNames)):
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching ="unchanged") # read disk only
-        inImage = sk.resize(inImage, (256,144), order=1, preserve_range=True)
+        if not categorical:
+            inImage = sk.resize(inImage, (256,128), order=1, preserve_range=True)
         affine = niftiImage.affine
         if len (inImage.shape ) == 3:
             inImage = inImage[: ,: ,0] # sometimes extra dims in HipMRI_study data
@@ -54,9 +56,7 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
             # ~ inImage = 255. * inImage / inImage . max ()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
-            print(inImage.shape)
             inImage = to_channels(inImage, dtype = dtype)
-            print(inImage.shape)
             images[i ,: ,: ,:] = inImage
         else:
             images[i ,: ,:] = inImage

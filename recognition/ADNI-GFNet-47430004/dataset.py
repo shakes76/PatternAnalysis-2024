@@ -68,7 +68,7 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
     
     return train_loader, test_loader
 
-# Running this code prints:
+# Running the function below, get_mean_std(), prints:
 # tensor(0.1415) tensor(0.2385), so mean = 0.1415, std = 0.2385.
 # This is where the "magic values" in the above section come from.
 

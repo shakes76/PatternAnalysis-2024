@@ -160,13 +160,13 @@ for num_epochs in PROGRESSIVE_EPOCHS[step:]:
         losses_critic.extend(step_losses_critic)
         losses_gen.extend(step_losses_gen)
 
-    # Save models after each set of epochs
-    save_model(gen, critic, step)
-
-    # Plot and save losses after training
-    plot_loss(losses_critic, losses_gen, step)
-
     # Generate and save example images from the generator
     generate_examples(gen, step)
     
     step += 1  # Increment step for the next iteration (increased image size)
+
+# Save models after each set of epochs
+save_model(gen, critic, step)
+
+# Plot and save losses after training
+plot_loss(losses_critic, losses_gen, step)

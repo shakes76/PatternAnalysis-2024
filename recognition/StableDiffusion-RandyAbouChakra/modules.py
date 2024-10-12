@@ -8,12 +8,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class NoiseScheduler:
     def __init__(self, timesteps=1000):
         self.timesteps = timesteps
-        self.betas = torch.linspace(1e-4, 0.02, timesteps)
-        self.alphas = torch.cumprod(1 - self.betas, dim=0)
+        self.betas = torch.linspace(1e-4, 0.02, timesteps).to(device)
+        self.alphas = torch.cumprod(1 - self.betas, dim=0).to(device)
 
     def add_noise(self, x, t):
-        noise = torch.randn_like(x)
-        alpha_t = self.alphas[t].view(-1, 1, 1, 1)
+        noise = torch.randn_like(x).to(device)
+        alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x.device)
         return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise
 
 # UNet: Processes data in latent space with skip connections (simplified for demonstration)
@@ -76,9 +76,9 @@ class Decoder(nn.Module):
 class StableDiffusionModel(nn.Module):
     def __init__(self, latent_dim=128, timesteps=1000):
         super(StableDiffusionModel, self).__init__()
-        self.encoder = Encoder(latent_dim=latent_dim)
-        self.unet = UNet(latent_dim=latent_dim)
-        self.decoder = Decoder(latent_dim=latent_dim)
+        self.encoder = Encoder(latent_dim=latent_dim).to(device)
+        self.unet = UNet(latent_dim=latent_dim).to(device)
+        self.decoder = Decoder(latent_dim=latent_dim).to(device)
         self.noise_scheduler = NoiseScheduler(timesteps=timesteps)
         self.timesteps = timesteps
 

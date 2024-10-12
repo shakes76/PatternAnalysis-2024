@@ -1,6 +1,7 @@
 import torch
 import math
 import torch.nn as nn
+from timm.models.layers import DropPath
 
 # Got inspiration from main_gfnet.py, gfnet.py files of the following github repo:
 # https://github.com/shakes76/GFNet
@@ -55,10 +56,17 @@ class GlobalFilter(nn.Module):
 
 class Block(nn.Module):
     def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
-        pass
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.filter = GlobalFilter(dim, h=h, w=w)
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
     def forward(self, x):
-        pass
+        x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
+        return x
 
 class PatchEmbed(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):

@@ -1,9 +1,7 @@
 
 from tkinter import filedialog
-import pydicom as dicom
 import os
 import matplotlib.pyplot as plt
-import time
 
 BENIGN = 0
 MALIGNANT = 1

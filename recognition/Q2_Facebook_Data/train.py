@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from modules import GNNModel , EnhancedGNN
+from modules import GNNModel
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import load_facebook_data, split_data
 import matplotlib.pyplot as plt
@@ -94,3 +94,65 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=1e-4)
     plt.show()
 
     return model
+
+def test_model(data, model):
+    """
+    This function tests the GNN model on the give data path.
+    The test accuracy is printed to the console.
+
+    Parameters:
+    -----------
+    data : torch_geometric.data.Data
+        The input data for the model
+    model : torch.nn.Module
+        The trained model - GNN Model
+    
+    Returns:
+    --------
+    test_acc : float
+        The test accuracy of the model   
+
+    """
+    model.eval()
+    with torch.no_grad():
+        out = model(data.x, data.edge_index)
+        pred = out.argmax(dim=1)
+        correct = pred[data.test_mask] == data.y[data.test_mask]
+        test_acc = int(correct.sum()) / int(data.test_mask.sum())
+        print(f"Test Accuracy: {test_acc:.4f}")
+        return test_acc
+
+
+if __name__ == '__main__':
+    """
+    This main function trains a GNN model on the Facebook dataset.
+    The data is loaded using the load_facebook_data function from the dataset module.
+    The model is trained using the train_model function(GNN).
+    The trained model is tested using the test_model function.
+    The model is saved to a file using torch.save.
+    """
+    # File paths
+    path = "recognition/Q2_Facebook_Data/facebook_large"
+    features_path = f"{path}/musae_facebook_features.json"
+    edges_path = f"{path}/musae_facebook_edges.csv"
+    target_path = f"{path}/musae_facebook_target.csv"
+
+
+    # load the data
+    data = load_facebook_data(features_path, edges_path, target_path)  
+
+
+    # initialise the model
+    model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
+
+    # train the model
+    model = train_model(data, model)
+
+
+    # test the model
+    test_model(data, model)
+
+
+    # save the model
+    modelName = "recognition/modelEnhance1.pth"
+    torch.save(model.state_dict(), modelName)

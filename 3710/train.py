@@ -26,4 +26,5 @@ if __name__ == "__main__":
 
     # Train model
     train(data, model, optimizer, loss_fn)
+    print(f"Number of training nodes: {data.train_mask.sum().item()}")
     torch.save(model.state_dict(), "model.pth")

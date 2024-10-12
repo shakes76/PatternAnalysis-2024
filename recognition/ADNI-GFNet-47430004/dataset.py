@@ -17,8 +17,8 @@ class ADNIDataset(Dataset):
         images = []
         labels = []
 
-        label_names = {"AD": 1, "NC": 0}
         sub_directory = "train" if self.train else "test"
+        label_names = {"AD": 1, "NC": 0}
 
         for label in label_names.keys():
             label_directory = os.path.join(self.root_dir, sub_directory, label)
@@ -43,6 +43,8 @@ class ADNIDataset(Dataset):
         return image, label
 
 def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
+    if data_dir is None:
+        data_dir = "/home/groups/comp3710/ADNI/AD_NC"
     transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
         tf.CenterCrop(crop_size),
@@ -63,3 +65,36 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
     
     return train_loader, test_loader
+
+def get_mean_std():
+
+    data_dir = "/home/groups/comp3710/ADNI/AD_NC"
+
+    transform = tf.Compose([
+        tf.Grayscale(num_output_channels=1),
+        tf.CenterCrop(224),
+        tf.Resize((224, 224)),
+        tf.ToTensor(),
+    ])
+    
+    train_dataset = ADNIDataset(root_dir=data_dir, transform=transform, train=True)
+    
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+
+    num_images = 0
+    mean = 0.0
+    std = 0.0
+    for images, _ in train_loader:
+        batch_size = images.size(0)
+        images = images.view(batch_size, -1)
+        mean += images.mean(1).sum(0)
+        std += images.std(1).sum(0)
+        num_images += batch_size
+    
+    mean /= num_images
+    std /= num_images
+
+    print(mean, std)
+
+if __name__ == '__main__':
+    get_mean_std()

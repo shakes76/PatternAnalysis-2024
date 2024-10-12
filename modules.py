@@ -158,37 +158,68 @@ class UNet3D(nn.Module):
     def __init__(self):
         super(UNet3D, self).__init__()
 
+        # # Encoder
+        # self.enc11 = NormConv3D(1, 16, kernel_size=3, stride=1, padding=1)
+        # self.enc12 = NormConv3D(16, 32, kernel_size=3, stride=1, padding=1)
+        # self.pool1 = nn.MaxPool3d(kernel_size=2, stride=2)
+
+        # self.enc21 = NormConv3D(32, 32, kernel_size=3, stride=1, padding=1)
+        # self.enc22 = NormConv3D(32, 64, kernel_size=3, stride=1, padding=1)
+        # self.pool2 = nn.MaxPool3d(kernel_size=2, stride=2)
+
+        # self.enc31 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
+        # self.enc32 = NormConv3D(64, 128, kernel_size=3, stride=1, padding=1)
+        # self.pool3 = nn.MaxPool3d(kernel_size=2, stride=2)
+
+        # # Bottleneck
+        # self.botteneck1 = NormConv3D(128, 128, kernel_size=3, stride=1, padding=1)
+        # self.botteneck2 = NormConv3D(128, 256, kernel_size=3, stride=1, padding=1)
+
+        # # Decoder
+        # self.up1 = NormConvTranspose3D(256, 256, kernel_size=2, stride=2)
+        # self.dec11 = NormConv3D(384, 128, kernel_size=3, stride=1, padding=1)
+        # self.dec12 = NormConv3D(128, 128, kernel_size=3, stride=1, padding=1)
+
+        # self.up2 = NormConvTranspose3D(128, 128, kernel_size=2, stride=2)
+        # self.dec21 = NormConv3D(192, 64, kernel_size=3, stride=1, padding=1)
+        # self.dec22 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
+
+        # self.up3 = NormConvTranspose3D(64, 64, kernel_size=2, stride=2)
+        # self.dec31 = NormConv3D(96, 32, kernel_size=3, stride=1, padding=1)
+        # self.dec32 = NormConv3D(32, 32, kernel_size=3, stride=1, padding=1)
+
+        # self.final = nn.Conv3d(32, 6, kernel_size=1)  # TODO check if this is right
         # Encoder
-        self.enc11 = NormConv3D(1, 16, kernel_size=3, stride=1, padding=1)
-        self.enc12 = NormConv3D(16, 32, kernel_size=3, stride=1, padding=1)
+        self.enc11 = NormConv3D(1, 8, kernel_size=3, stride=1, padding=1)
+        self.enc12 = NormConv3D(8, 16, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.MaxPool3d(kernel_size=2, stride=2)
 
-        self.enc21 = NormConv3D(32, 32, kernel_size=3, stride=1, padding=1)
-        self.enc22 = NormConv3D(32, 64, kernel_size=3, stride=1, padding=1)
+        self.enc21 = NormConv3D(16, 16, kernel_size=3, stride=1, padding=1)
+        self.enc22 = NormConv3D(16, 32, kernel_size=3, stride=1, padding=1)
         self.pool2 = nn.MaxPool3d(kernel_size=2, stride=2)
 
-        self.enc31 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
-        self.enc32 = NormConv3D(64, 128, kernel_size=3, stride=1, padding=1)
+        self.enc31 = NormConv3D(32, 32, kernel_size=3, stride=1, padding=1)
+        self.enc32 = NormConv3D(32, 64, kernel_size=3, stride=1, padding=1)
         self.pool3 = nn.MaxPool3d(kernel_size=2, stride=2)
 
         # Bottleneck
-        self.botteneck1 = NormConv3D(128, 128, kernel_size=3, stride=1, padding=1)
-        self.botteneck2 = NormConv3D(128, 256, kernel_size=3, stride=1, padding=1)
+        self.botteneck1 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
+        self.botteneck2 = NormConv3D(64, 128, kernel_size=3, stride=1, padding=1)
 
         # Decoder
-        self.up1 = NormConvTranspose3D(256, 256, kernel_size=2, stride=2)
-        self.dec11 = NormConv3D(384, 128, kernel_size=3, stride=1, padding=1)
-        self.dec12 = NormConv3D(128, 128, kernel_size=3, stride=1, padding=1)
+        self.up1 = NormConvTranspose3D(128, 128, kernel_size=2, stride=2)
+        self.dec11 = NormConv3D(192, 64, kernel_size=3, stride=1, padding=1)
+        self.dec12 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
 
-        self.up2 = NormConvTranspose3D(128, 128, kernel_size=2, stride=2)
-        self.dec21 = NormConv3D(192, 64, kernel_size=3, stride=1, padding=1)
-        self.dec22 = NormConv3D(64, 64, kernel_size=3, stride=1, padding=1)
+        self.up2 = NormConvTranspose3D(64, 64, kernel_size=2, stride=2)
+        self.dec21 = NormConv3D(96, 32, kernel_size=3, stride=1, padding=1)
+        self.dec22 = NormConv3D(32, 32, kernel_size=3, stride=1, padding=1)
 
-        self.up3 = NormConvTranspose3D(64, 64, kernel_size=2, stride=2)
-        self.dec31 = NormConv3D(96, 32, kernel_size=3, stride=1, padding=1)
-        self.dec32 = NormConv3D(32, 32, kernel_size=3, stride=1, padding=1)
+        self.up3 = NormConvTranspose3D(32, 32, kernel_size=2, stride=2)
+        self.dec31 = NormConv3D(48, 16, kernel_size=3, stride=1, padding=1)
+        self.dec32 = NormConv3D(16, 16, kernel_size=3, stride=1, padding=1)
 
-        self.final = nn.Conv3d(32, 6, kernel_size=1)  # TODO check if this is right
+        self.final = nn.Conv3d(16, 6, kernel_size=1)  # TODO check if this is right
 
     def forward(self, x):
         # Encocder foward pass

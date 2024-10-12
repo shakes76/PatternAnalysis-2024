@@ -4,6 +4,7 @@ import nibabel as nib
 from tqdm import tqdm
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 # Load the images and basic data preprocessing
 def load_images(directory):
@@ -24,10 +25,23 @@ def load_images(directory):
                     print(f"Error loading {file_path}: {e}")
     return images,labels
 
+# Get images and labels for test
+def get_test_dataset():
+    test_images,test_labels = load_images('test')
+    return test_images, test_labels
+
+# Split and get images and labels for train and validation
+def get_train_validation_dataset():
+    train_images, train_labels = load_images('train')
+    train_images, val_images, train_labels, val_labels = train_test_split(
+        train_images, train_labels, test_size=0.15, random_state=42, stratify=train_labels
+    )
+    return train_images, val_images, train_labels, val_labels
+
 # Test the result
 if __name__ == "__main__":
-    train_images, train_labels = load_images('train')
-    test_images,test_labels = load_images('test')
+    train_images, val_images, train_labels, val_labels = get_train_validation_dataset()
+    test_images,test_labels = get_test_dataset()
 
     print(f"Loaded {len(train_images)} training images.")
     print(f"Shape of the image:{train_images[0].shape}")

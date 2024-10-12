@@ -1,5 +1,5 @@
 import torch
-from modules import GFNetClassifier
+from modules import GFNet
 from dataset import ADNIDataset
 from PIL import Image
 import torchvision.transforms as transforms

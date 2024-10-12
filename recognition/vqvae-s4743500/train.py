@@ -14,9 +14,9 @@ from skimage.metrics import structural_similarity as ssim
 # Hyperparameters
 image_size = 256  # Image size for resizing
 batch_size = 32  # Adjust this based on available memory
-num_epochs = 20  # Number of training epochs
+num_epochs = 25  # Number of training epochs
 learning_rate = 0.001  # PLAY AROUND WITH 0.001 or 0.0001 Learning rate for optimizer
-beta = 0.25
+beta = 0.25  # EXPERIMENT WITH 0.1, 0.2, OR 0.5 IF IMAGE IS NOT CLEAR ENOUGH
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define data transformations
@@ -28,9 +28,19 @@ transform = transforms.Compose([
 ])
 
 # Dataset and DataLoader
-dataroot = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'  # Path to MRI training data
-dataset = ProstateMRIDataset(img_dir=dataroot, transform=transform)
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+train_data_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train' # Path to MRI training data
+test_data_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test' # Path to MRI test data
+val_data_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate' # Path to MRI validation data
+
+# Loads datasets using the custom data loader
+train_dataset = ProstateMRIDataset(img_dir=train_data_path, transform=transform)
+test_dataset = ProstateMRIDataset(img_dir=test_data_path, transform=transform)
+val_dataset = ProstateMRIDataset(img_dir=val_data_path, transform=transform)
+
+# Creates DataLoaders for each dataset
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
 # Initialize the VQ-VAE model
 model = VQVAE(
@@ -40,7 +50,7 @@ model = VQVAE(
     num_residual_layers=2,
     num_residual_hiddens=32,
     embedding_dim=128, # Set to 64, but try 128 if images are not clear enough
-    num_embeddings=256,
+    num_embeddings=512,
     decay=0.99,
     epsilon=1e-5
 ).to(device)
@@ -60,7 +70,7 @@ def train():
     model.train()
     for epoch in range(num_epochs):
         total_loss = 0
-        for batch_idx, images in enumerate(dataloader):
+        for batch_idx, images in enumerate(train_loader):
             images = images.to(device)  # Move images to the appropriate device
 
             # Forward pass through the VQ-VAE model
@@ -83,7 +93,7 @@ def train():
 
             # Print log info
             if batch_idx % eval_every == 0:
-                print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{batch_idx}/{len(dataloader)}], '
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{batch_idx}/{len(train_loader)}], '
                       f'Loss: {loss.item():.4f}, Recon Loss: {recon_loss.item():.4f}, '
                       f'Commitment Loss: {commitment_loss.item():.4f}')
 

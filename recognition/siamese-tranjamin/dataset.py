@@ -1,85 +1,52 @@
-import pydicom
-import os
-import numpy as np
-from enum import Enum
 import tensorflow as tf
-from typing import Optional
-import matplotlib.pyplot as plt
 import random
-import math
-import pandas as pd
 
-class ImageUniformityOptions(Enum):
-    CROP = 0
-    RANDOMCROP = 1
-    RESIZE = 2
-
-class DicomDataset():
+class BalancedMelanomaDataset():
     def __init__(self, 
-                 folder: str, 
-                 resize_option: ImageUniformityOptions, 
-                 limit: Optional[int] =None, 
-                 resize_size: Optional[tuple[int, int]] = None,
-                 normalise: bool = True,
-                 stratify: bool = True,
-                 **kwargs):
-        dicom_images = []
-        dicom_labels = []
+                 image_shape=(28, 28), 
+                 batch_size=128,
+                 validation_split=0.2):
+        dataset_seed = random.randint(0, 10000)
 
-        labels = pd.read_csv(os.path.join(folder, "../train_labels.csv"))
-        positive_labels = labels.loc[labels["target"] == 1]
-        negative_labels = labels.loc[labels["target"] == 0]
+        dataset = tf.keras.preprocessing.image_dataset_from_directory(
+            "datasets/balanced", 
+            labels="inferred", 
+            label_mode="binary",
+            shuffle=True,
+            validation_split=validation_split,
+            subset="training",
+            seed=dataset_seed,
+            image_size=image_shape,
+            batch_size=batch_size,
+            class_names=["positive", "negative"]
+        )
 
-        def process_image(filename):
-            dicom = pydicom.dcmread(os.path.join(folder, filename))
-            image = dicom.pixel_array
-            if normalise:
-                image = image/255.
-            
-            match resize_option:
-                case ImageUniformityOptions.RESIZE:
-                    image = tf.image.resize(image, resize_size)
+        dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
+            "datasets/balanced", 
+            labels="inferred", 
+            label_mode="binary",
+            shuffle=True,
+            validation_split=validation_split,
+            subset="validation",
+            seed=dataset_seed,
+            image_size=image_shape,
+            batch_size=batch_size,
+            class_names=["positive", "negative"]
+            )
 
-            return image
+        data_augmenter = tf.keras.Sequential([
+            # tf.keras.layers.RandomFlip("horizontal_and_vertical"),
+            # tf.keras.layers.RandomRotation(0.2)
+        ])
 
-        if stratify:
-            for ind, filename in enumerate(positive_labels["image_name"]):
-                if limit is not None and math.floor(limit/2) == ind:
-                    break
-                image = process_image(filename + ".dcm")
-                label = 1
+        dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
 
-                dicom_images.append(image)
-                dicom_labels.append(label)
-            for ind, filename in enumerate(negative_labels["image_name"]):
-                if limit is not None and math.floor(limit/2) == ind:
-                    break
-                image = process_image(filename + ".dcm")
-                label = 0
+        self.dataset = dataset.prefetch(tf.data.AUTOTUNE)
+        self.dataset_val = dataset_val.prefetch(tf.data.AUTOTUNE)
 
-                dicom_images.append(image)
-                dicom_labels.append(label)
-        else:
-            for ind, filename in labels["image_name"]:
-                if ind == limit:
-                    break
-                image = process_image(filename + ".dcm")
-                label = labels.loc[labels["image_name"] == filename].iloc[0]["target"]
-
-                dicom_images.append(image)
-                dicom_labels.append(label)
-
-        self.dicom_labels = np.array(dicom_labels)
-        self.dicom_images = np.array(dicom_images)
+    def training_dataset(self):
+        return self.dataset
     
-    def __len__(self):
-        return self.dicom_images.shape[0]
-    
-    def show_sample_images(self, n_images):
-        size = math.ceil(math.sqrt(n_images))
-        fig, axs = plt.subplots(size, size)
-        for i in range(n_images):
-            plt.subplot(size, size, i + 1)
-            index = random.randint(0, len(self) - 1)
-            plt.imshow(self.dicom_images[index])
-        plt.show()
+    def validation_dataset(self):
+        return self.dataset_val
+        

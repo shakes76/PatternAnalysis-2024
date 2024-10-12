@@ -1,6 +1,7 @@
 import torch
-from torchvision import transforms
-from modules_BEST import GFNet, GFNetPyramid
+import torch.nn.functional as F
+from torchvision import transforms, datasets
+from torch.utils.data import DataLoader
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,56 +9,51 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import os
 import random
+from modules_BEST import GFNetPyramid
 import torch.nn as nn
-from torchvision import datasets
-from torch.utils.data import DataLoader
 
-def predict_and_visualize(model, image_path, class_names=['NC', 'AD']):
-    # Load and preprocess the image
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
+def show_example_images(model, test_loader, num_examples=5, class_names=['NC', 'AD']):
+    model.eval()
+    all_examples = []
     
-    image = Image.open(image_path).convert('RGB')  # Convert to RGB
-    image_tensor = transform(image)
-    
-    # Add normalization after ensuring 3 channels
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    image_tensor = normalize(image_tensor)
-    
-    image_tensor = image_tensor.unsqueeze(0).to(device)
-
-    # Make prediction
     with torch.no_grad():
-        outputs = model(image_tensor)
-        probabilities = torch.nn.functional.softmax(outputs, dim=1)
-        _, predicted = outputs.max(1)
+        for images, labels in test_loader:
+            images = images.to(device)
+            outputs = model(images)
+            probabilities = F.softmax(outputs, dim=1)
+            _, preds = torch.max(outputs, 1)
+            
+            for img, pred, prob, label in zip(images, preds, probabilities, labels):
+                all_examples.append((img, pred, prob, label))
     
-    predicted_class = class_names[predicted.item()]
-    confidence = probabilities[0][predicted.item()].item()
-
-    # Visualize the image and prediction
-    plt.figure(figsize=(10, 5))
-    plt.subplot(1, 2, 1)
-    plt.imshow(image)
-    plt.title(f'Input Image\nPredicted: {predicted_class} ({confidence:.2%})')
-    plt.axis('off')
-
-    plt.subplot(1, 2, 2)
-    bars = plt.bar(class_names, probabilities[0].cpu().numpy())
-    plt.title('Class Probabilities')
-    plt.ylabel('Probability')
-    plt.ylim(0, 1)
-
-    for rect in bars:
-        height = rect.get_height()
-        plt.text(rect.get_x() + rect.get_width()/2., height,
-                 f'{height:.2%}',
-                 ha='center', va='bottom')
-
+    # Randomly select num_examples from all_examples
+    selected_examples = random.sample(all_examples, min(num_examples, len(all_examples)))
+    
+    # Plot examples
+    fig, axes = plt.subplots(1, len(selected_examples), figsize=(20, 4))
+    fig.suptitle('Example Classifications', fontsize=16)
+    
+    for i, (img, pred, prob, label) in enumerate(selected_examples):
+        # Denormalize the image
+        mean = torch.tensor([0.485]).view(1, 1, 1).to(device)
+        std = torch.tensor([0.229]).view(1, 1, 1).to(device)
+        img = img * std + mean
+        
+        img = img[0].cpu().numpy()
+        
+        axes[i].imshow(img, cmap='gray')
+        
+        predicted_class = class_names[pred.item()]
+        true_class = class_names[label.item()]
+        confidence = prob[pred.item()].item()
+        
+        title = f'Pred: {predicted_class}\nTrue: {true_class}\nConf: {confidence:.2f}'
+        axes[i].set_title(title, color='green' if pred == label else 'red')
+        axes[i].axis('off')
+    
     plt.tight_layout()
-    plt.savefig('predict/predict_image.png')
+    plt.savefig('predict/example_classifications.png')
+    plt.close()
 
 def plot_confusion_matrix(all_labels, all_preds, class_names=['NC', 'AD']):
     cm = confusion_matrix(all_labels, all_preds)
@@ -67,15 +63,17 @@ def plot_confusion_matrix(all_labels, all_preds, class_names=['NC', 'AD']):
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.savefig('predict/confusion_matrix.png')
+    plt.close()
 
 def main(model_path, test_dir, num_samples=5):
-    # Load the model
     global device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # Create the model
     model = GFNetPyramid(
         img_size=224, 
         patch_size=4, 
-        num_classes=2,  
+        num_classes=2,
         embed_dim=[96, 192, 384, 768],
         depth=[2, 2, 10, 2],
         mlp_ratio=[4, 4, 4, 4],
@@ -95,18 +93,20 @@ def main(model_path, test_dir, num_samples=5):
     model = model.to(device)
     model.eval()
 
-    # Get test data loader
+    # Define the transformations
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
+        transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.shape[0] == 1 else x),  # Ensure 3 channels
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
+
+    # Create the dataset and data loader
     test_dataset = datasets.ImageFolder(root=test_dir, transform=transform)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, pin_memory=True)
-    
+
     all_preds = []
     all_labels = []
-    all_image_paths = []
 
     # Run predictions on all test images
     for images, labels in test_loader:
@@ -116,14 +116,9 @@ def main(model_path, test_dir, num_samples=5):
             _, preds = torch.max(outputs, 1)
         all_preds.extend(preds.cpu().numpy())
         all_labels.extend(labels.cpu().numpy())
-        
-    # Correctly handle the image paths
-    all_image_paths = [os.path.join(test_dir, sample[0].split('/')[-2], sample[0].split('/')[-1]) for sample in test_loader.dataset.samples]
 
-    # Visualize a few random samples
-    sample_indices = random.sample(range(len(all_image_paths)), num_samples)
-    for idx in sample_indices:
-        predict_and_visualize(model, all_image_paths[idx])
+    # Show example images
+    show_example_images(model, test_loader, num_samples)
 
     # Plot confusion matrix
     plot_confusion_matrix(all_labels, all_preds)

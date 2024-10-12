@@ -72,37 +72,36 @@ class UNet(nn.Module):
 
         return x
 
+# Encoder: reduces the image to a latent representation
 class Encoder(nn.Module):
-    def __init__(self, latent_dim=256):
+    def __init__(self, in_channels=3, latent_dim=128):
         super(Encoder, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1)
-        self.fc = nn.Linear(256 * 8 * 8, latent_dim)
+        self.layers = nn.Sequential(
+            nn.Conv2d(in_channels, 64, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, latent_dim, 4, stride=2, padding=1)
+        )
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        return x
+        return self.layers(x)
 
+# Decoder: reconstructs the image from the latent representation
 class Decoder(nn.Module):
-    def __init__(self, latent_dim=256):
+    def __init__(self, latent_dim=128, out_channels=3):
         super(Decoder, self).__init__()
-        self.fc = nn.Linear(latent_dim, 256 * 8 * 8)
-        self.conv3 = nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
-        self.conv2 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
-        self.conv1 = nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1)
+        self.layers = nn.Sequential(
+            nn.ConvTranspose2d(latent_dim, 128, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, out_channels, 4, stride=2, padding=1),
+            nn.Tanh()  # To keep the output within [-1, 1] range
+        )
 
     def forward(self, x):
-        x = self.fc(x)
-        x = x.view(x.size(0), 256, 8, 8)
-        x = F.relu(self.conv3(x))
-        x = F.relu(self.conv2(x))
-        x = torch.sigmoid(self.conv1(x))
-        return x
+        return self.layers(x)
     
 
 class LatentDiffusionModel(nn.Module):

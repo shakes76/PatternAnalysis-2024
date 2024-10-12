@@ -1,20 +1,17 @@
-import nibabel as nib
-import numpy as np
+import torch
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv
 
-# 读取 NIfTI 图像
-img = nib.load('/Users/zhangxiangxu/3710_data/data/HipMRI_study_complete_release_v1/semantic_labels_anon/Case_004_Week0_SEMANTIC_LFOV.nii.gz')
+class GNN(torch.nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(GNN, self).__init__()
+        self.conv1 = GCNConv(in_channels, 16)
+        self.conv2 = GCNConv(16, out_channels)
 
-# 获取图像数据
-data = img.get_fdata()
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = self.conv2(x, edge_index)
+        return F.log_softmax(x, dim=1)
 
-# 遍历每一层切片并打印其形状
-for i in range(data.shape[2]):
-    slice_shape = data[:, :, i].shape
-    print(f"Shape of slice {i}: {slice_shape}")
-
-
-# 获取图像数据
-data = img.get_fdata()
-
-# 打印整个图像数据的形状
-print(f"Combined shape of all slices: {data.shape}")

@@ -16,19 +16,30 @@ import numpy as np
 
 """
 """
-class NoiceMappingNetwork(nn.Module):
-
-    def __init__(self, z_dim, w_dim, num_layers, activation=nn.ReLU):
-        """
-        :param z_dim: input latent dimensionality
-        :param w_dim: intermediate latent dimensionality
-        :param num_layers: number of mapping layers
-        :param activation: activation function
-        """
+class MappingNetwork(nn.Module):
+    def __init__(self, z_dim, w_dim):
         super().__init__()
+        self.mapping = nn.Sequential(
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim),
+            nn.ReLU(),
+            EqualizedLinear(z_dim, w_dim)
+        )
 
     def forward(self, x):
-        pass
+        x = x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)  # for PixelNorm
+        return self.mapping(x)
 
 
 class Generator(nn.Module):
@@ -105,11 +116,6 @@ class StyleBlock(nn.Module):
             x = x + self.scale_noise[None, :, None, None] * noise
         return self.activation(x + self.bias[None, :, None, None])
 
-    def forward(self, x, w):
-
-        style = self.to_style(w)
-        x = self.conv(x, style)
-        return self.activation(x + self.bias[None, :, None, None])
 
 class ToRGB(nn.Module):
 
@@ -121,6 +127,11 @@ class ToRGB(nn.Module):
         self.conv = Conv2dWeightModulate(features, 3, kernel_size=1, demodulate=False)
         self.bias = nn.Parameter(torch.zeros(3))
         self.activation = nn.LeakyReLU(0.2, True)
+
+    def forward(self, x, w):
+        style = self.to_style(w)
+        x = self.conv(x, style)
+        return self.activation(x + self.bias[None, :, None, None])
 
 class EqualizedWeight(nn.Module):
     """

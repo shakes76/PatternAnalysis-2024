@@ -131,6 +131,7 @@ if __name__ == "__main__":
         critic = Discriminator(LOG_RESOLUTION)
         mapping_network = MappingNetwork(Z_DIM, W_DIM)
         path_length_penalty = PathLengthPenalty(0.99)
+        os.mkdir('model')
         os.mkdir('model/stylegan2ANDC')
 
     else:

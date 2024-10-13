@@ -10,15 +10,16 @@
 - [References](#references)
 
 ## Model and Problem Description
-A siamese network is a neural network that takes a pair of input vectors and produces output embeddings in a lower-dimensional space that can be used to compare the original inputs. The idea of a siamese network was first proposed for signature verification [1], but it has since been applied to facial recognition and verification problems [4], as well as pedestrian tracking via video surveillance [3]. The output embeddings can be compared via some distance metric (e.g. Euclidean distance or cosine similarity) to quantify the "closeness" of the original input pair. During prediction, one of the vectors in the pair has a known label and is used as a reference for the other vector so that it can be classified based on how similar it is to known labelled images.
+A siamese network is a neural network that takes a pair of input vectors and produces output embeddings in a lower-dimensional space that can be used to compare the original inputs. The idea of a siamese network was first proposed for signature verification [2], but it has since been applied to facial recognition and verification problems [5], as well as pedestrian tracking via video surveillance [4]. The output embeddings can be compared via some distance metric (e.g. Euclidean distance or cosine similarity) to quantify the "closeness" of the original input pair. During prediction, one of the vectors in the pair has a known label and is used as a reference for the other vector so that it can be classified based on how similar it is to known labelled images.
 
-In this project, we apply the siamese network architecture to skin lesion analysis, in particular the dataset from the ISIC 2020 Melanoma Classification Challenge [5]. The challenge is to identify the presence of melanoma, a deadly and rare skin cancer, in images of skin lesions.
+In this project, we apply the siamese network architecture to skin lesion analysis, in particular the dataset from the ISIC 2020 Melanoma Classification Challenge [6]. The challenge is to identify the presence of melanoma, a deadly and rare skin cancer, in images of skin lesions.
 
 ## Model Architecture
-The siamese network architecture consists of a pair of neural networks with shared weights. In this project, the so-called "sister" networks we use are ResNets [2], in particular ResNet50s. The key characteristic of residual networks are that the weight layers learn residual functions with respect to the layer inputs as opposed to unreferenced functions. They have been shown empirically to be easier to optimise, and can perform better with increased depth despite deeper neural networks being typically more difficult to train. The output from the ResNets are pass through a global average pooling layer and flattened before being downsampled via a series of fully connected layers to some lower-dimensional space. Once we have embeddings from both inputs in the pair, they can be compared via e.g. Euclidean distance. An example architecture can be seen below.
+The siamese network architecture consists of a pair of neural networks with shared weights. In this project, the so-called "sister" networks we use are ResNets [3], in particular ResNet50s. The key characteristic of residual networks are that the weight layers learn residual functions with respect to the layer inputs as opposed to unreferenced functions. They have been shown empirically to be easier to optimise, and can perform better with increased depth despite deeper neural networks being typically more difficult to train. The output from the ResNets are pass through a global average pooling layer and flattened before being downsampled via a series of fully connected layers to some lower-dimensional space. Once we have embeddings from both inputs in the pair, they can be compared via e.g. Euclidean distance. An example architecture can be seen below.
 
 ![Siamese network example architecture](assets/siamese-network-example-architecture.png)
-*Siamese network example architecture with a ResNet base [6].*
+
+*Siamese network example architecture with a ResNet base [7].*
 
 The ResNet50 implementation in PyTorch has an additional fully connected downsampling layer from 2048 down to 1000 features, which we remove and replace with our own fully connected layers afterwards.
 
@@ -32,7 +33,7 @@ where $\mathbb{I}(\cdot)$ is the indicator function, $y = 0$ if the pair is simi
 
 Intuitively, the network is penalised if two similar vectors are far away in the embedded space, or if two dissimilar vectors are close together in the embedded space. The margin is the threshold at which we start penalising via the loss, and typically the same margin is used when predicting to determine whether a pair is similar or dissimilar.
 
-*As a side note, other $L_p$ norms (and indeed other distance metrics) can also be used in place of the Euclidean norm.*
+*As a side note, other Lp norms (and indeed other distance metrics) can also be used in place of the Euclidean norm.*
 
 ## Dependencies and Reproducibility
 The full list of dependencies and exact versions can be found in [environment.yml](./environment.yml). The Conda environment can replicated using the following command:
@@ -126,13 +127,22 @@ Below are loss curves from training several models with margins 0.3 and 0.5 and 
 
 ## Training Details
 
-Below are some details and insights from my training process.
+Below are some details and insights from the training process.
+
+- The training data was preprocessed by randomly applying any one or multiple of horizontal flips, random crops, and random rotations. This allows even the same images to be slightly different when resampled multiple times. Random transforms have been shown empirically to be effective for reducing overfitting and improving generalisation [1].
+- A per-class sampler was used to ensure that an equal proportion of positive and negative pairs were sampled in each mini-batch. Since the dataset is imbalanced with many more benign images than malignant images, this means that some images may be sampled multiple times during training.
+- Contrastive loss was used as described above.
+- The Adam optimiser was used with varying learning rates, as shown above.
+- Miners were experimented with to select the hardest pairs to classify during training. However, from my experience they were not very effective, and tended to stagnate training.
+- While training models for longer tended to decrease the loss steadily, the performance (measured via precision, recall, and AUROC) tended to also get worse. Accuracy tended to get better, but is not a good representation of the model performance given that the dataset is imbalanced.
+- When classifying unseen images, I experimented with using KNN with the embeddings of the reference images as neighbouring points. This was not very effective. In my experience, a better classifier was a "majority vote" classifier (implemented in the code as `MajorityClassifier`), which pairs an unseen image to all reference images, uses the margin as a threshold to compute its similarity/dissimilarity from each reference image, and classifies it based on the majority vote. This is very similar to KNN, but a key difference is that it explicitly uses the margin during classification, which I believe is what made it more effective.
 
 ## References
 
-- [1]: Bromley, J.; Guyon, I.; LeCun, Y.; Säckinger, E.; Shah, R. (1994). ["Signature verification using a "Siamese" time delay neural network"](https://papers.neurips.cc/paper_files/paper/1993/file/288cc0ff022877bd3df94bc9360b9c5d-Paper.pdf).
-- [2]: He, K.; Zhang, X.; Ren, S.; Sun, J. (2015). [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385).
-- [3]: Leal-Taixé, L.; Canton-Ferrer, C., and Schindler, K. (2016). ["Learning by tracking: Siamese CNN for robust target association"](https://www.ethz.ch/content/dam/ethz/special-interest/baug/igp/photogrammetry-remote-sensing-dam/documents/pdf/learning-tracking-siamese.pdf).
-- [4]: Taigman, Y.; Yang, M.; Ranzato, M.; Wolf, L. (2014). ["DeepFace: Closing the Gap to Human-Level Performance in Face Verification"](https://www.cs.toronto.edu/~ranzato/publications/taigman_cvpr14.pdf).
-- [5]: [ISIC 2020 Melanoma Classification Challenge](https://www.kaggle.com/c/siim-isic-melanoma-classification/overview).
-- [6]: [Siamese network architecture figure](https://www.researchgate.net/figure/Siamese-Networks-the-architecture-of-a-single-sister-network-It-consists-of-a-ResNet_fig3_354597739).
+- [1]: Altarabichi, M. G.; Nowaczyk, S.; Pashami, S; Mashhadi, P. S.; Handl, J. (2024). [Rolling the dice for better deep learning performance: A study of randomness techniques in deep neural networks](https://www.sciencedirect.com/science/article/pii/S0020025524004134)
+- [2]: Bromley, J.; Guyon, I.; LeCun, Y.; Säckinger, E.; Shah, R. (1994). ["Signature verification using a "Siamese" time delay neural network"](https://papers.neurips.cc/paper_files/paper/1993/file/288cc0ff022877bd3df94bc9360b9c5d-Paper.pdf).
+- [3]: He, K.; Zhang, X.; Ren, S.; Sun, J. (2015). [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385).
+- [4]: Leal-Taixé, L.; Canton-Ferrer, C., and Schindler, K. (2016). ["Learning by tracking: Siamese CNN for robust target association"](https://www.ethz.ch/content/dam/ethz/special-interest/baug/igp/photogrammetry-remote-sensing-dam/documents/pdf/learning-tracking-siamese.pdf).
+- [5]: Taigman, Y.; Yang, M.; Ranzato, M.; Wolf, L. (2014). ["DeepFace: Closing the Gap to Human-Level Performance in Face Verification"](https://www.cs.toronto.edu/~ranzato/publications/taigman_cvpr14.pdf).
+- [6]: [ISIC 2020 Melanoma Classification Challenge](https://www.kaggle.com/c/siim-isic-melanoma-classification/overview).
+- [7]: [Siamese network architecture figure](https://www.researchgate.net/figure/Siamese-Networks-the-architecture-of-a-single-sister-network-It-consists-of-a-ResNet_fig3_354597739).

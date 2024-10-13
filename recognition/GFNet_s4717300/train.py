@@ -34,7 +34,7 @@ print(device)
 
 # hyper-parameters
 learning_rate = 0.001
-weight_decay = 0.0001
+weight_decay = 0.001
 dropout = 0.0
 drop_path = 0.1
 
@@ -65,7 +65,7 @@ model = GFNet(img_size=image_size, patch_size=patch_size, in_chans=channels, num
 model.to(device)
 model.train()
 if loaded_model:
-    model.load_state_dict(torch.load(loaded_model, weights_only=True))
+    model.load_state_dict(torch.load(loaded_model, weights_only=False))
 
 criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
 
@@ -73,12 +73,14 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay
 scheduler = OneCycleLR(optimizer,max_lr=learning_rate, steps_per_epoch=len(training), epochs=epochs)
 
 training_losses = []
+test_losses_est = []
 test_losses = []
+test_accuracy_est = []
 test_accuracy = []
 
 
 # TODO: Move this to predict
-def evaluate_model(loader):
+def evaluate_model(loader, estimate=True):
     # Test the model
     print("==Testing====================")
     start_eval = time.time() #time generation
@@ -107,10 +109,16 @@ def evaluate_model(loader):
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-        test_losses.append(float(avg_loss / count))
+        if estimate:
+            test_losses_est.append(float(avg_loss / count))
+        else:
+            test_losses.append(float(avg_loss / count))
 
         accuracy = (100 * correct / total)
-        test_accuracy.append(accuracy)
+        if estimate:
+            test_accuracy_est.append(accuracy)
+        else:
+            test_accuracy.append(accuracy)
         print('Test Accuracy: {:.2f} % | Average Loss: {:.4f}'.format(accuracy, avg_loss / count)) 
 
     end = time.time()
@@ -119,6 +127,25 @@ def evaluate_model(loader):
     model.train()
     print("=============================")
     return accuracy, (avg_loss / count)
+
+
+def output_results():
+    with open('{}/losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(training_losses)
+    with open('{}/test_losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(test_losses)
+    with open('{}/test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(test_accuracy)
+    with open('{}/est-test_losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(test_losses_est)
+    with open('{}/est-test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(test_accuracy_est)
+
 
 def train_model():
     ## Start training loop
@@ -141,34 +168,18 @@ def train_model():
 
         result, test_loss = evaluate_model(test) 
         if epoch % 10 == 0:
-            result, test_loss = evaluate_model(validation) 
+            result, test_loss = evaluate_model(validation, False) 
             torch.save(model.state_dict(), '{}/Checkpoint-GFNET-e{}-{}-{}.pth'.format(tag, epoch, round(result, 4), tag))
-            with open('{}/losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(training_losses)
-            with open('{}/test_losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(test_losses)
-            with open('{}/test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(test_accuracy)
+            output_results()
 
             if abs(test_loss - train_loss.item()) > 0.35:
                 print('=======OVERFITTED-TERMINATED======')
                 exit(2)
 
         scheduler.step() 
-    result, final_accuracy = evaluate_model(validation) 
+    result, final_accuracy = evaluate_model(validation, False) 
     torch.save(model.state_dict(), '{}/FINAL_GFNET-{}-{}.pth'.format(tag, round(result, 4), tag))
-    with open('{}/losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(training_losses)
-    with open('{}/test_losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(test_losses)
-    with open('{}/test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(test_accuracy)
+    output_results()
     with open('{}/{}-acc.out'.format(tag, tag), 'w', newline='') as f:
         f.write('{} -- Final Accuracy {}\n'.format(tag, final_accuracy))
 

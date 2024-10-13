@@ -1,45 +1,67 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from modules import Encoder, Decoder  # Import components from modules.py
-from dataset import get_data_loader   # Import data loader from dataset.py
 import matplotlib.pyplot as plt
+import os
+from modules import Encoder, Decoder, VQVAE  # Import components from modules.py
+from dataset import get_dataloader  # Import data loader from dataset.py
 
-# Initialize model, optimizer, and loss function
-encoder = Encoder(in_channels=1, num_hiddens=128, num_residual_layers=2, num_residual_hiddens=32)
-decoder = Decoder(in_channels=128, out_channels=1)
 
-optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=1e-3)
-loss_fn = nn.MSELoss()
+def train_vqvae(num_epochs=20, batch_size=32, lr=1e-3, device='cpu'):
+    # Initialize model components
+    input_dim = 1  # Number of input channels
+    hidden_dim = 128  # Hidden dimension size
+    num_embeddings = 64  # Number of embeddings for the Vector Quantizer
+    embedding_dim = 128  # Dimension of each embedding
 
-# Set up training parameters
-num_epochs = 20
-image_dir = ''  # Update with actual path
-train_loader = get_data_loader(image_dir, batch_size=32)
+    # Instantiate the VQVAE model
+    vqvae = VQVAE(input_dim=input_dim, hidden_dim=hidden_dim, num_embeddings=num_embeddings, embedding_dim=embedding_dim, device=device)
+    vqvae.to(device)
 
-# Training loop
-train_loss_list = []
-for epoch in range(num_epochs):
-    encoder.train()
-    decoder.train()
-    epoch_loss = 0
+    # Define optimizer and loss function
+    optimizer = optim.Adam(vqvae.parameters(), lr=lr)
+    loss_fn = nn.MSELoss()
 
-    for batch in train_loader:
-        optimizer.zero_grad()
-        encoded = encoder(batch)
-        decoded = decoder(encoded)
-        loss = loss_fn(decoded, batch)
-        loss.backward()
-        optimizer.step()
-        epoch_loss += loss.item()
+    # Set up training parameters
+    current_dir = os.path.dirname(__file__)
+    image_dir  = os.path.join(current_dir, "keras_slices", "keras_slices", "keras_slices_train")
+    train_loader = get_dataloader(image_dir, batch_size=batch_size)
 
-    train_loss_list.append(epoch_loss / len(train_loader))
-    print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}")
+    for (batch, _) in train_loader:
+        print(type(batch), batch.shape)  # This should print <class 'torch.Tensor'>
+        break
 
-# Plot the training loss
-plt.plot(range(1, num_epochs + 1), train_loss_list)
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.title('Training Loss')
-plt.show()
+    # Training loop
+    train_loss_list = []
+    for epoch in range(num_epochs):
+        vqvae.train()
+        epoch_loss = 0
 
+        for (batch, _) in train_loader:
+            batch = batch.to(device)
+            optimizer.zero_grad()
+            reconstructed, quantisation_loss = vqvae(batch)  # Forward pass
+            loss = loss_fn(reconstructed, batch) + quantisation_loss  # Combine losses
+            loss.backward()
+            optimizer.step()
+            epoch_loss += loss.item()
+
+        train_loss_list.append(epoch_loss / len(train_loader))
+        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}")
+
+    # Save the model weights after training
+    torch.save(vqvae.encoder.state_dict(), 'encoder.pth')
+    torch.save(vqvae.decoder.state_dict(), 'decoder.pth')
+    print("Model weights saved as 'encoder.pth' and 'decoder.pth'.")
+
+    # Plot the training loss
+    plt.plot(range(1, num_epochs + 1), train_loss_list)
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
+    plt.savefig("training_loss.png")
+
+# If you want to run this script directly, you can include this check:
+if __name__ == "__main__":
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    train_vqvae(device=device)

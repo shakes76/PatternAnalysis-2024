@@ -64,7 +64,7 @@ class Decoder(nn.Module):
         return x
     
 class VQVAE(nn.Module):
-    def __init__(self, input_dim, hidden_dim, num_embeddings, embedding_dim):
+    def __init__(self, input_dim, hidden_dim, num_embeddings, embedding_dim, device):
         super(VQVAE, self).__init__()
         
         # Update the input channels for pre_vq_conv to match the encoder's output
@@ -72,6 +72,7 @@ class VQVAE(nn.Module):
         self.pre_vq_conv = nn.Conv2d(hidden_dim * 4, embedding_dim, kernel_size=1)  
         self.vq = VectorQuantiser(num_embeddings, embedding_dim)
         self.decoder = Decoder(embedding_dim, hidden_dim, input_dim)
+        self.to(device)
 
     def forward(self, x):
         z_e = self.encoder(x)  # Encoding

@@ -34,14 +34,9 @@ class MRIDataset(Dataset):
         img_nii = nib.load(img_path)
         image = img_nii.get_fdata()  # Get the image data as a numpy array
 
-        image = np.expand_dims(image, axis=0)  # Adding a channel dimension to get shape (1, H, W)
-
-        # Ensure the image has a single channel
-        assert image.shape[0] == 1, f"Expected image to have a single channel, but got {image.shape[0]} channels."
-
-        # Convert to numpy array (required for the PIL image conversion)
-        image = image.squeeze(0)  # Remove the channel dimension for PIL conversion, now shape (H, W)
-        image = image.astype(np.float32)  # Ensure data is in float32 format
+        # Convert to tensor and add a channel dimension
+        image = np.expand_dims(image, axis=0)  # Shape (1, H, W)
+        image = torch.tensor(image, dtype=torch.float32)  # Convert to tensor
 
         # Apply the transforms (if any)
         if self.transform:
@@ -49,8 +44,8 @@ class MRIDataset(Dataset):
 
         # Return the image and its corresponding index (can be adapted for labels if needed)
         return image, idx
-
-def get_dataloader(root_dir, batch_size=32, image_size=64, shuffle=True, num_workers=4):
+    
+def get_dataloader(root_dir, batch_size=32, image_size=64, shuffle=True, num_workers=4, device='cpu'):
     """
     Creates a DataLoader for the MRI dataset.
     Args:
@@ -81,11 +76,14 @@ def get_dataloader(root_dir, batch_size=32, image_size=64, shuffle=True, num_wor
 
 # Example usage
 if __name__ == '__main__':
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     current_dir = os.path.dirname(__file__)
     data_dir = os.path.join(current_dir, "keras_slices", "keras_slices_train")
     print(f"Data Directory: {data_dir}")
 
-    dataloader = get_dataloader(root_dir=data_dir, batch_size=16, image_size=64, shuffle=True)
+    dataloader = get_dataloader(root_dir=data_dir, batch_size=16, image_size=64, shuffle=True, device=device)
 
     for batch_idx, (images, _) in enumerate(dataloader):
+        images = images.to(device)
         print(f"Batch {batch_idx + 1} | Image Batch Shape: {images.shape}")
+

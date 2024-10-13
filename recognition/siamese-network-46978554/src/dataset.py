@@ -50,7 +50,7 @@ class MelanomaSkinCancerDataset(Dataset):
     """Custom dataset of melanoma skin cancer image pairs"""
 
     def __init__(
-        self, mode="train", data_dir=DATA_DIR, transform=None, size=15, seed: int = 42
+        self, mode="train", data_dir=DATA_DIR, transform=None, size=127, seed: int = 42
     ):
         """
         Args:

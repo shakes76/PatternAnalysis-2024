@@ -173,7 +173,7 @@ def main():
             )
             net.load_state_dict(checkpoint)
 
-            start_epoch = int(checkpoint_filename.split(".")[0].split("-")[-1])
+            start_epoch = int(str(checkpoint_filename).split(".")[0].split("-")[-1])
 
         if start_epoch != 0:
             print(f"Loaded checkpoint (trained for {start_epoch} epochs)")

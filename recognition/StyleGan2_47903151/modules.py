@@ -129,6 +129,7 @@ class ToRGB(nn.Module):
         self.activation = nn.LeakyReLU(0.2, True)
 
     def forward(self, x, w):
+
         style = self.to_style(w)
         x = self.conv(x, style)
         return self.activation(x + self.bias[None, :, None, None])
@@ -174,7 +175,7 @@ class EqualizedConv2d(nn.Module):
         return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
 
 class Conv2dWeightModulate(nn.Module):
-    def __init__(self, in_features, out_features, kernel_size, demodulate = False, epsilon = 1e-8):
+    def __init__(self, in_features, out_features, kernel_size, demodulate = True, epsilon = 1e-8):
         super().__init__()
         self.out_features = out_features
         self.demodulate = demodulate
@@ -191,7 +192,7 @@ class Conv2dWeightModulate(nn.Module):
         weights = weights * s
 
         if self.demodulate:
-            sigma_inv = torch.rsqrt((weights ** 2).sum(dim=(2, 3, 4), keepdim=True) + self.eps)
+            sigma_inv = torch.rsqrt((weights ** 2).sum(dim=(2, 3, 4), keepdim=True) + self.epsilon)
             weights = weights * sigma_inv
 
         x = x.reshape(1, -1, h, w)

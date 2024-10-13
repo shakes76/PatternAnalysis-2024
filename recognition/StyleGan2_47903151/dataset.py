@@ -28,4 +28,5 @@ def get_loader(log_resolution, batch_size):
         batch_size=batch_size,
         shuffle=True,
     )
+    print("Data loader loaded")
     return loader

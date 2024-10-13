@@ -93,13 +93,33 @@ def train_fn(
             loss_critic=loss_critic.item(),
         )
 
+MODEL_SAVED = os.path.exists('model/stylegan2ANDC')
 
 loader = get_loader(LOG_RESOLUTION, BATCH_SIZE)
+if not MODEL_SAVED:
+    gen = Generator(LOG_RESOLUTION, W_DIM)
+    critic = Discriminator(LOG_RESOLUTION)
+    mapping_network = MappingNetwork(Z_DIM, W_DIM)
+    path_length_penalty = PathLengthPenalty(0.99)
 
-gen = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)
-critic = Discriminator(LOG_RESOLUTION).to(DEVICE)
-mapping_network = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)
-path_length_penalty = PathLengthPenalty(0.99).to(DEVICE)
+else:
+    # Model class must be defined somewhere
+    gen = Generator(LOG_RESOLUTION, W_DIM)
+    gen.load_state_dict(torch.load("model/stylegan2ANDC/generator.pth"))
+
+    critic = Discriminator(LOG_RESOLUTION)
+    critic.load_state_dict(torch.load("model/stylegan2ANDC/discriminator.pth"))
+
+    mapping_network = MappingNetwork(Z_DIM, W_DIM)
+    mapping_network.load_state_dict(torch.load("model/stylegan2ANDC/mapping.pth"))
+
+    path_length_penalty = PathLengthPenalty(0.99)
+    path_length_penalty.load_state_dict(torch.load("model/stylegan2ANDC/PLP.pth"))
+
+get = gen.to(DEVICE)
+critic = critic.to(DEVICE)
+mapping_network = mapping_network.to(DEVICE)
+path_length_penalty = path_length_penalty.to(DEVICE)
 
 opt_gen = optim.Adam(gen.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
 opt_critic = optim.Adam(critic.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
@@ -123,4 +143,8 @@ for epoch in range(EPOCHS):
     if epoch % 50 == 0:
         generate_examples(gen, epoch)
 
-
+# Saving model
+torch.save(gen.state_dict(), "model/stylegan2ANDC/generator.pth")
+torch.save(critic.state_dict(), "model/stylegan2ANDC/discriminator.pth")
+torch.save(mapping_network.state_dict(), "model/stylegan2ANDC/mapping.pth")
+torch.save(path_length_penalty.state_dict(), "model/stylegan2ANDC/PLP.pth")

@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 from modules import VisionTransformer
 from dataset import get_dataloaders
+from utils import get_hyperparameters, get_optimizer, get_scheduler
 
 def train(model, dataloader, optimizer, criterion, device):
     model.train()
@@ -46,26 +47,34 @@ def evaluate_test(model, test_loader, criterion, device):
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    params = get_hyperparameters()
+    
     model = VisionTransformer().to(device)
     
     base_data_dir = '/home/groups/comp3710/ADNI/AD_NC'
 
-    train_loader, val_loader, test_loader = get_dataloaders(base_data_dir, batch_size=16, val_split=0.15)
+    train_loader, val_loader, test_loader = get_dataloaders(base_data_dir, batch_size=params['batch_size'])
     
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
     criterion = torch.nn.CrossEntropyLoss()
 
-    epochs = 20
+    optimizer = get_optimizer(model, params)
+    scheduler = get_scheduler(optimizer, params)
+
+    epochs = params['num_epochs']
     for epoch in range(epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device)
         val_loss, val_acc = validate(model, val_loader, criterion, device)
         
         print(f'Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
+        
+        scheduler.step()
     
     torch.save(model.state_dict(), 'model.pth')
-
+    
     test_loss, test_acc = evaluate_test(model, test_loader, criterion, device)
     print(f'Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.4f}')
 
 if __name__ == "__main__":
     main()
+

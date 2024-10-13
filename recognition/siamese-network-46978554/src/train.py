@@ -11,7 +11,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -o OUT, --out OUT     (TR/TS) output directory, default out
-  -p, --pretrained      (TR/TS) whether ResNet base is pretrained or not
+  -p, --pretrained      (TR/TS) whether ResNet base is pretrained, default false
   -m MARGIN, --margin MARGIN
                         (TR/TS) margin for contrastive loss, default 0.2
   -e EPOCH, --epoch EPOCH
@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from dataset import MelanomaSkinCancerDataset
-from modules import MajorityClassifier, SiameseNetwork
+from modules import SiameseNetwork, init_classifier
 from pytorch_metric_learning.distances import LpDistance
 from pytorch_metric_learning.losses import ContrastiveLoss
 from pytorch_metric_learning.samplers import MPerClassSampler
@@ -104,36 +104,19 @@ def test(net, test_dataset, ref_dataset, device, batch_size=128):
     # Reference images are used for classifying an unseen image - we compare it against
     # every reference image and classify it based on a majority vote
     data_loader = DataLoader(test_dataset, batch_size)
-    ref_data_loader = DataLoader(ref_dataset, batch_size)
 
     # Put network in eval mode
     net = net.to(device)
     net.eval()
-
-    # Embeddings and labels for reference dataset
-    ref_embeddings = []
-    ref_targets = []
 
     # Ground truth (targets) and predictions for test dataset
     preds = []
     preds_proba = []
     targets = []
 
+    clf = init_classifier(net, ref_dataset, device, args.margin)
+
     with torch.no_grad():  # Disable gradient computation for efficiency
-        # Get embeddings of reference images
-        for i, (x_batch, y_batch) in enumerate(ref_data_loader):
-            x_batch = x_batch.to(device)
-
-            embeddings = net(x_batch)
-            ref_embeddings.append(embeddings)
-            ref_targets.append(y_batch)
-
-        ref_embeddings = torch.concat(ref_embeddings)
-        ref_targets = torch.concat(ref_targets)
-
-        clf = MajorityClassifier(margin=args.margin)
-        clf.fit(ref_embeddings.cpu(), ref_targets)
-
         # Do prediction on test dataset
         for i, (x_batch, y_batch) in enumerate(data_loader):
             x_batch = x_batch.to(device)
@@ -224,7 +207,7 @@ if __name__ == "__main__":
 
     # Model args, hyperparameters
     parser.add_argument(
-        "-p", "--pretrained", action="store_true", help="(TR/TS) whether ResNet base is pretrained or not"
+        "-p", "--pretrained", action="store_true", help="(TR/TS) whether ResNet base is pretrained, default false"
     )
     parser.add_argument(
         "-m", "--margin", type=float, default=0.2, help="(TR/TS) margin for contrastive loss, default 0.2"

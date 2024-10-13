@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 from torchvision.models import ResNet50_Weights, resnet50
 
 
@@ -98,3 +99,39 @@ class MajorityClassifier:
         reference set.
         """
         return (self.predict_proba(X) >= 0.5).float()
+
+
+def init_classifier(net, ref_dataset, device, margin) -> MajorityClassifier:
+    """
+    Initialises a MajorityClassifier fitted with the reference dataset that can
+    be used for prediction.
+
+    Args:
+        net: Trained model to use for creating embeddings.
+        ref_dataset: Dataset of reference images.
+        device: Device that the model is on. Note that the returned classifier only
+          takes embeddings located on the cpu.
+        margin: Margin to use for the MajorityClassifier.
+    """
+    ref_data_loader = DataLoader(ref_dataset, batch_size=128)
+
+    # Embeddings and labels for reference dataset
+    ref_embeddings = []
+    ref_targets = []
+
+    with torch.no_grad():  # Disable gradient computation for efficiency
+        # Get embeddings of reference images
+        for i, (x_batch, y_batch) in enumerate(ref_data_loader):
+            x_batch = x_batch.to(device)
+
+            embeddings = net(x_batch)
+            ref_embeddings.append(embeddings)
+            ref_targets.append(y_batch)
+
+        ref_embeddings = torch.concat(ref_embeddings)
+        ref_targets = torch.concat(ref_targets)
+
+        clf = MajorityClassifier(margin=margin)
+        clf.fit(ref_embeddings.cpu(), ref_targets)
+
+    return clf

@@ -1,0 +1,57 @@
+Login:
+
+ssh s4803613@rangpur.compute.eait.uq.edu.au
+conda activate torch
+squeue -u s4803613
+____________________________________________________________________________
+TRAINING RUNNER
+
+#!/bin/bash
+#SBATCH --partition=comp3710 
+#SBATCH --account=comp3710 
+#SBATCH --gres=gpu:1
+
+# set name of job
+#SBATCH --job-name=GFNetADNI
+
+# total runtime, enable to use GPUs with max times
+#SBATCH --time=1-00:00:00 #1 days
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+
+# send mail to this address
+#SBATCH --mail-user=s4803613@student.uq.edu.au
+
+# output file
+#SBATCH --output=GFNet_train.out
+
+conda activate torch
+#run script
+python train.py
+_______________________________________________________________________________
+TESTING RUNNER
+
+#!/bin/bash
+#SBATCH --partition=comp3710 
+#SBATCH --account=comp3710 
+#SBATCH --gres=gpu:1
+
+# set name of job
+#SBATCH --job-name=GFNetADNI
+
+# total runtime, enable to use GPUs with max times
+#SBATCH --time=1-00:00:00 #1 days
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+
+# send mail to this address
+#SBATCH --mail-user=s4803613@student.uq.edu.au
+
+# output file
+#SBATCH --output=GFNet_test.out
+
+conda activate torch
+#run script
+python predict.py

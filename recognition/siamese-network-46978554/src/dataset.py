@@ -1,97 +1,49 @@
-"""Data loader for loading and preprocessing data"""
+"""
+Data loader for loading and preprocessing data
 
+Before using the package code, a train test split should be created with
+`create_train_test_split(DATA_DIR)`.
+"""
+
+import math
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 from util import DATA_DIR
 
 
-def create_train_test_split(data_dir: Path, seed: int = 42, train_split: float = 0.8):
-    import os
-    import shutil
+def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 0.8):
+    """
+    Creates a train test split from the train metadata, and stores the splits in
+    data_dir/train-split-metadata.csv and data_dir/test-split-metadata.csv.
 
-    rng = np.random.default_rng(seed)
+    Args:
+        data_dir: The directory in which the original train-metadata.csv is stored.
+          This is also the directory in which the resulting splits will be stored.
+        seed: A seed for reproducibility.
+        train_size: Size of the training split.
+    """
+    # Drop first column of indices
+    metadata = pd.read_csv(data_dir / "train-metadata.csv").iloc[:, 1:]
 
-    # Create train/test split in subdirectory so original data isn't affected
-    out_dir = data_dir / "train-test-split"
+    # Create a (stratified) train/test split from the train metadata, so each
+    # split has an equal proportion of benign vs. malignant images
+    train_metadata, test_metadata = train_test_split(
+        metadata,
+        train_size=train_size,
+        random_state=seed,
+        shuffle=True,
+        stratify=metadata["target"],
+    )
 
-    os.makedirs(out_dir / "train", exist_ok=True)
-    os.makedirs(out_dir / "test", exist_ok=True)
+    train_metadata = train_metadata.reset_index(drop=True)
+    test_metadata = test_metadata.reset_index(drop=True)
 
-    metadata = pd.read_csv(data_dir / "train-metadata.csv")
-
-    # Shuffle data and create train/test split
-    idxs = np.arange(len(metadata))
-    rng.shuffle(idxs)
-    cutoff = int(len(metadata) * train_split)
-    train_idxs = idxs[:cutoff]
-    test_idxs = idxs[cutoff:]
-
-    def create_split(idxs: np.ndarray, split_name: str):
-        md_split = metadata.iloc[idxs]
-        md_split.to_csv(out_dir / f"{split_name}-metadata.csv", index=False)
-
-        if split_name == "train":
-            md_split_benign = md_split[md_split["target"] == 0]
-            md_split_malign = md_split[md_split["target"] == 1]
-            md_split_malign = md_split_malign.sample(
-                n=len(md_split_benign), random_state=seed, replace=True
-            ).reset_index(drop=True)
-
-            md = pd.concat(
-                [
-                    _create_positive_pairs(md_split_benign, seed),
-                    _create_positive_pairs(md_split_malign, seed),
-                    _create_negative_pairs(md_split_malign, md_split_benign, seed),
-                ]
-            )
-
-            md = md.sample(frac=1, random_state=seed).reset_index(drop=True)
-            md.to_csv(out_dir / "train-pairs-metadata.csv", index=False)
-
-        for isic_id in md_split["isic_id"]:
-            src = data_dir / f"train-image/image/{isic_id}.jpg"
-            dest = out_dir / f"{split_name}/{isic_id}.jpg"
-            shutil.move(src, dest)
-
-    create_split(train_idxs, "train")
-    create_split(test_idxs, "test")
-
-
-def _create_positive_pairs(md: pd.DataFrame, seed: int = 42):
-    rng = np.random.default_rng(seed)
-
-    idxs = np.arange(len(md))
-    rng.shuffle(idxs)
-    cutoff = len(idxs) // 2
-
-    pairs = dict()
-    pairs["isic_id1"] = md["isic_id"].iloc[:cutoff].reset_index(drop=True)
-    pairs["isic_id2"] = md["isic_id"].iloc[cutoff:].reset_index(drop=True)
-    pairs["target"] = [0] * (len(idxs) // 2)  # positive pairs ==> label is 0
-    pairs = pd.DataFrame.from_dict(pairs)
-
-    return pairs
-
-
-def _create_negative_pairs(md1: pd.DataFrame, md2: pd.DataFrame, seed: int = 42):
-    rng = np.random.default_rng(seed)
-
-    # Match half of data in the larger class to smaller class
-    # md1 assumed to be smaller class
-    md2_idxs = np.arange(len(md2) // 2)
-    md1_idxs = rng.choice(np.arange(len(md1)), len(md2_idxs))
-
-    pairs = dict()
-    pairs["isic_id1"] = md1["isic_id"].iloc[md1_idxs].reset_index(drop=True)
-    pairs["isic_id2"] = md2["isic_id"].iloc[md2_idxs].reset_index(drop=True)
-    pairs["target"] = [1] * (len(md2) // 2)  # negative pairs ==> label is 1
-    pairs = pd.DataFrame.from_dict(pairs)
-
-    return pairs
+    train_metadata.to_csv(data_dir / "train-split-metadata.csv", index=False)
+    test_metadata.to_csv(data_dir / "test-split-metadata.csv", index=False)
 
 
 class MelanomaSkinCancerDataset(Dataset):

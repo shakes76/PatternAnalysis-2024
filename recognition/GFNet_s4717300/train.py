@@ -35,8 +35,8 @@ print(device)
 # hyper-parameters
 learning_rate = 0.001
 weight_decay = 0.001
-dropout = 0.0
-drop_path = 0.1
+dropout = 0.3
+drop_path = 0.3
 
 batches = 32
 patch_size = 16

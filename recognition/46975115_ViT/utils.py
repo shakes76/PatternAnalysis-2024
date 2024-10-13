@@ -5,9 +5,9 @@ def get_hyperparameters():
     Return a dictionary containing all the hyperparameters for the model.
     """
     return {
-        'learning_rate': 1e-5,          
+        'learning_rate': 1e-4,          
         'batch_size': 32,                
-        'num_epochs': 30,              
+        'num_epochs': 20,              
         'weight_decay': 1e-4,          
         'dropout_rate': 0.1,            
         'lr_scheduler_step_size': 7,   

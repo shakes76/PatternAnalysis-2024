@@ -39,12 +39,13 @@ def main():
     checkpoint = torch.load(model_path, map_location=device, weights_only=True)
     net.load_state_dict(checkpoint)
 
+    # Initialise a majority classifier from the reference dataset
     clf = init_classifier(net, ref_set, device, args.margin)
 
+    # Load metadata so we can also report the ground truth labels
     metadata = pd.read_csv(DATA_DIR / "train-metadata.csv").iloc[:, 1:]
 
     with torch.no_grad():  # Disable gradient computation for efficiency
-        # Do prediction on test dataset
         for img_path in args.images:
             # Read image and normalise pixel values to [0, 1]
             img = read_image(img_path) / 255
@@ -52,8 +53,8 @@ def main():
             # Add extra first dimension (batch_size = 1)
             img = torch.unsqueeze(img, 0)
 
+            # Forward pass through model to get embeddings
             embeddings = net(img).cpu()
-
             pred = clf.predict(embeddings)
             pred_proba = clf.predict_proba(embeddings)
 

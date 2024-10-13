@@ -52,6 +52,20 @@ def train(
     batch_size=128,
     start_epoch=0,
 ):
+    """
+    Training loop. A model checkpoint and the current losses are saved every 10 epochs.
+
+    Args:
+        net: Siamese network to train.
+        dataset: Training dataset.
+        device: Device to train on.
+        test_func: Callback function to call every 10 epochs. The only parameter passed
+          to the callback function is the network object.
+        nepochs: Number of epochs to train for.
+        batch_size: Size of each mini-batch in each epoch.
+        start_epoch: The epoch to start from (relevant for printing losses). This is
+          only non-zero if we are starting from a checkpoint.
+    """
     # Define dataloader to sample 50/50 split of benign & malignant images in each batch
     labels = dataset.metadata["target"]
     sampler = MPerClassSampler(labels=labels, m=batch_size // 2, batch_size=batch_size)
@@ -101,6 +115,17 @@ def train(
 
 
 def test(net, test_dataset, ref_dataset, device, batch_size=128):
+    """
+    Model testing on a trained network. Test images are classified using a
+    MajorityClassifier.
+
+    Args:
+        net: Trained Siamese network.
+        test_dataset: Dataset to test the network on.
+        ref_dataset: Dataset of reference images to use for the majority classifier.
+        device: Device to train on.
+        batch_size: Size of each mini-batch from the test dataset.
+    """
     # Reference images are used for classifying an unseen image - we compare it against
     # every reference image and classify it based on a majority vote
     data_loader = DataLoader(test_dataset, batch_size)

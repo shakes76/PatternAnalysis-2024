@@ -7,6 +7,9 @@ from torch.optim.lr_scheduler import OneCycleLR
 import csv
 import argparse
 
+import os
+
+
 parser = argparse.ArgumentParser(description='Optional argument example')
 
 # Define an optional argument, e.g., '--myarg'
@@ -21,6 +24,9 @@ if not args.tag:
     print('No tag supplied')
     exit(3)
 tag = args.tag
+
+# Create the directory if it doesn't exist
+os.makedirs(tag, exist_ok=True)
 
 # Setting up Coda
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
@@ -136,14 +142,14 @@ def train_model():
         result, test_loss = evaluate_model(test) 
         if epoch % 10 == 0:
             result, test_loss = evaluate_model(validation) 
-            torch.save(model.state_dict(), 'Checkpoint-GFNET-e{}-{}-{}.pth'.format(epoch, round(result, 4), tag))
-            with open('losses-{}.csv'.format(tag), 'w', newline='') as f:
+            torch.save(model.state_dict(), '{}/Checkpoint-GFNET-e{}-{}-{}.pth'.format(tag, epoch, round(result, 4), tag))
+            with open('{}/losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(training_losses)
-            with open('test_losses-{}.csv'.format(tag), 'w', newline='') as f:
+            with open('{}/test_losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(test_losses)
-            with open('test_accuracy-{}.csv'.format(tag), 'w', newline='') as f:
+            with open('{}/test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(test_accuracy)
 
@@ -153,17 +159,17 @@ def train_model():
 
         scheduler.step() 
     result, final_accuracy = evaluate_model(validation) 
-    torch.save(model.state_dict(), 'FINAL_GFNET-{}-{}.pth'.format(round(result, 4), tag))
-    with open('losses-{}.csv'.format(tag), 'w', newline='') as f:
+    torch.save(model.state_dict(), '{}/FINAL_GFNET-{}-{}.pth'.format(tag, round(result, 4), tag))
+    with open('{}/losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(training_losses)
-    with open('test_losses-{}.csv'.format(tag), 'w', newline='') as f:
+    with open('{}/test_losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(test_losses)
-    with open('test_accuracy-{}.csv'.format(tag), 'w', newline='') as f:
+    with open('{}/test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(test_accuracy)
-    with open('{}-acc.out'.format(tag), 'w', newline='') as f:
+    with open('{}/{}-acc.out'.format(tag, tag), 'w', newline='') as f:
         f.write('{} -- Final Accuracy {}\n'.format(tag, final_accuracy))
 
 

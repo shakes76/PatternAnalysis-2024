@@ -104,19 +104,15 @@ Overall, a margin of 0.5 and a learning rate of 0.0001 - 0.00001 seems to perfor
 
 We can also visualise the embeddings in a lower-dimensional space using PCA and TSNE by comparing the predicted classes vs. the ground truth labels. It is difficult to see any clear separation between benign and malignant cases for the PCA plots. For the TSNE plots, we can somewhat see most of the malignant cases clustered around one of the tails of the shapes.
 
-Predictions | Ground truth
+Predictions (margin 0.3) | Ground truth (margin 0.3)
 :-:|:--:
 ![](assets/margin-0.3-best-pca-preds.png) | ![](assets/margin-0.3-best-pca-targets.png)
 ![](assets/margin-0.3-best-tsne-preds.png) | ![](assets/margin-0.3-best-tsne-targets.png)
 
-*PCA and TSNE embeddings for models trained with margin 0.3*
-
-Predictions | Ground truth
+Predictions (margin 0.5) | Ground truth (margin 0.5)
 :-:|:--:
 ![](assets/margin-0.5-best-pca-preds.png) | ![](assets/margin-0.5-best-pca-targets.png)
 ![](assets/margin-0.5-best-tsne-preds.png) | ![](assets/margin-0.5-best-tsne-targets.png)
-
-*PCA and TSNE embeddings for models trained with margin 0.5*
 
 Using the [src/predict.py](src/predict.py) script, we can use these models to make predictions on any given skin lesion images. Here are some example correct and incorrect predictions, using the model trained with margin 0.5 and learning rate 0.0001:
 

@@ -22,12 +22,12 @@ class UNet(nn.Module):
         super(UNet, self).__init__()
 
         # Define downsampling layers (encoder path)
-        self.down1 = nn.Conv2d(latent_dim, latent_dim * 2, 3, stride=2, padding=1)  # 128 -> 256 channels, h -> h/2
-        self.down2 = nn.Conv2d(latent_dim * 2, latent_dim * 4, 3, stride=2, padding=1)  # 256 -> 512 channels, h/2 -> h/4
+        self.down1 = nn.Conv2d(latent_dim, latent_dim, 3, stride=2, padding=1)  # 128 -> 256 channels, h -> h/2
+        self.down2 = nn.Conv2d(latent_dim, latent_dim * 2, 3, stride=2, padding=1)  # 256 -> 512 channels, h/2 -> h/4
 
         # Define upsampling layers (decoder path) with interpolation for exact matches
-        self.up2 = nn.ConvTranspose2d(latent_dim * 4, latent_dim * 2, 3, stride=2, padding=1, output_padding=1)  # 512 -> 256 channels
-        self.up1 = nn.ConvTranspose2d(latent_dim * 2, latent_dim, 3, stride=2, padding=1, output_padding=1)  # 256 -> 128 channels
+        self.up2 = nn.ConvTranspose2d(latent_dim * 2, latent_dim, 3, stride=2, padding=1, output_padding=1)  # 512 -> 256 channels
+        self.up1 = nn.ConvTranspose2d(latent_dim, latent_dim, 3, stride=2, padding=1, output_padding=1)  # 256 -> 128 channels
 
         # Final layer to match original channel count
         self.final = nn.Conv2d(latent_dim, latent_dim, 3, padding=1)
@@ -84,6 +84,17 @@ class Decoder(nn.Module):
     def forward(self, x):
         return self.layers(x)
     
+class VAE(nn.Module):
+    def __init__(self, in_channels=3, latent_dim=128, out_channels=3):
+        super(VAE, self).__init__()
+        self.encoder = Encoder(in_channels=in_channels, latent_dim=latent_dim).to(device)
+        self.decoder = Decoder(latent_dim=latent_dim, out_channels=out_channels).to(device)
+
+    def forward(self, x):
+        latent = self.encoder(x)
+        reconstructed = self.decoder(latent)
+        return reconstructed, latent
+    
 
 # Main StableDiffusionModel class that integrates all components
 class StableDiffusionModel(nn.Module):
@@ -104,3 +115,7 @@ class StableDiffusionModel(nn.Module):
         denoised_latent = self.unet(noisy_latent, t)
         # Decode latent space back to image
         return latent, noisy_latent, denoised_latent, self.decoder(denoised_latent)
+    
+
+
+torch.no_grad

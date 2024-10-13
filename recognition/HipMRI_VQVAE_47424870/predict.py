@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 from modules import VQVAE
 from dataset import get_dataloader
+from skimage.metrics import structural_similarity as ssim 
 
 # Define the function for loading the VQVAE model
 def load_vqvae_model(encoder_path, decoder_path, input_dim=1, hidden_dim=128, num_embeddings=64, embedding_dim=128, device='cpu'):
@@ -25,6 +26,7 @@ def predict_vqvae(model, image_dir, save_images=True, output_dir='reconstructed_
     if save_images and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    ssim_list = []
     # Predict and visualize results
     with torch.no_grad():
         for i, (image, _) in enumerate(test_loader):
@@ -36,29 +38,41 @@ def predict_vqvae(model, image_dir, save_images=True, output_dir='reconstructed_
             # Get the reconstructed image
             reconstructed, _ = model(image)
             
+            # Convert images to NumPy arrays for SSIM calculation
+            original_image_np = image.squeeze(0).squeeze(0).cpu().numpy()
+            reconstructed_image_np = reconstructed.squeeze(0).squeeze(0).cpu().numpy()
+
+            # Calculate SSIM
+            ssim_value = ssim(original_image_np, reconstructed_image_np)
+            ssim_list.append(ssim_value)
+
             # Visualize the original and reconstructed images
             plt.figure(figsize=(10, 5))
             
             # Original image
             plt.subplot(1, 2, 1)
             plt.title('Original Image')
-            plt.imshow(image.squeeze(0).squeeze(0).cpu().numpy(), cmap='gray')
+            plt.imshow(original_image_np, cmap='gray')
+            plt.axis('off')
             
             # Reconstructed image
             plt.subplot(1, 2, 2)
             plt.title('Reconstructed Image')
-            plt.imshow(reconstructed.squeeze(0).squeeze(0).cpu().numpy(), cmap='gray')
+            plt.imshow(reconstructed_image_np, cmap='gray')
+            plt.axis('off')
             
             filename = os.path.join(output_dir, f'reconstructed_{i}.png')
             plt.savefig(filename)
             print(f"Saved reconstructed image {i} to {filename}.")
+            print(f"SSIM for image {i}: {ssim_value:.4f}")
 
 # Main function
 if __name__ == "__main__":
     # Define paths for model weights and image directory
-    encoder_path = 'encoder.pth'  # Path to encoder weights
-    decoder_path = 'decoder.pth'  # Path to decoder weights
-    image_dir = "path_to_test_images"  # Path to test image directory
+    current_dir = os.path.dirname(__file__)
+    encoder_path = os.path.join(current_dir, 'encoder.pth')  # Path to encoder weights
+    decoder_path = os.path.join(current_dir, 'decoder.pth')  # Path to decoder weights
+    image_dir = os.path.join(current_dir, "keras_slices", "keras_slices_validate")
 
     # Set up the device (GPU or CPU)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

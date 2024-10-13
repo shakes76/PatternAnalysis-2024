@@ -53,17 +53,18 @@ class VectorQuantiser(nn.Module):
         return z_q, quantisation_loss
     
 class Decoder(nn.Module):
-    def __init__(self, embedding_dim, hidden_dim, output_dim):
+    def __init__(self, embedding_dim, hidden_dim, output_dim, n_res_layers, res_hidden_dim):
         super(Decoder, self).__init__()
-        self.conv1 = nn.ConvTranspose2d(embedding_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1)
-        self.conv2 = nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1)
-        self.conv3 = nn.ConvTranspose2d(hidden_dim, output_dim, kernel_size=4, stride=2, padding=1)
+        self.reverse_order = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dim, hidden_dim * 2, kernel_size=4, stride=2, padding=1),
+            ResidualStack(hidden_dim, hidden_dim, res_hidden_dim, n_res_layers),
+            nn.ConvTranspose2d(hidden_dim * 2, hidden_dim, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(hidden_dim, output_dim, kernel_size=4, stride=2, padding=1)
+        )
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = torch.sigmoid(self.conv3(x))
-        return x
+        return self.reverse_order(x)
     
 class VQVAE(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_embeddings, embedding_dim, device):

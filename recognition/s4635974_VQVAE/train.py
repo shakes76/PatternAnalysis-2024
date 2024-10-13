@@ -43,7 +43,7 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 2
+num_epochs = 150
 batch_size = 16
 lr = 0.002
 num_hiddens = 128
@@ -52,10 +52,10 @@ num_channels = 1
 num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
-early_stopping = False
+early_stopping = True
 
 # Enter a description of model. Used for identifying saved files
-model_description = '2_epoch_test'
+model_description = 'early_stopping_lr=0.002'
 
 # Directory for saving images is named after model description 
 save_dir = model_description

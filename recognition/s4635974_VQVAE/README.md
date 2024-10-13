@@ -1,6 +1,7 @@
 # VQ-VAE generative model on Hip MRI Study for Prostate Cancer Dataset.
 
 ## Project Aim
+The aim of this project was to create a generative Vector Quantized - Variational Austoencoder (VQ-VAE) model using the Hip MRI Prostate Cancer Dataset [1]. The model must produce "reasonably clear images" and have a Structural Similarity Index Measure (SSIM) of over 0.6.
 
 ## Model Description
 

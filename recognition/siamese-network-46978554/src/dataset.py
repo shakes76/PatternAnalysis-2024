@@ -15,10 +15,11 @@ from torchvision.io import read_image
 from util import DATA_DIR
 
 
-def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 0.8):
+def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 0.7):
     """
-    Creates a train test split from the train metadata, and stores the splits in
-    data_dir/train-split-metadata.csv and data_dir/test-split-metadata.csv.
+    Creates a train/test/val split from the train metadata, and stores the splits in
+    data_dir/train-split-metadata.csv, data_dir/test-split-metadata.csv, and
+    data_dir/val-split-metadata.csv.
 
     Args:
         data_dir: The directory in which the original train-metadata.csv is stored.
@@ -29,9 +30,9 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 
     # Drop first column of indices
     metadata = pd.read_csv(data_dir / "train-metadata.csv").iloc[:, 1:]
 
-    # Create a (stratified) train/test split from the train metadata, so each
+    # Create a (stratified) train/test/val split from the train metadata, so each
     # split has an equal proportion of benign vs. malignant images
-    train_metadata, test_metadata = train_test_split(
+    train_metadata, test_val_metadata = train_test_split(
         metadata,
         train_size=train_size,
         random_state=seed,
@@ -39,11 +40,23 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 
         stratify=metadata["target"],
     )
 
+    test_val_metadata = test_val_metadata.reset_index(drop=True)
+
+    val_metadata, test_metadata = train_test_split(
+        test_val_metadata,
+        train_size=1 / 3,
+        random_state=seed,
+        shuffle=True,
+        stratify=test_val_metadata["target"],
+    )
+
     train_metadata = train_metadata.reset_index(drop=True)
     test_metadata = test_metadata.reset_index(drop=True)
+    val_metadata = val_metadata.reset_index(drop=True)
 
     train_metadata.to_csv(data_dir / "train-split-metadata.csv", index=False)
     test_metadata.to_csv(data_dir / "test-split-metadata.csv", index=False)
+    val_metadata.to_csv(data_dir / "val-split-metadata.csv", index=False)
 
 
 class MelanomaSkinCancerDataset(Dataset):
@@ -54,7 +67,7 @@ class MelanomaSkinCancerDataset(Dataset):
     ):
         """
         Args:
-            mode: One of "train", "test", or "ref". Determines which split to use.
+            mode: One of "train", "test", "val", or "ref". Determines which split to use
             data_dir: The directory in which the metadata CSVs can be found. The
               default directory structure (i.e. from the original archive file) is
               assumed.
@@ -70,9 +83,13 @@ class MelanomaSkinCancerDataset(Dataset):
             self.metadata = pd.read_csv(data_dir / "train-split-metadata.csv")
         elif self.mode == "test":
             self.metadata = pd.read_csv(data_dir / "test-split-metadata.csv")
+        elif self.mode == "val":
+            self.metadata = pd.read_csv(data_dir / "val-split-metadata.csv")
         else:  # self.mode == "ref"
+            # Sample reference data from training data
             metadata = pd.read_csv(data_dir / "train-split-metadata.csv")
 
+            # Sample a roughly equal proportion of benign and malignant cases
             benign = metadata[metadata["target"] == 0]
             malign = metadata[metadata["target"] == 1]
             benign_sample = benign.sample(math.floor(size / 2), random_state=seed)
@@ -81,9 +98,14 @@ class MelanomaSkinCancerDataset(Dataset):
             self.metadata = pd.concat([benign_sample, malign_sample])
 
     def __len__(self):
+        """Returns size of the dataset"""
         return len(self.metadata)
 
     def __getitem__(self, idx):
+        """
+        Returns the (normalised) image and label at index idx in the metadata CSV. If a
+        transform has been specified, it will be randomly applied to returned images.
+        """
         label = self.metadata.iloc[idx]["target"]
         img_name = self.metadata.iloc[idx]["isic_id"] + ".jpg"
         img_path = self.data_dir / f"train-image/image/{img_name}"

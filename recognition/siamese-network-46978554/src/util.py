@@ -64,7 +64,10 @@ def plot_tsne_embeddings(embeddings, labels, pred=False):
     plt.show()
 
 
-def plot_losses(loss_files, loss_names):
+def plot_losses(loss_files: list[str], loss_names: list[str]):
+    """
+    Plots the losses given by loss_files with corresponding labels given by loss_names.
+    """
     import matplotlib.pyplot as plt
     import torch
 
@@ -73,7 +76,7 @@ def plot_losses(loss_files, loss_names):
 
     for loss_file, loss_name in zip(loss_files, loss_names):
         loss = torch.load(loss_file, weights_only=False)
-        loss = loss[:len(loss) // skip * skip]
+        loss = loss[: len(loss) // skip * skip]
         loss = loss.view(len(loss) // skip, skip)
         mean_loss = loss.mean(dim=1)
         plt.plot(mean_loss, label=loss_name)
@@ -83,4 +86,3 @@ def plot_losses(loss_files, loss_names):
     plt.title("Loss over epochs (averaged every 100)")
     plt.legend()
     plt.show()
-

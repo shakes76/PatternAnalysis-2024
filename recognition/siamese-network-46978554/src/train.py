@@ -80,6 +80,7 @@ def train(
     loss_func = ContrastiveLoss(neg_margin=args.margin, distance=distance)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
 
+    # Start training
     losses = []
     end_epoch = nepochs + start_epoch
     for epoch in range(start_epoch, end_epoch):
@@ -139,6 +140,7 @@ def test(net, test_dataset, ref_dataset, device, batch_size=128):
     preds_proba = []
     targets = []
 
+    # Initialise a MajorityClassifier from the dataset of reference images
     clf = init_classifier(net, ref_dataset, device, args.margin)
 
     with torch.no_grad():  # Disable gradient computation for efficiency
@@ -146,8 +148,10 @@ def test(net, test_dataset, ref_dataset, device, batch_size=128):
         for i, (x_batch, y_batch) in enumerate(data_loader):
             x_batch = x_batch.to(device)
 
+            # Forward pass through network, then move to cpu for the classifier
             embeddings = net(x_batch).cpu()
 
+            # For classification report, we want the "hard" classification
             # For AUROC, we want the probability of the class with the greater label
             pred = clf.predict(embeddings)
             pred_proba = clf.predict_proba(embeddings)
@@ -171,6 +175,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("PyTorch version", torch.__version__, "on device", device)
 
+    # Initialise datasets
     train_transform = transforms.Compose(
         [
             transforms.RandomHorizontalFlip(),
@@ -180,30 +185,41 @@ def main():
     )
     train_set = MelanomaSkinCancerDataset(mode="train", transform=train_transform)
     test_set = MelanomaSkinCancerDataset(mode="test")
+    val_set = MelanomaSkinCancerDataset(mode="val")
     ref_set = MelanomaSkinCancerDataset(mode="ref")
 
+    # Create network
     net = SiameseNetwork(pretrained=args.pretrained)
 
-    def test_net(network):
-        report, auc = test(network, test_set, ref_set, device)
+    def test_net(network, val=False):
+        """
+        Callback function to test a network. Use `val` to switch between the validation
+        and test sets.
+        """
+        if val:
+            report, auc = test(network, val_set, ref_set, device)
+        else:
+            report, auc = test(network, test_set, ref_set, device)
         print(report)
         print("Test AUROC:", auc)
 
     if args.action == "train":
         start_epoch = 0
+
+        # Load model checkpoint if it is specified
         if args.checkpoint_tr:
             checkpoint_filename = out_dir / args.checkpoint_tr
             checkpoint = torch.load(
                 checkpoint_filename, map_location=device, weights_only=True
             )
             net.load_state_dict(checkpoint)
-
             start_epoch = int(str(checkpoint_filename).split(".")[0].split("-")[-1])
 
         if start_epoch != 0:
             print(f"Loaded checkpoint (trained for {start_epoch} epochs)")
         print(f"Training on {device} for {args.epoch} epochs...")
 
+        # Start training
         train(
             net,
             train_set,
@@ -215,6 +231,7 @@ def main():
         )
 
     else:  # args.action == "test"
+        # Load model checkpoint
         checkpoint_filename = out_dir / args.checkpoint_ts
         checkpoint = torch.load(
             checkpoint_filename, map_location=device, weights_only=True

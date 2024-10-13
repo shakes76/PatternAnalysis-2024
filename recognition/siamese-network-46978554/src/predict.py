@@ -58,6 +58,7 @@ def main():
             pred = clf.predict(embeddings)
             pred_proba = clf.predict_proba(embeddings)
 
+            # Convert labels to names and compute the correct probability for printing
             isic_id = os.path.basename(img_path).split(".")[0]
             pred_name = "benign" if pred == 0 else "malignant"
             prob = round(float(1 - pred_proba if pred == 0 else pred_proba), 4)

@@ -49,76 +49,49 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 
 class MelanomaSkinCancerDataset(Dataset):
     """Custom dataset of melanoma skin cancer image pairs"""
 
-    def __init__(self, train, img_dir=DATA_DIR / "train-test-split", transform=None):
-        self.train = train
-        self.img_dir = img_dir
+    def __init__(
+        self, mode="train", data_dir=DATA_DIR, transform=None, size=15, seed: int = 42
+    ):
+        """
+        Args:
+            mode: One of "train", "test", or "ref". Determines which split to use.
+            data_dir: The directory in which the metadata CSVs can be found. The
+              default directory structure (i.e. from the original archive file) is
+              assumed.
+            transform: A transform (or sequence of transforms) to apply to each image.
+            size: Size of the reference dataset, preferably an odd number to avoid ties
+              during classification. This value is ignored if mode != "ref".
+            seed: A seed for reproducibility. This value is ignored if mode != "ref".
+        """
+        self.mode = mode
+        self.data_dir = data_dir
         self.transform = transform
-        if self.train:
-            self.metadata = pd.read_csv(img_dir / "train-pairs-metadata.csv")
-        else:
-            self.metadata = pd.read_csv(img_dir / "test-metadata.csv")
+        if self.mode == "train":
+            self.metadata = pd.read_csv(data_dir / "train-split-metadata.csv")
+        elif self.mode == "test":
+            self.metadata = pd.read_csv(data_dir / "test-split-metadata.csv")
+        else:  # self.mode == "ref"
+            metadata = pd.read_csv(data_dir / "train-split-metadata.csv")
+
+            benign = metadata[metadata["target"] == 0]
+            malign = metadata[metadata["target"] == 1]
+            benign_sample = benign.sample(math.floor(size / 2), random_state=seed)
+            malign_sample = malign.sample(math.ceil(size / 2), random_state=seed)
+
+            self.metadata = pd.concat([benign_sample, malign_sample])
 
     def __len__(self):
         return len(self.metadata)
 
     def __getitem__(self, idx):
         label = self.metadata.iloc[idx]["target"]
-        subdir = "train" if self.train else "test"
-
-        if self.train:
-            img1_name = self.metadata.iloc[idx]["isic_id1"] + ".jpg"
-            img2_name = self.metadata.iloc[idx]["isic_id2"] + ".jpg"
-            img1_path = self.img_dir / f"{subdir}/{img1_name}"
-            img2_path = self.img_dir / f"{subdir}/{img2_name}"
-
-            image1 = read_image(img1_path) / 255
-            image2 = read_image(img2_path) / 255
-
-            if self.transform:
-                image1 = self.transform(image1)
-                image2 = self.transform(image2)
-
-            return image1, image2, label
-
-        # Test dataset
         img_name = self.metadata.iloc[idx]["isic_id"] + ".jpg"
-        img_path = self.img_dir / f"{subdir}/{img_name}"
+        img_path = self.data_dir / f"train-image/image/{img_name}"
 
-        image = read_image(img_path) / 255
+        # Normalise pixel values to [0, 1]
+        img = read_image(img_path) / 255
 
         if self.transform:
-            image = self.transform(image)
+            img = self.transform(img)
 
-        return image, label
-
-
-class MelanomaSiameseReferenceDataset(Dataset):
-    """
-    Custom dataset of reference melanoma skin cancer images for Siamese network prediction
-    """
-
-    def __init__(self, img_dir=DATA_DIR / "train-test-split", size=8, seed: int = 42):
-        self.img_dir = img_dir
-        self.size = size
-
-        metadata = pd.read_csv(img_dir / "train-metadata.csv")
-        benign = metadata[metadata["target"] == 0]
-        malign = metadata[metadata["target"] == 1]
-        benign_sample = benign.sample(size // 2, random_state=seed)
-        malign_sample = malign.sample(size // 2, random_state=seed)
-
-        metadata = pd.concat([benign_sample, malign_sample])
-        metadata = metadata.sample(frac=1, random_state=seed).reset_index(drop=True)
-        self.metadata = metadata
-
-    def __len__(self):
-        return len(self.metadata)
-
-    def __getitem__(self, idx):
-        label = self.metadata.iloc[idx]["target"]
-        img_name = self.metadata.iloc[idx]["isic_id"] + ".jpg"
-        img_path = self.img_dir / f"train/{img_name}"
-
-        image = read_image(img_path) / 255
-
-        return image, label
+        return img, label

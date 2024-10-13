@@ -5,7 +5,7 @@
 - [Model Architecture](#model-architecture)
 - [Dependencies and Reproducibility](#dependencies-and-reproducibility)
 - [Model Usage](#model-usage)
-  - [Examples](#examples)
+- [Results](#results)
 - [Training Details](#training-details)
 - [References](#references)
 
@@ -74,56 +74,70 @@ python src/predict.py -c output/checkpoint-epoch-100.pt -m 0.3 data/train-image/
 
 Some plotting functionality has also been provided in [src/util.py](src/util.py). These will be demonstrated below.
 
-### Examples
+## Results
+
+Below are the results from the models that performed the best. I found margins 0.3 and 0.5 to work the best through empirical testing.
 
 **Training and testing output**
 
-Using the [src/predict.py](src/predict.py) script, here are some example correct and incorrect predictions from one of my models:
+We plot the loss curves from training several models with margins 0.3 and 0.5 and learning rates 0.001, 0.0001, and 0.00001. The loss was recorded at every mini-batch, so to keep the graphs less cluttered, each block of 100 losses was averaged.
+
+![Margin 0.3 loss curves](assets/margin-0.3-avg-losses.png)
+
+*Loss curves for models trained with margin 0.3*
+
+![Margin 0.5 loss curves](assets/margin-0.5-avg-losses.png)
+
+*Loss curves for models trained with margin 0.5*
+
+A summary of each model's performance is given below. The dataset is imbalanced, and so there are significantly more benign cases than there are malignant cases. Hence accuracy is not a reliable indicator of performance. Instead, we can look at other metrics like AUROC, precision, and recall, as mentioned before.
+
+The values for precision, recall, and F1-score are given per-class, i.e. (benign, malignant). The best attained metrics in each column are bolded.
+
+
+| Model hyperparameters      | AUROC      | Precision        | Recall           | F1-score         |
+| -------------------------- | ---------- | ---------------- | ---------------- | ---------------- |
+| Margin = 0.3, lr = 0.001   | 0.8542     | (0.99, 0.10)     | (0.91, 0.57)     | (0.95, 0.17)     |
+| Margin = 0.3, lr = 0.0001  | 0.7953     | (0.99, 0.14)     | (0.95, 0.41)     | (0.97, 0.21)     |
+| Margin = 0.3, lr = 0.00001 | 0.8601     | (0.99, 0.08)     | **(0.86, 0.64)** | (0.92, 0.14)     |
+| Margin = 0.5, lr = 0.001   | 0.8190     | (0.99, 0.12)     | (0.93, 0.50)     | (0.96, 0.19)     |
+| Margin = 0.5, lr = 0.0001  | 0.7949     | **(0.99, 0.15)** | **(0.95, 0.52)** | **(0.97, 0.24)** |
+| Margin = 0.5, lr = 0.00001 | **0.8818** | (0.99, 0.08)     | (0.87, 0.67)     | (0.93, 0.15)     |
+
+Overall, a margin of 0.5 and a learning rate of 0.0001 - 0.00001 seems to perform the best across both classes. As expected, each model performs very well on the benign cases, but struggles more with the malignant cases. Notably, the precision for malignant cases is quite poor across the board, but the recall is somewhat more reasonable in the best cases.
+
+We can also visualise the embeddings in a lower-dimensional space using PCA and TSNE by comparing the predicted classes vs. the ground truth labels. It is difficult to see any clear separation between benign and malignant cases for the PCA plots. For the TSNE plots, we can somewhat see most of the malignant cases clustered around one of the tails of the shapes.
+
+Predictions | Ground truth
+:-:|:--:
+![](assets/margin-0.3-best-pca-preds.png) | ![](assets/margin-0.3-best-pca-targets.png)
+![](assets/margin-0.3-best-tsne-preds.png) | ![](assets/margin-0.3-best-tsne-targets.png)
+
+*PCA and TSNE embeddings for models trained with margin 0.3*
+
+Predictions | Ground truth
+:-:|:--:
+![](assets/margin-0.5-best-pca-preds.png) | ![](assets/margin-0.5-best-pca-targets.png)
+![](assets/margin-0.5-best-tsne-preds.png) | ![](assets/margin-0.5-best-tsne-targets.png)
+
+*PCA and TSNE embeddings for models trained with margin 0.5*
+
+Using the [src/predict.py](src/predict.py) script, we can use these models to make predictions on any given skin lesion images. Here are some example correct and incorrect predictions, using the model trained with margin 0.5 and learning rate 0.0001:
 
 ```
 ISIC_6024335:
   Prediction: malignant (0.5512)
   Target    : malignant
-ISIC_9509757:
-  Prediction: malignant (0.5433)
-  Target    : malignant
-ISIC_2182856:
-  Prediction: malignant (0.5276)
-  Target    : malignant
-ISIC_0075663:
-  Prediction: benign (0.7008)
-  Target    : benign
-ISIC_1602440:
-  Prediction: benign (0.6614)
-  Target    : benign
 ISIC_2600152:
   Prediction: benign (0.6772)
   Target    : benign
-ISIC_9863642:
-  Prediction: benign (0.6693)
-  Target    : malignant
-ISIC_5673518:
-  Prediction: benign (0.6772)
-  Target    : malignant
 ISIC_2822718:
   Prediction: benign (0.6614)
   Target    : malignant
-ISIC_2871437:
-  Prediction: malignant (0.6535)
-  Target    : benign
-ISIC_8542407:
-  Prediction: malignant (0.5433)
-  Target    : benign
 ISIC_7798403:
   Prediction: malignant (0.5354)
   Target    : benign
 ```
-
-**Loss curves and visualisations of embedding space**
-
-Below are loss curves from training several models with margins 0.3 and 0.5 and learning rates 0.001, 0.0001, and 0.00001. The loss was recorded at each mini-batch, so to make the graphs less cluttered we have only plotted every 100th loss.
-
-[loss curve goes here]
 
 ## Training Details
 
@@ -134,7 +148,7 @@ Below are some details and insights from the training process.
 - Contrastive loss was used as described above.
 - The Adam optimiser was used with varying learning rates, as shown above.
 - Miners were experimented with to select the hardest pairs to classify during training. However, from my experience they were not very effective, and tended to stagnate training.
-- While training models for longer tended to decrease the loss steadily, the performance (measured via precision, recall, and AUROC) tended to also get worse. Accuracy tended to get better, but is not a good representation of the model performance given that the dataset is imbalanced.
+- While training models for longer tended to decrease the loss steadily, the performance (measured via precision, recall, and AUROC) tended to also get worse. Accuracy tended to get better, but as discussed, is not a good representation of model performance for this dataset.
 - When classifying unseen images, I experimented with using KNN with the embeddings of the reference images as neighbouring points. This was not very effective. In my experience, a better classifier was a "majority vote" classifier (implemented in the code as `MajorityClassifier`), which pairs an unseen image to all reference images, uses the margin as a threshold to compute its similarity/dissimilarity from each reference image, and classifies it based on the majority vote. This is very similar to KNN, but a key difference is that it explicitly uses the margin during classification, which I believe is what made it more effective.
 
 ## References

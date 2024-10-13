@@ -1,3 +1,9 @@
+"""
+modules.py
+
+Holds the general neural network modules used for a 3D UNet.
+Modules for Improved 3D UNet to be added at a later date.
+"""
 from torch import nn
 import torch
 

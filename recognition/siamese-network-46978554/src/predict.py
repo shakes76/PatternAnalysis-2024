@@ -33,7 +33,7 @@ def main():
     ref_set = MelanomaSkinCancerDataset(mode="ref")
 
     # Load model from checkpoint
-    net = SiameseNetwork(pretrained=args.pretrained)
+    net = SiameseNetwork(pretrained=args.pretrained).to(device)
     checkpoint = torch.load(model_path, map_location=device, weights_only=True)
     net.load_state_dict(checkpoint)
 
@@ -42,8 +42,11 @@ def main():
     with torch.no_grad():  # Disable gradient computation for efficiency
         # Do prediction on test dataset
         for img_path in args.images:
-            # Normalise pixel values to [0, 1]
+            # Read image and normalise pixel values to [0, 1]
             img = read_image(img_path) / 255
+            img = img.to(device)
+            # Add extra first dimension (batch_size = 1)
+            img = torch.unsqueeze(img, 0)
 
             embeddings = net(img).cpu()
 
@@ -51,8 +54,9 @@ def main():
             pred_proba = clf.predict_proba(embeddings)
 
             print(f"{os.path.basename(img_path)}:")
-            print("  Prediction     :", "benign" if pred == 0 else "malignant")
-            print("  Prediction prob:", 1 - pred_proba if pred == 0 else pred_proba)
+            print(
+                f"  Prediction: {'benign' if pred == 0 else 'malignant'} ({float(1 - pred_proba if pred == 0 else pred_proba)})"
+            )
 
 
 if __name__ == "__main__":

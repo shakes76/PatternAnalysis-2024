@@ -347,4 +347,10 @@ class ImprovedUnet(nn.Module):
 
         final_sum = upscale_out_2 + segment_out_3
 
-        return torch.sigmoid(final_sum)
+        output =  nn.Softmax(dim = 1)(final_sum)
+
+        output = output.unsqueeze(1)
+
+        output = output.permute(0, 1, 3, 4, 5, 2)
+
+        return output

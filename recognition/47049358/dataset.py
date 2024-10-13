@@ -147,10 +147,6 @@ def load_saved_data(image_save_path, label_save_path):
         labels = pickle.load(f)
     return images, labels
 
-# Global constants for the dimensions to which images and masks will be resized
-# TRANSFORMED_X = 256  # width after resizing
-# TRANSFORMED_Y= 256  # height after resizing
-
 """
     PyTorch Dataset class for loading ISIC melanoma detection dataset.
 
@@ -180,60 +176,58 @@ class Prostate3dDataset(Dataset):
         img = self.images[idx]
         mask = self.labels[idx]
 
-        # img = Image.open(img_name).convert('RGB')  # Convert to RGB
-        # mask = Image.open(mask_name).convert('L')  # Convert to grayscale for segmentation masks.
-
-        # img = img.resize((TRANSFORMED_Y, TRANSFORMED_X))
-        # mask = mask.resize((TRANSFORMED_Y, TRANSFORMED_X), Image.NEAREST)
-
-        # if self.transform:
-        #     img = self.transform(img)
-        #     mask = torch.from_numpy(np.array(mask)).float().unsqueeze(0) / 255.0  # Convert to single channel tensor
-
         return img, mask
 
-rawImageNames = os.listdir(IMAGE_FILE_NAME)
-rawLabelNames = os.listdir(LABEL_FILE_NAME)
+# rawImageNames = os.listdir(IMAGE_FILE_NAME)
+# rawLabelNames = os.listdir(LABEL_FILE_NAME)
 
 # Split the set into train, validation, and test set (70:15:15 for train:valid:test)
-X_train, X_rem, y_train, y_rem = train_test_split(rawImageNames, rawLabelNames, train_size=0.8, random_state=RANDOM_STATE) # Split the data in training and remaining set
-X_val, X_test, y_val, y_test = train_test_split(X_rem, y_rem, train_size=0.5, random_state=RANDOM_STATE)
+# X_train, X_rem, y_train, y_rem = train_test_split(rawImageNames, rawLabelNames, train_size=0.8, random_state=RANDOM_STATE) # Split the data in training and remaining set
+# X_val, X_test, y_val, y_test = train_test_split(X_rem, y_rem, train_size=0.5, random_state=RANDOM_STATE)
 
-X_train = [os.path.join(IMAGE_FILE_NAME, image) for image in X_train]
-X_val = [os.path.join(IMAGE_FILE_NAME, image) for image in X_val]
-X_test = [os.path.join(IMAGE_FILE_NAME, image) for image in X_test]
+# X_train = [os.path.join(IMAGE_FILE_NAME, image) for image in X_train]
+# X_val = [os.path.join(IMAGE_FILE_NAME, image) for image in X_val]
+# X_test = [os.path.join(IMAGE_FILE_NAME, image) for image in X_test]
 
-y_train = [os.path.join(LABEL_FILE_NAME, label) for label in y_train]
-y_val = [os.path.join(LABEL_FILE_NAME, label) for label in y_val]
-y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
+# y_train = [os.path.join(LABEL_FILE_NAME, label) for label in y_train]
+# y_val = [os.path.join(LABEL_FILE_NAME, label) for label in y_val]
+# y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 
-X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
-X_val, y_val = load_images_and_labels(X_val, y_val, early_stop=True)
-X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
+# X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
+# X_val, y_val = load_images_and_labels(X_val, y_val, early_stop=True)
+# X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
 
-train_set = Prostate3dDataset(X_train, y_train)
-validation_set = Prostate3dDataset(X_val, y_val)
-test_set = Prostate3dDataset(X_test, y_test)
+train_dir = os.path.join(os.getcwd(), 'train_set')
+val_dir = os.path.join(os.getcwd(), 'validation_set')
+test_dir = os.path.join(os.getcwd(), 'test_set')
 
-train_loader = DataLoader(train_set, batch_size = BATCH_SIZE, shuffle = True)
-validation_loader = DataLoader(validation_set, batch_size = BATCH_SIZE, shuffle = False)
-test_loader = DataLoader(test_set, batch_size = BATCH_SIZE, shuffle = True)
-
-# train_dir = os.path.join(os.getcwd(), 'train_set')
-# val_dir = os.path.join(os.getcwd(), 'validation_set')
-# test_dir = os.path.join(os.getcwd(), 'test_set')
 # os.makedirs(train_dir, exist_ok = True)
 # os.makedirs(test_dir, exist_ok = True)
+# os.makedirs(val_dir, exist_ok = True)
 
-# train_img_file = os.path.join(train_dir, 'train_images.pkl')
-# train_label_file = os.path.join(train_dir, 'train_labels.pkl')
+train_img_file = os.path.join(train_dir, 'train_images.pkl')
+train_label_file = os.path.join(train_dir, 'train_labels.pkl')
 
-# val_img_file = os.path.join(val_dir, 'validation_images.pkl')
-# val_label_file = os.path.join(val_dir, 'validation_labels.pkl')
+val_img_file = os.path.join(val_dir, 'validation_images.pkl')
+val_label_file = os.path.join(val_dir, 'validation_labels.pkl')
 
-# test_img_file = os.path.join(test_dir, 'test_images.pkl')
-# test_label_file = os.path.join(test_dir, 'test_labels.pkl')
+test_img_file = os.path.join(test_dir, 'test_images.pkl')
+test_label_file = os.path.join(test_dir, 'test_labels.pkl')
 
 # save_data(images=X_train, labels=y_train, image_save_path=train_img_file, label_save_path=train_label_file)
 # save_data(images=X_val, labels=y_val, image_save_path=val_img_file, label_save_path=val_label_file)
 # save_data(images=X_test, labels=y_test, image_save_path=test_img_file, label_save_path=test_label_file)
+
+# Load datasets
+X_train, y_train = load_saved_data(train_img_file, train_label_file)
+X_val, y_val = load_saved_data(val_img_file, val_label_file)
+X_test, y_test = load_saved_data(test_img_file, test_label_file)
+
+# Recreate datasets and dataloaders
+train_set = Prostate3dDataset(X_train, y_train)
+validation_set = Prostate3dDataset(X_val, y_val)
+test_set = Prostate3dDataset(X_test, y_test)
+
+train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True)
+validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=False)
+test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=True)

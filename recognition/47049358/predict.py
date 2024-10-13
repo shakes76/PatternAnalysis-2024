@@ -58,8 +58,7 @@ def visualise_predictions(model, test_loader, device, num_images=3):
     image_count = 0  # Keep track of the number of images processed
 
     with torch.no_grad():
-        for data in test_loader:
-            inputs, targets = data
+        for inputs, targets in test_loader:
             inputs, targets = inputs.to(device), targets.to(device)
             # get prediction 
             outputs = model(inputs)
@@ -75,15 +74,21 @@ def visualise_predictions(model, test_loader, device, num_images=3):
             plt.title("Input Image")
             plt.imshow(input_image[0], cmap='gray')  
 
+            plt.savefig('input_image.png')
+
             plt.subplot(1, 3, 2)
             plt.title("Model Prediction")
-            plt.imshow(predicted_image[0], cmap='gray')  
+            plt.imshow(predicted_image[0], cmap='gray') 
+
+            plt.savefig('model_prediction.png') 
 
             plt.subplot(1, 3, 3)
             plt.title("Ground Truth")
             plt.imshow(target_image[0], cmap='gray')  
 
             plt.show()
+
+            plt.savefig('ground_truth.png')
 
             image_count += 1
 
@@ -103,6 +108,7 @@ def plot_dice(dice):
     plt.title("Dice Coefficient across test inputs")
     plt.grid(True)
     plt.show()
+    plt.savefig('dice_scores_test.png')
 
 
 """
@@ -128,6 +134,6 @@ if __name__ == "__main__":
     plot_dice(dice_scores)
 
     # plot three examples of images, prediction and truth. 
-    visualise_predictions(trained_model, test_loader,device)
+    # visualise_predictions(trained_model, test_loader,device)
 
 

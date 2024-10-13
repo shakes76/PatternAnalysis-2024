@@ -19,10 +19,12 @@ import argparse
 import os
 from pathlib import Path
 
+import pandas as pd
 import torch
 from dataset import MelanomaSkinCancerDataset
 from modules import SiameseNetwork, init_classifier
 from torchvision.io import read_image
+from util import DATA_DIR
 
 
 def main():
@@ -39,6 +41,8 @@ def main():
 
     clf = init_classifier(net, ref_set, device, args.margin)
 
+    metadata = pd.read_csv(DATA_DIR / "train-metadata.csv").iloc[:, 1:]
+
     with torch.no_grad():  # Disable gradient computation for efficiency
         # Do prediction on test dataset
         for img_path in args.images:
@@ -53,11 +57,15 @@ def main():
             pred = clf.predict(embeddings)
             pred_proba = clf.predict_proba(embeddings)
 
+            isic_id = os.path.basename(img_path).split(".")[0]
             pred_name = "benign" if pred == 0 else "malignant"
             prob = round(float(1 - pred_proba if pred == 0 else pred_proba), 4)
+            target = metadata["target"][metadata["isic_id"] == isic_id].iloc[0]
+            target_name = "benign" if target == 0 else "malignant"
 
-            print(f"{os.path.basename(img_path)}:")
+            print(f"{isic_id}:")
             print(f"  Prediction: {pred_name} ({prob})")
+            print(f"  Target    : {target_name}")
 
 
 if __name__ == "__main__":

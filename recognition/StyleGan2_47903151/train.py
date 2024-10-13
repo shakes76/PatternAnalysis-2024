@@ -2,6 +2,8 @@
 Contains source code for training, validating, testing, and saving the model.
 Plots losses and metrics during training.
 """
+import argparse
+
 import torch
 from torch import nn, optim
 from torchvision import datasets, transforms
@@ -112,71 +114,80 @@ def train_fn(
 
 MODEL_SAVED = os.path.exists('model/stylegan2ANDC')
 
-loader = get_loader(LOG_RESOLUTION, BATCH_SIZE)
-if not MODEL_SAVED:
-    gen = Generator(LOG_RESOLUTION, W_DIM)
-    critic = Discriminator(LOG_RESOLUTION)
-    mapping_network = MappingNetwork(Z_DIM, W_DIM)
-    path_length_penalty = PathLengthPenalty(0.99)
+if __name__ == "__main__":
+    # Get and parse the command line arguments
+    parser = argparse.ArgumentParser(description="COMP3506/7505 Assignment Two: Data Structure Tests")
 
-else:
-    gen = Generator(LOG_RESOLUTION, W_DIM)
-    gen.load_state_dict(torch.load("model/stylegan2ANDC/generator.pth"))
+    parser.add_argument("--directory", type=str, help="Directory for the dataset")
+    parser.set_defaults(directory="AD_NC")
 
-    critic = Discriminator(LOG_RESOLUTION)
-    critic.load_state_dict(torch.load("model/stylegan2ANDC/discriminator.pth"))
+    args = parser.parse_args()
 
-    mapping_network = MappingNetwork(Z_DIM, W_DIM)
-    mapping_network.load_state_dict(torch.load("model/stylegan2ANDC/mapping.pth"))
+    loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.directory)
+    if not MODEL_SAVED:
+        gen = Generator(LOG_RESOLUTION, W_DIM)
+        critic = Discriminator(LOG_RESOLUTION)
+        mapping_network = MappingNetwork(Z_DIM, W_DIM)
+        path_length_penalty = PathLengthPenalty(0.99)
 
-    path_length_penalty = PathLengthPenalty(0.99)
-    path_length_penalty.load_state_dict(torch.load("model/stylegan2ANDC/PLP.pth"))
+    else:
+        gen = Generator(LOG_RESOLUTION, W_DIM)
+        gen.load_state_dict(torch.load("model/stylegan2ANDC/generator.pth"))
 
-get = gen.to(DEVICE)
-critic = critic.to(DEVICE)
-mapping_network = mapping_network.to(DEVICE)
-path_length_penalty = path_length_penalty.to(DEVICE)
+        critic = Discriminator(LOG_RESOLUTION)
+        critic.load_state_dict(torch.load("model/stylegan2ANDC/discriminator.pth"))
 
-opt_gen = optim.Adam(gen.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
-opt_critic = optim.Adam(critic.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
-opt_mapping_network = optim.Adam(mapping_network.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+        mapping_network = MappingNetwork(Z_DIM, W_DIM)
+        mapping_network.load_state_dict(torch.load("model/stylegan2ANDC/mapping.pth"))
 
-gen.train()
-critic.train()
-mapping_network.train()
+        path_length_penalty = PathLengthPenalty(0.99)
+        path_length_penalty.load_state_dict(torch.load("model/stylegan2ANDC/PLP.pth"))
+
+    get = gen.to(DEVICE)
+    critic = critic.to(DEVICE)
+    mapping_network = mapping_network.to(DEVICE)
+    path_length_penalty = path_length_penalty.to(DEVICE)
+
+    opt_gen = optim.Adam(gen.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+    opt_critic = optim.Adam(critic.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+    opt_mapping_network = optim.Adam(mapping_network.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+
+    gen.train()
+    critic.train()
+    mapping_network.train()
 
 
-for epoch in range(EPOCHS):
-    train_fn(
-        critic,
-        gen,
-        path_length_penalty,
-        loader,
-        opt_critic,
-        opt_gen,
-        opt_mapping_network,
-    )
-    # Saving model every epoch
-    torch.save(gen.state_dict(), "model/stylegan2ANDC/generator.pth")
-    torch.save(critic.state_dict(), "model/stylegan2ANDC/discriminator.pth")
-    torch.save(mapping_network.state_dict(), "model/stylegan2ANDC/mapping.pth")
-    torch.save(path_length_penalty.state_dict(), "model/stylegan2ANDC/PLP.pth")
-    if total_epochs % 10 == 0:
-        generate_examples(gen, epoch, 12)
-    total_epochs += 1
-    json_data[total_epochs] += 1
-    json_data["G_loss"] = generator_loss
-    json_data["D_loss"] = discriminator_loss
-    # Writing to json file to remember num. epochs
-    with open("params/data.json", "w") as f:
-        f.write(json_data)
+    for epoch in range(EPOCHS):
+        train_fn(
+            critic,
+            gen,
+            path_length_penalty,
+            loader,
+            opt_critic,
+            opt_gen,
+            opt_mapping_network,
+        )
+        # Saving model every epoch
+        torch.save(gen.state_dict(), "model/stylegan2ANDC/generator.pth")
+        torch.save(critic.state_dict(), "model/stylegan2ANDC/discriminator.pth")
+        torch.save(mapping_network.state_dict(), "model/stylegan2ANDC/mapping.pth")
+        torch.save(path_length_penalty.state_dict(), "model/stylegan2ANDC/PLP.pth")
+        if total_epochs % 10 == 0:
+            generate_examples(gen, epoch, 12)
+        total_epochs += 1
+        json_data[total_epochs] += 1
+        json_data["G_loss"] = generator_loss
+        json_data["D_loss"] = discriminator_loss
+        # Writing to json file to remember num. epochs
+        with open("params/data.json", "w") as f:
+            f.write(json_data)
 
-plt.figure(figsize=(10, 5))
-plt.title("Generator and Discriminator Loss During Training")
-plt.plot(generator_loss, label="G")
-plt.plot(discriminator_loss, label="D")
-plt.xlabel("iterations")
-plt.ylabel("Loss")
-plt.legend()
-plt.savefig("training/training_loss.png")
+    plt.figure(figsize=(10, 5))
+    plt.title("Generator and Discriminator Loss During Training")
+    plt.plot(generator_loss, label="G")
+    plt.plot(discriminator_loss, label="D")
+    plt.xlabel("iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig("training/training_loss.png")
 

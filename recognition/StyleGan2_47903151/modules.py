@@ -257,3 +257,92 @@ class DiscriminatorBlock(nn.Module):
         x = self.down_sample(x)
 
         return (x + residual) * self.scale
+
+
+class PathLengthPenalty(nn.Module):
+
+    def __init__(self, beta):
+
+        super().__init__()
+
+        self.beta = beta
+        self.steps = nn.Parameter(torch.tensor(0.), requires_grad=False)
+
+        self.exp_sum_a = nn.Parameter(torch.tensor(0.), requires_grad=False)
+
+    def forward(self, w, x):
+
+        device = x.device
+        image_size = x.shape[2] * x.shape[3]
+        y = torch.randn(x.shape, device=device)
+
+        output = (x * y).sum() / sqrt(image_size)
+        sqrt(image_size)
+
+        gradients, *_ = torch.autograd.grad(outputs=output,
+                                            inputs=w,
+                                            grad_outputs=torch.ones(output.shape, device=device),
+                                            create_graph=True)
+
+        norm = (gradients ** 2).sum(dim=2).mean(dim=1).sqrt()
+
+        if self.steps > 0:
+
+            a = self.exp_sum_a / (1 - self.beta ** self.steps)
+
+            loss = torch.mean((norm - a) ** 2)
+        else:
+            loss = norm.new_tensor(0)
+
+        mean = norm.mean().detach()
+        self.exp_sum_a.mul_(self.beta).add_(mean, alpha=1 - self.beta)
+        self.steps.add_(1.)
+
+        return loss
+
+
+def gradient_penalty(critic, real, fake, device="cpu"):
+    BATCH_SIZE, C, H, W = real.shape
+    beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
+    interpolated_images = real * beta + fake.detach() * (1 - beta)
+    interpolated_images.requires_grad_(True)
+
+    # Calculate critic scores
+    mixed_scores = critic(interpolated_images)
+
+    # Take the gradient of the scores with respect to the images
+    gradient = torch.autograd.grad(
+        inputs=interpolated_images,
+        outputs=mixed_scores,
+        grad_outputs=torch.ones_like(mixed_scores),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
+    gradient = gradient.view(gradient.shape[0], -1)
+    gradient_norm = gradient.norm(2, dim=1)
+    gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
+    return gradient_penalty
+
+def get_w(batch_size, w_dim, device, mapping_network, log_resolution):
+
+    z = torch.randn(batch_size, w_dim).to(device)
+    w = mapping_network(z)
+    return w[None, :, :].expand(log_resolution, -1, -1)
+
+def get_noise(batch_size, log_resolution, device):
+
+    noise = []
+    resolution = 4
+
+    for i in range(log_resolution):
+        if i == 0:
+            n1 = None
+        else:
+            n1 = torch.randn(batch_size, 1, resolution, resolution, device=device)
+        n2 = torch.randn(batch_size, 1, resolution, resolution, device=device)
+
+        noise.append((n1, n2))
+
+        resolution *= 2
+
+    return noise

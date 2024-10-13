@@ -47,46 +47,45 @@ Notably, the main dependencies we use are:
 - [scikit-learn](https://scikit-learn.org/)
 - [torch](https://pytorch.org/)
 
-Where possible, seeding has been used to ensure the reproducibility of results. In particular, the train/test split and dataset creation steps support providing seeds so that the same splits can be created across multiple machines, and Pytorch's seed has been manually set so that training can be replicated.
+Where possible, seeding has been used to ensure the reproducibility of results. In particular, the train/test/validation split and dataset creation steps support providing seeds so that the same splits can be created across multiple machines, and Pytorch's seed has been manually set so that training can be replicated.
 
 ## Model Usage
 
-The data should be downloaded from [here](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data), and unzipped into a directory called `data/` in the top level. This is a downsized version of the original dataset with 256x256 resolution. A train/test split should then be created from `train-metadata.csv`, using the `create_train_test_split()` function in `src/dataset.py` like so:
-```python
-create_train_test_split(DATA_DIR) # DATA_DIR points to data/
-```
-This splits `train-metadata.csv` into `train-split-metadata.csv` and `test-split-metadata.csv` (default 80/20 split), ensuring that each split has an equal proportion of benign vs. malignant cases.
-
-Model training is done in [src/train.py](src/train.py). See `python src/train.py --help` for usage instructions. Relevant hyperparameters can be passed as command line arguments to the script. Checkpoint files are saved at every 10 epochs. For example, to train with 100 epochs, a learning rate of 0.0001, a batch size of 64, and store the output in the `output/` directory, use
-```bash
-python src/train.py train -o "output/" -m 0.3 -e 100 -l 0.0001 -b 64
-```
-
-Model testing for computing metrics is also done in [src/train.py](src/train.py). The checkpoint file to be used should be specified, as well as the margin to use for contrastive loss (this should be the same value as was used during training). This produces a classification report (prceision, recall, f1-score, accuracy) based on the test dataset, as well as the test AUROC (area under receiver operating characteristic curve). For example, to test the model with margin 0.3 in the `output/` directory from the 100th epoch checkpoint, use
-```bash
-python src/train.py test -o "output/" -m 0.3 --checkpoint-ts "checkpoint-epoch-100.pt"
-```
-
-To use the model for predictions, use [src/predict.py](src/predict.py). Similarly, see `python src/predict.py --help` for usage instructions. A list of images to be classified can be passed as command line arguments, and the prediction (and prediction probability) and target will be printed for each image. For example, to do prediction on a set of images using the model with margin 0.3 from the 100th epoch checkpoint, use
-```bash
-python src/predict.py -c output/checkpoint-epoch-100.pt -m 0.3 data/train-image/image/ISIC6024335.jpg ...
-```
+1. Download the data from [here](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data), and unzip it into a directory called `data/` in the top level. This is a downsized version of the original dataset with images of size 256x256. A stratified (i.e. equal proportion of benign vs. malignant images) train/test/validation split should then be created from `train-metadat.csv`, using the `create_train_test_split()` function in `src/dataset.py` like so:
+    ```python
+    # DATA_DIR points to data/, see src/util.py
+    create_train_test_split(DATA_DIR)
+    ```
+2. Model training is done in [src/train.py](src/train.py). See `python src/train.py --help` for usage instructions. Relevant hyperparameters can be passed as command line arguments to the script. Checkpoint files are saved at every 10 epochs. For example, to train with 100 epochs, a learning rate of 0.0001, a batch size of 64, and store the output in the `output/` directory, use
+    ```bash
+    python src/train.py train -o "output/" -m 0.3 -e 100 -l 0.0001 -b 64
+    ```
+3. Model testing for computing metrics is also done in [src/train.py](src/train.py). The checkpoint file to be used should be specified, as well as the margin to use for contrastive loss (this should be the same value as was used during training). This produces a classification report (prceision, recall, f1-score, accuracy) based on the test dataset, as well as the test AUROC (area under receiver operating characteristic curve). For example, to test the model with margin 0.3 in the `output/` directory from the 100th epoch checkpoint, use
+    ```bash
+    python src/train.py test -o "output/" -m 0.3 --checkpoint-ts "checkpoint-epoch-100.pt"
+    ```
+4.  To use the model for predictions, use [src/predict.py](src/predict.py). Similarly, see `python src/predict.py --help` for usage instructions. A list of images to be classified can be passed as command line arguments, and the prediction (and prediction probability) and target will be printed for each image. For example, to do prediction on a set of images using the model with margin 0.3 from the 100th epoch checkpoint, use
+    ```bash
+    python src/predict.py -c output/checkpoint-epoch-100.pt -m 0.3 data/train-image/image/ISIC6024335.jpg ...
+    ```
 
 Some plotting functionality has also been provided in [src/util.py](src/util.py). These will be demonstrated below.
 
 ## Results
 
-Below are the results from the models that performed the best. I found margins 0.3 and 0.5 to work the best through empirical testing.
+The train/test/validation split used was 70/20/10 respectively, which corresponds to approximately 23,000 training samples, 6,600 test samples, and 3,300 validation samples.
+
+Below are the results from the models that performed the best. I found margins 0.3 and 0.5 to work the best through empirical testing using the validation set.
 
 **Training and testing output**
 
-We plot the loss curves from training several models with margins 0.3 and 0.5 and learning rates 0.001, 0.0001, and 0.00001. The loss was recorded at every mini-batch, so to keep the graphs less cluttered, each block of 100 losses was averaged.
+We plot the loss curves from training several models with margins 0.3 and 0.5 and learning rates 0.001, 0.0001, and 0.00001. The loss was recorded at every mini-batch, so to keep the graphs less cluttered, each series of 100 losses was averaged.
 
-Margin 0.3 | Margin 0.5
+Losses for models trained with margin 0.3 | Losses for models trained with margin 0.5
 :-:|:--:
 ![](assets/margin-0.3-avg-losses.png) | ![](assets/margin-0.5-avg-losses.png)
 
-A summary of each model's performance is given below. The dataset is imbalanced, and so there are significantly more benign cases than there are malignant cases. Hence accuracy is not a reliable indicator of performance. Instead, we can look at other metrics like AUROC, precision, and recall, as mentioned before.
+A summary of each model's performance is given below. The dataset is imbalanced, and so there are significantly more benign cases than there are malignant cases. Hence accuracy is not a reliable indicator of performance. Instead, we can look at other metrics like AUROC, precision, and recall.
 
 The values for precision, recall, and F1-score are given per-class, i.e. (benign, malignant). The best attained metrics in each column are bolded.
 
@@ -100,9 +99,9 @@ The values for precision, recall, and F1-score are given per-class, i.e. (benign
 | Margin = 0.5, lr = 0.0001  | 0.7949     | **(0.99, 0.15)** | **(0.95, 0.52)** | **(0.97, 0.24)** |
 | Margin = 0.5, lr = 0.00001 | **0.8818** | (0.99, 0.08)     | (0.87, 0.67)     | (0.93, 0.15)     |
 
-Overall, a margin of 0.5 and a learning rate of 0.0001 - 0.00001 seems to perform the best across both classes. As expected, each model performs very well on the benign cases, but struggles more with the malignant cases. Notably, the precision for malignant cases is quite poor across the board, but the recall is somewhat more reasonable in the best cases.
+Overall, a margin of 0.5 and a learning rate of 0.0001/0.00001 seem to perform the best across both classes. As expected, each model performs very well on the benign cases, but struggles more with the malignant cases. Notably, the precision for malignant cases is quite poor across the board, but the recall is somewhat more reasonable in the best cases.
 
-We can also visualise the embeddings in a lower-dimensional space using PCA and TSNE by comparing the predicted classes vs. the ground truth labels. It is difficult to see any clear separation between benign and malignant cases for the PCA plots. For the TSNE plots, we can somewhat see most of the malignant cases clustered around one of the tails of the shapes.
+We can also visualise the embeddings in a lower-dimensional space using PCA and TSNE by comparing the predicted classes vs. the ground truth labels. For the PCA target plots (right), some clustering of malignant points is evident, but it is difficult to see any separation between benign and malignant cases. For the TSNE target plots (right), there is some malignant clustering evident around one of the tails, but again little separation between benign and malignant cases.
 
 Predictions (margin 0.3) | Ground truth (margin 0.3)
 :-:|:--:
@@ -114,7 +113,7 @@ Predictions (margin 0.5) | Ground truth (margin 0.5)
 ![](assets/margin-0.5-best-pca-preds.png) | ![](assets/margin-0.5-best-pca-targets.png)
 ![](assets/margin-0.5-best-tsne-preds.png) | ![](assets/margin-0.5-best-tsne-targets.png)
 
-Using the [src/predict.py](src/predict.py) script, we can use these models to make predictions on any given skin lesion images. Here are some example correct and incorrect predictions, using the model trained with margin 0.5 and learning rate 0.0001:
+Using the [src/predict.py](src/predict.py) script, the trained model checkpoints can be used to make predictions on any given skin lesion images. Here are some example correct and incorrect predictions, using the model trained with margin 0.5 and learning rate 0.0001:
 
 ```
 ISIC_6024335:

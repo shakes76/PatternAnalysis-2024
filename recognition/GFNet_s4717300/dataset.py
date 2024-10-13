@@ -1,7 +1,27 @@
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+from torch import Generator
+from torch.utils.data import random_split
 
 # Variables to store total sum and total squared sum
+
+def get_dist(loader):
+    mean = 0.0
+    std = 0.0
+    total_images = 0
+
+    for images, _ in loader:
+        # Compute the mean and std per batch
+        batch_samples = images.size(0)  # Get the number of images in the batch
+        images = images.view(batch_samples, images.size(1), -1)  # Flatten the image
+        mean += images.mean(2).sum(0)  # Sum mean across batch
+        std += images.std(2).sum(0)    # Sum std across batch
+        total_images += batch_samples
+
+    # Final mean and std calculations
+    mean /= total_images
+    std /= total_images
+    return mean, std, total_images
 
 class GFNetDataloader():
     def __init__(self, batch_size=64):
@@ -10,30 +30,20 @@ class GFNetDataloader():
         self._std = 0.0
         self._total_images = 0
         self.train_loader = None
-        self.test_loader = None
+        self.val_loader = None
         self.img_size = None
+        self.gen = Generator().manual_seed(4717300) # Student number as seed
 
     def load(self, img_size=None):
-        transform_complete = transforms.Compose([
+        init_trans = transforms.Compose([
             transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
         ])
 
         # dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=transform_complete)
-        dataset = datasets.ImageFolder(root='./AD_NC/train', transform=transform_complete)
+        dataset = datasets.ImageFolder(root='./AD_NC/train', transform=init_trans)
         loader = DataLoader(dataset, batch_size=128, shuffle=False)
-
-        for images, _ in loader:
-            # Compute the mean and std per batch
-            batch_samples = images.size(0)  # Get the number of images in the batch
-            images = images.view(batch_samples, images.size(1), -1)  # Flatten the image
-            self._mean += images.mean(2).sum(0)  # Sum mean across batch
-            self._std += images.std(2).sum(0)    # Sum std across batch
-            self._total_images += batch_samples
-
-        # Final mean and std calculations
-        self._mean /= self._total_images
-        self._std /= self._total_images
+        self._mean, self._std, self._total_images = get_dist(loader)
 
         val_trans = transforms.Compose([
                 transforms.ToTensor(),
@@ -43,44 +53,37 @@ class GFNetDataloader():
                 transforms.Normalize(mean=self._mean, std=self._std)
                 ])
 
-        if not img_size:
-            _transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Grayscale(num_output_channels=1),
-                transforms.Resize(240),
-                transforms.Pad((0, 8), fill=0),
-                transforms.RandomHorizontalFlip(),              # Flip horizontally
-                transforms.RandomVerticalFlip(p=0.5),           # Flip vertically with 50% probability
-                transforms.RandomRotation(30),                  # Random rotation within ±30 degrees
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Randomly change brightness/contrast
-                transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # Random translation
-                transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
-                transforms.Normalize(mean=self._mean, std=self._std),  # Use computed mean and std
-                ])
-            self.img_size = 256
-        else:
-            exit(1)
-            _transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Grayscale(num_output_channels=1),
-                transforms.Resize((img_size, img_size)),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
-                transforms.Normalize(mean=self._mean, std=self._std)  # Use computed mean and std
+        _transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Grayscale(num_output_channels=1),
+            transforms.Resize(240),
+            transforms.Pad((0, 8), fill=0),
+            transforms.RandomHorizontalFlip(),              # Flip horizontally
+            transforms.RandomVerticalFlip(p=0.5),           # Flip vertically with 50% probability
+            transforms.RandomRotation(30),                  # Random rotation within ±30 degrees
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Randomly change brightness/contrast
+            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # Random translation
+            transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
+            transforms.Normalize(mean=self._mean, std=self._std),  # Use computed mean and std
             ])
-            self.img_size = img_size
+        self.img_size = 256
 
 
-        train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
-        test_images = datasets.ImageFolder(root='./AD_NC/test', transform=val_trans)
-        # train_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
-        # test_images = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=val_trans)
+        # train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
+        # test_images = datasets.ImageFolder(root='./AD_NC/test', transform=val_trans)
 
-        self.train_loader = DataLoader(train_images, batch_size=self.batch_size, shuffle=True)
-        self.test_loader = DataLoader(test_images, batch_size=self.batch_size, shuffle=False)
+        train_data = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
+        val_data = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=val_trans)
+
+        train_split, test_split = random_split(train_data, [0.9, 0.1], generator=self.gen)
+
+
+        self.train_loader = DataLoader(train_split, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(test_split, batch_size=self.batch_size, shuffle=True)
+        self.val_loader = DataLoader(val_data, batch_size=self.batch_size, shuffle=False)
 
     def get_data(self):
-        return self.train_loader, self.test_loader
+        return self.train_loader, self.test_loader, self.val_loader
 
     def get_meta(self):
         return {"total_images": self._total_images,

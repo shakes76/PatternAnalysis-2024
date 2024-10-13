@@ -1,13 +1,9 @@
-# “train.py" containing the source code for training, validating, testing and saving your model. The model
-# should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
-# sure to plot the losses and metrics during training
 from dataset import GFNetDataloader
 from modules import GFNet
 import torch.optim.adamw
 import torch
 import time
-from utils import bcolors
-from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
+from torch.optim.lr_scheduler import OneCycleLR
 import csv
 import argparse
 
@@ -31,23 +27,22 @@ device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 print(device)
 
 # hyper-parameters
-learning_rate = 0.001
-weight_decay = 0.1
-dropout = 0.3
-drop_path = 0.3
+learning_rate = 0.0002
+weight_decay = 0.0001
+dropout = 0.0
+drop_path = 0.1
 
-batches = 24
-patch_size = 8
-embed_dim = 384
-depth = 8
-ff_ratio = 2
+batches = 32
+patch_size = 128
+embed_dim = 192
+depth = 12
+ff_ratio = 3
 epochs = 30
-warmup_epochs = 5
 
 ## Load data
 gfDataloader = GFNetDataloader(batches)
 gfDataloader.load()
-training, test = gfDataloader.get_data()
+training, test, validation = gfDataloader.get_data()
 image_size = gfDataloader.get_meta()['img_size']
 if not training or not test:
     print("Problem loading data, please check dataset is commpatable with dataloader including all hyprparameters")
@@ -69,28 +64,29 @@ if loaded_model:
 criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-total_step = len(training)
-cosine_t_max = epochs - warmup_epochs
-warmup_scheduler = LinearLR(optimizer, start_factor=0.01, end_factor=1.0, total_iters=warmup_epochs)
-cosine_scheduler = CosineAnnealingLR(optimizer, T_max=cosine_t_max)
+scheduler = OneCycleLR(optimizer,max_lr=args.lr, steps_per_epoch=len(training), epochs=epochs)
 
-scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[warmup_epochs])
+training_loss = []
+test_loss = []
+test_accuracy = []
 
-losses = []
-val_losses = []
 
 # TODO: Move this to predict
-def evaluate_model(final=False):
+def evaluate_model(loader):
     # Test the model
     print("==Testing====================")
-    start = time.time() #time generation
-    model.eval()
+    start_eval = time.time() #time generation
+    model.eval() 
+
+    all_preds = []  # To store all predictions
+    all_labels = []  # To store true labels
+
     with torch.no_grad():
         correct = 0
         total = 0
         avg_loss = 0 
         count = 0
-        for images, labels in test:
+        for images, labels in loader:
             images = images.to(device)
             labels = labels.to(device)
 
@@ -100,15 +96,19 @@ def evaluate_model(final=False):
             count += 1
             correct += (predicted == labels).sum().item()
             avg_loss += criterion(outputs, labels) 
-            if not final and count > 10:
-                break
-        val_losses.append(avg_loss / count)
+
+            # Collect predictions and true labels for metrics
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+            test_loss.append(avg_loss.item() / count)
 
         accuracy = (100 * correct / total)
-        print('Test Accuracy: {} %'.format(accuracy))
+        test_accuracy.append(accuracy)
+        print('Test Accuracy: {:.2f} % | Average Loss: {:.4f}'.format(accuracy, avg_loss / count)) 
 
     end = time.time()
-    elapsed = end - start
+    elapsed = end - start_eval
     print("Testing took " + str(elapsed) + " secs or " + str(elapsed/60) + " mins in total")
     model.train()
     print("=============================")
@@ -122,39 +122,49 @@ def train_model():
             labels = labels.to(device)
 
             output = model(images)
-            loss = criterion(output, labels)
+            train_loss = criterion(output, labels)
 
             # Backward and optimize
             optimizer.zero_grad()
-            loss.backward()
+            train_loss.backward()
             optimizer.step()
+            training_loss.append(train_loss.item())
         
-            if i % 1 == 0:
-                print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, total_step, loss.item()))
+            if i % 10 == 0:
+                print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, len(training), train_loss.item()))
 
-
-        losses.append(loss.item())
-        result, v_loss = evaluate_model() 
+        result, test_loss = evaluate_model(test) 
         if epoch % 10 == 0:
-            torch.save(model.state_dict(), 'GFNET-e{}-{}-{}.pth'.format(epoch, round(result, 4), tag))
+            result, test_loss = evaluate_model(validation) 
+            torch.save(model.state_dict(), 'Checkpoint-GFNET-e{}-{}-{}.pth'.format(epoch, round(result, 4), tag))
+            with open('losses-{}.csv'.format(tag), 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(training_loss)
+            with open('test_loss-{}.csv'.format(tag), 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(test_loss)
+            with open('test_accuracy-{}.csv'.format(tag), 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(test_accuracy)
 
-            if abs(v_loss - loss.item()) > 0.35:
+            if abs(test_loss - train_loss.item()) > 0.35:
                 print('=======OVERFITTED-TERMINATED======')
                 exit(2)
 
         scheduler.step() 
-    result, _ = evaluate_model(final=True) 
-    # torch.save(model.state_dict(), 'GFNET-{}.pth'.format(round(result, 4)))
-    torch.save(model.state_dict(), 'GFNET-{}-{}.pth'.format(round(result, 4), tag))
-    # Save losses to a CSV file
-    with open('losses.csv', 'w', newline='') as f:
+    result, final_accuracy = evaluate_model(validation) 
+    torch.save(model.state_dict(), 'FINAL_GFNET-{}-{}.pth'.format(round(result, 4), tag))
+    with open('losses-{}.csv'.format(tag), 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(losses)
-
-    # Save acc_hist to a CSV file
-    with open('val_loss.csv', 'w', newline='') as f:
+        writer.writerow(training_loss)
+    with open('test_loss-{}.csv'.format(tag), 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(val_losses)
+        writer.writerow(test_loss)
+    with open('test_accuracy-{}.csv'.format(tag), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(test_accuracy)
+    with open('{}-acc.out'.format(tag), 'w', newline='') as f:
+        f.write('{} -- Final Accuracy {}\n'.format(final_accuracy))
 
 
 

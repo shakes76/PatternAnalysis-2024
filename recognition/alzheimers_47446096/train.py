@@ -9,7 +9,7 @@ def train(device: str = "cpu"):
     NUM_EPOCH = 600
     LEARNING_RATE = 0.0002
 
-    model = VisionTransformer(6, 16, (3, 256, 256), 128, 8, 4, device).to(device)
+    model = VisionTransformer(8, 32, (3, 256, 256), 512, 8, 4, device).to(device)
     print(summary(model, (3, 256, 256)))
     trainLoader = getTrainLoader(gpu = True)
     valLoader = getValLoader(gpu = True)

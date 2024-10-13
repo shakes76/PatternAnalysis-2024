@@ -9,7 +9,7 @@ import skimage.transform as sk
 
 def to_channels(arr:np.ndarray, dtype = np.uint8) -> np.ndarray:
     channels = np.unique(arr)
-    res = np.zeros(arr.shape + (5,), dtype = dtype)
+    res = np.zeros(arr.shape + (6,), dtype = dtype)
     for c in channels:
         c = int(c)
         res [... , c : c +1][arr == c] = 1
@@ -26,12 +26,11 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     early_stop : Stop loading pre-maturely , leaves arrays mostly empty , for quick loading and testing scripts .
     '''
     affines = []
-
+    #count = 0
     # get fixed size
-    num = len (imageNames)
+    num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching="unchanged")
-    if not categorical:
-        first_case = sk.resize(first_case, (256,128), order=1, preserve_range=True)
+    first_case = sk.resize(first_case, (256,256))
     if len(first_case.shape) == 3:
         first_case = first_case [: ,: ,0] # sometimes extra dims , remove
     if categorical:
@@ -39,14 +38,13 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
         rows, cols, channels = first_case.shape
         images = np.zeros((num, rows, cols, channels), dtype = dtype)
     else:
-        rows, cols = first_case. shape
+        rows, cols = first_case.shape
         images = np.zeros((num, rows, cols), dtype = dtype)
 
     for i, inName in enumerate (tqdm(imageNames)):
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching ="unchanged") # read disk only
-        if not categorical:
-            inImage = sk.resize(inImage, (256,128), order=1, preserve_range=True)
+        inImage = sk.resize(inImage, (256,256))
         affine = niftiImage.affine
         if len (inImage.shape ) == 3:
             inImage = inImage[: ,: ,0] # sometimes extra dims in HipMRI_study data
@@ -75,7 +73,7 @@ def load(path, label=False):
     image_list = []
     for filename in glob.glob(path + '/*.nii.gz'): 
         image_list.append(filename)
-    train_set = load_data_2D(image_list, normImage=True, categorical=label)
+    train_set = load_data_2D(image_list, normImage=False, categorical=label)
     return train_set
 
 
@@ -85,6 +83,6 @@ validate_X = load(X_path + "validate")
 test_X = load(X_path + "test")
 
 seg_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_"
-train_Y = load(seg_path + "test", label=True)
+train_Y = load(seg_path + "train", label=True)
 validate_Y = load(seg_path + "validate", label=True)
 test_Y = load(seg_path + "test", label=True)

@@ -78,8 +78,8 @@ if __name__ == "__main__":
     model = AlzheimerModel(in_channels, patch_size, embed_size, img_size, num_layers, num_heads, d_mlp, dropout_rate)
     model.to(device)
 
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-2)
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
+    optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     # Scaler for mixed precision
     scaler = GradScaler('cuda')
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         checkpoint_path = f'output/param/checkpoint{START_EPOCH}.pth'
         checkpoint = torch.load(checkpoint_path)
         model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         
         print(f'Loaded model from {checkpoint_path}')
     else:
@@ -177,10 +177,11 @@ if __name__ == "__main__":
 
         # Save the model checkpoint after each epoch
         #torch.save(model.state_dict(), f'output/param/alzheimer_vit_epoch_{epoch+1}.pth')
-        torch.save({
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-        }, f'output/param/checkpoint{epoch+1}.pth')
-        print(f'Model saved: checkpoint{epoch+1}.pth')
+        if epoch < 10 or (epoch+1) % 20 == 0:
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                #'optimizer_state_dict': optimizer.state_dict(),
+            }, f'output/param/checkpoint{epoch+1}.pth')
+            print(f'Model saved: checkpoint{epoch+1}.pth')
 
     

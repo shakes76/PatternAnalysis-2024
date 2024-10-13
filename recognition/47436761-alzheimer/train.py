@@ -1,5 +1,5 @@
 from modules import AlzheimerModel
-from dataset import create_data_loader
+from dataset import *
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, SubsetRandomSampler
@@ -15,8 +15,8 @@ from sklearn.metrics import confusion_matrix, classification_report
 # Parameters
 NUM_EPOCHS = 40
 START_EPOCH = 30 # 0 index
-train_dir = 'dataset/AD_NC/train'
-test_dir = 'dataset/AD_NC/test'
+train_dir = '/home/groups/comp3710/ADNI/AD_NC/train' # '/home/groups/comp3710/ADNI/AD_NC/train'
+test_dir = '/home/groups/comp3710/ADNI/AD_NC/test' # '/home/groups/comp3710/ADNI/AD_NC/train'
 csv_file_path = 'training_epochs.csv'
 batch_size = 32
 learning_rate = 0.001
@@ -25,14 +25,15 @@ learning_rate = 0.001
 in_channels = 1
 img_size = 224
 patch_size = 16
-embed_size = 512
-num_layers = 8
-num_heads = 4
-d_mlp = 1024
-dropout_rate = 0.1
+embed_size = 768
+num_layers = 12
+num_heads = 8
+d_mlp = 2048
+dropout_rate = 0.4
 num_classes = 2
 batch_size = 32
-learning_rate = 3e-4
+learning_rate = 1e-5
+weight_decay = 1e-4
 
 
 def initialize_weights(m):
@@ -59,11 +60,15 @@ def initialize_weights(m):
 
 
 if __name__ == "__main__":
-    train_loader, val_loader = create_data_loader(
+    train_loader = create_train_loader(
         train_dir, 
         batch_size=batch_size, 
-        train=True, 
-        val=True, 
+        val_split=0.2, 
+    )
+    
+    val_loader = create_val_loader(
+        train_dir, 
+        batch_size=batch_size, 
         val_split=0.2, 
     )
 

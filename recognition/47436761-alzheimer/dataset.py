@@ -9,72 +9,127 @@ IMAGE_DIM = 224
 transform = transforms.Compose([
     transforms.Resize((IMAGE_DIM, IMAGE_DIM)),
     transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
-    transforms.RandomHorizontalFlip(),
+    transforms.RandomHorizontalFlip(p=0.3),
+    transforms.RandomRotation(degrees=5),
+    transforms.ColorJitter(brightness=0.1, contrast=0.1),
+    transforms.RandomAffine(degrees=5, translate=(0.02, 0.02), scale=(0.95, 1.05)),
+    transforms.RandomResizedCrop(size=IMAGE_DIM, scale=(0.8, 1.0)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485], std=[0.229]) # Imagenet values
+    transforms.Normalize(mean=[0.485], std=[0.229]),  # Imagenet values, or adjust based on MRI dataset stats
+    transforms.RandomErasing(p=0.3, scale=(0.02, 0.05), ratio=(0.3, 3.3)),
 ])
 
 
-def create_data_loader(root_dir, batch_size=32, train=True, val=False, val_split=0.2, seed=69):
+def create_train_loader(root_dir, batch_size=32, val_split=0.2, seed=69):
     """
-    Creates a DataLoader for the given dataset directory, with an optional split for validation.
+    Creates a DataLoader for the training set with data augmentation.
 
     Args:
-        root_dir (str): Directory containing the dataset (train or test).
+        root_dir (str): Directory containing the training dataset.
         batch_size (int): Number of samples per batch.
-        train (bool): Whether this is a training loader (shuffles data if True).
-        val (bool): Whether to split the data into training and validation.
-        val_split (float): Proportion of data to use for validation if splitting.
+        val_split (float): Proportion of data to use for validation.
+        seed (int): Seed for reproducibility.
 
     Returns:
-        DataLoader or tuple of DataLoader: A PyTorch DataLoader for the dataset, or a tuple of
-        (train_loader, val_loader) if `val=True`.
+        DataLoader: A PyTorch DataLoader for the training set.
     """
-    dataset = datasets.ImageFolder(root=root_dir, transform=transform)
+    # Define transform for training data with augmentations
+    train_transform = transforms.Compose([
+        transforms.Resize((IMAGE_DIM, IMAGE_DIM)),
+        transforms.Grayscale(num_output_channels=1),
+        #transforms.RandomHorizontalFlip(p=0.3),
+        transforms.RandomRotation(degrees=10),
+        #transforms.ColorJitter(brightness=0.1, contrast=0.1),
+        #transforms.RandomAffine(degrees=5, translate=(0.02, 0.02), scale=(0.95, 1.05)),
+        transforms.RandomResizedCrop(size=IMAGE_DIM, scale=(0.9, 1.1)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485], std=[0.229]),
+        #transforms.RandomErasing(p=0.3, scale=(0.02, 0.05), ratio=(0.3, 3.3)),
+    ])
     
-
-    # Create a local generator for reproducibility
+    dataset = datasets.ImageFolder(root=root_dir, transform=train_transform)
+    train_size = int(len(dataset) * (1 - val_split))
+    val_size = len(dataset) - train_size
     generator = torch.Generator().manual_seed(seed)
+    
+    train_dataset, _ = random_split(dataset, [train_size, val_size], generator=generator)
 
-
-    fraction = 0.7 # 0.3
-    subset_size = int(len(dataset) * fraction)
-
-    # Generate a random permutation of indices
-    indices = torch.randperm(len(dataset), generator=generator)[:subset_size]
-    dataset = Subset(dataset, indices)
-    print(f"Using the full dataset from {root_dir} with {len(dataset)} samples")
-
-    # If val is True, split the dataset into training and validation sets
-    if val:
-        val_size = int(len(dataset) * val_split)
-        train_size = len(dataset) - val_size
-        train_dataset, val_dataset = random_split(dataset, [train_size, val_size], generator=generator)
-
-        # Create DataLoaders for training and validation sets
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=batch_size,
-            shuffle=True,  # Shuffle training data
-            num_workers=4,
-            pin_memory=True
-        )
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=batch_size,
-            shuffle=False,  # Do not shuffle validation data
-            num_workers=4,
-            pin_memory=True
-        )
-        return train_loader, val_loader
-
-    # If val is False, create a standard DataLoader (for training or testing)
-    loader = DataLoader(
-        dataset,
+    train_loader = DataLoader(
+        train_dataset,
         batch_size=batch_size,
-        shuffle=train,  # Shuffle if training, do not shuffle if testing
+        shuffle=True,
         num_workers=4,
         pin_memory=True
     )
-    return loader
+    return train_loader
 
+
+# Function to create a validation DataLoader
+def create_val_loader(root_dir, batch_size=32, val_split=0.2, seed=69):
+    """
+    Creates a DataLoader for the validation set without data augmentation.
+
+    Args:
+        root_dir (str): Directory containing the training dataset.
+        batch_size (int): Number of samples per batch.
+        val_split (float): Proportion of data to use for validation.
+        seed (int): Seed for reproducibility.
+
+    Returns:
+        DataLoader: A PyTorch DataLoader for the validation set.
+    """
+    # Define transform for validation data (no augmentations)
+    val_transform = transforms.Compose([
+        transforms.Resize((IMAGE_DIM, IMAGE_DIM)),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485], std=[0.229]),
+    ])
+    
+    dataset = datasets.ImageFolder(root=root_dir, transform=val_transform)
+    train_size = int(len(dataset) * (1 - val_split))
+    val_size = len(dataset) - train_size
+    generator = torch.Generator().manual_seed(seed)
+    
+    _, val_dataset = random_split(dataset, [train_size, val_size], generator=generator)
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True
+    )
+    return val_loader
+
+
+# Function to create a test DataLoader
+def create_test_loader(root_dir, batch_size=32):
+    """
+    Creates a DataLoader for the test set without data augmentation.
+
+    Args:
+        root_dir (str): Directory containing the test dataset.
+        batch_size (int): Number of samples per batch.
+
+    Returns:
+        DataLoader: A PyTorch DataLoader for the test set.
+    """
+    # Define transform for test data (no augmentations)
+    test_transform = transforms.Compose([
+        transforms.Resize((IMAGE_DIM, IMAGE_DIM)),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485], std=[0.229]),
+    ])
+    
+    dataset = datasets.ImageFolder(root=root_dir, transform=test_transform)
+
+    test_loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True
+    )
+    return test_loader

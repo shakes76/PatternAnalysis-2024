@@ -35,6 +35,7 @@ if os.path.exists("params/data.json"):
     generator_loss = json_data["G_loss"]
     discriminator_loss = json_data["D_loss"]
 else:
+    os.mkdir("params/data.json")
     total_epochs = 0
     generator_loss = []
     discriminator_loss = []
@@ -130,6 +131,7 @@ if __name__ == "__main__":
         critic = Discriminator(LOG_RESOLUTION)
         mapping_network = MappingNetwork(Z_DIM, W_DIM)
         path_length_penalty = PathLengthPenalty(0.99)
+        os.mkdir('model/stylegan2ANDC')
 
     else:
         gen = Generator(LOG_RESOLUTION, W_DIM)

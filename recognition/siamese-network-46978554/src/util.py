@@ -6,13 +6,14 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def plot_pca_embeddings(embeddings, targets):
+def plot_pca_embeddings(embeddings, labels, pred=False):
     """
     Plots the first two principal components of the given embeddings.
 
     Args:
         embeddings: Model output embeddings.
-        targets: Labels for each embedding. Used for colouring the embedded points.
+        labels: Labels for each embedding. Used for colouring the embedded points.
+        pred: Whether the labels are predictions or targets (i.e. ground truth).
     """
     import matplotlib.pyplot as plt
     from sklearn.decomposition import PCA
@@ -23,8 +24,10 @@ def plot_pca_embeddings(embeddings, targets):
     comp1 = embeddings_pca[:, 0]
     comp2 = embeddings_pca[:, 1]
 
-    plt.scatter(comp1[targets == 0], comp2[targets == 0], label="benign")
-    plt.scatter(comp1[targets == 1], comp2[targets == 1], label="malignant")
+    suffix = "pred" if pred else "target"
+
+    plt.scatter(comp1[labels == 0], comp2[labels == 0], label="benign " + suffix)
+    plt.scatter(comp1[labels == 1], comp2[labels == 1], label="malignant " + suffix)
     plt.xlabel("PC Direction 1")
     plt.ylabel("PC Direction 2")
     plt.title("Model Embeddings (Test Set) in Principal Component Space")
@@ -32,13 +35,14 @@ def plot_pca_embeddings(embeddings, targets):
     plt.show()
 
 
-def plot_tsne_embeddings(embeddings, targets):
+def plot_tsne_embeddings(embeddings, labels, pred=False):
     """
     Plots the first two TSNE components of the given embeddings.
 
     Args:
         embeddings: Model output embeddings.
-        targets: Labels for each embedding. Used for colouring the embedded points.
+        labels: Labels for each embedding. Used for colouring the embedded points.
+        pred: Whether the labels are predictions or targets (i.e. ground truth).
     """
     import matplotlib.pyplot as plt
     from sklearn.manifold import TSNE
@@ -49,10 +53,28 @@ def plot_tsne_embeddings(embeddings, targets):
     comp1 = embeddings_tsne[:, 0]
     comp2 = embeddings_tsne[:, 1]
 
-    plt.scatter(comp1[targets == 0], comp2[targets == 0], label="benign")
-    plt.scatter(comp1[targets == 1], comp2[targets == 1], label="malignant")
+    suffix = "pred" if pred else "target"
+
+    plt.scatter(comp1[labels == 0], comp2[labels == 0], label="benign " + suffix)
+    plt.scatter(comp1[labels == 1], comp2[labels == 1], label="malignant " + suffix)
     plt.xlabel("TSNE Direction 1")
     plt.ylabel("TSNE Direction 2")
     plt.title("Model Embeddings (Test Set) in Principal Component Space")
+    plt.legend()
+    plt.show()
+
+
+def plot_losses(loss_files, loss_names):
+    import matplotlib.pyplot as plt
+    import torch
+
+    for loss_file, loss_name in zip(loss_files, loss_names):
+        # Plot every 100 losses
+        loss = torch.load(loss_file, weights_only=False)
+        plt.plot(loss[::100], label=loss_name)
+
+    plt.xlabel("Epoch mini batches (every 100)")
+    plt.ylabel("Loss")
+    plt.title("Loss over epochs (every 100)")
     plt.legend()
     plt.show()

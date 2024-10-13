@@ -1,13 +1,26 @@
+import sys  # Add this import for command-line arguments
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
+
+# Determine which module to import based on command-line argument
+if len(sys.argv) != 2 or sys.argv[1] not in ['1', '2']:
+    print("Usage: python train.py <1|2>")
+    sys.exit(1)
+
+module_choice = sys.argv[1]
+if module_choice == '1':
+    from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
+else:
+    from modules2 import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
+
 from dataset import create_adni_dataset, generate_random_inputs
 import numpy as np
 import wandb
 
+
 # Define training parameters
 BATCH_SIZE = 16
-EPOCHS = 200
+EPOCHS = 170
 TARGET_SIZE = (128, 128)  # Change target size to 256x256
 
 # Load the models
@@ -52,22 +65,40 @@ discriminator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=di
 
 print("Models compiled.")
 
-# Initialize Weights and Biases
-print("Initializing Weights and Biases...")
-wandb.init(
-    project="StyleGAN ADNI Test", 
-    entity="samwolfenden-university-of-queensland",
-    config={
-        "gen learning rate": generator_lr_schedule,
-        "disc learning rate": discriminator_lr_schedule,
-        "epochs": EPOCHS,
-        "optimizer": type(generator_optimizer).__name__,
-        "scheduler": type(discriminator_optimizer).__name__,
-        "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
-        "name": "SD-ADNI - VAE and Unet",
-        "image size": TARGET_SIZE,
-        "batch size": BATCH_SIZE
-    })
+if module_choice == '1':
+    # Initialize Weights and Biases
+    print("Initializing Weights and Biases...")
+    wandb.init(
+        project="StyleGAN ADNI Test", 
+        entity="samwolfenden-university-of-queensland",
+        config={
+            "gen learning rate": generator_lr_schedule,
+            "disc learning rate": discriminator_lr_schedule,
+            "epochs": EPOCHS,
+            "optimizer": type(generator_optimizer).__name__,
+            "scheduler": type(discriminator_optimizer).__name__,
+            "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
+            "name": "SD-ADNI - VAE and Unet",
+            "image size": TARGET_SIZE,
+            "batch size": BATCH_SIZE
+        })
+elif module_choice == '2':
+        # Initialize Weights and Biases
+    print("Initializing Weights and Biases...")
+    wandb.init(
+        project="StyleGAN2 ADNI Test", 
+        entity="samwolfenden-university-of-queensland",
+        config={
+            "gen learning rate": generator_lr_schedule,
+            "disc learning rate": discriminator_lr_schedule,
+            "epochs": EPOCHS,
+            "optimizer": type(generator_optimizer).__name__,
+            "scheduler": type(discriminator_optimizer).__name__,
+            "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
+            "name": "SD-ADNI - VAE and Unet",
+            "image size": TARGET_SIZE,
+            "batch size": BATCH_SIZE
+        })
 
 # Load the ADNI dataset
 print("Loading ADNI dataset...")
@@ -116,8 +147,8 @@ def train_step(real_images):
         disc_loss = real_loss + fake_loss
 
         # Add gradient penalty
-        gp = gradient_penalty(real_images, generated_images)
-        disc_loss += 10.0 * gp  # Weighted penalty
+        #gp = gradient_penalty(real_images, generated_images)
+        #disc_loss += 10.0 * gp  # Weighted penalty
 
     disc_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
     discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
@@ -154,8 +185,12 @@ def generate_and_save_images(model, epoch):
         plt.subplot(4, 4, i + 1)
         plt.imshow(predictions[i, :, :, 0] * 0.5 + 0.5, cmap='gray')
         plt.axis('off')
-    plt.savefig(f'finished_image_at_epoch_{epoch:04d}.png')
-    plt.close()
+    if module_choice == '1':
+        plt.savefig(f'StyleGAN_image_at_epoch_{epoch:04d}.png')
+        plt.close()
+    elif module_choice == '2':
+        plt.savefig(f'StyleGAN2_image_at_epoch_{epoch:04d}.png')
+        plt.close()
     print(f"Images saved for epoch {epoch}.")
 
 def extract_features(dataset, model):

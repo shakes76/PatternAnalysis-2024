@@ -50,9 +50,7 @@ class AllTumorDataset(Dataset[tuple[torch.Tensor, str]]):
     @override
     def __getitem__(self, index: int) -> tuple[torch.Tensor, str]:
         return (
-            transforms.CenterCrop(224)(
-                transforms.Resize(256)(io.read_image(self._image_paths[index]) / 255)
-            ),
+            _shrink_transforms(io.read_image(self._image_paths[index]) / 255),
             self._image_paths[index].stem,
         )
 
@@ -63,4 +61,8 @@ _augmentations = transforms.Compose(
         v2.RandomHorizontalFlip(p=0.5),
         v2.RandomVerticalFlip(p=0.5),
     ]
+)
+
+_shrink_transforms = transforms.Compose(
+    [transforms.Resize(256), transforms.CenterCrop(224)]
 )

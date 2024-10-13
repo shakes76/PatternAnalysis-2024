@@ -9,6 +9,7 @@ from sklearn.metrics import classification_report, roc_auc_score, RocCurveDispla
 from sklearn.manifold import TSNE
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
+from sklearn import neural_network
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -21,6 +22,7 @@ from dataset import TumorClassificationDataset
 
 logger = logging.getLogger(__name__)
 
+PLOTS_PATH = pathlib.Path("plots")
 DATA_PATH = pathlib.Path("data")
 ALL_META_PATH = DATA_PATH / "all.csv"
 TRAIN_META_PATH = DATA_PATH / "train.csv"
@@ -49,9 +51,9 @@ def main() -> None:
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=10,
+        num_epochs=1000,
         learning_rate=learning_rate,
-        margin=0.5,
+        margin=0.0001,
     )
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2, learning_rate=learning_rate)
@@ -62,7 +64,73 @@ def main() -> None:
 
     # Training data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
+
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df, transform=True)
+    # Undersample to alleviate class imbalance
+    benign = train_meta_df[train_meta_df["target"] == 0]
+    malignant = train_meta_df[train_meta_df["target"] == 1]
+    benign = benign.sample(random_state=42, n=len(malignant))
+    knn_df = pd.concat([benign, malignant])
+
+    # knn_df = train_meta_df
+
+    knn_ds = TumorClassificationDataset(IMAGES_PATH, knn_df, transform=False)
+
+    # Undersample dataloader for KNN embeddings
+    train_classification_loader = DataLoader(
+        knn_ds,
+        batch_size=hparams.batch_size,
+        num_workers=num_workers,
+    )
+
+    # Validation data
+    val_meta_df = pd.read_csv(VAL_META_PATH)
+    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df, transform=False)
+    val_loader = DataLoader(
+        val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
+    )
+
+    best_auc = 0
+
+    def validate():
+        nonlocal best_auc
+
+        embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
+        embeddings = normalize(embeddings)
+
+        val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
+        val_embeddings = normalize(val_embeddings)
+
+        def margin_weight(arr):
+            closest = arr.argmin(axis=1)
+            weights = (arr <= hparams.margin).astype(int)
+            weights[:, closest] = 1
+
+            return weights
+
+        knn = KNeighborsClassifier(n_neighbors=100, weights=margin_weight, p=2)
+        svm = SVC(probability=True)
+        nn = neural_network.MLPClassifier(
+            hidden_layer_sizes=(128, 64, 32, 32), random_state=42
+        )
+        fit_nn = nn.fit(embeddings, labels)
+        fit_knn = knn.fit(embeddings, labels)
+        fit_svm = svm.fit(embeddings, labels)
+
+        pred_labels = fit_knn.predict(val_embeddings)
+        svm_labels = fit_svm.predict(val_embeddings)
+        nn_labels = fit_nn.predict(val_embeddings)
+
+        auc = roc_auc_score(val_labels, pred_labels)
+        svm_auc = roc_auc_score(val_labels, svm_labels)
+        nn_auc = roc_auc_score(val_labels, nn_labels)
+        logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", auc, svm_auc, nn_auc)
+
+        if auc > best_auc:
+            best_auc = auc
+            trainer.save_model(f"best_{model_name}")
+
+    trainer.end_of_epoch_func = validate
 
     sampler = MPerClassSampler(
         labels=train_meta_df["target"],
@@ -91,30 +159,14 @@ def main() -> None:
         logger.info("Starting training...")
         trainer.train(train_loader)
 
+    # Training plots
     plt.figure()
     plt.plot(trainer.losses)
-    plt.savefig("plots/train_loss")
-
+    plt.savefig(PLOTS_PATH / "train_loss")
     plt.figure()
     plt.plot(trainer.mined_each_step)
-    plt.savefig("plots/mined")
+    plt.savefig(PLOTS_PATH / "mined")
 
-    # Undersample to alleviate class imbalance
-    benign = train_meta_df[train_meta_df["target"] == 0]
-    malignant = train_meta_df[train_meta_df["target"] == 1]
-    benign = benign.sample(random_state=42, n=len(malignant))
-    knn_df = pd.concat([benign, malignant])
-
-    # knn_df = train_meta_df
-
-    knn_ds = TumorClassificationDataset(IMAGES_PATH, knn_df, transform=False)
-
-    # Undersample dataloader for KNN embeddings
-    train_classification_loader = DataLoader(
-        knn_ds,
-        batch_size=hparams.batch_size,
-        num_workers=num_workers,
-    )
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     logger.info("Embeddings \n%s", embeddings)
 
@@ -165,8 +217,15 @@ def main() -> None:
     plt.savefig("plots/train_tsne")
 
     # Fit KNN
-    # knn = KNeighborsClassifier(n_neighbors=5, weights="uniform", p=2)
-    knn = SVC(probability=True)
+    def margin_weight(arr):
+        closest = arr.argmin(axis=1)
+        weights = (arr <= hparams.margin).astype(int)
+        weights[:, closest] = 1
+
+        return weights
+
+    knn = KNeighborsClassifier(n_neighbors=100, weights=margin_weight, p=2)
+    # knn = SVC(probability=True)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
 

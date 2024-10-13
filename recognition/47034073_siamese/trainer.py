@@ -47,6 +47,8 @@ class SiameseController:
             distance=self._distance,
         )
 
+        self.end_of_epoch_func = lambda: None
+
     def train(self, train_loader: DataLoader) -> None:
         for _ in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
@@ -54,6 +56,8 @@ class SiameseController:
 
             self._epoch += 1
             self.save_model(self._model_name)
+
+            self.end_of_epoch_func()
 
     def compute_all_embeddings(
         self, loader: DataLoader
@@ -89,7 +93,9 @@ class SiameseController:
         self._model.load_state_dict(state["model_state"])
         self._optim.load_state_dict(state["optim_state"])
         self.losses = state["losses"]
-        self.mined_each_step = state["mined_each_step"]
+        self.mined_each_step = state.get("mined_each_step")
+        if self.mined_each_step is None:
+            self.mined_each_step = []
         self._epoch = state["epoch"]
 
     def _train_epoch(

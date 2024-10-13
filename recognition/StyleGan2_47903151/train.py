@@ -35,7 +35,8 @@ if os.path.exists("params/data.json"):
     generator_loss = json_data["G_loss"]
     discriminator_loss = json_data["D_loss"]
 else:
-    os.mkdir("params")
+    if not os.path.exists("params"):
+        os.mkdir("params")
     total_epochs = 0
     generator_loss = []
     discriminator_loss = []
@@ -114,7 +115,6 @@ def train_fn(
             loss_critic=loss_critic.item(),
         )
 
-MODEL_SAVED = os.path.exists('model/stylegan2ANDC')
 
 if __name__ == "__main__":
     # Get and parse the command line arguments
@@ -126,12 +126,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.directory)
-    if not MODEL_SAVED:
+    if not os.path.exists('model/stylegan2ANDC'):
         gen = Generator(LOG_RESOLUTION, W_DIM)
         critic = Discriminator(LOG_RESOLUTION)
         mapping_network = MappingNetwork(Z_DIM, W_DIM)
         path_length_penalty = PathLengthPenalty(0.99)
-        os.mkdir('model')
+        if not os.path.exists('model'):
+            os.mkdir('model')
         os.mkdir('model/stylegan2ANDC')
 
     else:
@@ -193,5 +194,7 @@ if __name__ == "__main__":
     plt.xlabel("iterations")
     plt.ylabel("Loss")
     plt.legend()
+    if not os.path.exists("training"):
+        os.mkdir("training")
     plt.savefig("training/training_loss.png")
 

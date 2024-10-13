@@ -62,7 +62,7 @@ Model training is done in [src/train.py](src/train.py). See `python src/train.py
 python src/train.py train -o "output/" -m 0.3 -e 100 -l 0.0001 -b 64
 ```
 
-Model testing for inspecting metrics is also done in [src/train.py](src/train.py). The checkpoint file to be used should be specified, as well as the margin to use for contrastive loss (this should be the same value as was used during training). This produces a classification report (prceision, recall, f1-score, accuracy) based on the test dataset, as well as the test AUROC (area under receiver operating characteristic curve). For example, to test the model with margin 0.3 in the `output/` directory from the 100th epoch checkpoint, use
+Model testing for computing metrics is also done in [src/train.py](src/train.py). The checkpoint file to be used should be specified, as well as the margin to use for contrastive loss (this should be the same value as was used during training). This produces a classification report (prceision, recall, f1-score, accuracy) based on the test dataset, as well as the test AUROC (area under receiver operating characteristic curve). For example, to test the model with margin 0.3 in the `output/` directory from the 100th epoch checkpoint, use
 ```bash
 python src/train.py test -o "output/" -m 0.3 --checkpoint-ts "checkpoint-epoch-100.pt"
 ```
@@ -82,13 +82,9 @@ Below are the results from the models that performed the best. I found margins 0
 
 We plot the loss curves from training several models with margins 0.3 and 0.5 and learning rates 0.001, 0.0001, and 0.00001. The loss was recorded at every mini-batch, so to keep the graphs less cluttered, each block of 100 losses was averaged.
 
-![Margin 0.3 loss curves](assets/margin-0.3-avg-losses.png)
-
-*Loss curves for models trained with margin 0.3*
-
-![Margin 0.5 loss curves](assets/margin-0.5-avg-losses.png)
-
-*Loss curves for models trained with margin 0.5*
+Margin 0.3 | Margin 0.5
+:-:|:--:
+![](assets/margin-0.3-avg-losses.png) | ![](assets/margin-0.5-avg-losses.png)
 
 A summary of each model's performance is given below. The dataset is imbalanced, and so there are significantly more benign cases than there are malignant cases. Hence accuracy is not a reliable indicator of performance. Instead, we can look at other metrics like AUROC, precision, and recall, as mentioned before.
 

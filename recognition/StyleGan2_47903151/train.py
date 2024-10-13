@@ -97,9 +97,10 @@ def train_fn(
             plp = path_length_penalty(w, fake)
             if not torch.isnan(plp):
                 loss_gen = loss_gen + plp
+        if batch_idx % 100 == 0 or batch_idx == cur_batch_size-1:
             # Record loss for graph
-            generator_loss.append(loss_gen.numpy())
-            discriminator_loss.append(loss_critic.numpy())
+            generator_loss.append(loss_gen.item())
+            discriminator_loss.append(loss_critic.item())
 
         mapping_network.zero_grad()
         gen.zero_grad()

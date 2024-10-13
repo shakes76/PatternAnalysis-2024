@@ -1,4 +1,31 @@
-"""Code for training, validating, testing, and saving model"""
+"""
+Code for training, validating, testing, and saving model
+
+usage: train.py [-h] [-o OUT] [-p] [-m MARGIN] [-e EPOCH] [-l LR] [-b BATCH]
+                [--checkpoint-tr CHECKPOINT_TR] [--checkpoint-ts CHECKPOINT_TS]
+                {train,test}
+
+positional arguments:
+  {train,test}          Training (TR) or testing (TS)
+
+options:
+  -h, --help            show this help message and exit
+  -o OUT, --out OUT     (TR/TS) output directory, default out
+  -p, --pretrained      (TR/TS) whether ResNet base is pretrained or not
+  -m MARGIN, --margin MARGIN
+                        (TR/TS) margin for contrastive loss, default 0.2
+  -e EPOCH, --epoch EPOCH
+                        (TR) epochs, default 10
+  -l LR, --lr LR        (TR) learning rate, default 0.001
+  -b BATCH, --batch BATCH
+                        (TR) batch size, default 128
+  --checkpoint-tr CHECKPOINT_TR
+                        (TR) checkpoint file (in out directory) to train from, default
+                        none (train from scratch)
+  --checkpoint-ts CHECKPOINT_TS
+                        (TS) checkpoint file (in out directory) to test from, default
+                        checkpoint.pt
+"""
 
 import argparse
 import os
@@ -6,12 +33,14 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from dataset import MelanomaSiameseReferenceDataset, MelanomaSkinCancerDataset
-from modules import SiameseNetwork
+from dataset import MelanomaSkinCancerDataset
+from modules import MajorityClassifier, SiameseNetwork
+from pytorch_metric_learning.distances import LpDistance
+from pytorch_metric_learning.losses import ContrastiveLoss
+from pytorch_metric_learning.samplers import MPerClassSampler
 from sklearn.metrics import classification_report, roc_auc_score
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from util import contrastive_loss, contrastive_loss_threshold
 
 
 def train(
@@ -23,29 +52,33 @@ def train(
     batch_size=128,
     start_epoch=0,
 ):
-    data_loader = DataLoader(dataset, batch_size, shuffle=True, num_workers=4)
+    # Define dataloader to sample 50/50 split of benign & malignant images in each batch
+    labels = dataset.metadata["target"]
+    sampler = MPerClassSampler(labels=labels, m=batch_size // 2, batch_size=batch_size)
+    data_loader = DataLoader(dataset, batch_size, num_workers=4, sampler=sampler)
 
     # Put network in training mode
     net = net.to(device)
     net.train()
 
     # Define loss function and optimiser
-    loss_func = contrastive_loss(margin=args.margin)
+    distance = LpDistance(normalize_embeddings=False, p=2, power=1)
+    loss_func = ContrastiveLoss(neg_margin=args.margin, distance=distance)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
 
     losses = []
-    for epoch in range(start_epoch, nepochs + start_epoch):
+    end_epoch = nepochs + start_epoch
+    for epoch in range(start_epoch, end_epoch):
         epoch_loss = 0
         nbatches = 0
 
-        for i, (x1_batch, x2_batch, y_batch) in enumerate(data_loader):
-            x1_batch = x1_batch.to(device)
-            x2_batch = x2_batch.to(device)
+        for i, (x_batch, y_batch) in enumerate(data_loader):
+            x_batch = x_batch.to(device)
             y_batch = y_batch.to(device)
 
             optimizer.zero_grad()
-            out1, out2 = net(x1_batch, x2_batch)
-            loss = loss_func(out1, out2, y_batch)
+            embeddings = net(x_batch)
+            loss = loss_func(embeddings, y_batch)
             loss.backward()
             optimizer.step()
 
@@ -56,102 +89,73 @@ def train(
         print("Epoch %3d: %10f" % (epoch + 1, epoch_loss / nbatches))
 
         # Save model weights and losses every 10 epochs and at the last epoch
-        if epoch % 10 == 9 or epoch == nepochs + start_epoch - 1:
-            torch.save(torch.Tensor(losses), out_dir / "loss.pt")
-            save_obj = {"epoch": epoch + 1, "state_dict": net.state_dict()}
-            torch.save(save_obj, out_dir / "checkpoint.pt")
+        if epoch % 10 == 9 or epoch == end_epoch - 1:
+            loss_filename = f"loss-epochs-{start_epoch+1}-{epoch+1}.pt"
+            checkpoint_filename = f"checkpoint-epoch-{epoch+1}.pt"
+            torch.save(torch.Tensor(losses), out_dir / loss_filename)
+            torch.save(net.state_dict(), out_dir / checkpoint_filename)
 
+            # Test the network, if a callback function is provided
             if test_func:
                 test_func(net)
 
 
-def test(net, dataset, ref_set, device):
-    batch_size = 128
-    data_loader = DataLoader(dataset, batch_size, shuffle=False)
-
-    # Reference set is used for classification - we compare each new image to an
-    # image with an already known label
+def test(net, test_dataset, ref_dataset, device, batch_size=128):
+    # Reference images are used for classifying an unseen image - we compare it against
+    # every reference image and classify it based on a majority vote
+    data_loader = DataLoader(test_dataset, batch_size)
+    ref_data_loader = DataLoader(ref_dataset, batch_size)
 
     # Put network in eval mode
     net = net.to(device)
     net.eval()
 
-    targets_ref = []
-    outs_ref = []
+    # Embeddings and labels for reference dataset
+    ref_embeddings = []
+    ref_targets = []
 
+    # Ground truth (targets) and predictions for test dataset
     preds = []
     preds_proba = []
     targets = []
-    outs = []
 
     with torch.no_grad():  # Disable gradient computation for efficiency
-        # Run reference images through network to get reference outputs
-        ref_set_loader = DataLoader(ref_set, batch_size=8)
-        for i, (x_ref_batch, y_ref_batch) in enumerate(ref_set_loader):
-            x_ref_batch = x_ref_batch.to(device)
-            y_ref_batch = y_ref_batch.to(device)
-            out_ref = net.forward_one(x_ref_batch)
+        # Get embeddings of reference images
+        for i, (x_batch, y_batch) in enumerate(ref_data_loader):
+            x_batch = x_batch.to(device)
 
-            targets_ref.append(y_ref_batch)
-            outs_ref.append(out_ref)
+            embeddings = net(x_batch)
+            ref_embeddings.append(embeddings)
+            ref_targets.append(y_batch)
 
-        targets_ref = torch.concat(targets_ref)
-        outs_ref = torch.concat(outs_ref)
+        ref_embeddings = torch.concat(ref_embeddings)
+        ref_targets = torch.concat(ref_targets)
 
-        # Do prediction on test set
+        clf = MajorityClassifier(margin=args.margin)
+        clf.fit(ref_embeddings.cpu(), ref_targets)
+
+        # Do prediction on test dataset
         for i, (x_batch, y_batch) in enumerate(data_loader):
             x_batch = x_batch.to(device)
-            out = net.forward_one(x_batch)
-            # For AUC, we want the model to output probabilities
-            pred_proba = classify(out, outs_ref, targets_ref, device, prob=True)
-            # For classification report, we want the hard classifications
-            pred = (pred_proba >= 0.5).float()
 
+            embeddings = net(x_batch).cpu()
+
+            # For AUROC, we want the probability of the class with the greater label
+            pred = clf.predict(embeddings)
+            pred_proba = clf.predict_proba(embeddings)
+
+            preds.append(pred)
+            preds_proba.append(pred_proba)
             targets.append(y_batch.numpy())
-            outs.append(out.cpu().numpy())
-            preds.append(pred.cpu().numpy())
-            preds_proba.append(pred_proba.cpu().numpy())
 
-        targets = np.concatenate(targets)
-        outs = np.concatenate(outs)
         preds = np.concatenate(preds)
         preds_proba = np.concatenate(preds_proba)
-
-    if args.plot:
-        from util import plot_pca_embeddings
-
-        plot_pca_embeddings(outs, targets)
+        targets = np.concatenate(targets)
 
     report = classification_report(targets, preds, target_names=["benign", "malignant"])
     auc = roc_auc_score(targets, preds_proba)
 
     return report, auc
-
-
-def classify(out, outs_ref, targets_ref, device, prob=True):
-    batch_size = out.shape[0]
-    threshold = contrastive_loss_threshold(margin=args.margin)
-
-    preds = []
-    for out_ref, target_ref in zip(outs_ref, targets_ref):
-        out_ref = out_ref.repeat(batch_size, 1)
-        target_ref = target_ref.repeat(batch_size)
-        pair_pred = threshold(out, out_ref)
-
-        # The model returns 0 if the pair is similar, and 1 otherwise
-        # However, we need the actual label (0 for benign, 1 for malign)
-        # An XOR with the ground truth label (y_ref) will give us the actual label!
-        pred = torch.logical_xor(pair_pred, target_ref).float()
-        preds.append(pred)
-
-    # Stack predictions so that the dimensions are [batch_size, num_ref_imgs]
-    preds = torch.stack(preds, dim=1)
-
-    # Probability output is the mean label prediction
-    if prob:
-        return preds.mean(dim=1)
-    # For "hard" classification, use 0.5 as decision boundary
-    return (preds.mean(dim=1) >= 0.5).float()
 
 
 def main():
@@ -166,9 +170,9 @@ def main():
             transforms.RandomRotation(30),
         ]
     )
-    train_set = MelanomaSkinCancerDataset(train=True, transform=train_transform)
-    test_set = MelanomaSkinCancerDataset(train=False)
-    ref_set = MelanomaSiameseReferenceDataset(size=16)
+    train_set = MelanomaSkinCancerDataset(mode="train", transform=train_transform)
+    test_set = MelanomaSkinCancerDataset(mode="test")
+    ref_set = MelanomaSkinCancerDataset(mode="ref")
 
     net = SiameseNetwork(pretrained=args.pretrained)
 
@@ -180,18 +184,16 @@ def main():
     if args.action == "train":
         start_epoch = 0
         if args.checkpoint_tr:
-            checkpoint = torch.load(
-                out_dir / args.checkpoint_tr, weights_only=False, map_location=device
-            )
-            net.load_state_dict(checkpoint["state_dict"])
-            start_epoch = checkpoint["epoch"]
+            checkpoint_filename = out_dir / args.checkpoint_tr
+            checkpoint = torch.load(checkpoint_filename, map_location=device)
+            net.load_state_dict(checkpoint)
 
-        if start_epoch == 0:
-            print(f"Training on {device} for {args.epoch} epochs...")
-        else:
-            print(
-                f"Training on {device} from checkpoint ({start_epoch} epochs) for {args.epoch} epochs..."
-            )
+            start_epoch = int(checkpoint_filename.split(".")[0].split("-")[-1])
+
+        if start_epoch != 0:
+            print(f"Loaded checkpoint (trained for {start_epoch} epochs)")
+        print(f"Training on {device} for {args.epoch} epochs...")
+
         train(
             net,
             train_set,
@@ -203,71 +205,45 @@ def main():
         )
 
     else:  # args.action == "test"
-        checkpoint = torch.load(
-            out_dir / args.checkpoint_ts, weights_only=False, map_location=device
-        )
-        net.load_state_dict(checkpoint["state_dict"])
+        checkpoint_filename = out_dir / args.checkpoint_ts
+        checkpoint = torch.load(checkpoint_filename, map_location=device)
+        net.load_state_dict(checkpoint)
 
         test_net(net)
 
 
 if __name__ == "__main__":
+    # fmt: off
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["train", "test"], help="Training or testing")
-    parser.add_argument(
-        "-o",
-        "--out",
-        type=str,
-        default="out",
-        help="(TR/TS) output directory, default out",
-    )
+    parser.add_argument("action", choices=["train", "test"], help="Training (TR) or testing (TS)")
+    parser.add_argument("-o", "--out", type=str, default="out", help="(TR/TS) output directory, default out")
 
     # Model args, hyperparameters
     parser.add_argument(
-        "-p",
-        "--pretrained",
-        action="store_true",
-        help="(TR/TS) whether ResNet base is pretrained or not",
+        "-p", "--pretrained", action="store_true", help="(TR/TS) whether ResNet base is pretrained or not"
     )
     parser.add_argument(
-        "-m",
-        "--margin",
-        type=float,
-        default=0.2,
-        help="(TR/TS) margin for contrastive loss, default 0.2",
+        "-m", "--margin", type=float, default=0.2, help="(TR/TS) margin for contrastive loss, default 0.2"
     )
 
     # Training args
-    parser.add_argument(
-        "-e", "--epoch", type=int, default=10, help="(TR) epochs, default 10"
-    )
-    parser.add_argument(
-        "-l",
-        "--lr",
-        type=float,
-        default=0.001,
-        help="(TR) learning rate, default 0.001",
-    )
-    parser.add_argument(
-        "-b", "--batch", type=int, default=128, help="(TR) batch size, default 128"
-    )
+    parser.add_argument("-e", "--epoch", type=int, default=10, help="(TR) epochs, default 10")
+    parser.add_argument("-l", "--lr", type=float, default=0.001, help="(TR) learning rate, default 0.001")
+    parser.add_argument("-b", "--batch", type=int, default=128, help="(TR) batch size, default 128")
     parser.add_argument(
         "--checkpoint-tr",
         type=str,
         default="",
-        help="(TR) checkpoint file to train from, default none (train from scratch)",
+        help="(TR) checkpoint file (in out directory) to train from, default none (train from scratch)",
     )
     parser.add_argument(
         "--checkpoint-ts",
         type=str,
         default="checkpoint.pt",
-        help="(TS) checkpoint file (in output directory) to test from, default checkpoint.pt",
+        help="(TS) checkpoint file (in out directory) to test from, default checkpoint.pt",
     )
 
-    # Testing args
-    parser.add_argument(
-        "--plot", action="store_true", help="(TS) whether to display diagnostic plots"
-    )
+    # fmt: on
 
     args = parser.parse_args()
     print(args)

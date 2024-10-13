@@ -15,6 +15,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from modules import *
 from dataset import *
+import json
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 EPOCHS = 300
@@ -25,6 +26,20 @@ Z_DIM = 512
 W_DIM = 512
 LAMBDA_GP = 10
 
+if os.path.exists("params/data.json"):
+    with open("params/data.json", 'r') as f:
+        json_data = json.load(f)
+    total_epochs = json_data["epochs"]
+    generator_loss = json_data["G_loss"]
+    discriminator_loss = json_data["D_loss"]
+else:
+    total_epochs = 0
+    generator_loss = []
+    discriminator_loss = []
+    json_data = {"epochs": 0,
+                 "G_loss": [],
+                 "D_loss": []}
+
 
 def generate_examples(gen, epoch, n=100):
     gen.eval()
@@ -32,14 +47,13 @@ def generate_examples(gen, epoch, n=100):
     for i in range(n):
         with torch.no_grad():
             w = get_w(1, W_DIM, DEVICE, mapping_network, LOG_RESOLUTION)
-            noise = get_noise(1, DEVICE, LOG_RESOLUTION)
+            noise = get_noise(1, LOG_RESOLUTION, DEVICE)
             img = gen(w, noise)
             if not os.path.exists(f'saved_examples/epoch{epoch}'):
                 os.makedirs(f'saved_examples/epoch{epoch}')
             save_image(img * 0.5 + 0.5, f"saved_examples/epoch{epoch}/img_{i}.png")
 
     gen.train()
-
 
 def train_fn(
         critic,
@@ -81,6 +95,9 @@ def train_fn(
             plp = path_length_penalty(w, fake)
             if not torch.isnan(plp):
                 loss_gen = loss_gen + plp
+            # Record loss for graph
+            generator_loss.append(loss_gen.numpy())
+            discriminator_loss.append(loss_critic.numpy())
 
         mapping_network.zero_grad()
         gen.zero_grad()
@@ -103,7 +120,6 @@ if not MODEL_SAVED:
     path_length_penalty = PathLengthPenalty(0.99)
 
 else:
-    # Model class must be defined somewhere
     gen = Generator(LOG_RESOLUTION, W_DIM)
     gen.load_state_dict(torch.load("model/stylegan2ANDC/generator.pth"))
 
@@ -140,11 +156,27 @@ for epoch in range(EPOCHS):
         opt_gen,
         opt_mapping_network,
     )
-    if epoch % 50 == 0:
-        generate_examples(gen, epoch)
+    # Saving model every epoch
+    torch.save(gen.state_dict(), "model/stylegan2ANDC/generator.pth")
+    torch.save(critic.state_dict(), "model/stylegan2ANDC/discriminator.pth")
+    torch.save(mapping_network.state_dict(), "model/stylegan2ANDC/mapping.pth")
+    torch.save(path_length_penalty.state_dict(), "model/stylegan2ANDC/PLP.pth")
+    if total_epochs % 10 == 0:
+        generate_examples(gen, epoch, 12)
+    total_epochs += 1
+    json_data[total_epochs] += 1
+    json_data["G_loss"] = generator_loss
+    json_data["D_loss"] = discriminator_loss
+    # Writing to json file to remember num. epochs
+    with open("params/data.json", "w") as f:
+        f.write(json_data)
 
-# Saving model
-torch.save(gen.state_dict(), "model/stylegan2ANDC/generator.pth")
-torch.save(critic.state_dict(), "model/stylegan2ANDC/discriminator.pth")
-torch.save(mapping_network.state_dict(), "model/stylegan2ANDC/mapping.pth")
-torch.save(path_length_penalty.state_dict(), "model/stylegan2ANDC/PLP.pth")
+plt.figure(figsize=(10, 5))
+plt.title("Generator and Discriminator Loss During Training")
+plt.plot(generator_loss, label="G")
+plt.plot(discriminator_loss, label="D")
+plt.xlabel("iterations")
+plt.ylabel("Loss")
+plt.legend()
+plt.savefig("training/training_loss.png")
+

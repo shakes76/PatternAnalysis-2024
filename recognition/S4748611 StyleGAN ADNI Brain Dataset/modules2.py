@@ -108,7 +108,7 @@ def build_discriminator():
 
     return Model(input_image, x, name="discriminator")
 
-def build_stylegan2():
+def build_stylegan():
     latent_input = Input(shape=(LATENT_DIM,))
     constant_input = Input(shape=(INITIAL_SIZE, INITIAL_SIZE, LATENT_DIM))
 
@@ -123,7 +123,7 @@ def build_stylegan2():
 # Build and summarize the models
 generator = build_generator()
 discriminator = build_discriminator()
-stylegan2 = build_stylegan2()
+stylegan2 = build_stylegan()
 
 print("Generator Summary:")
 generator.summary()

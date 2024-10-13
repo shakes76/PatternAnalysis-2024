@@ -17,14 +17,12 @@ In this project, we apply the siamese network architecture to skin lesion analys
 ## Model Architecture
 The siamese network architecture consists of a pair of neural networks with shared weights. In this project, the so-called "sister" networks we use are ResNets [2], in particular ResNet50s. The key characteristic of residual networks are that the weight layers learn residual functions with respect to the layer inputs as opposed to unreferenced functions. They have been shown empirically to be easier to optimise, and can perform better with increased depth despite deeper neural networks being typically more difficult to train. The output from the ResNets are pass through a global average pooling layer and flattened before being downsampled via a series of fully connected layers to some lower-dimensional space. Once we have embeddings from both inputs in the pair, they can be compared via e.g. Euclidean distance. An example architecture can be seen below.
 
-<figure>
-<img src="./assets/siamese-network-example-architecture" alt="Siamese network example architecture" />
-<figcaption>Siamese network example architecture with a ResNet base [6].</figcaption>
-</figure>
+![Siamese network example architecture](assets/siamese-network-example-architecture.png)
+*Siamese network example architecture with a ResNet base [6].*
 
-The ResNet50 implementation in PyTorch has an additional fully connected downsampling layer from 2048 down to 1000 features, which we remove as we define our own fully connected layers afterwards.
+The ResNet50 implementation in PyTorch has an additional fully connected downsampling layer from 2048 down to 1000 features, which we remove and replace with our own fully connected layers afterwards.
 
-One of the losses commonly used for siamese networks, and what we use in thsi project, is contrastive loss. Mathematically, this is given as
+One of the losses commonly used for siamese networks, and what we use in this project, is contrastive loss. Mathematically, this is given as
 
 $$\mathbb{I}(y = 0) \cdot \Vert f(x_1) - f(x_2) \Vert_2^2 + \mathbb{I}(y = 1) \cdot \max(0, m - \Vert f(x_1) - f(x_2) \Vert_2^2 ),$$
 
@@ -32,7 +30,9 @@ where $\mathbb{I}(\cdot)$ is the indicator function, $y = 0$ if the pair is simi
 - For similar pairs, this is simply the squared distance between the output embeddings.
 - For dissimilar pairs, the loss is 0 if the squared distance is less than the margin $m$. Otherwise, the smaller the squared distance, the greater the loss.
 
-Intuitively, the network is penalised if two similar vectors are far away in the embedded space, or if two dissimilar vectors are close together in the embedded space.
+Intuitively, the network is penalised if two similar vectors are far away in the embedded space, or if two dissimilar vectors are close together in the embedded space. The margin is the threshold at which we start penalising via the loss, and typically the same margin is used when predicting to determine whether a pair is similar or dissimilar.
+
+*As a side note, other $L_p$ norms (and indeed other distance metrics) can also be used in place of the Euclidean norm.*
 
 ## Dependencies and Reproducibility
 The full list of dependencies and exact versions can be found in [environment.yml](./environment.yml). The Conda environment can replicated using the following command:
@@ -77,7 +77,7 @@ Some plotting functionality has also been provided in [src/util.py](src/util.py)
 
 **Training and testing output**
 
-Using my [src/predict.py](src/predict.py) script, here are some example correct and incorrect predictions from one of my models:
+Using the [src/predict.py](src/predict.py) script, here are some example correct and incorrect predictions from one of my models:
 
 ```
 ISIC_6024335:
@@ -135,4 +135,4 @@ Below are some details and insights from my training process.
 - [3]: Leal-Taixé, L.; Canton-Ferrer, C., and Schindler, K. (2016). ["Learning by tracking: Siamese CNN for robust target association"](https://www.ethz.ch/content/dam/ethz/special-interest/baug/igp/photogrammetry-remote-sensing-dam/documents/pdf/learning-tracking-siamese.pdf).
 - [4]: Taigman, Y.; Yang, M.; Ranzato, M.; Wolf, L. (2014). ["DeepFace: Closing the Gap to Human-Level Performance in Face Verification"](https://www.cs.toronto.edu/~ranzato/publications/taigman_cvpr14.pdf).
 - [5]: [ISIC 2020 Melanoma Classification Challenge](https://www.kaggle.com/c/siim-isic-melanoma-classification/overview).
-- [6]: [Siamese network architecture](https://www.researchgate.net/figure/Siamese-Networks-the-architecture-of-a-single-sister-network-It-consists-of-a-ResNet_fig3_354597739).
+- [6]: [Siamese network architecture figure](https://www.researchgate.net/figure/Siamese-Networks-the-architecture-of-a-single-sister-network-It-consists-of-a-ResNet_fig3_354597739).

@@ -35,7 +35,7 @@ if os.path.exists("params/data.json"):
     generator_loss = json_data["G_loss"]
     discriminator_loss = json_data["D_loss"]
 else:
-    os.mkdir("params/data.json")
+    os.mkdir("params")
     total_epochs = 0
     generator_loss = []
     discriminator_loss = []

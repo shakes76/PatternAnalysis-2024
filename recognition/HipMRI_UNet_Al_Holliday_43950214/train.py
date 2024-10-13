@@ -48,6 +48,10 @@ for epoch in range(epochs):
         loss.backward()
         optm.step()
 
+print("Done")
+# save the weights
+torch.save(net.state_dict(), "~/weights.pth")
+
 # test Cross Entropy Loss
 #imgBatch, segBatch = next(iter(trainLoader))
 #img = imgBatch[0].to(dev)

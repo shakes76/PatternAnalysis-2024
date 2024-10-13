@@ -53,10 +53,11 @@ def main():
             pred = clf.predict(embeddings)
             pred_proba = clf.predict_proba(embeddings)
 
+            pred_name = "benign" if pred == 0 else "malignant"
+            prob = round(float(1 - pred_proba if pred == 0 else pred_proba), 4)
+
             print(f"{os.path.basename(img_path)}:")
-            print(
-                f"  Prediction: {'benign' if pred == 0 else 'malignant'} ({float(1 - pred_proba if pred == 0 else pred_proba)})"
-            )
+            print(f"  Prediction: {pred_name} ({prob})")
 
 
 if __name__ == "__main__":
@@ -76,8 +77,7 @@ if __name__ == "__main__":
     # fmt: on
 
     args = parser.parse_args()
-    print(args)
 
     model_path = Path(__file__).parent.parent / args.checkpoint
 
-    # main()
+    main()

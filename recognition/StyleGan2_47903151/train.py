@@ -185,7 +185,7 @@ if __name__ == "__main__":
         json_data["D_loss"] = discriminator_loss
         # Writing to json file to remember num. epochs
         with open("params/data.json", "w") as f:
-            f.write(json_data)
+            json.dump(json_data, f)
 
     plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")

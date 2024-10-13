@@ -8,7 +8,7 @@ from tqdm import tqdm
 from modules import *
 from dataset import *
 import matplotlib.animation as animation
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # List to store images for multiple points in each epoch
 img_list = []
 
@@ -61,14 +61,21 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=10):
             # Backward pass and optimize
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
+            total_loss = loss.item()
 
-        print(f"Epoch {epoch + 1}/{epochs}, VAE Loss: {total_loss / len(dataloader):.4f}")
+        print(f"Epoch {epoch + 1}/{epochs}, VAE Loss: {total_loss:.4f}")
         visualize_images_encoder(reconstructed)
+
+
+    # Save the model's state dictionary after training completes
+    torch.save(vae.state_dict(), 'vae_state_dict.pth')
+    print("Model saved as 'vae_state_dict.pth'")
+
+    
     # Create and save GIF
     fig = plt.figure(figsize=(8, 8))
     plt.axis("off")
-    ims = [[plt.imshow(np.transpose(img, (1, 2, 0)), animated=True)] for img in img_list]
+    ims = [[plt.imshow(np.transpose(img, (1, 2, 0)), animated=True)] for img in img_list_encoder]
     ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
     ani.save('training_progress_encoder.gif', writer='imagemagick', fps=10)
     plt.close(fig)

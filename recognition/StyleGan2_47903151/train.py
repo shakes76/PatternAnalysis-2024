@@ -180,7 +180,7 @@ if __name__ == "__main__":
         if total_epochs % 10 == 0:
             generate_examples(gen, epoch, 12)
         total_epochs += 1
-        json_data[total_epochs] += 1
+        json_data["epochs"] += 1
         json_data["G_loss"] = generator_loss
         json_data["D_loss"] = discriminator_loss
         # Writing to json file to remember num. epochs

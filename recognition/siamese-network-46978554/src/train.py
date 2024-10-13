@@ -185,7 +185,9 @@ def main():
         start_epoch = 0
         if args.checkpoint_tr:
             checkpoint_filename = out_dir / args.checkpoint_tr
-            checkpoint = torch.load(checkpoint_filename, map_location=device)
+            checkpoint = torch.load(
+                checkpoint_filename, map_location=device, weights_only=True
+            )
             net.load_state_dict(checkpoint)
 
             start_epoch = int(checkpoint_filename.split(".")[0].split("-")[-1])
@@ -206,7 +208,9 @@ def main():
 
     else:  # args.action == "test"
         checkpoint_filename = out_dir / args.checkpoint_ts
-        checkpoint = torch.load(checkpoint_filename, map_location=device)
+        checkpoint = torch.load(
+            checkpoint_filename, map_location=device, weights_only=True
+        )
         net.load_state_dict(checkpoint)
 
         test_net(net)

@@ -6,9 +6,23 @@ from torch.utils.data import TensorDataset
 
 # Upload our dataset and transfer to tensor format, return the edges, train and test set
 def upload_dataset(device):
+    """
+    Loads the Facebook dataset which is partially preprocessed , which includes node features, edges, and targets.
+
+    Parameter:
+        - device: The device ('cpu', 'cuda', or 'mps') which is used for transferring tensor.
+
+    Returns:
+        - tensor_edges: The edges of the graph, without self-loops.
+        - train_set: The dataset for training, containing node features and their corresponding targets.
+        - test_set: The dataset for testing, containing node features and their corresponding targets.
+    """
+
+    # Load the dataset from the provided file
     facebook_data = np.load("/Users/chenyihu/Desktop/Pycharm_Code/3710-PatternAnalysis-2024/facebook_large/facebook.npz")
     tensor_edges = torch.tensor(facebook_data['edges'].T).to(device)
 
+    # Avoid self-looping
     tensor_edges = tensor_edges[:, tensor_edges[0] != tensor_edges[1]]
     tensor_targets = torch.tensor(facebook_data['target']).to(device)
     tensor_features = torch.tensor(facebook_data['features']).to(device)
@@ -17,6 +31,7 @@ def upload_dataset(device):
     print("Nodes targets: ", tensor_targets)
     print("Nodes features: ", tensor_features)
 
+    # Normalize the node features
     scaler = StandardScaler()
     tensor_features_cpu = tensor_features.cpu().numpy()
     normalized_features = scaler.fit_transform(tensor_features_cpu)

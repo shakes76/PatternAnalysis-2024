@@ -19,21 +19,20 @@ tensor_edges, train_set, test_set = upload_dataset(device)
 train_loader = DataLoader(train_set, batch_size=256, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=256, shuffle=False)
 
-
 def evaluate_accuracy(model, loader, edges, criterion, device):
     """
     Evaluates the model's accuracy and loss on a given dataset.
 
     Parameters:
-        model: The trained GCN model used to make predictions.
-        loader: A DataLoader object containing the dataset to evaluate (training and test set with 0.7 and 0.3).
-        edges: Graph edge information, used in graph neural networks.
-        criterion: The loss function used to calculate the error between predicted results and actual datas.
-        device: The computing device, we use "mps" on MAC devices.
+        - model: The trained GCN model used to make predictions.
+        - loader: A DataLoader object containing the dataset to evaluate (training and test set with 0.7 and 0.3).
+        - edges: Graph edge information, used in graph neural networks.
+        - criterion: The loss function used to calculate the error between predicted results and actual datas.
+        - device: The computing device, we use "mps" on MAC devices.
 
     Returns:
-        accuracy: The accuracy of the predictions on the dataset.
-        loss_function: The average loss computed over the dataset.
+        - accuracy: The accuracy of the predictions on the dataset.
+        - loss_function: The average loss computed over the dataset.
     """
 
     model.eval()
@@ -62,18 +61,18 @@ def train_evaluate_model(model, train_loader, test_loader, edges, device, learni
         Implement early stopping if the test accuracy does not improve for a specified number of epochs.
 
         Parameters:
-        model: The GCN neural network model to be trained.
-        train_loader: DataLoader object containing the training dataset.
-        test_loader: DataLoader object containing the test dataset.
-        edges: The graph edges information for the neural network.
-        device: The computing device ('mps' for MAC there) used for training and evaluation.
-        num_epochs: The total number of epochs to train the model.
+            - model: The GCN neural network model to be trained.
+            - train_loader: DataLoader object containing the training dataset.
+            - test_loader: DataLoader object containing the test dataset.
+            - edges: The graph edges information for the neural network.
+            - device: The computing device ('mps' for MAC there) used for training and evaluation.
+            - num_epochs: The total number of epochs to train the model.
 
         Returns:
-        train_losses: A list of training losses recorded after each epoch.
-        train_accuracies: A list of training accuracies recorded after each epoch.
-        test_losses: A list of test losses recorded after each epoch.
-        test_accuracies: A list of test accuracies recorded after each epoch.
+            - train_losses: A list of training losses recorded after each epoch.
+            - train_accuracies: A list of training accuracies recorded after each epoch.
+            - test_losses: A list of test losses recorded after each epoch.
+            - test_accuracies: A list of test accuracies recorded after each epoch.
     """
 
     model.train()

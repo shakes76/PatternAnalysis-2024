@@ -3,6 +3,14 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
 class GCNModel(torch.nn.Module):
+    """
+    GCN neural network model for classification tasks.
+
+    Parameters:
+        - classes: Number of output classes.
+        - features: Input feature size.
+    """
+
     def __init__(self, classes, features):
         super(GCNModel, self).__init__()
         self.conv1 = GCNConv(features, 32)
@@ -17,3 +25,6 @@ class GCNModel(torch.nn.Module):
 
         classification = self.final_class(feature)
         return F.log_softmax(classification, dim=1)
+
+    def get_embeddings(self):
+        return self.get_embeddings()

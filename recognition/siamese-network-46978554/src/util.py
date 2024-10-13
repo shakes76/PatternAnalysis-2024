@@ -68,13 +68,19 @@ def plot_losses(loss_files, loss_names):
     import matplotlib.pyplot as plt
     import torch
 
-    for loss_file, loss_name in zip(loss_files, loss_names):
-        # Plot every 100 losses
-        loss = torch.load(loss_file, weights_only=False)
-        plt.plot(loss[::100], label=loss_name)
+    # Average every 100 losses
+    skip = 100
 
-    plt.xlabel("Epoch mini batches (every 100)")
+    for loss_file, loss_name in zip(loss_files, loss_names):
+        loss = torch.load(loss_file, weights_only=False)
+        loss = loss[:len(loss) // skip * skip]
+        loss = loss.view(len(loss) // skip, skip)
+        mean_loss = loss.mean(dim=1)
+        plt.plot(mean_loss, label=loss_name)
+
+    plt.xlabel("Epoch mini batches (averaged every 100)")
     plt.ylabel("Loss")
-    plt.title("Loss over epochs (every 100)")
+    plt.title("Loss over epochs (averaged every 100)")
     plt.legend()
     plt.show()
+

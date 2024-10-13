@@ -47,7 +47,7 @@
 
 ## References
 
-1.
+1. Early stopping algo
 2.
 3.
 

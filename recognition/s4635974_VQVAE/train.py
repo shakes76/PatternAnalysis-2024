@@ -8,6 +8,7 @@ from torchmetrics.functional.image \
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 from dataset import HipMRILoader
 import modules
@@ -42,7 +43,7 @@ class ValidationLossEarlyStopping:
 # dim_embedding = 64
 # beta = 0.25
 
-num_epochs = 100
+num_epochs = 2
 batch_size = 16
 lr = 0.002
 num_hiddens = 128
@@ -51,21 +52,24 @@ num_channels = 1
 num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
+early_stopping = False
 
-# Used for saving files
-model_description = 'jitter_test'
+# Enter a description of model. Used for identifying saved files
+model_description = '2_epoch_test'
 
-# Save directory
+# Directory for saving images is named after model description 
 save_dir = model_description
 
-# Define the save directory and ensure it exists
+# Model is saved at the end of training in saved_model folder using description of model
 model_dir = f'saved_model/{model_description}.pth'
 
-save_data_dir = f'{model_description}.pkl'
+# Data of model is saved for making plots. 
+save_data_dir = f'data_viz/{model_description}.pkl'
 
 def train_model(
         save_dir: str | None = None, 
         model_dir: str | None = None, 
+        save_data_dir: str | None = None,
         num_epochs: int = num_epochs,
         batch_size: int = batch_size,
         lr: float = lr,
@@ -74,19 +78,9 @@ def train_model(
         num_channels: int = num_channels,
         num_embeddings: int = num_embeddings,
         dim_embedding: int = dim_embedding,
-        beta: float = beta
+        beta: float = beta,
+        early_stopping: bool = early_stopping
         ):
-
-    # Hyperparameters
-    num_epochs = num_epochs
-    batch_size = batch_size
-    lr = lr
-    num_hiddens = num_hiddens
-    num_residual_hiddens = num_residual_hiddens
-    num_channels = num_channels
-    num_embeddings = num_embeddings
-    dim_embedding = dim_embedding
-    beta = beta
 
     print("==== Paramaters ====")
     print(f"Max Epochs: ", num_epochs)
@@ -108,6 +102,10 @@ def train_model(
     if type(model_dir) == str:
         os.makedirs(os.path.dirname(model_dir), exist_ok=True)
 
+    # Data vizulisation directory
+    if type(save_data_dir) == str:
+        os.makedirs(os.path.dirname(save_data_dir), exist_ok=True)
+
     # Configure Pytorch
     seed = 42
     torch.manual_seed(seed)
@@ -128,18 +126,18 @@ def train_model(
     #     transforms.Normalize((0,), (1,)),  # Normalize
     # ])
 
-    # Define your training transformations, including conversion to PIL and back to tensor
-    train_transform = transforms.Compose([
-        transforms.ToPILImage(),  # Convert NumPy array to PIL Image
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Augmentations for training
-        transforms.ToTensor(),  # Convert back to tensor
-        transforms.Normalize((0,), (1,)),  # Normalize
-    ])
+    # # Define your training transformations, including conversion to PIL and back to tensor
+    # train_transform = transforms.Compose([
+    #     transforms.ToPILImage(),  # Convert NumPy array to PIL Image
+    #     transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Augmentations for training
+    #     transforms.ToTensor(),  # Convert back to tensor
+    #     transforms.Normalize((0,), (1,)),  # Normalize
+    # ])
 
     # Get loaders (variance == 5)
     train_loader, validate_loader, data_variance = HipMRILoader(
         train_dir, validate_dir, test_dir,
-        batch_size=batch_size, transform=train_transform
+        batch_size=batch_size, transform=None
         ).get_loaders()
     print('Variance: ', data_variance)
     print()
@@ -158,9 +156,7 @@ def train_model(
         num_residual_hiddens=num_hiddens,
         num_embeddings=num_embeddings,
         dim_embedding=dim_embedding,
-        beta=beta)
-
-    model = model.to(device)
+        beta=beta).to(device)
 
     # Set optimiser
     optimizer = optim.Adam(
@@ -168,19 +164,9 @@ def train_model(
         lr=lr,
         amsgrad=False)
 
-    # # Define the scheduler
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
-
-    # # Piecewise Linear Schedule. Helps the optimiser frind the appropriate local minima without overshoooting. 
-    # # CyclicLR explores a range of learning rates in the early part of training. lr fluctuates between base_lr and max_lr
-    # sched_linear_1 = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.0004, max_lr=lr, step_size_up=715, step_size_down=715, mode="triangular", verbose=False)
-    # # LinearLR reduces the learning rate steadily in the latter part of training to help the model converge more smoothly.
-    # # Slowly decrease lr from start_factor to end_factor. Can make more fine adjstments toeards end of training. 
-    # sched_linear_2 = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=0.0004/lr, end_factor=0.0004/5, verbose=False)
-    # # SequentialLR combines these two schedules, making the learning rate change in a piecewise linear manner. This combination helps with faster convergence while maintaining stability at the end of training.
-    # scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[sched_linear_1, sched_linear_2], milestones=[40])
-
-    # early_stopper = ValidationLossEarlyStopping(40, 0.01)
+    # Initiate early stopping, if used
+    if early_stopping:
+        early_stopper = ValidationLossEarlyStopping(40, 0.01)
 
     # Training mectrics
     epoch_training_output_loss = []
@@ -190,13 +176,13 @@ def train_model(
     epoch_validation_vq_loss = []
     epoch_ssim = []
 
-
     # Training loop
     for epoch in range(num_epochs):
         model.train()
         training_output_error = []
         training_vq_error = []
 
+        # Training set loop
         for i, training_images in enumerate(train_loader):
             training_input_images = training_images.to(device)
 
@@ -225,7 +211,8 @@ def train_model(
         validation_output_error = []
         validation_vq_error = []
         validation_ssim = []
-
+        
+        # Validation set loop
         with torch.no_grad():
             for j, validation_images in enumerate(validate_loader):
                 validation_input_images = validation_images.to(device)
@@ -236,7 +223,7 @@ def train_model(
                 decoded_image = validation_output_images.view(-1, 1, 256, 128).detach().to(device)
                 
                 # Calculate SSIM and store it
-                similarity = ssim(decoded_image, real_image, data_range=1.0).item()
+                similarity = ssim(decoded_image, real_image).item() #, data_range=1.0
                 validation_ssim.append(similarity)
 
                 # Calculate output loss for validation
@@ -253,6 +240,7 @@ def train_model(
         epoch_ssim.append(average_ssim)
         print(f'Epoch [{epoch + 1}/{num_epochs}], Validation output loss: {average_validation_loss:.5f}, Validation VQ loss: {average_validation_vq_loss}, Average SSIM: {average_ssim:.5f}')
 
+        # Save resl vs. decoded image after every 10 epochs
         if (epoch + 1) % 10 == 0:
             # Number of images to save
             num_images_to_save = 4  # Adjust this for the number of real and decoded images
@@ -286,16 +274,14 @@ def train_model(
             plt.savefig(os.path.join(save_dir, f'real_and_decoded_images_epoch_{epoch + 1}.png'))
             plt.close()
 
-        # if early_stopper.early_stop_check(average_validation_loss):
-        #     print(f"Stopped early at Epoch: {epoch +1}")
-        #     break
-        
-        # scheduler.step()
-        # print(f"Epoch [{epoch+1}/{num_epochs}], Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
+        # Early stopping, if used
+        if early_stopping:
+            # Check if early stopping condition is reached
+            if early_stopper.early_stop_check(average_validation_loss):
+                print(f"Stopped early at Epoch: {epoch +1}")
+                break
         
         print()
-
-    import pickle
 
     # After training, save the lists to a file
     data = {
@@ -306,8 +292,9 @@ def train_model(
         "ssim": epoch_ssim
     }
 
-    with open(save_data_dir, 'wb') as f:
-        pickle.dump(data, f)
+    if type(save_data_dir) == str:
+        with open(save_data_dir, 'wb') as f:
+            pickle.dump(data, f)
 
     if type(save_dir) == str:
         epochs = range(1, len(epoch_training_output_loss) + 1)
@@ -370,9 +357,9 @@ def train_model(
 
 print("End")
 
-
 if (__name__ == "__main__"):
     model = train_model(
         save_dir=save_dir, 
-        model_dir=model_dir)
+        model_dir=model_dir,
+        save_data_dir=save_data_dir)
 

@@ -37,7 +37,7 @@ patch_size = 128
 embed_dim = 192
 depth = 12
 ff_ratio = 3
-epochs = 30
+epochs = 50
 
 ## Load data
 gfDataloader = GFNetDataloader(batches)
@@ -64,10 +64,10 @@ if loaded_model:
 criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-scheduler = OneCycleLR(optimizer,max_lr=args.lr, steps_per_epoch=len(training), epochs=epochs)
+scheduler = OneCycleLR(optimizer,max_lr=learning_rate, steps_per_epoch=len(training), epochs=epochs)
 
-training_loss = []
-test_loss = []
+training_losses = []
+test_losses = []
 test_accuracy = []
 
 
@@ -101,7 +101,7 @@ def evaluate_model(loader):
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-            test_loss.append(avg_loss.item() / count)
+            test_losses.append(float(avg_loss / count))
 
         accuracy = (100 * correct / total)
         test_accuracy.append(accuracy)
@@ -128,7 +128,7 @@ def train_model():
             optimizer.zero_grad()
             train_loss.backward()
             optimizer.step()
-            training_loss.append(train_loss.item())
+            training_losses.append(train_loss.item())
         
             if i % 10 == 0:
                 print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, len(training), train_loss.item()))
@@ -139,10 +139,10 @@ def train_model():
             torch.save(model.state_dict(), 'Checkpoint-GFNET-e{}-{}-{}.pth'.format(epoch, round(result, 4), tag))
             with open('losses-{}.csv'.format(tag), 'w', newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow(training_loss)
-            with open('test_loss-{}.csv'.format(tag), 'w', newline='') as f:
+                writer.writerow(training_losses)
+            with open('test_losses-{}.csv'.format(tag), 'w', newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow(test_loss)
+                writer.writerow(test_losses)
             with open('test_accuracy-{}.csv'.format(tag), 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(test_accuracy)
@@ -156,15 +156,15 @@ def train_model():
     torch.save(model.state_dict(), 'FINAL_GFNET-{}-{}.pth'.format(round(result, 4), tag))
     with open('losses-{}.csv'.format(tag), 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(training_loss)
-    with open('test_loss-{}.csv'.format(tag), 'w', newline='') as f:
+        writer.writerow(training_losses)
+    with open('test_losses-{}.csv'.format(tag), 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(test_loss)
+        writer.writerow(test_losses)
     with open('test_accuracy-{}.csv'.format(tag), 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(test_accuracy)
     with open('{}-acc.out'.format(tag), 'w', newline='') as f:
-        f.write('{} -- Final Accuracy {}\n'.format(final_accuracy))
+        f.write('{} -- Final Accuracy {}\n'.format(tag, final_accuracy))
 
 
 

@@ -40,8 +40,8 @@ class GFNetDataloader():
             transforms.ToTensor(),
         ])
 
-        # dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=transform_complete)
-        dataset = datasets.ImageFolder(root='./AD_NC/train', transform=init_trans)
+        dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=init_trans)
+        # dataset = datasets.ImageFolder(root='./AD_NC/train', transform=init_trans)
         loader = DataLoader(dataset, batch_size=128, shuffle=False)
         self._mean, self._std, self._total_images = get_dist(loader)
 

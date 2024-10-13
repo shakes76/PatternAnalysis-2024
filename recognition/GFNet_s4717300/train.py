@@ -27,13 +27,13 @@ device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 print(device)
 
 # hyper-parameters
-learning_rate = 0.0002
+learning_rate = 0.0008
 weight_decay = 0.0001
 dropout = 0.0
 drop_path = 0.1
 
 batches = 32
-patch_size = 128
+patch_size = 64
 embed_dim = 192
 depth = 12
 ff_ratio = 3
@@ -101,7 +101,7 @@ def evaluate_model(loader):
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-            test_losses.append(float(avg_loss / count))
+        test_losses.append(float(avg_loss / count))
 
         accuracy = (100 * correct / total)
         test_accuracy.append(accuracy)

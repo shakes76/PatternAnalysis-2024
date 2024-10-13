@@ -8,9 +8,11 @@ import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
 import torch
+from torch.utils.data import DataLoader
 
 IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
 LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
+BATCH_SIZE = 1
 RANDOM_STATE = 47049358
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -81,9 +83,6 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
     early_stop : Stop loading prematurely. Leaves arrays mostly empty, for quick loading and testing scripts.
     '''
     affines = []
-    interp = 'linear'
-    if dtype == np.uint8:  # assume labels
-        interp = 'nearest'
 
     num = len(imageNames)
     niftiImage = nib.load(imageNames[0])
@@ -210,12 +209,15 @@ y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 
 X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
 X_val, y_val = load_images_and_labels(X_val, y_val, early_stop=True)
-X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
-
+X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
 
 train_set = Prostate3dDataset(X_train, y_train)
 validation_set = Prostate3dDataset(X_val, y_val)
 test_set = Prostate3dDataset(X_test, y_test)
+
+train_loader = DataLoader(train_set, batch_size = BATCH_SIZE, shuffle = True)
+validation_loader = DataLoader(validation_set, batch_size = BATCH_SIZE, shuffle = False)
+test_loader = DataLoader(test_set, batch_size = BATCH_SIZE, shuffle = True)
 
 # train_dir = os.path.join(os.getcwd(), 'train_set')
 # val_dir = os.path.join(os.getcwd(), 'validation_set')

@@ -27,15 +27,19 @@ The following sections provide an overview of the deep learning pipeline used fo
 &nbsp;&nbsp;&nbsp;&nbsp; 4. Testing procedure  
 
 ## 1. Data Loading & Preprocessing  
-The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#here). The images consists of grayscale MRI scans of prostate tissue which was loaded and preprocessed using the custom data loader found in the [dataset.py](recognition/vqvae-s4743500/dataset.py) file. Because the images only have one colour channel representing the intensity of the pixels (grayscale images), each image is converted to a single-channel grayscale image using  
+The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#here). The images consists of grayscale MRI scans of prostate tissue which was loaded and preprocessed using the custom data loader found in the [dataset.py](dataset.py) file. Because the images only have one colour channel representing the intensity of the pixels (grayscale images), each image is converted to a single-channel grayscale image using  
+  
 `transforms.Grayscale(num_output_channels=1)`  
+  
 This was done to ensure that all images have the expected format (1 channel, grayscale).  
 
 ### Dataset Description  
-The MRI images are stored in NIfTI (.nii or .nii.gz) format, and it was split into training, validation, and test datasets:
+The MRI images are stored in NIfTI (.nii or .nii.gz) format, and it was split into training, validation, and test datasets:  
+  
 Number of training images: 11460  
 Number of validation images: 660  
 Number of testing images: 540  
+  
 which corresponds to approximately 90% of the data being used for training, 6% for validation, and the remaining 4% for testing. These split percentages allow us to effectively train the data while maintaining a validation and testing set to evaluate the model's ability to generalise to unseen data.   
 
 ### Data Pipeline  

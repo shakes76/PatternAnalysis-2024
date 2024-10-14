@@ -19,15 +19,15 @@ from timm.models import create_model
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.scheduler import create_scheduler
 from timm.optim import create_optimizer
-from timm.utils import NativeScaler, get_state_dict, ModelEma
+from timm.utils import NativeScaler, accuracy, ModelEma
 from functools import partial
 import torch.nn as nn
-import utils
 
 from dataset import get_data_loader
 from modules import GFNet
+import utils
 
-import wandb_config
+#import wandb_config
 
 
 def train_one_epoch(model: torch.nn.Module, criterion,
@@ -48,7 +48,7 @@ def train_one_epoch(model: torch.nn.Module, criterion,
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
 
-        with torch.cuda.amp.autocast():
+        with torch.amp.autocast('cuda'):
             outputs = model(samples)
             #loss = criterion(samples, outputs, targets)
             loss = criterion(outputs, targets)
@@ -90,21 +90,21 @@ def evaluate(data_loader, model, device):
         target = target.to(device, non_blocking=True)
 
         # compute output
-        with torch.cuda.amp.autocast():
+        with torch.amp.autocast('cuda'):
             output = model(images)
             loss = criterion(output, target)
 
-        acc1, _ = utils.accuracy(output, target, topk=(1, 5))
+        acc1, _ = accuracy(output, target, topk=(1, 5))
 
         batch_size = images.shape[0]
         metric_logger.update(loss=loss.item())
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+        #metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
+    print('* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}'
+          .format(top1=metric_logger.acc1, losses=metric_logger.loss))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
@@ -117,7 +117,7 @@ def train_GFNet(dataloaders, num_epochs):
 
     start_time = time.time()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    wandb_config.setup_wandb()
+    #wandb_config.setup_wandb()
 
     cudnn.benchmark = True
 
@@ -172,7 +172,8 @@ def train_GFNet(dataloaders, num_epochs):
             max_norm=0, model_ema=model_ema
         )
 
-        lr_scheduler.step(epoch)
+        #lr_scheduler.step(epoch)
+        lr_scheduler.step()
 
         # Save checkpoint
         #if args.output_dir:
@@ -203,4 +204,5 @@ if __name__ == "__main__":
         'val': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/test", batch_size = 32, shuffle = False)
     }
 
-    train_GFNet(dataloaders, num_epochs=10)
+    num_epochs=10
+    train_GFNet(dataloaders, num_epochs=num_epochs)

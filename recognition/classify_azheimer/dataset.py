@@ -37,12 +37,16 @@ class AlzheimerDataset(Dataset):
 
         return image, label
 
-def get_datasets(train_dir, test_dir, transform):
-    train_dataset = AlzheimerDataset(train_dir, transform=transform)
-    test_dataset = AlzheimerDataset(test_dir, transform=transform)
-    return train_dataset, test_dataset
 
-def get_dataloaders(train_dataset, test_dataset, batch_size=32):
+def get_dataloaders(data_dir, batch_size=32):
+    
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    train_dataset = AlzheimerDataset(f"{data_dir}/train", transform=transform)
+    test_dataset = AlzheimerDataset(f"{data_dir}/test", transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader

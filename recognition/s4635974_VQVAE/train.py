@@ -32,30 +32,30 @@ class ValidationLossEarlyStopping:
         return False
 
 
-# # Hyperparameters
-# num_epochs = 200
-# batch_size = 32
-# lr = 0.0002
-# num_hiddens = 128
-# num_residual_hiddens = 32
-# num_channels = 1
-# num_embeddings = 512
-# dim_embedding = 64
-# beta = 0.25
-
-num_epochs = 150
-batch_size = 16
-lr = 0.002
+# Hyperparameters
+num_epochs = 140
+batch_size = 32
+lr = 0.0004
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
 num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
-early_stopping = True
+
+# num_epochs = 150
+# batch_size = 16
+# lr = 0.002
+# num_hiddens = 128
+# num_residual_hiddens = 32
+# num_channels = 1
+# num_embeddings = 512
+# dim_embedding = 64
+# beta = 0.25
+# early_stopping = True
 
 # Enter a description of model. Used for identifying saved files
-model_description = 'early_stopping_lr=0.002'
+model_description = '_lr=0.0004_bs=32'
 
 # Directory for saving images is named after model description 
 save_dir = model_description
@@ -118,23 +118,7 @@ def train_model(
     test_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test'
     validate_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate'
 
-    # # Define your training transformations, including conversion to PIL and back to tensor
-    # transform = transforms.Compose([
-    #     transforms.ToPILImage(),  # Convert NumPy array to PIL Image
-    #     transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Augmentations for training
-    #     transforms.ToTensor(),  # Convert back to tensor
-    #     transforms.Normalize((0,), (1,)),  # Normalize
-    # ])
-
-    # # Define your training transformations, including conversion to PIL and back to tensor
-    # train_transform = transforms.Compose([
-    #     transforms.ToPILImage(),  # Convert NumPy array to PIL Image
-    #     transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Augmentations for training
-    #     transforms.ToTensor(),  # Convert back to tensor
-    #     transforms.Normalize((0,), (1,)),  # Normalize
-    # ])
-
-    # Get loaders (variance == 5)
+    # Get loaders
     train_loader, validate_loader, data_variance = HipMRILoader(
         train_dir, validate_dir, test_dir,
         batch_size=batch_size, transform=None

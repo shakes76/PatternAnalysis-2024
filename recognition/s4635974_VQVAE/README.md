@@ -72,7 +72,7 @@ Above, we have the torchinfo summary of the specific VQ-VAE model used in this r
 
 ### Hyperparameters
 
-The parameters below yielded the best performance I was able to achieve (in both speed and accuracy). I used the orignal paper [] and another model [] for guidance. 
+The parameters below yielded the best performance I was able to achieve (in both speed and accuracy). I used the orignal paper [2] and another model [3] for guidance. 
 
 - Number of Epochs = 150 (Max - Early Stopping Used)
 - Batch Size = 16
@@ -85,6 +85,18 @@ The parameters below yielded the best performance I was able to achieve (in both
 - Beta = 0.25 (Commitment Loss)
 
 ### Data Pre-processing
+
+The Hip MRI Prostate Cancer 2D dataset [1] was provided for us on the university cluster. It was already split into training, validation, and testing sets. FIND OUT SPLITS
+
+The dataset comprised of Nifti files. We were provided with code [4] for loading Nifti the files into images. The loading code can also normalises the images, which was done for this model. 
+
+No further data pre-processing was carried out. 
+
+
+
+
+
+
 - Describe any specific pre-processing you have used with references if any.
 - Justify your training, validation and testing splits of the data.
 

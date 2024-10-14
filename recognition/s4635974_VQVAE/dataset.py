@@ -166,6 +166,12 @@ mean = loader.get_mean()
 std = variance ** 0.5
 
 print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
+
+test_loader = loader.get_test_loader()
+
+print("Train: ", {len(train_loader.dataset)})
+print("Val: ", {len(validate_loader.dataset)})
+print("Test: ", {len(test_loader.dataset)})
 # Training Mean: -2.7069713723903988e-06, Training Std: 0.9999692733335542, variance = 0.9999385476112366
     
 

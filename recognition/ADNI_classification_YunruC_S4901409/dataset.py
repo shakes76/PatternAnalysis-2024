@@ -12,27 +12,34 @@ def extract_zip(zip_path, extract_to):
             zip_ref.extractall(extract_to)
         print("Extraction complete.") 
 
+
+
 class ADNIDataset(Dataset):
     '''Custom dataset class inherited from pytorch dataset class.
         It is used to load and preprocess the dataset'''
-    def __init__(self, data_dir, transform = None):
+    def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
         self.transform = transform
         self.data = []
         self.labels = []
 
-        # label 1 for AD and 0 for normal
+        # Load data for both classes (AD and NC)
         self._load_data('AD', 1)
         self._load_data('NC', 0)
-    
-    def _load_data (self, folder_name, label):
+
+    def _load_data(self, folder_name, label):
         folder_path = os.path.join(self.data_dir, folder_name)
+        if not os.path.exists(folder_path):
+            print(f"Warning: Folder {folder_path} does not exist.")
+            return
+        
+        # Add all images from the given folder to the dataset
         for file in os.listdir(folder_path):
-            if file .endswith('.png'):
+            if file.endswith('.jpeg'):
                 img_path = os.path.join(folder_path, file)
                 self.data.append(img_path)
                 self.labels.append(label)
-        
+    
     def __len__(self):
         return len(self.data)
 
@@ -50,7 +57,7 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     """ Loading the training, testing and validating dataset.
     The training and validating dataset are seperated from 
     the original train dataset"""
-    
+
     extract_zip(zip_path, extract_to)
 
     transform = transforms.Compose([
@@ -75,7 +82,19 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
 
     return train_loader, val_loader, test_loader
     
+if __name__ == "__main__":
+    zip_path = "ADNI_AD_NC_2D.zip"
+    extract_to = "data"
 
+    train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to)
+
+    for loader, name in zip([train_loader, val_loader, test_loader], ["Train", "Val", "Test"]):
+        print(f"\nTesting {name} loader:")
+        for images, labels in loader:
+            print(f"Batch size: {len(images)}")
+            print(f"Image shape: {images[0].shape}") 
+            print(f"Labels: {labels}")
+            break  
 
 
 

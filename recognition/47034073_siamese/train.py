@@ -53,7 +53,7 @@ def main() -> None:
         batch_size=128,
         num_epochs=1000,
         learning_rate=learning_rate,
-        margin=0.0001,
+        margin=0.2,
     )
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2, learning_rate=learning_rate)
@@ -111,7 +111,11 @@ def main() -> None:
         knn = KNeighborsClassifier(n_neighbors=100, weights=margin_weight, p=2)
         svm = SVC(probability=True)
         nn = neural_network.MLPClassifier(
-            hidden_layer_sizes=(128, 64, 32, 32), random_state=42
+            hidden_layer_sizes=(64),
+            learning_rate_init=0.0001,
+            random_state=42,
+            early_stopping=True,
+            verbose=False,
         )
         fit_nn = nn.fit(embeddings, labels)
         fit_knn = knn.fit(embeddings, labels)
@@ -234,17 +238,17 @@ def main() -> None:
     _evaluate_classification(fit_knn, embeddings, labels, data_name="train")
 
     # Validation data
-    val_meta_df = pd.read_csv(VAL_META_PATH)
-    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df, transform=False)
-    val_loader = DataLoader(
-        val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
-    )
-    embeddings, labels = trainer.compute_all_embeddings(val_loader)
-    embeddings = normalize(embeddings)
+    # val_meta_df = pd.read_csv(VAL_META_PATH)
+    # val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df, transform=False)
+    # val_loader = DataLoader(
+    #     val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
+    # )
+    val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
+    val_embeddings = normalize(val_embeddings)
 
     # Eval on validation
     logger.info("Evaluating classification on val data...")
-    _evaluate_classification(fit_knn, embeddings, labels, data_name="val")
+    _evaluate_classification(fit_knn, val_embeddings, val_labels, data_name="val")
 
     if args.test:
         test_meta_df = pd.read_csv(TEST_META_PATH)

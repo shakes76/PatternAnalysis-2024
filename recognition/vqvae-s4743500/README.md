@@ -42,10 +42,10 @@ which corresponds to approximately 90% of the data being used for training, 6% f
 The following transformations were applied to the dataset before feeding it into the model:  
   
 `transform = transforms.Compose([`  
-    `transforms.Resize((image_size, image_size)),`   
-    `transforms.Grayscale(num_output_channels=1),`   
-    `transforms.ToTensor(),`  
-    `transforms.Normalize((0.5,), (0.5,))`   
+&nbsp;&nbsp;&nbsp;&nbsp;`transforms.Resize((image_size, image_size)),`   
+&nbsp;&nbsp;&nbsp;&nbsp;`transforms.Grayscale(num_output_channels=1),`   
+&nbsp;&nbsp;&nbsp;&nbsp;`transforms.ToTensor(),`  
+&nbsp;&nbsp;&nbsp;&nbsp;`transforms.Normalize((0.5,), (0.5,))`   
 `])`  
   
 The images were resized to 256x256 pixels to make sure all images had the same input size. Moreover, to improve training stability, the pixel values for each image were normalized to the range [-1, 1]. Because the images only have one colour channel representing the intensity of the pixels (grayscale images), each image is converted to a single-channel grayscale image using  

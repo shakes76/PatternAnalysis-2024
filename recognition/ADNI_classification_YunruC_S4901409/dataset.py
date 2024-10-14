@@ -58,16 +58,21 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     The training and validating dataset are seperated from 
     the original train dataset"""
 
-    extract_zip(zip_path, extract_to)
+    # for situation if the images are contained in a zip folder 
+    if zip_path.endswith('.zip'):
+        extract_zip(zip_path, extract_to)
+        data_dir = extract_to
+    else: 
+        data_dir = zip_path
 
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(mean=[0.5], std=[0.5])
         ])
 
-    train_dataset = ADNIDataset(os.path.join(extract_to, 'AD_NC/train'), transform= transform)
-    test_dataset = ADNIDataset(os.path.join(extract_to, 'AD_NC/test'), transform= transform)
+    train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= transform)
+    test_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/test'), transform= transform)
 
     train_size = int(train_split*len(train_dataset))
     val_size = len(train_dataset)-train_size
@@ -88,13 +93,15 @@ if __name__ == "__main__":
 
     train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to)
 
-    for loader, name in zip([train_loader, val_loader, test_loader], ["Train", "Val", "Test"]):
+
+    # test whetehr the loader works 
+    '''for loader, name in zip([train_loader, val_loader, test_loader], ["Train", "Val", "Test"]):
         print(f"\nTesting {name} loader:")
         for images, labels in loader:
             print(f"Batch size: {len(images)}")
             print(f"Image shape: {images[0].shape}") 
             print(f"Labels: {labels}")
-            break  
+            break  '''
 
 
 

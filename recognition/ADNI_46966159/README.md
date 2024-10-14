@@ -14,11 +14,15 @@ to blurring.
 The diffusion process or forward process is a Markov chain that adds noise to the data[^1]. The
 noise is samples from a Gaussian distribution. The Markov chain is a stochastic process that 
 only depends on probability and the last state. The transition from noise states at some time $t$ can be expressed as
-$$q(\mathbf{x}_t | \mathbf{x}_{t-1})=\mathcal{N}(\mathbf{x}_t;\sqrt{1-\beta_t}x_{t-1};\beta_t\mathbf{I}).$$
+```math
+q(\mathbf{x}_t | \mathbf{x}_{t-1})=\mathcal{N}(\mathbf{x}_t;\sqrt{1-\beta_t}x_{t-1};\beta_t\mathbf{I}).
+```
 The forward process variances $\beta_t$ are fixed to be small so only a small amount of noise is added each time.
 So $q(\mathbf{x}_{1:T}|\mathbf{x}_0)$ is the diffusion process. We can make use of reparametrisation to introduce
 $\alpha_t=1-\beta_t$ and $\bar{\alpha}=\prod_{s=1}^t\alpha_s$ to get
-$$q(\mathbf{x}_t|\mathbf{x}_0)=\mathcal{N}(\mathbf{x}_t;\sqrt{\bar\alpha}\mathbf{x}_0,(1-\bar{\alpha}_t)\mathbf{I}).$$
+```math
+q(\mathbf{x}_t|\mathbf{x}_0)=\mathcal{N}(\mathbf{x}_t;\sqrt{\bar\alpha}\mathbf{x}_0,(1-\bar{\alpha}_t)\mathbf{I}).
+```
 
 ### Reverse process
 The goal of denoising diffusion is to sample images from noise to generate a new image. 

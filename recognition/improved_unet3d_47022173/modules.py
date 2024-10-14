@@ -17,24 +17,23 @@ def init_weights(m):
 		if hasattr(m, 'bias') and m.bias is not None:
 			nn.init.constant_(m.bias, 0)
 
-class DiceLoss(torch.nn.Module):
-	def init(self):
-		super(DiceLoss, self).init()
+# class DiceLoss(torch.nn.Module):
+# 	def init(self):
+# 		super(DiceLoss, self).init()
 
-	def forward(self, pred, masks):
-		return 1 - self.dice_coefficient(pred, masks)
+# 	def forward(self, pred, masks):
+# 		return 1 - self.dice_coefficient(pred, masks)
 
-	def dice_coefficient(self,  pred, masks):
-		smooth = 1e-6 # Avoid divide by zero
+def dice_coefficient(pred, masks):
+	smooth = 1e-6 # Avoid divide by zero
 
-		# Flatten
-		pred = pred.contiguous().view(-1)
-		masks = masks.contiguous().view(-1)
+	# Flatten
+	pred = pred.contiguous().view(-1)
+	masks = masks.contiguous().view(-1)
 
-		intersection = (pred * masks).sum()
-		dice = (2. * intersection + smooth) / (pred.sum() + masks.sum() + smooth)
-		return dice
-
+	intersection = (pred * masks).sum()
+	dice = (2. * intersection) / (pred.sum() + masks.sum() + smooth)
+	return dice
 
 class Modified3DUNet(nn.Module):
 	def __init__(self, in_channels, n_classes, base_n_filter):
@@ -221,10 +220,11 @@ class Modified3DUNet(nn.Module):
 		out = out_pred + ds1_ds2_sum_upscale_ds3_sum_upscale
 		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes)
 		logits = out
-		softmax_logits = self.softmax(out)
+		sigmoid_logits = torch.sigmoid(out)
+		predictions = (sigmoid_logits > 0.5)
 
-		prediction_indices = torch.argmax(softmax_logits, dim=1)
-		predictions = torch.zeros_like(softmax_logits)
-		predictions.scatter_(1, prediction_indices.unsqueeze(1), 1)
+		# prediction_indices = torch.argmax(sigmoid_logits, dim=1)
+		# predictions = torch.zeros_like(sigmoid_logits)
+		# predictions.scatter_(1, prediction_indices.unsqueeze(1), 1)
 
-		return softmax_logits, predictions, logits
+		return sigmoid_logits, predictions, logits

@@ -184,52 +184,8 @@ def main(args):
     seed = args.seed + utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
-    # random.seed(seed)
 
     cudnn.benchmark = True
-
-    # dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
-    # dataset_val, _ = build_dataset(is_train=False, args=args)
-
-    # if True:  # args.distributed:
-    #     num_tasks = utils.get_world_size()
-    #     global_rank = utils.get_rank()
-    #     if args.repeated_aug:
-    #         sampler_train = RASampler(
-    #             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-    #         )
-    #     else:
-    #         sampler_train = torch.utils.data.DistributedSampler(
-    #             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-    #         )
-    #     if args.dist_eval:
-    #         if len(dataset_val) % num_tasks != 0:
-    #             print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
-    #                   'This will slightly alter validation results as extra duplicate entries are added to achieve '
-    #                   'equal num of samples per-process.')
-    #         sampler_val = torch.utils.data.DistributedSampler(
-    #             dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-    #     else:
-    #         sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-    # else:
-    #     sampler_train = torch.utils.data.RandomSampler(dataset_train)
-    #     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-
-    # data_loader_train = torch.utils.data.DataLoader(
-    #     dataset_train, sampler=sampler_train,
-    #     batch_size=args.batch_size,
-    #     num_workers=args.num_workers,
-    #     pin_memory=args.pin_mem,
-    #     drop_last=True,
-    # )
-
-    # data_loader_val = torch.utils.data.DataLoader(
-    #     dataset_val, sampler=sampler_val,
-    #     batch_size=int(1.5 * args.batch_size),
-    #     num_workers=args.num_workers,
-    #     pin_memory=args.pin_mem,
-    #     drop_last=False
-    # )
 
     adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
     dataset_train, dataset_val, data_loader_train, data_loader_val = adni_data_load(adni_dir, verbose=True) 
@@ -248,60 +204,12 @@ def main(args):
 
     print(f"Creating model: {args.arch}")
 
-    if args.arch == 'gfnet-xs-adni':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6),
-            num_classes=2  # Change this to 2 for your binary classification task
-        )
-    elif args.arch == 'gfnet-xs':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-ti':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=256, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-s':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=384, depth=19, mlp_ratio=4, drop_path_rate=0.15,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-b':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=0.25,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-h-ti':
-        model = GFNetPyramid(
-            img_size=args.input_size, 
-            patch_size=4, embed_dim=[64, 128, 256, 512], depth=[3, 3, 10, 3],
-            mlp_ratio=[4, 4, 4, 4],
-            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.1,
-        )
-    elif args.arch == 'gfnet-h-s':
-        model = GFNetPyramid(
-            img_size=args.input_size, 
-            patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 10, 3],
-            mlp_ratio=[4, 4, 4, 4],
-            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.2, init_values=1e-5
-        )
-    elif args.arch == 'gfnet-h-b':
-        model = GFNetPyramid(
-            img_size=args.input_size, 
-            patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 27, 3],
-            mlp_ratio=[4, 4, 4, 4],
-            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.4, init_values=1e-6
-        )
-    else:
-        raise NotImplementedError
+    model = GFNet(
+        img_size=args.input_size, 
+        patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        num_classes=2
+    )
 
     if args.finetune:
         if args.finetune.startswith('https'):

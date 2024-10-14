@@ -28,7 +28,7 @@ class ADNIDataset(Dataset):
         # get number of samples
         return len(self.image_paths)
 
-def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False, test_data=False):
+def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False, test_set=False):
     """ 
     Args:
         root_dir (str): the root directory containing the ADNI data
@@ -39,10 +39,14 @@ def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False, test_
         train_loader (DataLoader)
         val_loader (DataLoader)
     """
+    set_type = 'train'
+
+    if test_set:
+        set_type = 'test'
 
     # Directories for AD and NC (Normal Controls)
-    ad_dir = os.path.join(root_dir, 'train', 'AD')
-    nc_dir = os.path.join(root_dir, 'train', 'NC')
+    ad_dir = os.path.join(root_dir, set_type, 'AD')
+    nc_dir = os.path.join(root_dir, set_type, 'NC')
 
     if verbose:
         print("Loading ADNI dataset...")
@@ -69,7 +73,7 @@ def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False, test_
     ])
     
     # No need for validation split if loading test set data
-    if test_data:
+    if test_set:
         test_dataset = ADNIDataset(image_paths, labels, transform=transform)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
         return test_dataset, test_loader

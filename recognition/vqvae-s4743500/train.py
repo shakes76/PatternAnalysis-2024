@@ -181,6 +181,8 @@ def plot_ssim_scores(train_ssim_scores, val_ssim_scores):
     plt.xlabel('Epoch')
     plt.ylabel('SSIM')
     plt.title('SSIM Scores per Epoch')
+    # Add a red dotted line at y=0.6 to represent the benchmark
+    plt.axhline(y=0.6, color='red', linestyle='--', label='Benchmark SSIM 0.6')
     plt.legend()
     plt.savefig('ssim_scores.png')
     plt.close()

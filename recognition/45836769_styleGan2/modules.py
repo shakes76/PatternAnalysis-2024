@@ -319,8 +319,8 @@ class SynthesisBlock(nn.Module):
         super().__init__()
         self.up = up
         self.final_resolution = final_resolution
-        self.conv1 = ModulatedConv2d(in_channels, out_channels, style_dim, kernel_size=3)
-        self.conv2 = ModulatedConv2d(out_channels, out_channels, style_dim, kernel_size=3, up=up)
+        self.conv1 = ModulatedConv2d(in_channels, out_channels, style_dim, kernel_size=kernel_size)
+        self.conv2 = ModulatedConv2d(out_channels, out_channels, style_dim, kernel_size=kernel_size, up=up)
         self.noise1 = NoiseInjection(out_channels)
         self.noise2 = NoiseInjection(out_channels)
         self.activate = nn.LeakyReLU(0.2)
@@ -599,7 +599,7 @@ class StyleGAN2Discriminator(nn.Module):
         self.final_linear = nn.Linear(out_features, 1)
 
 
-    def forward(self, x):
+    def forward(self, x, feature_output=False):
         """
         Forward pass of StyleGAN2 discriminator.
 
@@ -609,12 +609,23 @@ class StyleGAN2Discriminator(nn.Module):
         Returns:
             torch.Tensor: Discriminator scores of shape (batch_size,).
         """
+        features = []
         for layer in self.descrim_network:
             x = layer(x)
+            features.append(x)
+        
         x = self.minibatch_stddev(x)
         x = self.final_conv(x)
+        features.append(x)
+        
         x = self.flatten(x)
+        final_features = x  # Store the flattened features
         x = self.final_linear(x)
 
         # Get single value per sample
-        return x.squeeze(1)
+        x = x.squeeze(1)
+
+        if feature_output:
+            return final_features
+        else:
+            return x

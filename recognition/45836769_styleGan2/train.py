@@ -40,7 +40,7 @@ from sklearn.preprocessing import StandardScaler
 # Hyperparams - mostly following StyleGAN2 paper
 z_dim = 256 # Latent dims (z: input, w: intermediate)
 w_dim = 256  
-num_mapping_layers = 8
+num_mapping_layers = 4
 mapping_dropout = 0.1
 label_dim = 2  # AD and NC
 num_layers = 7
@@ -48,7 +48,7 @@ ngf = 256 # Num generator features
 ndf = 256 # Num disciminator features
 batch_size = 8
 num_epochs = 100
-lr = 0.002
+lr = 0.0001
 beta1 = 0.0
 beta2 = 0.99  # Adam betas
 r1_gamma = 10.0  # R1 regularisation weight

@@ -11,7 +11,7 @@ to blurring.
 
 
 ### Diffusion process
-The diffusion process or forward process is a Markov chain that adds noise to the data[^1]. The
+The diffusion process or forward process is a Markov chain that adds noise to the data. The
 noise is samples from a Gaussian distribution. The Markov chain is a stochastic process that 
 only depends on probability and the last state. The transition from noise states at some time $`t`$ can be expressed as
 ```math
@@ -43,6 +43,7 @@ calculated by using mean-squared error loss as KL divergence approximation.
 This loss can then be used to optimise the model's parameters.
 
 ![img.png](train_alg.png)
+*Training algorithm outlined in DDPM paper*
 
 ### Sampling
 With a model that can successfully predict the amount of noise at some time step of the forward process,
@@ -51,6 +52,7 @@ and then going through the reverse process to $`t=0`$ where the result is a gene
 time step $`t-1`$, a small amount of noise is added to keep the process stable.
 
 ![img.png](sample_alg.png)
+*Sampling algorthm outlined in DDPM paper*
 
 ### Parameters
 The number of time steps $`T`$ is a hyperparameter that must be pre-decided. Here, we will set $`T=1000`$
@@ -117,6 +119,7 @@ and AD is extremely complex, and it would be difficult to classify and make pred
 at least for these two dimensions.
 
 ![tsne.png](tsne.png)
+*t-SNE embedding plot of ADNI images*
 
 [^1]: Denoising Diffusion Probabilistic Models https://arxiv.org/abs/1706.03762
 [^2]: U-Net: Convolutional Networks for Biomedical Image Segmentation https://arxiv.org/abs/1505.04597

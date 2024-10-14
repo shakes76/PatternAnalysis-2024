@@ -54,7 +54,7 @@ class Decoder(nn.Module):
 
 
 class UNet2D(nn.Module):
-    def __init__(self, in_channels=3, out_channels=6, feature_sizes=[64, 128, 256], channel_dim=3):
+    def __init__(self, in_channels=1, out_channels=6, feature_sizes=[64, 128, 256], channel_dim=1):
         super().__init__()
         self.channel_dim = channel_dim # Dimension for skip connection concatenation
         self.encoder = Encoder(in_channels, feature_sizes)

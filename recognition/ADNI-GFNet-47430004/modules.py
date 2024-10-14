@@ -231,7 +231,7 @@ def main():
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    lr_scheduler, _ = create_scheduler(optimizer)
+    lr_scheduler, _ = create_scheduler(None, optimizer)
 
     print(f"Start training for {epochs} epochs")
     start_time = time.time()

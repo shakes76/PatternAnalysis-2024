@@ -24,5 +24,5 @@ plt.figure(figsize=(figure_width, figure_height))
 
 plt.imshow(np.transpose(np_grid_img, (1, 2, 0)), cmap='gray')
 plt.axis('off')
-plt.savefig("/home/Student/s4743000/COMP3710/PatternAnalysis-2024/recognition/ADNI-GFNet-47430004/test/dataset/test_dataset", bbox_inches='tight', pad_inches=0)
+plt.savefig("test/dataset/test_dataset", bbox_inches='tight', pad_inches=0)
 plt.close()

@@ -2,7 +2,7 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 import os
-import matplotlib.pyplot as plt
+from torch.utils.data import Dataset
 
 N_CLASSES = 6
 
@@ -68,16 +68,25 @@ def get_names(data_path):
     names = [os.path.join(data_path, img) for img in os.listdir(data_path) if img.endswith(('.nii', '.nii.gz'))]
     return names
 
-data_path = 'C:/Users/21pit/OneDrive/Desktop/COMP3710/Project/PatternAnalysis-2024/recognition/UNet2D_47443349'
+class ProstateDataset(Dataset):
+    def __init__(self, image_dir, mask_dir, transforms):
+        self.imageNames = get_names(image_dir)
+        self.maskNames = get_names(mask_dir)
+        self.images = load_data_2D(self.imageNames, normImage=True) # Images normalised
+        self.masks = load_data_2D(self.maskNames, categorical=True) # One-hot encoded
+        self.transforms = transforms
 
-# Test
-imageNames = get_names(data_path + '/keras_slices_test')
-images = load_data_2D(imageNames, early_stop=True, normImage=False)
-plt.imshow(images[2])
-plt.show()
-
-maskNames = get_names(data_path + '/keras_slices_seg_test')
-masks = load_data_2D(maskNames, early_stop=True, normImage=False, categorical=True)
-plt.imshow(masks[2][:,:,1])
-plt.show()
-
+    def __len__(self):
+		# Total number of samples contained in the dataset
+        return len(self.imageNames)
+    
+    def __getitem__(self, idx):
+        image = self.images[idx]
+        mask = self.masks[idx]
+		
+        if self.transforms is not None:
+			# Apply the transformations to both image and its mask
+            image = self.transforms(image)
+            mask = self.transforms(mask)
+		
+        return (image, mask)

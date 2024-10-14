@@ -1,0 +1,4 @@
+DatasetImageDir: ""
+LabelCSVDir: ""
+OutputDir: ""
+TrainTestRario: 0.8

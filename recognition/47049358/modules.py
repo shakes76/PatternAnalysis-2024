@@ -1,356 +1,210 @@
-"""
-containing the source code of the components of your model. Each component must be
-implementated as a class or a function
-"""
-
-# imports
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import numpy as np
 
-# Global variables
-NEGATIVE_SLOPE = 10**2
-DROPOUT_PROB = 0.3
+NEGATIVE_SLOPE = 10 ** -2
+DROP_PROB = 0.3
+NUM_SEGMENTS = 6
 
-"""
-Custom convolutional layer with adjusted padding to retain original spatial dimensions 
-It includes an instance normalization and LeakyReLU activation.
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels.
-- kernel_size (int, optional): Size of the convolutional kernel (default is 3).
-- stride (int, optional): Stride of the convolution operation (default is 1).
-- padding (int, optional): Padding size for the convolution (default is 0).
-"""
-class StandardConv(nn.Module):
+class StandardModule(nn.Module):
     def __init__(self, in_channels, out_channels,
-                 kernel_size=3, stride=1, padding=1):
-        super(StandardConv, self).__init__()
-        self.conv3d = nn.Conv3d(in_channels, out_channels,
-                                kernel_size=kernel_size, stride=stride, padding=padding)
+                 kernel_size = 3, stride = 1, padding = 1, inplace = False):
+        super(StandardModule, self).__init__()
+        self.conv = nn.Conv3d(in_channels = in_channels, out_channels = out_channels,
+                                kernel_size = kernel_size, stride = stride, padding = padding)
         self.instance_norm = nn.InstanceNorm3d(out_channels, affine=True)
-        self.relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE)
+        self.l_relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace = inplace)
 
     def forward(self, x):
-        x = self.conv3d(x)
+        x = self.conv(x)
         x = self.instance_norm(x)
-        x = self.relu(x)
+        x = self.l_relu(x)
         return x
-
-"""
-Context module class for enhanced feature mapping using pre-activation residual blocks with dropout between.
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels.
-
-Architecture:
-- Conv1: 3x3 convolutional layer with instance normalisation and LeakyReLU activation.
-- Dropout: Dropout layer with a specified dropout probability.
-- Conv2: 3x3 convolutional layer with instance normalisation and LeakyReLU activation.
-"""
+    
 class ContextModule(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(ContextModule, self).__init__()
-        self.conv1 = nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.instance_norm = nn.InstanceNorm3d(out_channels, affine=True)
-        self.relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace=True)
-        self.dropout = nn.Dropout(DROPOUT_PROB)
-        self.conv2 = nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1)
-        self.instance_norm2 = nn.InstanceNorm3d(out_channels, affine=True)
-        self.relu2 = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace=True)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.instance_norm(x)
-        x = self.relu(x)
-        x = self.dropout(x)
-        x = self.conv2(x)
-        x = self.instance_norm2(x)
-        x = self.relu2(x)
-        return x
-
-"""
-Convolutional Layer with Stride
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels.
-- kernel_size (int, optional): Size of the convolutional kernel (default is 3).
-- stride (int, optional): Stride of the convolution operation (default is 2).
-- padding (int, optional): Padding size for the convolution (default is 0). Adjusted padding to retain spatial dimensions.
-
-"""
-class ConvWithStride(nn.Module):
     def __init__(self, in_channels, out_channels,
-                 kernel_size=3, stride=2, padding=1):
-        super(ConvWithStride, self).__init__()
-        self.conv = nn.Conv3d(in_channels, out_channels,
-                              kernel_size=kernel_size, stride=stride, padding=padding)
-        self.relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace=True)
+                 kernel_size = 3, stride = 1, padding = 1):
+        super(ContextModule, self).__init__()
+        self.block1 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
+        self.dropout = nn.Dropout(DROP_PROB)
+        self.block2 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
+        
+    def forward(self, x):
+        x = self.block1(x)
+        x = self.dropout(x)
+        x = self.block2(x)
+        return x
+    
+class Stride2Module(nn.Module):
+    def __init__(self, in_channels, out_channels,
+                 kernel_size=3, stride=2, padding=1, inplace = False):
+        super(Stride2Module, self).__init__()
+        self.conv = nn.Conv3d(in_channels = in_channels, out_channels = out_channels,
+                                kernel_size = kernel_size, stride = stride, padding = padding)
+        self.instance_norm = nn.InstanceNorm3d(out_channels, affine=True)
+        self.l_relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace = inplace)
 
     def forward(self, x):
-        out = self.conv(x)
-        out = self.relu(out)
-        return out
-
-"""
-Upsampling Module
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels.
-
-Architecture:
-- ConvTranspose2d: Transposed convolution for upsampling with a kernel size of 2 and stride of 2.
-- Conv: 3x3 convolutional layer with padding to maintain spatial dimensions.
-- InstanceNorm: Instance normalisation applied to the output.
-- LeakyReLU: Leaky ReLU activation function.
-"""
+        x = self.conv(x)
+        x = self.instance_norm(x)
+        x = self.l_relu(x)
+        return x
+    
 class UpsamplingModule(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpsamplingModule, self).__init__()
-        self.conv_transpose = nn.ConvTranspose3d(in_channels, out_channels,
-                                                 kernel_size=2, stride=2, padding=0)
-        self.conv = nn.Conv3d(out_channels, out_channels,
-                              kernel_size=3, stride=1, padding=1)
-        self.norm = nn.InstanceNorm3d(out_channels, affine=True)
-        self.relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace=True)
+        self.conv_transpose = nn.ConvTranspose3d(in_channels = in_channels, out_channels = out_channels,
+                                                 kernel_size = 4, stride = 2, padding = 1)
+        self.block = StandardModule(in_channels = out_channels, out_channels = out_channels, inplace = True)
 
     def forward(self, x):
         x = self.conv_transpose(x)
-        x = self.conv(x)
-        x = self.relu(x)
+        x = self.block(x)
         return x
 
 
-"""
-Localisation Module for recombining features. 
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels.
-
-Architecture:
-- Conv1: 3x3 convolutional layer with instance normalisation and LeakyReLU activation.
-- Conv2: 1x1 convolutional layer with instance normalisation and LeakyReLU activation.
-"""
 class LocalisationModule(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(LocalisationModule, self).__init__()
 
-        self.conv1 = nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.norm = nn.InstanceNorm3d(out_channels, affine=True)
-        self.relu = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace=True)
+        self.block1 = StandardModule(in_channels = in_channels, out_channels = out_channels)
 
-        self.conv2 = nn.Conv3d(out_channels, out_channels, kernel_size=1, padding=0)
-        self.norm2 = nn.InstanceNorm3d(out_channels, affine=True)
-        self.relu2 = nn.LeakyReLU(negative_slope=NEGATIVE_SLOPE, inplace=True)
+        self.block2 = StandardModule(in_channels = out_channels, out_channels = out_channels, kernel_size = 1, padding = 0)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.norm(x)
-        x = self.relu(x)
-        x = self.conv2(x)
-        x = self.norm2(x)
-        x = self.relu2(x)
+        x = self.block1(x)
+        x = self.block2(x)
         return x
-
-
-"""
-Segmentation Module reduces depth of feature maps to 1. 
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels (set to 1 since just mask is grayscale)
-
-Architecture:
-- Segmentation: 1x1 convolutional layer
-
-"""
-class SegmentationModule(nn.Module):
+    
+class SegmentationLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(SegmentationModule, self).__init__()
-        self.segmentation = nn.Conv3d(in_channels, out_channels,
-                                      kernel_size=1, stride=1, padding=0)
+        super(SegmentationLayer, self).__init__()
+        self.seg = nn.Conv3d(in_channels = in_channels, out_channels = out_channels,
+                                      kernel_size = 1, stride = 1, padding = 0)
 
     def forward(self, x):
-        return self.segmentation(x)
-
-"""
-UpScale Module used to increase spatial resolution. 
-
-Parameters:
-- in_channels (int): Number of input channels.
-- out_channels (int): Number of output channels.
-
-Architecture:
-- Upscale: 2x2 transposed convolutional layer with no padding
-
-"""
+        return self.seg(x)
+    
 class UpScaleModule(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpScaleModule, self).__init__()
-        self.upscale = nn.ConvTranspose3d(in_channels, out_channels,
-                                          kernel_size=2, stride=2, padding=0)
+        self.upscale = nn.ConvTranspose3d(in_channels = in_channels, out_channels = out_channels,
+                                          kernel_size = 4, stride = 2, padding = 1)
 
     def forward(self, x):
         return self.upscale(x)
-
-"""
-This class defines an improved U-Net architecture. 
-"""
+    
 class ImprovedUnet(nn.Module):
     def __init__(self):
         super(ImprovedUnet, self).__init__()
-        # in_channels = 3 # RGB colours have three input channels.
-        in_channels = 1
+        self.block1 = StandardModule(1, 16) # Grayscale thus requries 1 input channel
+        self.context1 = ContextModule(16, 16)
 
-        out_channels = 16
-        self.conv_1 = StandardConv(in_channels, out_channels)
-        in_channels=16
-        self.context_1 = ContextModule(in_channels, out_channels)
+        self.block2 = Stride2Module(16, 32)
+        self.context2 = ContextModule(32, 32)
 
-        in_channels = 16
-        out_channels = 32
-        self.conv_2 = ConvWithStride(in_channels, out_channels)
-        in_channels = 32
-        self.context_layer_2 = ContextModule(in_channels, out_channels)
+        self.block3 = Stride2Module(32, 64)
+        self.context3 = ContextModule(64, 64)
 
-        in_channels = 32
-        out_channels = 64
-        self.conv_3 = ConvWithStride(in_channels, out_channels)
-        in_channels = 64
-        self.context_layer_3 = ContextModule(in_channels, out_channels)
+        self.block4 = Stride2Module(64, 128)
+        self.context4 = ContextModule(128, 128)
 
-        in_channels = 64
-        out_channels = 128
-        self.conv_4 = ConvWithStride(in_channels, out_channels)
-        in_channels = 128
-        self.context_layer_4 = ContextModule(in_channels, out_channels)
+        self.block5 = Stride2Module(128, 256)
+        self.context5 = ContextModule(256, 256)        
 
-        in_channels = 128
-        out_channels = 256
-        self.conv_5 = ConvWithStride(in_channels, out_channels)
-        in_channels = 256
-        self.context_layer_5 = ContextModule(in_channels, out_channels)
+        self.upsample1 = UpsamplingModule(256, 128)
 
-        in_channels = 256
-        out_channels = 128
-        self.upsample_layer_1 = UpsamplingModule(in_channels, out_channels)
+        self.localise1 = LocalisationModule(256, 128)
+        self.upsample2 = UpsamplingModule(128, 64)
 
-        in_channels = 256
-        out_channels = 128
-        self.localise_layer_1 = LocalisationModule(in_channels,out_channels)
+        self.localise2 = LocalisationModule(128, 64)
+        self.upsample3 = UpsamplingModule(64, 32)
 
-        in_channels = 128
-        out_channels = 64
-        self.upsample_layer_2 = UpsamplingModule(in_channels, out_channels)
+        self.localise3 = LocalisationModule(64, 32)
+        self.upsample4 = UpsamplingModule(32, 16)
 
-        in_channels = 128
-        out_channels = 64
-        self.localise_layer_2 = LocalisationModule(in_channels, out_channels)
-
-        in_channels = 64
-        out_channels = 32
-        self.upsample_layer_3 = UpsamplingModule(in_channels, out_channels)
-
-        in_channels = 64
-        out_channels = 32
-        self.localise_layer_3 = LocalisationModule(in_channels, out_channels)
-
-        # fourth upsample layer
-        in_channels = 32
-        out_channels = 16
-        self.upsample_layer_4 = UpsamplingModule(in_channels, out_channels)
-
-        in_channels = 32
-        out_channels = 32
-        self.conv_output = StandardConv(in_channels, out_channels)
+        self.conv_output = StandardModule(32, 32)
 
         # first segmentation layer
-        in_channels =  64
-        # out_channels = 1
-        out_channels = 6
-        self.segmentation_layer_1 = SegmentationModule(in_channels, out_channels)
+        self.segmentation1 = SegmentationLayer(64, NUM_SEGMENTS)
 
         # second segmentation layer
-        in_channels = 32
-        # out_channels = 1
-        out_channels = 6
-        self.segmentation_layer_2 = SegmentationModule(in_channels, out_channels)
+        self.segmentation2 = SegmentationLayer(32, NUM_SEGMENTS)
 
         # third segmentation layer
-        in_channels = 32
-        # out_channels = 1
-        out_channels = 6
-        self.segmentation_layer_3 = SegmentationModule(in_channels, out_channels)
+        self.segmentation3 = SegmentationLayer(32, NUM_SEGMENTS)
 
         # upscaling layers
-        self.upscale_1 = UpScaleModule(out_channels, out_channels)
-        self.upscale_2 = UpScaleModule(out_channels, out_channels)
+        self.upscale_1 = UpScaleModule(NUM_SEGMENTS, NUM_SEGMENTS)
+        self.upscale_2 = UpScaleModule(NUM_SEGMENTS, NUM_SEGMENTS)
 
 
     def forward(self, x):
-        conv_out_1 = self.conv_1(x)
-        context_out_1 = self.context_1(conv_out_1)
+        conv_out_1 = self.block1(x)
+        context_out_1 = self.context1(conv_out_1)
         element_sum_1 = conv_out_1 + context_out_1
 
         # second term
-        conv_out_2 = self.conv_2(element_sum_1)
-        context_out_2  = self.context_layer_2(conv_out_2)
+        conv_out_2 = self.block2(element_sum_1)
+        context_out_2  = self.context2(conv_out_2)
         element_sum_2 = conv_out_2 + context_out_2
 
         # third downsample
-        conv_out_3 = self.conv_3(element_sum_2)
-        context_out_3 = self.context_layer_3(conv_out_3)
+        conv_out_3 = self.block3(element_sum_2)
+        context_out_3 = self.context3(conv_out_3)
         element_sum_3 = conv_out_3 + context_out_3
 
-        conv_out_4 = self.conv_4(element_sum_3)
-        context_out_4 = self.context_layer_4(conv_out_4)
+        conv_out_4 = self.block4(element_sum_3)
+        context_out_4 = self.context4(conv_out_4)
         element_sum_4 = conv_out_4 + context_out_4
 
-        conv_out_5 = self.conv_5(element_sum_4)
-        context_out_5 = self.context_layer_5(conv_out_5)
+        conv_out_5 = self.block5(element_sum_4)
+        context_out_5 = self.context5(conv_out_5)
         element_sum_5 = conv_out_5 + context_out_5
 
         # First upsampling module.
-        upsample_out_1 = self.upsample_layer_1(element_sum_5)
-        concat_1 = torch.cat((element_sum_4, upsample_out_1), dim=1)
+        upsample_out_1 = self.upsample1(element_sum_5)
+        concat_1 = torch.cat((element_sum_4, upsample_out_1))
 
-        localisation_out_1 = self.localise_layer_1(concat_1)
-        upsample_out_2 = self.upsample_layer_2(localisation_out_1)
-        concat_2 = torch.cat((element_sum_3, upsample_out_2), dim=1)
+        localisation_out_1 = self.localise1(concat_1)
+        upsample_out_2 = self.upsample2(localisation_out_1)
+        concat_2 = torch.cat((element_sum_3, upsample_out_2))
 
-        localisation_out_2 = self.localise_layer_2(concat_2)
-        upsample_out_3 = self.upsample_layer_3(localisation_out_2)
-        concat_3 = torch.cat((element_sum_2, upsample_out_3), dim=1)
+        localisation_out_2 = self.localise2(concat_2)
+        upsample_out_3 = self.upsample3(localisation_out_2)
+        concat_3 = torch.cat((element_sum_2, upsample_out_3))
 
-        localisation_out_3 = self.localise_layer_3(concat_3)
-        upsample_out_4 = self.upsample_layer_4(localisation_out_3)
-        concat_4 = torch.cat((element_sum_1, upsample_out_4), dim=1)
+        localisation_out_3 = self.localise3(concat_3)
+        upsample_out_4 = self.upsample4(localisation_out_3)
+        concat_4 = torch.cat((element_sum_1, upsample_out_4))
 
-        segment_out_1 = self.segmentation_layer_1(localisation_out_2)
+        segment_out_1 = self.segmentation1(localisation_out_2)
         upscale_out_1 = self.upscale_1(segment_out_1)
 
-        segment_out_2 = self.segmentation_layer_2(localisation_out_3)
+        segment_out_2 = self.segmentation2(localisation_out_3)
         seg_sum_1 = upscale_out_1 + segment_out_2
 
         upscale_out_2 = self.upscale_2(seg_sum_1)
 
-        segment_out_1 = self.segmentation_layer_1(localisation_out_2)
-        upscale_out_1 = self.upscale_1(segment_out_1)
-
         convoutput_out = self.conv_output(concat_4)
-        segment_out_3 = self.segmentation_layer_3(convoutput_out)
+        segment_out_3 = self.segmentation3(convoutput_out)
 
         final_sum = upscale_out_2 + segment_out_3
 
-        output =  nn.Softmax(dim = 1)(final_sum)
+        output = torch.permute(final_sum,( 1, 2, 3, 0))
 
-        output = output.unsqueeze(1)
+        return torch.softmax(output, dim = -1)
 
-        output = output.permute(0, 1, 3, 4, 5, 2)
+if __name__ == '__main__':
+    # Create a tensor of shape (256, 256, 128) with random numbers
+    random_tensor = torch.randn(256, 256, 128)
 
-        return output
+    random_tensor = random_tensor[np.newaxis, : , : , :]
+    
+    conv = ImprovedUnet()
+
+    print(random_tensor.shape)
+
+    output = conv(random_tensor)
+
+    print(output.shape)

@@ -32,11 +32,31 @@ from train import train_one_epoch, evaluate
 from dataset import get_dataloaders
 from timm.utils import NativeScaler
 
-import wandb_config
+import wandb
 
 # Hyperparameters
 hyperparameter_1 = None
 epochs = 300
+
+
+# wandb parameters
+project = "ADNI-GFNet"
+group = "GFNet"
+config={
+            "id": 0,
+            "machine": "a100",
+            "architecture": "gfnet-xs",
+            "model": "GFNet",
+            "dataset": "ImageNet",
+            "epochs": 300,
+            "optimizer": "adam",
+            "loss": "crossentropy",
+            "metric": "accuracy",
+            #~ "dim": 64,
+            "depth": 12,
+            "embed_dim": 384,
+            "batch_size": 128
+        }
 
 class mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -218,7 +238,10 @@ def main():
     print("Main of Modules - modules compiles/runs\n")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    wandb_config.setup_wandb()
+    experiment_id = wandb.util.generate_id()
+    config["id"] = experiment_id
+    wandb.init(project, group, config)
+    config = wandb.config
 
     criterion = torch.nn.CrossEntropyLoss()
     train_loader, test_loader = get_dataloaders(None)

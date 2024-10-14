@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 def load_images(directory):
     images = []
     labels = []
-
+    # Read the image data and convert it into an array to store the labels associated with the image
     for label in os.listdir(directory):
         label_folder =os.path.join(directory, label)
         if os.path.isdir(label_folder):

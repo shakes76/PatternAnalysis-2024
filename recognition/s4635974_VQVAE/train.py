@@ -42,6 +42,7 @@ num_channels = 1
 num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
+early_stopping = True
 
 # num_epochs = 150
 # batch_size = 16

@@ -15,7 +15,7 @@ from skimage.metrics import structural_similarity as ssim
 # Hyperparameters
 image_size = 256  # Image size for resizing
 batch_size = 32  # Adjust this based on available memory
-num_epochs = 20  # Number of training epochs
+num_epochs = 10  # Number of training epochs
 learning_rate = 0.001  # PLAY AROUND WITH 0.001 or 0.0001 Learning rate for optimizer
 beta = 0.25  # EXPERIMENT WITH 0.1, 0.2, OR 0.5 IF IMAGE IS NOT CLEAR ENOUGH
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -65,6 +65,11 @@ eval_every = 100
 model_save_path = './saved_models'
 os.makedirs(model_save_path, exist_ok=True)
 
+# Lists to store SSIM scores and losses for plotting later
+train_ssim_scores, val_ssim_scores = [], []
+train_losses, val_losses = [], []
+batch_losses = []
+
 # Training loop
 def train():
     print("Starting training loop")
@@ -92,6 +97,9 @@ def train():
             loss.backward()
             optimizer.step()
 
+            # ADDED THIS: Track batch-level losses for the plot
+            batch_losses.append(loss.item())
+
             total_train_loss += loss.item()
 
             # Calculate SSIM between original and reconstructed images (in the same batch)
@@ -108,6 +116,10 @@ def train():
         avg_ssim_train = np.mean(ssim_train_scores)
 
         print(f'Epoch [{epoch + 1}], Train Loss: {avg_train_loss:.4f}, Train SSIM: {avg_ssim_train:.4f}')
+
+        # Stores the train SSIM and loss values in the list
+        train_ssim_scores.append(avg_ssim_train)
+        train_losses.append(avg_train_loss)
 
         # Visualize and save reconstructed training images
         visualize_reconstruction(images, x_recon, epoch, phase='train')
@@ -139,6 +151,10 @@ def train():
 
         print(f'Epoch [{epoch + 1}], Val Loss: {avg_val_loss:.4f}, Val SSIM: {avg_ssim_val:.4f}')
 
+        # Stores the validation SSIM and loss values in the list 
+        val_ssim_scores.append(avg_ssim_val)
+        val_losses.append(avg_val_loss)
+
         # Visualize and save reconstructed validation images
         visualize_reconstruction(val_images, x_recon, epoch, phase='val')
 
@@ -146,6 +162,47 @@ def train():
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), os.path.join(model_save_path, 'best_vqvae_model.pth'))
+
+    # After training, plot and save the SSIM scores and losses
+    plot_ssim_scores(train_ssim_scores, val_ssim_scores)
+    plot_losses(train_losses, val_losses)
+    plot_batch_losses(batch_losses)
+
+
+# Plot SSIM scores
+def plot_ssim_scores(train_ssim_scores, val_ssim_scores):
+    plt.figure()
+    plt.plot(train_ssim_scores, label='Train SSIM')
+    plt.plot(val_ssim_scores, label='Val SSIM')
+    plt.xlabel('Epoch')
+    plt.ylabel('SSIM')
+    plt.title('SSIM Scores per Epoch')
+    plt.legend()
+    plt.savefig('ssim_scores.png')
+    plt.close()
+
+# Plot losses
+def plot_losses(train_losses, val_losses):
+    plt.figure()
+    plt.plot(train_losses, label='Train Loss')
+    plt.plot(val_losses, label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Losses per Epoch')
+    plt.legend()
+    plt.savefig('losses.png')
+    plt.close()
+
+# Plot batch losses 
+def plot_batch_losses(train_losses):
+    plt.figure()
+    plt.plot(train_losses, label='Train Loss')
+    plt.xlabel('Batch no.')
+    plt.ylabel('Reconstruction loss')
+    plt.title('Training reconstruction Losses')
+    plt.legend()
+    plt.savefig('batch_losses.png')
+    plt.close()
 
 def calculate_ssim(original_images, reconstructed_images):
     original_images = original_images.cpu().data

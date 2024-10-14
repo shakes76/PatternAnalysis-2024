@@ -26,7 +26,7 @@ class ContextModule(nn.Module):
                  kernel_size = 3, stride = 1, padding = 1):
         super(ContextModule, self).__init__()
         self.block1 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
-        self.dropout = nn.Dropout(DROP_PROB)
+        self.dropout = nn.Dropout(DROP_PROB) # Drop description uncertain, replace it with Dropout3d when poor performance
         self.block2 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
         
     def forward(self, x):
@@ -193,7 +193,11 @@ class ImprovedUnet(nn.Module):
 
         output = torch.permute(final_sum,( 1, 2, 3, 0))
 
-        return torch.softmax(output, dim = -1)
+        output =  torch.softmax(output, dim = -1)
+
+        output = output[np.newaxis, : , : , : , :]
+        
+        return output
 
 if __name__ == '__main__':
     # Create a tensor of shape (256, 256, 128) with random numbers

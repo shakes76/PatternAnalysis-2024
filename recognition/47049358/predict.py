@@ -6,13 +6,12 @@ where applicable
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 
 
 # import from local files  
 from train import dice_coefficient, trained_model
-from dataset import test_loader
+from dataset import X_test, y_test, Prostate3dDataset
 
 """
     Tests improved unet on trained model. 
@@ -29,18 +28,38 @@ from dataset import test_loader
 def test(model, test_loader, device):
     model.eval()  # Set the model to evaluation mode
     
-    dice_scores = [] # stores dice scores. 
+    test_scores = [] # stores dice scores.
+    seg_0_scores = []
+    seg_1_scores = []
+    seg_2_scores = []
+    seg_3_scores = []
+    seg_4_scores = []
+    seg_5_scores = []
 
     with torch.no_grad():
-        for test_inputs, test_masks in test_loader:
-            inputs, targets = test_inputs[np.newaxis, :], test_masks[np.newaxis, :]
-
-            inputs, targets = inputs.to(device), targets.to(device)
+        for inputs, masks in test_loader:
+            inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
-            dice = dice_coefficient(outputs, targets)
-            dice_scores.append(dice.item())
+            test_loss, dice_coefs = dice_coefficient(outputs, masks)
 
-    return dice_scores
+            for i in range(len(dice_coefs)):
+                if i == 0:
+                    seg_0_scores.append(dice_coefs[i])
+                elif i == 1:
+                    seg_1_scores.append(dice_coefs[i])
+                elif i == 2:
+                    seg_2_scores.append(dice_coefs[i])
+                elif i == 3:
+                    seg_3_scores.append(dice_coefs[i])
+                elif i == 4:
+                    seg_4_scores.append(dice_coefs[i])
+                else:
+                    seg_5_scores.append(dice_coefs[i])
+                
+
+            test_scores.append(-1 * test_loss.item())
+
+    return test_scores, seg_0_scores, seg_1_scores, seg_2_scores, seg_3_scores, seg_4_scores, seg_5_scores
 
 """
     Visualises model image, predictions and ground truth on first three images from test loader.
@@ -99,16 +118,25 @@ def visualise_predictions(model, test_loader, device, num_images=3):
     Plots dice coefficients of the whole test dataset.
     Takes an array of dice scores as input. 
 """
-def plot_dice(dice):
+def plot_dice(dice, segment_scores):
     x_values = np.arange(len(dice))  # Generate x-values as indices
     plt.figure(figsize=(8, 6))
-    plt.plot(x_values, dice, marker='o', linestyle='-')
+
+    # Plot overall dice scores
+    plt.plot(x_values, dice_scores, label='Overall Dice Scores')
+    
+    # Plot segment scores
+    for i, segment_score in enumerate(segment_scores):
+        plt.plot(x_values, segment_score, label=f'Segment {i} Dice Scores')
+
+
     plt.xlabel("Image Index")
     plt.ylabel("Dice Coefficient")
     plt.title("Dice Coefficient across test inputs")
+    plt.legend()
     plt.grid(True)
-    plt.show()
     plt.savefig('dice_scores_test.png')
+    plt.close()
 
 
 """
@@ -119,19 +147,37 @@ if __name__ == "__main__":
     # connect to gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # set up data transform. 
-    data_transform = transforms.Compose([
-        transforms.ToTensor(),
-        #transforms.Normalize(mean=[0.7071, 0.5821, 0.5360], std=[0.1561, 0.1644, 0.1795])
-    ])
+    test_set = Prostate3dDataset(X_test, y_test)
+    test_loader = DataLoader(test_set)
 
     # perform predictions
-    dice_scores = test(trained_model, test_loader, device)
+    dice_scores, s0, s1, s2, s3, s4, s5 = test(trained_model, test_loader, device)
+
     average_dice = np.mean(dice_scores)
     print(f"Average Dice Coefficient: {average_dice:.4f}")
 
+    average_s0 = np.mean(s0)
+    print(f"Segment 0 Dice Coefficient: {average_s0:.4f}")
+
+    average_s1 = np.mean(s1)
+    print(f"Segment 1 Dice Coefficient: {average_s1:.4f}")
+
+    average_s2 = np.mean(s2)
+    print(f"Segment 2 Dice Coefficient: {average_s2:.4f}")
+
+    average_s3 = np.mean(s3)
+    print(f"Segment 3 Dice Coefficient: {average_s3:.4f}")
+
+    average_s4 = np.mean(s4)
+    print(f"Segment 4 Dice Coefficient: {average_s4:.4f}")
+
+    average_s5 = np.mean(s5)
+    print(f"Segment 5 Dice Coefficient: {average_s5:.4f}")
+
+    segment_scores = [s0, s1, s2, s3, s4, s5]
+
     # plot dice scores across the dataset.
-    plot_dice(dice_scores)
+    plot_dice(dice_scores, segment_scores)
 
     # plot three examples of images, prediction and truth. 
     # visualise_predictions(trained_model, test_loader,device)

@@ -3,9 +3,10 @@ semantic_MRs_anon
 
 **__pycache__**
 
-
 *.ipynb
 
 *.pkl
 
 *.txt
+
+*.png

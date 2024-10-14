@@ -4,28 +4,25 @@ should be imported from “modules.py” and the data loader should be imported 
 sure to plot the losses and metrics during training
 """
 
-from dataset import train_loader, validation_loader
+from dataset import X_train, y_train, X_val, y_val, Prostate3dDataset
 from modules import ImprovedUnet
 import matplotlib.pyplot as plt
 import torch
+from torch.utils.data import DataLoader
+from time import time
 from tqdm import tqdm
-import numpy as np
 
-NUM_EPOCHS = 10
 
-from tqdm import tqdm
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
+NUM_EPOCHS = 300
+LEARNING_RATE = 5e-4
+WEIGHT_DECAY = 1e-5
+LR_INITIAL = 0.985
 
-NUM_EPOCHS = 10
-
-def train(model, train_loader, valid_loader, num_epochs=100, device="cuda"):
-    # Set up criterion, optimiser, and scheduler for learning rate.
+def train(model, train_loader, valid_loader, num_epochs=NUM_EPOCHS, device="cuda"):
+    # set up criterion, optimiser, and scheduler for learning rate. 
     criterion = dice_coefficient
-    optimiser = torch.optim.Adam(model.parameters(), lr=5e-4, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=0.985)
+    optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma = LR_INITIAL)
 
     model.to(device)
     model.train()
@@ -33,93 +30,110 @@ def train(model, train_loader, valid_loader, num_epochs=100, device="cuda"):
     training_losses = []
     validation_losses = []
 
-    # Initialize GradScaler for mixed precision training
-    scaler = torch.cuda.amp.GradScaler()
-
     for epoch in range(num_epochs):
         running_loss = 0.0
-        for inputs, masks in tqdm(train_loader, desc=f'Epoch {epoch + 1}/{num_epochs}'):
-            inputs = inputs[:, np.newaxis]
-            masks = masks[:, np.newaxis]
-
-            inputs, masks = inputs.to(device, non_blocking=True), masks.to(device, non_blocking=True)
-
+        segment_losses = None
+        for batch_num, (inputs, masks) in enumerate(tqdm(train_loader)):
+            inputs, masks = inputs.to(device), masks.to(device)
             optimiser.zero_grad()
+            outputs = model(inputs)
 
-            # Forward pass with mixed precision
-            with torch.amp.autocast():
-                outputs = model(inputs)
-                loss = 1 - criterion(masks, outputs)
+            # we want to maximise the dice coefficient
+            # loss is then 1 - dice coefficient 
+            loss, d_coefs = criterion(y_true = masks, y_pred = outputs) 
 
-            # Backward pass with GradScaler
-            scaler.scale(loss).backward()
-            scaler.step(optimiser)
-            scaler.update()
+            if segment_losses == None:
+                segment_losses = d_coefs
+            else:
+                segment_losses += d_coefs
 
-            running_loss += loss.item()
+            loss.backward()
+            optimiser.step()
 
-            # Clear cache
-            torch.cuda.empty_cache()
+            running_loss +=  -1 * loss.item()
 
-        training_losses.append(running_loss / len(train_loader))
+            if batch_num >= 0:
+                break
+
         scheduler.step()
 
-        # Validation step (optional)
+        for i in range(len(segment_losses)):
+            print(f"Epoch {epoch + 1} Segment {i} - Training Dice Coefficient: {segment_losses[i] / len(train_loader)}")
+
+        print(f"Epoch {epoch + 1}, Training Loss: {running_loss / len(train_loader)}")
+
         model.eval()
-        validation_loss = 0.0
+        val_loss = 0.0
+        segment_losses = None
+
+        # get validation losses. 
         with torch.no_grad():
-            for inputs, masks in valid_loader:
-                inputs = inputs[:, np.newaxis]
-                masks = masks[:, np.newaxis]
+            for val_inputs, val_masks in valid_loader:
+                val_inputs, val_masks = val_inputs.to(device), val_masks.to(device)
+                val_outputs = model(val_inputs)
 
-                inputs, masks = inputs.to(device, non_blocking=True), masks.to(device, non_blocking=True)
+                loss, d_coefs = criterion(val_outputs, val_masks)
 
-                with torch.cuda.amp.autocast():
-                    outputs = model(inputs)
-                    loss = 1 - criterion(masks, outputs)
+                if segment_losses == None:
+                    segment_losses = d_coefs
+                else:
+                    segment_losses += d_coefs
 
-                validation_loss += loss.item()
+                val_loss += -1 * loss.item()
 
-        validation_losses.append(validation_loss / len(valid_loader))
-        model.train()
+        for i in range(len(segment_losses)):
+
+            print(f"Epoch {epoch + 1} Segment {i} - Validation Dice Coefficient: {segment_losses[i] / len(train_loader)}")
+
+        print(f"Epoch {epoch + 1}, Validation Loss: {val_loss / len(valid_loader)}")
+
+        training_losses.append(running_loss / len(train_loader))
+        validation_losses.append(val_loss / len(valid_loader))
 
     return model, training_losses, validation_losses
 
-def dice_coefficient(y_true, y_pred, epsilon=1e-6):
-    num_masks = y_true.size(-1)  # Assuming the masks are in the last dimension
-    dim_coefs = torch.zeros(num_masks, device=y_true.device)  # Initialize a tensor to store the coefficients
-
+def dice_coefficient(y_true, y_pred, epsilon=1e-7):
+    num_masks = y_true.size(-1)
+    d_coefs = torch.zeros(num_masks)
     for i in range(num_masks):
-        # Get the argmax indices along the class dimension
-        ref = torch.argmax(y_pred, dim=-1)
-        
-        # Create binary masks where the predicted elements are set to 1 if they match the argmax indices
-        y_pred_binary = (ref == i).float()
-        
-        y_true_f = y_true[..., i].contiguous().view(-1)  # Flatten the mask
-        y_pred_f = y_pred_binary.contiguous().view(-1)  # Flatten the prediction
-        
-        intersection = torch.sum(y_true_f * y_pred_f)
-        denominator = torch.sum(y_true_f) + torch.sum(y_pred_f)
-        dim_coef = 2 * (intersection / denominator.clamp(min=epsilon))
-        print(f'Mask {i}: ', dim_coef)
-        dim_coefs[i] = dim_coef  # Store the coefficient in the tensor
+        ground_truth_seg = y_true[: , : , : , : , i]
+        pred_seg = y_pred[: , : , : , : , i]
 
-    output = torch.divide(torch.sum(dim_coefs), num_masks)
-    output.requires_grad = True
-    return output
+        d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / torch.sum((ground_truth_seg + pred_seg) + epsilon)
+        d_coefs[i] = d_coef
+        
+    overall_loss = (-1 / num_masks) * torch.sum(d_coefs)
+    return overall_loss, d_coefs
 
 # connect to gpu
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 if not torch.cuda.is_available():
     print("Warning CUDA not Found. Using CPU")
 
 # create model. 
 model = ImprovedUnet()
 
+# Importing Dataloader breaks the implementation. Hence they are loaded below instead:
+
+train_set = Prostate3dDataset(X_train, y_train)
+validation_set = Prostate3dDataset(X_val, y_val)
+
+train_loader = DataLoader(train_set)
+validation_loader = DataLoader(validation_set)
+
+print("> Start Training")
+
+start = time()
+
 # train improved unet
 trained_model, training_losses, validation_losses = train(model, train_loader, validation_loader, 
                                                             device=device, num_epochs=NUM_EPOCHS)
+
+end = time()
+
+elapsed_time = end - start
+print(f"Training completed in {elapsed_time:.2f} seconds")
 
 plt.figure(figsize=(10,5))
 plt.plot(training_losses, label='Training Loss')
@@ -128,6 +142,6 @@ plt.title('Losses over epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
-plt.show()
-
+plt.grid(True)
 plt.savefig('unet_losses_over_epochs.png')
+plt.close()

@@ -24,6 +24,8 @@ from samplers import RASampler
 import utils
 from gfnet import GFNet, GFNetPyramid
 
+from dataset import adni_data_load
+
 import warnings
 warnings.filterwarnings("ignore", message="Argument interpolation should be")
 
@@ -186,48 +188,52 @@ def main(args):
 
     cudnn.benchmark = True
 
-    dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
-    dataset_val, _ = build_dataset(is_train=False, args=args)
+    # dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+    # dataset_val, _ = build_dataset(is_train=False, args=args)
 
-    if True:  # args.distributed:
-        num_tasks = utils.get_world_size()
-        global_rank = utils.get_rank()
-        if args.repeated_aug:
-            sampler_train = RASampler(
-                dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-            )
-        else:
-            sampler_train = torch.utils.data.DistributedSampler(
-                dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-            )
-        if args.dist_eval:
-            if len(dataset_val) % num_tasks != 0:
-                print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
-                      'This will slightly alter validation results as extra duplicate entries are added to achieve '
-                      'equal num of samples per-process.')
-            sampler_val = torch.utils.data.DistributedSampler(
-                dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-        else:
-            sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-    else:
-        sampler_train = torch.utils.data.RandomSampler(dataset_train)
-        sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+    # if True:  # args.distributed:
+    #     num_tasks = utils.get_world_size()
+    #     global_rank = utils.get_rank()
+    #     if args.repeated_aug:
+    #         sampler_train = RASampler(
+    #             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    #         )
+    #     else:
+    #         sampler_train = torch.utils.data.DistributedSampler(
+    #             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    #         )
+    #     if args.dist_eval:
+    #         if len(dataset_val) % num_tasks != 0:
+    #             print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
+    #                   'This will slightly alter validation results as extra duplicate entries are added to achieve '
+    #                   'equal num of samples per-process.')
+    #         sampler_val = torch.utils.data.DistributedSampler(
+    #             dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+    #     else:
+    #         sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+    # else:
+    #     sampler_train = torch.utils.data.RandomSampler(dataset_train)
+    #     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
-    data_loader_train = torch.utils.data.DataLoader(
-        dataset_train, sampler=sampler_train,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_mem,
-        drop_last=True,
-    )
+    # data_loader_train = torch.utils.data.DataLoader(
+    #     dataset_train, sampler=sampler_train,
+    #     batch_size=args.batch_size,
+    #     num_workers=args.num_workers,
+    #     pin_memory=args.pin_mem,
+    #     drop_last=True,
+    # )
 
-    data_loader_val = torch.utils.data.DataLoader(
-        dataset_val, sampler=sampler_val,
-        batch_size=int(1.5 * args.batch_size),
-        num_workers=args.num_workers,
-        pin_memory=args.pin_mem,
-        drop_last=False
-    )
+    # data_loader_val = torch.utils.data.DataLoader(
+    #     dataset_val, sampler=sampler_val,
+    #     batch_size=int(1.5 * args.batch_size),
+    #     num_workers=args.num_workers,
+    #     pin_memory=args.pin_mem,
+    #     drop_last=False
+    # )
+
+    adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    dataset_train, dataset_val, data_loader_train, data_loader_val = adni_data_load(adni_dir, verbose=True) 
+    args.nb_classes = 2
 
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
@@ -242,7 +248,14 @@ def main(args):
 
     print(f"Creating model: {args.arch}")
 
-    if args.arch == 'gfnet-xs':
+    if args.arch == 'gfnet-xs-adni':
+        model = GFNet(
+            img_size=args.input_size, 
+            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            num_classes=2  # Change this to 2 for your binary classification task
+        )
+    elif args.arch == 'gfnet-xs':
         model = GFNet(
             img_size=args.input_size, 
             patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,

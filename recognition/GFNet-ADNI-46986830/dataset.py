@@ -3,7 +3,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 from typing import Any
-# from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 
 class ADNIDataset(Dataset):
     def __init__(self) -> None:
@@ -35,7 +35,8 @@ def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False):
     nc_dir = os.path.join(root_dir, 'train', 'NC')
 
     if verbose:
-        print("ADNI data directories:")
+        print("Loading ADNI dataset...")
+        print("Directories:")
         print(ad_dir)
         print(nc_dir)
 
@@ -49,8 +50,22 @@ def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False):
     image_paths = ad_image_paths + nc_image_paths
     labels = ad_labels + nc_labels
 
-    print(image_paths)
-    print(labels)
+    # Split data by subjects (assuming filename contains the subject ID like 1003730)
+    # Extract subject IDs from filenames
+    subject_ids = [os.path.basename(p).split('_')[0] for p in image_paths]
+
+    if verbose:
+        print("Number of subjects:", len(subject_ids))
+
+    # Split subject-wise
+    train_subjects, val_subjects = train_test_split(list(set(subject_ids)), test_size=val_size, random_state=42)
+
+    train_paths = [p for p in image_paths if os.path.basename(p).split('_')[0] in train_subjects]
+    val_paths = [p for p in image_paths if os.path.basename(p).split('_')[0] in val_subjects]
+
+    train_labels = [labels[i] for i, p in enumerate(image_paths) if os.path.basename(p).split('_')[0] in train_subjects]
+    val_labels = [labels[i] for i, p in enumerate(image_paths) if os.path.basename(p).split('_')[0] in val_subjects]
+
     
 
 

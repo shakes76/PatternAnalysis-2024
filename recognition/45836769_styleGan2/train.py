@@ -34,8 +34,8 @@ from dataset import ADNIDataset
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from umap import UMAP
 from sklearn.preprocessing import StandardScaler
+import gc
 
 # Hyperparams - mostly following StyleGAN2 paper
 z_dim = 256 # Latent dims (z: input, w: intermediate)
@@ -116,30 +116,25 @@ def plot_umap(generator, discriminator, dataloader, epoch):
     discriminator.eval()
     real_feats, fake_feats, labels = [], [], []
     
-    # Collect features from real and fake
     with torch.no_grad(), amp.autocast(device_type='cuda'):
         for real_imgs, lbls in dataloader:
             real_imgs, lbls = real_imgs.to(device), lbls.to(device)
-            # Gen real image features from discrim
-            real_feats.append(discriminator(real_imgs, feature_output=True).float().cpu())  # Ensure float32
+            real_feats.append(discriminator(real_imgs, feature_output=True).float().cpu())
             labels.extend(lbls.cpu().numpy())
-            # Gen fake image features from gen
             z = torch.randn(real_imgs.size(0), z_dim).to(device)
             fake_imgs = generator(z, lbls)
-            fake_feats.append(discriminator(fake_imgs, feature_output=True).float().cpu())  # Ensure float32
+            fake_feats.append(discriminator(fake_imgs, feature_output=True).float().cpu())
     
-    # Prepare data for UMAP
-    real_feats, fake_feats = torch.cat(real_feats).numpy(), torch.cat(fake_feats).numpy()
+    real_feats = torch.cat(real_feats).numpy()
+    fake_feats = torch.cat(fake_feats).numpy()
     labels = np.array(labels)
     combined_feats = np.vstack([real_feats, fake_feats])
     combined_labels = np.concatenate([labels, labels])
     is_real = np.concatenate([np.ones(len(real_feats)), np.zeros(len(fake_feats))])
     
-    # Normalise + apply UMAP
     normalised_feats = StandardScaler().fit_transform(combined_feats)
     embeddings = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42).fit_transform(normalised_feats)
     
-    # Plot UMAP for labels and real vs fake
     for plot_type, c in [("labels", combined_labels), ("real_vs_fake", is_real)]:
         plt.figure(figsize=(12, 10))
         plt.scatter(embeddings[:, 0], embeddings[:, 1], c=c, cmap='coolwarm' if plot_type == "labels" else 'viridis', alpha=0.7)
@@ -147,6 +142,10 @@ def plot_umap(generator, discriminator, dataloader, epoch):
         plt.title(f"UMAP - {'AD vs NC' if plot_type == 'labels' else 'Real vs Fake'} (Epoch {epoch+1})")
         plt.savefig(f"results/UMAP/umap_{plot_type}_e{epoch+1}.png")
         plt.close()
+
+    # Clear memory
+    del real_feats, fake_feats, combined_feats, normalised_feats, embeddings
+    clear_cache()
 
 def plot_losses(d_losses, g_losses):
     plt.figure(figsize=(10, 5))
@@ -159,6 +158,9 @@ def plot_losses(d_losses, g_losses):
     plt.savefig("results/loss_plot.png")
     plt.close()
 
+def clear_cache():
+    torch.cuda.empty_cache()
+    gc.collect()
 
 # Training loop
 total_batches = len(dataloader)
@@ -177,6 +179,7 @@ d_losses = []
 g_losses = []
 
 for epoch in range(num_epochs):
+    clear_cache()
     for i, (real_images, labels) in enumerate(dataloader):
         real_images, labels = real_images.to(device), labels.to(device)
         
@@ -246,17 +249,25 @@ for epoch in range(num_epochs):
         #     save_images(generator, fixed_z['AD'], fixed_labels['AD'], epoch, i)
         #     save_images(generator, fixed_z['NC'], fixed_labels['NC'], epoch, i)
     
-    if epoch % save_interval == 0:
-        # End of epoch: save images, plot UMAP, save model
+    print(f"Epoch [{epoch+1}/{num_epochs}] completed")
+    
+    # Save checkpoints and generate images every 5 epochs
+    if (epoch + 1) % save_interval == 0:
         save_images(generator, fixed_z['AD'], fixed_labels['AD'], epoch)
         save_images(generator, fixed_z['NC'], fixed_labels['NC'], epoch)
-        plot_umap(generator, discriminator, dataloader, epoch)
         torch.save({
             'gen_state_dict': generator.state_dict(),
             'discrim_state_dict': discriminator.state_dict(),
         }, f"checkpoints/stylegan2_checkpoint_epoch_{epoch+1}.pth")
 
-    print(f"Epoch [{epoch+1}/{num_epochs}] completed")
+    # Plot UMAP only after 50th epoch and at the end
+    if epoch + 1 == 50 or epoch + 1 == num_epochs:
+        print("Importing UMAP")
+        from umap import UMAP
+        print(f"Generating UMAP plot for epoch {epoch+1}")
+        plot_umap(generator, discriminator, dataloader, epoch)
+
+
     
 plot_losses(d_losses, g_losses)
 

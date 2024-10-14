@@ -78,11 +78,11 @@ class UNet2D(nn.Module):
         x = self.bottleneck(x)
         
         # Decoder
-        for i, operation in enumerate(self.decoder.layers):
+        for i, operation in enumerate(self.decoder.operations):
             x = operation(x)
             # Concatenate with corresponding encoder output (skip connection) after upsample (i%2 == 0 in operations)
             if i%2 == 0:
-                enc_output = enc_outputs[-(i/2)-1]
+                enc_output = enc_outputs[-(i//2)-1]
                 x = torch.cat((x, enc_output), dim=self.channel_dim)
 
         # Output raw logits

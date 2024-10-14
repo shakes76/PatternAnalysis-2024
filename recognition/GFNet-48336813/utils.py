@@ -14,7 +14,7 @@ import torch.distributed as dist
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
-    parser.add_argument('--epochs', default=3, type=int)
+    parser.add_argument('--epochs', default=1, type=int)
 
     # Model parameters
     parser.add_argument('--arch', default='deit_small', type=str,
@@ -128,7 +128,7 @@ def get_args_parser():
                         choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
                         type=str, help='semantic granularity')
 
-    parser.add_argument('--output_dir', default='',
+    parser.add_argument('--output_dir', default='outputs/',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='mps',
                         help='device to use for training / testing')

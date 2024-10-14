@@ -32,9 +32,6 @@ from torchvision.utils import save_image
 from modules import StyleGAN2Generator, StyleGAN2Discriminator
 from dataset import ADNIDataset
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
 import gc
 
 # Hyperparams - mostly following StyleGAN2 paper
@@ -46,7 +43,7 @@ label_dim = 2  # AD and NC
 num_layers = 7
 ngf = 256 # Num generator features
 ndf = 256 # Num disciminator features
-batch_size = 8
+batch_size = 4
 num_epochs = 100
 lr = 0.0001
 beta1 = 0.0
@@ -264,6 +261,9 @@ for epoch in range(num_epochs):
     if epoch + 1 == 50 or epoch + 1 == num_epochs:
         print("Importing UMAP")
         from umap import UMAP
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from sklearn.preprocessing import StandardScaler
         print(f"Generating UMAP plot for epoch {epoch+1}")
         plot_umap(generator, discriminator, dataloader, epoch)
 

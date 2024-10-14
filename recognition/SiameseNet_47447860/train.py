@@ -17,17 +17,18 @@ from predict import PredictData
 
 if __name__ == "__main__":
     # Set device to CUDA if a CUDA device is available, else CPU
+    print(torch.cuda.is_available())
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Parameter declaration
-    learning_rate = 0.00007
+    learning_rate = 0.0000001
     num_epochs = 30
     backbone = "resnet18"  # the feature extraction model we are using
     save_after = 10  # save the model's image every {20} epoch
 
     # path to write things to - includes summary writer, checkpoints,
-    # out_path = "~/project/outputs/"
     out_path = r'C:\Users\sebas\project\outputs'
+    #out_path = "~/project/outputs/"
 
     """
     # get data from the dataset.py file
@@ -37,9 +38,10 @@ if __name__ == "__main__":
     csv_path = "~/archive/train-metadata.csv
     """
 
-    data_path = r'C:\Users\sebas\archive'
+    data_path = r'C:\Users\sebas\archive\large_dataset'
+    #data_path = "~/.kaggle/"
 
-    dataset = Dataset(data_path, augment=False)
+    dataset = Dataset(data_path)
 
     # Get the splits
     train_dataset = dataset.get_split('train')
@@ -47,9 +49,9 @@ if __name__ == "__main__":
     test_dataset = dataset.get_split('test')
 
     # Create DataLoader for each split
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, num_workers=2)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=16, num_workers=2)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, num_workers=2)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, num_workers=4)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=256, num_workers=4)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=256, num_workers=4)
 
     model = SiameseNetwork()
     model.to(device)

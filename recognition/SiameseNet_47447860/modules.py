@@ -15,6 +15,8 @@ class SiameseNetwork(nn.Module):
 
         super().__init__()
 
+        self.dropout_rate = 0.5
+
         if backbone not in models.__dict__:
             raise Exception("No model named {} exists in torchvision.models.".format(backbone))
 
@@ -29,17 +31,17 @@ class SiameseNetwork(nn.Module):
         # vector represents both malignant or both benign (same class of image) -> will return a value close to 1
         # Else if the images are of different classes, we want the head to return a value close to 0
         self.cls_head = nn.Sequential(
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=self.dropout_rate),
             nn.Linear(3*out_features, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
 
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=self.dropout_rate),
             nn.Linear(512, 64),
             nn.BatchNorm1d(64),
             #nn.Sigmoid(),
             nn.ReLU(),
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=self.dropout_rate),
 
             nn.Linear(64, 1),
             nn.Sigmoid(),

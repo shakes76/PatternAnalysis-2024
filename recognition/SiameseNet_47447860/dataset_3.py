@@ -5,19 +5,21 @@ import time
 import numpy as np
 from PIL import Image
 
+import random
+
 import torch
 from torchvision import transforms
+from torchvision.transforms import v2
 
 
 class Dataset(torch.utils.data.IterableDataset):
-    def __init__(self, path, augment, shuffle_pairs=True):
+    def __init__(self, path, shuffle_pairs=True):
         '''
         Returns:
                 output (torch.Tensor): shape=[b, 1], Similarity of each pair of images,
                 where b = batch size
         '''
         self.path = path
-        self.augment = augment
 
         self.shuffle_pairs = shuffle_pairs
 
@@ -32,13 +34,15 @@ class Dataset(torch.utils.data.IterableDataset):
         self.malignant = '1'
         self.benign = '0'
 
-        # self.augment_malignant()
-
         self.image_paths, self.image_classes, self.class_indices = self.load_data()
-        self.indices1, self.indices2 = self.create_pairs()
+        # re-balance the classes if needed
+        if abs(len(self.class_indices[self.malignant]) - len(self.class_indices[self.benign])) > 500:
+            self.augment_data()
+            self.image_paths, self.image_classes, self.class_indices = self.load_data()
+        else:
+            print("no need for augmenting")
 
-    # def augment_malignant(self):
-        # if balancing doesn't work well, then we can augment to give it more training data
+        self.indices1, self.indices2 = self.create_pairs()
 
     def load_data(self):
         image_paths = glob.glob(os.path.join(self.path, "*/*.jpg"))
@@ -54,6 +58,64 @@ class Dataset(torch.utils.data.IterableDataset):
             class_indices[image_class].append(image_paths.index(image_path))
 
         return image_paths, image_classes, class_indices
+
+    def augment_data(self):
+        num_images_to_generate = len(self.class_indices[self.benign])
+
+        # Set up the augmentation transform (without normalizing)
+        augment_transform = transforms.Compose([
+            transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), shear=0.2),
+            transforms.RandomResizedCrop(size=(224, 224), scale=(0.7, 1.0)),
+            transforms.RandomRotation(20),
+            transforms.RandomHorizontalFlip(p=0.5),
+        ])
+
+        augment_transform = v2.Compose([
+            v2.RandomResizedCrop(size=(224, 224), antialias=True),
+            v2.RandomHorizontalFlip(p=0.5),
+        ])
+
+        # Load the existing images
+        existing_images_count = len(self.class_indices[self.malignant])
+
+        # Check how many more images are needed
+        needed_images = num_images_to_generate - existing_images_count
+
+        if needed_images > 0:
+            print(f"Need to generate {needed_images} images.")
+
+            # put all the used image names into a set
+            used_numbers = set()
+            for filename in os.listdir(os.path.join(self.path, self.malignant)):
+                if filename.startswith('ISIC_') and filename.endswith('.jpg'):
+                    # Extract the 7-digit number from the filename
+                    number = filename.split('_')[1].split('.')[0]
+                    used_numbers.add(number)
+
+            # Loop to generate additional images
+            for i in range(needed_images):
+                # Randomly choose an existing image to augment
+                img_index = np.random.choice(self.class_indices[self.malignant])
+                img_path = self.image_paths[img_index]
+                img = Image.open(img_path)
+
+                # Apply augmentation transform to the image
+                augmented_img = augment_transform(img)
+
+                # Save the augmented image back to the same directory with a new name
+                while True:
+                    # Generate a random 7-digit number
+                    random_number = '{:07d}'.format(random.randint(0, 9999999))
+
+                    if random_number not in used_numbers:
+                        # If the number is not used, return the new unique name
+                        img_name = f'ISIC_{random_number}.jpg'
+                        break
+
+                augmented_img.save(os.path.join(self.path, self.malignant, img_name))
+            print("Done Augmenting")
+        else:
+            print(f"No new images are needed. The directory already has {existing_images_count} images.")
 
     def create_pairs(self):
         '''
@@ -105,14 +167,14 @@ class Dataset(torch.utils.data.IterableDataset):
         '''
         if mode == 'train':
             return self.Split(self.image_paths, self.image_classes, self.indices1[:self.train_val_index],
-                              self.indices2[:self.train_val_index], self.augment)
+                              self.indices2[:self.train_val_index])
         elif mode == 'val':
             return self.Split(self.image_paths, self.image_classes,
                               self.indices1[self.train_val_index:self.val_test_index],
-                              self.indices2[self.train_val_index:self.val_test_index], self.augment)
+                              self.indices2[self.train_val_index:self.val_test_index])
         elif mode == 'test':
             return self.Split(self.image_paths, self.image_classes, self.indices1[self.val_test_index:],
-                              self.indices2[self.val_test_index:], self.augment)
+                              self.indices2[self.val_test_index:])
         else:
             raise ValueError(f"Unknown mode {mode}. Must be one of: 'train', 'val', 'test'.")
 
@@ -121,32 +183,28 @@ class Dataset(torch.utils.data.IterableDataset):
         Split class to handle iteration over a specific subset of the data (train, val, or test).
         '''
 
-        def __init__(self, image_paths, image_classes, indices1, indices2, augment):
+        def __init__(self, image_paths, image_classes, indices1, indices2):
             self.image_paths = image_paths
             self.image_classes = image_classes
             self.indices1 = indices1
             self.indices2 = indices2
-            self.augment = augment
             self.feed_shape = [3, 224, 224]
             #self.feed_shape = [3, 256, 256]
 
-            # Define transforms
-            if self.augment:
-                # If images are to be augmented, add extra operations for it (first two).
-                self.transform = transforms.Compose([
-                    transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=0.2),
-                    transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                    transforms.Resize(self.feed_shape[1:], antialias=True)
-                ])
-            else:
-                # If no augmentation is needed then apply only the normalization and resizing operations.
-                self.transform = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                    transforms.Resize(self.feed_shape[1:], antialias=True)
-                ])
+            # Define transform
+            self.transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                transforms.Resize(self.feed_shape[1:], antialias=True)
+            ])
+            """
+            self.transform = v2.Compose([
+                v2.ToImage(),
+                v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                transforms.Resize(self.feed_shape[1:], antialias=True)
+            ])
+            """
 
         def __iter__(self):
             '''

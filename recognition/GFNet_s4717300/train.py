@@ -34,11 +34,11 @@ print(device)
 
 # hyper-parameters
 learning_rate = 0.001
-weight_decay = 0.001
-dropout = 0.3
-drop_path = 0.3
+weight_decay = 0.005
+dropout = 0.4
+drop_path = 0.4
 
-batches = 32
+batches = 50
 patch_size = 32
 embed_dim = 156
 depth = 12

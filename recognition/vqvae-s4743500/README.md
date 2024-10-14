@@ -27,11 +27,7 @@ The following sections provide an overview of the deep learning pipeline used fo
 &nbsp;&nbsp;&nbsp;&nbsp; 4. Testing procedure  
 
 ## 1. Data Loading & Preprocessing  
-The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#here). The images consists of grayscale MRI scans of prostate tissue which was loaded and preprocessed using the custom data loader found in the [dataset.py](dataset.py) file. Because the images only have one colour channel representing the intensity of the pixels (grayscale images), each image is converted to a single-channel grayscale image using  
-  
-`transforms.Grayscale(num_output_channels=1)`  
-  
-This was done to ensure that all images have the expected format (1 channel, grayscale).  
+The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#here). The images consists of grayscale MRI scans of prostate tissue which was loaded and preprocessed using the custom data loader found in the [dataset.py](dataset.py) file.    
 
 ### Dataset Description  
 The MRI images are stored in NIfTI (.nii or .nii.gz) format, and it was split into training, validation, and test datasets:  
@@ -40,11 +36,32 @@ Number of training images: 11460
 Number of validation images: 660  
 Number of testing images: 540  
   
-which corresponds to approximately 90% of the data being used for training, 6% for validation, and the remaining 4% for testing. These split percentages allow us to effectively train the data while maintaining a validation and testing set to evaluate the model's ability to generalise to unseen data.   
+which corresponds to approximately 90% of the data being used for training, 6% for validation, and the remaining 4% for testing. These split percentages allow us to effectively train the data while maintaining a validation and testing set to evaluate the model's ability to generalise unseen data. Therefore, no form of data augmentation was performed as I believed the dataset size was sufficient. 
 
 ### Data Pipeline  
+The following transformations were applied to the dataset before feeding it into the model:  
+  
+`transform = transforms.Compose([`  
+    `transforms.Resize((image_size, image_size)),`   
+    `transforms.Grayscale(num_output_channels=1),`   
+    `transforms.ToTensor(),`  
+    `transforms.Normalize((0.5,), (0.5,))`   
+`])`  
+  
+The images were resized to 256x256 pixels to make sure all images had the same input size. Moreover, to improve training stability, the pixel values for each image were normalized to the range [-1, 1]. Because the images only have one colour channel representing the intensity of the pixels (grayscale images), each image is converted to a single-channel grayscale image using  
+  
+`transforms.Grayscale(num_output_channels=1)`  
+  
+This was done to ensure that all images have the expected format (1 channel, grayscale).
 
 ### Data Loaders  
+The dataset was loaded using PyTorch's DataLoader class within the `torch.utils.data` module. Shuffling was enabled for the training data so that the model did not learn from any specific order of images, which could have led to some form of bias. Three DataLoaders were created for the individual datasets (train, validation, and test dataset):  
+  
+`train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)`  
+`val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)`  
+`test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)`  
+  
+## 2. Model Architecture  
 
 
 

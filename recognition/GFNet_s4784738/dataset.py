@@ -74,8 +74,8 @@ def get_data_loader(root_dir, batch_size=32, shuffle=True, num_workers=1):
     Returns a dataloader with the specified characteristics
     """
     transform = transforms.Compose([
-        # Resize to 256x240 from the default size of 256x240 pixels
-        transforms.Resize((256, 240)),
+        # Resize to 224x224 from the default size of 256x240 pixels
+        transforms.Resize((224, 224)),
         transforms.Grayscale(),
         transforms.ToTensor(),
         # Pre-calculated mean and standard deviation pixel values

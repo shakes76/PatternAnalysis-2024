@@ -8,7 +8,7 @@ from monai.transforms import (
     Compose,
     EnsureTyped,
     RandFlipd,
-    Resized,
+    Resized, RandRotated, Rand3DElasticd, RandSpatialCropd,
 
 )
 # example_filename = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon\Case_004_Week0_SEMANTIC_LFOV.nii.gz"
@@ -49,10 +49,6 @@ class MRIDataset(Dataset):
         if self.norm_image:
             image_data = (image_data - image_data.mean()) / image_data.std()
 
-        # 如果是分类数据，将其转换为多通道
-        if self.categorical:
-            image_data = self.to_channels(image_data)
-
         # 如果有标签数据，加载标签数据
         if self.label_paths is not None:
             label = nib.load(self.label_paths[idx])
@@ -87,24 +83,31 @@ class MRIDataset(Dataset):
 # 定义数据增强的变换
 train_transforms = Compose(
     [
-        RandFlipd(keys=("image", "label"), prob=0.5, spatial_axis=None),
+        Rand3DElasticd(keys=("image", "label"),sigma_range=(5, 8),magnitude_range=(100, 200),prob=0.5,
+                       mode=("bilinear", "nearest")),
+        RandSpatialCropd(keys=("image", "label"),roi_size=(224, 224, 96),random_size=False),
+        RandFlipd(keys=("image", "label"), prob=0.5, spatial_axis=(0, 1, 2)),
+        RandRotated(keys=("image", "label"), range_x=(-10, 10), range_y=(-10, 10), prob=0.5, mode='nearest'),
         Resized(keys=["image", "label"], spatial_size=(256, 256, 128)),
-        EnsureTyped(keys=("image", "label"), dtype=torch.float32),
+        EnsureTyped(keys=("image",), dtype=torch.float32),
+        EnsureTyped(keys=("label",), dtype=torch.long),
     ]
 )
 
 val_transforms = Compose(
     [
-        EnsureTyped(keys=("image", "label"), dtype=torch.float32),
+        Resized(keys=["image", "label"], spatial_size=(256, 256, 128)),
+        EnsureTyped(keys=("image",), dtype=torch.float32),
+        EnsureTyped(keys=("label",), dtype=torch.long),
     ]
 )
 
 if __name__ == '__main__':
     # 指定图像和标签的文件夹路径
-    # train_image_folder = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon"
-    # train_label_folder = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon"
-    train_image_folder = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
-    train_label_folder = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
+    train_image_folder = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon"
+    train_label_folder = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon"
+    # train_image_folder = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
+    # train_label_folder = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
     # 获取所有图像和标签路径
     train_image_paths = sorted(glob.glob(os.path.join(train_image_folder, "*.nii*")))
     train_label_paths = sorted(glob.glob(os.path.join(train_label_folder, "*.nii*")))

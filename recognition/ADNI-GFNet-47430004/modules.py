@@ -1,9 +1,14 @@
 import torch
+import torch.optim as optim
 import math
 import torch.nn as nn
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from functools import partial
 from collections import OrderedDict
+from train import train_one_epoch, evaluate
+from dataset import get_dataloaders
+from timm.utils import NativeScaler
+
 
 # Got inspiration from main_gfnet.py, gfnet.py files of the following github repo:
 # https://github.com/shakes76/GFNet
@@ -186,8 +191,22 @@ class GFNet(nn.Module):
         x = self.head(x)
         return x
 
+# Code from main_gfnet.py will go here
 def main():
-    print("Main of Modules - modules compiles/runs")
+    print("Main of Modules - modules compiles/runs\n")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    criterion = torch.nn.CrossEntropyLoss()
+    train_loader, test_loader = get_dataloaders(None)
+    epoch = 0
+    loss_scaler = NativeScaler()
+
+    model = GFNet(num_classes=2)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    one_train_stat = train_one_epoch(model, criterion, train_loader, optimizer, device,
+                    epoch, loss_scaler)
+    print("Trained")
+    print(one_train_stat)
+    # validate_model(model, test_loader, criterion)
 
 if __name__ == '__main__':
     main()

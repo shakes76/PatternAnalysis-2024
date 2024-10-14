@@ -58,10 +58,7 @@ def main():
     train_loader, test_loader = get_dataloaders(data_dir)
     classifier.train(train_loader, epochs=10)
     accuracy = classifier.evaluate(test_loader)
-    if accuracy >= 0.8:
-        print("Model meets the accuracy requirement.")
-    else:
-        print("Model does not meet the accuracy requirement.")
+    print(f"Accuracy: {accuracy}")
 
 if __name__ == "__main__":
     main()

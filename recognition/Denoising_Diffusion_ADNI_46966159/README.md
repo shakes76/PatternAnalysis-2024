@@ -42,7 +42,7 @@ noise added to this image. The loss between the estimated noise and real noise c
 calculated by using mean-squared error loss as KL divergence approximation. 
 This loss can then be used to optimise the model's parameters.
 
-![img.png](train_alg.png)
+![img.png](figures/train_alg.png)
 *Training algorithm outlined in DDPM paper*
 
 ### Sampling
@@ -51,7 +51,7 @@ then the reverse process can be applied. Sampling consists of starting with a ra
 and then going through the reverse process to $`t=0`$ where the result is a generated sample. At each
 time step $`t-1`$, a small amount of noise is added to keep the process stable.
 
-![img.png](sample_alg.png)
+![img.png](figures/sample_alg.png)
 *Sampling algorthm outlined in DDPM paper*
 
 ### Parameters
@@ -118,7 +118,7 @@ AD data in particular is fairly sparsely populated. This shows that the relation
 and AD is extremely complex, and it would be difficult to classify and make predictions between the two classes 
 at least for these two dimensions.
 
-![tsne.png](tsne.png)
+![tsne.png](figures/tsne.png)
 *t-SNE embedding plot of ADNI images*
 
 [^1]: Denoising Diffusion Probabilistic Models https://arxiv.org/abs/1706.03762

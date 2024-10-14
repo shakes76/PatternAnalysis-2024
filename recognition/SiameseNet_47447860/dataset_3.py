@@ -127,20 +127,26 @@ class Dataset(torch.utils.data.IterableDataset):
             self.indices1 = indices1
             self.indices2 = indices2
             self.augment = augment
-            self.feed_shape = [3, 256, 256]
+            self.feed_shape = [3, 224, 224]
+            #self.feed_shape = [3, 256, 256]
 
             # Define transforms
-            self.transform = transforms.Compose([
-                transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=0.2),
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                transforms.Resize(self.feed_shape[1:])
-            ]) if augment else transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                transforms.Resize(self.feed_shape[1:])
-            ])
+            if self.augment:
+                # If images are to be augmented, add extra operations for it (first two).
+                self.transform = transforms.Compose([
+                    transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), scale=(0.8, 1.2), shear=0.2),
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                    transforms.Resize(self.feed_shape[1:], antialias=True)
+                ])
+            else:
+                # If no augmentation is needed then apply only the normalization and resizing operations.
+                self.transform = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                    transforms.Resize(self.feed_shape[1:], antialias=True)
+                ])
 
         def __iter__(self):
             '''
@@ -161,6 +167,9 @@ class Dataset(torch.utils.data.IterableDataset):
                     image2 = self.transform(image2).float()
 
                 yield (image1, image2), torch.FloatTensor([class1 == class2]), (class1, class2)
+
+        def __len__(self):
+            return len(self.indices1)
 
     def __len__(self):
         return len(self.image_paths)

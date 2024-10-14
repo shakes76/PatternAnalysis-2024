@@ -37,7 +37,8 @@ class SiameseNetwork(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(512, 64),
             nn.BatchNorm1d(64),
-            nn.Sigmoid(),
+            #nn.Sigmoid(),
+            nn.ReLU(),
             nn.Dropout(p=0.5),
 
             nn.Linear(64, 1),

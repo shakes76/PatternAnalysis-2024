@@ -20,10 +20,10 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Parameter declaration
-    learning_rate = 0.1
-    num_epochs = 100
+    learning_rate = 0.00007
+    num_epochs = 30
     backbone = "resnet18"  # the feature extraction model we are using
-    save_after = 20  # save the model's image every {20} epoch
+    save_after = 10  # save the model's image every {20} epoch
 
     # path to write things to - includes summary writer, checkpoints,
     # out_path = "~/project/outputs/"
@@ -40,7 +40,6 @@ if __name__ == "__main__":
     data_path = r'C:\Users\sebas\archive'
 
     dataset = Dataset(data_path, augment=False)
-    dataloader = DataLoader(dataset, batch_size=8, drop_last=True)
 
     # Get the splits
     train_dataset = dataset.get_split('train')
@@ -48,14 +47,14 @@ if __name__ == "__main__":
     test_dataset = dataset.get_split('test')
 
     # Create DataLoader for each split
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, num_workers=1)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, num_workers=1)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, num_workers=1)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, num_workers=2)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=16, num_workers=2)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, num_workers=2)
 
     model = SiameseNetwork()
     model.to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
     criterion = torch.nn.BCELoss()
 
     # summary writer - keeps track of training progression/visualising training progression

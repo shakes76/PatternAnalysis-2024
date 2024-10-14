@@ -18,11 +18,11 @@ class PredictData:
         self.show_images = show_images
 
         # results path where our final plots go
-        self.results_path = "~/project/results/"
+        self.results_path = r"C:\Users\sebas\project\results"
 
         # The path to the model's checkpoint - where weights are saved
         # The checkpoint is kind of like a list of different checkpoints, hence why we need to index it with 'backbone'
-        self.checkpoint_path = "~/project/outputs/best.pth"
+        self.checkpoint_path = r"C:\Users\sebas\project\outputs\best.pth"
 
         # Set device to CUDA if a CUDA device is available, else CPU
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

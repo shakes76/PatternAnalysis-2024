@@ -11,10 +11,10 @@ def main():
 
     # Hyperparameters
     batch_size = 8
-    learning_rate = 0.001
-    num_epochs = 40
-    step_size = 5  # Number of epochs to wait before reducing the learning rate
-    gamma = 0.1    # Factor by which the learning rate is reduced
+    base_lr = 0.0001  # Minimum learning rate
+    max_lr = 0.001    # Maximum learning rate
+    num_epochs = 45
+    step_size = 5     # Number of iterations (batches) for one cycle
 
     # Load data
     train_loader, val_loader = get_adni_dataloader(batch_size=batch_size, train=True)
@@ -22,11 +22,11 @@ def main():
     # Initialize the model, loss function, and optimizer
     model = GFNet().to(device)  # Adjust model initialization as needed
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=base_lr)
 
-    # Initialize the learning rate scheduler
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=gamma, patience=3, verbose=True)
-
+    # Initialize the cyclic learning rate scheduler
+    scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, 
+                                            step_size_up=step_size, mode='triangular')
 
     # Lists to store loss and accuracy values
     train_losses, val_losses = [], []
@@ -34,11 +34,8 @@ def main():
 
     # Training and validation loop
     for epoch in range(num_epochs):
-        train_one_epoch(epoch, model, train_loader, criterion, optimizer, train_losses, train_accuracies, device)
+        train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler, train_losses, train_accuracies, device)
         validate_one_epoch(epoch, model, val_loader, criterion, val_losses, val_accuracies, device)
-
-        # Step the learning rate scheduler
-        scheduler.step(val_losses[-1])
 
         print(f'Epoch [{epoch + 1}/{num_epochs}], '
               f'Train Loss: {train_losses[-1]:.4f}, Train Acc: {train_accuracies[-1]:.2f}, '
@@ -51,7 +48,7 @@ def main():
     # Plot the training and validation losses and accuracies
     plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_accuracies)
 
-def train_one_epoch(epoch, model, train_loader, criterion, optimizer, train_losses, train_accuracies, device):
+def train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler, train_losses, train_accuracies, device):
     model.train()
     running_loss = 0.0
     correct = 0
@@ -64,6 +61,9 @@ def train_one_epoch(epoch, model, train_loader, criterion, optimizer, train_loss
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
+
+        # Step the learning rate scheduler after each batch
+        scheduler.step()
 
         running_loss += loss.item()
         _, predicted = torch.max(outputs.data, 1)

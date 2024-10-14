@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # specify directory of data
 # dataroot = "/home/groups/comp3710/ADNI"
-dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/ADNI_46966159/ADNI"
+dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/Denoising_Diffusion_ADNI_46966159/ADNI"
 
 batch_size = 28
 image_size = 64

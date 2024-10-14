@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 
 def extract_embeddings(model, loader, edges, device):
     """
+    Extracts embeddings from the model.
 
-    :param model:
-    :param loader:
-    :param edges:
-    :param device:
-    :return:
+    :param model: Our trained / untrained GCN model.
+    :param loader: DataLoader object which contains the dataset.
+    :param edges: The graph edges for GCN model.
+    :param device: CUDA / MPS device to run the program.
+    :return: Concatenated embeddings and their corresponding labels.
     """
     model.eval()
     all_embeddings = []
@@ -29,11 +30,12 @@ def extract_embeddings(model, loader, edges, device):
 def plot_tsne(embeddings, labels, title="t-SNE Embeddings"):
     """
     Implementing TSNE for dimensionality reduction, visualizing the embeddings' performance.
+    Reference: The knowledge of 2D t-SNE algorithm is learnt and referred from
+    https://www.datacamp.com/tutorial/introduction-t-sne.
 
     :param embeddings: Relevant embeddings that are extracted.
     :param labels: The corresponding labels for the data points.
     :param title: Title of the plot.
-
     :return: The 2D t-SNE plot with different classes in specified colors.
     """
     tsne = TSNE(n_components=2, random_state=42)

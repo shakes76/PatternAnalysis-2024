@@ -129,7 +129,7 @@ def train_evaluate_model(model, train_loader, test_loader, edges, device, learni
     return train_losses, train_accuracies, test_losses, test_accuracies
 
 
-# Define the GCN model
+# Define the GCN model, we will train and test GCN model there
 model = GCNModel(classes=4, features=128).to(device)
 
 test_embeddings, test_labels = extract_embeddings(model, test_loader, tensor_edges, device)

@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
 from dataset import upload_dataset
 from modules import GCNModel
+from predict import extract_embeddings, plot_tsne
 import matplotlib.pyplot as plt
 import torch.optim as optim
 import torch
@@ -23,14 +24,13 @@ def evaluate_accuracy(model, loader, edges, criterion, device):
     """
     Evaluates the model's accuracy and loss on a given dataset.
 
-    Parameters:
-        - model: The trained GCN model used to make predictions.
-        - loader: A DataLoader object containing the dataset to evaluate (training and test set with 0.7 and 0.3).
-        - edges: Graph edge information, used in graph neural networks.
-        - criterion: The loss function used to calculate the error between predicted results and actual datas.
-        - device: The computing device, we use "mps" on MAC devices.
+    :param model: The trained GCN model used to make predictions.
+    :param loader: A DataLoader object containing the dataset to evaluate (training and test set with 0.7 and 0.3).
+    :param edges: Graph edge information, used in graph neural networks.
+    :param criterion: The loss function used to calculate the error between predicted results and actual datas.
+    :param device: The computing device, we use "mps" on MAC devices.
 
-    Returns:
+    :returns
         - accuracy: The accuracy of the predictions on the dataset.
         - loss_function: The average loss computed over the dataset.
     """
@@ -57,18 +57,16 @@ def evaluate_accuracy(model, loader, edges, criterion, device):
 
 def train_evaluate_model(model, train_loader, test_loader, edges, device, learning_rate, num_epochs):
     """
-        Trains the model and evaluates its performance on both the training and test sets after each epoch.
-        Implement early stopping if the test accuracy does not improve for a specified number of epochs.
+        Training the specified model and evaluating its performance on both the training and test sets.
+        Implementing early stopping if the test accuracy does not improve as expected.
 
-        Parameters:
-            - model: The GCN neural network model to be trained.
-            - train_loader: DataLoader object containing the training dataset.
-            - test_loader: DataLoader object containing the test dataset.
-            - edges: The graph edges information for the neural network.
-            - device: The computing device ('mps' for MAC there) used for training and evaluation.
-            - num_epochs: The total number of epochs to train the model.
-
-        Returns:
+        :param model: The GCN neural network model to be trained.
+        :param train_loader: DataLoader object containing the training dataset.
+        :param test_loader: DataLoader object containing the test dataset.
+        :param edges: The graph edges information for the neural network.
+        :param device: The computing device ('mps' for MAC there) used for training and evaluation.
+        :param num_epochs: The total number of epochs to train the model.
+        :returns
             - train_losses: A list of training losses recorded after each epoch.
             - train_accuracies: A list of training accuracies recorded after each epoch.
             - test_losses: A list of test losses recorded after each epoch.
@@ -126,6 +124,7 @@ def train_evaluate_model(model, train_loader, test_loader, edges, device, learni
         if unchanged_count >= 10:
             print(f"Early stopping at epoch {epoch + 1}. Best Test Accuracy: {best_accuracy:.4f}")
             break
+    print(f"Best Test Accuracy: {best_accuracy:.4f}")
 
     return train_losses, train_accuracies, test_losses, test_accuracies
 
@@ -133,9 +132,15 @@ def train_evaluate_model(model, train_loader, test_loader, edges, device, learni
 # Define the GCN model
 model = GCNModel(classes=4, features=128).to(device)
 
+test_embeddings, test_labels = extract_embeddings(model, test_loader, tensor_edges, device)
+plot_tsne(test_embeddings, test_labels, title="Visualization of t-SNE Embeddings Before Training")
+
 # Train the model, plot the results
 train_losses, train_accuracies, test_losses, test_accuracies = \
     train_evaluate_model(model, train_loader, test_loader, tensor_edges, device, learning_rate=0.0005, num_epochs=75)
+
+test_embeddings, test_labels = extract_embeddings(model, test_loader, tensor_edges, device)
+plot_tsne(test_embeddings, test_labels, title="Visualization of t-SNE Embeddings After Training")
 
 # Plotting losses and accuracy
 plt.figure(figsize=(10, 6))

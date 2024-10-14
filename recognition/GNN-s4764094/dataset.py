@@ -9,10 +9,8 @@ def upload_dataset(device):
     """
     Loads the Facebook dataset which is partially preprocessed , which includes node features, edges, and targets.
 
-    Parameter:
-        - device: The device ('cpu', 'cuda', or 'mps') which is used for transferring tensor.
-
-    Returns:
+    :param device: The device ('cpu', 'cuda', or 'mps') which is used for transferring tensor.
+    :returns
         - tensor_edges: The edges of the graph, without self-loops.
         - train_set: The dataset for training, containing node features and their corresponding targets.
         - test_set: The dataset for testing, containing node features and their corresponding targets.

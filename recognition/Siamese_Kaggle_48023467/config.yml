@@ -2,3 +2,5 @@ DatasetImageDir: ""
 LabelCSVDir: ""
 OutputDir: ""
 TrainTestRario: 0.8
+OversampleRatio: 0.6
+FirstRun: True

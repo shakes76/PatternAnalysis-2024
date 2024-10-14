@@ -6,8 +6,7 @@ File to handle loading, and preprocessing of the dataset
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-
-DATASET_PATH = "/home/groups/comp3710/HipMRI_Study_open"
+from const import DATASET_PATH
 
 im = None
 utils = None
@@ -22,11 +21,11 @@ def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     return res
 
 # load medical image functions
-def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False):
+def load_data_2d(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False):
     '''
     Load medical image data from names, cases list provided into a list for each.
 
-    This function pre - allocates 4D arrays for conv2d to avoid excessive memory usage.
+    This function pre-allocates 4D arrays for conv2d to avoid excessive memory usage.
 
     normImage: bool (normalise the image 0.0 - 1.0)
     early_stop: Stop loading pre-maturely, leaves arrays mostly empty, for quick loading and testing scripts.
@@ -72,11 +71,11 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     else:
         return images
 
-def load_data_3D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, orient = False, early_stop = False):
+def load_data_3d(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, orient = False, early_stop = False):
     '''
     Load medical image data from names, cases list provided into a list for each.
 
-    This function pre - allocates 5D arrays for conv3d to avoid excessive memory usage.
+    This function pre-allocates 5D arrays for conv3d to avoid excessive memory usage.
 
     normImage: bool (normalise the image 0.0 -1.0)
     orient: Apply orientation and resample image ? Good for images with large slice thickness or anisotropic resolution

@@ -1,9 +1,12 @@
+"""
+Got inspiration from infer.py file of the following github repo:
+https://github.com/shakes76/GFNet
+"""
+
 import torch
 from modules import GFNet
 from dataset import ADNIDataset
 
-# Got inspiration from infer.py file of github repo:
-# https://github.com/shakes76/GFNet
 
 class AverageMeter(object):
     pass

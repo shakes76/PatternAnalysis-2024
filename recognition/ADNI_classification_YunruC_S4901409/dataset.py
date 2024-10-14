@@ -13,6 +13,8 @@ def extract_zip(zip_path, extract_to):
         print("Extraction complete.") 
 
 class ADNIDataset(Dataset):
+    '''Custom dataset class inherited from pytorch dataset class.
+        It is used to load and preprocess the dataset'''
     def __init__(self, data_dir, transform = None):
         self.data_dir = data_dir
         self.transform = transform
@@ -43,6 +45,35 @@ class ADNIDataset(Dataset):
             image = self.transform(image)
         
         return image, label
+    
+def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
+    """ Loading the training, testing and validating dataset.
+    The training and validating dataset are seperated from 
+    the original train dataset"""
+    
+    extract_zip(zip_path, extract_to)
+
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+
+    train_dataset = ADNIDataset(os.path.join(extract_to, 'AD_NC/train'), transform= transform)
+    test_dataset = ADNIDataset(os.path.join(extract_to, 'AD_NC/test'), transform= transform)
+
+    train_size = int(train_split*len(train_dataset))
+    val_size = len(train_dataset)-train_size
+
+    train_dataset, val_dataset = random_split(
+            train_dataset, [train_size, val_size]
+        )
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle = True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle = False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle = False)
+
+    return train_loader, val_loader, test_loader
     
 
 

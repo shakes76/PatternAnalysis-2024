@@ -39,7 +39,7 @@ dropout = 0.3
 drop_path = 0.3
 
 batches = 32
-patch_size = 16
+patch_size = 32
 embed_dim = 783
 depth = 12
 ff_ratio = 3

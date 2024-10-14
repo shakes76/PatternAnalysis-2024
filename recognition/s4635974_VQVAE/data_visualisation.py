@@ -4,10 +4,10 @@ import os
 import torch
 
 # Ensure save_dir exists
-save_dir = "data_viz"
+save_dir = "graphs"
 os.makedirs(save_dir, exist_ok=True)
 
-open_dir = 'lr=0.002.pkl'
+open_dir = 'data_viz/early_stopping_lr=0.002.pkl'
 
 # Load the saved data using pickle
 with open(open_dir, 'rb') as f:

@@ -18,9 +18,9 @@ import modules
 model_path = 'saved_model/lr=0.003.pth'
 
 # Hyperparmeters if training again
-num_epochs = 3
+num_epochs = 100
 batch_size = 16
-lr = 0.003
+lr = 0.002
 num_hiddens = 128
 num_residual_hiddens = 32
 num_channels = 1
@@ -74,16 +74,10 @@ def predict(
     test_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test'
     validate_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate'
 
-    # Define your transformations
-    transform = transforms.Compose([
-        transforms.ToTensor(),  
-        transforms.Normalize((0,), (1,)) 
-    ])
-
     # Get test loader
     test_loader = HipMRILoader(
         train_dir, validate_dir, test_dir,
-        batch_size=batch_size, transform=transform
+        batch_size=batch_size, transform=None
         ).get_test_loader()
     
     # Save average SSIM per batch

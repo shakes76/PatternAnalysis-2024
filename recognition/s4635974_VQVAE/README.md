@@ -6,28 +6,83 @@ The aim of this project was to create a generative Vector Quantized - Variationa
 ## Model Description
 
 ### Overview
-The VQ-VAE is an unsupervised generative model that encodes an image into a discrete latent representation and then decodes the discrete representation back into a high-quality representation of the orignal image. 
+The VQ-VAE is an unsupervised generative model that encodes data into a discrete latent representation and then decodes this representation back into a high-quality reconstruction of the original data.
 
-The distinguishing feature of the VQ-VAE is that the latent representation is discrete, rather than continuous. This is achieved by using vector quantisation (VQ). 
+The distinguishing feature of the VQ-VAE is that its latent representation is discrete rather than continuous.
 
-The model builds on the Vareational Auto Encoder (VAE), which encodes images into a continous latent representation. This model suffered from "posterier collapse", where the latent space is ignored when paired with a powerful autoregressive model. By leveraging vector quantisation, the VQ-VAE is able to avoid this problem. 
-
-- Overview
-- Problem it solves
+The model builds on the architecture of the Variational Autoencoder (VAE), which encodes data into a continuous latent representation. VAEs can suffer from a problem called “posterior collapse,” where the latent space is ignored when combined with a powerful autoregressive decoder. By using vector quantization (VQ), the VQ-VAE encodes the input into discrete codebook vectors. This discrete latent space helps the VQ-VAE avoid the problem of posterior collapse.
 
 ### Model Architecture Overview
-- Include picture
+![Model Architecture](report_images/VQ-VAE_model_architecture_diagram.png)
+*Model Architecture Diagram* [2]
+
+The Model's architecture consists of three main components:
+
+1. **The Encoder**: Encodes the data into a compressed, lower-dimensional space.
+2. **The Vector Quantizer**: Quantizes the encoded data into a pre-defined codebook of discrete vectors.
+3. **The Decoder**: Decodes the quantized data back into a high-quality reconstruction of the original data.
+
+Furthermore, this particular implementation of the VQ-VAE is designed for processing images. Therefore, both the encoder and decoder consist of convolutional neural networks (CNNs) for image feature extraction. The CNNs include residual layers, where the input is added to the output of a layer, helping to minimize gradient loss and improve training stability.
 
 ### Loss Function
+![Loss Function](report_images/loss_function.png) 
+*Loss Function* [2]
+
+The loss function consists of three main components:
+
+1. **Reconstruction Loss**: Measures how well the decoded data matches the original input.
+2. **Embedding Loss**: Measures how well the output of the encoder (the encoded representation) maps to the nearest codebook vector. This loss encourages the encoded output to be close to the corresponding codebook vector.
+3. **Commitment Loss**: Encourages the encoded latent vector to commit to a specific embedding from the codebook and ensures that the output does not fluctuate significantly, promoting stability during training.
+
+The Embedding Loss and Commitment Loss combine to form the Vector Quantization (VQ) Loss. The VQ Loss is then combined with the Reconstruction Loss to form the Total Loss.
+
+For calculating the above losses, this implementation of the VQ-VAE uses Mean Squared Error (MSE) for the Reconstruction Loss and the quantization losses. 
 
 ### How it works
 
-The discrete latent representation is a compressed lower-dimensional version of the original data that captures essential features. It consists of a finite set of codebook vectors, also known as "embeddings" and are updated via the models performace during training.
+The VQ-VAE model in this report is designed for encoding and decoding images from the Hip MRI Prostate Cancer 2D dataset [1].
 
-### Specific Architecture
-- pytorchinfo 
+#### Training
+
+The encoder processes the input images and compresses them into lower-dimensional data using convolutional neural networks (CNNs) and residual layers for feature extraction.
+
+This compressed data is then passed to the vector quantizer (VQ), which maps it to a codebook embedding, forming part of the discrete latent representation. At this stage, the embedding loss is calculated to measure the difference between the encoder output and the nearest codebook vector.
+
+Next, the commitment loss is calculated, ensuring that the encoded latent vector commits to a specific codebook embedding, encouraging stability in the quantization process.
+
+The embedding is subsequently passed to the decoder, which also uses CNNs and residual layers to reconstruct the image from the discrete representation.
+
+The reconstruction loss is then calculated by comparing the input image to the output (reconstructed) image. This reconstruction loss, along with the embedding and commitment losses, is backpropagated through the model to adjust the model’s weights, improving performance in future training iterations.
+
+#### Validation 
+
+At the end of each training epoch, the model is evaluated against the validation set to measure its performance during training. The real images from the validation set are compared to the model’s reconstructed versions. Validation losses (reconstruction, embedding, and commitment losses) and the Structural Similarity Index Measure (SSIM) are calculated and reported.
+
+By keeping track of the validation losses and SSIM, we can monitor the model’s performance, ensuring it is not overfitting to the training data and is making progress toward its reconstruction accuracy goal.
+
+#### Testing
+
+Once the model has finished training, we evaluate its performance on the test set, which contains images the model has not seen during training. The test set images are passed through the model, and their reconstructed outputs are compared to the original input images. The average SSIM score is calculated to assess the quality of the reconstructions. Additionally, several random test images are selected for visual comparison, showing both the original and reconstructed versions.
+
+### Specific Model Architecture
+![pytorchinfo summary](report_images/pytorchinfo.png)
+*pytorchinfo summary: input_size=(16, 1, 256, 128)*
+
+Above, we have the torchinfo summary of the specific VQ-VAE model used in this report. The batch size is 16. Our image size is 1 x 256 x 128. 
 
 ### Hyperparameters
+
+The parameters below yielded the best performance I was able to achieve (in both speed and accuracy). I used the orignal paper [] and another model [] for guidance. 
+
+- Number of Epochs = 150 (Max - Early Stopping Used)
+- Batch Size = 16
+- Learning Rate = 0.002 (Using Adam Optimiser)
+- Number of Hidden Layers = 128
+- Number of Residual Hidden Layers = 32
+- Number of channels = 1
+- Number of embeddings = 512
+- Embedding Dimension = 64
+- Beta = 0.25 (Commitment Loss)
 
 ### Data Pre-processing
 - Describe any specific pre-processing you have used with references if any.

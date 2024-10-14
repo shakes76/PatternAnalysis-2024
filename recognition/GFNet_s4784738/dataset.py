@@ -76,10 +76,12 @@ def get_data_loader(root_dir, batch_size=32, shuffle=True, num_workers=1):
     transform = transforms.Compose([
         # Resize to 224x224 from the default size of 256x240 pixels
         transforms.Resize((224, 224)),
-        transforms.Grayscale(),
+        #transforms.Grayscale(),
+        transforms.Grayscale(num_output_channels=3),  # Convert grayscale to 3-channel
         transforms.ToTensor(),
         # Pre-calculated mean and standard deviation pixel values
-        transforms.Normalize([0.1155], [0.2224]),
+        #transforms.Normalize([0.1155], [0.2224]),
+        transforms.Normalize([0.1155, 0.1155, 0.1155], [0.2224, 0.2224, 0.2224]),
     ])
 
     dataset = ADNIDataset(root_dir=root_dir, transform=transform)

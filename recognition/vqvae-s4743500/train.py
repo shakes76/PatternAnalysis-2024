@@ -72,6 +72,10 @@ batch_losses = []
 
 # Training loop
 def train():
+    # Print number of images in each dataset
+    print(f'Number of training images: {len(train_dataset)}')
+    print(f'Number of validation images: {len(val_dataset)}')
+    print(f'Number of testing images: {len(test_dataset)}')
     print("Starting training loop")
     best_val_loss = float('inf') # Tracks the best validation loss for model saving 
     for epoch in range(num_epochs):

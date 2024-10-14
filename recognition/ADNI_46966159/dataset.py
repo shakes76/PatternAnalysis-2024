@@ -7,12 +7,13 @@ import matplotlib.pyplot as plt
 # dataroot = "/home/groups/comp3710/ADNI"
 dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/ADNI_46966159/ADNI"
 
-batch_size = 32
+batch_size = 28
 image_size = 64
 
 dataset = torchvision.datasets.ImageFolder(root=dataroot,
                                            transform=transforms.Compose([
                                                transforms.Resize((image_size, image_size)),
+                                               transforms.RandomHorizontalFlip(),
                                                transforms.ToTensor(),
                                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                            ]))

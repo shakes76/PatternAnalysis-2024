@@ -1,11 +1,14 @@
+"""
+Got inspiration from datasets.py file of the following github repo:
+https://github.com/shakes76/GFNet
+and my demo 2 brain gan data-loading code
+"""
+
 import torchvision.transforms as tf
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import os
 
-# Got inspiration from infer.py file of the following github repo:
-# https://github.com/shakes76/GFNet
-# and my demo 2 brain gan data-loading code
 
 class ADNIDataset(Dataset):
     def __init__(self, root_dir, transform=None, train=True):

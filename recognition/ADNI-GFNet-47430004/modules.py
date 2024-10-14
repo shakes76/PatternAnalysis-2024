@@ -36,7 +36,7 @@ import wandb_config
 
 # Hyperparameters, some more are in wandb_config.py
 hyperparameter_1 = None
-epochs = 300
+epochs = 1
 start_epoch = 0
 output_dir = 'test/model/'
 

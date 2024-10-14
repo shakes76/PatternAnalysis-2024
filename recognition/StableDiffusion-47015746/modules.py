@@ -95,27 +95,40 @@ class VAE(nn.Module):
         reconstructed = self.decoder(latent)
         return reconstructed, latent
     
+def check_grad(tensor, name):
+    if tensor.requires_grad:
+        print(f"{name}: requires_grad=True, grad_fn={tensor.grad_fn}")
+    else:
+        print(f"{name}: requires_grad=False")
 
-# Main StableDiffusionModel class that integrates all components
-class StableDiffusionModel(nn.Module):
-    def __init__(self, latent_dim=128, timesteps=1000):
-        super(StableDiffusionModel, self).__init__()
-        self.encoder = Encoder(latent_dim=latent_dim).to(device)
-        self.unet = UNet(latent_dim=latent_dim).to(device)
-        self.decoder = Decoder(latent_dim=latent_dim).to(device)
-        self.noise_scheduler = NoiseScheduler(timesteps=timesteps)
-        self.timesteps = timesteps
+
+class DiffusionModel(nn.Module):
+    def __init__(self, encoder, unet, decoder, noise_scheduler):
+        super(DiffusionModel, self).__init__()
+        self.encoder = encoder
+        self.unet = unet
+        self.decoder = decoder
+        self.noise_scheduler = noise_scheduler
+
+        # Set requires_grad=False for all decoder parameters
+        for param in self.decoder.parameters():
+            param.requires_grad = False
 
     def forward(self, x, t):
-        # Encode image to latent space
-        latent = self.encoder(x)
-        # Add noise to the latent representation
+        # Encode to latent space without gradients
+        with torch.no_grad():
+            latent = self.encoder(x)
+
+        # Add noise
         noisy_latent = self.noise_scheduler.add_noise(latent, t)
-        # Denoise the noisy latent representation with UNet
+
+        # Denoise with UNet (this requires gradients)
         denoised_latent = self.unet(noisy_latent, t)
-        # Decode latent space back to image
-        return latent, noisy_latent, denoised_latent, self.decoder(denoised_latent)
-    
+
+        # Temporarily set decoder to train mode for gradients  
+        output_images = self.decoder(denoised_latent)
+
+        return denoised_latent, output_images
 
 
-torch.no_grad
+

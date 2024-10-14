@@ -43,7 +43,7 @@ def visualize_images_encoder(encoder_reconstructed):
 
 
 # Training loop for VAE with optimizer defined inside the function
-def train_vae(vae, dataloader, lr=1e-4, epochs=10):
+def train_vae(vae, dataloader, lr=1e-4, epochs=50):
     vae.train()
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)  # Define optimizer within the function
     criterion = nn.MSELoss()  # Use MSE for image reconstruction
@@ -71,7 +71,7 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=10):
     torch.save(vae.state_dict(), 'vae_state_dict.pth')
     print("Model saved as 'vae_state_dict.pth'")
 
-    
+
     # Create and save GIF
     fig = plt.figure(figsize=(8, 8))
     plt.axis("off")
@@ -80,49 +80,39 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=10):
     ani.save('training_progress_encoder.gif', writer='imagemagick', fps=10)
     plt.close(fig)
 
-def train_diffusion_model(model, dataloader, epochs=10, lr=1e-3, beta=1.0, weight_smooth_l1=0.5):
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    model.to(device)
+
+
+
+
+
+# Instantiate and train only the diffusion model
+# Adjust the training function
+def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
+    diffusion_model.unet.train()  # Only UNet should be in training mode
+    criterion = nn.MSELoss()
 
     for epoch in range(epochs):
-        model.train()  # Set the model to training mode
-
+        total_loss = 0
         for images, _ in dataloader:
             images = images.to(device)
-            t = torch.randint(0, model.timesteps, (images.size(0),)).long().to(device)
-
-            latent, noisy_latent, denoised_latent, output_images = model(images, t)
-
-            # Calculate losses with both MSE and Smooth L1 Loss
-            reconstructed_from_latent = model.decoder(latent)
-            
-            encoder_loss = F.mse_loss(reconstructed_from_latent, images)
-            
-            unet_loss = F.mse_loss(denoised_latent, latent)
-
-            decoder_loss = F.mse_loss(output_images, images)
-
-            # Combine all losses
-            total_loss = encoder_loss + unet_loss + decoder_loss
-
             optimizer.zero_grad()
-            total_loss.backward()
-            optimizer.step()
 
-        print(f"Epoch {epoch + 1}: Encoder Loss: {encoder_loss.item():.4f}, "
-              f"UNet Loss: {unet_loss.item():.4f}, Decoder Loss: {decoder_loss.item():.4f}, "
-              f"Total Loss: {total_loss.item():.4f}")
-        
-        # Save output images for each epoch
-        visualize_images_final(output_images)
-        visualize_images_encoder(reconstructed_from_latent)
-    # Create and save GIF
-    fig = plt.figure(figsize=(8, 8))
-    plt.axis("off")
-    ims = [[plt.imshow(np.transpose(img, (1, 2, 0)), animated=True)] for img in img_list]
-    ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-    ani.save('training_progress.gif', writer='imagemagick', fps=10)
-    plt.close(fig)
+            # Random timestep for diffusion
+            t = torch.randint(0, diffusion_model.noise_scheduler.timesteps, (images.size(0),)).long().to(device)
+
+            # Forward pass through diffusion model
+            denoised_latent, output_images = diffusion_model(images, t)
+
+            # Calculate loss for denoising
+            loss = criterion(output_images, images)
+
+            # Backward pass and optimize
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {total_loss / len(dataloader):.4f}")
+
 
 
 # Make sure this runs only when executed directly
@@ -137,10 +127,25 @@ if __name__ == '__main__':
     latent_dim = 128
     timesteps = 1000
 
+    # Load the pre-trained VAE (encoder and decoder) and instantiate a new UNet and noise scheduler
+    pre_trained_vae = VAE(in_channels=3, latent_dim=128, out_channels=3).to(device)
+    pre_trained_vae.load_state_dict(torch.load("vae_state_dict.pth"))
+    pre_trained_vae.eval()
+    encoder = pre_trained_vae.encoder  # Use pre-trained encoder
+    decoder = pre_trained_vae.decoder  # Use pre-trained decoder
 
-    vae = VAE(in_channels=3, latent_dim=128, out_channels=3).to(device)
-    train_vae(vae, dataloader, lr=1e-4, epochs=10)
+    # Define the UNet and noise scheduler for the diffusion model
+    unet = UNet(latent_dim=128).to(device)
+    noise_scheduler = NoiseScheduler(timesteps=1000)
+    unet.train()
+    # Instantiate diffusion model with frozen encoder and decoder
+    diffusion_model = DiffusionModel(encoder, unet, decoder, noise_scheduler).to(device)
 
+    # Define optimizer for only the UNet part
+    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr=1e-4)
+
+    # Train the diffusion model as before
+    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=10)
 
 
     #stable_diffusion_model = StableDiffusionModel(latent_dim, timesteps)

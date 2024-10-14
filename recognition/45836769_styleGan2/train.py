@@ -33,6 +33,8 @@ from modules import StyleGAN2Generator, StyleGAN2Discriminator
 from dataset import ADNIDataset
 import os
 import gc
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Hyperparams - mostly following StyleGAN2 paper
 z_dim = 256 # Latent dims (z: input, w: intermediate)
@@ -261,8 +263,6 @@ for epoch in range(num_epochs):
     if epoch + 1 == 50 or epoch + 1 == num_epochs:
         print("Importing UMAP")
         from umap import UMAP
-        import numpy as np
-        import matplotlib.pyplot as plt
         from sklearn.preprocessing import StandardScaler
         print(f"Generating UMAP plot for epoch {epoch+1}")
         plot_umap(generator, discriminator, dataloader, epoch)

@@ -1,7 +1,30 @@
+"""
+Got inspiration from main_gfnet.py, gfnet.py files of the following github repo:
+https://github.com/shakes76/GFNet
+"""
+import argparse
+import datetime
+import numpy as np
+import time
 import torch
-import torch.optim as optim
+import torch.backends.cudnn as cudnn
+import json
 import math
+
+from pathlib import Path
+
+from timm.data import Mixup
+from timm.models import create_model
+from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
+from timm.scheduler import create_scheduler
+from timm.optim import create_optimizer
+from timm.utils import NativeScaler, get_state_dict, ModelEma
+from functools import partial
 import torch.nn as nn
+
+import utils
+
+import torch.optim as optim
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from functools import partial
 from collections import OrderedDict
@@ -9,12 +32,11 @@ from train import train_one_epoch, evaluate
 from dataset import get_dataloaders
 from timm.utils import NativeScaler
 
-
-# Got inspiration from main_gfnet.py, gfnet.py files of the following github repo:
-# https://github.com/shakes76/GFNet
+import wandb_config
 
 # Hyperparameters
 hyperparameter_1 = None
+epochs = 300
 
 class mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -195,6 +217,9 @@ class GFNet(nn.Module):
 def main():
     print("Main of Modules - modules compiles/runs\n")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    wandb_config.setup_wandb()
+
     criterion = torch.nn.CrossEntropyLoss()
     train_loader, test_loader = get_dataloaders(None)
     epoch = 0
@@ -204,8 +229,120 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     one_train_stat = train_one_epoch(model, criterion, train_loader, optimizer, device,
                     epoch, loss_scaler)
-    print("Trained")
+    print("Trained one")
     print(one_train_stat)
+
+    print(f"Start training for {epochs} epochs")
+    start_time = time.time()
+    max_accuracy = 0.0
+    for epoch in range(args.start_epoch, args.epochs):
+        if args.distributed:
+            data_loader_train.sampler.set_epoch(epoch)
+
+        train_stats = train_one_epoch(
+            model, criterion, data_loader_train,
+            optimizer, device, epoch, loss_scaler,
+            args.clip_grad, model_ema, mixup_fn,
+            set_training_mode=args.finetune == ''  # keep in eval mode during finetuning
+        )
+
+        lr_scheduler.step(epoch)
+
+        if args.output_dir:
+            checkpoint_paths = [output_dir / 'checkpoint_last.pth']
+            for checkpoint_path in checkpoint_paths:
+                if model_ema is not None:
+                    utils.save_on_master({
+                        'model': model_without_ddp.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                        'lr_scheduler': lr_scheduler.state_dict(),
+                        'epoch': epoch,
+                        'model_ema': get_state_dict(model_ema),
+                        'scaler': loss_scaler.state_dict(),
+                        'args': args,
+                    }, checkpoint_path)
+                else:
+                    utils.save_on_master({
+                        'model': model_without_ddp.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                        'lr_scheduler': lr_scheduler.state_dict(),
+                        'epoch': epoch,
+                        'scaler': loss_scaler.state_dict(),
+                        'args': args,
+                    }, checkpoint_path)
+        
+        if (epoch + 1) % 20 == 0:
+            file_name = 'checkpoint_epoch%d.pth' % epoch
+            checkpoint_path = output_dir / file_name
+            if model_ema is not None:
+                utils.save_on_master({
+                    'model': model_without_ddp.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'epoch': epoch,
+                    'model_ema': get_state_dict(model_ema),
+                    'scaler': loss_scaler.state_dict(),
+                    'args': args,
+                }, checkpoint_path)
+            else:
+                utils.save_on_master({
+                    'model': model_without_ddp.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'epoch': epoch,
+                    'scaler': loss_scaler.state_dict(),
+                    'args': args,
+                }, checkpoint_path)
+
+        test_stats = evaluate(data_loader_val, model, device)
+        print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
+        max_accuracy = max(max_accuracy, test_stats["acc1"])
+        print(f'Max accuracy: {max_accuracy:.2f}%')
+        
+        #wandb logging
+        wandb_config.wandb.log({"epoch": epoch})
+        wandb_config.wandb.log(train_stats)
+        wandb_config.wandb.log(test_stats)
+        wandb_config.wandb.log({"max_accuracy": max_accuracy})
+
+        if max_accuracy == test_stats["acc1"]:
+            checkpoint_path = output_dir / 'checkpoint_best.pth'
+            if model_ema is not None:
+                utils.save_on_master({
+                    'model': model_without_ddp.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'epoch': epoch,
+                    'model_ema': get_state_dict(model_ema),
+                    'scaler': loss_scaler.state_dict(),
+                    'args': args,
+                }, checkpoint_path)
+            else:
+                utils.save_on_master({
+                    'model': model_without_ddp.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'epoch': epoch,
+                    'scaler': loss_scaler.state_dict(),
+                    'args': args,
+                }, checkpoint_path)
+
+        log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+                     **{f'test_{k}': v for k, v in test_stats.items()},
+                     'epoch': epoch,
+                     'n_parameters': n_parameters}
+
+        if args.output_dir and utils.is_main_process():
+            with (output_dir / "log.txt").open("a") as f:
+                f.write(json.dumps(log_stats) + "\n")
+
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
+    wandb_config.wandb.run.summary["training_time"] = total_time_str
+    wandb_config.wandb.run.summary["Parameters"] = n_parameters
+    wandb_config.wandb.run.finish()
+
     # validate_model(model, test_loader, criterion)
 
 if __name__ == '__main__':

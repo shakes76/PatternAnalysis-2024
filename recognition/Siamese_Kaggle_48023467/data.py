@@ -7,19 +7,20 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, Sampler
 from torchvision import transforms
-import logging
+import logging  
 from PIL import Image   
 from sklearn.model_selection import train_test_split
 import random
 
 # Class for storing and pre-processing the ISIC Dataset
 class ISICDataset(Dataset):
-    def __init__(self, dir, ratio, transform=None, mode="train", first_run=True):
+    def __init__(self, dir, split_ratio, oversample_ratio, transform=None, mode="train", first_run=True):
         
         self._dir = dir
         self._imgs = []
         self._mode = mode
-        self._ratio = ratio
+        self._split_ratio = split_ratio
+        self._oversample_ratio = oversample_ratio
         self._transform = transform
         
         # Preprocess images and labels if first time running model
@@ -35,10 +36,38 @@ class ISICDataset(Dataset):
         
         # Split data into training and validation sets based on the ratio
         # Data stratified to account for unbalanced dataset label ratio
-        img_train, img_val = train_test_split(img_refs, train_size=ratio, stratify=[label for _, label in img_refs])
+        # DEBUG - MENTION RANDOM STATE FOR REPRODUCEABILITY
+        img_train, img_val = train_test_split(img_refs, train_size=split_ratio, stratify=[label for _, label in img_refs], random_state=27)
         
-        self._imgs = img_refs
+        # Balance data in training mode by oversampling
+        if mode == 'train':
+            # Manual oversampling due to data storage method
+            benign_train, malignant_train = [], []
+            self._imgs += benign_train
+            for img in img_train:
+                benign_train.append(img) if img[1] == 0 else malignant_train.append(img)
+                
+            benign_count = len(benign_train)
+            malignant_count = len(malignant_train)
+            
+            # Calculate amount minority class (malignant) needs to increase by
+            oversample_count = ((benign_count * oversample_ratio) - malignant_count)
+            
+            # Randomly resample if oversample count is valid (>0)
+            if oversample_count > 0:
+                for _ in range(0, oversample_count):
+                    sample = random.choice(malignant_train)
+                    self._imgs += sample
+                    
+        else:
+            self._imgs = img_val
         
+        # Split image array into seperate arrays based on labels
+        benign_indices, malignant_indices = [], []
+        for i, img in enumerate(self._imgs):
+            benign_indices.append(i) if img[1] == 0 else malignant_indices.append(i)
+            
+        self._imgs_split = {0:benign_indices, 1:malignant_indices}
         return
     
     def preprocess(self):
@@ -52,8 +81,11 @@ class ISICDataset(Dataset):
         img_ref, label = self._imgs[index]
         
         # Generate random indexes for positive and negative images
-        index_pos = random.choice()
-        index_neg = random.choice()
+        index_pos = random.choice(self._imgs_split[index])
+        while index_pos == index:
+            index_pos = random.choice(self._imgs_split[index])
+            
+        index_neg = random.choice(self._imgs_split[1-index])
         
         # Acquire images
         img_anchor = self.load_img(img_ref)

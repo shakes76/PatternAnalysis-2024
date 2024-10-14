@@ -4,14 +4,14 @@ can create data, images in this case. This is done by gradually adding noise to 
 or training images and then attempting to learn how to remove noise through a machine
 learning model. The diffusion model consists of two elements - diffusion process and reverse process.[^1]
 Diffusion models are capable of creating high quality generated images as well as
-diverse samples at the expense of slower sampling time. Compared with other generative models,
+diverse samples at the expense of slower sampling time[^5]. Compared with other generative models,
 GANs generally output high quality images and are fast and sampling, but have low diversity.
 VAEs have fast sampling and high diversity, but suffer from lower quality samples, mostly due
 to blurring.
 
 
 ### Diffusion process
-The diffusion process or forward process is a Markov chain that adds noise to the data. The
+The diffusion process or forward process is a Markov chain that adds noise to the data[^1]. The
 noise is samples from a Gaussian distribution. The Markov chain is a stochastic process that 
 only depends on probability and the last state. The transition from noise states at some time $t$ can be expressed as
 $$q(\mathbf{x}_t | \mathbf{x}_{t-1})=\mathcal{N}(\mathbf{x}_t;\sqrt{1-\beta_t}x_{t-1};\beta_t\mathbf{I}).$$
@@ -68,16 +68,16 @@ can be classified as quite complex and so the values are likely to work with the
 Some parameters we set, however, did diverge from the original paper. This was usually for reasons of 
 computation time and complexity, particularly during the training process. The input images were scaled down
 to $64\times64$ which resulted in output samples of the same size. A (reduced) batch size of 28 images was used.
-We also specified $32$ groups and $8$ heads. Finally, we trained over $100$ epochs.
+We also specified $32$ groups and $8$ heads. Finally, we trained with $100$ epochs.
 
 ### UNet
 Much like the authors of the original paper, the UNet model will be used as the deep learning model to
 predict the noise for the reverse process. The UNet was chosen because it was originally developed
-and optimised for biomedical image segmentation which fits with the ADNI dataset. The UNet used resembles
+and optimised for biomedical image segmentation which fits with the ADNI dataset[^2]. The UNet used resembles
 closely the UNet implemented in the original paper. 
 
 The UNet model saw massive gains in performance when self-attention and Transformer sinusoidal position embeddings
-were utilised. These two factors meant that the UNet was able to process and interpret
+were utilised[^3]. These two factors meant that the UNet was able to process and interpret
 information effectively. The sinusoidal embeddings gave the UNet additional positional 
 information by adding sine and cosine curves of differing frequencies. The attention is useful
 for analysing interactions and relationships in features that can capture complex structures and
@@ -101,7 +101,7 @@ found. Finally, the images were normalised and then converted to a tensor.
 
 ### t-SNE
 $t$-distributed stochastic neighbor embeddings is a non-linear dimensionality reduction technique
-used to visualise high-dimensional data. $t$-SNE measures similarity between data points by joint
+used to visualise high-dimensional data[^4]. $t$-SNE measures similarity between data points by joint
 probabilities and then attempts to minimise the KL-divergence between the joint probabilities
 of the low-dimensional embedding and the high-dimensional data. Here we have performed dimensionality reduction
 down to just two dimensions. We have two classes of data: 0 - AD and 1 - CN. The embedding plot shows
@@ -112,4 +112,8 @@ at least for these two dimensions.
 
 ![tsne.png](tsne.png)
 
-[^1]: Denoising Diffusion Probabilistic Models https://arxiv.org/pdf/1706.03762
+[^1]: Denoising Diffusion Probabilistic Models https://arxiv.org/abs/1706.03762
+[^2]: U-Net: Convolutional Networks for Biomedical Image Segmentation https://arxiv.org/abs/1505.04597
+[^3]: Attention Is All You Need https://arxiv.org/abs/1706.03762
+[^4]: Visualizing Data using t-SNE https://jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf
+[^5]: Denoising Diffusion Model from scratch using PyTorch https://medium.com/@mickael.boillaud/denoising-diffusion-model-from-scratch-using-pytorch-658805d293b4

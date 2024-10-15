@@ -2,6 +2,7 @@ from torch.utils.data import *
 from dataset import *
 import matplotlib.pyplot as plt
 import torch
+from sklearn.metrics import accuracy_score
 from utiles import *
 from modules import *
 
@@ -11,8 +12,20 @@ hidden_layer = 64
 classes = ["Politicians", "Governmental Organisations", "Television Shows", "Companies"]
 learning_rate = 5e-4
 
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def train_model():
+    print("Training loop:")
+    for epoch in range(num_epochs):
+        model.train()
+        optimizer.zero_grad()
+        output = model(data.x, data.edge_index)
+        ground_truth = data.y
+        
+        loss = criterion(output[train_mask].to(device), ground_truth[train_mask].to(device))
+        loss.backward()
+        optimizer.step()
+        return loss.item()
 
 # Loading up the dataset and applying custom augmentations
 data, masks = load_data()
@@ -32,3 +45,7 @@ criterion = torch.nn.CrossEntropyLoss()
 
 
 
+
+
+
+ 

@@ -37,7 +37,7 @@ class DiceCoefficientLoss(nn.Module):
             d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
             d_coefs[i] = d_coef
         
-        overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
+        overall_loss = (-1 / num_masks) * torch.sum(d_coefs)
         return overall_loss, d_coefs
 
 def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"):

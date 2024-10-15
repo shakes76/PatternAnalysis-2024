@@ -1,33 +1,28 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
+from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE
 from dataset import create_adni_dataset, generate_random_inputs
-import numpy as np
 import wandb
 
 
 # Define training parameters
 BATCH_SIZE = 16
 EPOCHS = 170
-TARGET_SIZE = (128, 128)  # Change target size to 256x256
+TARGET_SIZE = (128, 128)  # Change target size to 128x128
 
 # Load the models
 print("Loading models...")
 generator = build_generator()
-generator.summary()
 print("Generator model loaded.")
 discriminator = build_discriminator()
-discriminator.summary()
 print("Discriminator model loaded.")
 stylegan = build_stylegan()
-stylegan.summary()
 print("StyleGAN model loaded.")
-
 
 # Define initial learning rate and decay parameters for the generator
 initial_learning_rate = 0.00002
 decay_steps = 100 
-decay_rate = 0.95
+decay_rate = 1
 
 # Create a learning rate schedule for the generator
 generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -40,7 +35,7 @@ generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 # Define initial learning rate and decay parameters for the discriminator
 initial_discriminator_learning_rate = 0.00001
 discriminator_decay_steps = 100 
-discriminator_decay_rate = 1.05
+discriminator_decay_rate = 1
 
 # Create a learning rate schedule for the discriminator
 discriminator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -57,7 +52,6 @@ discriminator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=di
 
 print("Models compiled.")
 
-
 # Initialize Weights and Biases
 print("Initializing Weights and Biases...")
 wandb.init(
@@ -73,8 +67,9 @@ wandb.init(
         "name": "SD-ADNI - VAE and Unet",
         "image size": TARGET_SIZE,
         "batch size": BATCH_SIZE
-     })
-
+    },
+    save_code=True
+)
 
 # Load the ADNI dataset
 print("Loading ADNI dataset...")
@@ -84,21 +79,6 @@ print("ADNI dataset loaded.")
 # Define the loss function
 cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
-# Gradient penalty for the discriminator
-
-def gradient_penalty(real_images, fake_images):
-    alpha = tf.random.uniform([real_images.shape[0], 1, 1, 1], 0.0, 1.0)
-    interpolated_images = alpha * real_images + (1 - alpha) * fake_images
-    with tf.GradientTape() as gp_tape:
-        gp_tape.watch(interpolated_images)
-        interpolated_output = discriminator(interpolated_images, training=True)
-    gradients = gp_tape.gradient(interpolated_output, [interpolated_images])[0]
-    gradients_l2 = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3]))
-    gradient_penalty = tf.reduce_mean((gradients_l2 - 1.0) ** 2)
-    return gradient_penalty
-
-
-# Modifications in train_step
 @tf.function
 def train_step(real_images):
     latent_vectors, constant_inputs = generate_random_inputs(BATCH_SIZE, LATENT_DIM, INITIAL_SIZE)
@@ -116,21 +96,15 @@ def train_step(real_images):
     with tf.GradientTape() as disc_tape:
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
-
         
         real_loss = cross_entropy(tf.ones_like(real_output), real_output)
         fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
         disc_loss = real_loss + fake_loss
 
-        # Add gradient penalty
-        gp = gradient_penalty(real_images, generated_images)
-        disc_loss += 10.0 * gp  # Weighted penalty
-
     disc_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
     discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
 
     return gen_loss, disc_loss
-
 
 def train(epochs):
     print("Starting training...")
@@ -148,6 +122,10 @@ def train(epochs):
 
         if (epoch + 1) % 10 == 0:
             generate_and_save_images(generator, epoch + 1)
+        
+        if (epoch + 1) == EPOCHS:
+            generator.save(f'generator_model_epoch_{epoch + 1}.h5')
+            discriminator.save(f'discriminator_model_epoch_{epoch + 1}.h5') 
 
     return gen_loss, disc_loss
 
@@ -161,80 +139,10 @@ def generate_and_save_images(model, epoch):
         plt.subplot(4, 4, i + 1)
         plt.imshow(predictions[i, :, :, 0] * 0.5 + 0.5, cmap='gray')
         plt.axis('off')
-
+    
     plt.savefig(f'StyleGAN_image_at_epoch_{epoch:04d}.png')
     plt.close()
     print(f"Images saved for epoch {epoch}.")
 
-def extract_features(dataset, model):
-    print("Extracting features from the dataset...")
-    features = []
-    labels = []
-    for batch in dataset:
-        # Get features from the discriminator
-        feature_output = model(batch, training=False)
-        features.append(feature_output.numpy())
-        # Assuming labels are derived from the directory names
-        labels.extend(['AD' if 'AD' in str(batch) else 'NC'] * batch.shape[0])
-    print("Feature extraction completed.")
-    return np.concatenate(features), np.array(labels)
-
-def save_models(generator, discriminator, stylegan):
-    print("Saving models...")
-    generator.save('stylegan_generator.h5')
-    discriminator.save('stylegan_discriminator.h5')
-    stylegan.save('stylegan_model.h5')
-    print("Models saved successfully.")
-
 if __name__ == "__main__":
     gen_loss, disc_loss = train(EPOCHS)
-
-    # Extract features from the discriminator
-    real_features, real_labels = extract_features(adni_dataset, discriminator)
-
-    # Generate some images and extract their features
-    print("Generating random inputs for image generation...")
-    latent_vector, constant_input = generate_random_inputs(1000, LATENT_DIM, INITIAL_SIZE)
-    generated_images = generator.predict([latent_vector, constant_input])
-    generated_features = discriminator.predict(generated_images)
-
-    # Combine real and generated features
-    all_features = np.concatenate([real_features, generated_features])
-    all_labels = np.concatenate([real_labels, ['Generated'] * generated_features.shape[0]])
-
-    # Check the shape of all_features
-    print("Shape of all_features:", all_features.shape)
-
-    # After training, generate a sample image
-    print("Generating a sample image...")
-    latent_vector, constant_input = generate_random_inputs(1, LATENT_DIM, INITIAL_SIZE)
-    generated_image = generator.predict([latent_vector, constant_input])
-    print(f"Generated image shape: {generated_image.shape}")
-
-    # Test discriminator
-    print("Testing discriminator on generated image...")
-    discriminator_output = discriminator.predict(generated_image)
-    print(f"Discriminator output: {discriminator_output}")
-
-    # Test full StyleGAN
-    print("Testing full StyleGAN...")
-    stylegan_output = stylegan.predict([latent_vector, constant_input])
-    print(f"StyleGAN output: {stylegan_output}")
-
-    # Save a final generated image
-    plt.figure(figsize=(1, 1))
-    plt.imshow(generated_image[0, :, :, 0] * 0.5 + 0.5, cmap='gray')
-    plt.axis('off')
-    plt.savefig('final_generated_image.png')
-    plt.close()
-    print("Final generated image saved.")
-
-    # Save the models
-    save_models(generator, discriminator, stylegan)
-
-    # Log final outputs to Weights and Biases
-    wandb.log({"Generated Image": wandb.Image(generated_image[0])})
-    wandb.log({"Discriminator Output": discriminator_output})
-    wandb.log({"StyleGAN Output": stylegan_output})
-    wandb.log({"Final Generated Image": wandb.Image(generated_image[0])})
-    print("Weights and Biases logging completed.")

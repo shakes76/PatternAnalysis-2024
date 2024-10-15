@@ -10,12 +10,13 @@ from torchvision import transforms # type: ignore
 import matplotlib.pyplot as plt
 from modules import VQVAE # type: ignore # Import your VQVAE model
 from dataset import ProstateMRIDataset  # Import the custom dataset
+from torchvision.utils import make_grid, save_image # type: ignore
 from skimage.metrics import structural_similarity as ssim
 
 # Hyperparameters
 image_size = 256  # Image size for resizing
 batch_size = 32  # Adjust this based on available memory
-num_epochs = 15  # Number of training epochs
+num_epochs = 20  # Number of training epochs
 learning_rate = 0.001  # PLAY AROUND WITH 0.001 or 0.0001 Learning rate for optimizer
 beta = 0.25  # EXPERIMENT WITH 0.1, 0.2, OR 0.5 IF IMAGE IS NOT CLEAR ENOUGH
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -73,12 +74,18 @@ batch_losses = []
 
 # Training loop
 def train():
-    # Print number of images in each dataset
+    # Prints the number of images in each dataset
     print(f'Number of training images: {len(train_dataset)}')
     print(f'Number of validation images: {len(val_dataset)}')
     print(f'Number of testing images: {len(test_dataset)}')
+
+    # Calls the save original image function to save a batch of images before training
+    save_original_images(train_loader)
+
     print("Starting training loop")
-    best_val_loss = float('inf') # Tracks the best validation loss for model saving 
+
+    # Tracks the best validation loss for model saving 
+    best_val_loss = float('inf') 
     for epoch in range(num_epochs):
         model.train()
         total_train_loss = 0
@@ -253,6 +260,29 @@ def visualize_reconstruction(original_images, reconstructed_images, epoch, phase
     # Save the plot with the phase (train/val) in the filename
     plt.savefig(f'{recon_save_dir}/epoch_{epoch + 1}_phase_{phase}.png')
     plt.close()
+
+# Function to save a batch of original images
+def save_original_images(loader, save_dir='./original_images', img_name="original_images.png"):
+    # Fetch a batch of images from the loader
+    original_imgs = next(iter(loader))
+    
+    # Denormalize the images to the range [0, 1]
+    original_imgs = denormalize(original_imgs)
+    
+    # Create a grid of images
+    grid = make_grid(original_imgs, nrow=8)
+    
+    # Create the directory if it doesn't exist
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Save the image grid
+    save_image(grid, os.path.join(save_dir, img_name))
+
+    print("Saved original images")
+
+# Function to denormalize images
+def denormalize(tensor):
+    return (tensor * 0.5) + 0.5  
 
 if __name__ == "__main__":
     train()

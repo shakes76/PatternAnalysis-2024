@@ -44,7 +44,8 @@ for epoch in range(epochs):
         img = img.to(dev)
         seg = seg.to(dev)
         out = net(img)
-        seg = TF.center_crop(seg, output_size = out.size(2))
+        # This is no longer necessary!
+        #seg = TF.center_crop(seg, output_size = out.size(2))
         loss = lossFunc(out[:,0,:,:], seg[:,0,:,:])
         optm.zero_grad()
         loss.backward()

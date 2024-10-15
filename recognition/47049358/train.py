@@ -21,9 +21,9 @@ LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
 
-class DiceCoefficient(nn.Module):
+class DiceCoefficientLoss(nn.Module):
     def __init__(self, epsilon=1e-7):
-        super(DiceCoefficient, self).__init__()
+        super(DiceCoefficientLoss, self).__init__()
         self.epsilon = epsilon
 
     def forward(self, y_true, y_pred):
@@ -37,13 +37,13 @@ class DiceCoefficient(nn.Module):
             d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
             d_coefs[i] = d_coef
         
-        overall_loss = (-1 / num_masks) * torch.sum(d_coefs)
+        overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
         return overall_loss, d_coefs
 
 def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"):
 
     # set up criterion, optimiser, and scheduler for learning rate. 
-    criterion = DiceCoefficient()
+    criterion = DiceCoefficientLoss()
     optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma = LR_INITIAL)
 
@@ -59,7 +59,7 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
 
     for epoch in range(num_epochs):
         running_loss = 0.0
-        segment_losses = None
+        segment_coefs = None
         for inputs, masks in tqdm(train_loader):
 
             inputs, masks = inputs.to(device), masks.to(device)
@@ -68,26 +68,26 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
 
             loss, d_coefs = criterion(y_true = masks, y_pred = outputs) 
 
-            if segment_losses == None:
-                segment_losses = d_coefs
+            if segment_coefs == None:
+                segment_coefs = d_coefs
             else:
-                segment_losses += d_coefs
+                segment_coefs += d_coefs
 
             loss.backward()
             optimiser.step()
 
-            running_loss += -1 * loss.item()
+            running_loss += loss.item()
 
         scheduler.step()
 
-        for i in range(len(segment_losses)):
-            print(f"Epoch {epoch + 1} Segment {i} - Training Dice Coefficient: {segment_losses[i] / len(train_loader)}")
+        for i in range(len(segment_coefs)):
+            print(f"Epoch {epoch + 1} Segment {i} - Training Dice Coefficient: {segment_coefs[i] / len(train_loader)}")
 
         print(f"Epoch {epoch + 1}, Training Loss: {running_loss / len(train_loader)}")
 
         model.eval()
         val_loss = 0.0
-        segment_losses = None
+        segment_coefs = None
 
         # get validation losses. 
         with torch.no_grad():
@@ -97,16 +97,16 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
 
                 loss, d_coefs = criterion(val_outputs, val_masks)
 
-                if segment_losses == None:
-                    segment_losses = d_coefs
+                if segment_coefs == None:
+                    segment_coefs = d_coefs
                 else:
-                    segment_losses += d_coefs
+                    segment_coefs += d_coefs
 
-                val_loss += -1 * loss.item()
+                val_loss += loss.item()
 
-        for i in range(len(segment_losses)):
+        for i in range(len(segment_coefs)):
 
-            print(f"Epoch {epoch + 1} Segment {i} - Validation Dice Coefficient: {segment_losses[i] / len(train_loader)}")
+            print(f"Epoch {epoch + 1} Segment {i} - Validation Dice Coefficient: {segment_coefs[i] / len(train_loader)}")
 
         print(f"Epoch {epoch + 1}, Validation Loss: {val_loss / len(valid_loader)}")
 

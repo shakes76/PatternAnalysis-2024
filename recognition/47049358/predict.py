@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 
 # import from local files  
-from train import dice_coefficient, trained_model
+from train import DiceCoefficientLoss, trained_model
 from dataset import X_test, y_test, Prostate3dDataset
 
 BATCH_SIZE = 2
@@ -39,10 +39,13 @@ def test(model, test_loader, device):
     seg_5_scores = []
 
     with torch.no_grad():
+        
+        criterion = DiceCoefficientLoss()
+
         for inputs, masks in test_loader:
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
-            test_loss, dice_coefs = dice_coefficient(outputs, masks)
+            test_loss, dice_coefs = criterion(outputs, masks)
 
             for i in range(len(dice_coefs)):
                 if i == 0:
@@ -58,8 +61,7 @@ def test(model, test_loader, device):
                 else:
                     seg_5_scores.append(dice_coefs[i])
                 
-
-            test_scores.append(-1 * test_loss.item())
+            test_scores.append(test_loss.item())
 
     return test_scores, seg_0_scores, seg_1_scores, seg_2_scores, seg_3_scores, seg_4_scores, seg_5_scores
 

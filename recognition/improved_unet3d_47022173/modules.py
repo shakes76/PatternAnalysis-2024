@@ -220,11 +220,13 @@ class Modified3DUNet(nn.Module):
 		out = out_pred + ds1_ds2_sum_upscale_ds3_sum_upscale
 		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes)
 		logits = out
-		sigmoid_logits = torch.sigmoid(out)
-		predictions = (sigmoid_logits > 0.5)
+		softmax_logits = self.softmax(out)
 
-		# prediction_indices = torch.argmax(sigmoid_logits, dim=1)
-		# predictions = torch.zeros_like(sigmoid_logits)
-		# predictions.scatter_(1, prediction_indices.unsqueeze(1), 1)
+		# sigmoid_logits = torch.sigmoid(out)
+		# predictions = (sigmoid_logits > 0.5)
 
-		return sigmoid_logits, predictions, logits
+		prediction_indices = torch.argmax(softmax_logits, dim=1)
+		predictions = torch.zeros_like(softmax_logits)
+		predictions.scatter_(1, prediction_indices.unsqueeze(1), 1)
+
+		return softmax_logits, predictions, logits

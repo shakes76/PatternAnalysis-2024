@@ -41,6 +41,14 @@ step_size = 10
 gamma = 0.1
 
 
+# def save(predictions): 
+#     print(predictions.shape, np.unique(predictions.detach().cpu().numpy())) # torch.Size([4194304, 6]) [0. 1.]
+#     predictions = torch.argmax(predictions, dim=1) # [4194304]
+#     print(predictions.shape, np.unique(predictions.detach().cpu().numpy()))
+#     predictions = predictions.view(batch_size, 128, 128, 128).cpu().numpy()
+#     print(predictions.shape, np.unique(predictions))
+
+
 # Test loop
 def validate(model, data_loader):
     criterion = DiceLoss()
@@ -86,10 +94,9 @@ def validate(model, data_loader):
     print(f"Average Dice Score: {list(map(lambda x: 1 - float(x / len(data_loader)), dice_scores))}")
 
 
-
 if __name__ == '__main__':
     # Load and process data
-    transforms = tio.Compose([
+    train_transforms = tio.Compose([
         tio.RescaleIntensity((0, 1)),
         tio.RandomFlip(),
         tio.Resize((128,128,128)),
@@ -97,12 +104,18 @@ if __name__ == '__main__':
         tio.RandomElasticDeformation(),
         tio.ZNormalization(),
     ])
+
+    valid_transforms = tio.Compose([
+        tio.RescaleIntensity((0, 1)),
+        tio.Resize((128,128,128)),
+        tio.ZNormalization(),
+    ])
     
-    valid_dataset = ProstateDataset3D(images_path, masks_path, transforms, "valid")
+    valid_dataset = ProstateDataset3D(images_path, masks_path, "valid", valid_transforms)
     valid_dataloader = DataLoader(valid_dataset, batch_size=1, shuffle=shuffle, num_workers=num_workers)
 
     mode = "train" if IS_RANGPUR else "debug"
-    train_dataset = ProstateDataset3D(images_path, masks_path, transforms, mode)
+    train_dataset = ProstateDataset3D(images_path, masks_path, mode, train_transforms)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
     # Model
@@ -134,7 +147,8 @@ if __name__ == '__main__':
             masks = F.one_hot(masks, num_classes=6) # [batch * l * w * h, 6]
             
             optimizer.zero_grad()
-            sigmoid_logits, predictions, logits = model(inputs) # All shapes: [batch * l * w * h, 6]
+            _, predictions, logits = model(inputs) # All shapes: [batch * l * w * h, 6]
+            # save(predictions)
             loss = criterion(logits, masks)
             loss.backward()
             optimizer.step()

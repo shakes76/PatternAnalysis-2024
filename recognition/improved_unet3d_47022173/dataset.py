@@ -77,7 +77,7 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 
 
 class ProstateDataset3D(Dataset):
-	def __init__(self, images_path, masks_path, transforms, mode):
+	def __init__(self, images_path, masks_path, mode, transforms):
 		image_names = [f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith(end)]
 		mask_names = [f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith(end)]
 		
@@ -120,6 +120,7 @@ class ProstateDataset3D(Dataset):
 			raw_images = load_data_3D(self.image_names[loaded:loaded + LOAD_SIZE])
 			raw_masks = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE])
 			# raw_masks, affine = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE], getAffines=True)
+
 			subject = tio.Subject(
 				image=tio.ScalarImage(tensor=raw_images),
 				mask=tio.LabelMap(tensor=raw_masks),
@@ -128,7 +129,8 @@ class ProstateDataset3D(Dataset):
 			transformed = transforms(subject)
 			self.images = torch.cat((self.images, transformed['image'].data), dim=0) # Batch, 128 ,128 ,128
 			self.masks = torch.cat((self.masks, transformed['mask'].data), dim=0)
-			# self.affine = torch.cat((self.affine, torch.tensor(affine)), dim=0)
+		# self.affine = torch.cat((self.affine, torch.tensor(affine)), dim=0)
+	
 
 			loaded = len(self.images)
 			print(f"Loaded {len(self.images)} / {len(self.image_names)}")

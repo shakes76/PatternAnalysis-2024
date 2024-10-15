@@ -6,7 +6,6 @@ from tqdm import tqdm
 import pickle
 import numpy as np
 from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
 
 IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
 LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')

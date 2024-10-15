@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 from time import time
 from tqdm import tqdm
-import numpy as np
+import math
 
 
 NUM_EPOCHS = 300
@@ -36,9 +36,15 @@ class DiceCoefficientLoss(nn.Module):
 
             d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
             d_coefs[i] = d_coef
+
+        weighted, _ = torch.sort(d_coefs)
+
+        for i in range(num_masks):
+            weighted[i] = d_coefs[i] / (math.e ** i)
         
         overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
-        return overall_loss, d_coefs
+        weighted_loss = 1 - (1 / num_masks) * torch.sum(weighted)
+        return overall_loss, d_coefs, weighted_loss
 
 def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"):
 
@@ -66,14 +72,15 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
             optimiser.zero_grad()
             outputs = model(inputs)
 
-            loss, d_coefs = criterion(y_true = masks, y_pred = outputs) 
+            # the weighted value is only used for updating gradients!
+            loss, d_coefs, weighted = criterion(y_true = masks, y_pred = outputs) 
 
             if segment_coefs == None:
                 segment_coefs = d_coefs
             else:
                 segment_coefs += d_coefs
 
-            loss.backward()
+            weighted.backward()
             optimiser.step()
 
             running_loss += loss.item()
@@ -95,7 +102,7 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
                 val_inputs, val_masks = val_inputs.to(device), val_masks.to(device)
                 val_outputs = model(val_inputs)
 
-                loss, d_coefs = criterion(val_outputs, val_masks)
+                loss, d_coefs, _ = criterion(val_outputs, val_masks)
 
                 if segment_coefs == None:
                     segment_coefs = d_coefs
@@ -150,5 +157,5 @@ plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig('unet_losses_over_epochs_alter_loss.png')
+plt.savefig('unet_losses_over_epochs_weighted_loss.png')
 plt.close()

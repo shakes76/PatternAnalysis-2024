@@ -45,7 +45,7 @@ def test(model, test_loader, device):
         for inputs, masks in test_loader:
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
-            test_loss, dice_coefs = criterion(outputs, masks)
+            test_loss, dice_coefs, _ = criterion(outputs, masks)
 
             for i in range(len(dice_coefs)):
                 if i == 0:
@@ -64,59 +64,6 @@ def test(model, test_loader, device):
             test_scores.append(test_loss.item())
 
     return test_scores, seg_0_scores, seg_1_scores, seg_2_scores, seg_3_scores, seg_4_scores, seg_5_scores
-
-"""
-    Visualises model image, predictions and ground truth on first three images from test loader.
-
-    Parameters:
-    - model (nn.Module): The trained model used for making predictions.
-    - test_loader (DataLoader): DataLoader for the test dataset.
-    - device (str): The device (e.g., 'cuda' or 'cpu') to run the visualization on.
-    - num_images (int): The number of images to visualize (default is 3).
-
-    """
-def visualise_predictions(model, test_loader, device, num_images=3):
-    model.eval()  # Set the model to evaluation mode
-
-    image_count = 0  # Keep track of the number of images processed
-
-    with torch.no_grad():
-        for inputs, targets in test_loader:
-            inputs, targets = inputs.to(device), targets.to(device)
-            # get prediction 
-            outputs = model(inputs)
-
-            # Convert PyTorch tensors to NumPy arrays
-            input_image = inputs[0].cpu().numpy()  
-            target_image = targets[0].cpu().numpy()
-            predicted_image = outputs[0].cpu().numpy()
-
-            # Create a side-by-side visualization for three images, prediction, ground truth. 
-            plt.figure(figsize=(12, 4))
-            plt.subplot(1, 3, 1)
-            plt.title("Input Image")
-            plt.imshow(input_image[0], cmap='gray')  
-
-            plt.savefig('input_image.png')
-
-            plt.subplot(1, 3, 2)
-            plt.title("Model Prediction")
-            plt.imshow(predicted_image[0], cmap='gray') 
-
-            plt.savefig('model_prediction.png') 
-
-            plt.subplot(1, 3, 3)
-            plt.title("Ground Truth")
-            plt.imshow(target_image[0], cmap='gray')  
-
-            plt.show()
-
-            plt.savefig('ground_truth.png')
-
-            image_count += 1
-
-            if image_count >= num_images:
-                break
 
 """
     Plots dice coefficients of the whole test dataset.
@@ -139,7 +86,7 @@ def plot_dice(dice, segment_scores):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig('dice_scores_test_alter_loss.png')
+    plt.savefig('dice_scores_test_weighted_loss.png')
     plt.close()
 
 

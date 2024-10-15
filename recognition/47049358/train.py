@@ -60,10 +60,7 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
     for epoch in range(num_epochs):
         running_loss = 0.0
         segment_losses = None
-        for batch_num, (inputs, masks) in enumerate(tqdm(train_loader)):
-
-            print(inputs.shape)
-            print(masks.shape)
+        for inputs, masks in tqdm(train_loader):
 
             inputs, masks = inputs.to(device), masks.to(device)
             optimiser.zero_grad()
@@ -79,10 +76,7 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
             loss.backward()
             optimiser.step()
 
-            running_loss +=  -1 * loss.item()
-
-            if batch_num >= 0:
-                break
+            running_loss += -1 * loss.item()
 
         scheduler.step()
 

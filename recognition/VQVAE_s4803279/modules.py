@@ -85,3 +85,97 @@ class ResidualBlock(nn.Module):
             residual = self.projection(x)
 
         return self.relu(out + residual)
+
+
+class VQVAE2(nn.Module):
+    """
+    VQVAE-2 with hierarchical latent spaces
+
+    Args:
+        in_channels: number of input channels
+        hidden_dims: list of hidden dimensions for encoder/decoder
+        num_embeddings: list of codebook sizes for each level
+        embedding_dim: list of embedding dimensions for each level
+        commitment_cost: weight for commitment loss
+    """
+    def __init__(self, in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost):
+        super(VQVAE2, self).__init__()
+
+        assert len(num_embeddings) == len(embedding_dims)
+        self.num_levels = len(num_embeddings)
+
+        # Top level encoder
+        self.encoder_top = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_dims[0], 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[0], hidden_dims[0]),
+            nn.ReLU(inplace = True),
+            nn.Conv2d(hidden_dims[0], embedding_dims[0], 1)
+        )
+
+        # Bottom level encoder
+        self.encoder_bottom = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_dims[1], 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[1], hidden_dims[1]),
+            nn.ReLU(inplace = True),
+            nn.Conv2d(hidden_dims[1], embedding_dims[1], 1)
+        )
+
+        # Vector Quantizers
+        self.vq_top = VectorQuantizer(num_embeddings[0], embedding_dims[0], commitment_cost)
+        self.vq_bottom = VectorQuantizer(num_embeddings[1], embedding_dims[1], commitment_cost)
+
+        # Decoders
+        self.decoder_top = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dims[0], hidden_dims[0], 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[0], hidden_dims[0]),
+            nn.ReLU(inplace = True)
+        )
+
+        self.decoder_bottom = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dims[1] + hidden_dims[0], hidden_dims[1], 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[1], hidden_dims[1]),
+            nn.ReLU(inplace = True),
+            nn.Conv2d(hidden_dims[1], in_channels, 1)
+        )
+
+
+    def encode(self, x):
+        # Top level encoding
+        z_top = self.encoder_top(x)
+        loss_top, quant_top, indices_top = self.vq_top(z_top)
+
+        # Bottom level encoding
+        z_bottom = self.encoder_bottom(x)
+        loss_bottom, quant_bottom, indices_bottom = self.vq_bottom(z_bottom)
+
+        return (loss_top, quant_top, indices_top), (loss_bottom, quant_bottom, indices_bottom)
+
+
+    def decode(self, quant_top, quant_bottom):
+        # Decode top level
+        dec_top = self.decoder_top(quant_top)
+
+        # Upsample top features to match bottom size
+        dec_top_upsampled = F.interpolate(dec_top, size = quant_bottom.shape[2:])
+
+        # Concatenate with bottom features and decode
+        combined = torch.cat([dec_top_upsampled, quant_bottom], dim = 1)
+        x_recon = self.decoder_bottom(combined)
+
+        return x_recon
+
+
+    def forward(self, x):
+        # Encode
+        (loss_top, quant_top, _), (loss_bottom, quant_bottom, _) = self.encode(x)
+
+        # Decode
+        x_recon = self.decode(quant_top, quant_bottom)
+
+        # Calculate reconstruction loss
+        recon_loss = F.mse_loss(x_recon, x)
+
+        # Total loss
+        total_loss = recon_loss + loss_top + loss_bottom
+
+        return total_loss, x_recon

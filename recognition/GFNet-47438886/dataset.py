@@ -1,5 +1,11 @@
+""" Dataset Loaders
+
+Set of functions to use to load the ADNI dataset.
+
+"""
 import os
 import re
+import platform
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
@@ -99,6 +105,9 @@ def load_adni_data(root_dir, valid_size=0.2, batch_size=32):
 
     return train_loader, val_loader
 
+if platform.system() == "Windows":
+    root_dir = 'ADNI_AD_NC_2D/AD_NC'
+else:
+    root_dir = '~/ADNI/AD_NC'
 
-root_dir = 'ADNI_AD_NC_2D/AD_NC'
 train_loader, val_loader = load_adni_data(root_dir)

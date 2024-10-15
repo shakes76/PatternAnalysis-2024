@@ -6,7 +6,11 @@ File to handle loading, and preprocessing of the dataset
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+from torch.utils.data import Dataset
 from const import DATASET_PATH
+import os
+from typing import Iterable
+from sklearn.model_selection import train_test_split
 
 im = None
 utils = None
@@ -136,3 +140,61 @@ def load_data_3d(imageNames, normImage = False, categorical = False, dtype = np.
         return images, affines
     else:
         return images
+
+class MriData3D(Dataset):
+    """
+    Mri Dataset class to Load in segments of the Hip Mri dataset. Is also able to load other simmilar
+    datasets. 
+    """
+    def __init__(self, data_path:str = DATASET_PATH, target_data:list[str]|None=None, transform=None, label_transform=None) -> None:
+        self.main_data_path = data_path + "/semantic_MRs/"
+        self.data_label_path = data_path + "/semantic_labels_only/"
+        self.transform = transform
+        self.label_transform = label_transform
+        self.data_files = os.listdir(self.main_data_path)
+        self.label_files = os.listdir(self.data_label_path)
+        if target_data:
+            self.data_files = [name[:10] in target_data for name in self.data_files]
+            self.label_files = [name[:10] in target_data for name in self.label_files]
+
+    def __len__(self):
+        return len(self.data_files)
+
+    def __getitem__(self, index) -> tuple[np.ndarray, np.ndarray]:
+        image = load_data_3d(os.path.join(self.main_data_path, self.data_files[index]))
+        label = load_data_3d(os.path.join(self.data_label_path, self.label_files[index]))
+        if self.transform:
+            image = self.transform(image)
+        if self.label_transform:
+            label = self.label_transform(label)
+        return image, label
+
+def mri_split(data_path:str = DATASET_PATH,proportions:Iterable[float] = [0.7,0.2,0.1]) -> list[list[str]]:
+    """Creates a split on sample names from the MRI's for training a neural network
+
+    Args:
+        data_path (str, optional): The path for the mri dataset. Defaults to DATASET_PATH.
+        proportions (Iterable[float], optional): The set of proportions. Defaults to [0.7,0.2,0.1].
+
+    Returns:
+        list[list[str]]: List of the resulting splits (randomized)
+    """
+    if any(x < 0 for x in proportions):
+        return []
+    if sum(proportions) != 1:
+        return []
+    targets = [x[:10] for x in os.listdir(data_path + "/semantic_MRs/")]
+    # targets = [x + 1 for x in range(10)]
+    if len(targets) == 0:
+        return []
+    result = []
+    while len(proportions) > 1:
+        to_append, to_split = train_test_split(targets, train_size=proportions[0])
+        targets = to_split
+        result.append(to_append)
+        proportions = proportions[1:]
+        new_sum = sum(proportions)
+        if new_sum != 1 and new_sum:
+            proportions = [x/new_sum for x in proportions]
+    result.append(to_split)
+    return result

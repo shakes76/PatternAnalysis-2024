@@ -7,14 +7,14 @@ from functools import partial
 from collections import OrderedDict
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-from dataset import ADNI_DEFAULT_MEAN_TRAIN, ADNI_DEFAULT_STD_TRAIN
+from dataset import ADNI_DEFAULT_MEAN_TEST, ADNI_DEFAULT_STD_TEST
 
 def _cfg(url='', **kwargs):
     return {
         'url': url,
         'num_classes': 2, 'input_size': (1, 224, 224), 'pool_size': None,
         'crop_pct': .9, 'interpolation': 'bicubic',
-        'mean': ADNI_DEFAULT_MEAN_TRAIN, 'std': ADNI_DEFAULT_STD_TRAIN,
+        'mean': ADNI_DEFAULT_MEAN_TEST, 'std': ADNI_DEFAULT_STD_TEST,
         'first_conv': 'patch_embed.proj', 'classifier': 'head',
         **kwargs
     }

@@ -120,7 +120,7 @@ def evaluate(data_loader, model, device):
 if __name__ == "__main__":
 
     # Get arguments (stored in utils.py)
-    parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('GFNet training and validation script', parents=[get_args_parser()])
     args = parser.parse_args()
     
     # Set device

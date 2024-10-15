@@ -122,7 +122,7 @@ def get_args_parser():
     parser.add_argument('--data-path', default='data/', type=str,
                         help='dataset path')
     parser.add_argument('--data-set', default='ADNI', choices=['ADNI', 'CIFAR', 'IMNET', 'INAT', 'INAT19'],
-                        type=str, help='ADNI dataset path')
+                        type=str, help='Dataset name')
     parser.add_argument('--inat-category', default='name',
                         choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
                         type=str, help='semantic granularity')

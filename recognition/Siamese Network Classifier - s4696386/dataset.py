@@ -45,6 +45,15 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
             else:
                 benigns.append(image_name)
     
+    # Cut down the data to reduce time spent
+    benigns = benigns[:len(malignants)*2]
+    files2: dict = {}
+    for b in benigns:
+        files2[b] = files.get(b, b+".dcm")
+    for m in malignants:
+        files2[m] = files.get(m, m+".dcm")
+    files = files2
+    
     return files, truths, malignants, benigns
 
 
@@ -97,7 +106,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
         """
         Number of available images
         """
-        return len(self.data_set)
+        return sum([len(val) for key, val in self.data_set.items()])
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
@@ -142,7 +151,6 @@ class APP_MATCHER(torch.utils.data.Dataset):
         ])
         image = resize_transform(image)
         # Add channel dimension (1xHxW)
-        image = image.unsqueeze(0)
         return image
     
     def is_train_set(self) -> bool:
@@ -171,8 +179,8 @@ def main():
 
     current_directory = os.getcwd()
     with cProfile.Profile() as pr:
-        read_data("C:/Users/Kai Graz/Documents/University/2024 Semester 2/COMP3710/Final Project/ISIC_2020_TRAIN",
-            "C:/Users/Kai Graz/Documents/University/2024 Semester 2/COMP3710/Final Project/ISIC_2020_Training_GroundTruth.csv")
+        files, truths, malignants, benigns = read_data("E:/COMP3710 Project/ISIC_2020_Train_DICOM_corrected",
+            "E:/COMP3710 Project/ISIC_2020_Training_GroundTruth.csv")
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     os.chdir(current_directory)

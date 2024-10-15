@@ -1,15 +1,20 @@
 import os
+import argparse
 from PIL import Image
-import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
-import torch
 from torch.utils.data import DataLoader
-## On val 2152 imgs:    Mean: 0.12288379669189453, Std: 0.2244586944580078
-## On train 19368 imgs: Mean: 0.19868804514408112, Std: 0.24770835041999817
-import argparse
+
 from utils import get_args_parser
 
+ADNI_DEFAULT_MEAN_TRAIN = 0.19868804514408112
+ADNI_DEFAULT_STD_TRAIN = 0.24770835041999817
+
+ADNI_DEFAULT_MEAN_VAL = 0.12288379669189453
+ADNI_DEFAULT_STD_VAL = 0.2244586944580078
+
+ADNI_DEFAULT_MEAN_TEST = 0.12404339015483856
+ADNI_DEFAULT_STD_TEST = 0.2250228226184845
 
 class ADNI_Dataset(Dataset):
     def __init__(self, root_dir, split='train', transform=None):
@@ -56,47 +61,58 @@ class ADNI_Dataset(Dataset):
         return image, label
 
 
-
-def build_dataset(is_train, args, infer_no_resize=False):
-    transform = build_transform(is_train, args, infer_no_resize)
-
+def build_dataset(split, args):
+    transform = build_transform(split, args)
     if args.data_set == 'ADNI':
-        dataset = ADNI_Dataset('data/', 'train' if is_train else 'val', transform=transform)
+        dataset = ADNI_Dataset('data/', split=split, transform=transform)
         nb_classes = 2
-
+    else: NotImplementedError
     return dataset, nb_classes
 
 
-def build_transform(is_train, args, infer_no_resize=False):
-    if is_train:
+def build_transform(split, args):
+    if split == "train":
         transform = transforms.Compose(
             [
-                transforms.RandomResizedCrop(224),
+                transforms.RandomResizedCrop(args.input_size),
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomAdjustSharpness(sharpness_factor=0.9, p=0.1),
-                transforms.Grayscale(num_output_channels=1),  # Converts to grayscale
+                transforms.Grayscale(num_output_channels=1),
                 transforms.ToTensor(),
                 transforms.Normalize(
-                    mean=0.19868804514408112,
-                    std=0.24770835041999817,
+                    mean=ADNI_DEFAULT_MEAN_TRAIN,
+                    std=ADNI_DEFAULT_STD_TRAIN,
                 ),
             ]
         )
-    else:
+    elif split == "val":
         transform = transforms.Compose(
             [
-                transforms.Resize(224),
-                transforms.CenterCrop(224),
-                transforms.Grayscale(num_output_channels=1),  # Converts to grayscale
+                transforms.Resize(args.input_size),
+                transforms.CenterCrop(args.input_size),
+                transforms.Grayscale(num_output_channels=1),
                 transforms.ToTensor(),
                 transforms.Normalize(
-                    mean=0.12288379669189453,
-                    std=0.2244586944580078,
+                    mean=ADNI_DEFAULT_MEAN_VAL,
+                    std=ADNI_DEFAULT_STD_VAL,
                 ),
             ]
         )
+    elif split == "test":
+        transform = transforms.Compose(
+            [
+                transforms.Resize(args.input_size),
+                transforms.CenterCrop(args.input_size),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=ADNI_DEFAULT_MEAN_TEST,
+                    std=ADNI_DEFAULT_STD_TEST,
+                ),
+            ]
+        )
+    else: NotImplementedError
     return transform
-
 
 
 def get_mean_and_std(dataset):
@@ -104,7 +120,6 @@ def get_mean_and_std(dataset):
     mean = 0.0
     std = 0.0
     total_images_count = 0
-
     for images, _ in loader:
         # Flatten the images into a single dimension per batch
         images = images.view(images.size(0), -1)  # (batch_size, width*height)
@@ -120,12 +135,11 @@ def get_mean_and_std(dataset):
 
 
 
-if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
+if __name__ == "__main__":
     parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
-
-    ## print(args)
-    dataset_val, nb_classes = build_dataset(is_train=False, args=args)
-    # Assuming dataset_val is already defined
-    mean, std = get_mean_and_std(dataset_val)
+    # Get dataset mean and std for required split
+    split = 'test'  # Change to 'train', 'val', or 'test'
+    dataset, nb_classes = build_dataset(split=split, args=args)
+    mean, std = get_mean_and_std(dataset)
     print(f"Mean: {mean}, Std: {std}")

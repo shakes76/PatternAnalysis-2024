@@ -11,7 +11,6 @@ from sklearn.preprocessing import normalize, scale
 from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
 from sklearn.manifold import TSNE
 from sklearn.svm import SVC
-from sklearn.decomposition import PCA
 from sklearn import neural_network
 import pandas as pd
 import numpy as np
@@ -171,7 +170,7 @@ def main() -> None:
         logger.info("Starting training...")
         trainer.train(train_loader)
 
-    utils.save_training_plots(trainer)
+    utils.plot_training_data(trainer)
 
     # Get classifer training observation embeddings
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
@@ -180,26 +179,7 @@ def main() -> None:
     embeddings = normalize(embeddings)
 
     # PCA
-    logger.info("Fitting pca...")
-    pca = PCA(n_components=2)
-    pca_projections = pca.fit_transform(standard_embeddings)
-    logger.info("Plotting pca...")
-    plt.figure()
-    plt.scatter(
-        pca_projections[:, 0],
-        pca_projections[:, 1],
-        c=knn_df["target"],
-        cmap="coolwarm",
-        marker=".",
-        s=0.5,
-    )
-    plt.xlabel("component1")
-    plt.ylabel("component2")
-    benign_patch = mpatches.Patch(color="blue", label="Benign")
-    malignant_patch = mpatches.Patch(color="red", label="Malignant")
-    plt.legend(handles=[benign_patch, malignant_patch])
-    logger.info("Writing image")
-    plt.savefig("plots/train_pca")
+    utils.plot_pca(embeddings, knn_df["target"])
 
     # tsne
     logger.info("Fitting tsne...")

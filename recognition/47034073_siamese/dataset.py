@@ -57,7 +57,6 @@ class AllTumorDataset(Dataset[tuple[torch.Tensor, str]]):
 
 _augmentations = transforms.Compose(
     [
-        v2.RandomCrop(size=(224, 224)),
         v2.RandomHorizontalFlip(p=0.5),
         v2.RandomVerticalFlip(p=0.5),
     ]

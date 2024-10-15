@@ -9,6 +9,7 @@ class SiameseNetwork(torch.nn.Module):
         
         self.loss_criterion = torch.nn.BCELoss()
         
+        # allowed under https://edstem.org/au/courses/18266/discussion/2269791
         self.resnet = torchvision.models.resnet18(weights=None)
 
         self.fc_in_features = self.resnet.fc.in_features

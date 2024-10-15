@@ -13,9 +13,11 @@ def load_data():
 
     # cluster directory
     # data = np.load(" /home/Student/s4722208/Project/facebook.npz")
-    features = torch.tensor(data['features'])
-    edges = torch.tensor(data['edges'])
-    target = torch.tensor(data['target'])
+    features = torch.tensor(data['features'], dtype=torch.float32)
+    edges = torch.tensor(data['edges'], dtype=torch.int64)
+    edges = edges.t()
+    target = torch.tensor(data['target'], dtype=torch.int64)
+
 
     number_of_nodes = features.size(0)
 

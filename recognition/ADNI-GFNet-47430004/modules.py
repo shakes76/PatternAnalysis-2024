@@ -357,6 +357,7 @@ class GFNet(nn.Module):
 def main(args):
     print("Main of Modules - modules compiles/runs\n")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
 
     criterion = torch.nn.CrossEntropyLoss()
     train_loader, test_loader = get_dataloaders(None)
@@ -364,6 +365,7 @@ def main(args):
     loss_scaler = NativeScaler()
 
     model = GFNet(num_classes=2, in_chans=1)
+    model.to(device)
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)

@@ -59,7 +59,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
         self._train = train
         self.train_ratio = train_ratio
         self.test_ratio = 1 - train_ratio
-        self._image_height, self._image_width = (300, 300) # Temporary size
+        self._image_height, self._image_width = (480, 640) # Smallest size in dataset
 
         # Use read_data function to load the local dataset
         self.files, self.truths, self.malignants, self.benigns = read_data(image_folder,

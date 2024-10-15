@@ -48,3 +48,37 @@ class UNet3D(nn.Module):
     def upconv(self, in_channels, out_channels):
         # Transposed convolution for upsampling
         return nn.ConvTranspose3d(in_channels, out_channels, kernel_size=2, stride=2)
+
+
+
+    def forward(self, x):
+        
+        #Downsampling, using each encoder with a maxpool between them
+        enc1 = self.encoder1(x)
+        enc2 = self.encoder2(F.max_pool3d(enc1, 2))
+        enc3 = self.encoder3(F.max_pool3d(enc2, 2))
+        enc4 = self.encoder4(F.max_pool3d(enc3, 2))
+
+        #Then bridge to start upsampling
+        bridge = self.bridge(F.max_pool3d(enc4, 2))
+
+        #Upsampling step, with concatenations between each upsample, downsample pair
+        dec4 = self.upconv4(bottleneck)
+        dec4 = torch.cat((dec4, enc4), dim=1)
+        dec4 = self.decoder4(dec4)
+
+        dec3 = self.upconv3(dec4)
+        dec3 = torch.cat((dec3, enc3), dim=1)
+        dec3 = self.decoder3(dec3)
+
+        dec2 = self.upconv2(dec3)
+        dec2 = torch.cat((dec2, enc2), dim=1)
+        dec2 = self.decoder2(dec2)
+
+        dec1 = self.upconv1(dec2)
+        dec1 = torch.cat((dec1, enc1), dim=1)  
+        dec1 = self.decoder1(dec1)
+
+        #final convolution
+        out = self.final_conv(dec1)
+        return out

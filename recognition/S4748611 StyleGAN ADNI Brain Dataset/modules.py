@@ -118,31 +118,3 @@ def build_stylegan():
 
     return Model([latent_input, constant_input], validity, name="stylegan")
 
-# Build and summarize the models
-generator = build_generator()
-discriminator = build_discriminator()
-stylegan = build_stylegan()
-
-print("Generator Summary:")
-generator.summary()
-
-print("\nDiscriminator Summary:")
-discriminator.summary()
-
-print("\nStyleGAN Summary:")
-stylegan.summary()
-
-# Test the models with random inputs
-# Test generator
-latent_vector = np.random.normal(0, 1, (1, LATENT_DIM))
-constant_input = np.random.normal(0, 1, (1, INITIAL_SIZE, INITIAL_SIZE, LATENT_DIM))
-generated_image = generator.predict([latent_vector, constant_input])
-print(f"\nGenerated image shape: {generated_image.shape}")
-
-# Test discriminator
-discriminator_output = discriminator.predict(generated_image)
-print(f"Discriminator output: {discriminator_output}")
-
-# Test full StyleGAN
-stylegan_output = stylegan.predict([latent_vector, constant_input])
-print(f"StyleGAN output: {stylegan_output}")

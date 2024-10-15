@@ -7,9 +7,8 @@ import pathlib
 
 from sklearn.base import ClassifierMixin
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import normalize, scale
+from sklearn.preprocessing import normalize
 from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
-from sklearn.manifold import TSNE
 from sklearn.svm import SVC
 from sklearn import neural_network
 import pandas as pd
@@ -17,7 +16,6 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
 import utils
 from trainer import SiameseController, HyperParams
@@ -175,32 +173,10 @@ def main() -> None:
     # Get classifer training observation embeddings
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     logger.info("Embeddings \n%s", embeddings)
-    standard_embeddings = scale(embeddings)
     embeddings = normalize(embeddings)
 
-    # PCA
     utils.plot_pca(embeddings, knn_df["target"])
-
-    # tsne
-    logger.info("Fitting tsne...")
-    tsne = TSNE(random_state=42)
-    tsne_projections = tsne.fit_transform(standard_embeddings)
-    logger.info("Plotting tsne...")
-    plt.figure()
-    plt.scatter(
-        tsne_projections[:, 0],
-        tsne_projections[:, 1],
-        c=knn_df["target"],
-        cmap="coolwarm",
-        marker=".",
-    )
-    plt.xlabel("component1")
-    plt.ylabel("component2")
-    benign_patch = mpatches.Patch(color="blue", label="Benign")
-    malignant_patch = mpatches.Patch(color="red", label="Malignant")
-    plt.legend(handles=[benign_patch, malignant_patch])
-    logger.info("Writing image")
-    plt.savefig("plots/train_tsne")
+    utils.plot_tsne(embeddings, knn_df["target"])
 
     # Fit classifiers
     logger.info("Fitting KNN...")

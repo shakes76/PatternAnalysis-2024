@@ -67,30 +67,40 @@ def main() -> None:
     knn = KNeighborsClassifier(
         n_neighbors=100, weights=lambda arr: _margin_weight(arr, hparams), p=2
     )
-    svm = SVC(probability=True)
+    svm = SVC(probability=True, random_state=42)
     nn = neural_network.MLPClassifier(
-        hidden_layer_sizes=(64),
-        learning_rate_init=0.00001,
+        hidden_layer_sizes=(64, 64, 64, 64, 64, 64, 64),
+        learning_rate_init=0.0001,
         random_state=42,
         early_stopping=True,
         verbose=False,
     )
 
-    # Training data
+    # Siamese training data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
-
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df, transform=True)
+    # sampler = MPerClassSampler(
+    #     labels=train_meta_df["target"],
+    #     m=hparams.batch_size / 2,
+    #     length_before_new_iter=1_000 if args.debug else len(train_meta_df),
+    # )
+    train_loader = DataLoader(
+        dataset,
+        pin_memory=True,
+        num_workers=num_workers,
+        # sampler=sampler,
+        shuffle=True,
+        batch_size=hparams.batch_size,
+        drop_last=True,
+    )
+
+    # Classifier training data
     # Undersample to alleviate class imbalance
     benign = train_meta_df[train_meta_df["target"] == 0]
     malignant = train_meta_df[train_meta_df["target"] == 1]
     benign = benign.sample(random_state=42, n=len(malignant))
     knn_df = pd.concat([benign, malignant])
-
-    # knn_df = train_meta_df
-
     knn_ds = TumorClassificationDataset(IMAGES_PATH, knn_df, transform=False)
-
-    # Undersample dataloader for KNN embeddings
     train_classification_loader = DataLoader(
         knn_ds,
         batch_size=hparams.batch_size,
@@ -148,22 +158,6 @@ def main() -> None:
 
     trainer.end_of_epoch_func = validate
 
-    # sampler = MPerClassSampler(
-    #     labels=train_meta_df["target"],
-    #     m=hparams.batch_size / 2,
-    #     length_before_new_iter=1_000 if args.debug else len(train_meta_df),
-    # )
-
-    train_loader = DataLoader(
-        dataset,
-        pin_memory=True,
-        num_workers=num_workers,
-        # sampler=sampler,
-        shuffle=True,
-        batch_size=hparams.batch_size,
-        drop_last=True,
-    )
-
     if args.continue_training and args.load_model is None:
         raise ValueError(
             "Cannot continue training without loading a model use -l option"
@@ -181,9 +175,15 @@ def main() -> None:
     # Training plots
     plt.figure()
     plt.plot(trainer.losses)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.tight_layout()
     plt.savefig(PLOTS_PATH / "train_loss")
     plt.figure()
     plt.plot(trainer.mined_each_step)
+    plt.xlabel("Train step")
+    plt.ylabel("Num mined")
+    plt.tight_layout()
     plt.savefig(PLOTS_PATH / "mined")
 
     # Get classifer training observation embeddings
@@ -290,7 +290,7 @@ def _evaluate_classification(
     report = classification_report(labels, predictions)
     auc = roc_auc_score(labels, proba[:, 1])
     if not minimal:
-        logger.info("%s data report:\n%s\nauc: %f", data_name, report, auc)
+        logger.info("%s data report:\n%s\nauc: %f\n", data_name, report, auc)
         RocCurveDisplay.from_predictions(labels, proba[:, 1])
         plt.savefig(f"plots/{data_name}_roc")
     return auc

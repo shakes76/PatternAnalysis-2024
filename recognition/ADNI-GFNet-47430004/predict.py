@@ -125,10 +125,13 @@ def validate(val_loader, model, criterion):
 
 if __name__ == '__main__':
     print("Main of Predict")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
     cudnn.benchmark = True
     _, test_loader = get_dataloaders(None)
 
-    model = GFNet()
+    model = GFNet(num_classes=2, in_chans=1)
+    model.to(device)
 
     model_path = "test/model/GFNet.pth"
 

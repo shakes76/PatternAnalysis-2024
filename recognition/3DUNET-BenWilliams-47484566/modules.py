@@ -82,3 +82,18 @@ class UNet3D(nn.Module):
         #final convolution
         out = self.final_conv(dec1)
         return out
+
+
+
+
+
+
+
+class crossEntropyLoss(nn.Module):
+    def __init__(self, weight=None):
+        super(crossEntropyLoss, self).__init__()
+        self.weight = weight
+
+    def forward(self, output, target):
+        loss = F.cross_entropy(output, target, weight=self.weight, ignore_index=3)
+        return loss

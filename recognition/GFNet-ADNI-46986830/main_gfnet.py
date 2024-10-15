@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", message="Argument interpolation should be")
 
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
-    parser.add_argument('--batch-size', default=64, type=int)
+    parser.add_argument('--batch-size', default=32, type=int)
     parser.add_argument('--epochs', default=300, type=int)
 
     # Model parameters
@@ -138,7 +138,7 @@ def get_args_parser():
     parser.add_argument('--finetune', default='', help='finetune from checkpoint')
 
     # Dataset parameters
-    parser.add_argument('--data-path', default='/datasets01/imagenet_full_size/061417/', type=str,
+    parser.add_argument('--data-path', default='home/groups/comp3710/ADNI/AD_NC', type=str,
                         help='dataset path')
     parser.add_argument('--data-set', default='IMNET', choices=['CIFAR', 'IMNET', 'INAT', 'INAT19'],
                         type=str, help='Image Net dataset path')
@@ -171,7 +171,7 @@ def get_args_parser():
 
 
 def main(args):
-    utils.init_distributed_mode(args)
+    # utils.init_distributed_mode(args)
 
     print(args)
 
@@ -187,7 +187,9 @@ def main(args):
 
     cudnn.benchmark = True
 
-    adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    # adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    adni_dir = args.data_path
+    print("dataset location:", adni_dir)
     dataset_train, dataset_val, data_loader_train, data_loader_val = adni_data_load(adni_dir, verbose=True) 
     args.nb_classes = 2
 
@@ -276,9 +278,9 @@ def main(args):
             resume='')
 
     model_without_ddp = model
-    if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
-        model_without_ddp = model.module
+    # if args.distributed:
+    #     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+    #     model_without_ddp = model.module
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
 
@@ -352,8 +354,8 @@ def main(args):
     start_time = time.time()
     max_accuracy = 0.0
     for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed:
-            data_loader_train.sampler.set_epoch(epoch)
+        # if args.distributed:
+        #     data_loader_train.sampler.set_epoch(epoch)
 
         train_stats = train_one_epoch(
             model, criterion, data_loader_train,

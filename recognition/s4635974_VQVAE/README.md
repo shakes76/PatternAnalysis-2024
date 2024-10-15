@@ -14,7 +14,7 @@ The model builds on the architecture of the Variational Autoencoder (VAE), which
 
 ### Model Architecture Overview
 ![Model Architecture](report_images/VQ-VAE_model_architecture_diagram.png)
-*Model Architecture Diagram* [2]
+*Figure 1. Model Architecture Diagram* [2]
 
 The Model's architecture consists of three main components:
 
@@ -26,7 +26,7 @@ Furthermore, this particular implementation of the VQ-VAE is designed for proces
 
 ### Loss Function
 ![Loss Function](report_images/loss_function.png) 
-*Loss Function* [2]
+*Figure 2. Loss Function* [2]
 
 The loss function consists of three main components:
 
@@ -66,7 +66,7 @@ Once the model has finished training, we evaluate its performance on the test se
 
 ### Specific Model Architecture
 ![pytorchinfo summary](report_images/pytorchinfo.png)
-*pytorchinfo summary: input_size=(16, 1, 256, 128)*
+*Figure 3. pytorchinfo summary: input_size=(16, 1, 256, 128)*
 
 Above, we have the torchinfo summary of the specific VQ-VAE model used in this report. The batch size is 16. Our image size is 1 x 256 x 128. 
 
@@ -86,26 +86,50 @@ The parameters below yielded the best performance I was able to achieve (in both
 
 ### Data Pre-processing
 
-The Hip MRI Prostate Cancer 2D dataset [1] was provided for us on the university cluster. It was already split into training, validation, and testing sets. FIND OUT SPLITS
+The Hip MRI Prostate Cancer 2D dataset [1] was provided for us on the university cluster. It was already split into training (~ 90%), validation (~ 5%), and testing sets (~ 5%).
 
 The dataset comprised of Nifti files. We were provided with code [4] for loading Nifti the files into images. The loading code can also normalises the images, which was done for this model. 
 
-No further data pre-processing was carried out. 
-
-
-
-
-
-
-- Describe any specific pre-processing you have used with references if any.
-- Justify your training, validation and testing splits of the data.
-
+The above was enough to achives our aim so no further data pre-processing was carried out.
 
 ## Model Results
 
 ### Training
+The model was trained wih the above parameters. Early stopping was used [5] to stop the training when there was no further improvement in validation loss. This can help avoid overfitting and save on computational resources. Little improvement was acieved beyond 60 epochs. 
+
+#### Training and Validation output losses (reconstruction loss)
+![Training and validation output loss](report_images/output_loss_per_epoch.png)
+*Figure 4. Training and Validation Output Loss (Reconstruction Loss) over epochs*
+
+Figure 4 shows the training and validation output losses from the decoder (reconstuction loss) reduce over each epoch. This demonstrates that the model is learning well.
+
+![Training and validation output loss zoomed](report_images/training_output_loss_zoomed.png)
+*Figure 5. Training and Validation Output Loss (Reconstruction Loss) over epochs - zoomed in*
+
+Zooming in (Figure 5) we can see that the validation loss fits closely to the train loss, indicating that the model is not overfitting. 
+
+#### Training and Validation VQ losses
+![VQ loss](report_images/vq_loss_per_epoch.png)
+*Figure 6. Training and validation vector quantization (VQ) loss over epochs*
+
+Similarly, in Figure 6 we see the training and validation VQ losses fit closely together and reduce over epochs, demonstrating that the training is going well and no overfitting. 
+
+#### Validation Structural Similarity Index Measure (SSIM)
+![SSIM](report_images/ssim.png)
+* Figure 7. Structural Similarity Index Measure (SSIM) over epochs*
+
+As we can see, above, we go beyond our goal of achiveing an SSIM of 0.6, with a final max SSIM of 0.84 on the validation set (during training).
+
+#### Reconstructions on validation set
+![Training reconstructions](report_images/real_and_decoded_images_epoch_60.png)
+*Figure 8. Training reconstructions on the validation set after 60 Epochs*
+
+Figure 8 shows a sample of 4 images taken from the validation set and passed through our model at the 60th epoch. We can see that the decoded images resmeble the real images vary well. 
+
 
 ### Testing
+
+
 
 ## Usage
     - list any dependencies required

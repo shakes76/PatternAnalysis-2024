@@ -14,8 +14,8 @@ from dataset import HipMRILoader
 import modules
 
 
-# Model path if using existing model
-model_path = 'saved_model/lr=0.003.pth'
+# Model path for loading model
+model_path = 'saved_model/early_stopping_lr=0.002.pth'
 
 # Hyperparmeters if training again
 num_epochs = 100
@@ -28,14 +28,14 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
-# Save directory if training again
-train_save_image_dir = f'train_images'
+# # Save directory if training again
+# train_save_image_dir = f'train_images'
 
-# Model save diretory if training again
-train_save_model_dir = f'saved_model/train.pth'
+# # Model save diretory if training again
+# train_save_model_dir = f'saved_model/early_stopping_lr=0.002.pth'
 
-# Retrain bool. Set to true if retaining
-retrain_model = False
+# # Retrain bool. Set to true if retaining
+# retrain_model = False
 
 # Directory for saving test images
 test_save_dir = f'test_images'
@@ -43,7 +43,7 @@ os.makedirs(test_save_dir, exist_ok=True)
 
 def predict(
         model_path=model_path, 
-        retrain_model=retrain_model 
+        test_save_dir=test_save_dir 
         ):
     
     # Configure Pytorch
@@ -98,7 +98,7 @@ def predict(
             decoded_image = test_output_images.view(-1, 1, 256, 128).detach()
             
             # Calculate SSIM and store it
-            similarity = ssim(decoded_image, real_image, data_range=1.0).item()
+            similarity = ssim(decoded_image, real_image).item()
             batch_SSIM.append(similarity)
         
         # Calculate average SSIM per batch
@@ -145,7 +145,8 @@ def predict(
     print("End")
 
 if (__name__ == "__main__"):
-    predict(model_path=model_path)
+    predict(model_path=model_path,
+            test_save_dir=test_save_dir)
 
 
 

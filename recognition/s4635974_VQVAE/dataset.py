@@ -159,19 +159,19 @@ class HipMRILoader:
     def get_mean(self):
         return self.train_mean
     
-# Example usage:
-loader = HipMRILoader(train_dir, validate_dir, test_dir, batch_size=16)
-train_loader, validate_loader, variance = loader.get_loaders()
-mean = loader.get_mean()
-std = variance ** 0.5
+# # Example usage:
+# loader = HipMRILoader(train_dir, validate_dir, test_dir, batch_size=16)
+# train_loader, validate_loader, variance = loader.get_loaders()
+# mean = loader.get_mean()
+# std = variance ** 0.5
 
-print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
+# print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
 
-test_loader = loader.get_test_loader()
+# test_loader = loader.get_test_loader()
 
-print("Train: ", {len(train_loader.dataset)})
-print("Val: ", {len(validate_loader.dataset)})
-print("Test: ", {len(test_loader.dataset)})
+# print("Train: ", {len(train_loader.dataset)})
+# print("Val: ", {len(validate_loader.dataset)})
+# print("Test: ", {len(test_loader.dataset)})
 # Training Mean: -2.7069713723903988e-06, Training Std: 0.9999692733335542, variance = 0.9999385476112366
     
 

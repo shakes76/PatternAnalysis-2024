@@ -28,15 +28,6 @@ num_embeddings = 512
 dim_embedding = 64
 beta = 0.25
 
-# # Save directory if training again
-# train_save_image_dir = f'train_images'
-
-# # Model save diretory if training again
-# train_save_model_dir = f'saved_model/early_stopping_lr=0.002.pth'
-
-# # Retrain bool. Set to true if retaining
-# retrain_model = False
-
 # Directory for saving test images
 test_save_dir = f'test_images'
 os.makedirs(test_save_dir, exist_ok=True)
@@ -110,7 +101,7 @@ def predict(
 
     # Visualize 4 random images through the model and save in test_save_dir
     # Create a figure to plot the images
-    fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(10, 10))
+    fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(8, 16))
 
     # Loop through random indices to visualize
     for idx, real_image in enumerate(test_loader):  # Get batch from DataLoader
@@ -139,8 +130,8 @@ def predict(
 
     # Save the figure
     plt.tight_layout()
+    plt.title("Real vs Decoded Test Set Images")
     plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
-    plt.show()
     
     print("End")
 

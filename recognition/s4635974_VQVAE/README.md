@@ -129,10 +129,16 @@ Figure 8 shows a sample of 4 images taken from the validation set and passed thr
 
 ### Testing
 
+![Testing decode images](report_images/real_vs_decoded_test.png)
 
 
 ## Usage
-    - list any dependencies required
+
+### Dependencies
+
+Below I list the dependcies used and version. To reproduce results, these dependencies must be install with the listed verion (or higher).
+    
+    - matplotlib 3.9.2
     - versions
     - how to reproduce results
 

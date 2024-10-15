@@ -8,7 +8,9 @@ class GCN(torch.nn.Module):
         super(GCN, self).__init__()
         # Define four GCN convolutional layers
         self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, out_channels)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.conv4 = GCNConv(hidden_channels, out_channels)
 
     def forward(self, x, edge_index):
         # First graph convolution layer + ReLU
@@ -17,5 +19,14 @@ class GCN(torch.nn.Module):
         
         # Second graph convolution layer + ReLU
         x = self.conv2(x, edge_index)
+        x = F.relu(x)
+        
+        # Third graph convolution layer + ReLU
+        x = self.conv3(x, edge_index)
+        x = F.relu(x)
+        
+        # Fourth graph convolution layer
+        x = self.conv4(x, edge_index)
+        
         # Apply log_softmax for classification (if required)
         return F.log_softmax(x, dim=1)

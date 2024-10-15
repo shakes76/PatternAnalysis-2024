@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import time
@@ -15,8 +16,12 @@ from utils import calculate_ssim, read_yaml_file, get_transforms
     
     
 if __name__ == '__main__':
-    # config_path = "recognition/VQVAE_47323254/configs/train.yaml"
-    config_path = "/home/Student/s4732325/project2/configs/train.yaml"
+    parser = argparse.ArgumentParser(description='Train VQVAE model.')
+    parser.add_argument('--config', type=str, required=True, 
+                        help='Path to the configuration YAML file.')
+    
+    args = parser.parse_args()
+    config_path = args.config
     config = read_yaml_file(config_path)
     
     model_parameters = config['model_parameters']

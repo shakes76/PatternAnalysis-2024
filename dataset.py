@@ -139,8 +139,8 @@ class NiftiDataset(Dataset):
 
         inImage = inImage.astype(self.dtype)
 
-        if self.normImage:
-            inImage = (inImage - inImage.mean()) / inImage.std()
+        # if self.normImage:
+        #     inImage = (inImage - inImage.mean()) / inImage.std()
 
         inImage = torch.from_numpy(inImage)
         # **Add channels dimension to image**

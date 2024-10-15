@@ -79,7 +79,7 @@ class NormConvTranspose3D(nn.Module):
         x = self.norm(x)
         x = self.activation(x)
         return x
-
+    
 
 # class UNet3D(nn.Module):
 #     def __init__(self):

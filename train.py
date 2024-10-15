@@ -238,6 +238,7 @@ import numpy as np
 import torchio as tio
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from modules import UNet3D
 from dataset import NiftiDataset
 from torch.utils.data import DataLoader
@@ -326,7 +327,6 @@ def train_loop():
     # Define transforms
     training_transform = tio.Compose([
         tio.RandomAffine(),
-        tio.RandomElasticDeformation(),
         tio.RandomFlip(axes=(0, 1, 2)),
     ])
 
@@ -335,7 +335,7 @@ def train_loop():
         image_filenames=train_image_filenames,
         label_filenames=train_label_filenames,
         dtype=np.float32,
-        transform=training_transform
+        transform=None
     )
 
     # Validation dataset
@@ -378,8 +378,23 @@ def train_loop():
         num_workers=num_workers
     )
 
+
+    def dice_loss(pred, target, epsilon=1e-6):
+        pred_probs = F.softmax(pred, dim=1)
+        num_classes = pred.shape[1]
+        target_one_hot = F.one_hot(target, num_classes=num_classes)
+        target_one_hot = target_one_hot.permute(0, 4, 1, 2, 3)
+        target_one_hot = target_one_hot.type(pred.dtype)
+        pred_flat = pred_probs.view(pred_probs.shape[0], pred_probs.shape[1], -1)
+        target_flat = target_one_hot.view(target_one_hot.shape[0], target_one_hot.shape[1], -1)
+        intersection = (pred_flat * target_flat).sum(-1)
+        union = pred_flat.sum(-1) + target_flat.sum(-1)
+        dice_score = (2 * intersection + epsilon) / (union + epsilon)
+        dice_loss = 1 - dice_score.mean()
+        return dice_loss
+
     model = UNet3D().to(device)
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
 
     num_epochs = 15
@@ -402,7 +417,7 @@ def train_loop():
 
             optimizer.zero_grad()
             outputs = model(batch_images)  # Should output shape: (batch_size, num_classes, D, H, W)
-            loss = criterion(outputs, batch_labels)
+            loss = dice_loss(outputs, batch_labels)
             loss.backward()
             optimizer.step()
 
@@ -420,7 +435,7 @@ def train_loop():
                 batch_labels = batch_labels.to(device)
                 batch_labels = batch_labels.squeeze(1)  # Shape becomes (batch_size, D, H, W)
                 outputs = model(batch_images)
-                loss = criterion(outputs, batch_labels)
+                loss = dice_loss(outputs, batch_labels)
                 val_loss += loss.item() * batch_images.size(0)
 
         epoch_val_loss = val_loss / len(val_dataset)
@@ -440,11 +455,12 @@ def train_loop():
             batch_labels = batch_labels.to(device)
             batch_labels = batch_labels.squeeze(1)
             outputs = model(batch_images)
-            loss = criterion(outputs, batch_labels)
+            loss = dice_loss(outputs, batch_labels)
             test_loss += loss.item() * batch_images.size(0)
 
     avg_test_loss = test_loss / len(test_dataset)
     print(f"Test Loss: {avg_test_loss:.4f}")
+    print(f"Average Dice Score: {1 - avg_test_loss:.4f}")
 
 if __name__ == "__main__":
     train_loop()

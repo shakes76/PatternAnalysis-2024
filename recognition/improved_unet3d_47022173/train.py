@@ -1,6 +1,6 @@
 from dataset import *
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 import torchio as tio
 from utils import *
 from modules import *
@@ -13,7 +13,7 @@ if IS_RANGPUR:
     images_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs/"
     masks_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only/"
     epochs = 50
-    batch_size = 4
+    batch_size = 5
 else:
     images_path = "./data/semantic_MRs_anon/"
     masks_path = "./data/semantic_labels_anon/"
@@ -25,6 +25,7 @@ batch_size = batch_size
 shuffle = True
 num_workers = 2
 epochs = epochs
+background = True
 
 # Model parameters
 in_channels = 1 # greyscale
@@ -32,7 +33,7 @@ n_classes = 6 # 6 different values in mask
 base_n_filter = 8
 
 # Optimizer parameters
-lr = 1e-5
+lr = 1e-3
 weight_decay = 1e-2
 
 # Scheduler parameters
@@ -50,6 +51,7 @@ def validate(model, data_loader):
 
     with torch.no_grad():
         for i, data in enumerate(data_loader):  
+            dice_score = DiceLoss()
             # inputs, masks, affine = data
             inputs, masks = data
             inputs, masks = inputs.to(device), masks.to(device)
@@ -62,11 +64,10 @@ def validate(model, data_loader):
             masks = F.one_hot(masks, num_classes=6) 
 
             # Group categories for masks and labels
-
             for i in range(n_classes):
-                mask = masks[:, i]
-                prediction = predictions[:, i]
-                dice_scores[i] += dice_coefficient(prediction, mask)
+                mask = F.one_hot( masks[:, i].long(), num_classes=2)
+                prediction = F.one_hot(predictions[:, i].long(), num_classes=2)
+                dice_scores[i] += dice_score(prediction, mask)
 
             # Calculate loss
             loss = criterion(logits, masks)
@@ -82,7 +83,7 @@ def validate(model, data_loader):
     avg_test_loss = test_loss / len(data_loader)
 
     print(f"Test Loss: {avg_test_loss}")
-    print(f"Average Dice Score: {list(map(lambda x: float(x / len(data_loader)), dice_scores))}")
+    print(f"Average Dice Score: {list(map(lambda x: 1 - float(x / len(data_loader)), dice_scores))}")
 
 
 
@@ -100,7 +101,6 @@ if __name__ == '__main__':
     valid_dataset = ProstateDataset3D(images_path, masks_path, transforms, "valid")
     valid_dataloader = DataLoader(valid_dataset, batch_size=1, shuffle=shuffle, num_workers=num_workers)
 
-
     mode = "train" if IS_RANGPUR else "debug"
     train_dataset = ProstateDataset3D(images_path, masks_path, transforms, mode)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
     # Loss function
-    criterion = DiceLoss()
+    criterion = DiceLoss(include_background=background)
 
     # Training loop
     for epoch in range(epochs):
@@ -146,5 +146,5 @@ if __name__ == '__main__':
         print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(valid_dataloader)}")
 
     # save model
-    torch.save(model.state_dict(), 'model.pth')
+    torch.save(model.state_dict(), f'model_lr_{lr}_e_{epochs}_bg_{background}_bs{batch_size}.pth')
     validate(model, valid_dataloader)

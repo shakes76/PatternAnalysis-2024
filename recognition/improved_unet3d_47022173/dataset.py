@@ -8,12 +8,10 @@ import torchio as tio
 import torch
 
 if IS_RANGPUR:
-	cutoff = 211
 	end = 'nii.gz'
 	split = 6
 	length = 9
 else:
-	cutoff = 24
 	end = 'nii'
 	split = 3
 	length = 14

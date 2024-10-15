@@ -3,4 +3,4 @@ data/
 __pycache__/
 questions.txt
 debug.py
-model.pth
+*.pth

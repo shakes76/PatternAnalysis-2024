@@ -26,3 +26,6 @@ A triamese network was used with the triplet loss [^1], and extension of the sia
 ## Discussion
 
 ## Conclusion
+
+## References
+[^1] Potato

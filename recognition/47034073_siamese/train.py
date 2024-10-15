@@ -142,7 +142,7 @@ def main() -> None:
         nn_auc = _evaluate_classification(
             fit_nn, val_embeddings, val_labels, minimal=True
         )
-        logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", knn_auc, svm_auc, nn_auc)
+        logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", svm_auc, knn_auc, nn_auc)
 
         if knn_auc > knn_best_auc:
             knn_best_auc = knn_auc

@@ -7,9 +7,9 @@
 ### Example Prediction
 
 ## Problem Overview 
-The 2020 ISIC malignant lesion detection challenge on Kaggle was the task of correctly classifying images of skin lesions as malignant or benign. The dataset is highly imbalanced with approximately 98% of observations being benign and only 2% being malignant. This meant that using naive metrics such as accuracy was undesirable as a predictor which simply always predicted malignant lesions would obtain a score of 98%. Therefore the challenge was to achieve a high reciever-operator-curve area-under-the-curve (ROC-AUC) score.
+The 2020 Kaggle ISIC malignant lesion detection challenge was to correctly classify images of skin lesions as malignant or benign. The dataset is highly imbalanced with approximately 98% of observations being benign and only 2% being malignant. This meant that using naive metrics such as accuracy was undesirable as a predictor which simply always predicted malignant lesions would obtain a score of 98%. Therefore the challenge was to achieve a high reciever-operator-curve area-under-the-curve (ROC-AUC) score.
 
-There are a few techniques for dealing with highly imbalanced data such re-sampling and heavy augmentation. Metric learning is one such method which alleviates the issue by generating a large amount of training data in the form of observation combinations. Because of the combinatorial explosion of pairings we need worry less about the class imbalance. Metric learning is the method of directly learning feature embeddings which maximimise or minimize some distance between observations. For our problem we wish to minimize the distance between observations from the same class and maximize the distance between osbervations from different classes. 
+There are a few techniques for dealing with highly imbalanced data such re-sampling and heavy augmentation. Metric learning is one such method which alleviates the issue by generating a large amount of training data in the form of observation combinations. Because of the combinatorial explosion of pairings we need worry less about the class imbalance. Metric learning is the method of directly learning feature embeddings which maximimise or minimize some distance between observations. For our problem we wish to minimize the distance between observations from the same class and maximize the distance between observations from different classes. 
 
 ## Data Preparation
 Patient meta-data was not used for simplicity as other solutions had found that they were not very essential performance [[]](). Although it would be simple to incorporate this data by concatenating it to the outputted feature embeddings and apply appropriate normalization.
@@ -24,7 +24,7 @@ A triamese network was used with the triplet loss [[2]](#2), an extension of the
 
 Once embeddings are produced they are compared using triplet loss. Let $l(x^a, x^p, x^n)$ be the loss for an single triplet with anchor $x^a$, positive $x^p$, and negative $x^n$ lesion images. Then $l$ is given by:
 
-$$l(x^a, x^p, x^n) = \mathrm{ReLU}\left(\vert\vert f(x^a) - f(x^p) \vert\vert_2^2 - \vert\vert f(x^a) - f(x^n) \vert\vert_2^2 + m \right)$$
+$$l(x^a, x^p, x^n) = \mathrm{ReLU}\left(\Vert f(x^a) - f(x^p) \Vert_2^2 - \Vert f(x^a) - f(x^n) \Vert_2^2 + m \right)$$
 
 Where $m$ is some hyperparameter for the desired margin. Note that $\mathrm{ReLU}$ is nothing more than the maximum of its argument and 0, this meant that 0 is the smallest loss possible. The left term of the loss encourages pairs from the same class to be close to each other in embedding space. The right term encourages pairs from different class to be far apart in the embedding space. The minimum loss is acquired when the positive example is closer than the negative example and is closer by margin $m$.
 

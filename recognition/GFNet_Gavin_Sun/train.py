@@ -2,37 +2,33 @@ import torch
 import matplotlib.pyplot as plt
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from dataset import get_adni_dataloader  # Import your data loader
-from modules import GFNet  # Import your model
+from dataset import get_adni_dataloader  
+from modules import GFNet  
 
 def main():
-    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Hyperparameters
     batch_size = 8
     base_lr = 0.0001  # Minimum learning rate
     max_lr = 0.001    # Maximum learning rate
-    num_epochs = 45
-    step_size = 5     # Number of iterations (batches) for one cycle
+    num_epochs = 80
+    step_size = 5    
 
     # Load data
     train_loader, val_loader = get_adni_dataloader(batch_size=batch_size, train=True)
 
-    # Initialize the model, loss function, and optimizer
-    model = GFNet().to(device)  # Adjust model initialization as needed
+    model = GFNet().to(device)  
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=base_lr)
 
-    # Initialize the cyclic learning rate scheduler
+    # cosine lr
     scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, 
                                             step_size_up=step_size, mode='triangular')
 
-    # Lists to store loss and accuracy values
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []
 
-    # Training and validation loop
     for epoch in range(num_epochs):
         train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler, train_losses, train_accuracies, device)
         validate_one_epoch(epoch, model, val_loader, criterion, val_losses, val_accuracies, device)
@@ -42,10 +38,7 @@ def main():
               f'Val Loss: {val_losses[-1]:.4f}, Val Acc: {val_accuracies[-1]:.2f}, '
               f'LR: {scheduler.get_last_lr()[0]:.6f}')
 
-    # Save the model
     torch.save(model.state_dict(), 'gfnet_model.pth')
-
-    # Plot the training and validation losses and accuracies
     plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_accuracies)
 
 def train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler, train_losses, train_accuracies, device):
@@ -62,7 +55,6 @@ def train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler,
         loss.backward()
         optimizer.step()
 
-        # Step the learning rate scheduler after each batch
         scheduler.step()
 
         running_loss += loss.item()
@@ -96,7 +88,6 @@ def validate_one_epoch(epoch, model, val_loader, criterion, val_losses, val_accu
 def plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_accuracies):
     plt.figure(figsize=(12, 5))
 
-    # Loss plot
     plt.subplot(1, 2, 1)
     plt.plot(range(num_epochs), train_losses, label='Train Loss')
     plt.plot(range(num_epochs), val_losses, label='Validation Loss')
@@ -105,7 +96,6 @@ def plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_acc
     plt.ylabel('Loss')
     plt.legend()
 
-    # Accuracy plot
     plt.subplot(1, 2, 2)
     plt.plot(range(num_epochs), train_accuracies, label='Train Accuracy')
     plt.plot(range(num_epochs), val_accuracies, label='Validation Accuracy')

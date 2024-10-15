@@ -7,7 +7,7 @@ ____________________________________________________________________________
 TRAINING RUNNER
 
 #!/bin/bash
-#SBATCH --partition=comp3710 
+#SBATCH --partition=comp3710
 #SBATCH --account=comp3710 
 #SBATCH --gres=gpu:1
 
@@ -15,7 +15,7 @@ TRAINING RUNNER
 #SBATCH --job-name=GFNetADNI
 
 # total runtime, enable to use GPUs with max times
-#SBATCH --time=1-00:00:00 #1 days
+#SBATCH --time=06:00:00  # 6 hours
 
 # mail alert at start, end and abortion of execution
 #SBATCH --mail-type=ALL
@@ -33,7 +33,7 @@ _______________________________________________________________________________
 TESTING RUNNER
 
 #!/bin/bash
-#SBATCH --partition=comp3710 
+#SBATCH --partition=comp3710
 #SBATCH --account=comp3710 
 #SBATCH --gres=gpu:1
 
@@ -41,7 +41,7 @@ TESTING RUNNER
 #SBATCH --job-name=GFNetADNI
 
 # total runtime, enable to use GPUs with max times
-#SBATCH --time=1-00:00:00 #1 days
+#SBATCH --time=06:00:00  # 6 hours
 
 # mail alert at start, end and abortion of execution
 #SBATCH --mail-type=ALL
@@ -50,7 +50,7 @@ TESTING RUNNER
 #SBATCH --mail-user=s4803613@student.uq.edu.au
 
 # output file
-#SBATCH --output=GFNet_test.out
+#SBATCH --output=GFNet_predict.out
 
 conda activate torch
 #run script

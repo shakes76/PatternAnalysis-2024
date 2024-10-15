@@ -51,8 +51,9 @@ def train_one_epoch(model: torch.nn.Module, criterion,
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
         loss_scaler(loss, optimizer, clip_grad=max_norm,
                         parameters=model.parameters(), create_graph=is_second_order)
-    
-        torch.cuda.synchronize()
+
+        if device == 'cuda':
+            torch.cuda.synchronize()
 
         metric_logger.update(loss=loss_value)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])

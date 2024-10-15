@@ -5,7 +5,7 @@ https://github.com/shakes76/GFNet
 
 import torch
 from modules import GFNet
-from dataset import ADNIDataset
+from dataset import ADNIDataset, get_dataloaders
 import argparse
 import datetime
 import numpy as np
@@ -24,7 +24,6 @@ from timm.scheduler import create_scheduler
 from timm.optim import create_optimizer
 from timm.utils import NativeScaler, get_state_dict, ModelEma
 
-from datasets import get_dataloaders
 import utils
 from functools import partial
 

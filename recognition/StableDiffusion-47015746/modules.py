@@ -16,43 +16,69 @@ class NoiseScheduler:
         alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x.device)
         return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise
 
-# UNet with time embedding and dynamic upsampling for consistent dimensions
 class UNet(nn.Module):
     def __init__(self, latent_dim=128):
         super(UNet, self).__init__()
 
-        # Define downsampling layers (encoder path)
-        self.down1 = nn.Conv2d(latent_dim, latent_dim, 3, stride=2, padding=1)  # 128 -> 256 channels, h -> h/2
-        self.down2 = nn.Conv2d(latent_dim, latent_dim * 2, 3, stride=2, padding=1)  # 256 -> 512 channels, h/2 -> h/4
+        # Define downsampling layers (encoder path) with batch normalization
+        self.down1 = nn.Conv2d(latent_dim, latent_dim * 2, 3, stride=2, padding=1)  # 128 -> 256 channels, h -> h/2
+        self.bn1 = nn.BatchNorm2d(latent_dim * 2)
 
-        # Define upsampling layers (decoder path) with interpolation for exact matches
-        self.up2 = nn.ConvTranspose2d(latent_dim * 2, latent_dim, 3, stride=2, padding=1, output_padding=1)  # 512 -> 256 channels
-        self.up1 = nn.ConvTranspose2d(latent_dim, latent_dim, 3, stride=2, padding=1, output_padding=1)  # 256 -> 128 channels
+        self.down2 = nn.Conv2d(latent_dim * 2, latent_dim * 4, 3, stride=2, padding=1)  # 256 -> 512 channels, h/2 -> h/4
+        self.bn2 = nn.BatchNorm2d(latent_dim * 4)
 
-        # Final layer to match original channel count
-        self.final = nn.Conv2d(latent_dim, latent_dim, 3, padding=1)
+        self.down3 = nn.Conv2d(latent_dim * 4, latent_dim * 8, 3, stride=2, padding=1)  # 512 -> 1024 channels, same spatial dimensions
+        self.bn3 = nn.BatchNorm2d(latent_dim * 8)
+
+        self.down4 = nn.Conv2d(latent_dim * 8, latent_dim * 16, 3, stride=2, padding=1)  # 1024 -> 2048 channels, same spatial dimensions
+        self.bn4 = nn.BatchNorm2d(latent_dim * 16)
+
+        # Define upsampling layers (decoder path) with batch normalization
+        self.up4 = nn.ConvTranspose2d(latent_dim * 16, latent_dim * 8, 3, stride=2, padding=1, output_padding=1)  # 2048 -> 1024 channels, h/8 -> h/4
+        self.bn5 = nn.BatchNorm2d(latent_dim * 8)
+
+        self.up3 = nn.ConvTranspose2d(latent_dim * 8, latent_dim * 4, 3, stride=2, padding=1, output_padding=1)  # 1024 -> 512 channels, h/4 -> h/2
+        self.bn6 = nn.BatchNorm2d(latent_dim * 4)
+
+        self.up2 = nn.ConvTranspose2d(latent_dim * 4, latent_dim * 2, 3, stride=2, padding=1, output_padding=1)  # 512 -> 256 channels, same spatial dimensions
+        self.bn7 = nn.BatchNorm2d(latent_dim * 2)
+
+        self.up1 = nn.ConvTranspose2d(latent_dim * 2, latent_dim, 3, stride=2, padding=1, output_padding=1)  # 256 -> 128 channels, same spatial dimensions
+        self.bn8 = nn.BatchNorm2d(latent_dim)
 
     def forward(self, x, t):
-        # Downsample (encoder path) with skip connections
-        x1 = F.relu(self.down1(x))  # Output: [batch, 256, h/2, w/2]
-        x2 = F.relu(self.down2(x1))  # Output: [batch, 512, h/4, w/4]
+        # Downsample (encoder path) with batch normalization
+        
+        x1 = F.relu(self.bn1(self.down1(x)))  # Output: [batch, 256, h/2, w/2]
+        
+        x2 = F.relu(self.bn2(self.down2(x1)))  # Output: [batch, 512, h/4, w/4]
+       
+        x3 = F.relu(self.bn3(self.down3(x2)))  # Output: [batch, 1024, h/4, w/4]
+        
+        x4 = F.relu(self.bn4(self.down4(x3)))  # Output: [batch, 2048, h/4, w/4]
+        
 
-        # Inject time embedding before the decoding path
+        # Inject time embedding into the deepest layer in the encoder path
         timestep_embedding = torch.sin(t.float() * 1e-4).view(-1, 1, 1, 1).to(x.device)
-        x2 = x2 + timestep_embedding  # Add time embedding to the deepest layer in the encoder
+        x4 = x4 + timestep_embedding
+        
+        # Upsample (decoder path) with skip connections and batch normalization
+        x = F.relu(self.bn5(self.up4(x4)))
+        
+        x = x + x3  # First skip connection
+    
+        x = F.relu(self.bn6(self.up3(x)))
+        x = x + x2  # Second skip connection
 
-        # Upsample (decoder path) with skip connections
-        x = F.relu(self.up2(x2))
-
-        # Resize x to match x1 dimensions before addition, ensuring consistent size for skip connection
+        x = F.relu(self.bn7(self.up2(x)))
         x = F.interpolate(x, size=x1.shape[2:], mode='nearest')
-        x = x + x1
 
-        x = F.relu(self.up1(x))
+        x = x + x1  # Third skip connection
 
-        # Final convolution to reduce back to latent dimension
-        x = self.final(x)
+        x = F.relu(self.bn8(self.up1(x)))
+
         return x
+    
 # Encoder: reduces the image to a latent representation
 class Encoder(nn.Module):
     def __init__(self, in_channels=3, latent_dim=128):
@@ -128,7 +154,7 @@ class DiffusionModel(nn.Module):
         # Temporarily set decoder to train mode for gradients  
         output_images = self.decoder(denoised_latent)
 
-        return denoised_latent, output_images
+        return latent, noisy_latent, denoised_latent, output_images
 
 
 

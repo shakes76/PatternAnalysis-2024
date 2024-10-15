@@ -14,6 +14,50 @@ img_list = []
 
 img_list_encoder = []
 
+def visualize_images(latent, noisy_latent, denoised_latent, final_reconstructed, epoch):
+    # Move images back to CPU and detach
+    latent = latent.cpu().detach()
+    noisy_latent = noisy_latent.cpu().detach()
+    denoised_latent = denoised_latent.cpu().detach()
+    final_reconstructed = final_reconstructed.cpu().detach()
+
+    # Unnormalize images to bring them from [-1, 1] to [0, 1] for visualization
+    def unnormalize(imgs):
+        return imgs * 0.5 + 0.5
+
+    latent = unnormalize(latent)
+    noisy_latent = unnormalize(noisy_latent)
+    denoised_latent = unnormalize(denoised_latent)
+    final_reconstructed = unnormalize(final_reconstructed)
+
+    # Display first 8 images
+    num_images = 8
+    fig, axes = plt.subplots(4, num_images, figsize=(15, 5))
+
+    for i in range(num_images):
+        # Original Images
+        axes[0, i].imshow(np.transpose(latent[i].numpy(), (1, 2, 0)))
+        axes[0, i].axis('off')
+        axes[0, i].set_title("Latent")
+
+        # Reconstructed from Latent (Encoder → Decoder)
+        axes[1, i].imshow(np.transpose(noisy_latent[i].numpy(), (1, 2, 0)))
+        axes[1, i].axis('off')
+        axes[1, i].set_title("Noisy Latent")
+
+        # Final Reconstructed (Full Model Output)
+        axes[2, i].imshow(np.transpose(denoised_latent[i].numpy(), (1, 2, 0)))
+        axes[2, i].axis('off')
+        axes[2, i].set_title("Denoised Latent")
+
+        # Final Reconstructed (Full Model Output)
+        axes[3, i].imshow(np.transpose(final_reconstructed[i].numpy(), (1, 2, 0)))
+        axes[3, i].axis('off')
+        axes[3, i].set_title("Final Output")
+
+    plt.suptitle(f"Epoch {epoch} - Model Outputs")
+    plt.show()
+
 def visualize_images_final(final_reconstructed):
     # Move images back to CPU and detach
     final_reconstructed = final_reconstructed.cpu().detach()
@@ -92,7 +136,7 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
     criterion = nn.MSELoss()
 
     for epoch in range(epochs):
-        total_loss = 0
+        
         for images, _ in dataloader:
             images = images.to(device)
             optimizer.zero_grad()
@@ -101,7 +145,7 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
             t = torch.randint(0, diffusion_model.noise_scheduler.timesteps, (images.size(0),)).long().to(device)
 
             # Forward pass through diffusion model
-            denoised_latent, output_images = diffusion_model(images, t)
+            latent, noisy_latent, denoised_latent, output_images = diffusion_model(images, t)
 
             # Calculate loss for denoising
             loss = criterion(output_images, images)
@@ -109,9 +153,10 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
             # Backward pass and optimize
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
+            total_loss = loss.item()
 
-        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {total_loss / len(dataloader):.4f}")
+        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {total_loss:.4f}")
+        visualize_images(diffusion_model.decoder(latent), diffusion_model.decoder(noisy_latent), diffusion_model.decoder(denoised_latent), output_images, epoch + 1)
 
 
 

@@ -1,23 +1,22 @@
 
-import torch
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-## for MAIN / DRIVER
+import os
 import argparse
 import time
 import datetime
+from datetime import datetime as now
+import matplotlib.pyplot as plt
 from collections import defaultdict, deque
+import torch
 import torch.distributed as dist
 
 
-
 def get_args_parser():
-    parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
+    parser = argparse.ArgumentParser('GFNet training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
-    parser.add_argument('--epochs', default=1, type=int)
+    parser.add_argument('--epochs', default=20, type=int)
 
     # Model parameters
-    parser.add_argument('--arch', default='deit_small', type=str,
+    parser.add_argument('--arch', default='gfnet-xs', type=str,
                         help='Name of model to train')
     parser.add_argument('--input-size', default=224, type=int, help='images input size')
 
@@ -152,11 +151,31 @@ def get_args_parser():
     return parser
 
 
-"""
-Train and eval functions used in main.py
-"""
+def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot_dir='images'):
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
 
+    # Plot Accuracy vs Epoch
+    plt.figure()
+    plt.plot(epochs, test_acc, marker='o')
+    plt.title(f'Arch: {architecture}, Accuracy vs Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy (%)')
+    plt.ylim(0, 100)
+    plt.xticks(ticks=range(min(epochs), max(epochs)+1)) # Only integer ticks
+    plt.savefig(os.path.join(plot_dir, f'{current_datetime}_{architecture}_accuracy_vs_epoch.png'))
+    plt.close()
 
+    # Plot Test Loss vs Epoch
+    plt.figure()
+    plt.plot(epochs, test_loss, marker='o')
+    plt.title(f'Arch: {architecture}, Test Loss vs Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss (%)')
+    plt.ylim(0, 1)
+    plt.xticks(ticks=range(min(epochs), max(epochs)+1)) # Only integer ticks
+    plt.savefig(os.path.join(plot_dir, f'{current_datetime}_{architecture}_loss_vs_epoch.png'))
+    plt.close()
 
 def is_dist_avail_and_initialized():
     if not dist.is_available():
@@ -165,6 +184,22 @@ def is_dist_avail_and_initialized():
         return False
     return True
 
+def get_world_size():
+    if not is_dist_avail_and_initialized():
+        return 1
+    return dist.get_world_size()
+
+def get_rank():
+    if not is_dist_avail_and_initialized():
+        return 0
+    return dist.get_rank()
+
+def is_main_process():
+    return get_rank() == 0
+
+def save_on_master(*args, **kwargs):
+    if is_main_process():
+        torch.save(*args, **kwargs)
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a

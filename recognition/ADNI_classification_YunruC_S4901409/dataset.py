@@ -46,7 +46,7 @@ class ADNIDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.data[idx]
         label = self.labels[idx]
-        image = Image.open(img_path).convert('L')
+        image = Image.open(img_path).convert('RGB')
 
         if self.transform:
             image = self.transform(image)
@@ -68,7 +68,7 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5], std=[0.5])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
     train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= transform)
@@ -95,13 +95,13 @@ if __name__ == "__main__":
 
 
     # test whetehr the loader works 
-    '''for loader, name in zip([train_loader, val_loader, test_loader], ["Train", "Val", "Test"]):
+    for loader, name in zip([train_loader, val_loader, test_loader], ["Train", "Val", "Test"]):
         print(f"\nTesting {name} loader:")
         for images, labels in loader:
             print(f"Batch size: {len(images)}")
             print(f"Image shape: {images[0].shape}") 
             print(f"Labels: {labels}")
-            break  '''
+            break  
 
 
 

@@ -54,7 +54,6 @@ def evaluate_accuracy(model, loader, edges, criterion, device):
     loss_function = test_loss / len(loader)
     return accuracy, loss_function
 
-
 def train_evaluate_model(model, train_loader, test_loader, edges, device, learning_rate, num_epochs):
     """
         Training the specified model and evaluating its performance on both the training and test sets.

@@ -11,23 +11,20 @@ def upload_dataset(device):
 
     :param device: The device ('cpu', 'cuda', or 'mps') which is used for transferring tensor.
     :returns
-        - tensor_edges: The edges of the graph, without self-loops.
-        - train_set: The dataset for training, containing node features and their corresponding targets.
-        - test_set: The dataset for testing, containing node features and their corresponding targets.
+        tensor_edges: The edges of the graph, without self-loops.
+        train_set: The dataset for training, containing node features and their corresponding targets.
+        test_set: The dataset for testing, containing node features and their corresponding targets.
     """
 
     # Load the dataset from the provided file
-    facebook_data = np.load("/Users/chenyihu/Desktop/Pycharm_Code/3710-PatternAnalysis-2024/facebook_large/facebook.npz")
+    facebook_data = np.load("/Users/chenyihu/"
+                            "Desktop/Pycharm_Code/3710-PatternAnalysis-2024/facebook_large/facebook.npz")
     tensor_edges = torch.tensor(facebook_data['edges'].T).to(device)
 
     # Avoid self-looping
     tensor_edges = tensor_edges[:, tensor_edges[0] != tensor_edges[1]]
     tensor_targets = torch.tensor(facebook_data['target']).to(device)
     tensor_features = torch.tensor(facebook_data['features']).to(device)
-
-    print("Nodes edges: ", tensor_edges)
-    print("Nodes targets: ", tensor_targets)
-    print("Nodes features: ", tensor_features)
 
     # Normalize the node features
     scaler = StandardScaler()

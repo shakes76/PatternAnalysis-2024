@@ -1,32 +1,27 @@
+
+import sys
+import math
+import json
+import time
+import datetime
+from datetime import datetime as now
+import argparse
+from functools import partial
 import torch
 import torch.nn as nn
-import json
-import datetime
-from modules import GFNet
-from functools import partial
+import torch.distributed as dist
 from timm.scheduler import create_scheduler
 from timm.optim import create_optimizer
-from timm.utils import NativeScaler, get_state_dict, ModelEma
+from timm.utils import NativeScaler, get_state_dict, ModelEma, accuracy
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-import argparse
-from utils import get_args_parser
-import time
-
-import math
-import sys
+from timm.data import Mixup
 from typing import Iterable, Optional
 from pathlib import Path
-import torch
-
-from timm.data import Mixup
-from timm.utils import accuracy, ModelEma
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-from torch.nn.modules.loss import MSELoss, BCEWithLogitsLoss, CrossEntropyLoss
-import torch.distributed as dist
 
 import utils
+from utils import get_args_parser, save_on_master, is_main_process, save_plots
 from dataset import build_dataset
-import random
+from modules import GFNet
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: LabelSmoothingCrossEntropy,
@@ -47,10 +42,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: LabelSmoothingCrossEntrop
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
 
-        ##with torch.cuda.amp.autocast():
-        # with torch.autocast(device_type=device.type):
-        outputs = model(samples)
-        loss = criterion(outputs, targets)
+        if device == "cuda":
+            with torch.autocast(device_type="cuda"):
+                outputs = model(samples)
+                loss = criterion(outputs, targets)
+        else:
+            outputs = model(samples)
+            loss = criterion(outputs, targets)
 
         loss_value = loss.item()
 
@@ -80,6 +78,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: LabelSmoothingCrossEntrop
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
+
 @torch.no_grad()
 def evaluate(data_loader, model, device):
     criterion = torch.nn.CrossEntropyLoss()
@@ -95,9 +94,13 @@ def evaluate(data_loader, model, device):
         target = target.to(device, non_blocking=True)
 
         # compute output
-        # with torch.autocast(device_type="cpu"):
-        output = model(images)
-        loss = criterion(output, target)
+        if device == "cuda":
+            with torch.autocast(device_type="cuda"):
+                output = model(images)
+                loss = criterion(output, target)
+        else:
+            output = model(images)
+            loss = criterion(output, target)
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
@@ -112,39 +115,15 @@ def evaluate(data_loader, model, device):
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
-def is_dist_avail_and_initialized():
-    if not dist.is_available():
-        return False
-    if not dist.is_initialized():
-        return False
-    return True
-
-def get_world_size():
-    if not is_dist_avail_and_initialized():
-        return 1
-    return dist.get_world_size()
 
 
-def get_rank():
-    if not is_dist_avail_and_initialized():
-        return 0
-    return dist.get_rank()
+if __name__ == "__main__":
 
-
-def is_main_process():
-    return get_rank() == 0
-
-def save_on_master(*args, **kwargs):
-    if is_main_process():
-        torch.save(*args, **kwargs)
-
-
-
-if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
-
+    # Get arguments (stored in utils.py)
     parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     
+    # Set device
     device = torch.device(
         "mps"
         if torch.backends.mps.is_available()
@@ -153,12 +132,13 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
         else "cpu"
     )
 
-    dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
-    dataset_val, _ = build_dataset(is_train=False, args=args)
-
+    # Get datasets
+    dataset_train, args.nb_classes = build_dataset('train', args=args)
+    dataset_val, _ = build_dataset('val', args=args)
+    
     sampler_train = torch.utils.data.RandomSampler(dataset_train)
     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-
+    
     data_loader_train = torch.utils.data.DataLoader(
         dataset_train, sampler=sampler_train,
         batch_size=args.batch_size,
@@ -166,7 +146,7 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
         pin_memory=args.pin_mem,
         drop_last=True,
     )
-
+    
     data_loader_val = torch.utils.data.DataLoader(
         dataset_val, sampler=sampler_val,
         batch_size=int(1.5 * args.batch_size),
@@ -175,6 +155,7 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
         drop_last=False
     )
 
+    # Set data augmentation technique mixup parameters
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
     if mixup_active:
@@ -185,32 +166,55 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
     else:
         print('mix up is not used')
-
-    print("Assigning model instance...")
-    model = GFNet(
-        img_size=224, 
-        patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6)
-    ).to(device)
+ 
+    # Create model instance based off parameters
+    print(f"Creating model: {args.arch}")
+    if args.arch == 'gfnet-xs':
+        model = GFNet(
+            img_size=args.input_size, 
+            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    elif args.arch == 'gfnet-ti':
+        model = GFNet(
+            img_size=args.input_size, 
+            patch_size=16, embed_dim=256, depth=12, mlp_ratio=4,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    elif args.arch == 'gfnet-s':
+        model = GFNet(
+            img_size=args.input_size, 
+            patch_size=16, embed_dim=384, depth=19, mlp_ratio=4, drop_path_rate=0.15,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    elif args.arch == 'gfnet-b':
+        model = GFNet(
+            img_size=args.input_size, 
+            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=0.25,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    else:
+        raise NotImplementedError
+    model.to(device)
     print("Model ready.")
+    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('number of params:', n_parameters)
 
+    # Set model ema parameters if used (for training stabilisation)
     model_ema = None
     if args.model_ema:
-        # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
         model_ema = ModelEma(
             model,
             decay=args.model_ema_decay,
             device='cpu' if args.model_ema_force_cpu else '',
             resume='')
 
-    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('number of params:', n_parameters)
-
+    # Set optimiser and lr scheduler from parameters
     optimizer = create_optimizer(args, model)
     loss_scaler = NativeScaler()
-
     lr_scheduler, _ = create_scheduler(args, optimizer)
 
+    # Set loss based off parameters
     if args.mixup > 0.:
         # smoothing is handled with mixup label transform
         criterion = SoftTargetCrossEntropy()
@@ -219,13 +223,19 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
     else:
         criterion = torch.nn.CrossEntropyLoss()
         
-    output_dir = Path(args.output_dir)
+    # For plotting results
+    test_acc_list = []
+    test_loss_list = []
+    epoch_list = []
         
+    # Training loop
     print(f"Start training for {args.epochs} epochs")
+    current_datetime = now.now().strftime('%Y-%m-%d %H:%M:%S')
+    output_dir = Path(args.output_dir)
     start_time = time.time()
     max_accuracy = 0.0
     for epoch in range(args.start_epoch, args.epochs):
-
+         
         train_stats = train_one_epoch(
             model, criterion, data_loader_train,
             optimizer, device, epoch, loss_scaler,
@@ -235,6 +245,7 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
 
         lr_scheduler.step(epoch)
 
+        # Checkpoint saving
         if args.output_dir:
             checkpoint_paths = [output_dir / 'checkpoint_last.pth']
             for checkpoint_path in checkpoint_paths:
@@ -281,11 +292,17 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
                     'args': args,
                 }, checkpoint_path)
 
+        # Model validation after each epoch
         test_stats = evaluate(data_loader_val, model, device)
+        # For plotting results
+        test_acc_list.append(test_stats['acc1'])
+        test_loss_list.append(test_stats['loss'])
+        epoch_list.append(epoch)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
+        # Always store best checkpoint
         if max_accuracy == test_stats["acc1"]:
             checkpoint_path = output_dir / 'checkpoint_best.pth'
             if model_ema is not None:
@@ -308,14 +325,22 @@ if __name__ == "__main__":  # Add this guard to prevent multiprocessing issues
                     'args': args,
                 }, checkpoint_path)
 
-        log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                        **{f'test_{k}': v for k, v in test_stats.items()},
+        # Stats logged in log.txt
+        log_stats = {   'dtc': current_datetime,
+                        'arch': args.arch,
                         'epoch': epoch,
+                        **{f'train_{k}': v for k, v in train_stats.items()},
+                        **{f'test_{k}': v for k, v in test_stats.items()},
                         'n_parameters': n_parameters}
 
-        if args.output_dir and utils.is_main_process():
+        if args.output_dir and is_main_process():
             with (output_dir / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
+                
+        # Save plots
+        save_plots(architecture=args.arch, epochs=epoch_list, 
+                   test_acc=test_acc_list, test_loss=test_loss_list,
+                   current_datetime=current_datetime)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

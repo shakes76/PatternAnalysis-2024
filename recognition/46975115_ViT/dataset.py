@@ -26,7 +26,7 @@ class ADNIDataset(Dataset):
 
         return image, torch.tensor(label, dtype=torch.float32)
 
-def get_dataloaders(data_dir, batch_size=64, validation_split=0.15):
+def get_dataloaders(data_dir, batch_size=32, validation_split=0.2):
     """
     Creates DataLoader objects for training, validation, and testing datasets.
     

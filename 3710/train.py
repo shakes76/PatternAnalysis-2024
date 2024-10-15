@@ -45,12 +45,3 @@ if __name__ == "__main__":
     train(data, model, optimizer, loss_fn)
     print(f"Number of training nodes: {data.train_mask.sum().item()}")
 
-    # Load the best model and evaluate on the test set
-    model.load_state_dict(torch.load("model.pth", weights_only=True))
-    model.eval()
-    with torch.no_grad():
-        test_out = model(data)
-        test_predictions = test_out[data.test_mask].argmax(dim=1)
-        test_accuracy = accuracy_score(data.y[data.test_mask].cpu(), test_predictions.cpu())
-    
-    print(f'Test Accuracy: {test_accuracy * 100:.2f}%')

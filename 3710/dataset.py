@@ -66,6 +66,3 @@ def load_data(npz_file_path):
 
     return data
 
-
-# Call the function to load data
-load_data('/Users/zhangxiangxu/Downloads/3710_report/facebook.npz')

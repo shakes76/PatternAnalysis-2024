@@ -436,7 +436,7 @@ def main(args):
                      'n_parameters': n_parameters}
 
         if output_dir and utils.is_main_process():
-            with (output_dir + "log.txt").open("a") as f:
+            with open(output_dir + "log.txt", "a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
     total_time = time.time() - start_time

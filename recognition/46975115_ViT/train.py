@@ -1,22 +1,23 @@
 import torch
-import torch.optim as optim
 from modules import VisionTransformer
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import get_dataloaders
-from utils import get_hyperparameters, get_optimizer, get_scheduler
+from utils import get_hyperparameters, get_optimizer
 
 def train(model, dataloader, optimizer, criterion, device):
     model.train()
     total_loss = 0
     correct = 0
     for inputs, labels in dataloader:
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, labels = inputs.to(device), labels.long().to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-        correct += (outputs.argmax(dim=1) == labels).sum().item()
+        predictions = outputs.argmax(dim=1)
+        correct += (predictions == labels).sum().item()
     return total_loss / len(dataloader), correct / len(dataloader.dataset)
 
 def validate(model, dataloader, criterion, device):
@@ -25,11 +26,12 @@ def validate(model, dataloader, criterion, device):
     correct = 0
     with torch.no_grad():
         for inputs, labels in dataloader:
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(device), labels.long().to(device)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
-            correct += (outputs.argmax(dim=1) == labels).sum().item()
+            predictions = outputs.argmax(dim=1)
+            correct += (predictions == labels).sum().item()
     return total_loss / len(dataloader), correct / len(dataloader.dataset)
 
 def evaluate_test(model, test_loader, criterion, device):
@@ -38,12 +40,15 @@ def evaluate_test(model, test_loader, criterion, device):
     correct = 0
     with torch.no_grad():
         for inputs, labels in test_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(device), labels.long().to(device)  # Convert labels to long (integer type)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
+            # For binary classification, use argmax to get the predicted class
             correct += (outputs.argmax(dim=1) == labels).sum().item()
+    # Return average loss and accuracy
     return total_loss / len(test_loader), correct / len(test_loader.dataset)
+
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -59,7 +64,11 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
 
     optimizer = get_optimizer(model, params)
-    scheduler = get_scheduler(optimizer, params)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.5)
+
+    best_val_acc = 0
+    early_stopping_patience = 3
+    patience_counter = 0
 
     epochs = params['num_epochs']
     for epoch in range(epochs):
@@ -68,7 +77,18 @@ def main():
         
         print(f'Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
         
-        scheduler.step()
+        # Early stopping
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            patience_counter = 0
+        else:
+            patience_counter += 1
+
+        if patience_counter >= early_stopping_patience:
+            print("Early stopping triggered")
+            break
+
+        scheduler.step(val_loss)
     
     torch.save(model.state_dict(), 'model.pth')
     
@@ -77,4 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

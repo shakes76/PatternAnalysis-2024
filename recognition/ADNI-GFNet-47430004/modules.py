@@ -23,6 +23,7 @@ from functools import partial
 import torch.nn as nn
 
 import utils
+import os
 
 import torch.optim as optim
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
@@ -384,7 +385,7 @@ def main(args):
         
         if (epoch + 1) % 20 == 0:
             file_name = 'checkpoint_epoch%d.pth' % epoch
-            checkpoint_path = output_dir / file_name
+            checkpoint_path = os.path.join(output_dir, file_name)
             utils.save_on_master({
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
@@ -399,7 +400,7 @@ def main(args):
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
         if max_accuracy == test_stats["acc1"]:
-            checkpoint_path = output_dir / 'checkpoint_best.pth'
+            checkpoint_path = os.path.join(output_dir, 'checkpoint_best.pth')
             utils.save_on_master({
                     'model': model.state_dict(),
                     'optimizer': optimizer.state_dict(),
@@ -414,7 +415,7 @@ def main(args):
                      'n_parameters': n_parameters}
 
         if output_dir and utils.is_main_process():
-            with (output_dir / "log.txt").open("a") as f:
+            with (output_dir + "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
     total_time = time.time() - start_time
@@ -422,6 +423,6 @@ def main(args):
     print('Training time {}'.format(total_time_str))
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('ADNI GFNet training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)

@@ -67,7 +67,7 @@ The code for the VQ-VAE Architecture was implemented in the [modules.py](modules
 ### Encoder
 The main goal for the Encoder is to reduce the 256x256 MRI images to a lower-dimensional latent representation so that it can be passed to the quantization layer. The Encoder is composed of  
   
-- **Convolution layers**: These are the layers responsible for downsampling the input image while also learning sophisticated representations. The parameters are  
+- **Downsampling layers**: These are the layers responsible for downsampling the input image while also learning sophisticated representations. The parameters are  
   
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`nn.Conv2d(`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`in_channels=in_channels,`  
@@ -77,7 +77,8 @@ The main goal for the Encoder is to reduce the 256x256 MRI images to a lower-dim
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`padding=1`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`)`  
   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I initialised the kernel size to equal 4, which meant the size of the filter that slides over the image was 4x4. A stride of 2 was set to effectively downsample the image by half while still being able to retain and campture important information  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I initialised the kernel size to equal 4, which meant the size of the filter that slides over the image was 4x4.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A stride of 2 was set to effectively downsample the image by half while still being able to retain and campture important information  
   
 - **Residual connections**: The encoder also has a residual stack to improve feature learning and facilitate gradient flow. Residual connections (or skip connections) help the network capture the important spatial details while avoiding the risk of vanishing gradients  
   
@@ -89,11 +90,35 @@ The main goal for the Encoder is to reduce the 256x256 MRI images to a lower-dim
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.residual_stack = ResidualStack(num_hiddens, num_residual_layers, num_residual_hiddens)`  
   
 ### Vector Quantizer  
-  
+The Vector Quantizer module is the most important component of the VQ-VAE architecture.  
+
 ### Decoder   
+The decoder takes the quantized latent representation and tries to reconstruct an image that resembles the original high-resolution MRI input image. The decoder is composed of  
   
+- **Upsampling layers**: This layer follows a similar process as the convolutional layers in the encoder, except now we use upsampling layers to progressively restore the spatial resolution. It works by doubling the spatial dimensions for the purpose of recovering the original 256x256 image size that was reduced in the encoder  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`nn.ConvTranspose2d(`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`in_channels=in_channels,`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`out_channels=out_channels,`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`kernel_size=4,`
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`stride=2,`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`padding=1`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`),`  
+  
+&nbsp;&nbsp;&nbsp;&nbsp;The key parameter above is initialising the stride parameter to equal 2, as this is what upsamples the layers by double.  
+  
+- **Resiual connections**: The decoder, similar to the encoder, also uses residual connections to improve the generated image  
+  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`class Decoder(nn.Module):`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`def __init__(self, embedding_dim, num_hiddens, num_upsampling_layers, num_residual_layers, num_residual_hiddens):`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`# ConvTranspose layers for upsampling`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.upconv = nn.Sequential()`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.residual_stack = ResidualStack(num_hiddens, num_residual_layers, num_residual_hiddens)`  
+  
+
 ### Final VQ-VAE Model  
   
+WRITE DISCUSSION HERE 
 
 ## Reference List  
 <a name="1">[1]</a> What is VQ-VAE (Vector Quantized Variational Autoencoder): [https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.](https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.)  

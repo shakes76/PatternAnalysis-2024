@@ -174,8 +174,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
 
 # Main function for profiling & debugging
 def main():
-    import cProfile
-    import pstats
+    import cProfile, pstats
 
     current_directory = os.getcwd()
     with cProfile.Profile() as pr:

@@ -7,11 +7,11 @@ import re
 
 def predict():
     data, classes = load_data()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda')
     data = data.to(device)
 
     model = GNNModel(in_channels=data.num_features, hidden_channels=64, out_channels=len(classes)).to(device)
-    model.load_state_dict(torch.load('model.pth'))
+    model.load_state_dict(torch.load('best_model.pth'))
     model.eval()
 
     with torch.no_grad():

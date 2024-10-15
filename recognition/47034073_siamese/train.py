@@ -11,6 +11,7 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn import neural_network
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from pytorch_metric_learning.samplers import MPerClassSampler
@@ -185,9 +186,9 @@ def main() -> None:
     plt.plot(trainer.mined_each_step)
     plt.savefig(PLOTS_PATH / "mined")
 
+    # Get classifer training observation embeddings
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
     logger.info("Embeddings \n%s", embeddings)
-
     standard_embeddings = scale(embeddings)
     embeddings = normalize(embeddings)
 
@@ -216,7 +217,7 @@ def main() -> None:
     # tsne
     logger.info("Fitting tsne...")
     tsne = TSNE(random_state=42)
-    tsne_projections = tsne.fit_transform(embeddings)
+    tsne_projections = tsne.fit_transform(standard_embeddings)
     logger.info("Plotting tsne...")
     plt.figure()
     plt.scatter(
@@ -241,21 +242,15 @@ def main() -> None:
 
     # Eval on train
     logger.info("Evaluating classification on train data...")
-    _evaluate_classification(fit_knn, embeddings, labels, data_name="train")
+    _evaluate_classification(fit_knn, embeddings, labels, data_name="train(knn)")
     _evaluate_classification(fit_svm, embeddings, labels, data_name="train(SVM)")
 
-    # Validation data
-    # val_meta_df = pd.read_csv(VAL_META_PATH)
-    # val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df, transform=False)
-    # val_loader = DataLoader(
-    #     val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
-    # )
     val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
     val_embeddings = normalize(val_embeddings)
 
     # Eval on validation
     logger.info("Evaluating classification on val data...")
-    _evaluate_classification(fit_knn, val_embeddings, val_labels, data_name="val")
+    _evaluate_classification(fit_knn, val_embeddings, val_labels, data_name="val(knn)")
     _evaluate_classification(fit_svm, val_embeddings, val_labels, data_name="val(SVM)")
 
     if args.test:
@@ -270,7 +265,7 @@ def main() -> None:
         embeddings = normalize(embeddings)
 
         logger.info("Evaluating classification on test data...")
-        _evaluate_classification(fit_knn, embeddings, labels, data_name="test")
+        _evaluate_classification(fit_knn, embeddings, labels, data_name="test(knn)")
         _evaluate_classification(fit_svm, embeddings, labels, data_name="test(svm)")
 
     total_script_time = time.time() - script_start_time
@@ -284,6 +279,7 @@ def _evaluate_classification(
     data_name: str = "train",
     minimal: bool = False,
 ) -> float:
+    """Generate classification report"""
     predictions = knn.predict(embeddings)
     proba = knn.predict_proba(embeddings)
     report = classification_report(labels, predictions)
@@ -295,7 +291,8 @@ def _evaluate_classification(
     return auc
 
 
-def _margin_weight(arr, hparams):
+def _margin_weight(arr: np.ndarray, hparams: HyperParams):
+    """Weight function which accepts neighbours that are within designated margin"""
     closest = arr.argmin(axis=1)
     weights = (arr <= hparams.margin).astype(int)
     weights[:, closest] = 1

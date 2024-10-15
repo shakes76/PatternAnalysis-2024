@@ -15,7 +15,7 @@ from skimage.metrics import structural_similarity as ssim
 # Hyperparameters
 image_size = 256  # Image size for resizing
 batch_size = 32  # Adjust this based on available memory
-num_epochs = 10  # Number of training epochs
+num_epochs = 15  # Number of training epochs
 learning_rate = 0.001  # PLAY AROUND WITH 0.001 or 0.0001 Learning rate for optimizer
 beta = 0.25  # EXPERIMENT WITH 0.1, 0.2, OR 0.5 IF IMAGE IS NOT CLEAR ENOUGH
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -52,6 +52,7 @@ model = VQVAE(
     num_residual_hiddens=32,
     embedding_dim=128, # Set to 64, but try 128 if images are not clear enough
     num_embeddings=512,
+    beta=0.25, # I ADDED THIS PARAMETER
     decay=0.99,
     epsilon=1e-5
 ).to(device)
@@ -206,6 +207,7 @@ def plot_batch_losses(train_losses):
     plt.xlabel('Batch no.')
     plt.ylabel('Reconstruction loss')
     plt.title('Training reconstruction Losses')
+    plt.ylim(0, 0.2) # I ADDED THIS TO REDUCE THE Y-VALUE RANGE
     plt.legend()
     plt.savefig('batch_losses.png')
     plt.close()

@@ -1,0 +1,9 @@
+PyYAML
+nibabel
+numpy
+pillow
+scikit-image
+scikit-learn
+scipy
+torch
+torchvision

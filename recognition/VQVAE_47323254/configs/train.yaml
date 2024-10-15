@@ -1,0 +1,73 @@
+# Model
+model_parameters:
+  in_channels: 1 
+  hidden_channels: 128
+  res_channels: 32
+  nb_res_layers: 2
+  embed_dim: 64
+  nb_entries: 512
+  downscale_factor: 4
+
+# Log 
+# logs_root: recognition/VQVAE_47323254/logs
+logs_root: /home/Student/s4732325/project2/logs
+log_dir_name: no_augmentation_high_lr
+log_frequency: 1
+image_frequency: 1
+
+# Hyperparameters
+batch_size: 64
+num_epochs: 30
+learning_rate: 0.001
+weight_decay: 0.0
+
+# Dataset 
+# train_dataset_dir: recognition/VQVAE_47323254/HipMRI_study_keras_slices_data/keras_slices_train
+# val_dataset_dir: recognition/VQVAE_47323254/HipMRI_study_keras_slices_data/keras_slices_validate
+train_dataset_dir: /home/Student/s4732325/project2/HipMRI_study_keras_slices_data/keras_slices_train
+val_dataset_dir: /home/Student/s4732325/project2/HipMRI_study_keras_slices_data/keras_slices_validate
+num_samples: 
+
+# Augmentation
+train_transforms:
+  - name: CenterCrop
+    params: 
+      size: [256, 128]
+  # - name: Resize
+  #   params:
+  #     size: [256, 256]
+  # - name: RandomVerticalFlip
+  # - name: RandomHorizontalFlip
+  # - name: GaussianBlur
+  #   params:
+  #     kernel_size: 3
+  #     sigma: [0.1, 0.5]
+  # - name: RandomAffine
+  #   params:
+  #     degrees: 0
+  #     translate: [0.0, 0.0]
+  #     scale: [0.9, 1.1]
+  # - name: ColorJitter
+  #   params: 
+  #     brightness: 0.1
+  #     contrast: 0.1
+  #     saturation: 0.1
+  #     hue: 0.1
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: [0.5]
+      std: [0.5]
+
+val_transforms:
+  - name: CenterCrop
+    params:
+      size: [256, 128]
+  # - name: Resize
+  #   params:
+  #     size: [256, 256]
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: [0.5]
+      std: [0.5]

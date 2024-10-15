@@ -1,69 +1,61 @@
 import logging
 import os
+import time
 
 import matplotlib.pyplot as plt
+import shutil
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision import transforms
 from tqdm import tqdm
 
 from dataset import HipMRIDataset
 from modules import VQVAE
-from utils import calculate_ssim
+from utils import calculate_ssim, read_yaml_file, get_transforms
     
     
 if __name__ == '__main__':
+    # config_path = "recognition/VQVAE_47323254/configs/train.yaml"
+    config_path = "/home/Student/s4732325/project2/configs/train.yaml"
+    config = read_yaml_file(config_path)
+    
+    model_parameters = config['model_parameters']
+    
+    log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
+        os.path.join(config['logs_root'], f"{time.strftime('%Y%m%d_%H%M%S')}")
+    log_frequency = config['log_frequency']
+    image_frequency = config['image_frequency']
+    
+    batch_size = config['batch_size']
+    learning_rate = config['learning_rate']
+    num_epochs = config['num_epochs']
+    weight_decay = config['weight_decay']
+    
+    train_dataset_dir = config['train_dataset_dir']
+    val_dataset_dir = config['val_dataset_dir']
+    num_samples = config['num_samples']
+    
+    train_transforms = config['train_transforms']
+    val_transforms = config['val_transforms']
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Path
-    if device.type == 'cpu':
-        dir = "recognition/VQVAE_47323254"
-        log_dir = f'{dir}/logs/log_local'
-    else:
-        dir = "/home/Student/s4732325/project2"
-        log_dir = f'{dir}/logs/v2'
-    data_dir = f'{dir}/HipMRI_study_keras_slices_data'
     os.makedirs(log_dir, exist_ok=True)
-
-    # Configuration
-    num_epochs = 40
-    batch_size = 64
-    learning_rate = 1e-3
-    num_samples = None
-
-    # Set up logging
     logging.basicConfig(filename=os.path.join(log_dir, 'training.log'), level=logging.INFO, 
                         format='%(asctime)s - %(levelname)s - %(message)s')
+    shutil.copy(config_path, log_dir)
 
-    train_transform = transforms.Compose([
-        transforms.CenterCrop((256, 128)),
-        # transforms.Resize((256, 256)),
-        transforms.RandomVerticalFlip(),
-        transforms.RandomHorizontalFlip(),
-        transforms.GaussianBlur(3, sigma=(0.1, 0.5)),
-        transforms.RandomAffine(degrees=0, translate=(0.0, 0.0), scale=(0.9, 1.1)), 
-        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
-    
-    val_test_transform = transforms.Compose([
-        transforms.CenterCrop((256, 128)),
-        # transforms.Resize((256, 256)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    train_transform = get_transforms(train_transforms)
+    val_test_transform = get_transforms(val_transforms)
 
-    model = VQVAE(in_channels=1, hidden_channels=128, res_channels=32, nb_res_layers=2, 
-                embed_dim=64, nb_entries=512, downscale_factor=4).to(device)
+    model = VQVAE(**model_parameters).to(device)
     
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     # Dataset loader
-    train_dataset = HipMRIDataset(data_dir + "/keras_slices_train", train_transform, num_samples=num_samples)
+    train_dataset = HipMRIDataset(train_dataset_dir, train_transform, num_samples=num_samples)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_dataset = HipMRIDataset(data_dir + "/keras_slices_validate", val_test_transform, num_samples=num_samples)
+    val_dataset = HipMRIDataset(val_dataset_dir, val_test_transform, num_samples=num_samples)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # Training Loop
@@ -75,6 +67,8 @@ if __name__ == '__main__':
     val_total_losses = []
     train_ssim_scores = []
     val_ssim_scores = []
+    
+    start_time = time.time()
     for epoch in range(1, num_epochs + 1):
         # Train
         model.train()
@@ -117,7 +111,7 @@ if __name__ == '__main__':
                                         val_reconstructed[0, 0].cpu().detach().numpy())
         
         # Save original and reconstructed images every 10 epochs
-        if epoch % 10 == 0:
+        if epoch % image_frequency == 0:
             with torch.no_grad():
                 train_original_image = train_batch[0, 0].cpu().detach().numpy()
                 train_reconstructed_image = train_reconstructed[0, 0].cpu().detach().numpy()
@@ -160,30 +154,23 @@ if __name__ == '__main__':
         val_total_losses.append(val_loss)
         val_ssim_scores.append(val_total_ssim / len(val_loader))
             
-        logging.info(f"Epoch [{epoch}/{num_epochs}], \
-                        Train Loss: {train_loss:.4f}, \
-                        Val Loss: {val_loss:.4f}, \
-                        Train SSIM: {train_total_ssim / len(train_loader):.4f}, \
-                        Val SSIM: {val_total_ssim / len(val_loader):.4f}")
-        
+        if epoch % log_frequency == 0:
+            logging.info(f"Epoch [{epoch}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train SSIM: {train_total_ssim / len(train_loader):.4f}, Val SSIM: {val_total_ssim / len(val_loader):.4f}")
+    
+    end_time = time.time()
+    logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes")
         
     train_metrices = [
-        train_vq_losses,
-        train_recon_losses,
-        train_total_losses,
-        train_ssim_scores
+        train_vq_losses, train_recon_losses,
+        train_total_losses, train_ssim_scores
     ]
     val_metrices = [
-        val_vq_losses,
-        val_recon_losses,
-        val_total_losses,
-        val_ssim_scores
+        val_vq_losses, val_recon_losses,
+        val_total_losses, val_ssim_scores
     ]
     metric_names = [
-        "Vector Quantization Loss",
-        "Reconstruction Loss",
-        "Total Loss",
-        "Structural Similarity Index"
+        "Vector Quantization Loss", "Reconstruction Loss",
+        "Total Loss", "Structural Similarity Index"
     ]
     
     fig, axs = plt.subplots(2, 2, figsize=(12, 10))
@@ -193,6 +180,8 @@ if __name__ == '__main__':
         axs[i].plot(train_metrices[i], label='Train')
         axs[i].plot(val_metrices[i], label='Validation')
         axs[i].set_title(metric_names[i])
+        axs[i].set_xlabel('Epoch')
+        axs[i].set_ylabel(metric_names[i])
         axs[i].legend()
     
     plt.tight_layout()

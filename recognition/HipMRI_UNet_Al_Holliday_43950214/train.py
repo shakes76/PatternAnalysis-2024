@@ -14,6 +14,9 @@ import torchvision.transforms.functional as TF
 import dataset
 import modules
 
+chan = 1
+outDim = 64
+
 epochs = 8 # something small for now
 dev = torch.device("cuda")
 trans = transforms.Resize((256, 256))
@@ -28,7 +31,7 @@ hipmri2dtest = dataset.HipMRI2d("H:\\HipMRI", imgSet = "test", transform = trans
 #hipmri2dtest = dataset.HipMRI2d("/home/groups/comp3710/HipMRI_Study_open/keras_slices_data", imgSet = "test", transform = trans, applyTrans = True)
 trainLoader = DataLoader(hipmri2dtrain, batch_size=8, shuffle = False)
 
-net = modules.UNet()
+net = modules.UNet(chan, outDim)
 net = net.to(dev)
 
 lossFunc = nn.CrossEntropyLoss()
@@ -47,8 +50,9 @@ for epoch in range(epochs):
         loss.backward()
         optm.step()
         if (i+1) % 100 == 0:
-            print ("Epoch [{}/{}], Loss: {:.5f}"
-                    .format(epoch+1, epochs, loss.item()))
+            print ("Epoch [{}/{}]"
+                    .format(epoch+1, epochs))
+            print("loss: ", loss.item())
 
 print("Done")
 # save the weights

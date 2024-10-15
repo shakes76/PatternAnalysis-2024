@@ -34,12 +34,13 @@ class GlobalFilterLayer(nn.Module):
         layer norm -> 2D FFT -> element wise mult -> 2D IFFT 
         '''
         batch_size, N, channels = x.shape
-        height = width = int(N**0.5) # Since I resized to 224x224
+        height = width = int(N ** 0.5)  # assuming N is a perfect square
+        
         x = x.view(batch_size, height, width, channels)
         x_normalized = self.layer_norm(x)
         X = torch.fft.rfft2(x_normalized, dim=(1, 2), norm='ortho') # 2D FFT 
         X_tilde = X * self.frequency_domain_filters # Element-wise multiplication
-        x_filtered = torch.fft.irfft2(X_tilde, dim=(1, 2), norm='ortho') # inverse 2D FFT 
+        x_filtered = torch.fft.irfft2(X_tilde, s=(height, width), dim=(1, 2), norm='ortho')  # inverse 2D FFT 
         x_filtered = x_filtered.reshape(batch_size, N, channels)
         return x_filtered 
 class MLP(nn.Module):
@@ -117,6 +118,8 @@ class PatchEmbedding(nn.Module):
 class Downlayer(nn.Module):
     def __init__(self, dim_in, dim_out):
         super().__init__()
+        self.dim_in = dim_in
+        self.dim_out = dim_out
         self.downsample = nn.Conv2d(dim_in, dim_out, kernel_size=2, stride=2)
 
     def forward(self, x):
@@ -124,7 +127,7 @@ class Downlayer(nn.Module):
         height = width = int(N ** 0.5)  # assume 224 x 224
         x = x.view(batch_size, height, width, channels).permute(0, 3, 1, 2) # to (B, C, H, W)
         x = self.downsample(x).permute(0, 2, 3, 1) # to (B, dim_out, H/2, W/2)
-        x = x.flatten(2).transpose(1, 2)  # (B, num_patches, dim_out)
+        x = x.reshape(batch_size, -1, self.dim_out)  # (B, num_patches, dim_out)
         return x
 class GFNet(nn.Module):
     def __init__(self, img_size=224, num_classes=2, embed_dim=64, num_blocks=[3, 3, 10, 3], dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, is_training = False):
@@ -136,13 +139,13 @@ class GFNet(nn.Module):
 
         # Define the stages
         self.stage1 = nn.ModuleList([Block(img_size // 4, img_size // 4, dims[0], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[0])])
-        self.down1 = Downlayer(img_size // 4, dims[0], dims[1])
+        self.down1 = Downlayer(dims[0], dims[1])
 
         self.stage2 = nn.ModuleList([Block(img_size // 8, img_size // 8, dims[1], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[1])])
-        self.down2 = Downlayer(img_size // 8, dims[1], dims[2])
+        self.down2 = Downlayer(dims[1], dims[2])
 
         self.stage3 = nn.ModuleList([Block(img_size // 16, img_size // 16, dims[2], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[2])])
-        self.down3 = Downlayer(img_size // 16, dims[2], dims[3])
+        self.down3 = Downlayer(dims[2], dims[3])
 
         self.stage4 = nn.ModuleList([Block(img_size // 32, img_size // 32, dims[3], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[3])])
 
@@ -175,9 +178,8 @@ class GFNet(nn.Module):
 
         # Global average pooling
         x = x.mean(1)  # (B, num_patches, embed_dim)
-
         
-        x = self.norm(x)
+        #x = self.norm(x)
         x = self.head(x)
         return x
 

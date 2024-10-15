@@ -18,14 +18,12 @@ class ResidualStack(nn.Module):
                         in_channels=num_hiddens,
                         out_channels=num_residual_hiddens,
                         kernel_size=3,
-                        stride=1,
                         padding=1,
                     ),
                     nn.ReLU(),
                     nn.Conv2d(
                         in_channels=num_residual_hiddens,
                         out_channels=num_hiddens,
-                        stride=1,
                         kernel_size=1,
                     ),
                 )
@@ -138,40 +136,51 @@ class Decoder(nn.Module):
         return x_recon
     
 class VectorQuantizer(nn.Module):
-    def __init__(self, embedding_dim, num_embeddings, decay=0.99, epsilon=1e-5):
+    def __init__(self, embedding_dim, num_embeddings, beta = 0.25, decay=0.99, epsilon=1e-5):
         super().__init__()
         self.embedding_dim = embedding_dim
         self.num_embeddings = num_embeddings
+        self.beta = beta  # This is used for the embedding loss
         self.decay = decay
         self.epsilon = epsilon
 
-        # Initialises embeddings randomly
-        limit = 3 ** 0.5
-        self.embeddings = nn.Parameter(torch.FloatTensor(embedding_dim, num_embeddings).uniform_(-limit, limit))
+        # # Initialises embeddings randomly
+        # limit = 3 ** 0.5
+        # self.embeddings = nn.Parameter(torch.FloatTensor(embedding_dim, num_embeddings).uniform_(-limit, limit))
 
-    def forward(self, x):
-        flat_x = x.permute(0, 2, 3, 1).reshape(-1, self.embedding_dim)
+        # TRY USE nn.Embedding() INSTEAD OF THE ABOVE 
+        # Initialises embeddings using nn.Embedding
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
+        self.embedding.weight.data.uniform_(-1 / num_embeddings, 1 / num_embeddings)
 
-        # Computes distances to embedding vectors to find the closest match to the input
-        distances = (
-            (flat_x ** 2).sum(1, keepdim=True)
-            - 2 * flat_x @ self.embeddings
-            + (self.embeddings ** 2).sum(0, keepdim=True)
-        )
+    def forward(self, z):
+        # Reshape z from BCHW to BHWC
+        z = z.permute(0, 2, 3, 1).contiguous()
 
-        # Gets the closest embedding index
-        encoding_indices = distances.argmin(1)
-        quantized_x = F.embedding(
-            encoding_indices.view(x.shape[0], *x.shape[2:]), self.embeddings.transpose(0, 1)
-        ).permute(0, 3, 1, 2)
+        # Flatten the tensor from [B,H,W,C] to [B*H*W,C].
+        z_flattened = z.view(-1, self.embedding_dim)
 
-        # Calculates the commitment loss
-        commitment_loss = ((x - quantized_x.detach()) ** 2).mean()
+        # Compute distance between z and the embedding vectors
+        distance = torch.sum(z_flattened**2, dim=1, keepdim=True) + \
+                   torch.sum(self.embedding.weight**2, dim=1) - \
+                   2 * torch.matmul(z_flattened, self.embedding.weight.t())
 
-        # Straight-through estimator
-        quantized_x = x + (quantized_x - x).detach()
+        # Find the closest embedding index for each vector
+        encoding_indices = torch.argmin(distance, dim=1)
+        quantized = self.embedding(encoding_indices).view(z.shape)
 
-        return quantized_x, commitment_loss, encoding_indices.view(x.shape[0], -1)
+        # Compute the embedding loss
+        embedding_loss = F.mse_loss(quantized.detach(), z)
+        quantized_loss = F.mse_loss(quantized, z.detach())
+        total_loss = quantized_loss + self.beta * embedding_loss
+
+        # Straight-through estimator for backpropagation
+        quantized = z + (quantized - z).detach()
+
+        # Reshape quantized back to BCHW
+        quantized = quantized.permute(0, 3, 1, 2).contiguous()
+
+        return total_loss, quantized, encoding_indices
 
 class VQVAE(nn.Module):
     def __init__(
@@ -182,7 +191,8 @@ class VQVAE(nn.Module):
             num_residual_layers=2,
             num_residual_hiddens=32,
             embedding_dim=64,
-            num_embeddings=256,
+            num_embeddings=128,
+            beta=0.25, # I ADDED THIS PARAMETER 
             decay=0.99,
             epsilon=1e-5
     ):
@@ -198,8 +208,8 @@ class VQVAE(nn.Module):
             in_channels=num_hiddens, out_channels=embedding_dim, kernel_size=1
         )
         self.vq = VectorQuantizer(
-            embedding_dim, num_embeddings, decay, epsilon
-        )
+            embedding_dim, num_embeddings, beta, decay, epsilon
+        ) # I ADDED THE BETA PARAMETER
         self.decoder = Decoder(
             embedding_dim,
             num_hiddens,
@@ -210,7 +220,7 @@ class VQVAE(nn.Module):
 
     def forward(self, x):
         z = self.pre_vq_conv(self.encoder(x))
-        z_quantized, commitment_loss, _ = self.vq(z)
+        quantization_loss, z_quantized, encoding_indices = self.vq(z)
         x_recon = self.decoder(z_quantized)
-        return {"commitment_loss": commitment_loss, "x_recon": x_recon}
+        return {"commitment_loss": quantization_loss, "x_recon": x_recon}
 

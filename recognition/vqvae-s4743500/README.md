@@ -90,7 +90,7 @@ The main goal for the Encoder is to reduce the 256x256 MRI images to a lower-dim
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.residual_stack = ResidualStack(num_hiddens, num_residual_layers, num_residual_hiddens)`  
   
 ### Vector Quantizer  
-The Vector Quantizer module is the most important component of the VQ-VAE architecture.  
+The Vector Quantizer module is the most important component of the VQ-VAE architecture.  FINISH WRITING THIS AFTER TESTING ON RANGPUR
 
 ### Decoder   
 The decoder takes the quantized latent representation and tries to reconstruct an image that resembles the original high-resolution MRI input image. The decoder is composed of  
@@ -117,10 +117,20 @@ The decoder takes the quantized latent representation and tries to reconstruct a
   
 
 ### Final VQ-VAE Model  
+The final VQ-VAE model integrates the encoder, vector quantizer, and decoder into a single network:  
   
+`class VQVAE(nn.Module):`  
+&nbsp;&nbsp;&nbsp;&nbsp;`def forward(self, x):`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`z = self.pre_vq_conv(self.encoder(x))  # Encode the input MRI into the latent space`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`z_quantized, commitment_loss, _ = self.vq(z)  # Quantize the latent space into discrete embeddings`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`x_recon = self.decoder(z_quantized)  # Decode the quantized representations back to the original image size`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`return {"commitment_loss": commitment_loss, "x_recon": x_recon}`  
+  
+## 3. VQ-VAE Training  
 WRITE DISCUSSION HERE 
+
 
 ## Reference List  
 <a name="1">[1]</a> What is VQ-VAE (Vector Quantized Variational Autoencoder): [https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.](https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.)  
-<a name="2">[2]</a> VQ-VAE Architecture Illustration: [https://arxiv.org/abs/1711.00937](https://arxiv.org/abs/1711.00937)  
+<a name="2">[2]</a> Neural Discrete Representation Learning, Aaron van den Oord, Oriol Vinyals, Koray Kavukcuoglu, 2017: [https://arxiv.org/abs/1711.00937](https://arxiv.org/abs/1711.00937)  
 <a name="here">[3]</a> 2D HipMRI slices: [https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2):

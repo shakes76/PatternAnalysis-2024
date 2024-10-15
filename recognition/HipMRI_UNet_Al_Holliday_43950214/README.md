@@ -5,6 +5,16 @@
 
 This is an implementation of a 2D U-Net based on [1] that tries to produce segmentations of the HipMRI data set.
 
+### Architecture
+
+### Dependencies
+
+(List the man deps, perhaps include the conda env file in the repo)
+
+### Training and Results
+
+This model **in theory** should work, however there are one or two issues that prevent
+
 ## Author
 
 Alastair Holliday (student number 43950214)

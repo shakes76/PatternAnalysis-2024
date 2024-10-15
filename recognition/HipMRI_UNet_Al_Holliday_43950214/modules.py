@@ -85,29 +85,21 @@ class UNet(nn.Module):
     
     def forward(self, x):
         enc1 = self.blk1(x) # size (64, 252, 252)
-        print("enc1: ", enc1.shape)
         maxPool1 = F.max_pool2d(enc1, 2) # size (64, 126, 126)
-        print("maxPool1: ", maxPool1.shape)
         enc2 = self.blk2(maxPool1) # size (128, 122, 122)
-        print("enc2: ", enc2.shape)
         maxPool2 = F.max_pool2d(enc2, 2) # size (128, 61, 61)
-        print("maxPool2: ", maxPool2.shape)
         enc3 = self.blk3(maxPool2) # size (256, 57, 57)
-        print("enc3: ", enc3.shape)
         maxPool3 = F.max_pool2d(enc3, 2) # size (256, 28, 28)
-        print("maxPool3: ", maxPool3.shape)
         # bypassing the lowest layer in the 'U' before the latent space, that's why it's commented out
         #enc4 = self.blk4(maxPool3) # size (512, 24, 24)
         #maxPool4 = F.max_pool2d(enc4, 2) # size (512, 12, 12)
         #lat = self.latent(maxPool4) # size (1024, 8, 8)
         lat = self.latent(maxPool3)
-        print("lat: ", lat.shape)
         #up1 = self.up1(lat) # size (512, 16, 16)
         #dec1 = self.dec1(torch.concat(
         #    (TF.center_crop(enc4, output_size=up1.size(1)), up1), 0)) # size (512, 12, 12)
         #up2 = self.up2(dec1) # size (256, 24, 24)
         up2 = self.up2(lat)
-        print("up2: ", up2.shape)
         # to handle batches properly
         if len(up2.size()) == 4:
             cropSz = up2.size(2)
@@ -117,9 +109,7 @@ class UNet(nn.Module):
             chanDim = 0
         dec2 = self.dec2(torch.concat(
             (TF.center_crop(enc3, output_size=cropSz), up2), chanDim)) # size (256, 20, 20)
-        print("dec2: ", dec2.shape)
         up3 = self.up3(dec2) # size (128, 40, 40)
-        print("up3: ", up3.shape)
         if len(up3.size()) == 4:
             cropSz = up3.size(2)
             chanDim = 1
@@ -128,9 +118,7 @@ class UNet(nn.Module):
             chanDim = 0
         dec3 = self.dec3(torch.concat(
             (TF.center_crop(enc2, output_size=cropSz), up3), chanDim)) # size (128, 36, 36)
-        print("dec3: ", dec3.shape)
         up4 = self.up4(dec3) # size (64, 72, 72)
-        print("up4: ", up4.shape)
         if len(up4.size()) == 4:
             cropSz = up4.size(2)
             chanDim = 1
@@ -139,6 +127,5 @@ class UNet(nn.Module):
             chanDim = 0
         dec4 = self.dec4(torch.concat(
             (TF.center_crop(enc1, output_size=cropSz), up4), chanDim)) # size (64, 68, 68)
-        print("dec4: ", dec4.shape)
         return F.softmax(self.out(dec4), dim = chanDim) # size (2, 68, 68)
         # skip == blk1 + blk of some other level

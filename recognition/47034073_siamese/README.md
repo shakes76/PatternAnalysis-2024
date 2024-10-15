@@ -19,7 +19,7 @@ Data was split into a train, validation and test set. 64% of data was used for t
 Images were all processed pre-training by first downsampling them to a 256x256 resolution and then taking a center crop of 224x224 pixels. This was done to speed up training and and make the data compatible with ResNet50 embedding model architecture.
 
 ## The Training Algorithm and Triplet Loss
-A triamese network was used with the triplet loss [^1], and extension of the siamese network <source>, 
+A triamese network was used with the triplet loss[^1], and extension of the siamese network <source>, 
 
 ## Results
 
@@ -28,4 +28,4 @@ A triamese network was used with the triplet loss [^1], and extension of the sia
 ## Conclusion
 
 ## References
-[^1] Potato
+[^1]: Potato pie.

@@ -8,3 +8,7 @@ Since the original repo used the MIT License, a copy of the MIT License has also
 Dependencies: pytorch, timm (requires searching on conda-forge)
 
 Since we are using ADNI data which has two types, AD or NC, top 5 accuracy is not really useful.
+TODO:
+Remove Acc5
+Train first verify later
+Remove redundant progress checking prints

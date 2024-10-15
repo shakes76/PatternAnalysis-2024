@@ -1,3 +1,5 @@
+"""Handle training, validation and testing of triamese network."""
+
 import time
 import argparse
 import logging
@@ -33,7 +35,7 @@ IMAGES_PATH = DATA_PATH / "small_images"
 
 
 def main() -> None:
-    """Handle training, validation and testing of triamese network."""
+    """Run the program."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("-c", "--continue-training", action="store_true")

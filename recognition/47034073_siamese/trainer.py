@@ -1,3 +1,5 @@
+"""Training loop, saving and loading the model."""
+
 import time
 import logging
 import pathlib
@@ -17,6 +19,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 @dataclass
 class HyperParams:
+    """Training hyperparameters"""
+
     num_epochs: int = 20
     batch_size: int = 32
     learning_rate: float = 0.001
@@ -25,7 +29,14 @@ class HyperParams:
 
 
 class SiameseController:
+    """Facilitates training, saving and loading."""
+
     def __init__(self, hparams: HyperParams, model_name: str) -> None:
+        """
+        Args:
+            hparams: Hyperparameters.
+            model_name: Used for saving the model
+        """
         self._model = EmbeddingNetwork().to(device)
         self._optim = torch.optim.Adam(
             params=self._model.parameters(),
@@ -50,6 +61,10 @@ class SiameseController:
         self.end_of_epoch_func = lambda: None
 
     def train(self, train_loader: DataLoader) -> None:
+        """Train the model.
+        Args:
+            train_loader: DataLoader which iterates over training data.
+        """
         for _ in range(self._hparams.num_epochs):
             self._train_epoch(train_loader)
             logger.info("Epoch %d / loss %e", self._epoch, self.losses[-1])
@@ -62,6 +77,15 @@ class SiameseController:
     def compute_all_embeddings(
         self, loader: DataLoader
     ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Args:
+            DataLoader: Should iterate over images for which to compute all embeddings for.
+
+        Returns:
+            Let N be the number of observations and d be the dimension of embeddings.
+                The first element in tuple is Nxd tensor containing embeddings.
+                Second element is length N tensor containing all labels.
+        """
         with torch.inference_mode():
             all_embeddings = []
             all_labels = []
@@ -74,6 +98,10 @@ class SiameseController:
             return torch.cat(all_embeddings), torch.cat(all_labels)
 
     def save_model(self, name: str) -> None:
+        """
+        Args:
+            name: Model will be saved to models/{name}.pt
+        """
         MODEL_DIR.mkdir(exist_ok=True)
 
         state = {
@@ -88,6 +116,10 @@ class SiameseController:
         torch.save(state, MODEL_DIR / f"{name}.pt")
 
     def load_model(self, name: str) -> None:
+        """
+        Args:
+            name: Model will be loaded from models/{name}.pt
+        """
         state = torch.load(MODEL_DIR / f"{name}.pt", weights_only=False)
 
         self._model.load_state_dict(state["model_state"])

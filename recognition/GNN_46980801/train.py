@@ -1,6 +1,7 @@
 from modules import GCNNet
 import torch
 from dataset import graph_data
+import matplotlib.pyplot as plt
 
 #Training Loop 
 def train(model, data):
@@ -43,16 +44,35 @@ def evaluate(model, data):
         
         #Report the proportion of correct test predictions 
         acc_test = int(correct_test) / int(data.test_mask.sum())
-        
-    return acc_train, acc_val, acc_test
+
+    return acc_train, acc_test
 
 #Model definition 
 #input dim, hidden dim to be tuned according ot training
-model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10, num_layers=3)
+model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10)
 
-for epoch in range(200):
+losses = []
+train_accs = []
+test_accs = []
+
+for epoch in range(10):
 
     loss = train(model, graph_data)
     if epoch % 1 == 0:
-        acc_train, acc_val, acc_test = evaluate(model, graph_data)
+        acc_train, acc_test = evaluate(model, graph_data)
+        losses.append(loss)
+        train_accs.append(acc_train)
+        test_accs.append(acc_test)
         print(f'Epoch: {epoch}, Loss: {loss:.4f}, Train Acc: {acc_train:.4f}, Test Acc: {acc_test:.4f}')
+
+
+epochs = range(10)
+plt.plot(epochs, losses, label="Losses")
+plt.plot(epochs, train_accs, label="Training Accuracy")
+plt.plot(epochs, test_accs, label="Test Accuracy")
+plt.xlabel("Epochs")
+plt.title("Multiple Lines Plot")
+plt.legend()
+plt.title("")
+plt.show()
+

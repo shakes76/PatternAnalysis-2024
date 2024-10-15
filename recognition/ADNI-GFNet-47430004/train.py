@@ -21,7 +21,7 @@ import random
 def train_one_epoch(model: torch.nn.Module, criterion,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
-                    model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None,
+                    model_ema = None, mixup_fn: Optional[Mixup] = None,
                     set_training_mode=True):
     model.train(set_training_mode)
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -53,8 +53,6 @@ def train_one_epoch(model: torch.nn.Module, criterion,
                         parameters=model.parameters(), create_graph=is_second_order)
     
         torch.cuda.synchronize()
-        if model_ema is not None:
-            model_ema.update(model)
 
         metric_logger.update(loss=loss_value)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])

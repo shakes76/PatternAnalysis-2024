@@ -9,18 +9,41 @@ from modules import ImprovedUnet
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
+import torch.nn as nn
 from time import time
 from tqdm import tqdm
+import numpy as np
 
 
 NUM_EPOCHS = 300
+BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
 
-def train(model, train_loader, valid_loader, num_epochs=NUM_EPOCHS, device="cuda"):
+class DiceCoefficient(nn.Module):
+    def __init__(self, epsilon=1e-7):
+        super(DiceCoefficient, self).__init__()
+        self.epsilon = epsilon
+
+    def forward(self, y_true, y_pred):
+
+        num_masks = y_true.size(-1)
+        d_coefs = torch.zeros(num_masks, device=y_true.device)
+        for i in range(num_masks):
+            ground_truth_seg = y_true[:, :, :, :, i]
+            pred_seg = y_pred[:, :, :, :, i]
+
+            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
+            d_coefs[i] = d_coef
+        
+        overall_loss = (-1 / num_masks) * torch.sum(d_coefs)
+        return overall_loss, d_coefs
+
+def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"):
+
     # set up criterion, optimiser, and scheduler for learning rate. 
-    criterion = dice_coefficient
+    criterion = DiceCoefficient()
     optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma = LR_INITIAL)
 
@@ -30,16 +53,22 @@ def train(model, train_loader, valid_loader, num_epochs=NUM_EPOCHS, device="cuda
     training_losses = []
     validation_losses = []
 
+    
+    train_loader = DataLoader(dataset = train_set, batch_size = BATCH_SIZE)
+    valid_loader = DataLoader(dataset = validation_set, batch_size = BATCH_SIZE)
+
     for epoch in range(num_epochs):
         running_loss = 0.0
         segment_losses = None
         for batch_num, (inputs, masks) in enumerate(tqdm(train_loader)):
+
+            print(inputs.shape)
+            print(masks.shape)
+
             inputs, masks = inputs.to(device), masks.to(device)
             optimiser.zero_grad()
             outputs = model(inputs)
 
-            # we want to maximise the dice coefficient
-            # loss is then 1 - dice coefficient 
             loss, d_coefs = criterion(y_true = masks, y_pred = outputs) 
 
             if segment_losses == None:
@@ -92,19 +121,6 @@ def train(model, train_loader, valid_loader, num_epochs=NUM_EPOCHS, device="cuda
 
     return model, training_losses, validation_losses
 
-def dice_coefficient(y_true, y_pred, epsilon=1e-7):
-    num_masks = y_true.size(-1)
-    d_coefs = torch.zeros(num_masks)
-    for i in range(num_masks):
-        ground_truth_seg = y_true[: , : , : , : , i]
-        pred_seg = y_pred[: , : , : , : , i]
-
-        d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / torch.sum((ground_truth_seg + pred_seg) + epsilon)
-        d_coefs[i] = d_coef
-        
-    overall_loss = (-1 / num_masks) * torch.sum(d_coefs)
-    return overall_loss, d_coefs
-
 # connect to gpu
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -119,15 +135,12 @@ model = ImprovedUnet()
 train_set = Prostate3dDataset(X_train, y_train)
 validation_set = Prostate3dDataset(X_val, y_val)
 
-train_loader = DataLoader(train_set)
-validation_loader = DataLoader(validation_set)
-
 print("> Start Training")
 
 start = time()
 
 # train improved unet
-trained_model, training_losses, validation_losses = train(model, train_loader, validation_loader, 
+trained_model, training_losses, validation_losses = train(model, train_set, validation_set, 
                                                             device=device, num_epochs=NUM_EPOCHS)
 
 end = time()

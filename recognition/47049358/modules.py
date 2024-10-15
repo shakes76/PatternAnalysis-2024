@@ -140,10 +140,10 @@ class ImprovedUnet(nn.Module):
 
 
     def forward(self, x):
+
         conv_out_1 = self.block1(x)
         context_out_1 = self.context1(conv_out_1)
         element_sum_1 = conv_out_1 + context_out_1
-
         # second term
         conv_out_2 = self.block2(element_sum_1)
         context_out_2  = self.context2(conv_out_2)
@@ -164,26 +164,26 @@ class ImprovedUnet(nn.Module):
 
         # First upsampling module.
         upsample_out_1 = self.upsample1(element_sum_5)
-        concat_1 = torch.cat((element_sum_4, upsample_out_1))
+        concat_1 = torch.cat((element_sum_4, upsample_out_1), dim = 1)
 
         localisation_out_1 = self.localise1(concat_1)
         upsample_out_2 = self.upsample2(localisation_out_1)
-        concat_2 = torch.cat((element_sum_3, upsample_out_2))
+        concat_2 = torch.cat((element_sum_3, upsample_out_2), dim = 1)
 
         localisation_out_2 = self.localise2(concat_2)
         upsample_out_3 = self.upsample3(localisation_out_2)
-        concat_3 = torch.cat((element_sum_2, upsample_out_3))
+        concat_3 = torch.cat((element_sum_2, upsample_out_3), dim = 1)
 
         localisation_out_3 = self.localise3(concat_3)
         upsample_out_4 = self.upsample4(localisation_out_3)
-        concat_4 = torch.cat((element_sum_1, upsample_out_4))
+        concat_4 = torch.cat((element_sum_1, upsample_out_4), dim = 1)
 
         segment_out_1 = self.segmentation1(localisation_out_2)
         upscale_out_1 = self.upscale_1(segment_out_1)
 
         segment_out_2 = self.segmentation2(localisation_out_3)
         seg_sum_1 = upscale_out_1 + segment_out_2
-
+        
         upscale_out_2 = self.upscale_2(seg_sum_1)
 
         convoutput_out = self.conv_output(concat_4)
@@ -191,24 +191,16 @@ class ImprovedUnet(nn.Module):
 
         final_sum = upscale_out_2 + segment_out_3
 
-        output = torch.permute(final_sum,( 1, 2, 3, 0))
+        output = torch.permute(final_sum, (0, 2, 3, 4, 1))
 
         output =  torch.softmax(output, dim = -1)
-
-        output = output[np.newaxis, : , : , : , :]
         
         return output
+    
 
 if __name__ == '__main__':
-    # Create a tensor of shape (256, 256, 128) with random numbers
-    random_tensor = torch.randn(256, 256, 128)
-
-    random_tensor = random_tensor[np.newaxis, : , : , :]
-    
-    conv = ImprovedUnet()
-
-    print(random_tensor.shape)
-
-    output = conv(random_tensor)
-
-    print(output.shape)
+    model = ImprovedUnet()
+    input_tensor = torch.randn(2, 1, 256, 256, 128)  # Input tensor with shape [2, 1, 256, 256, 128]
+    output_tensor = model(input_tensor)
+    print(f"Input shape: {input_tensor.shape}")
+    print(f"Output shape: {output_tensor.shape}")

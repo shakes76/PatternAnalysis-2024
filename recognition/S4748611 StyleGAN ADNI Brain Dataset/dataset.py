@@ -31,7 +31,7 @@ def load_and_preprocess_adni(data_dirs, target_size=(256, 256), batch_size=64): 
 
     return dataset
 
-def create_adni_dataset(batch_size, target_size=(256, 256)):  # Change target size to 256x256
+def create_adni_dataset(batch_size, target_size):
     data_dirs = [
         '/home/groups/comp3710/ADNI/AD_NC/test/AD',
         '/home/groups/comp3710/ADNI/AD_NC/test/NC',

@@ -35,7 +35,7 @@ from timm.utils import NativeScaler
 
 # Hyperparameters, some more are in wandb_config.py
 hyperparameter_1 = None
-epochs = 1
+epochs = 2
 start_epoch = 0
 output_dir = 'test/model/'
 

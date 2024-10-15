@@ -9,16 +9,16 @@ class UNet3D(nn.Module):
         super(UNet3D, self).__init__()
         
         #Encoder definitions - downsampling
-        self.encoder1 = self.conv_block(in_channels, base_filters)       
-        self.encoder2 = self.conv_block(base_filters, base_filters*2)
-        self.encoder3 = self.conv_block(base_filters*2, base_filters*4)
-        self.encoder4 = self.conv_block(base_filters*4, base_filters*8)
+        self.encoder1 = self.conv_step(in_channels, base_filters)       
+        self.encoder2 = self.conv_step(base_filters, base_filters*2)
+        self.encoder3 = self.conv_step(base_filters*2, base_filters*4)
+        self.encoder4 = self.conv_step(base_filters*4, base_filters*8)
 
         #Decoder definitons - upsampling
-        self.decoder4 = self.conv_block(base_filters*16, base_filters*8)
-        self.decoder3 = self.conv_block(base_filters*8, base_filters*4)
-        self.decoder2 = self.conv_block(base_filters*4, base_filters*2)
-        self.decoder1 = self.conv_block(base_filters*2, base_filters)
+        self.decoder4 = self.conv_step(base_filters*16, base_filters*8)
+        self.decoder3 = self.conv_step(base_filters*8, base_filters*4)
+        self.decoder2 = self.conv_step(base_filters*4, base_filters*2)
+        self.decoder1 = self.conv_step(base_filters*2, base_filters)
         
         
         
@@ -32,7 +32,7 @@ class UNet3D(nn.Module):
         self.final_conv = nn.Conv3d(base_filters, out_channels, kernel_size=1)
 
         #Bridge convolution between encoder and decoder
-        self.bridge = self.conv_block(base_filters*8, base_filters*16)
+        self.bridge = self.conv_step(base_filters*8, base_filters*16)
 
     def conv_step(self, in_channels, out_channels):
         #conv + BN + relu step between feature maps

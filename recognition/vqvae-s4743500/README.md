@@ -89,7 +89,7 @@ The main goal for the Encoder is to reduce the 256x256 MRI images to a lower-dim
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`# ...`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.residual_stack = ResidualStack(num_hiddens, num_residual_layers, num_residual_hiddens)`  
   
-The fundamental aspects of the Encoder that was discussed above was adapted from Michael A. Alcorn's encoder module which can be found here [[4]](#4).
+The fundamental aspects of the Encoder that were discussed above was adapted from Michael A. Alcorn's encoder module which can be found here [[4]](#4).
 
 ### Vector Quantizer  
 The Vector Quantizer module is one of the most important components of the VQ-VAE architecture. Inspiration for coding the Vector Quantizer architecture can be found in the following YouTube video [[5]](#5) which discusses in depth the topic of Neural Discrete Representation Learning.  
@@ -142,7 +142,7 @@ The decoder takes the quantized latent representation and tries to reconstruct a
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.upconv = nn.Sequential()`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`self.residual_stack = ResidualStack(num_hiddens, num_residual_layers, num_residual_hiddens)`  
   
-The fundamental aspects of the Decoder that was discussed above was adapted from Michael A. Alcorn's decoder module which can be found here [[4]](#4).  
+The fundamental aspects of the Decoder that were discussed above was adapted from Michael A. Alcorn's decoder module which can be found here [[4]](#4).  
   
 ### Final VQ-VAE Model  
 The final VQ-VAE model integrates the encoder, vector quantizer, and decoder into a single network:  
@@ -170,5 +170,5 @@ To begin, the VQ-VAE model and data loaders were imported from the [modules.py](
 <a name="1">[1]</a> What is VQ-VAE (Vector Quantized Variational Autoencoder): [https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.](https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.)  
 <a name="2">[2]</a> Neural Discrete Representation Learning, Aaron van den Oord, Oriol Vinyals, Koray Kavukcuoglu, 2017: [https://arxiv.org/abs/1711.00937](https://arxiv.org/abs/1711.00937)  
 <a name="here">[3]</a> 2D HipMRI slices: [https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2)  
-<a name="here">[4]</a> Michael A. Alcorn's VQ-VAE Model Architecture: [https://github.com/airalcorn2/vqvae-pytorch/blob/master/vqvae.py](https://github.com/airalcorn2/vqvae-pytorch/blob/master/vqvae.py)  
-<a name="here">[5]</a> VQ-VAEs Neural Discrete Representation Learning (PyTorch Code Explained): [https://www.youtube.com/watch?v=VZFVUrYcig0](https://www.youtube.com/watch?v=VZFVUrYcig0)  
+<a name="4">[4]</a> Michael A. Alcorn's VQ-VAE Model Architecture: [https://github.com/airalcorn2/vqvae-pytorch/blob/master/vqvae.py](https://github.com/airalcorn2/vqvae-pytorch/blob/master/vqvae.py)  
+<a name="5">[5]</a> VQ-VAEs Neural Discrete Representation Learning (PyTorch Code Explained): [https://www.youtube.com/watch?v=VZFVUrYcig0](https://www.youtube.com/watch?v=VZFVUrYcig0)  

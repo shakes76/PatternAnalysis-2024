@@ -59,3 +59,40 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+
+
+class VQVAENIfTIDataset(Dataset):
+    def __init__(self, data_dir, transform=None, normImage=True, categorical=False):
+        self.data_dir = data_dir
+        self.transform = transform
+        self.normImage = normImage
+        self.categorical = categorical
+        self.file_list = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.nii.gz')]
+        self.images = load_data_2D(self.file_list, normImage=self.normImage, categorical=self.categorical)
+
+
+    def __len__(self):
+        return len(self.images)
+
+
+    def __getitem__(self, idx):
+        image = self.images[idx]
+
+        # Convert to PyTorch tensor
+        image_tensor = torch.from_numpy(image).float()
+
+        # Add channel dimension if it's a 2D image
+        if image_tensor.dim() == 2:
+            image_tensor = image_tensor.unsqueeze(0)
+
+        if self.transform:
+            image_tensor = self.transform(image_tensor)
+
+        return image_tensor
+
+
+def create_nifti_data_loaders(data_dir, batch_size, num_workers=4, normImage=True, categorical=False):
+    dataset = VQVAENIfTIDataset(data_dir, normImage=normImage, categorical=categorical)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    return data_loader
+

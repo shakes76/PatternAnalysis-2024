@@ -27,9 +27,6 @@ from timm.utils import NativeScaler, get_state_dict, ModelEma
 import utils
 from functools import partial
 
-from gfnet import GFNet
-
-
 class AverageMeter(object):
     def __init__(self, name, fmt=':f'):
         self.name = name

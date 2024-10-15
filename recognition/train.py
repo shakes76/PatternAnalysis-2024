@@ -7,7 +7,7 @@ from utiles import *
 from modules import *
 
 # Hyper-parameters
-num_epochs = 10
+num_epochs = 500
 hidden_layer = 64
 classes = ["Politicians", "Governmental Organisations", "Television Shows", "Companies"]
 learning_rate = 5e-4
@@ -36,12 +36,13 @@ def train_model():
 
         train_loss.append(loss.item())
         train_accuray.append(accuracy)
-
+        epoch_loss = loss.item()
+        epoch_accuracy = accuracy.item()
         # Validation
         model.eval()
 
         output = model(data.x, data.edge_index)
-        accuracy = ((output.argmax(dim=1)[test_mask] == data.y[test_mask]).float()).mean()
+        accuracy = ((output.argmax(dim=1)[validation_mask] == data.y[validation_mask]).float()).mean()
 
         validation_loss.append(loss.item())
         validation_accuracy.append(accuracy)
@@ -52,7 +53,16 @@ def train_model():
     print("Training Over")
     torch.save(model, "GCN.pth")
             
+def test_model(model, data):
+    # ----- Testing -----
+    print("--- Testing ---")
+    model.eval()
+    with torch.no_grad():
+        model.eval()
 
+        output = model(data.x, data.edge_index)
+        accuracy = ((output.argmax(dim=1)[test_mask] == data.y[test_mask]).float()).mean()
+    print(f"Test Accuracy: {100 * accuracy:.2f}%")
 
 if __name__ == "__main__":
     # Loading up the dataset and applying custom augmentations

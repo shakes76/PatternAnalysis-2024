@@ -37,6 +37,6 @@ outDim = 64
 
 #out = basicBlk(firstImg)
 
-net = modules.UNet(chan, outDim)
+net = modules.UNet(chan, outDim, segDim = 1)
 net = net.to(dev)
 out = net(firstImg)

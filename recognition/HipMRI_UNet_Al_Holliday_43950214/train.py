@@ -46,7 +46,7 @@ for epoch in range(epochs):
         out = net(img)
         # This is no longer necessary!
         #seg = TF.center_crop(seg, output_size = out.size(2))
-        loss = lossFunc(out[:,0,:,:], seg[:,0,:,:])
+        loss = lossFunc(out, seg)
         optm.zero_grad()
         loss.backward()
         optm.step()
@@ -57,7 +57,7 @@ for epoch in range(epochs):
 
 print("Done")
 # save the weights
-torch.save(net.state_dict(), "~/weights.pth")
+torch.save(net.state_dict(), "./weights.pth")
 
 # test Cross Entropy Loss
 #imgBatch, segBatch = next(iter(trainLoader))

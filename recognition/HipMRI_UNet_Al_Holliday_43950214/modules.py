@@ -53,7 +53,7 @@ class UNet(nn.Module):
     U-Net class. Basically going to consist of BasicBlocks (going off the 
     diagram from the U-Net paper).
     """
-    def __init__(self, inDim, outDim):
+    def __init__(self, inDim, outDim, segDim = 4):
         super().__init__()
         # encoder
         self.blk1 = UNetBasicBlock(inDim, outDim, 3)
@@ -81,7 +81,7 @@ class UNet(nn.Module):
         self.dec3 = UNetBasicBlock(outDim * 4, outDim * 2, 3)
         self.up4 = nn.ConvTranspose2d(outDim * 2, outDim, 2, stride = 2)
         self.dec4 = UNetBasicBlock(outDim * 2, outDim, 3)
-        self.out = nn.Conv2d(outDim, 2, kernel_size = 1)
+        self.out = nn.Conv2d(outDim, segDim, kernel_size = 1)
     
     def forward(self, x):
         enc1 = self.blk1(x) # size (64, 252, 252)
@@ -140,5 +140,5 @@ class UNet(nn.Module):
         dec4 = self.dec4(torch.concat(
             (TF.center_crop(enc1, output_size=cropSz), up4), chanDim)) # size (64, 68, 68)
         print("dec4: ", dec4.shape)
-        return self.out(dec4) # size (2, 68, 68)
+        return F.softmax(self.out(dec4), dim = chanDim) # size (2, 68, 68)
         # skip == blk1 + blk of some other level

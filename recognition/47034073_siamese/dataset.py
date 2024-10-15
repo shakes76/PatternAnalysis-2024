@@ -1,3 +1,5 @@
+"""Pytorch Datasets"""
+
 import pathlib
 import logging
 from typing import override
@@ -14,10 +16,20 @@ TARGET = "target"
 logger = logging.getLogger(__name__)
 
 
-class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
+class LesionClassificationDataset(Dataset):
+    """Dataset for handling skin lesion images and targets indicating whether or not they are
+    benign or malignant.
+    """
+
     def __init__(
         self, image_path: pathlib.Path, meta_df: pd.DataFrame, transform: bool = True
     ) -> None:
+        """
+        Args:
+            image_path: Path to lesion image files folder
+            meta_df: Dataframe which contains IMAGE_NAME column and TARGET column
+            transform: True to apply online augmentations
+        """
         self._image_path = image_path
         self._meta_df = meta_df
         self._transform = transform
@@ -43,6 +55,10 @@ class ShrinkLesionDataset(Dataset):
     """Used to apply image shrinking augmentations to entire dataset"""
 
     def __init__(self, image_path: pathlib.Path) -> None:
+        """
+        Args:
+            image_path: Path to lesion image files folder
+        """
         self._image_paths = sorted(list(image_path.iterdir()))
         self._len = len(self._image_paths)
 

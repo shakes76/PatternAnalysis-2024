@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
 from trainer import SiameseController, HyperParams
-from dataset import TumorClassificationDataset
+from dataset import LesionClassificationDataset
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def main() -> None:
 
     # Siamese training data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
-    dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df, transform=True)
+    dataset = LesionClassificationDataset(IMAGES_PATH, train_meta_df, transform=True)
     train_loader = DataLoader(
         dataset,
         pin_memory=True,
@@ -94,7 +94,7 @@ def main() -> None:
     malignant = train_meta_df[train_meta_df["target"] == 1]
     benign = benign.sample(random_state=42, n=len(malignant))
     knn_df = pd.concat([benign, malignant])
-    knn_ds = TumorClassificationDataset(IMAGES_PATH, knn_df, transform=False)
+    knn_ds = LesionClassificationDataset(IMAGES_PATH, knn_df, transform=False)
     train_classification_loader = DataLoader(
         knn_ds,
         batch_size=hparams.batch_size,
@@ -103,7 +103,7 @@ def main() -> None:
 
     # Validation data
     val_meta_df = pd.read_csv(VAL_META_PATH)
-    val_dataset = TumorClassificationDataset(IMAGES_PATH, val_meta_df, transform=False)
+    val_dataset = LesionClassificationDataset(IMAGES_PATH, val_meta_df, transform=False)
     val_loader = DataLoader(
         val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
     )
@@ -255,7 +255,7 @@ def main() -> None:
 
     if args.test:
         test_meta_df = pd.read_csv(TEST_META_PATH)
-        test_dataset = TumorClassificationDataset(
+        test_dataset = LesionClassificationDataset(
             IMAGES_PATH, test_meta_df, transform=False
         )
         test_loader = DataLoader(

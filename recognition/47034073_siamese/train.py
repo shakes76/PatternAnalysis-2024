@@ -132,7 +132,7 @@ def main() -> None:
         nn_auc = _evaluate_classification(
             fit_nn, val_embeddings, val_labels, minimal=True
         )
-        logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", auc, svm_auc, nn_auc)
+        logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", knn_auc, svm_auc, nn_auc)
 
         if knn_auc > knn_best_auc:
             knn_best_auc = knn_auc
@@ -235,23 +235,27 @@ def main() -> None:
     logger.info("Writing image")
     plt.savefig("plots/train_tsne")
 
+    # Fit classifiers
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
     logger.info("Fitting SVM")
     fit_svm = svm.fit(embeddings, labels)
+    logger.info("Fitting NN...")
+    fit_nn = nn.fit(embeddings, labels)
 
     # Eval on train
     logger.info("Evaluating classification on train data...")
-    _evaluate_classification(fit_knn, embeddings, labels, data_name="train(knn)")
+    _evaluate_classification(fit_knn, embeddings, labels, data_name="train(KNN)")
     _evaluate_classification(fit_svm, embeddings, labels, data_name="train(SVM)")
-
-    val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
-    val_embeddings = normalize(val_embeddings)
+    _evaluate_classification(fit_nn, embeddings, labels, data_name="train(NN)")
 
     # Eval on validation
+    val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
+    val_embeddings = normalize(val_embeddings)
     logger.info("Evaluating classification on val data...")
-    _evaluate_classification(fit_knn, val_embeddings, val_labels, data_name="val(knn)")
+    _evaluate_classification(fit_knn, val_embeddings, val_labels, data_name="val(KNN)")
     _evaluate_classification(fit_svm, val_embeddings, val_labels, data_name="val(SVM)")
+    _evaluate_classification(fit_nn, val_embeddings, val_labels, data_name="val(NN)")
 
     if args.test:
         test_meta_df = pd.read_csv(TEST_META_PATH)
@@ -265,8 +269,9 @@ def main() -> None:
         embeddings = normalize(embeddings)
 
         logger.info("Evaluating classification on test data...")
-        _evaluate_classification(fit_knn, embeddings, labels, data_name="test(knn)")
-        _evaluate_classification(fit_svm, embeddings, labels, data_name="test(svm)")
+        _evaluate_classification(fit_knn, embeddings, labels, data_name="test(KNN)")
+        _evaluate_classification(fit_svm, embeddings, labels, data_name="test(SVM)")
+        _evaluate_classification(fit_nn, embeddings, labels, data_name="test(NN)")
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)

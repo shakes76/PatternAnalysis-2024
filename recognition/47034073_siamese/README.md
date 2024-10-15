@@ -15,7 +15,7 @@ There are a few techniques for dealing with highly imbalanced data such re-sampl
 Patient meta-data was not used for simplicity as other solutions had found that they were not very essential performance [[]](). Although it would be simple to incorporate this data by concatenating it to the outputted feature embeddings and apply appropriate normalization.
 
 Data was split into a train, validation and test set. 64% of data was used for training, 16% was used for validation and 20% was used for testing. Stratified sampling was used to ensure that the ground truth distributions were well represented. This was a fairly important consideration as there was not much data in the minority class, stratification ensured all sets had adequate examples.
-Images were all processed pre-training by first downsampling them to a 256x256 resolution and then taking a center crop of 224x224 pixels. This was done to speed up training and and make the data compatible with ResNet50 embedding model architecture. 
+Images were all processed pre-training by first downsampling them to a 256x256 resolution and then taking a center crop of 224x224 pixels. This was done to speed up training and and make the data compatible with the embedding model architecture. 
 
 Image pixels were rescaled intensitied were rescaled to be in the range [0, 1] by dividing through by the RGB maximum 255. Images were also augmented online during training with a random horizontal flip with probability 0.5 and then a random vertical flip with probability 0.5. Colour augmentation was not used as the true colour was likely to be a very important feature for classification of lesions [[]]().
 
@@ -27,6 +27,8 @@ Once embeddings are produced they are compared using triplet loss. Let $l(x^a, x
 $$l(x^a, x^p, x^n) = \mathrm{ReLU}\left(\Vert f(x^a) - f(x^p) \Vert_2^2 - \Vert f(x^a) - f(x^n) \Vert_2^2 + m \right)$$
 
 Where $m$ is some hyperparameter for the desired margin. Note that $\mathrm{ReLU}$ is nothing more than the maximum of its argument and 0, this meant that 0 is the smallest loss possible. The left term of the loss encourages pairs from the same class to be close to each other in embedding space. The right term encourages pairs from different class to be far apart in the embedding space. The minimum loss is acquired when the positive example is closer than the negative example and is closer by margin $m$.
+
+One of the most import parts to triplet loss performance is the mining of triplets. This refers to the process of finding difficult triplets to train with, as triplets with zero loss have no learning signal. The most popular mining technique is semi-hard mining as introduced in [[]](). This technique chooses triplets such that the positive example is closer to the anchor than the negative sample but the margin is still violated. These triplets are easier to improve than when the negative example is closer than the postive one, but still provide a learning signal. This strategy is often used to improve stability of learning. However, it was found empirically for this problem that the all mining strategy worked the best. This strategy selects all triplets which violate the margin. Triplets are sampled online from each minibatch.
 
 The network was trained on a single RTX 3060 GPU.
 ## Results

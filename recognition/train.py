@@ -7,7 +7,7 @@ from utiles import *
 from modules import *
 
 # Hyper-parameters
-num_epochs = 5
+num_epochs = 10
 hidden_layer = 64
 classes = ["Politicians", "Governmental Organisations", "Television Shows", "Companies"]
 learning_rate = 5e-4
@@ -21,19 +21,16 @@ def train_model():
     validation_loss = []
     validation_accuracy = []
 
-    best_accuracy = 0
     epoch_loss = 0
     epoch_accuracy = 0
 
     print("Training loop:")
     for epoch in range(num_epochs):
         model.train()
-
         optimizer.zero_grad()
         output = model(data.x, data.edge_index)
-        ground_truth = data.y
-        loss = criterion(output[train_mask].to(device), ground_truth[train_mask].to(device))
-        accuracy = ((output[train_mask] == ground_truth[test_mask]).float()).mean()
+        loss = criterion(output[train_mask].to(device), data.y[train_mask].to(device))
+        accuracy = ((output.argmax(dim=1) [train_mask] == data.y[train_mask]).float()).mean()
         loss.backward()
         optimizer.step()
 
@@ -44,11 +41,7 @@ def train_model():
         model.eval()
 
         output = model(data.x, data.edge_index)
-        ground_truth = data.y
-
-        loss = criterion(output[train_mask].to(device), ground_truth[train_mask].to(device))
-        accuracy = ((output[train_mask] == ground_truth[test_mask]).float()).mean()
-
+        accuracy = ((output.argmax(dim=1)[test_mask] == data.y[test_mask]).float()).mean()
 
         validation_loss.append(loss.item())
         validation_accuracy.append(accuracy)
@@ -56,26 +49,30 @@ def train_model():
 
         if epoch % 5 == 0:
             print(f"Epoch {epoch + 1}, Loss: {epoch_loss:.4f}, Acc: {epoch_accuracy:.4f}")
-        
+    print("Training Over")
     torch.save(model, "GCN.pth")
             
 
-# Loading up the dataset and applying custom augmentations
-data, masks = load_data()
-train_mask = masks[0]
-test_mask = masks[2]
-validation_mask = masks[2]
 
-number_of_features = data.x.shape[1]
+if __name__ == "__main__":
+    # Loading up the dataset and applying custom augmentations
+    data, masks = load_data()
+    train_mask = masks[0]
+    test_mask = masks[1]
+    validation_mask = masks[2]
 
-# Creating an instance of the UNet to be trained
-model = GCN(in_channels = number_of_features, hidden_channels= hidden_layer, out_channels =  len(classes))
-model = model.to(device)
+    number_of_features = data.x.shape[1]
+    print( data.x.shape[1])
 
-# Setup the optimizer
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
-criterion = torch.nn.CrossEntropyLoss()
+    # Creating an instance of the UNet to be trained
+    model = GCN(in_channels = number_of_features, hidden_channels= hidden_layer, out_channels =  len(classes))
+    model = model.to(device)
 
+    # Setup the optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
+    criterion = torch.nn.CrossEntropyLoss()
+    train_model()
+    
 
 
 

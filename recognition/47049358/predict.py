@@ -139,7 +139,7 @@ def plot_dice(dice, segment_scores):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig('dice_scores_test.png')
+    plt.savefig('dice_scores_test_alter_loss.png')
     plt.close()
 
 

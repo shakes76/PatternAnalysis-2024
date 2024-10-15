@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+import utils
 from trainer import SiameseController, HyperParams
 from dataset import LesionClassificationDataset
 
@@ -170,19 +171,7 @@ def main() -> None:
         logger.info("Starting training...")
         trainer.train(train_loader)
 
-    # Training plots
-    plt.figure()
-    plt.plot(trainer.losses)
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.tight_layout()
-    plt.savefig(PLOTS_PATH / "train_loss")
-    plt.figure()
-    plt.plot(trainer.mined_each_step)
-    plt.xlabel("Train step")
-    plt.ylabel("Num mined")
-    plt.tight_layout()
-    plt.savefig(PLOTS_PATH / "mined")
+    utils.save_training_plots(trainer)
 
     # Get classifer training observation embeddings
     embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)

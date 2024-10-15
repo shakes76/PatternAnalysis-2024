@@ -129,27 +129,32 @@ class VQVAE(nn.Module):
             nn.BatchNorm2d(dim),
             nn.ReLU(),
             nn.Conv2d(dim, dim, 4, 2, 1),
+            nn.BatchNorm2d(dim),
             nn.ReLU(),
             nn.Conv2d(dim, dim, 3, 1, 1),  # Keep the number of channels as 512
             ResidualStack(dim, n_res_layers)
         )
         
-        # self.pre_quant_conv = nn.Conv2d(dim, 2, kernel_size=1)
-        self.codebook = VectorQuantizer(num_embeddings, dim)
-        # self.post_quant_conv = nn.Conv2d(dim, 4, kernel_size=1)
+        self.pre_quant_conv = nn.Conv2d(dim, 64, kernel_size=1)
+        self.codebook = VectorQuantizer(num_embeddings, 64)
         
         # Commitment Loss Beta
         self.beta = 0.25 # From paper
         
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(dim, dim, 3, 1, 1),
             ResidualStack(dim, n_res_layers),
+            nn.ReLU(),
+            nn.ConvTranspose2d(dim, dim, 3, 1, 1),
+            nn.BatchNorm2d(dim),
+            nn.ReLU(),
             nn.ConvTranspose2d(dim, dim, 4, 2, 1),
             nn.BatchNorm2d(dim),
             nn.ReLU(),
             nn.ConvTranspose2d(dim, in_dim, 4, 2, 1),
             nn.Tanh()
         )
+        
+        self.apply(utils.weights_init)
 
         
     def forward(self, x):
@@ -158,12 +163,15 @@ class VQVAE(nn.Module):
         
         # Pre-quantization convolution
         # quant_input = self.pre_quant_conv(encoded_output)  # Still 4D: [B, C, H', W']
+        # print(quant_input.shape)
         # print("Yes")
         
         latents, quantize_loss = self.codebook(encoded_output)  # Output shape: [B*H*W,C]
+        print(latents.shape)
         
         # Post-quantization convolution
         # decoder_input = self.post_quant_conv(latents)
+        # print(decoder_input.shape)
         # print("Yes")
         
         # Decoder part: input to decoder must be 4D
@@ -233,7 +241,16 @@ def train_vqvae():
     plt.savefig('training_loss.png')
     plt.close()
     
-    return model
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, num_epochs + 1), ssim_scores, label='SSIM Scores')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('SSIM Scores over Epochs')
+    plt.legend()
+    plt.grid()
+    plt.savefig('ssim_scores.png')
+    plt.close()
+    
 
 def validate(epoch):
     global best_epoch

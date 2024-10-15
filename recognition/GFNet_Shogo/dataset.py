@@ -95,7 +95,7 @@ class TestPreprocessing:
 #     for images, labels in loader:
 #         # images: (N = batch size , C = 1, H, W)
 #         batch_num_images = images.size(0)
-#         images = images.view(batch_num_images, images.size(1), -1)  # (N, C = 1, H * W)
+#         images = images.view(batch_num_images, images.size(1), -1)  # (B, C, H * W)
 #         mean += images.float().mean(2).sum(0)
 #         std += images.float().std(2).sum(0)
 #         num_images += batch_num_images

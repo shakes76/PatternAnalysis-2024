@@ -28,4 +28,4 @@ A triamese network was used with the triplet loss[^1], and extension of the siam
 ## Conclusion
 
 ## References
-[^1]: Potato pie.
+[^1]: Schroff, F., Kalenichenko, D., & Philbin, J. (2015, June). FaceNet: A unified embedding for face recognition and clustering. 2015 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). doi:10.1109/cvpr.2015.7298682

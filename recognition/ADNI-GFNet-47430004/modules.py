@@ -33,11 +33,29 @@ from train import train_one_epoch, evaluate
 from dataset import get_dataloaders
 from timm.utils import NativeScaler
 
-# Hyperparameters, some more are in wandb_config.py
+# Hyperparameters
 hyperparameter_1 = None
 epochs = 2
 start_epoch = 0
 output_dir = 'test/model/'
+
+project = "ADNI-GFNet"
+group = "GFNet",
+config={
+        "id": 0,
+        "machine": "a100",
+        "architecture": "gfnet-xs",
+        "model": "GFNet",
+        "dataset": "ADNI",
+        "epochs": 300,
+        "optimizer": "adam",
+        "loss": "crossentropy",
+        "metric": "accuracy",
+        #~ "dim": 64,
+        "depth": 12,
+        "embed_dim": 384,
+        "batch_size": 128
+}
 
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
@@ -359,6 +377,9 @@ def main(args):
     print("Main of Modules - modules compiles/runs\n")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     criterion = torch.nn.CrossEntropyLoss()
     train_loader, test_loader = get_dataloaders(None)

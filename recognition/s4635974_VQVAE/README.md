@@ -129,7 +129,15 @@ Figure 8 shows a sample of 4 images taken from the validation set and passed thr
 
 ### Testing
 
+#### SSIM
+![Test SSIM](report_images/test_ssim.png)
+*Figure 9. Average SSIM on test set*
+
+During testing we achieve an average SSIM score of 0.85, well abvove our tartget of 0.6.
+
+#### Reconstructed images
 ![Testing decode images](report_images/real_vs_decoded_test.png)
+*Figure *
 
 
 ## Usage

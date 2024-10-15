@@ -130,7 +130,6 @@ def predict(
 
     # Save the figure
     plt.tight_layout()
-    plt.title("Real vs Decoded Test Set Images")
     plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
     
     print("End")

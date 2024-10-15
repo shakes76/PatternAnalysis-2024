@@ -6,14 +6,10 @@ from dataset import APP_MATCHER
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
 
-def train(model, device, train_loader, optimizer, epoch, log_interval, dry_run):
+def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_interval, dry_run):
     model.train()
-
-    # we aren't using `TripletLoss` as the MNIST dataset is simple, so `BCELoss` can do the trick.
-    # criterion = torch.nn.BCELoss()
     
-    criterion = torch.nn.TripletMarginLoss(model.triplet_margin)
-    
+    criterion = model.loss_criterion
 
     for batch_idx, (images_1, images_2, targets) in enumerate(train_loader):
         images_1, images_2, targets = images_1.to(device), images_2.to(device), targets.to(device)
@@ -23,21 +19,17 @@ def train(model, device, train_loader, optimizer, epoch, log_interval, dry_run):
         loss.backward()
         optimizer.step()
         if batch_idx % log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(images_1), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+            print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
+            print(f"Loss: {loss.item()}")
             if dry_run:
                 break
 
-def test(model, device, test_loader):
+def test(model: SiameseNetwork, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
 
-    # we aren't using `TripletLoss` as the MNIST dataset is simple, so `BCELoss` can do the trick.
-    # criterion = torch.nn.BCELoss()
-    
-    criterion = torch.nn.TripletMarginLoss(model.triplet_margin)
+    criterion = model.loss_criterion
 
     with torch.no_grad():
         for (images_1, images_2, targets) in test_loader:
@@ -49,19 +41,14 @@ def test(model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
 
-    # for the 1st epoch, the average loss is 0.0001 and the accuracy 97-98%
-    # using default settings. After completing the 10th epoch, the average
-    # loss is 0.0000 and the accuracy 99.5-100% using default settings.
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+    print(f'Test set: Average loss: {test_loss}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset)}%)\n')
 
 def main():
     torch_seed = 10
     batch_size = 64
     shuffle = True
     gamma = 0.7
-    epochs = 2
+    epochs = 10
     learning_rate = 1.0
     save_model = False
     log_interval = 10
@@ -74,8 +61,8 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # Create Datasets and place them into DataLoaders
-    train_dataset = APP_MATCHER(train=True)
-    test_dataset = APP_MATCHER(train=False)
+    train_dataset = APP_MATCHER(image_folder="E:/COMP3710 Project/ISIC_2020_Train_DICOM_corrected", ground_truth_file="E:/COMP3710 Project/ISIC_2020_Training_GroundTruth.csv", train=True)
+    test_dataset = APP_MATCHER(image_folder="E:/COMP3710 Project/ISIC_2020_Train_DICOM_corrected", ground_truth_file="E:/COMP3710 Project/ISIC_2020_Training_GroundTruth.csv",train=False)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size, shuffle)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle)
 

@@ -1,5 +1,4 @@
-import torch
-import torchvision
+import torch, torchvision
 
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
@@ -8,14 +7,10 @@ class SiameseNetwork(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super(SiameseNetwork, self).__init__(*args, **kwargs)
         
-        self.triplet_margin = 0.1
+        self.loss_criterion = torch.nn.BCELoss()
         
         self.resnet = torchvision.models.resnet18(weights=None)
 
-        # over-write the first conv layer to be able to read MNIST images
-        # as resnet18 reads (3,x,x) where 3 is RGB channels
-        # whereas MNIST has (1,x,x) where 1 is a gray-scale channel
-        # self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         self.fc_in_features = self.resnet.fc.in_features
         
         # remove the last layer of resnet18 (linear layer which is before avgpool layer)

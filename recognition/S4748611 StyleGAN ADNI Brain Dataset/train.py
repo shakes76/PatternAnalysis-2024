@@ -1,18 +1,6 @@
-import sys  # Add this import for command-line arguments
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
-# Determine which module to import based on command-line argument
-if len(sys.argv) != 2 or sys.argv[1] not in ['1', '2']:
-    print("Usage: python train.py <1|2>")
-    sys.exit(1)
-
-module_choice = sys.argv[1]
-if module_choice == '1':
-    from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
-else:
-    from modules2 import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
-
+from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE, FINAL_SIZE
 from dataset import create_adni_dataset, generate_random_inputs
 import numpy as np
 import wandb
@@ -26,16 +14,20 @@ TARGET_SIZE = (128, 128)  # Change target size to 256x256
 # Load the models
 print("Loading models...")
 generator = build_generator()
+generator.summary()
 print("Generator model loaded.")
 discriminator = build_discriminator()
+discriminator.summary()
 print("Discriminator model loaded.")
 stylegan = build_stylegan()
+stylegan.summary()
 print("StyleGAN model loaded.")
+
 
 # Define initial learning rate and decay parameters for the generator
 initial_learning_rate = 0.00002
 decay_steps = 100 
-decay_rate = 1
+decay_rate = 0.95
 
 # Create a learning rate schedule for the generator
 generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -48,7 +40,7 @@ generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 # Define initial learning rate and decay parameters for the discriminator
 initial_discriminator_learning_rate = 0.00001
 discriminator_decay_steps = 100 
-discriminator_decay_rate = 1
+discriminator_decay_rate = 1.05
 
 # Create a learning rate schedule for the discriminator
 discriminator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -65,40 +57,24 @@ discriminator_optimizer = tf.keras.optimizers.experimental.Adam(learning_rate=di
 
 print("Models compiled.")
 
-if module_choice == '1':
-    # Initialize Weights and Biases
-    print("Initializing Weights and Biases...")
-    wandb.init(
-        project="StyleGAN ADNI Test", 
-        entity="samwolfenden-university-of-queensland",
-        config={
-            "gen learning rate": generator_lr_schedule,
-            "disc learning rate": discriminator_lr_schedule,
-            "epochs": EPOCHS,
-            "optimizer": type(generator_optimizer).__name__,
-            "scheduler": type(discriminator_optimizer).__name__,
-            "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
-            "name": "SD-ADNI - VAE and Unet",
-            "image size": TARGET_SIZE,
-            "batch size": BATCH_SIZE
-        })
-elif module_choice == '2':
-        # Initialize Weights and Biases
-    print("Initializing Weights and Biases...")
-    wandb.init(
-        project="StyleGAN2 ADNI Test", 
-        entity="samwolfenden-university-of-queensland",
-        config={
-            "gen learning rate": generator_lr_schedule,
-            "disc learning rate": discriminator_lr_schedule,
-            "epochs": EPOCHS,
-            "optimizer": type(generator_optimizer).__name__,
-            "scheduler": type(discriminator_optimizer).__name__,
-            "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
-            "name": "SD-ADNI - VAE and Unet",
-            "image size": TARGET_SIZE,
-            "batch size": BATCH_SIZE
-        })
+
+# Initialize Weights and Biases
+print("Initializing Weights and Biases...")
+wandb.init(
+    project="StyleGAN ADNI Test", 
+    entity="samwolfenden-university-of-queensland",
+    config={
+        "gen learning rate": generator_lr_schedule,
+        "disc learning rate": discriminator_lr_schedule,
+        "epochs": EPOCHS,
+        "optimizer": type(generator_optimizer).__name__,
+        "scheduler": type(discriminator_optimizer).__name__,
+        "cross entropy loss": type(tf.keras.losses.BinaryCrossentropy()).__name__,
+        "name": "SD-ADNI - VAE and Unet",
+        "image size": TARGET_SIZE,
+        "batch size": BATCH_SIZE
+     })
+
 
 # Load the ADNI dataset
 print("Loading ADNI dataset...")
@@ -147,8 +123,8 @@ def train_step(real_images):
         disc_loss = real_loss + fake_loss
 
         # Add gradient penalty
-        #gp = gradient_penalty(real_images, generated_images)
-        #disc_loss += 10.0 * gp  # Weighted penalty
+        gp = gradient_penalty(real_images, generated_images)
+        disc_loss += 10.0 * gp  # Weighted penalty
 
     disc_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
     discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
@@ -185,12 +161,9 @@ def generate_and_save_images(model, epoch):
         plt.subplot(4, 4, i + 1)
         plt.imshow(predictions[i, :, :, 0] * 0.5 + 0.5, cmap='gray')
         plt.axis('off')
-    if module_choice == '1':
-        plt.savefig(f'StyleGAN_image_at_epoch_{epoch:04d}.png')
-        plt.close()
-    elif module_choice == '2':
-        plt.savefig(f'StyleGAN2_image_at_epoch_{epoch:04d}.png')
-        plt.close()
+
+    plt.savefig(f'StyleGAN_image_at_epoch_{epoch:04d}.png')
+    plt.close()
     print(f"Images saved for epoch {epoch}.")
 
 def extract_features(dataset, model):
@@ -208,9 +181,9 @@ def extract_features(dataset, model):
 
 def save_models(generator, discriminator, stylegan):
     print("Saving models...")
-    # generator.save('stylegan_generator.h5')
-    # discriminator.save('stylegan_discriminator.h5')
-    # stylegan.save('stylegan_model.h5')
+    generator.save('stylegan_generator.h5')
+    discriminator.save('stylegan_discriminator.h5')
+    stylegan.save('stylegan_model.h5')
     print("Models saved successfully.")
 
 if __name__ == "__main__":
@@ -257,7 +230,7 @@ if __name__ == "__main__":
     print("Final generated image saved.")
 
     # Save the models
-    # save_models(generator, discriminator, stylegan)
+    save_models(generator, discriminator, stylegan)
 
     # Log final outputs to Weights and Biases
     wandb.log({"Generated Image": wandb.Image(generated_image[0])})

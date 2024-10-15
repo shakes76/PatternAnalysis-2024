@@ -1,3 +1,5 @@
+"""Creates train, val test split."""
+
 import pathlib
 import logging
 
@@ -14,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
+    """Runs the main program"""
     logging.basicConfig(level=logging.INFO)
 
     metadata = pd.read_csv(ALL_META_DIR)

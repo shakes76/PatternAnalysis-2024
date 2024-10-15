@@ -37,16 +37,18 @@ optm = torch.optim.SGD(net.parameters())
 net.train()
 for epoch in range(epochs):
     for i, (img, seg) in enumerate(trainLoader):
-        print(i)
+        #print(i)
         img = img.to(dev)
         seg = seg.to(dev)
         out = net(img)
         seg = TF.center_crop(seg, output_size = out.size(2))
-        # I FUCKING HATE PYTORCH SO MUCH. WHY IS THIS NECESSARY?
         loss = lossFunc(out[:,0,:,:], seg[:,0,:,:])
         optm.zero_grad()
         loss.backward()
         optm.step()
+        if (i+1) % 100 == 0:
+            print ("Epoch [{}/{}], Loss: {:.5f}"
+                    .format(epoch+1, epochs, loss.item()))
 
 print("Done")
 # save the weights

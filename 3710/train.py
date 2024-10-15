@@ -20,7 +20,7 @@ if __name__ == "__main__":
     data = load_data(npz_file_path)
 
     # Initialize model, optimizer, and loss function
-    model = GNN(in_channels=data.num_features, out_channels=6) 
+    model = GNN(in_channels=data.num_features, out_channels=4) 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     loss_fn = torch.nn.CrossEntropyLoss()
 

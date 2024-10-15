@@ -35,7 +35,7 @@ if __name__ == "__main__":
     data.test_mask = test_mask
 
     # Load model (ensure it is properly trained)
-    model = GNN(in_channels=data.num_features, out_channels=6)
+    model = GNN(in_channels=data.num_features, out_channels=4)
     # Assuming you have a saved model state_dict
     model.load_state_dict(torch.load("model.pth", weights_only=True))
     print(f"Number of testing nodes: {data.test_mask.sum().item()}")

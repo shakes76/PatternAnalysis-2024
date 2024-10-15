@@ -1,3 +1,5 @@
+"""Shrinks all lesion images to be 224x224"""
+
 import pathlib
 import time
 
@@ -5,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision.io import write_jpeg
 
-from dataset import AllTumorDataset
+from dataset import ShrinkLesionDataset
 
 DATA_DIR = pathlib.Path("data")
 IMAGES_DIR = DATA_DIR / "train"
@@ -13,8 +15,9 @@ SMALL_IMAGES_DIR = DATA_DIR / "small_images"
 
 
 def main() -> None:
+    """Runs program"""
     SMALL_IMAGES_DIR.mkdir(exist_ok=True)
-    dataset = AllTumorDataset(IMAGES_DIR)
+    dataset = ShrinkLesionDataset(IMAGES_DIR)
     loader = DataLoader(dataset, batch_size=512, num_workers=6)
 
     start_time = time.time()

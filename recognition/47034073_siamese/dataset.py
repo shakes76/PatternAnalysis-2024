@@ -39,7 +39,9 @@ class TumorClassificationDataset(Dataset[tuple[torch.Tensor, int]]):
         return image, target
 
 
-class AllTumorDataset(Dataset[tuple[torch.Tensor, str]]):
+class ShrinkLesionDataset(Dataset):
+    """Used to apply image shrinking augmentations to entire dataset"""
+
     def __init__(self, image_path: pathlib.Path) -> None:
         self._image_paths = sorted(list(image_path.iterdir()))
         self._len = len(self._image_paths)
@@ -49,10 +51,9 @@ class AllTumorDataset(Dataset[tuple[torch.Tensor, str]]):
 
     @override
     def __getitem__(self, index: int) -> tuple[torch.Tensor, str]:
-        return (
-            _shrink_transforms(io.read_image(self._image_paths[index]) / 255),
-            self._image_paths[index].stem,
-        )
+        image = _shrink_transforms(io.read_image(self._image_paths[index]) / 255)
+        path = self._image_paths[index].stem
+        return (image, path)
 
 
 _augmentations = transforms.Compose(

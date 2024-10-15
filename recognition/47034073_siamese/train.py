@@ -292,7 +292,7 @@ def _evaluate_classification(
     if not minimal:
         logger.info("%s data report:\n%s\nauc: %f\n", data_name, report, auc)
         RocCurveDisplay.from_predictions(labels, proba[:, 1])
-        plt.savefig(f"plots/{data_name}_roc")
+        plt.savefig(PLOTS_PATH / f"{data_name}_roc")
     return auc
 
 

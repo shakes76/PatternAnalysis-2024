@@ -52,7 +52,36 @@ class VectorQuantizer(nn.Module):
         q_latent_loss = F.mse_loss(quantized, inputs.detach())
         loss = q_latent_loss + self.commitment_cost * e_latent_loss
 
-        quantized = inputs + (quantized - inputs).detach()  # Straight-through estimator
+        # Straight-through estimator
+        quantized = inputs + (quantized - inputs).detach()
 
         # Convert quantized from BHWC -> BCHW
         return loss, quantized.permute(0, 3, 1, 2).contiguous(), encoding_indices
+
+
+class ResidualBlock(nn.Module):
+    """
+    Residual block used in the encoder and decoder
+    """
+    def __init__(self, in_channels, out_channels):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding = 1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding = 1)
+        self.relu = nn.ReLU(inplace = True)
+
+        if in_channels != out_channels:
+            self.projection = nn.Conv2d(in_channels, out_channels, 1)
+        else:
+            self.projection = None
+
+
+    def forward(self, x):
+        residual = x
+
+        out = self.relu(self.conv1(x))
+        out = self.conv2(out)
+
+        if self.projection:
+            residual = self.projection(x)
+
+        return self.relu(out + residual)

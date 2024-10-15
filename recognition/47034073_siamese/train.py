@@ -3,6 +3,7 @@ import argparse
 import logging
 import pathlib
 
+from sklearn.base import ClassifierMixin
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import normalize, scale
 from sklearn.metrics import classification_report, roc_auc_score, RocCurveDisplay
@@ -14,7 +15,6 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from pytorch_metric_learning.samplers import MPerClassSampler
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
@@ -33,7 +33,7 @@ IMAGES_PATH = DATA_PATH / "small_images"
 
 
 def main() -> None:
-    """Handle training, validation and testing."""
+    """Handle training, validation and testing of triamese network."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("-c", "--continue-training", action="store_true")
@@ -79,16 +79,10 @@ def main() -> None:
     # Siamese training data
     train_meta_df = pd.read_csv(TRAIN_META_PATH)
     dataset = TumorClassificationDataset(IMAGES_PATH, train_meta_df, transform=True)
-    # sampler = MPerClassSampler(
-    #     labels=train_meta_df["target"],
-    #     m=hparams.batch_size / 2,
-    #     length_before_new_iter=1_000 if args.debug else len(train_meta_df),
-    # )
     train_loader = DataLoader(
         dataset,
         pin_memory=True,
         num_workers=num_workers,
-        # sampler=sampler,
         shuffle=True,
         batch_size=hparams.batch_size,
         drop_last=True,
@@ -119,20 +113,23 @@ def main() -> None:
     nn_best_auc = 0
 
     def validate():
+        """To run at the end of epoch to check performance of each classifier on validation data."""
         nonlocal knn_best_auc
         nonlocal svm_best_auc
         nonlocal nn_best_auc
 
+        # Get train and validation embeddings
         embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
         embeddings = normalize(embeddings)
-
         val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
         val_embeddings = normalize(val_embeddings)
 
+        # Fit classifiers
         fit_nn = nn.fit(embeddings, labels)
         fit_knn = knn.fit(embeddings, labels)
         fit_svm = svm.fit(embeddings, labels)
 
+        # Compute AUC scores
         knn_auc = _evaluate_classification(
             fit_knn, val_embeddings, val_labels, minimal=True
         )
@@ -144,14 +141,13 @@ def main() -> None:
         )
         logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", svm_auc, knn_auc, nn_auc)
 
+        # Check for best auc so far
         if knn_auc > knn_best_auc:
             knn_best_auc = knn_auc
             trainer.save_model(f"{model_name}_best_knn")
-
         if svm_auc > svm_best_auc:
             svm_best_auc = svm_auc
             trainer.save_model(f"{model_name}_best_svm")
-
         if nn_auc > nn_best_auc:
             nn_best_auc = nn_auc
             trainer.save_model(f"{model_name}_best_nn")
@@ -278,15 +274,19 @@ def main() -> None:
 
 
 def _evaluate_classification(
-    knn: KNeighborsClassifier,
+    model: ClassifierMixin,
     embeddings: torch.Tensor,
     labels: torch.Tensor,
     data_name: str = "train",
     minimal: bool = False,
 ) -> float:
-    """Generate classification report"""
-    predictions = knn.predict(embeddings)
-    proba = knn.predict_proba(embeddings)
+    """Generate classification report
+
+    Returns:
+        AUC score
+    """
+    predictions = model.predict(embeddings)
+    proba = model.predict_proba(embeddings)
     report = classification_report(labels, predictions)
     auc = roc_auc_score(labels, proba[:, 1])
     if not minimal:

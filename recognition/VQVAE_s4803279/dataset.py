@@ -11,34 +11,34 @@ import os
 from tqdm import tqdm
 
 
-def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
+def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     channels = np.unique(arr)
-    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
+    res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
     for c in channels:
         c = int(c)
-        res[..., c:c+1][arr == c] = 1
+        res[..., c:c + 1][arr == c] = 1
     return res
 
 
-def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
+def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False):
     affines = []
 
     num = len(imageNames)
-    first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
+    first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
     if len(first_case.shape) == 3:
         first_case = first_case[:,:,0]
 
     if categorical:
-        first_case = to_channels(first_case, dtype=dtype)
+        first_case = to_channels(first_case, dtype = dtype)
         rows, cols, channels = first_case.shape
-        images = np.zeros((num, rows, cols, channels), dtype=dtype)
+        images = np.zeros((num, rows, cols, channels), dtype = dtype)
     else:
         rows, cols = first_case.shape
-        images = np.zeros((num, rows, cols), dtype=dtype)
+        images = np.zeros((num, rows, cols), dtype = dtype)
 
     for i, inName in enumerate(tqdm(imageNames)):
         niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged')
+        inImage = niftiImage.get_fdata(caching = 'unchanged')
         affine = niftiImage.affine
         if len(inImage.shape) == 3:
             inImage = inImage[:,:,0]
@@ -46,7 +46,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         if normImage:
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
-            inImage = to_channels(inImage, dtype=dtype)
+            inImage = to_channels(inImage, dtype = dtype)
             images[i,:,:,:] = inImage
         else:
             images[i,:,:] = inImage
@@ -62,13 +62,13 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
 
 class VQVAENIfTIDataset(Dataset):
-    def __init__(self, data_dir, transform=None, normImage=True, categorical=False):
+    def __init__(self, data_dir, transform = None, normImage = True, categorical = False):
         self.data_dir = data_dir
         self.transform = transform
         self.normImage = normImage
         self.categorical = categorical
         self.file_list = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.nii.gz')]
-        self.images = load_data_2D(self.file_list, normImage=self.normImage, categorical=self.categorical)
+        self.images = load_data_2D(self.file_list, normImage = self.normImage, categorical = self.categorical)
 
 
     def __len__(self):
@@ -91,8 +91,7 @@ class VQVAENIfTIDataset(Dataset):
         return image_tensor
 
 
-def create_nifti_data_loaders(data_dir, batch_size, num_workers=4, normImage=True, categorical=False):
-    dataset = VQVAENIfTIDataset(data_dir, normImage=normImage, categorical=categorical)
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+def create_nifti_data_loaders(data_dir, batch_size, num_workers = 4, normImage = True, categorical = False):
+    dataset = VQVAENIfTIDataset(data_dir, normImage = normImage, categorical = categorical)
+    data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers)
     return data_loader
-

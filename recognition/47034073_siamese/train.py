@@ -46,20 +46,33 @@ def main() -> None:
 
     # Training params
     num_workers = 2
-    learning_rate = 0.0001
+    learning_rate = 0.00001
     model_name = "most_recent"
 
     hparams = HyperParams(
         batch_size=128,
         num_epochs=1000,
         learning_rate=learning_rate,
-        margin=0.2,
+        margin=1,
     )
     if args.debug:
         hparams = HyperParams(batch_size=128, num_epochs=2, learning_rate=learning_rate)
 
     trainer = SiameseController(
         hparams, model_name="debug" if args.debug else model_name
+    )
+
+    # Define classifiers
+    knn = KNeighborsClassifier(
+        n_neighbors=100, weights=lambda arr: _margin_weight(arr, hparams), p=2
+    )
+    svm = SVC(probability=True)
+    nn = neural_network.MLPClassifier(
+        hidden_layer_sizes=(64),
+        learning_rate_init=0.00001,
+        random_state=42,
+        early_stopping=True,
+        verbose=False,
     )
 
     # Training data
@@ -90,10 +103,14 @@ def main() -> None:
         val_dataset, batch_size=hparams.batch_size, num_workers=num_workers
     )
 
-    best_auc = 0
+    knn_best_auc = 0
+    svm_best_auc = 0
+    nn_best_auc = 0
 
     def validate():
-        nonlocal best_auc
+        nonlocal knn_best_auc
+        nonlocal svm_best_auc
+        nonlocal nn_best_auc
 
         embeddings, labels = trainer.compute_all_embeddings(train_classification_loader)
         embeddings = normalize(embeddings)
@@ -101,52 +118,49 @@ def main() -> None:
         val_embeddings, val_labels = trainer.compute_all_embeddings(val_loader)
         val_embeddings = normalize(val_embeddings)
 
-        def margin_weight(arr):
-            closest = arr.argmin(axis=1)
-            weights = (arr <= hparams.margin).astype(int)
-            weights[:, closest] = 1
-
-            return weights
-
-        knn = KNeighborsClassifier(n_neighbors=100, weights=margin_weight, p=2)
-        svm = SVC(probability=True)
-        nn = neural_network.MLPClassifier(
-            hidden_layer_sizes=(64),
-            learning_rate_init=0.0001,
-            random_state=42,
-            early_stopping=True,
-            verbose=False,
-        )
         fit_nn = nn.fit(embeddings, labels)
         fit_knn = knn.fit(embeddings, labels)
         fit_svm = svm.fit(embeddings, labels)
 
-        pred_labels = fit_knn.predict(val_embeddings)
-        svm_labels = fit_svm.predict(val_embeddings)
-        nn_labels = fit_nn.predict(val_embeddings)
-
-        auc = roc_auc_score(val_labels, pred_labels)
-        svm_auc = roc_auc_score(val_labels, svm_labels)
-        nn_auc = roc_auc_score(val_labels, nn_labels)
+        knn_auc = _evaluate_classification(
+            fit_knn, val_embeddings, val_labels, minimal=True
+        )
+        svm_auc = _evaluate_classification(
+            fit_svm, val_embeddings, val_labels, minimal=True
+        )
+        nn_auc = _evaluate_classification(
+            fit_nn, val_embeddings, val_labels, minimal=True
+        )
         logger.info("\nsvm auc %e\nknn auc %e\nMLP auc %e", auc, svm_auc, nn_auc)
 
-        if auc > best_auc:
-            best_auc = auc
-            trainer.save_model(f"best_{model_name}")
+        if knn_auc > knn_best_auc:
+            knn_best_auc = knn_auc
+            trainer.save_model(f"{model_name}_best_knn")
+
+        if svm_auc > svm_best_auc:
+            svm_best_auc = svm_auc
+            trainer.save_model(f"{model_name}_best_svm")
+
+        if nn_auc > nn_best_auc:
+            nn_best_auc = nn_auc
+            trainer.save_model(f"{model_name}_best_nn")
 
     trainer.end_of_epoch_func = validate
 
-    sampler = MPerClassSampler(
-        labels=train_meta_df["target"],
-        m=hparams.batch_size / 2,
-        length_before_new_iter=1_000 if args.debug else len(train_meta_df),
-    )
+    # sampler = MPerClassSampler(
+    #     labels=train_meta_df["target"],
+    #     m=hparams.batch_size / 2,
+    #     length_before_new_iter=1_000 if args.debug else len(train_meta_df),
+    # )
+
     train_loader = DataLoader(
         dataset,
         pin_memory=True,
         num_workers=num_workers,
-        sampler=sampler,
+        # sampler=sampler,
+        shuffle=True,
         batch_size=hparams.batch_size,
+        drop_last=True,
     )
 
     if args.continue_training and args.load_model is None:
@@ -220,22 +234,15 @@ def main() -> None:
     logger.info("Writing image")
     plt.savefig("plots/train_tsne")
 
-    # Fit KNN
-    def margin_weight(arr):
-        closest = arr.argmin(axis=1)
-        weights = (arr <= hparams.margin).astype(int)
-        weights[:, closest] = 1
-
-        return weights
-
-    knn = KNeighborsClassifier(n_neighbors=100, weights=margin_weight, p=2)
-    # knn = SVC(probability=True)
     logger.info("Fitting KNN...")
     fit_knn = knn.fit(embeddings, labels)
+    logger.info("Fitting SVM")
+    fit_svm = svm.fit(embeddings, labels)
 
     # Eval on train
     logger.info("Evaluating classification on train data...")
     _evaluate_classification(fit_knn, embeddings, labels, data_name="train")
+    _evaluate_classification(fit_svm, embeddings, labels, data_name="train(SVM)")
 
     # Validation data
     # val_meta_df = pd.read_csv(VAL_META_PATH)
@@ -249,6 +256,7 @@ def main() -> None:
     # Eval on validation
     logger.info("Evaluating classification on val data...")
     _evaluate_classification(fit_knn, val_embeddings, val_labels, data_name="val")
+    _evaluate_classification(fit_svm, val_embeddings, val_labels, data_name="val(SVM)")
 
     if args.test:
         test_meta_df = pd.read_csv(TEST_META_PATH)
@@ -263,6 +271,7 @@ def main() -> None:
 
         logger.info("Evaluating classification on test data...")
         _evaluate_classification(fit_knn, embeddings, labels, data_name="test")
+        _evaluate_classification(fit_svm, embeddings, labels, data_name="test(svm)")
 
     total_script_time = time.time() - script_start_time
     logger.info("Script done in %d seconds.", total_script_time)
@@ -273,14 +282,25 @@ def _evaluate_classification(
     embeddings: torch.Tensor,
     labels: torch.Tensor,
     data_name: str = "train",
-) -> None:
+    minimal: bool = False,
+) -> float:
     predictions = knn.predict(embeddings)
     proba = knn.predict_proba(embeddings)
     report = classification_report(labels, predictions)
     auc = roc_auc_score(labels, proba[:, 1])
-    logger.info("%s data report:\n%s\nauc: %f", data_name, report, auc)
-    RocCurveDisplay.from_predictions(labels, proba[:, 1])
-    plt.savefig(f"plots/{data_name}_roc")
+    if not minimal:
+        logger.info("%s data report:\n%s\nauc: %f", data_name, report, auc)
+        RocCurveDisplay.from_predictions(labels, proba[:, 1])
+        plt.savefig(f"plots/{data_name}_roc")
+    return auc
+
+
+def _margin_weight(arr, hparams):
+    closest = arr.argmin(axis=1)
+    weights = (arr <= hparams.margin).astype(int)
+    weights[:, closest] = 1
+
+    return weights
 
 
 if __name__ == "__main__":

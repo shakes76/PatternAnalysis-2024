@@ -1,29 +1,20 @@
 import math
 import logging
+import torch
+import torch.fft
+import torch.nn as nn
 from functools import partial
 from collections import OrderedDict
-from copy import Error, deepcopy
-from re import S
-from numpy.lib.arraypad import pad
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-import torch.fft
-from torch.nn.modules.container import Sequential
 
-_logger = logging.getLogger(__name__)
-
+from dataset import ADNI_DEFAULT_MEAN_TRAIN, ADNI_DEFAULT_STD_TRAIN
 
 def _cfg(url='', **kwargs):
     return {
         'url': url,
         'num_classes': 2, 'input_size': (1, 224, 224), 'pool_size': None,
         'crop_pct': .9, 'interpolation': 'bicubic',
-        'mean': 0.19868804514408112, 'std': 0.24770835041999817,
+        'mean': ADNI_DEFAULT_MEAN_TRAIN, 'std': ADNI_DEFAULT_STD_TRAIN,
         'first_conv': 'patch_embed.proj', 'classifier': 'head',
         **kwargs
     }
@@ -126,7 +117,6 @@ class PatchEmbed(nn.Module):
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
-
 
 class DownLayer(nn.Module):
     """ Image to Patch Embedding

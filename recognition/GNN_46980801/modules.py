@@ -38,3 +38,24 @@ class GCNNet(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 
+#Training Loop 
+def train(model, data):
+    #Adam chosen for loss fucntion 
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+
+    #Cross Entropy Chosen for criterion 
+    criterion = torch.nn.CrossEntropyLoss()
+
+    #set ot training mode 
+    model.train()
+    
+    optimizer.zero_grad()
+
+    out = model(data)
+    #Compute loss
+    loss = criterion(out[data.train_mask], data.y[data.train_mask])
+    loss.backward()
+
+    #Gradient step 
+    optimizer.step()
+    return loss.item()

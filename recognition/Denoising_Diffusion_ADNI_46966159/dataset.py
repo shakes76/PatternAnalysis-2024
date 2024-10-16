@@ -4,12 +4,14 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 
 # specify directory of data
-dataroot = "/home/groups/comp3710/ADNI"
-# dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/Denoising_Diffusion_ADNI_46966159/ADNI"
+# dataroot = "/home/groups/comp3710/ADNI"
+dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/Denoising_Diffusion_ADNI_46966159/ADNI"
 
+# chosen hyperparameters
 batch_size = 28
 image_size = 64
 
+# normalise, resize images and randomly flip
 dataset = torchvision.datasets.ImageFolder(root=dataroot,
                                            transform=transforms.Compose([
                                                transforms.Resize((image_size, image_size)),
@@ -29,7 +31,7 @@ def show_images(images, title=""):
         images = images.detach().cpu().numpy()
 
     # Defining number of rows and columns
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(6, 5))
     rows = int(len(images) ** (1 / 2))
     cols = round(len(images) / rows)
 
@@ -37,14 +39,15 @@ def show_images(images, title=""):
     idx = 0
     for i in range(rows):
         for j in range(cols):
-            fig.add_subplot(rows, cols, idx + 1)
+            ax = fig.add_subplot(rows, cols, idx + 1)
 
             if idx < len(images):
-                plt.imshow(images[idx][0], cmap="gray")
+
+                ax.imshow(images[idx][0], cmap="gray")
+                ax.axis('off')
                 idx += 1
     fig.suptitle(title, fontsize=30)
 
-    # Showing the figure
     plt.show()
 
 def show_first_batch(loader):

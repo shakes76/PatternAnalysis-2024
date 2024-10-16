@@ -6,6 +6,11 @@ import modules
 
 
 def display_reverse(images):
+    """
+    Display reverse process of image generation
+    :param images: final generated samples
+    :return:
+    """
     fig, axes = plt.subplots(1, 10, figsize=(10, 1))
     for i, ax in enumerate(axes.flat):
         x = images[i].squeeze(0)
@@ -17,12 +22,19 @@ def display_reverse(images):
 
 
 def generate_images(checkpoint_path = None, num_time_steps = 1000, ema_decay = 0.9999, ):
+    """
+    Generate sample images
+    :param checkpoint_path: model checkpoint directory
+    :param num_time_steps: number of steps set at 1000
+    :param ema_decay: exponential moving average decay
+    """
     checkpoint = torch.load(checkpoint_path)
     model = modules.UNET().cuda()
     model.load_state_dict(checkpoint['weights'])
     ema = ModelEmaV3(model, decay=ema_decay)
     ema.load_state_dict(checkpoint['ema'])
     scheduler = modules.DiffusionScheduler(num_time_steps=num_time_steps)
+    # time snapshots for plotting
     times = [0, 15, 50, 100, 200, 300, 400, 550, 700, 999]
     images = []
 

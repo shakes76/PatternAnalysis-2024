@@ -9,6 +9,26 @@ GANs generally output high quality images and are fast and sampling, but have lo
 VAEs have fast sampling and high diversity, but suffer from lower quality samples, mostly due
 to blurring.
 
+## Requirements
+This project requires several Python packages to function properly. 
+It is assumed that torch with gpu and cuda is used.
+Below is a list of the required packages along with their specified versions:
+
+- **einops**: `0.8.0` - A flexible and powerful library for manipulating tensor shapes.
+- **matplotlib**: `3.9.2` - A plotting library for creating static, animated, and interactive visualizations in Python.
+- **scikit-learn**: `1.5.2` - A library for machine learning that provides simple and efficient tools for data mining and data analysis.
+- **timm**: `1.0.10` - A library that provides PyTorch image models, including many popular pre-trained models.
+- **torch**: `2.4.0` - The core library for PyTorch, a deep learning framework.
+- **torchvision**: `0.19.0` - A library that provides computer vision functionalities in PyTorch, including datasets, model architectures, and image transformations.
+- **tqdm**: `4.66.5` - A fast, extensible progress bar for Python.
+
+### Installation
+
+To install the required packages, you can use the following command:
+
+```bash
+pip install -r requirements.txt
+```
 
 ### Diffusion process
 The diffusion process or forward process is a Markov chain that adds noise to the data. The
@@ -43,7 +63,7 @@ calculated by using mean-squared error loss as KL divergence approximation.
 This loss can then be used to optimise the model's parameters.
 
 ![img.png](figures/train_alg.png)
-*Training algorithm outlined in DDPM paper*
+
 
 ### Sampling
 With a model that can successfully predict the amount of noise at some time step of the forward process,
@@ -52,7 +72,7 @@ and then going through the reverse process to $`t=0`$ where the result is a gene
 time step $`t-1`$, a small amount of noise is added to keep the process stable.
 
 ![img.png](figures/sample_alg.png)
-*Sampling algorthm outlined in DDPM paper*
+
 
 ### Parameters
 The number of time steps $`T`$ is a hyperparameter that must be pre-decided. Here, we will set $`T=1000`$
@@ -104,7 +124,8 @@ found. Finally, the images were normalised and then converted to a tensor.
 
 ## Results
 ### Training
-
+![training_img.png](figures/training_img.png)
+Example batch of training images
 ### Sampling
 
 ### t-SNE

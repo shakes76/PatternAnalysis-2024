@@ -5,11 +5,15 @@ from einops import rearrange
 import math
 
 class SinusoidalEmbeddings(nn.Module):
+    """
+    Sinusoidal embeddings provide positional information by using sine & cosine functions.
+    """
     def __init__(self, time_steps, embed_dim):
         super().__init__()
         position = torch.arange(time_steps).unsqueeze(1).float()
         div = torch.exp(torch.arange(0, embed_dim, 2).float() * -(math.log(10000.0) / embed_dim))
         embeddings = torch.zeros(time_steps, embed_dim, requires_grad=False)
+        # sine and cosine curves of varying frequencies
         embeddings[:, 0::2] = torch.sin(position * div)
         embeddings[:, 1::2] = torch.cos(position * div)
         self.embeddings = embeddings
@@ -20,13 +24,15 @@ class SinusoidalEmbeddings(nn.Module):
 
 class ResBlock(nn.Module):
     """
-    Residual Block
+    Residual block applies convolutional layers with skip connections.
+    Group norm and dropout are utilised for performance
     """
     def __init__(self, channels, groups, dropout_prob):
         super().__init__()
         self.relu = nn.ReLU(inplace=True)
         self.gnorm1 = nn.GroupNorm(num_groups=groups, num_channels=channels)
         self.gnorm2 = nn.GroupNorm(num_groups=groups, num_channels=channels)
+        # 3x3 same convolution
         self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
         self.dropout = nn.Dropout(p=dropout_prob, inplace=True)
@@ -40,7 +46,7 @@ class ResBlock(nn.Module):
 
 class Attention(nn.Module):
     """
-    Make use of attention
+    Perform self-attention on the input features.
     """
     def __init__(self, channels, heads, dropout_prob):
         super().__init__()
@@ -51,6 +57,8 @@ class Attention(nn.Module):
 
     def forward(self, x):
         h, w = x.shape[2:]
+        # transform data from einops library to deal with tensors easily
+        # (b) batch size (c) channels (h) height (w) width
         x = rearrange(x, 'b c h w -> b (h w) c')
         x = self.proj1(x)
         x = rearrange(x, 'b L (C H K) -> K b H L C', K=3, H=self.num_heads)
@@ -62,9 +70,9 @@ class Attention(nn.Module):
 
 class UnetLayer(nn.Module):
     """
-    Complete UNet layer
+    A complete single layer of the UNet architecture.
     """
-    def __init__(self, upscale, attention, num_groups, dropout_prob, num_heads, channels):
+    def __init__(self, upscale, has_attention, num_groups, dropout_prob, num_heads, channels):
         super().__init__()
         self.ResBlock1 = ResBlock(channels=channels, groups=num_groups, dropout_prob=dropout_prob)
         self.ResBlock2 = ResBlock(channels=channels, groups=num_groups, dropout_prob=dropout_prob)
@@ -72,7 +80,7 @@ class UnetLayer(nn.Module):
             self.conv = nn.ConvTranspose2d(channels, channels // 2, kernel_size=4, stride=2, padding=1)
         else:
             self.conv = nn.Conv2d(channels, channels * 2, kernel_size=3, stride=2, padding=1)
-        if attention:
+        if has_attention:
             self.attention_layer = Attention(channels, heads=num_heads, dropout_prob=dropout_prob)
 
     def forward(self, x, embeddings):
@@ -84,33 +92,36 @@ class UnetLayer(nn.Module):
 
 class UNET(nn.Module):
     """
-    UNet CNN
+    U-Net model for image segmentation and denoising tasks.
+    32 groups are used for group normalization.
+    8 heads are used for self-attention.
+    dropout probability is set to 0.1.
     """
     def __init__(self,
-                 Channels = [256, 512, 1024, 2048, 2048, 1536],
-                 Attentions = [False, True, False, False, False, True],
-                 Upscales = [False, False, False, True, True, True],
-                 num_groups: int = 32,
-                 dropout_prob: float = 0.1,
-                 num_heads: int = 8,
-                 input_channels: int = 3,
-                 output_channels: int = 3,
-                 time_steps: int = 1000):
+                 channels = [128, 256, 512, 1024, 1024, 768],
+                 is_attention = [False, True, False, False, False, True],
+                 is_upscale = [False, False, False, True, True, True],
+                 num_groups = 32,
+                 dropout_prob = 0.1,
+                 num_heads = 8,
+                 input_channels = 3,
+                 output_channels = 3,
+                 time_steps = 1000):
         super().__init__()
-        self.num_layers = len(Channels)
-        self.shallow_conv = nn.Conv2d(input_channels, Channels[0], kernel_size=3, padding=1)
-        out_channels = (Channels[-1]//2)+Channels[0]
+        self.num_layers = len(channels)
+        self.shallow_conv = nn.Conv2d(input_channels, channels[0], kernel_size=3, padding=1)
+        out_channels = (channels[-1] // 2) + channels[0]
         self.late_conv = nn.Conv2d(out_channels, out_channels//2, kernel_size=3, padding=1)
         self.output_conv = nn.Conv2d(out_channels//2, output_channels, kernel_size=1)
         self.relu = nn.ReLU(inplace=True)
-        self.embeddings = SinusoidalEmbeddings(time_steps=time_steps, embed_dim=max(Channels))
+        self.embeddings = SinusoidalEmbeddings(time_steps=time_steps, embed_dim=max(channels))
         for i in range(self.num_layers):
             layer = UnetLayer(
-                upscale=Upscales[i],
-                attention=Attentions[i],
+                upscale=is_upscale[i],
+                has_attention=is_attention[i],
                 num_groups=num_groups,
                 dropout_prob=dropout_prob,
-                channels=Channels[i],
+                channels=channels[i],
                 num_heads=num_heads
             )
             setattr(self, f'Layer{i+1}', layer)
@@ -129,6 +140,9 @@ class UNET(nn.Module):
         return self.output_conv(self.relu(self.late_conv(x)))
 
 class DiffusionScheduler(nn.Module):
+    """
+    Linearly increase the beta values from 1e-4 to 0.02 over the entire training process.
+    """
     def __init__(self, num_time_steps: int=1000):
         super().__init__()
         self.beta = torch.linspace(1e-4, 0.02, num_time_steps, requires_grad=False)

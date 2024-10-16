@@ -103,6 +103,7 @@ The number of triplets mined in each minibatch can be seen in Figure [num]().
 We can visualize the embeddings and formed clusters in a 2-dimensional space by fitting a t-distributed Stochastic Neighbor Embedding (TSNE) model. A plot of this for the undersampled training data can be seen in Figure [num]().
 
 ![TSNE clusters](readme_assets/train_tsne.png)
+*Figure num: TSNE space projection of undersampled train set embeddings.*
 
 We can see that reasonable separation appears to have occured.
 

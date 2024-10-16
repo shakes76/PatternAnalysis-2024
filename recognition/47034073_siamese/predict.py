@@ -15,6 +15,8 @@ def main():
     if args.load_model is not None:
         trainer.load_model(args.load_model)
 
+    svm_train_dataset = 
+
 
 if __name__ == "__main__":
     main()

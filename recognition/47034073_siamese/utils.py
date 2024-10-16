@@ -1,6 +1,8 @@
 import pathlib
 import logging
 
+import pandas as pd
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.decomposition import PCA
@@ -8,8 +10,10 @@ from sklearn.manifold import TSNE
 from sklearn import preprocessing
 
 from trainer import SiameseController
+from dataset import LesionClassificationDataset
 
 PLOTS_PATH = pathlib.Path("plots")
+IMAGES_PATH = pathlib.Path("data/small_images")
 
 logger = logging.getLogger(__name__)
 
@@ -77,3 +81,20 @@ def plot_tsne(embeddings, targets) -> None:
     plt.legend(handles=[benign_patch, malignant_patch])
     logger.info("Writing image")
     plt.savefig(PLOTS_PATH / "train_tsne")
+
+
+def get_classifier_loader(
+    train_meta_df: pd.DataFrame, batch_size: int = 128, num_workers: int = 2
+) -> tuple[pd.DataFrame, DataLoader]:
+    """Return loader for classifier"""
+    benign = train_meta_df[train_meta_df["target"] == 0]
+    malignant = train_meta_df[train_meta_df["target"] == 1]
+    benign = benign.sample(random_state=42, n=len(malignant))
+    balanced_df = pd.concat([benign, malignant])
+    balanced_ds = LesionClassificationDataset(IMAGES_PATH, balanced_df, transform=False)
+    loader = DataLoader(
+        balanced_ds,
+        batch_size=batch_size,
+        num_workers=num_workers,
+    )
+    return balanced_df, loader

@@ -13,7 +13,6 @@ from dataset import TrainPreprocessing, TestPreprocessing
 from modules import GFNet
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
 from utils import EarlyStopping
 import optuna
 from optuna.terminator import EMMREvaluator, MedianErrorEvaluator, Terminator, TerminatorCallback
@@ -22,7 +21,7 @@ import gc
 def train_one_epoch(model, train_loader, criterion, optimiser, device):
     model.train()
     running_loss = 0.0 
-    for inputs, labels in tqdm(train_loader):
+    for inputs, labels in train_loader:
         inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device)  
         optimiser.zero_grad()
         outputs = model(inputs)
@@ -39,7 +38,7 @@ def validate(model, val_loader, criterion, device):
     model.eval()
     running_loss = 0.0
     with torch.no_grad():
-        for inputs, labels in tqdm(val_loader):
+        for inputs, labels in val_loader:
             inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device) 
             outputs = model(inputs)
             loss = criterion(outputs, labels)
@@ -60,15 +59,15 @@ def objective(trial):
     os.makedirs(output_dir, exist_ok=True)
 
     # load data
-    train_dataset_path = "../dataset/AD_NC/train"
-
+    #train_dataset_path = "../dataset/AD_NC/train"
+    train_dataset_path = " /home/groups/comp3710/ADNI/AD_NC/train"
     # Load train and validation data
     train_data = TrainPreprocessing(train_dataset_path, batch_size=batch_size)
     train_loader, val_loader = train_data.get_train_val_loaders(val_split=0.2)
 
     # model initalisation
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # Test model (tiny tiny)
+    # Base model 
     model = GFNet(
         img_size=224, 
         num_classes=1,

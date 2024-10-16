@@ -20,7 +20,8 @@ batch_size = 128
 
 
 # Load test data
-test_dataset_path = "../dataset/AD_NC/test"
+#test_dataset_path = "../dataset/AD_NC/test"
+test_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/test"
 test_data = TestPreprocessing(test_dataset_path, batch_size=batch_size)
 test_loader = test_data.get_test_loader()
 

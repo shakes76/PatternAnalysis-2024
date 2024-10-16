@@ -4,6 +4,9 @@ from dataset import load_data
 from sklearn.metrics import accuracy_score
 
 def train(data, model, optimizer, loss_fn, epochs=100):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+    data = data.to(device)
     model.train()
     best_val_loss = float('inf')
     

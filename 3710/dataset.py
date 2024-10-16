@@ -3,24 +3,19 @@ import torch
 from torch_geometric.data import Data
 from torch_geometric.utils import add_self_loops
 
-def create_masks(labels, num_labeled=800, train_ratio=0.7, val_ratio=0.15):
-    # Select indices of labeled nodes
-    labeled_indices = (labels != -1).nonzero(as_tuple=True)[0].numpy()  # Assuming -1 represents no label
-    np.random.shuffle(labeled_indices)
-
-    # Split labeled nodes into train, validation, and test sets
-    num_labeled = min(num_labeled, len(labeled_indices))
-    labeled_indices = labeled_indices[:num_labeled]
-    
-    train_split = int(train_ratio * num_labeled)
-    val_split = int(val_ratio * num_labeled)
-
-    train_indices = labeled_indices[:train_split]
-    val_indices = labeled_indices[train_split:train_split + val_split]
-    test_indices = labeled_indices[train_split + val_split:]
-
-    # Create masks for train, validation, and test sets
+def create_masks(labels, train_ratio=0.7, val_ratio=0.15):
     num_nodes = len(labels)
+    indices = np.arange(num_nodes)
+    np.random.shuffle(indices)
+
+    train_split = int(train_ratio * num_nodes)
+    val_split = int(val_ratio * num_nodes)
+
+    train_indices = indices[:train_split]
+    val_indices = indices[train_split:train_split + val_split]
+    test_indices = indices[train_split + val_split:]
+
+    # 创建训练、验证和测试集的掩码
     train_mask = torch.zeros(num_nodes, dtype=torch.bool)
     val_mask = torch.zeros(num_nodes, dtype=torch.bool)
     test_mask = torch.zeros(num_nodes, dtype=torch.bool)
@@ -32,37 +27,36 @@ def create_masks(labels, num_labeled=800, train_ratio=0.7, val_ratio=0.15):
     return train_mask, val_mask, test_mask
 
 def load_data(npz_file_path):
-    # Step 1: Load the .npz data file
+    # 第一步：加载 .npz 数据文件
     data = np.load(npz_file_path)
 
-    # Step 2: Extract features, edges, and labels from the data
+    # 第二步：从数据中提取特征、边和标签
     features = data['features']
     edges = data['edges']
     labels = data['target']
 
-    # Step 3: Convert features, edges, and labels into a PyTorch Geometric Data object
+    # 第三步：将特征、边和标签转换为 PyTorch Geometric 的 Data 对象
     edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
     x = torch.tensor(features, dtype=torch.float)
     y = torch.tensor(labels, dtype=torch.long)
 
-    # Add self-loops
+    # 添加自环
     edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))
 
-    # Generate train, validation, and test masks only for labeled nodes
+    # 对所有节点随机划分训练、验证和测试集
     train_mask, val_mask, test_mask = create_masks(y)
 
-    # Create Data object
+    # 创建 Data 对象
     data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_mask, val_mask=val_mask, test_mask=test_mask)
 
-    # Print some debugging information
+    # 打印一些调试信息
     print("Features shape:", features.shape)
     print("Edges shape:", edges.shape)
     print("Labels shape:", y.shape)
-    print("Number of labeled nodes:", (y != -1).sum().item())
+    print("Number of nodes:", x.size(0))
     print("Number of training nodes:", train_mask.sum().item())
     print("Number of validation nodes:", val_mask.sum().item())
     print("Number of test nodes:", test_mask.sum().item())
     print("Data object:", data)
 
     return data
-

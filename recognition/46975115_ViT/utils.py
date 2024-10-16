@@ -3,7 +3,7 @@ import torch.optim as optim
 def get_hyperparameters():
     return {
         'batch_size': 64,
-        'num_epochs': 20,
+        'num_epochs': 25,
         'learning_rate': 1e-4,
     }
 

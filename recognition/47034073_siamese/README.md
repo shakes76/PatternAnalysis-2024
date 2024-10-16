@@ -68,11 +68,11 @@ The 2020 Kaggle ISIC malignant lesion detection challenge was to correctly class
 There are a few standard techniques for dealing with highly imbalanced data such as re-sampling and heavy augmentation. Metric learning is another method that alleviates the issue by generating a large amount of training data in the form of observation combinations. Because of the combinatorial explosion of pairings, we can worry less about the class imbalance. Metric learning is the method of directly learning feature embeddings that maximise or minimize some distance between pairs, or in this project's case, triplets, of observations. For our problem, we seek to minimize the distance between observations from the same class and maximize the distance between observations from different classes. 
 
 ## The Training Algorithm and Triplet Loss
-A triamese network was used with the triplet loss [[5]](#5), an extension of the siamese network popularised for one-shot image recognition [[4]](#4). For this training framework, we first compute feature embeddings outputted by the second last layer of a ResNet50 before softmax is applied. The ResNet architecture can be seen in Figure [num](). Pre-trained ImageNet weights were not used, as it was thought that features trained on natural objects would not transfer well to lesion images. Pre-trained network weights have been shown to be inflexible in some cases [in defense](). 
+A triamese network was used with the triplet loss [[5]](#5), an extension of the siamese network popularised for one-shot image recognition [[4]](#4). For this training framework, we first compute feature embeddings outputted by the second last layer of a ResNet50 before softmax is applied. The ResNet architecture can be seen in Figure [1](#fig1). Pre-trained ImageNet weights were not used, as it was thought that features trained on natural objects would not transfer well to lesion images. Pre-trained network weights have been shown to be inflexible in some cases [[3]](#3). 
 
 ![Resnet50 Architecture](readme_assets/lesion_resnet.png)
 
-*Figure num: Resnet50 Architecture. Image adapted from [[1]](#1).*
+*Figure <a id=fig1>1</a>: Resnet50 Architecture. Image adapted from [[1]](#1).*
 
 The ResNet50 produced 2048-dimensional features which were then passed through an additional embedding head which created 256-dimensional latent embedding vectors. This embedding head is formed by a ReLU activation, followed by a 1024-dimensional linear layer, ReLU, a 512-dimensional linear layer, ReLU and lastly a 256-dimensional linear layer. The final embedding was then normalized such that it has unit $L_2$ norm. Let the final normalized embedding be given by $f(x)$ where $f$ is the embedding mapping and $x$ is a lesion image. 
 
@@ -105,44 +105,45 @@ The embedding network was trained with Pytorch using the Adam optimizer with a l
 The KNN used a custom uniform voting from the nearest neighbour and all neighbours that were closer than $m$. The SVM used the default sci-kit learn hyperparameters, most notably a $C$ value of 1 and the Radial Basis Function kernel. The neural network architecture can be seen in Figure [num](), the Adam optimizer was used with a learning rate of 0.0001 and a momentum value of 0.9, and other Adam hyperparameters were set to the sci-kit learn defaults.
 
 ## Results
-The training loss curve for the embedding network can be seen in Figure [num]().
+The training loss curve for the embedding network can be seen in Figure [2](#fig2).
 
 ![Training Loss](readme_assets/train_loss.png "Training loss")
-*Figure num: Training loss for the embedding network.*
 
-The number of triplets mined in each minibatch can be seen in Figure [num]().
+*Figure <a id=fig2>2</a>: Training loss for the embedding network.*
+
+The number of triplets mined in each minibatch can be seen in Figure [3](#fig3).
 
 ![Number of triplets mined](readme_assets/mined.png "Number of mined triplets")
 
-*Figure num: Number of triplets mined in each minibatch.*
+*Figure <a id=fig3>3</a>: Number of triplets mined in each minibatch.*
 
-We can visualize the embeddings and formed clusters in a 2-dimensional space by fitting a t-distributed Stochastic Neighbor Embedding (TSNE) model. A plot of this for the undersampled training data can be seen in Figure [num]().
+We can visualize the embeddings and formed clusters in a 2-dimensional space by fitting a t-distributed Stochastic Neighbor Embedding (TSNE) model. A plot of this for the undersampled training data can be seen in Figure [4](#fig4).
 
 ![TSNE clusters](readme_assets/train_tsne.png)
 
-*Figure num: TSNE space projection of undersampled train set embeddings.*
+*Figure <a id=fig4>4</a>: TSNE space projection of undersampled train set embeddings.*
 
 We can see that reasonable separation appears to have occurred.
 
-The best results were achieved using the SVM classifier. Using this classifier, the ROC and AUC for the train, validation and test sets can be seen in Figures num num and num respectively.
+The best results were achieved using the SVM classifier. Using this classifier, the ROC and AUC for the train, validation and test sets can be seen in Figures [5](#fig5), [6](#fig6) and [7](#fig7) respectively.
 
 ![SVM train ROC](readme_assets/train(SVM)_roc.png)
 
-*Figure num: ROC for SVM on train set*
+*Figure <a id=fig5>5</a>: ROC for SVM on train set*
 
 ![SVM validation ROC](readme_assets/val(SVM)_roc.png)
 
-*Figure num: ROC for SVM on validation set*
+*Figure <a id=fig6>6</a>: ROC for SVM on validation set*
 
 ![SVM test ROC](readme_assets/test(SVM)_roc.png)
 
-*Figure num: ROC for SVM on test set*
+*Figure <a id=fig7>7</a>: ROC for SVM on test set*
 
 We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contained a higher proportion of the likely harder minority class compared to the validation and test sets. When not undersampling the classifier's training set an AUC of 1 was almost always reached on the training set but with bad performance on the others. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.
 
-The classification report for the SVM classifier on the test set can be seen in Table [num](). Class 0 and 1 represent the benign and malignant classes respectively. 
+The classification report for the SVM classifier on the test set can be seen in Table [1](#tab1). Class 0 and 1 represent the benign and malignant classes respectively. 
 
-*Table num: Classification report for SVM on the test set.*
+*Table <a id=tab1>1</a>: Classification report for SVM on the test set.*
 |              | precision | recall | f1-score | support |
 |--------------|-----------|--------|----------|---------|
 | 0            | 0.99      | 0.91   | 0.95     | 6509    |

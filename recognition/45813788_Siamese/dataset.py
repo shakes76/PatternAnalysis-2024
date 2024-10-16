@@ -1,12 +1,13 @@
 '''preprocess dataset'''
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader, dataloader
+from torch.utils.data import DataLoader, dataloader, Dataset
 import os
 from torchvision import transforms
 from PIL import Image
 #import matplotlib as plt
 import matplotlib.pyplot as plt
+import random
 
 current_dir = os.getcwd()
 excel = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-metadata.csv')
@@ -70,6 +71,58 @@ plt.imshow(augmented_image_np)
 plt.axis('off')  # Turn off axis labels
 plt.show()
 
+
+class ISISCDataset(Dataset):
+    def __init__(self, benign_df, malignant_df, images_dir, transform_benign=None, transform_malignant=None, augment_ratio=1.0):
+        self.benign_df = benign_df
+        self.malignant_df = malignant_df
+        self.images_dir = images_dir
+        self.transform_benign = transform_benign
+        self.transform_malignant = transform_malignant
+        self.augment_ratio = augment_ratio
+
+        #list of image IDs
+        self.benign_ids = self.benign_df['isic_id'].tolist()
+        self.malignant_ids = self.malignant_df['isic_id'].tolist()
+
+        #Gen paris
+        self.pairs, self.labels = self.create_pairs()
+
+    def create_pairs(self):
+        pairs = []
+        labels = []
+
+        for _ in range(len(self.benign_ids)):
+            img1, img2 = random.sample(self.benign_ids, 2)
+            pairs.append((img1, img2))
+            labels.append(1)
+
+        for _ in range(len(self.malignant_ids)):
+            img1, img2 = random.sample(self.malignant_ids, 2)
+            pairs.append((img1, img2))
+            labels.append(1)
+
+            if self.augment_ratio > 0 and random.random() < self.augment_ratio:
+                pairs.append((img1,img2))
+                labels.append(1)
+
+        # Negative Pairs
+        for _ in range(len(self.benign_ids)):
+            img1 = random.choice(self.benign_ids)
+            img2 = random.choice(self.benign_ids)
+            pairs.append((img1, img2))
+            labels.append(0)
+
+        return pairs, labels
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def __getitem__(self, index):
+        img1_id, img2_id = self.pairs[index]
+        label = self.labels[index]
+
+        #get images
 
 #print(malignant)
 #print(benign)

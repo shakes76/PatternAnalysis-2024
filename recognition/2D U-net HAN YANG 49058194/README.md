@@ -1,4 +1,4 @@
-# COMP3710-Report
+# 2D U-net model Report
 
 ## Author
 Han Yang 49058194

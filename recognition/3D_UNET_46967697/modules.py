@@ -1,3 +1,10 @@
+"""
+This file contains the 3D U-Net architecture.
+The 3D U-Net architecture is implemented using the DoubleConv, Down, and Up modules.
+
+@author Damian Bellew
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,3 +1,10 @@
+"""
+Contains constants including file paths and parameters for the 3D U-Net model
+Also contains helper functions for uncompressing nii.gz files
+
+@author Damian Bellew
+"""
+
 # FILE PATHS
 DATASET_PATH = '../../../data_copy/HipMRI_Study_open'
 KERAS_SLICES_PATH = DATASET_PATH + '/keras_slices_data'

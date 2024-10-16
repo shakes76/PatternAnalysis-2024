@@ -1,3 +1,10 @@
+"""
+This script trains a 3D U-Net model on the dataset. 
+The model is trained using the Dice loss function and the AdamW optimizer. 
+
+@author Damian Bellew
+"""
+
 import torch.utils
 from utils import *
 from modules import *
@@ -46,7 +53,6 @@ torch.save(model.state_dict(), '3d_unet_model.pth')
 
 # Test the model
 model.eval()
-test_loss = 0.0
 dice_score = 0.0
 
 with torch.no_grad():
@@ -59,19 +65,9 @@ with torch.no_grad():
 
         # Compute loss
         loss = criterion(outputs, labels)
-        test_loss += loss.item()
-        
-        # Compute dice score
-        #preds = torch.sigmoid(outputs)  
-        #preds = (preds > 0.5).float()  
-
-        #intersection = (preds * labels).sum() 
-        #dice = (2. * intersection + 1e-6) / (preds.sum() + labels.sum() + 1e-6)
-        #dice_score += dice.item()
+        dice_score += loss.item()
 
 # Compute the average test loss and Dice score
-avg_test_loss = test_loss / len(test_loader)
-#avg_dice_score = dice_score / len(test_loader)
+avg_dice_score = dice_score / len(test_loader)
 
-print(f'Average Test Loss: {avg_test_loss}')
-#print(f'Average Dice Score: {avg_dice_score}')
+print(f'Average Dice Score: {avg_dice_score}')

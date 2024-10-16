@@ -1,3 +1,12 @@
+"""
+This file contains the dataset class and data loader function for the 3D U-Net model. 
+The dataset class loads the semantic MRs and labels from the specified paths. 
+The data loader function splits the data into training and testing sets and returns the data loaders for training and testing. 
+The data loader function is used in the training script to load the data for training the model.
+
+@author Damian Bellew
+"""
+
 from utils import *
 
 import numpy as np

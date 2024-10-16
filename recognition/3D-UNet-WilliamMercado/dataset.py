@@ -3,14 +3,15 @@ dataset.py
 
 File to handle loading, and preprocessing of the dataset
 """
-import numpy as np
-import nibabel as nib
-from tqdm import tqdm
-from torch.utils.data import Dataset
-from const import DATASET_PATH
 import os
 from typing import Iterable
+
+import nibabel as nib
+import numpy as np
+from const import DATASET_PATH
 from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset
+from tqdm import tqdm
 
 im = None
 utils = None

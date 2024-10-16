@@ -25,7 +25,7 @@ class SiameseNetwork(nn.Module):
         # Use a ResNet backbone without the last FC layer (we'll define our own)
         resnet_base = resnet50()
 
-        # FC layers to downsample to a 64-dimensional vector
+        # FC layers to downsample to a 64-dimensional vector output
         self.net = nn.Sequential(
             *list(resnet_base.children())[:-1],
             nn.Flatten(),
@@ -54,8 +54,9 @@ class MajorityClassifier:
     def __init__(self, margin=1.0):
         """
         Args:
-            margin: The margin as in contrastive loss. Used to determine whether two
-              images are considered a similar pair or not.
+            margin: The margin as in contrastive loss. Used as the pairwise distance
+              threshold for determining whether two images are considered a similar pair
+              or not.
         """
 
         def threshold(x1, x2):
@@ -66,7 +67,8 @@ class MajorityClassifier:
 
     def fit(self, X, y):
         """
-        Saves X and y as the reference embeddings and reference labels, respectively.
+        Saves X and y as the reference embeddings and reference labels (respectively)
+        to use during prediction.
         """
         self.ref_embeddings = X
         self.ref_targets = y

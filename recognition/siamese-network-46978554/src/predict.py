@@ -1,5 +1,8 @@
 """
-Example usage of trained model on given image files
+Example usage of trained model on given image files.
+
+For each given image file, the prediction (with the estimated prediction probability)
+and ground truth label are printed.
 
 usage: predict.py [-h] [-c CHECKPOINT] [-m MARGIN] images [images ...]
 
@@ -31,14 +34,14 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("PyTorch version", torch.__version__, "on device", device)
 
-    ref_set = MelanomaSkinCancerDataset(mode="ref")
-
     # Load model from checkpoint
+    model_path = Path(__file__).parent.parent / args.checkpoint
     net = SiameseNetwork().to(device)
     checkpoint = torch.load(model_path, map_location=device, weights_only=True)
     net.load_state_dict(checkpoint)
 
     # Initialise a majority classifier from the reference dataset
+    ref_set = MelanomaSkinCancerDataset(mode="ref")
     clf = init_classifier(net, ref_set, device, args.margin)
 
     # Load metadata so we can also report the ground truth labels
@@ -81,9 +84,6 @@ if __name__ == "__main__":
     )
 
     # fmt: on
-
     args = parser.parse_args()
-
-    model_path = Path(__file__).parent.parent / args.checkpoint
 
     main()

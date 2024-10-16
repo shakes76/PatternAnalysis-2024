@@ -7,8 +7,8 @@ import matplotlib.pylab as plt
 from math import log2
 
 # Constants for dataset and model configuration
-AD_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/AD'
-NC_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/NC'
+AD_PATH = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/AD_NC/AD/train'
+NC_PATH = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/AD_NC/NC/train'
 DATASET_PATH = AD_PATH  # Path to the dataset
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available, otherwise use CPU

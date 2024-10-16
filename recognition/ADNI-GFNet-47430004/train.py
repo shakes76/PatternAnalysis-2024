@@ -37,9 +37,15 @@ lr = 1e-6
 project = "ADNI-GFNet"
 group = "GFNet",
 
+# To use create_scheduler without "args parser"
 class defaultArgs(object):
     def __init__(self):
         self.sched = "cosine"
+        # More info here for type of schedulers: https://timm.fast.ai/schedulers
+        # "cosine" = SGDR
+        # "step" = stepLR
+        # "tanh" = TanhLR
+        # "plateau" = plateau
 
 config = defaultArgs()
 
@@ -139,6 +145,8 @@ if __name__ == '__main__':
     lr_scheduler, _ = create_scheduler(config, optimizer)
 
     print(f"Start training for {epochs} epochs")
+    print(f"Hyperparameters:")
+    print(f"lr = {lr}")
     start_time = time.time()
     max_accuracy = 0.0
     for epoch in range(start_epoch, epochs):

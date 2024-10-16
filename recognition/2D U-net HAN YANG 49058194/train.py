@@ -14,7 +14,7 @@ Usage:
     Run this script to start training the U-Net model.
 
 Author: Han Yang
-Date: 25/09/2024
+Date: 28/09/2024
 """
 
 import os

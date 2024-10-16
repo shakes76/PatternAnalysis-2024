@@ -34,37 +34,40 @@ test_data = TestPreprocessing(test_dataset_path, batch_size=16)
 test_loader = test_data.get_test_loader()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device)
+
+# Initial settings
 test_model = GFNet(
-    img_size=224,
+    img_size=224, 
     num_classes=2,
-    embed_dim=32,
-    num_blocks=[3, 3, 10, 3],
-    dims=[32, 64, 128, 256],
+    initial_embed_dim=32, 
+    blocks_per_stage=[1, 1, 1, 1], 
+    stage_dims=[32, 64, 128, 256], 
     drop_rate=0.05,
     drop_path_rate=0.05,
+    init_values=1e-5,
     is_training=True
 )
 
 test_model.to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.AdamW(test_model.parameters(), lr=1e-3, weight_decay=0.05)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100) 
+criterion = nn.BCEWithLogitsLoss()
+optimiser = optim.AdamW(test_model.parameters(), lr=1e-3, weight_decay=0.05)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=100) 
+torch.nn.utils.clip_grad_norm_(test_model.parameters(), max_norm=1.0)
 
-def train_one_epoch(model, train_loader, criterion, optimizer, device):
+def train_one_epoch(model, train_loader, criterion, optimiser, device):
     model.train()
     running_loss = 0.0 
 
     for inputs, labels in tqdm(train_loader):
         inputs, labels = inputs.to(device), labels.to(device)
 
-        optimizer.zero_grad()
+        optimiser.zero_grad()
 
         outputs = model(inputs)
         loss = criterion(outputs, labels)
 
         loss.backward()
-        optimizer.step()
+        optimiser.step()
 
         running_loss += loss.item()
 
@@ -72,4 +75,4 @@ def train_one_epoch(model, train_loader, criterion, optimizer, device):
     print(f"Train Loss: {epoch_loss:.4f}")
 
 
-train_one_epoch(test_model, train_loader, criterion, optimizer, device)
+train_one_epoch(test_model, train_loader, criterion, optimiser, device)

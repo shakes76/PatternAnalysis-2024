@@ -88,17 +88,17 @@ class Block(nn.Module):
     '''
     Block to consist Global Filter Layer and Feed Forward Network
     '''
-    def __init__(self, height, width, dimension, mlp_drop=0.1, drop_path_rate=0.0, is_training=False):
+    def __init__(self, height, width, dimension, mlp_drop=0.1, drop_path_rate=0.0, init_values=1e-5, is_training=False):
         super().__init__()
         self.global_filter = GlobalFilterLayer(height, width, dimension)
-        self.mlp = MLP(dimension, drop=mlp_drop)
+        self.mlp = MLP(input_dim=dimension, drop=mlp_drop)
         self.drop_path = DropPath(drop_prob=drop_path_rate, is_training = is_training) if drop_path_rate > 0. else nn.Identity()
-
+        self.gamma = nn.Parameter(init_values * torch.ones((dimension)), requires_grad=True)
     def forward(self, x):
         residual = x # use for skip connection
         x = self.global_filter(x) # Layer Norm -> 2D FFT -> Element-wise mult -> 2D IFFT
         x = self.mlp(x)  # Layer Norm -> MLP
-        x = self.drop_path(x)        
+        x = self.drop_path(self.gamma * x)        
         x = x + residual  # Skip connection
         
         return x
@@ -130,59 +130,76 @@ class Downlayer(nn.Module):
         x = x.reshape(batch_size, -1, self.dim_out)  # (B, num_patches, dim_out)
         return x
 class GFNet(nn.Module):
-    def __init__(self, img_size=224, num_classes=2, embed_dim=64, num_blocks=[3, 3, 10, 3], dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, is_training = False):
+    def __init__(self, img_size=224, num_classes=2, initial_embed_dim=64, blocks_per_stage=[3, 3, 10, 3], 
+                 stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, is_training=False, dropcls=0.0):
         super().__init__()
 
-        self.patch_embed = PatchEmbedding(dim_in=1, embed_dim=embed_dim, patch_size=4)
-        self.pos_embed = nn.Parameter(torch.zeros(1, (img_size // 4) * (img_size // 4), embed_dim))
+        self.patch_embed = nn.ModuleList()
+        self.pos_embed = nn.ParameterList() 
+        
+        patch_embed = PatchEmbedding(dim_in=1, embed_dim=initial_embed_dim, patch_size=4)
+        num_patches = (img_size // 4) * (img_size // 4)
+        self.patch_embed.append(patch_embed)
+        self.pos_embed.append(nn.Parameter(torch.zeros(1, num_patches, initial_embed_dim)))
+
+        # Define DownLayers and patch embedding
+        sizes = [56, 28, 14, 7]
+        for i in range(1, len(sizes)):
+            downlayer = Downlayer(stage_dims[i-1], stage_dims[i])
+            self.patch_embed.append(downlayer)
+            num_patches = (sizes[i] * sizes[i])
+            self.pos_embed.append(nn.Parameter(torch.zeros(1, num_patches, stage_dims[i])))
+        
         self.pos_drop = nn.Dropout(p=drop_rate)
 
-        # Define the stages
-        self.stage1 = nn.ModuleList([Block(img_size // 4, img_size // 4, dims[0], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[0])])
-        self.down1 = Downlayer(dims[0], dims[1])
+        # Define the blocks for each stage
+        self.blocks = nn.ModuleList([
+            nn.ModuleList([Block(sizes[i], sizes[i], stage_dims[i], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, 
+                                 init_values=init_values, is_training=is_training) for _ in range(blocks_per_stage[i])])
+            for i in range(4)
+        ])
 
-        self.stage2 = nn.ModuleList([Block(img_size // 8, img_size // 8, dims[1], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[1])])
-        self.down2 = Downlayer(dims[1], dims[2])
+        self.norm = nn.LayerNorm(stage_dims[-1])
+        self.head = nn.Linear(stage_dims[-1], num_classes)  # Linear head
 
-        self.stage3 = nn.ModuleList([Block(img_size // 16, img_size // 16, dims[2], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[2])])
-        self.down3 = Downlayer(dims[2], dims[3])
-
-        self.stage4 = nn.ModuleList([Block(img_size // 32, img_size // 32, dims[3], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, is_training=is_training) for i in range(num_blocks[3])])
-
-        self.norm = nn.LayerNorm(dims[-1])
-        self.head = nn.Linear(dims[-1], num_classes)  # Linear head
+        # Head dropout
+        self.final_dropout = nn.Dropout(p=dropcls) if dropcls > 0 else nn.Identity()
 
     def forward(self, x):
         # Stage 1:
-        x = self.patch_embed(x)
-        x = x + self.pos_embed
+        x = self.patch_embed[0](x)
+        x = x + self.pos_embed[0]
         x = self.pos_drop(x)
 
-        for block in self.stage1:
+        for block in self.blocks[0]:
             x = block(x)
-        x = self.down1(x)
+        x = self.patch_embed[1](x)  # Downsample and patch embed for stage 2
 
-        # Stage 2
-        for block in self.stage2:
+        # Stage 2:
+        x = x + self.pos_embed[1]
+        for block in self.blocks[1]:
             x = block(x)
-        x = self.down2(x)
+        x = self.patch_embed[2](x)  # Downsample and patch embed for stage 3
 
-        # Stage 3
-        for block in self.stage3:
+        # Stage 3:
+        x = x + self.pos_embed[2]
+        for block in self.blocks[2]:
             x = block(x)
-        x = self.down3(x)
+        x = self.patch_embed[3](x)  # Downsample and patch embed for stage 4
 
-        # Stage 4
-        for block in self.stage4:
+        # Stage 4:
+        x = x + self.pos_embed[3]
+        for block in self.blocks[3]:
             x = block(x)
 
         # Global average pooling
         x = x.mean(1)  # (B, num_patches, embed_dim)
-        
-        #x = self.norm(x)
+
+        # normalization -> head dropout -> classification
+        x = self.norm(x)
+        x = self.final_dropout(x)
         x = self.head(x)
         return x
-
 
 # tiny_model = GFNet(
 #     img_size=224,

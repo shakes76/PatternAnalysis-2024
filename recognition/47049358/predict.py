@@ -69,7 +69,7 @@ def test(model, test_loader, criterion, device):
     Plots dice coefficients of the whole test dataset.
     Takes an array of dice scores as input. 
 """
-def plot_dice(dice, segment_scores):
+def plot_dice(dice, criterion, segment_scores):
     x_values = np.arange(len(dice))  # Generate x-values as indices
     plt.figure(figsize=(8, 6))
 
@@ -86,7 +86,7 @@ def plot_dice(dice, segment_scores):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig('dice_scores_test_weighted_loss.png')
+    plt.savefig(f'dice_scores_test_{str(criterion)}.png')
     plt.close()
 
 
@@ -131,6 +131,6 @@ if __name__ == "__main__":
     segment_scores = [s0, s1, s2, s3, s4, s5]
 
     # plot dice scores across the dataset.
-    plot_dice(dice_scores, segment_scores)
+    plot_dice(dice_scores, criterion, segment_scores)
 
 

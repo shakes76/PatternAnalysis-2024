@@ -3,7 +3,7 @@ from modules import VisionTransformer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import get_dataloaders
 from utils import get_hyperparameters, get_optimizer
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 def train(model, dataloader, optimizer, criterion, device):
     model.train()
@@ -62,7 +62,6 @@ def plot_metrics(train_acc, val_acc, train_loss, val_loss):
     plt.ylabel('Accuracy')
     plt.legend()
     plt.title('Training and Validation Accuracy')
-    plt.savefig('accuracy_plot.png')
 
     # Plot loss
     plt.subplot(1, 2, 2)

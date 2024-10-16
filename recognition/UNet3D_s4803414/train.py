@@ -18,3 +18,8 @@ LEARNING_RATE = 1e-4
 # Create dataset and dataloader
 dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=transform)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+# Initialize the model, loss function, and optimizer
+model = UNet3D(in_channels=1, out_channels=6)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)

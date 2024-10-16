@@ -15,16 +15,24 @@ from tqdm import tqdm
 import math
 
 
-NUM_EPOCHS = 300
-BATCH_SIZE = 2
+NUM_EPOCHS = 1
+BATCH_SIZE = 1
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
+LOSS_IDX = 0
 
-class DiceCoefficientLoss(nn.Module):
-    def __init__(self, epsilon=1e-7):
-        super(DiceCoefficientLoss, self).__init__()
+class BaseDice(nn.Module):
+    def __init__(self, epsilon = 1e-7):
+        super(BaseDice, self).__init__()
         self.epsilon = epsilon
+
+    def forward(self, input, target):
+        raise NotImplementedError("Sublasses should implement this method.")
+
+class ExponentialWeightedLoss(BaseDice):
+    def __init__(self, epsilon=1e-7):
+        super().__init__(epsilon)
 
     def forward(self, y_true, y_pred):
 
@@ -45,11 +53,71 @@ class DiceCoefficientLoss(nn.Module):
         overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
         weighted_loss = 1 - (1 / num_masks) * torch.sum(weighted)
         return overall_loss, d_coefs, weighted_loss
+    
+class ArithmeticWeightedLoss(BaseDice):
+    def __init__(self, epsilon=1e-7):
+        super().__init__(epsilon)
 
-def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"):
+    def forward(self, y_true, y_pred):
+
+        num_masks = y_true.size(-1)
+        d_coefs = torch.zeros(num_masks, device=y_true.device)
+        for i in range(num_masks):
+            ground_truth_seg = y_true[:, :, :, :, i]
+            pred_seg = y_pred[:, :, :, :, i]
+
+            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
+            d_coefs[i] = d_coef
+
+        weighted, _ = torch.sort(d_coefs)
+
+        for i in range(num_masks):
+            weighted[i] = d_coefs[i] / (i + 1)
+        
+        overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
+        weighted_loss = 1 - (1 / num_masks) * torch.sum(weighted)
+        return overall_loss, d_coefs, weighted_loss
+    
+class PaperLoss(BaseDice):
+    def __init__(self, epsilon=1e-7):
+        super().__init__(epsilon)
+
+    def forward(self, y_true, y_pred):
+
+        num_masks = y_true.size(-1)
+        d_coefs = torch.zeros(num_masks, device=y_true.device)
+        for i in range(num_masks):
+            ground_truth_seg = y_true[:, :, :, :, i]
+            pred_seg = y_pred[:, :, :, :, i]
+
+            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
+            d_coefs[i] = d_coef
+
+        overall_loss = (- 1 / num_masks) * torch.sum(d_coefs)
+        return overall_loss, d_coefs, None
+    
+class AlternativeLoss(BaseDice):
+    def __init__(self, epsilon=1e-7):
+        super().__init__(epsilon)
+
+    def forward(self, y_true, y_pred):
+
+        num_masks = y_true.size(-1)
+        d_coefs = torch.zeros(num_masks, device=y_true.device)
+        for i in range(num_masks):
+            ground_truth_seg = y_true[:, :, :, :, i]
+            pred_seg = y_pred[:, :, :, :, i]
+
+            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
+            d_coefs[i] = d_coef
+
+        overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
+        return overall_loss, d_coefs, None
+
+def train(model, train_set, validation_set, loss, num_epochs=NUM_EPOCHS, device="cuda"):
 
     # set up criterion, optimiser, and scheduler for learning rate. 
-    criterion = DiceCoefficientLoss()
+    criterion = loss
     optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma = LR_INITIAL)
 
@@ -58,7 +126,6 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
 
     training_losses = []
     validation_losses = []
-
     
     train_loader = DataLoader(dataset = train_set, batch_size = BATCH_SIZE)
     valid_loader = DataLoader(dataset = validation_set, batch_size = BATCH_SIZE)
@@ -80,7 +147,11 @@ def train(model, train_set, validation_set, num_epochs=NUM_EPOCHS, device="cuda"
             else:
                 segment_coefs += d_coefs
 
-            weighted.backward()
+            if weighted == None:
+                loss.backward()
+            else:
+                weighted.backward()
+
             optimiser.step()
 
             running_loss += loss.item()
@@ -136,12 +207,16 @@ model = ImprovedUnet()
 train_set = Prostate3dDataset(X_train, y_train)
 validation_set = Prostate3dDataset(X_val, y_val)
 
+loss_map = {0 : PaperLoss, 1 : AlternativeLoss, 2 : ExponentialWeightedLoss, 3 : ArithmeticWeightedLoss}
+
+loss = loss_map.get(LOSS_IDX)
+
 print("> Start Training")
 
 start = time()
 
 # train improved unet
-trained_model, training_losses, validation_losses = train(model, train_set, validation_set, 
+trained_model, training_losses, validation_losses = train(model, train_set, validation_set, loss = loss,
                                                             device=device, num_epochs=NUM_EPOCHS)
 
 end = time()

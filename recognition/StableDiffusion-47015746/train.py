@@ -134,8 +134,10 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
 def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
     diffusion_model.unet.train()  # Only UNet should be in training mode
     criterion = nn.MSELoss()
+    epoch_losses = []  # List to store loss for each epoch
 
     for epoch in range(epochs):
+        total_loss = 0  # Reset total loss for the current epoch
         
         for images, _ in dataloader:
             images = images.to(device)
@@ -153,10 +155,37 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
             # Backward pass and optimize
             loss.backward()
             optimizer.step()
-            total_loss = loss.item()
+            total_loss += loss.item()  # Accumulate loss
 
-        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {total_loss:.4f}")
-        visualize_images(diffusion_model.decoder(latent), diffusion_model.decoder(noisy_latent), diffusion_model.decoder(denoised_latent), output_images, epoch + 1)
+        # Calculate average loss for the epoch
+        avg_loss = total_loss / len(dataloader)
+        epoch_losses.append(avg_loss)  # Store the average loss
+        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {avg_loss:.4f}")
+
+        # Visualize final output images if desired
+        visualize_images_final(output_images)
+
+    # Save the model's state dictionary after training completes
+    torch.save(diffusion_model.state_dict(), 'diffusion_model_state_dict.pth')
+    print("Model saved as 'diffusion_model_state_dict.pth'")
+
+    # Plot loss vs. epoch
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(1, epochs + 1), epoch_losses, marker='o', linestyle='-', color='b')
+    plt.title("Loss vs. Epoch")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.grid()
+    plt.savefig("loss_vs_epoch.png")  # Save the figure
+    plt.show()
+
+    # Create and save GIF
+    fig = plt.figure(figsize=(8, 8))
+    plt.axis("off")
+    ims = [[plt.imshow(np.transpose(img, (1, 2, 0)), animated=True)] for img in img_list]
+    ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
+    ani.save('training_progress_encoder.gif', writer='imagemagick', fps=10)
+    plt.close(fig)
 
 
 

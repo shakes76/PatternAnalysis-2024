@@ -16,7 +16,7 @@ EPOCHS = 10
 LEARNING_RATE = 1e-4
 
 # Create dataset and dataloader
-dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=transform)
+dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 # Initialize the model, loss function, and optimizer

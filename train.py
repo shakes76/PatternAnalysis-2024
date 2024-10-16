@@ -239,6 +239,7 @@ import torchio as tio
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import nibabel as nib
 from modules import UNet3D
 from dataset import NiftiDataset
 from torch.utils.data import DataLoader
@@ -447,6 +448,7 @@ def train_loop():
     print('Training Complete.')
 
     # Testing phase
+    is_first = True
     model.eval()
     test_loss = 0.0
     with torch.no_grad():
@@ -455,6 +457,20 @@ def train_loop():
             batch_labels = batch_labels.to(device)
             batch_labels = batch_labels.squeeze(1)
             outputs = model(batch_images)
+            if is_first:
+                pred_class = torch.argmax(outputs, dim=1)
+                pred_class = pred_class.squeeze(0)
+                pred_class = pred_class.detach().cpu().numpy().astype(np.int16)
+                pred_image = nib.Nifti1Image(pred_class, np.eye(4))
+                nib.save(pred_image, "predicted_seg.nii.gz")
+
+                actual = batch_labels.squeeze(0)
+                actual = actual.detach().cpu().numpy().astype(np.int16)
+                actual = nib.Nifti1Image(actual, np.eye(4))
+                nib.save(actual, "actual_seg.nii.gz")
+
+                is_first = False
+
             loss = dice_loss(outputs, batch_labels)
             test_loss += loss.item() * batch_images.size(0)
 

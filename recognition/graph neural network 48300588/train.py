@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam
+from torch.optim import SGD  # Changed import
+from torch.optim.lr_scheduler import StepLR  # Import scheduler
 import matplotlib.pyplot as plt
 from modules import GNNModel
 from dataset import load_data
@@ -10,13 +11,14 @@ import time
 def train():
     # Load data and classes
     data, classes = load_data()
-    device = torch.device('cuda')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
 
     # Initialize model, optimizer, and loss function
     model = GNNModel(in_channels=data.num_features, hidden_channels=64, out_channels=len(classes)).to(device)
-    optimizer = Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-    criterion = torch.nn.CrossEntropyLoss()  # Changed from NLLLoss to CrossEntropyLoss
+    optimizer = SGD(model.parameters(), lr=0.1, weight_decay=5e-4, momentum=0.9)  # Changed to SGD with adjusted lr and momentum
+    scheduler = StepLR(optimizer, step_size=50, gamma=0.1)  # Initialize scheduler
+    criterion = torch.nn.CrossEntropyLoss()
 
     # Initialize variables for tracking training progress
     epochs = 200
@@ -40,6 +42,7 @@ def train():
         loss = criterion(out[data.train_mask], data.y[data.train_mask])
         loss.backward()
         optimizer.step()
+        scheduler.step()  # Update scheduler
 
         # Record training loss
         train_losses.append(loss.item())

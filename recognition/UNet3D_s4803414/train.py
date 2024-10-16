@@ -6,14 +6,14 @@ from torch.utils.data import DataLoader
 from dataset import MRIDataset
 from modules import UNet3D
 from torchvision import transforms
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
 MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
 
 BATCH_SIZE = 2
-EPOCHS = 10
+EPOCHS = 5
 LEARNING_RATE = 1e-4
 
 # Create dataset and dataloader
@@ -46,7 +46,7 @@ for epoch in range(EPOCHS):
         optimizer.zero_grad()
 
         # Forward pass with mixed precision
-        with autocast():
+        with autocast(device_type='cuda'):
             outputs = model(images)
             loss = criterion(outputs, masks.squeeze(1))  # Squeeze to match output shape
 

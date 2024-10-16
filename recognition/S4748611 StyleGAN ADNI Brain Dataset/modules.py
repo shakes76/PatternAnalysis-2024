@@ -22,11 +22,22 @@ class AdaIN(Layer):
         x, style = inputs
         style_scale = self.style_scale_transform(style)
         style_shift = self.style_shift_transform(style)
-        
+
         mean, variance = tf.nn.moments(x, axes=[1, 2], keepdims=True)
         normalized = (x - mean) / tf.sqrt(variance + 1e-8)
-        
+
         return normalized * (1 + style_scale[:, None, None, :]) + style_shift[:, None, None, :]
+
+    def get_config(self):
+        # Return the configuration of the layer to be used during loading
+        config = super(AdaIN, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        # Create a new instance of the layer from the config
+        return cls(**config)
+
 
 def apply_noise(x):
     noise = tf.random.normal(shape=tf.shape(x), mean=0.0, stddev=1.0)

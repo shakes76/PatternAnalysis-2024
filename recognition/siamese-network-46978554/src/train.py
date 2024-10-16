@@ -1,7 +1,7 @@
 """
 Code for training, validating, testing, and saving model
 
-usage: train.py [-h] [-o OUT] [-p] [-m MARGIN] [-e EPOCH] [-l LR] [-b BATCH]
+usage: train.py [-h] [-o OUT] [-m MARGIN] [-e EPOCH] [-l LR] [-b BATCH]
                 [--checkpoint-tr CHECKPOINT_TR] [--checkpoint-ts CHECKPOINT_TS]
                 {train,test}
 
@@ -11,7 +11,6 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -o OUT, --out OUT     (TR/TS) output directory, default out
-  -p, --pretrained      (TR/TS) whether ResNet base is pretrained, default false
   -m MARGIN, --margin MARGIN
                         (TR/TS) margin for contrastive loss, default 0.2
   -e EPOCH, --epoch EPOCH
@@ -189,7 +188,7 @@ def main():
     ref_set = MelanomaSkinCancerDataset(mode="ref")
 
     # Create network
-    net = SiameseNetwork(pretrained=args.pretrained)
+    net = SiameseNetwork()
 
     def test_net(network, val=False):
         """
@@ -248,9 +247,6 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--out", type=str, default="out", help="(TR/TS) output directory, default out")
 
     # Model args, hyperparameters
-    parser.add_argument(
-        "-p", "--pretrained", action="store_true", help="(TR/TS) whether ResNet base is pretrained, default false"
-    )
     parser.add_argument(
         "-m", "--margin", type=float, default=0.2, help="(TR/TS) margin for contrastive loss, default 0.2"
     )

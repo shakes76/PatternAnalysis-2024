@@ -4,24 +4,22 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision.models import ResNet50_Weights, resnet50
+from torchvision.models import resnet50
 
 
 class SiameseNetwork(nn.Module):
     """A Siamese network with a ResNet backbone."""
 
-    def __init__(self, pretrained=False):
+    def __init__(self):
         """
-        Args:
-            pretrained: Whether to use a ResNet with pretrained ImageNet weights.
+        Initialise Siamese network architecture with a ResNet50 architecture base
         """
         super(SiameseNetwork, self).__init__()
 
         # Use a ResNet backbone without the last FC layer (we'll define our own)
-        if pretrained:
-            resnet_base = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
-        else:
-            resnet_base = resnet50()
+        resnet_base = resnet50()
+
+        # FC layers to downsample to a 64-dimensional vector
         self.net = nn.Sequential(
             *list(resnet_base.children())[:-1],
             nn.Flatten(),
@@ -30,11 +28,6 @@ class SiameseNetwork(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(in_features=256, out_features=64, bias=True)
         )
-
-        # Freeze ResNet layers if we're using pretrained weights
-        if pretrained:
-            for param in self.net[:-3].parameters():
-                param.requires_grad = False
 
     def forward(self, x):
         """Forward pass through the siamese network"""

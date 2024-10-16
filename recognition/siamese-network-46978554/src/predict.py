@@ -1,7 +1,7 @@
 """
-Example usage of trained model
+Example usage of trained model on given image files
 
-usage: predict.py [-h] [-c CHECKPOINT] [-p] [-m MARGIN] images [images ...]
+usage: predict.py [-h] [-c CHECKPOINT] [-m MARGIN] images [images ...]
 
 positional arguments:
   images                Image(s) to predict
@@ -10,7 +10,6 @@ options:
   -h, --help            show this help message and exit
   -c CHECKPOINT, --checkpoint CHECKPOINT
                         Model checkpoint
-  -p, --pretrained      Whether ResNet base is pretrained, default false
   -m MARGIN, --margin MARGIN
                         (TR/TS) margin for contrastive loss, default 0.2
 """
@@ -35,7 +34,7 @@ def main():
     ref_set = MelanomaSkinCancerDataset(mode="ref")
 
     # Load model from checkpoint
-    net = SiameseNetwork(pretrained=args.pretrained).to(device)
+    net = SiameseNetwork().to(device)
     checkpoint = torch.load(model_path, map_location=device, weights_only=True)
     net.load_state_dict(checkpoint)
 
@@ -77,9 +76,6 @@ if __name__ == "__main__":
         "images", type=str, nargs="+", help="Image(s) to predict"
     )
     parser.add_argument("-c", "--checkpoint", type=str, help="Model checkpoint")
-    parser.add_argument(
-        "-p", "--pretrained", action="store_true", help="Whether ResNet base is pretrained, default false"
-    )
     parser.add_argument(
         "-m", "--margin", type=float, default=0.2, help="(TR/TS) margin for contrastive loss, default 0.2"
     )

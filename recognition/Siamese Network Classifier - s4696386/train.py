@@ -6,7 +6,7 @@ from dataset import APP_MATCHER
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
 
-def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_interval, dry_run = False):
+def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_interval, dry_run = False, verbose = False):
     model.train()
     
     criterion = model.loss_criterion
@@ -18,13 +18,14 @@ def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_int
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
-        print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
-        print(f"Loss: {loss.item()}")
+        if verbose:
+            print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
+            print(f"Loss: {loss.item()}")
         if batch_idx % log_interval == 0:
             if dry_run:
                 break
 
-def test(model: SiameseNetwork, device, test_loader):
+def test(model: SiameseNetwork, device, test_loader, verbose = False):
     model.eval()
     test_loss = 0
     correct = 0
@@ -41,7 +42,8 @@ def test(model: SiameseNetwork, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
 
-    print(f'Test set: Average loss: {test_loss}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset)}%)\n')
+    if verbose:
+        print(f'Test set: Average loss: {test_loss}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset)}%)\n')
 
 def main():
     torch_seed = 10

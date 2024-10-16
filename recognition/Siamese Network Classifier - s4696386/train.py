@@ -20,11 +20,11 @@ def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_int
         loss.backward()
         optimizer.step()
         if verbose:
-            print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
-            print(f"Loss: {loss.item()}")
-        if batch_idx % log_interval == 0:
-            if dry_run:
-                break
+            if batch_idx % log_interval == 0:
+                print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
+                print(f"Loss: {loss.item()}")
+        if dry_run:
+            break
 
 def test(model: SiameseNetwork, device, test_loader, threshold = 0.5, verbose = False):
     model.eval()
@@ -68,7 +68,7 @@ def main():
     epochs = 20
     learning_rate = 0.01
     save_model = False
-    log_interval = 2
+    log_interval = 10
     dry_run = False
     
 

@@ -27,7 +27,7 @@ After training the embedding network we use embeddings as an input to a separate
 ## Data Preparation
 Patient meta-data was not used for simplicity as other solutions had found that they were not very essential performance [[]](). Although it would be simple to incorporate this data by concatenating it to the outputted feature embeddings and apply appropriate normalization.
 
-Data was split into a train, validation and test set. 64% of data was used for training, 16% was used for validation and 20% was used for testing. Stratified sampling was used to ensure that the ground truth distribution was well represented in each set. This was a fairly important consideration as there was not much data in the minority class, stratification ensured all sets had adequate examples from this class.
+Data was split into a train, validation and test set. 64% of data was used for training, 16% was used for validation and 20% was used for testing. Stratified sampling was used to ensure that the ground truth distribution was well represented in each set. This was a fairly important consideration as there was not much data in the minority class, stratification ensured all sets had adequate examples from this class. Model architectures and hyperparameters were only tuned on the validation set to avoid information leakage, with the test set being reserved for the final evaluation.
 
 Images were all processed prior to training by first downsampling them to a 256x256 resolution and then taking a center crop of 224x224 pixels. This was done to speed up training and and make the data compatible with the embedding model architecture. 
 
@@ -41,7 +41,29 @@ The embedding network was trained with Pytorch using the Adam optimizer with a l
 The KNN used a custom uniform voting from the nearest neighbor and all neighbours that were closer than $m$. The SVM used the default sci-kit learn hyperparameters, most notably a $C$ value of 1 and the Radial Basis Function kernel. The neural network architecture can be seen in Figure [num](), the Adam optimizer was used with a learning rate of 0.0001 and a momentum value of 0.9, other Adam hyperparameters were set to the sci-kit learn defaults.
 
 ## Results
-The training loss curve can be seen in Figure [num]().
+The training loss curve for the embedding network can be seen in Figure [num]().
+![Training Loss](readme_assets/train_loss.png "Training loss")
+*Figure num: Training loss for embedding network.*
+
+The number of triplets mined in each minibatch can be seen in Figure [num]().
+![Number of triplets mined](readme_assets/mined.png "Number of mined triplets")
+*Figure num: Number of triplets mined in each minibatch.*
+
+The best results were achieved using the SVM classifier. Using this classifier the The ROC and AUC for the train, validation and test sets can be seen in Figures num num and num respectively.
+
+![SVM train ROC](readme_assets/train(SVM)_roc.png)
+*Figure num: ROC for SVM on train set*
+
+![SVM validation ROC](readme_assets/val(SVM)_roc.png)
+*Figure num: ROC for SVM on validation set*
+
+![SVM test ROC](readme_assets/test(SVM)_roc.png)
+*Figure num: ROC for SVM on test set*
+
+We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contain a higher proportion of the likely harder minority class compared to the validation and test sets. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.
+
+
+
 
 ## References
 <a id="1">[1]</a> Koch, G.R. (2015). Siamese Neural Networks for One-Shot Image Recognition.

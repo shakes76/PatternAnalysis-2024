@@ -54,6 +54,12 @@ class UNet(nn.Module):
     diagram from the U-Net paper).
     """
     def __init__(self, inDim, outDim, segDim = 4):
+        """
+        Parameters:
+            inDim: the input dimension size (i.e. channel dimension)
+            outDim: the output dimension size
+            segDim: the number of segments
+        """
         super().__init__()
         # encoder
         self.blk1 = UNetBasicBlock(inDim, outDim, 3)

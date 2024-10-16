@@ -55,27 +55,30 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         # data_dir = "../../resources/AD_NC"
     train_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
-        tf.CenterCrop(crop_size),
+        # tf.CenterCrop(crop_size),
         tf.Resize((image_size, image_size)),
+        tf.RandomRotation(degrees=15),
+        tf.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.8, 1.2)),
+        tf.ColorJitter(brightness=0.1, contrast=0.1),
         tf.ToTensor(),
         # Hardcoded to value found below
-        tf.Normalize(mean=[0.1415],
-                     std=[0.2385]),
-        # tf.Normalize(mean=[0.1156],
-        #              std=[0.2198],),
+        # tf.Normalize(mean=[0.1415],
+        #              std=[0.2385]),
+        tf.Normalize(mean=[0.1156],
+                     std=[0.2198],),
         tf.RandomHorizontalFlip(),
         tf.RandomVerticalFlip(),
     ])
     test_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
-        tf.CenterCrop(crop_size),
+        # tf.CenterCrop(crop_size),
         tf.Resize((image_size, image_size)),
         tf.ToTensor(),
         # Hardcoded to value found below
-        tf.Normalize(mean=[0.1415],
-                     std=[0.2385]),
-        # tf.Normalize(mean=[0.1156],
-        #              std=[0.2198],),
+        # tf.Normalize(mean=[0.1415],
+        #              std=[0.2385]),
+        tf.Normalize(mean=[0.1156],
+                     std=[0.2198],),
     ])
     
     # Create datasets

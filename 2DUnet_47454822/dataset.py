@@ -59,8 +59,11 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
             images[i, :, :, :] = inImage
         else:
             try:
+                #(imageNames[i])
                 images[i, :, :] = inImage
-            except FileError:
+            except  ValueError:
+                print("Error loading: " + imageNames[i])
+
                 print(inName)
 
         affines.append(affine)

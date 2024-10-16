@@ -3,9 +3,13 @@ import keras
 from keras import layers, models, Sequential
 from keras.src.backend import shape
 from keras.src.losses import Dice
-from keras.src.optimizers import AdamW
+from keras.src.optimizers import AdamW, Adam
 from keras.src import backend
 from keras.src import ops
+# from keras_core.src.ops import argmax
+from tensorflow.python.keras.losses import CategoricalCrossentropy
+
+
 
 
 FULL_SIZE_IMG = 1  # set to 2 to use full size image
@@ -39,14 +43,14 @@ def unet_model(input_size=(128, 128, 1), batch_size=12, preprocessing=None):
     # flattened = layers.Flatten(inputs)
 
     # rand_crop = layers.RandomCrop()(inputs)
-    rand_flip = layers.RandomFlip(mode="horizontal_and_vertical")(inputs)
+    # rand_flip = layers.RandomFlip(mode="horizontal_and_vertical")(inputs)
 
-    norm = layers.Normalization()(rand_flip)
+    # norm = layers.Normalization()(input)
 
-    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(norm)  # padding same accounts for the shrinkage that occurs from kernal
-    dropped = layers.Dropout(0.25)(conv1)
+    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)  # padding same accounts for the shrinkage that occurs from kernal
+    # dropped = layers.Dropout(0.25)(conv1)
     # Encoder
-    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(dropped)
+    conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv1)
     pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
 
     conv2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
@@ -57,27 +61,27 @@ def unet_model(input_size=(128, 128, 1), batch_size=12, preprocessing=None):
     conv3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(conv3)
     pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
 
-    # conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool3)
-    # conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv4)
-    # pool4 = layers.MaxPooling2D(pool_size=(2, 2))(conv4)
+    conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool3)
+    conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv4)
+    pool4 = layers.MaxPooling2D(pool_size=(2, 2))(conv4)
 
 
     # Bridge
-    conv5 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool3)
+    conv5 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
     conv5 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
 
     # Decoder
-    # up1 = layers.Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same')(conv5)
-    # concat1 = layers.concatenate([up1, conv4], axis=3)
-    # conv6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(concat1)
-    # conv6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv6)
+    up1 = layers.Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same')(conv5)
+    concat1 = layers.concatenate([up1, conv4], axis=3)
+    conv6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(concat1)
+    conv6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv6)
 
     print("Conv5 shape: "+str(shape(conv5)))
     print("Conv3 shape: " + str(shape(conv3)))
     print("Conv2 shape: " + str(shape(conv2)))
     print("Conv1 shape: " + str(shape(conv1)))
 
-    up2 = layers.Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(conv5)  # Changed conv 6 to conv 5
+    up2 = layers.Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(conv6)  # Changed conv 6 to conv 5
     concat2 = layers.concatenate([up2, conv3], axis=3)
     conv7 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(concat2)
     conv7 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(conv7)
@@ -92,11 +96,15 @@ def unet_model(input_size=(128, 128, 1), batch_size=12, preprocessing=None):
     conv9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(concat4)
     conv9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv9)
 
-    outputs = layers.Conv2D(6, (1, 1), activation='sigmoid')(conv9)
+    outputs = layers.Conv2D(6, (1, 1), activation='softmax')(conv9)
+    # Double check number of classes
+    # outputs = argmax(results)
 
     model = models.Model(inputs=[inputs], outputs=[outputs])
     model.summary()
-    model.compile(optimizer=AdamW(learning_rate=0.0001), loss=Dice, metrics=['accuracy'])
+    model.compile(optimizer=Adam(), loss="categorical_crossentropy", metrics=['accuracy'])  # learning_rate=0.0001
+    # TODO: Print dice_coefficent,    if one-hot use cat_cross_entropy, otheriwse, use sparse if from 0 to 5,  use argmax
+    # Dice = 1 - dice_coefficent,   dice_coefficient = 1 - Dice
     # keras_cv.losses.IoULoss("xyxy", mode="quadratic")
 
     return model

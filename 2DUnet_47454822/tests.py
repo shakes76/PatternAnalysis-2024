@@ -3,7 +3,7 @@ import os
 import keras
 import numpy as np
 from keras.src.legacy.preprocessing.image import ImageDataGenerator
-from keras.src.optimizers import AdamW
+from keras.src.optimizers import AdamW, Adam
 from keras.src.saving.saving_api import load_model
 from keras.src.utils import to_categorical
 
@@ -43,7 +43,7 @@ def invoke_dir():
 
 def test_train():
 
-    path = "/home/ja/Documents/uni/COMP3710/PatternAnalysis-2024/data/"
+    path = "C:\\Users\\jjedm\\PatternAnalysis-2024\\HipMRI_study_keras_slices_data\\"
 
     # ============== Train or Load Model ==============
 
@@ -66,16 +66,16 @@ def test_train():
     # )
 
 
-    train_images = load_dir(f"{path}keras_slices_train/")
-    train_masks = load_dir(f"{path}keras_slices_seg_train/")
+    train_images = load_dir(f"{path}keras_slices_train\\")
+    train_masks = load_dir(f"{path}keras_slices_seg_train\\")
 
-    test_images = load_dir(f"{path}keras_slices_test/")
-    test_masks = load_dir(f"{path}keras_slices_seg_test/")
+    test_images = load_dir(f"{path}keras_slices_test\\")
+    test_masks = load_dir(f"{path}keras_slices_seg_test\\")
     # train_images = test_images
     # train_masks = test_masks
 
 
-    model_name = "drop_norm.crop.flip_train13"
+    model_name = "full_depth_softmax_nodice_2epoc_train2"
 
     if os.path.isfile(f'models/{model_name}.keras') is False:
         # https://fdnieuwveldt.medium.com/building-advanced-custom-feature-transformation-pipelines-in-keras-using-easyflow-4c5fce545dc2
@@ -100,7 +100,7 @@ def test_train():
         # model.compile(optimizer=AdamW(), loss=Dice(), metrics=['accuracy']) # used to be sparse_cat_crossent. find better loss
         # TODO: add IoU loss. See https://keras.io/api/keras_cv/losses/iou_loss/  keras_cv.losses.IoULoss()
 
-        model.fit(x=train_images, y=train_masks, batch_size=batch_size, epochs=1, shuffle=True, verbose=2)
+        model.fit(x=train_images, y=train_masks, batch_size=batch_size, epochs=2, shuffle=True, verbose=2)
 
         print('Finished training, saving')
         model.save(f'models/{model_name}.keras')
@@ -116,9 +116,11 @@ def test_train():
         print("Loading Model")
         model = load_model(f'models/{model_name}.keras')
 
+        model.compile(optimizer=Adam(), loss=Dice(), metrics=["accuracy"])
+
         loss, accuracy = model.evaluate(test_images, test_masks)
 
-        print(f"Loss: {loss}")
+        print(f"Dice Coefficient: {1 - loss}")
         print(f"Accuracy: {accuracy}")
 
 if __name__ == '__main__':

@@ -131,7 +131,7 @@ found. Finally, the images were normalised and then converted to a tensor.
 
 ## Results
 ### Training
-An example batch of training images is displayed below:
+An example batch of training images is displayed below.
 ![training_img.png](figures/training_img.png)
 
 $`t`$-distributed stochastic neighbor embeddings is a non-linear dimensionality reduction technique

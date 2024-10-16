@@ -3,12 +3,13 @@ import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 
+
 # specify directory of data
 # dataroot = "/home/groups/comp3710/ADNI"
 dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/Denoising_Diffusion_ADNI_46966159/ADNI"
 
 # chosen hyperparameters
-batch_size = 28
+batch_size = 32
 image_size = 64
 
 # normalise, resize images and randomly flip
@@ -58,6 +59,28 @@ def show_first_batch(loader):
         show_images(batch[0], "Images in the first batch")
         break
 
+def show_forward(ddpm, loader):
+    """
+    Visual forward process step
+    :param ddpm: diffusion model
+    :param loader: dataloader
+    :return:
+    """
+    for batch in loader:
+        imgs = batch[0]
+
+        show_images(imgs, "Original images")
+
+        for percent in [0.25, 0.5, 0.75, 1]:
+            show_images(
+                ddpm(imgs.cpu(),
+                     [int(percent * 1000) - 1 for _ in range(len(imgs))]),
+                f"DDPM Noisy images {int(percent * 100)}%"
+            )
+        break
+
 
 if __name__ == '__main__':
     show_first_batch(dataloader)
+    # ddpm = modules.UNET()
+    # show_forward(ddpm, dataloader)

@@ -27,12 +27,15 @@ class BaseDice(nn.Module):
         super(BaseDice, self).__init__()
         self.epsilon = epsilon
 
-    def forward(self, input, target):
+    def forward(self, y_true, y_pred):
         raise NotImplementedError("Sublasses should implement this method.")
 
 class ExponentialWeightedLoss(BaseDice):
     def __init__(self, epsilon=1e-7):
         super().__init__(epsilon)
+
+    def __str__(self):
+        return 'ExponentialWeightedLoss'
 
     def forward(self, y_true, y_pred):
 
@@ -58,6 +61,9 @@ class ArithmeticWeightedLoss(BaseDice):
     def __init__(self, epsilon=1e-7):
         super().__init__(epsilon)
 
+    def __str__(self):
+        return 'ArithmeticWeightedLoss'
+
     def forward(self, y_true, y_pred):
 
         num_masks = y_true.size(-1)
@@ -82,6 +88,9 @@ class PaperLoss(BaseDice):
     def __init__(self, epsilon=1e-7):
         super().__init__(epsilon)
 
+    def __str__(self):
+        return 'PaperLoss'
+
     def forward(self, y_true, y_pred):
 
         num_masks = y_true.size(-1)
@@ -99,6 +108,9 @@ class PaperLoss(BaseDice):
 class AlternativeLoss(BaseDice):
     def __init__(self, epsilon=1e-7):
         super().__init__(epsilon)
+
+    def __str__(self):
+        return 'AlternativeLoss'
 
     def forward(self, y_true, y_pred):
 
@@ -207,7 +219,7 @@ model = ImprovedUnet()
 train_set = Prostate3dDataset(X_train, y_train)
 validation_set = Prostate3dDataset(X_val, y_val)
 
-loss_map = {0 : PaperLoss, 1 : AlternativeLoss, 2 : ExponentialWeightedLoss, 3 : ArithmeticWeightedLoss}
+loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss()}
 
 loss = loss_map.get(LOSS_IDX)
 
@@ -224,6 +236,9 @@ end = time()
 elapsed_time = end - start
 print(f"Training completed in {elapsed_time:.2f} seconds")
 
+training_losses = []
+validation_losses = []
+
 plt.figure(figsize=(10,5))
 plt.plot(training_losses, label='Training Loss')
 plt.plot(validation_losses, label='Validation Loss')
@@ -232,5 +247,5 @@ plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig('unet_losses_over_epochs_weighted_loss.png')
+plt.savefig(f'unet_losses_over_epochs_{str(loss)}.png')
 plt.close()

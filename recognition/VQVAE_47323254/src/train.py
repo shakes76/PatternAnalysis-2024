@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from dataset import HipMRIDataset
 from modules import VQVAE
-from utils import calculate_ssim, read_yaml_file, get_transforms
+from utils import calculate_ssim, read_yaml_file, get_transforms, combine_images
     
     
 if __name__ == '__main__':
@@ -20,14 +20,14 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True, 
                         help='Path to the configuration YAML file.')
     
-    args = parser.parse_args()
-    config_path = args.config
+    config_path = parser.parse_args().config
     config = read_yaml_file(config_path)
     
     model_parameters = config['model_parameters']
     
     log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
         os.path.join(config['logs_root'], f"{time.strftime('%Y%m%d_%H%M%S')}")
+    image_log_dir = os.path.join(log_dir, 'images')
     log_frequency = config['log_frequency']
     image_frequency = config['image_frequency']
     
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     os.makedirs(log_dir, exist_ok=True)
+    os.makedirs(image_log_dir, exist_ok=True)
     logging.basicConfig(filename=os.path.join(log_dir, 'training.log'), level=logging.INFO, 
                         format='%(asctime)s - %(levelname)s - %(message)s')
     shutil.copy(config_path, log_dir)
@@ -122,31 +123,25 @@ if __name__ == '__main__':
                 train_reconstructed_image = train_reconstructed[0, 0].cpu().detach().numpy()
                 val_original_image = val_batch[0, 0].cpu().detach().numpy()
                 val_reconstructed_image = val_reconstructed[0, 0].cpu().detach().numpy()
+                train_image = combine_images(train_original_image, train_reconstructed_image)
+                val_image = combine_images(val_original_image, val_reconstructed_image)
                 
-                plt.figure(figsize=(10, 10))
+                plt.figure(figsize=(8, 4))
 
-                plt.subplot(2, 2, 1)
-                plt.imshow(train_original_image, cmap='gray')
-                plt.title(f"Train Original Image")
-                plt.axis('off')
-
-                plt.subplot(2, 2, 2)
-                plt.imshow(train_reconstructed_image, cmap='gray')
-                plt.title(f"Train Reconstructed Image")
-                plt.axis('off')
-                
-                plt.subplot(2, 2, 3)
-                plt.imshow(val_original_image, cmap='gray')
-                plt.title(f"Val Original Image")
-                plt.axis('off')
-                
-                plt.subplot(2, 2, 4)
-                plt.imshow(val_reconstructed_image, cmap='gray')
-                plt.title(f"Val Reconstructed Image")
+                plt.subplot(1, 2, 1)
+                plt.imshow(train_image, cmap='gray')
+                plt.title("Train Original and Reconstructed Image")
                 plt.axis('off')
 
-                plt.savefig(os.path.join(log_dir, f'epoch_{epoch}.png'))
+                plt.subplot(1, 2, 2)
+                plt.imshow(val_image, cmap='gray')
+                plt.title("Validation Original and Reconstructed Image")
+                plt.axis('off')
+
+                plt.tight_layout()
+                plt.savefig(os.path.join(image_log_dir, f'epoch_{epoch}.png'))
                 plt.close()
+        
         
         train_loss = train_total_loss / len(train_loader)
         val_loss = val_total_loss / len(val_loader)
@@ -165,11 +160,11 @@ if __name__ == '__main__':
     end_time = time.time()
     logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes")
         
-    train_metrices = [
+    train_metrics = [
         train_vq_losses, train_recon_losses,
         train_total_losses, train_ssim_scores
     ]
-    val_metrices = [
+    val_metrics = [
         val_vq_losses, val_recon_losses,
         val_total_losses, val_ssim_scores
     ]
@@ -182,15 +177,15 @@ if __name__ == '__main__':
     axs = axs.flatten()
     
     for i in range(4):
-        axs[i].plot(train_metrices[i], label='Train')
-        axs[i].plot(val_metrices[i], label='Validation')
+        axs[i].plot(train_metrics[i], label='Train')
+        axs[i].plot(val_metrics[i], label='Validation')
         axs[i].set_title(metric_names[i])
         axs[i].set_xlabel('Epoch')
         axs[i].set_ylabel(metric_names[i])
         axs[i].legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, 'metrices_plot.png'))
+    plt.savefig(os.path.join(log_dir, 'metrics_plot.png'))
     plt.close()
     
     # Save model

@@ -191,6 +191,7 @@ The results of the 2D U-Net model for prostate segmentation demonstrate the effe
 ## Conclusion
 This project successfully applied a 2D U-Net model to segment prostate MRI images, achieving a Dice similarity coefficient of 0.81, surpassing the target threshold of 0.75. The results demonstrate that the U-Net architecture is well-suited for medical image segmentation tasks due to its encoder-decoder structure and skip connections, which effectively preserve spatial information.
 <br />
+<br />
 While the model performs well, there is room for improvement, especially in handling complex regions and incorporating 3D spatial information. Future work could explore more advanced architectures, such as 3D U-Net, and incorporate post-processing techniques to enhance segmentation quality further. Overall, this project provides a solid foundation for prostate segmentation and highlights the potential of deep learning in medical imaging applications.
 
 ---

@@ -127,6 +127,11 @@ def plot_loss(losses_critic, losses_gen, step):
     plt.savefig('generator_loss_final.png')
     plt.close()
 
+def moving_average(data, window_size):
+    """
+    """
+    return [sum(data[i:i + window_size]) / window_size for i in range(len(data) - window_size + 1)]
+
 # Initialize generator and critic
 gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create generator
 critic = Discriminator(IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create critic
@@ -175,5 +180,9 @@ for num_epochs in PROGRESSIVE_EPOCHS[step:]:
 # Save models after each set of epochs
 save_model(gen, critic, step)
 
+# take moving average of losses
+smoothed_losses_critic = moving_average(total_losses_critic, 10)
+smoothed_losses_gen = moving_average(total_losses_gen, 10)
+
 # Plot and save losses after training
-plot_loss(total_losses_critic, total_losses_gen, step)
+plot_loss(smoothed_losses_critic, smoothed_losses_gen, step)

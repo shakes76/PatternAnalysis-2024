@@ -75,7 +75,7 @@ class GNNModel(nn.Module):
         
         # Final output layer
         x = self.fc(x)
-        return F.log_softmax(x, dim=1)
+        return x
 
     def accuracy(self, y_true, y_pred):
         return (y_true == y_pred).sum().item() / len(y_true)

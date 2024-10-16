@@ -3,55 +3,51 @@ from modules import GNNModel
 from dataset import load_data
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
-import re
 
 def predict():
+    # Load data and classes
     data, classes = load_data()
     device = torch.device('cuda')
     data = data.to(device)
 
+    # Load the trained model
     model = GNNModel(in_channels=data.num_features, hidden_channels=64, out_channels=len(classes)).to(device)
-    model.load_state_dict(torch.load('best_model.pth'))
+    model.load_state_dict(torch.load('best_model.pth', map_location=device))
     model.eval()
 
+    # Get model outputs
     with torch.no_grad():
         out = model(data.x, data.edge_index)
         _, pred = out.max(dim=1)
 
-    # Compute TSNE embeddings
+    # Compute TSNE embeddings using the learned node representations
     embeddings = out.cpu().numpy()
-    tsne = TSNE(n_components=2)
+    tsne = TSNE(n_components=2, random_state=42)
     embeddings_2d = tsne.fit_transform(embeddings)
 
-    # Plot embeddings visualization
-    plt.figure(figsize=(8,8))
-    scatter = plt.scatter(embeddings_2d[:,0], embeddings_2d[:,1], c=data.y.cpu(), cmap='tab10', alpha=0.7)
-
-    # Get legend elements
-    handles, labels = scatter.legend_elements(prop="colors")
-
-    # Extract integer labels from strings like '$\\mathdefault{0}$'
-    int_labels = []
-    for label in labels:
-        # Use regular expression to extract digits
-        match = re.search(r'\d+', label)
-        if match:
-            int_labels.append(int(match.group()))
-        else:
-            int_labels.append(None)  # Handle cases where no digits are found
-
-    # Map integer indices to class names
-    class_labels = [str(classes[i]) if i is not None else 'Unknown' for i in int_labels]
-
-    # Plot legend
-    plt.legend(handles=handles, labels=class_labels, title='Classes')
+    # Plot TSNE embeddings with ground truth labels
+    plt.figure(figsize=(10, 10))
+    scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=data.y.cpu(), cmap='tab10', alpha=0.7)
     plt.title('t-SNE Visualization of Node Embeddings')
+    plt.xlabel('Component 1')
+    plt.ylabel('Component 2')
+
+    # Create legend with class names
+    class_labels = [str(cls) for cls in classes]
+    plt.legend(handles=scatter.legend_elements()[0], labels=class_labels, title='Classes')
+
     plt.savefig('tsne_embeddings.png')
     plt.show()
 
-    # Output sample predictions
+    # Print sample predictions
     for i in range(10):
         print(f'Node {i}: Predicted Label: {classes[pred[i]]}, True Label: {classes[data.y[i]]}')
+
+    # Calculate and print test accuracy
+    test_mask = data.test_mask
+    test_correct = pred[test_mask] == data.y[test_mask]
+    test_acc = int(test_correct.sum()) / int(test_mask.sum())
+    print(f'Test Accuracy: {test_acc:.4f}')
 
 if __name__ == '__main__':
     predict()

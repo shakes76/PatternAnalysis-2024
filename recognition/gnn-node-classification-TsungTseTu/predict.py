@@ -1,3 +1,16 @@
+# -----------------------------------------------------------
+# Project: Graph Attention Network for Node Classification
+# Filename: predict.py
+# Author: Tsung-Tse Tu
+# Student ID: s4780187
+# Date: October 2024 (Last edited 10/17/2024)
+# Description: This script loads the pre-trained GAT model 
+#              and evaluates it on the test set. It outputs 
+#              the test accuracy and visualizes the learned 
+#              node embeddings using t-SNE.
+# -----------------------------------------------------------
+
+
 import torch
 from modules import GAT
 from dataset import load_facebook_data

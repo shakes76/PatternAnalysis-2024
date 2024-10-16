@@ -1,3 +1,15 @@
+# -----------------------------------------------------------
+# Project: Graph Attention Network for Node Classification
+# Filename: modules.py
+# Author: Tsung-Tse Tu
+# Student ID: s4780187
+# Date: October 2024 (Last edited: 10/17/2024)
+# Description: This file contains the implementation of the 
+#              Graph Attention Network (GAT) model used for 
+#              semi-supervised node classification.
+# -----------------------------------------------------------
+
+
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv

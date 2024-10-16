@@ -1,3 +1,14 @@
+# -----------------------------------------------------------
+# Project: Graph Attention Network for Node Classification
+# Filename: train.py
+# Author: Tsung-Tse Tu
+# Student ID: s4780187
+# Date: October 2024 (Last update 10/17/2024)
+# Description: This script trains the GAT model using node 
+#              features and graph structure for classification.
+#              It implements early stopping and a learning rate 
+#              scheduler to optimize the model performance.
+# -----------------------------------------------------------
 import torch
 import numpy as np
 import random

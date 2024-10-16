@@ -3,11 +3,14 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader, dataloader, Dataset
 import os
-from torchvision import transforms
+from torchvision import transforms, io
 from PIL import Image
 #import matplotlib as plt
 import matplotlib.pyplot as plt
 import random
+
+
+SCALE_FACTOR = 1.0/255
 
 current_dir = os.getcwd()
 excel = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-metadata.csv')
@@ -92,6 +95,8 @@ class ISISCDataset(Dataset):
         pairs = []
         labels = []
 
+        #use 1 for similar and 0 for not 
+
         for _ in range(len(self.benign_ids)):
             img1, img2 = random.sample(self.benign_ids, 2)
             pairs.append((img1, img2))
@@ -118,11 +123,34 @@ class ISISCDataset(Dataset):
     def __len__(self):
         return len(self.pairs)
 
+    def apply_transform(self, img_id, img):
+        # we only need to look at malignant class and if its not in there
+        # then we carry on
+        if img_id in self.malignant_ids:
+            img = self.transform_malignant(img)
+        else:
+            if self.transform_benign:
+                img = self.transform_benign(img)
+
+        return img
+
     def __getitem__(self, index):
         img1_id, img2_id = self.pairs[index]
         label = self.labels[index]
 
         #get images
+        img1_path = os.path.join(self.images_dir,img1_id + '.jpg')
+        img2_path = os.path.join(self.images_dir,img1_id + '.jpg')
+
+        #normalise pixel values
+        img1 = io.read_image(img1_path).float() * SCALE_FACTOR
+        img2 = io.read_image(img2_path).float() * SCALE_FACTOR
+
+        #transform the images
+        img1 = self.apply_transform(img1_id, img1)
+        img2 = self.apply_transform(img2_id, img2)
+        
+        return img1, img2, torch.tensor(label, dtype=torch.float32)
 
 #print(malignant)
 #print(benign)

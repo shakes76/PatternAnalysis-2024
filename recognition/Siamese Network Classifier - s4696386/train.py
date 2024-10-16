@@ -1,7 +1,7 @@
 import torch
 
 from modules import SiameseNetwork
-from dataset import APP_MATCHER
+from dataset import APP_MATCHER, read_data, DEFAULT_LOCATION, PROCESSED_DATA
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 # With support from:
@@ -78,11 +78,14 @@ def main():
     # Use cuda device if available
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+    processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
+
     # Create Datasets and place them into DataLoaders
-    train_dataset = APP_MATCHER(image_folder="E:/COMP3710 Project/ISIC_2020_Train_DICOM_corrected", ground_truth_file="E:/COMP3710 Project/ISIC_2020_Training_GroundTruth.csv", train=True)
-    test_dataset = APP_MATCHER(image_folder="E:/COMP3710 Project/ISIC_2020_Train_DICOM_corrected", ground_truth_file="E:/COMP3710 Project/ISIC_2020_Training_GroundTruth.csv",train=False)
+    train_dataset = APP_MATCHER(processed_data, train=True)
+    test_dataset = APP_MATCHER(processed_data, train=False)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size, shuffle)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle)
+    print("Data Loaded")
 
     # Create the model
     model = SiameseNetwork().to(device)
@@ -93,7 +96,7 @@ def main():
     
     # run epochs
     for epoch in range(1, epochs+1):
-        train(model, device, train_loader, optimizer, epoch, log_interval, dry_run)
+        train(model, device, train_loader, optimizer, epoch, log_interval, dry_run, verbose=False)
         test(model, device, test_loader, verbose=True)
         scheduler.step()
 

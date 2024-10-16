@@ -1,3 +1,20 @@
+"""
+dataset.py
+----------
+Custom dataset class for loading MRI slices and segmentation masks.
+
+Input:
+    - Root directory containing the dataset in .npy format.
+
+Output:
+    - Torch Dataset objects that can be used for training/testing with DataLoader.
+
+Usage:
+    Import this module to create a Dataset instance for training and evaluation.
+
+Author: Han Yang
+Date: 25/09/2024
+"""
 import os
 import numpy as np
 import torch

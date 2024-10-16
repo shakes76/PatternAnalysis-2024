@@ -1,11 +1,13 @@
-from dataset import testImages, trainImages, validateImages, testSegImages, trainSegImages, validateSegImages
 from modules import unet
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import Dice
+#from tensorflow.keras.losses import Dice
+from tensorflow.keras.losses import BinaryCrossentropy
+from dataset import testImages, trainImages, validateImages, testSegImages, trainSegImages, validateSegImages
+
 
 # Set up the model from the modules file
 unetModel = unet()
-unetModel.compile(optimizer = Adam(), loss = Dice(), metrics=['accuracy', Dice])
+unetModel.compile(optimizer=Adam(), loss=BinaryCrossentropy(), metrics=['accuracy'])
 
 # Run the training on the model
 trainResults = unetModel.fit(trainImages, trainSegImages, validation_data = (validateImages, validateSegImages), 
@@ -13,6 +15,7 @@ trainResults = unetModel.fit(trainImages, trainSegImages, validation_data = (val
 
 # Run the trained model on the test datasets 
 testResults = unetModel.evaluate(testImages, testSegImages, batch_size = 32)
+trainPredictedSeg = unetModel.predict(testImages)
 
 # Extracting the loss, accuracy and dice score for the training and validation stats from the model
 trainingLoss = trainResults.history["loss"]

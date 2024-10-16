@@ -1,7 +1,7 @@
 import train
 import matplotlib.pyplot as plt
-from train import trainingLoss, trainingAccuracy, trainingValLoss, trainingValAccuracy, trainingDiceScore, trainingValDiceScore, testLoss, testAccuracy, testDiceScore
-
+from train import trainingLoss, trainingAccuracy, trainingValLoss, trainingValAccuracy, trainingDiceScore, trainingValDiceScore, testLoss, testAccuracy, testDiceScore, trainPredictedSeg
+from dataset import testImages, trainImages, validateImages, testSegImages, trainSegImages, validateSegImages
 
 # Printing the test stats 
 print(testLoss)
@@ -39,3 +39,11 @@ plt.ylabel('Dice Score')
 plt.legend()
 plt.grid()
 plt.show()
+
+
+# Need to display a segmented image and the predicted segmented image 
+# for a good dice value and a bad one
+
+# printing the first training segmented data 
+plt.imshow(trainSegImages[0], cmap='gray')
+plt.imshow(trainPredictedSeg[0], cmap='gray')

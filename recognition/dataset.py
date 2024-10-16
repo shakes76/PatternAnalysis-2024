@@ -94,7 +94,6 @@ validateSegDir = '/home/deb/Documents/3710DATA/HipMRI_study_keras_slices_data/ke
 # trainSegDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train/'
 # validateSegDir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate/'
 
-
 # Load the scans 
 testListNii = list(Path(testDir).glob('*.nii'))
 testImages = load_data_2D(testListNii, normImage=True, categorical=False)

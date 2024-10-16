@@ -1,7 +1,8 @@
-import torch, argparse
+import torch
 
 from modules import SiameseNetwork
 from dataset import APP_MATCHER
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
@@ -25,10 +26,12 @@ def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_int
             if dry_run:
                 break
 
-def test(model: SiameseNetwork, device, test_loader, verbose = False):
+def test(model: SiameseNetwork, device, test_loader, threshold = 0.5, verbose = False):
     model.eval()
     test_loss = 0
     correct = 0
+    all_targets = []
+    all_preds = []
 
     criterion = model.loss_criterion
 
@@ -37,13 +40,25 @@ def test(model: SiameseNetwork, device, test_loader, verbose = False):
             images_1, images_2, targets = images_1.to(device), images_2.to(device), targets.to(device)
             outputs = model(images_1, images_2).squeeze()
             test_loss += criterion(outputs, targets).sum().item()  # sum up batch loss
-            pred = torch.where(outputs > 0.5, 1, 0)  # get the index of the max log-probability
+
+            # Store true and predicted values
+            all_targets.extend(targets.cpu().numpy())
+            pred = torch.where(outputs > threshold, 1, 0)  # get the index of the max log-probability
+            all_preds.extend(pred.cpu().numpy())
             correct += pred.eq(targets.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
 
+    # Calculate metrics
+    accuracy = accuracy_score(all_targets, all_preds)
+    precision = precision_score(all_targets, all_preds)
+    recall = recall_score(all_targets, all_preds)
+    f1 = f1_score(all_targets, all_preds)
+
     if verbose:
-        print(f'Test set: Average loss: {test_loss}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset)}%)\n')
+        print(f'Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset):.2f}%)')
+        print(f'Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}\n')
+
 
 def main():
     torch_seed = 10
@@ -51,7 +66,7 @@ def main():
     shuffle = True
     gamma = 0.7
     epochs = 20
-    learning_rate = 0.1
+    learning_rate = 0.01
     save_model = False
     log_interval = 2
     dry_run = False
@@ -78,7 +93,7 @@ def main():
     # run epochs
     for epoch in range(1, epochs+1):
         train(model, device, train_loader, optimizer, epoch, log_interval, dry_run)
-        test(model, device, test_loader)
+        test(model, device, test_loader, verbose=True)
         scheduler.step()
 
     if save_model:

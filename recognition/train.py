@@ -8,7 +8,8 @@ from modules import *
 from sklearn.manifold import TSNE
 
 # Hyper-parameters
-num_epochs = 100
+
+num_epochs = 200
 hidden_layer = 64
 classes = ["Politicians", "Governmental Organisations", "Television Shows", "Companies"]
 learning_rate = 5e-4
@@ -39,19 +40,24 @@ def train_model():
         train_accuray.append(accuracy)
         epoch_loss = loss.item()
         epoch_accuracy = accuracy.item()
+
+
         # Validation
         model.eval()
 
         output = model(data.x, data.edge_index)
+        loss = criterion(output[validation_mask].to(device), label_validation.to(device))
         accuracy = ((output.argmax(dim=1)[validation_mask] == label_validation).float()).mean()
 
         validation_loss.append(loss.item())
         validation_accuracy.append(accuracy)
             
 
-        if epoch % 5 == 0:
+        if epoch % 20 == 0:
             print(f"Epoch {epoch + 1}, Loss: {epoch_loss:.4f}, Acc: {epoch_accuracy:.4f}")
     print("Training Over")
+    plot_loss(train_loss, validation_loss)
+    plot_accuracy(train_accuray, validation_accuracy)
     torch.save(model, "GCN.pth")
             
 def test_model():
@@ -62,22 +68,10 @@ def test_model():
         output = model(data.x, data.edge_index)
         accuracy = ((output.argmax(dim=1)[test_mask] == label_test).float()).mean()
     print(f"Test Accuracy: {100 * accuracy:.2f}%")
-    plot_TSNE(output.cpu().numpy(), data.y.cpu().numpy())
+    plot_TSNE(output.cpu().numpy(), data.y.cpu().numpy(), classes)
 
 
-def plot_TSNE(output, y_true):
-    # Plotting t-SNE
-    tsne = TSNE(n_components=2, perplexity=30, random_state=42)
-    reduced_embeddings = tsne.fit_transform(output)
 
-    plt.figure(figsize=(10, 8))
-    for i in range(len(classes)):  
-        idx = y_true == i 
-        plt.scatter(reduced_embeddings[idx, 0], 
-                    reduced_embeddings[idx, 1], label=classes[i], alpha = 0.7)  
-    plt.legend()
-    plt.title("TSNE Plot")
-    plt.savefig("TSNE_plot_(epoch_{0}_1).png".format(num_epochs))
 
 
 if __name__ == "__main__":

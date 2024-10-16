@@ -155,15 +155,15 @@ class MriData3D(Dataset):
         self.data_files = os.listdir(self.main_data_path)
         self.label_files = os.listdir(self.data_label_path)
         if target_data:
-            self.data_files = [name[:10] in target_data for name in self.data_files]
-            self.label_files = [name[:10] in target_data for name in self.label_files]
+            self.data_files = [name for name in self.data_files if name[:10] in target_data]
+            self.label_files = [name for name in self.label_files if name[:10] in target_data]
 
     def __len__(self):
         return len(self.data_files)
 
     def __getitem__(self, index) -> tuple[np.ndarray, np.ndarray]:
-        image = load_data_3d(os.path.join(self.main_data_path, self.data_files[index]))
-        label = load_data_3d(os.path.join(self.data_label_path, self.label_files[index]))
+        image = load_data_3d([os.path.join(self.main_data_path, self.data_files[index])])
+        label = load_data_3d([os.path.join(self.data_label_path, self.label_files[index])])
         if self.transform:
             image = self.transform(image)
         if self.label_transform:

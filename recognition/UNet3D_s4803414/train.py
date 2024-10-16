@@ -13,7 +13,7 @@ MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
 MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
 
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 30
 LEARNING_RATE = 1e-3
 
 # Create dataset and dataloader

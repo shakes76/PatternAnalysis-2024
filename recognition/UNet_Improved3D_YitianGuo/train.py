@@ -183,8 +183,6 @@ def evaluate(model, val_loader, criterion, device):
 
             with autocast():
                 outputs = model(images)  # [B, num_classes, D, H, W]
-                print("outputs.shape:", outputs.shape)
-                print("labels.shape:", labels.shape)
                 loss = criterion(outputs, labels)
 
             val_loss += loss.item()

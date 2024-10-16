@@ -90,8 +90,8 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
         alpha = min(alpha, 1)  # Ensure alpha doesn't exceed 1
 
         # Store losses for plotting later
-        losses_critic.append(loss_critic.item())
-        losses_gen.append(loss_gen.item())
+        losses_critic.append(abs(loss_critic.item()))
+        losses_gen.append(abs(loss_gen.item()))
 
         # Update progress bar with current losses
         loop.set_postfix(gp=gp.item(), loss_critic=loss_critic.item())
@@ -128,9 +128,11 @@ def plot_loss(losses_critic, losses_gen, step):
     plt.close()
 
 def moving_average(data, window_size):
-    """
-    """
-    return [sum(data[i:i + window_size]) / window_size for i in range(len(data) - window_size + 1)]
+    """ Calculate the moving average of a list of values."""
+    return [
+        sum(data[i:i + window_size]) / window_size # Calculate the average for each window
+        for i in range(len(data) - window_size + 1) # Iterate over the data until the last full window
+        ]
 
 # Initialize generator and critic
 gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create generator

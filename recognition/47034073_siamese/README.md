@@ -1,4 +1,9 @@
 # Detecting Malignant Lesions From Highly Imbalanced Data Using Triplet Loss
+## Dependencies
+The project used Python 3.12.5. Dependencies can be found in `requirements.txt` and can be install using pip via.
+```bash
+pip install -r requirements.txt
+```
 
 ## Usage
 Run commands from root directory.
@@ -66,6 +71,7 @@ There are a few standard techniques for dealing with highly imbalanced data such
 A triamese network was used with the triplet loss [[2]](#2), an extension of the siamese network popularised for one-shot image recognition [[1]](#1). For this training framework we first compute feature embeddings outputted by the second last layer of a ResNet50 before softmax is applied. The ResNet architecture can be seen in Figure [num](). Pre-trained ImageNet weights were not used, as it was thought that features trained on natural objects would not transfer well to lesion images. Pre-trained network weights have been shown to be inflexible in some cases [[]](). 
 
 ![Resnet50 Architecture](readme_assets/lesion_resnet.png)
+
 *Figure num: Resnet50 Architecture. Image adapted from [ref]().*
 
 The ResNet50 produced 2048-dimensional features which were then passed through an additional embedding head which created a 256-dimensional latent embedding vectors. This embedding head is formed by a ReLU activation, followed by a 1024-dimensional linear layer, ReLU, 512-dimensional linear layer, ReLU and lastly a 256-dimensional linear layer. The final embedding was then normalized such that it has unit $L_2$ norm. Let the final normalized embedding be given by $f(x)$ where $f$ is the embedding mapping and $x$ is a lesion image. 
@@ -107,11 +113,13 @@ The training loss curve for the embedding network can be seen in Figure [num]().
 The number of triplets mined in each minibatch can be seen in Figure [num]().
 
 ![Number of triplets mined](readme_assets/mined.png "Number of mined triplets")
+
 *Figure num: Number of triplets mined in each minibatch.*
 
 We can visualize the embeddings and formed clusters in a 2-dimensional space by fitting a t-distributed Stochastic Neighbor Embedding (TSNE) model. A plot of this for the undersampled training data can be seen in Figure [num]().
 
 ![TSNE clusters](readme_assets/train_tsne.png)
+
 *Figure num: TSNE space projection of undersampled train set embeddings.*
 
 We can see that reasonable separation appears to have occured.

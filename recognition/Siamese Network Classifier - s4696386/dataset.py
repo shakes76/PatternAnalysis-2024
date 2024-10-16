@@ -95,6 +95,16 @@ class APP_MATCHER(torch.utils.data.Dataset):
         
         # Determine which type this Dataloader is
         self.data_set = self.train_examples if self.is_train_set() else self.test_examples
+
+         # Define data augmentation transformations
+        self.transform = torchvision.transforms.Compose([
+            torchvision.transforms.ToPILImage(),
+            torchvision.transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
+            torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
+            torchvision.transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),  # Color jitter
+            torchvision.transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),  # Resize to fixed dimensions
+            torchvision.transforms.ToTensor()  # Convert to tensor
+        ])
             
         
 
@@ -146,6 +156,10 @@ class APP_MATCHER(torch.utils.data.Dataset):
             target = torch.tensor(DISSIMILAR)  # Negative label
 
         image_2 = self.images.get(img_name_2, None)
+
+        # Apply augmentations to images
+        image_1 = self.transform(image_1)
+        image_2 = self.transform(image_2)
 
         return image_1, image_2, target
     

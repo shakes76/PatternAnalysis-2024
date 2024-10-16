@@ -1,3 +1,17 @@
+"""
+models.py
+---------
+Defines the U-Net architecture used for prostate segmentation.
+
+Model:
+    - U-Net: A convolutional neural network architecture for image segmentation.
+
+Usage:
+    Import this module to create a U-Net model instance.
+
+Author: Han Yang
+Date: 24/10/2024
+"""
 import torch
 import torch.nn as nn
 

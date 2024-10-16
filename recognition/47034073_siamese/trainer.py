@@ -74,6 +74,12 @@ class SiameseController:
 
             self.end_of_epoch_func()
 
+    def compute_embedding(self, image: torch.Tensor) -> torch.Tensor:
+        """Compute the embedding for a single image."""
+        with torch.inference_mode():
+            image = image.to(device)
+            return self._model(image.unsqueeze(0)).detach().cpu()
+
     def compute_all_embeddings(
         self, loader: DataLoader
     ) -> tuple[torch.Tensor, torch.Tensor]:

@@ -72,6 +72,10 @@ class ShrinkLesionDataset(Dataset):
         return (image, path)
 
 
+def load_single_image(path: str) -> torch.Tensor:
+    return io.read_image(path) / 255
+
+
 _augmentations = transforms.Compose(
     [
         v2.RandomHorizontalFlip(p=0.5),

@@ -90,16 +90,6 @@ def main() -> None:
 
     # Classifier training data
     # Undersample to alleviate class imbalance
-    # benign = train_meta_df[train_meta_df["target"] == 0]
-    # malignant = train_meta_df[train_meta_df["target"] == 1]
-    # benign = benign.sample(random_state=42, n=len(malignant))
-    # knn_df = pd.concat([benign, malignant])
-    # knn_ds = LesionClassificationDataset(IMAGES_PATH, knn_df, transform=False)
-    # train_classification_loader = DataLoader(
-    #     knn_ds,
-    #     batch_size=hparams.batch_size,
-    #     num_workers=num_workers,
-    # )
     balanced_df, train_classification_loader = utils.get_classifier_loader(
         train_meta_df, batch_size=hparams.batch_size, num_workers=num_workers
     )

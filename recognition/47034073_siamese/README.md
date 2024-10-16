@@ -37,7 +37,7 @@ python train.py --load-model most_recent --continue
 You may replace `most_recent` with the name of any model in the `models` folder.
 
 ### Evaluation
-To evaluate the final trained model run
+To evaluate the final trained model and produce all plots in the `plots` folder, run
 ```bash
 python train.py --load-model best
 ```

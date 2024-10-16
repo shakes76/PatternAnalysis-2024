@@ -138,33 +138,23 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
     epoch_losses = []  # List to store loss for each epoch
 
     # Calculate an abstract milestone as half the total epochs
-    milestone = epochs // 3
+    milestone = epochs // 2
 
-    # Define OneCycleLR for warm-up and initial phase
-    sched_one_cycle = lr_scheduler.OneCycleLR(
-        optimizer, max_lr=0.01, total_steps=epochs * len(dataloader),
-        anneal_strategy='linear', div_factor=10, final_div_factor=1e3
+    # Define schedulers without the verbose parameter
+    sched_linear_1 = lr_scheduler.CyclicLR(
+        optimizer, base_lr=0.005, max_lr=0.05, step_size_up = milestone // 2, step_size_down = milestone // 2, mode="triangular"
     )
-
-    # Define CyclicLR with a reduced range
-    sched_cyclic = lr_scheduler.CyclicLR(
-        optimizer, base_lr=0.001, max_lr=0.01, step_size_up=30, step_size_down=30, mode="triangular"
+    sched_linear_3 = lr_scheduler.LinearLR(
+        optimizer, start_factor= 10, end_factor= 0.1
     )
-
-    # Define CosineAnnealingLR for smooth decay toward the end
-    sched_cosine = lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=epochs - milestone, eta_min=0.0001
-    )
-
-    # Use SequentialLR with adjusted milestones
     scheduler = lr_scheduler.SequentialLR(
-        optimizer, schedulers=[sched_one_cycle, sched_cyclic, sched_cosine],
-        milestones=[milestone, int(epochs * 0.8)]
+        optimizer, schedulers=[sched_linear_1, sched_linear_3], milestones=[milestone]
     )
 
+    # Training loop with the two-phase learning rate schedule
     for epoch in range(epochs):
         total_loss = 0  # Reset total loss for the current epoch
-        
+
         for images, _ in dataloader:
             images = images.to(device)
             optimizer.zero_grad()
@@ -183,14 +173,15 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
             optimizer.step()
             total_loss += loss.item()  # Accumulate loss
 
-            # Step through scheduler for each batch
-            scheduler.step()
+        # Step through SequentialLR scheduler once per epoch
+        scheduler.step()
 
         # Calculate average loss for the epoch
         avg_loss = total_loss / len(dataloader)
         epoch_losses.append(avg_loss)  # Store the average loss
-        # Retrieve the current learning rate from the optimizer
-        current_lr = optimizer.param_groups[0]['lr']
+
+        # Print the current learning rate using get_last_lr
+        current_lr = scheduler.get_last_lr()[0]  # get_last_lr() returns a list
         print(f"Epoch {epoch + 1}/{epochs}, Learning Rate: {current_lr:.6f}, Diffusion Model Loss: {avg_loss:.4f}")
 
         # Visualize final output images if desired
@@ -246,7 +237,7 @@ if __name__ == '__main__':
     diffusion_model = DiffusionModel(encoder, unet, decoder, noise_scheduler).to(device)
 
     # Define optimizer for only the UNet part
-    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr=1e-4)
+    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters())
 
     # Train the diffusion model as before
     train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=10)

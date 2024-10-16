@@ -46,7 +46,7 @@ def unet_model(input_size=(256, 128, 1)):
     conv9 = layers.Conv2D(64, 3, activation='relu', padding='same')(merge9)    # 256x128x64
     conv9 = layers.Conv2D(64, 3, activation='relu', padding='same')(conv9)     # 256x128x64
 
-    conv10 = layers.Conv2D(2, 1, activation='softmax')(conv9)                  # 256x128x2 - Output segmentation map
+    conv10 = layers.Conv2D(1, 1, activation='sigmoid')(conv9)                  # 256x128x2 - Output segmentation map
 
     model = models.Model(inputs=inputs, outputs=conv10)
     

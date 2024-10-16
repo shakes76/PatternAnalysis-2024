@@ -60,13 +60,16 @@ def load_image(file_name):
         """
         dicom = pydicom.dcmread(file_name)
         image = dicom.pixel_array
-        # Resize the image to a fixed size
-        resize_transform = torchvision.transforms.Compose([
+        # Define data augmentation transformations
+        augment_and_resize = torchvision.transforms.Compose([
             torchvision.transforms.ToPILImage(),
-            torchvision.transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
-            torchvision.transforms.ToTensor()
+            torchvision.transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
+            torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
+            torchvision.transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),  # Color jitter
+            torchvision.transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),  # Resize to fixed dimensions
+            torchvision.transforms.ToTensor()  # Convert to tensor
         ])
-        image = resize_transform(image)
+        image = augment_and_resize(image)
         # Add channel dimension (1xHxW)
         return image
 
@@ -74,6 +77,7 @@ def load_image(file_name):
 class APP_MATCHER(torch.utils.data.Dataset):
     
     RANDOM_SEED = 69420
+    
     def __init__(self, image_folder: str = None, ground_truth_file: str = None,
             train: bool = True, train_ratio: float = 0.8):
         super(APP_MATCHER, self).__init__()
@@ -95,18 +99,6 @@ class APP_MATCHER(torch.utils.data.Dataset):
         
         # Determine which type this Dataloader is
         self.data_set = self.train_examples if self.is_train_set() else self.test_examples
-
-         # Define data augmentation transformations
-        self.transform = torchvision.transforms.Compose([
-            torchvision.transforms.ToPILImage(),
-            torchvision.transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
-            torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
-            torchvision.transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),  # Color jitter
-            torchvision.transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),  # Resize to fixed dimensions
-            torchvision.transforms.ToTensor()  # Convert to tensor
-        ])
-            
-        
 
     def split_dataset(self, train_ratio: float) -> tuple[dict[int, list], dict[int, list]]:
         """
@@ -156,10 +148,6 @@ class APP_MATCHER(torch.utils.data.Dataset):
             target = torch.tensor(DISSIMILAR)  # Negative label
 
         image_2 = self.images.get(img_name_2, None)
-
-        # Apply augmentations to images
-        image_1 = self.transform(image_1)
-        image_2 = self.transform(image_2)
 
         return image_1, image_2, target
     

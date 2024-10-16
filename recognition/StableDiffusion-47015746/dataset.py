@@ -16,7 +16,7 @@ def load_data(root):
     workers = 2
 
     # Batch size during training
-    batch_size = 128
+    batch_size = 32
 
     # Dataset and DataLoader
     dataset = dset.ImageFolder(root=dataroot,

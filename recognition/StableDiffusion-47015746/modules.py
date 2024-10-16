@@ -14,7 +14,7 @@ class NoiseScheduler:
     def add_noise(self, x, t):
         noise = torch.randn_like(x).to(device)
         alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x.device)
-        return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise
+        return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise, noise
 
 class UNet(nn.Module):
     def __init__(self, latent_dim=128):
@@ -48,34 +48,32 @@ class UNet(nn.Module):
 
     def forward(self, x, t):
         # Downsample (encoder path) with batch normalization
-        
-        x1 = F.relu(self.bn1(self.down1(x)))  # Output: [batch, 256, h/2, w/2]
-        
-        x2 = F.relu(self.bn2(self.down2(x1)))  # Output: [batch, 512, h/4, w/4]
-       
-        x3 = F.relu(self.bn3(self.down3(x2)))  # Output: [batch, 1024, h/4, w/4]
-        
-        x4 = F.relu(self.bn4(self.down4(x3)))  # Output: [batch, 2048, h/4, w/4]
-        
-
-        # Inject time embedding into the deepest layer in the encoder path
         timestep_embedding = torch.sin(t.float() * 1e-4).view(-1, 1, 1, 1).to(x.device)
-        x4 = x4 + timestep_embedding
+    
+
+        x1 = F.relu(self.bn1(self.down1(x + timestep_embedding)))  # Output: [batch, 256, h/2, w/2]
+        
+        x2 = F.relu(self.bn2(self.down2(x1 + timestep_embedding)))  # Output: [batch, 512, h/4, w/4]
+       
+        x3 = F.relu(self.bn3(self.down3(x2 + timestep_embedding)))  # Output: [batch, 1024, h/4, w/4]
+        
+        x4 = F.relu(self.bn4(self.down4(x3 + timestep_embedding)))  # Output: [batch, 2048, h/4, w/4]
+
         
         # Upsample (decoder path) with skip connections and batch normalization
-        x = F.relu(self.bn5(self.up4(x4)))
+        x = F.relu(self.bn5(self.up4(x4 + timestep_embedding)))
         
         x = x + x3  # First skip connection
     
-        x = F.relu(self.bn6(self.up3(x)))
+        x = F.relu(self.bn6(self.up3(x + timestep_embedding)))
         x = x + x2  # Second skip connection
 
-        x = F.relu(self.bn7(self.up2(x)))
+        x = F.relu(self.bn7(self.up2(x + timestep_embedding)))
         x = F.interpolate(x, size=x1.shape[2:], mode='nearest')
 
         x = x + x1  # Third skip connection
 
-        x = F.relu(self.bn8(self.up1(x)))
+        x = F.relu(self.bn8(self.up1(x + timestep_embedding)))
 
         return x
     
@@ -146,15 +144,12 @@ class DiffusionModel(nn.Module):
             latent = self.encoder(x)
 
         # Add noise
-        noisy_latent = self.noise_scheduler.add_noise(latent, t)
+        noisy_latent, noise = self.noise_scheduler.add_noise(latent, t)
 
         # Denoise with UNet (this requires gradients)
-        denoised_latent = self.unet(noisy_latent, t)
+        predicted_noise = self.unet(noisy_latent, t)
 
-        # Temporarily set decoder to train mode for gradients  
-        output_images = self.decoder(denoised_latent)
-
-        return latent, noisy_latent, denoised_latent, output_images
+        return latent, noisy_latent, predicted_noise, noise
 
 
 

@@ -15,21 +15,23 @@ img_list = []
 
 img_list_encoder = []
 
-def visualize_images(latent, noisy_latent, denoised_latent, final_reconstructed, epoch):
+def visualize_images(im1, im2, im3, im4, epoch):
     # Move images back to CPU and detach
-    latent = latent.cpu().detach()
-    noisy_latent = noisy_latent.cpu().detach()
-    denoised_latent = denoised_latent.cpu().detach()
-    final_reconstructed = final_reconstructed.cpu().detach()
+    im1= im1.cpu().detach()
+    im2= im2.cpu().detach()
+    im3= im3.cpu().detach()
+    im4= im4.cpu().detach()
+    
 
     # Unnormalize images to bring them from [-1, 1] to [0, 1] for visualization
     def unnormalize(imgs):
         return imgs * 0.5 + 0.5
 
-    latent = unnormalize(latent)
-    noisy_latent = unnormalize(noisy_latent)
-    denoised_latent = unnormalize(denoised_latent)
-    final_reconstructed = unnormalize(final_reconstructed)
+    im1= unnormalize(im1)
+    im2= unnormalize(im2)
+    im3= unnormalize(im3)
+    im4= unnormalize(im4)
+    
 
     # Display first 8 images
     num_images = 8
@@ -37,24 +39,25 @@ def visualize_images(latent, noisy_latent, denoised_latent, final_reconstructed,
 
     for i in range(num_images):
         # Original Images
-        axes[0, i].imshow(np.transpose(latent[i].numpy(), (1, 2, 0)))
+        axes[0, i].imshow(np.transpose(im1[i].numpy(), (1, 2, 0)))
         axes[0, i].axis('off')
-        axes[0, i].set_title("Latent")
+        axes[0, i].set_title("Original Image")
 
         # Reconstructed from Latent (Encoder → Decoder)
-        axes[1, i].imshow(np.transpose(noisy_latent[i].numpy(), (1, 2, 0)))
+        axes[1, i].imshow(np.transpose(im2[i].numpy(), (1, 2, 0)))
         axes[1, i].axis('off')
-        axes[1, i].set_title("Noisy Latent")
+        axes[1, i].set_title("Image After Noise")
 
         # Final Reconstructed (Full Model Output)
-        axes[2, i].imshow(np.transpose(denoised_latent[i].numpy(), (1, 2, 0)))
+        axes[2, i].imshow(np.transpose(im3[i].numpy(), (1, 2, 0)))
         axes[2, i].axis('off')
-        axes[2, i].set_title("Denoised Latent")
+        axes[2, i].set_title("Predicted Noise")
 
         # Final Reconstructed (Full Model Output)
-        axes[3, i].imshow(np.transpose(final_reconstructed[i].numpy(), (1, 2, 0)))
+        axes[3, i].imshow(np.transpose(im4[i].numpy(), (1, 2, 0)))
         axes[3, i].axis('off')
-        axes[3, i].set_title("Final Output")
+        axes[3, i].set_title("Image After Noise - Predicted Noise")
+
 
     plt.suptitle(f"Epoch {epoch} - Model Outputs")
     plt.show()
@@ -91,7 +94,7 @@ def visualize_images_encoder(encoder_reconstructed):
 def train_vae(vae, dataloader, lr=1e-4, epochs=50):
     vae.train()
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)  # Define optimizer within the function
-    criterion = nn.MSELoss()  # Use MSE for image reconstruction
+    criterion = F.smooth_l1_loss()  # Use MSE for image reconstruction
 
     for epoch in range(epochs):
         total_loss = 0
@@ -132,24 +135,23 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
 
 # Instantiate and train only the diffusion model
 # Adjust the training function
-def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
+def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
     diffusion_model.unet.train()  # Only UNet should be in training mode
-    criterion = nn.MSELoss()
     epoch_losses = []  # List to store loss for each epoch
 
     # Calculate an abstract milestone as half the total epochs
-    milestone = epochs // 2
+    #milestone = epochs // 2
 
     # Define schedulers without the verbose parameter
-    sched_linear_1 = lr_scheduler.CyclicLR(
-        optimizer, base_lr=0.005, max_lr=0.05, step_size_up = milestone // 2, step_size_down = milestone // 2, mode="triangular"
-    )
-    sched_linear_3 = lr_scheduler.LinearLR(
-        optimizer, start_factor= 10, end_factor= 0.1
-    )
-    scheduler = lr_scheduler.SequentialLR(
-        optimizer, schedulers=[sched_linear_1, sched_linear_3], milestones=[milestone]
-    )
+    #sched_linear_1 = lr_scheduler.CyclicLR(
+        #optimizer, base_lr=0.005, max_lr=0.05, step_size_up = milestone // 2, step_size_down = milestone // 2, mode="triangular"
+    #)
+    #sched_linear_3 = lr_scheduler.LinearLR(
+        #optimizer, start_factor= 1, end_factor= 0.1
+    #)
+    #scheduler = lr_scheduler.SequentialLR(
+        #optimizer, schedulers=[sched_linear_1, sched_linear_3], milestones=[milestone]
+    #)
 
     # Training loop with the two-phase learning rate schedule
     for epoch in range(epochs):
@@ -157,16 +159,17 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
 
         for images, _ in dataloader:
             images = images.to(device)
+            
             optimizer.zero_grad()
 
             # Random timestep for diffusion
             t = torch.randint(0, diffusion_model.noise_scheduler.timesteps, (images.size(0),)).long().to(device)
 
             # Forward pass through diffusion model
-            latent, noisy_latent, denoised_latent, output_images = diffusion_model(images, t)
+            latent, noisy_latent, predicted_noise, noise = diffusion_model(images, t)
 
             # Calculate loss for denoising
-            loss = criterion(output_images, images)
+            loss = F.smooth_l1_loss(noise, predicted_noise)
 
             # Backward pass and optimize
             loss.backward()
@@ -174,18 +177,18 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
             total_loss += loss.item()  # Accumulate loss
 
         # Step through SequentialLR scheduler once per epoch
-        scheduler.step()
+        #scheduler.step()
 
         # Calculate average loss for the epoch
         avg_loss = total_loss / len(dataloader)
         epoch_losses.append(avg_loss)  # Store the average loss
 
         # Print the current learning rate using get_last_lr
-        current_lr = scheduler.get_last_lr()[0]  # get_last_lr() returns a list
-        print(f"Epoch {epoch + 1}/{epochs}, Learning Rate: {current_lr:.6f}, Diffusion Model Loss: {avg_loss:.4f}")
+        #current_lr = scheduler.get_last_lr()[0]  # get_last_lr() returns a list
+        #print(f"Epoch {epoch + 1}/{epochs}, Learning Rate: {current_lr:.6f}, Diffusion Model Loss: {avg_loss:.4f}")
+        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {avg_loss:.4f}")
 
-        # Visualize final output images if desired
-        visualize_images_final(output_images)
+        visualize_images(diffusion_model.decoder(latent), diffusion_model.decoder(noisy_latent), diffusion_model.decoder(predicted_noise), diffusion_model.decoder(noisy_latent - predicted_noise), epoch + 1)
 
     # Save the model's state dictionary after training completes
     torch.save(diffusion_model.state_dict(), 'diffusion_model_state_dict.pth')
@@ -237,10 +240,10 @@ if __name__ == '__main__':
     diffusion_model = DiffusionModel(encoder, unet, decoder, noise_scheduler).to(device)
 
     # Define optimizer for only the UNet part
-    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters())
+    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr=1e-3)
 
     # Train the diffusion model as before
-    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=10)
+    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=100)
 
 
     #stable_diffusion_model = StableDiffusionModel(latent_dim, timesteps)

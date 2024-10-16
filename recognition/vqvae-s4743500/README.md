@@ -185,8 +185,25 @@ The training set and validation set was used to calculate the **Structural Simil
   
 After training, the SSIM scores and training reconstruction losses for each batch were plotted to visualise how the models performance evolved during training (refer to the graphs under [Results](#results)). Finally, the model with the lowest validation loss was saved in order for it to be used in the [predict.py](predict.py) script as this would likely be the model that generalises best to unseen data.  
   
-### Results
-
+### Results  
+  
+After 1 epoch:  
+![A Batch of Training Images vs Reconstructed Images - Epoch 1](resources/epoch_1_phase_train(ssim=0.3209).png)  
+  
+After 5 epochs:  
+![A Batch of Training Images vs Reconstructed Images - Epoch 5](resources/epoch_5_phase_train(ssim=0.6973).png)  
+  
+After 20 epochs:  
+![A Batch of Training Images vs Reconstructed Images - Epoch 20](resources/epoch_20_phase_train(ssim=0.8056).png)  
+  
+SSIM scores for each epoch:  
+![SSIM Scores per Epoch](resources/ssim_scores.png)  
+  
+Training reconstruction losses per batch:  
+![Training Reconstruction losses per bath no.](resources/batch_losses.png)  
+  
+Input validation image vs. codebook embedding representation vs. reconstructed validation image:  
+![Codebook Representation for Comparison](resources/epoch_19_comparison_val.png)
 
 ## 4. VQ-VAE Testing Process
 

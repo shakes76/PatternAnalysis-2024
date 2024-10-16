@@ -4,7 +4,7 @@ from dataset import load_images
 from sklearn.preprocessing import LabelEncoder
 
 # Loading
-model = tf.keras.models.load_mode('best_model')
+model = tf.keras.models.load_model('best_model.h5')
 test_images, test_labels = load_images('test')
 
 # trans the label of test set to int

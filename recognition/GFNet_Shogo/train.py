@@ -12,6 +12,7 @@ from modules import GFNet
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+import matplotlib as plt
 
 
 # Learning Rate: 1e-5 to 1e-2
@@ -38,7 +39,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Initial settings
 test_model = GFNet(
     img_size=224, 
-    num_classes=2,
+    num_classes=1,
     initial_embed_dim=32, 
     blocks_per_stage=[1, 1, 1, 1], 
     stage_dims=[32, 64, 128, 256], 
@@ -57,22 +58,25 @@ torch.nn.utils.clip_grad_norm_(test_model.parameters(), max_norm=1.0)
 def train_one_epoch(model, train_loader, criterion, optimiser, device):
     model.train()
     running_loss = 0.0 
-
     for inputs, labels in tqdm(train_loader):
-        inputs, labels = inputs.to(device), labels.to(device)
-
+        inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device)  
         optimiser.zero_grad()
-
         outputs = model(inputs)
         loss = criterion(outputs, labels)
-
         loss.backward()
         optimiser.step()
-
         running_loss += loss.item()
+    epoch_loss = running_loss / len(train_loader)
+    return epoch_loss
 
-    epoch_loss = running_loss / len(train_loader) 
-    print(f"Train Loss: {epoch_loss:.4f}")
-
-
-train_one_epoch(test_model, train_loader, criterion, optimiser, device)
+def validate(model, val_loader, criterion, device):
+    model.eval()
+    running_loss = 0.0
+    with torch.no_grad():
+        for inputs, labels in tqdm(val_loader):
+            inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device) 
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            running_loss += loss.item()
+    epoch_loss = running_loss / len(val_loader)
+    return epoch_loss

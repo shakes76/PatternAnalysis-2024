@@ -130,7 +130,7 @@ class Downlayer(nn.Module):
         x = x.reshape(batch_size, -1, self.dim_out)  # (B, num_patches, dim_out)
         return x
 class GFNet(nn.Module):
-    def __init__(self, img_size=224, num_classes=2, initial_embed_dim=64, blocks_per_stage=[3, 3, 10, 3], 
+    def __init__(self, img_size=224, num_classes=1, initial_embed_dim=64, blocks_per_stage=[3, 3, 10, 3], 
                  stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, is_training=False, dropcls=0.0):
         super().__init__()
 
@@ -200,25 +200,3 @@ class GFNet(nn.Module):
         x = self.final_dropout(x)
         x = self.head(x)
         return x
-
-# tiny_model = GFNet(
-#     img_size=224,
-#     num_classes=2,
-#     embed_dim=64,
-#     num_blocks=[3, 3, 10, 3],
-#     dims=[64, 128, 256, 512],
-#     drop_rate=0.1,
-#     drop_path_rate=0.1,
-#     is_training=True
-# )
-
-# test_model = GFNet(
-#     img_size=224,
-#     num_classes=2,
-#     embed_dim=64,
-#     num_blocks=[1, 1, 1, 1],
-#     dims=[32, 64, 128, 256],
-#     drop_rate=0.05,
-#     drop_path_rate=0.05,
-#     is_training=True
-# )

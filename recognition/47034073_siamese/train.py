@@ -52,7 +52,7 @@ def main() -> None:
 
     hparams = HyperParams(
         batch_size=128,
-        num_epochs=1000,
+        num_epochs=120,
         learning_rate=learning_rate,
         margin=1,
     )

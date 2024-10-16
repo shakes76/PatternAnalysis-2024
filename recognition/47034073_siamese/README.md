@@ -1,10 +1,59 @@
 # Detecting Malignant Lesions From Highly Imbalanced Data Using Triplet Loss
 
 ## Usage
-### Data Preparation
+Run commands from root directory.
+### Directory setup
+```bash
+mkdir data models plots
+```
+### Downloading data
+```bash
+```
 ### Downloading The Trained Model
+```bash
+```
+### Moving files into correct directories.
+Extract the downloaded zip files into the following directories.
+```
+data
+----small_images
+----all.csv
+----test.csv
+----train.csv
+----val.csv
+models
+----best.pt
+```
+
 ### Training
+To train the model from scratch.
+```bash
+python train.py
+```
+To continue training a model run
+```bash
+python train.py --load-model most_recent --continue
+```
+You may replace `most_recent` with the name of any model in the `models` folder.
+
+### Evaluation
+To evaluate the final trained model run
+```bash
+python train.py --load-model best
+```
+To include test set evaluation run
+```bash
+python train.py --load-model best --test
+```
 ### Example Prediction
+To get the prediction for a 224x224 lesion image run
+```bash
+python predict.py <path to jpg image file>
+```
+For example,
+```bash
+python predict.py data/small_images/ISIC_0015719.jpg
+```
 
 ## Problem Overview 
 The 2020 Kaggle ISIC malignant lesion detection challenge was to correctly classify images of skin lesions as malignant or benign. The dataset is highly imbalanced with approximately 98% of observations being benign and only 2% being malignant. This meant that using naive metrics such as accuracy was undesirable as a predictor which simply always predicted malignant lesions would obtain a score of 98%. Therefore the Kaggle challenge was to achieve a high reciever-operator-curve area-under-the-curve (ROC-AUC) score. Monitoring precision and recall was also a secondary method of evaluation used.
@@ -62,7 +111,7 @@ The best results were achieved using the SVM classifier. Using this classifier t
 
 We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contain a higher proportion of the likely harder minority class compared to the validation and test sets. When not undersampling the classifier's training set an AUC of 1 was almost always reached on the training set but with bad performance on the others. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.
 
-The classification report for the SVM classifier on the test set can be seen in Table [num](). 
+The classification report for the SVM classifier on the test set can be seen in Table [num](). Class 0 and 1 represent the benign and malignant class respectively. 
 
 *Table num: Classification report for SVM on the test set.*
 |              | precision | recall | f1-score | support |
@@ -73,7 +122,7 @@ The classification report for the SVM classifier on the test set can be seen in 
 | **macro avg**| 0.54      | 0.67   | 0.54     | 6626    |
 | **weighted avg** | 0.97  | 0.90   | 0.94     | 6626    |
 
-For the problem of malignant lesion detection, it could be argued that recall is more important than precision, as the cost of missing a malignant obersvation is high. The low precision could be costly too in that a patient may be given costly treatment, however this could be rememedied in a real world system by having a medical professional verify malignant detections. In the results we can see that we reach a decently high recall for an imbalanced problem of 44%.
+For the problem of malignant lesion detection, it could be argued that recall is more important than precision, as the cost of missing a malignant observation is high. The low precision could be costly too in that a patient may be given unnecessary treatment, however this could be rememedied in a real world system by having a medical professional verify malignant detections. In the results we can see that we reach a recall of 44%, which seems decently high for the 2% minority class in this highly imbalanced problem.
 
 
 ## References

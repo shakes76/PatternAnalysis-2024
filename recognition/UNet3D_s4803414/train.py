@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from dataset import MRIDataset
 from modules import UNet3D
 from torchvision import transforms
+from torch.cuda.amp import autocast, GradScaler
 
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
@@ -24,6 +25,13 @@ model = UNet3D(in_channels=1, out_channels=6)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
+# Initialize GradScaler for mixed precision
+scaler = GradScaler()
+
+# Set device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.to(device)  # Move the model to the device once
+
 # Training loop
 for epoch in range(EPOCHS):
     model.train()  # Set the model to training mode
@@ -31,23 +39,27 @@ for epoch in range(EPOCHS):
 
     for images, masks in dataloader:
         # Move to GPU if available
-        images = images.to('cuda') if torch.cuda.is_available() else images
-        masks = masks.to('cuda') if torch.cuda.is_available() else masks
+        images = images.to(device)
+        masks = masks.to(device)
 
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, masks.squeeze(1))  # Squeeze to match output shape
+        # Zero the gradients
+        optimizer.zero_grad()
+
+        # Forward pass with mixed precision
+        with autocast():
+            outputs = model(images)
+            loss = criterion(outputs, masks.squeeze(1))  # Squeeze to match output shape
 
         # Backward pass and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()  # Scale the loss
+        scaler.step(optimizer)  # Update the parameters
+        scaler.update()  # Update the scale for the next iteration
 
         # Accumulate loss
         running_loss += loss.item()
 
-        # Print loss for the epoch
-        print(f'Epoch [{epoch + 1}/{EPOCHS}], Loss: {running_loss / len(dataloader):.4f}')
+    # Print loss for the epoch
+    print(f'Epoch [{epoch + 1}/{EPOCHS}], Loss: {running_loss / len(dataloader):.4f}')
 
 # Save the model
 os.makedirs(os.path.dirname(MODEL_SAVE_PATH), exist_ok=True)  # Create model directory if it doesn't exist

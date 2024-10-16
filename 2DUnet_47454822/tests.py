@@ -98,7 +98,6 @@ def test_train():
 
         model = unet_model((256, 128, 1), batch_size=batch_size)
         # model.compile(optimizer=AdamW(), loss=Dice(), metrics=['accuracy']) # used to be sparse_cat_crossent. find better loss
-        # TODO: add IoU loss. See https://keras.io/api/keras_cv/losses/iou_loss/  keras_cv.losses.IoULoss()
 
         model.fit(x=train_images, y=train_masks, batch_size=batch_size, epochs=2, shuffle=True, verbose=2)
 

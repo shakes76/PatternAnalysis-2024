@@ -1,5 +1,7 @@
+import os
 import argparse
-import time
+import random
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
@@ -9,27 +11,34 @@ from dataset import build_dataset
 from modules import GFNet, _cfg
 
 def get_args_parser():
+    """
+    Creates an argument parser for the prediction script.
+
+    Returns:
+        argparse.ArgumentParser: Argument parser for command-line options.
+    """
     parser = argparse.ArgumentParser('GFNet testing script', add_help=False)
-    parser.add_argument('--batch-size', default=128, type=int)
-    parser.add_argument('--arch', default='gfnet-xs', type=str, help='Name of model to train')
-    parser.add_argument('--input-size', default=224, type=int, help='images input size')
-    parser.add_argument('--data-path', default='data/', type=str,
-                        help='dataset path')
-    parser.add_argument('--data-set', default='ADNI', choices=['ADNI', 'CIFAR', 'IMNET', 'INAT', 'INAT19'],
-                        type=str, help='Dataset name')
-    parser.add_argument('--seed', default=0, type=int)
-    parser.add_argument('--model-path', default='outputs/checkpoint_best.pth', help='resume from checkpoint')
-    parser.add_argument('--num_workers', default=10, type=int)
-    parser.add_argument('--pin-mem', action='store_true',
-                        help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
-    parser.add_argument('--no-pin-mem', action='store_false', dest='pin_mem',
-                        help='')
+    parser.add_argument('--batch-size', default=128, type=int, help='Batch size for testing.')
+    parser.add_argument('--arch', default='gfnet-b', type=str, help='Model architecture to use.')
+    parser.add_argument('--input-size', default=224, type=int, help='Input image size.')
+    parser.add_argument('--data-path', default='data/', type=str, help='Path to the dataset.')
+    parser.add_argument('--data-set', default='ADNI', type=str, help='Dataset name.')
+    parser.add_argument('--seed', default=0, type=int, help='Random seed for reproducibility.')
+    parser.add_argument('--model-path', default='outputs/checkpoint_best.pth', help='Path to the model checkpoint.')
+    parser.add_argument('--num_workers', default=10, type=int, help='Number of workers for data loading.')
+    parser.add_argument('--pin-mem', action='store_true', help='Pin CPU memory in DataLoader for better GPU transfer.')
+    parser.add_argument('--no-pin-mem', action='store_false', dest='pin_mem', help='Do not pin memory.')
     parser.set_defaults(pin_mem=True)
     return parser
 
-
 def main(args):
-    # Check device
+    """
+    Main function for testing the GFNet model.
+
+    Args:
+        args: Parsed command-line arguments.
+    """
+    # Set the device (CUDA, MPS, or CPU)
     if torch.cuda.is_available():
         device = torch.device("cuda")
         cudnn.benchmark = True
@@ -40,172 +49,185 @@ def main(args):
     else:
         device = torch.device("cpu")
         print("Neither CUDA nor MPS are available. Using CPU.")
-        
-    # Build test dataset
+
+    # Build the test dataset and DataLoader
     dataset_test, _ = build_dataset(split='test', args=args)
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test,
-        batch_size=128,
+        batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
         drop_last=False
     )
 
-    # Assign model instance
-    if args.arch == 'gfnet-xs':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-ti':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=256, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-s':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=384, depth=19, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    elif args.arch == 'gfnet-b':
-        model = GFNet(
-            img_size=args.input_size, 
-            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
-        )
-    else:
-        raise NotImplementedError
-
-    # Configure model and load trained model weights
-    model_path = args.model_path
+    # Create and configure the model
+    model = create_model(args)
     model.default_cfg = _cfg()
+    model = load_model_weights(model, args.model_path)
+    model = model.to(device)
+    print(f'## Model loaded with {sum(p.numel() for p in model.parameters())} parameters.')
+
+    # Set the criterion (loss function)
+    criterion = torch.nn.CrossEntropyLoss().to(device)
+
+    # Validate the model on the test data
+    print('## Validating model on test dataset...')
+    validate(data_loader_test, model, criterion, device)
+    # Making a single inference
+    print('## Making a single inference and saving to output.')
+    save_random_test_image(data_loader_test, model, device, class_names=('NC', 'AD'), output_dir='outputs')
+
+
+def create_model(args):
+    """
+    Creates an instance of the GFNet model based on architecture.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        GFNet: The instantiated model.
+    """
+    print(f"Creating model: {args.arch}")
+    if args.arch == 'gfnet-xs':
+        return GFNet(img_size=args.input_size, patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
+                     norm_layer=partial(nn.LayerNorm, eps=1e-6))
+    elif args.arch == 'gfnet-ti':
+        return GFNet(img_size=args.input_size, patch_size=16, embed_dim=256, depth=12, mlp_ratio=4,
+                     norm_layer=partial(nn.LayerNorm, eps=1e-6))
+    elif args.arch == 'gfnet-s':
+        return GFNet(img_size=args.input_size, patch_size=16, embed_dim=384, depth=19, mlp_ratio=4,
+                     norm_layer=partial(nn.LayerNorm, eps=1e-6))
+    elif args.arch == 'gfnet-b':
+        return GFNet(img_size=args.input_size, patch_size=16, embed_dim=512, depth=19, mlp_ratio=4,
+                     norm_layer=partial(nn.LayerNorm, eps=1e-6))
+    else:
+        raise NotImplementedError(f"Architecture '{args.arch}' is not implemented.")
+
+
+def load_model_weights(model, model_path):
+    """
+    Loads pretrained weights into the model.
+
+    Args:
+        model (nn.Module): The model instance.
+        model_path (str): Path to the model checkpoint.
+
+    Returns:
+        nn.Module: Model with loaded weights.
+    """
+    print(f"Loading model weights from {model_path}")
     checkpoint = torch.load(model_path, map_location="cpu")
     model.load_state_dict(checkpoint["model"])
-    print('## model has been successfully loaded')
+    print('Model weights loaded successfully.')
+    return model
 
-    model = model.to(device)
-    n_parameters = sum(p.numel() for p in model.parameters())
-    print('number of params:', n_parameters)
 
-    # Assign testing criteria
-    if torch.cuda.is_available():
-        criterion = torch.nn.CrossEntropyLoss().cuda()
-    else:
-        criterion = torch.nn.CrossEntropyLoss()
+def accuracy(output, target):
+    """
+    Computes the accuracy for binary classification.
     
-    # Test model on test data
-    validate(data_loader_test, model, criterion, device)
-
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self, name, fmt=':f'):
-        self.name = name
-        self.fmt = fmt
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-    def __str__(self):
-        fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
-        return fmtstr.format(**self.__dict__)
-
-class ProgressMeter(object):
-    def __init__(self, num_batches, meters, prefix=""):
-        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
-        self.meters = meters
-        self.prefix = prefix
-
-    def display(self, batch):
-        entries = [self.prefix + self.batch_fmtstr.format(batch)]
-        entries += [str(meter) for meter in self.meters]
-        print('\t'.join(entries))
-
-    def _get_batch_fmtstr(self, num_batches):
-        num_digits = len(str(num_batches // 1))
-        fmt = '{:' + str(num_digits) + 'd}'
-        return '[' + fmt + '/' + fmt.format(num_batches) + ']'
-
-def accuracy(output, target, topk=(1,)):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
+    Args:
+        output (torch.Tensor): Model output logits of shape (batch_size, num_classes).
+        target (torch.Tensor): Ground truth labels of shape (batch_size).
+        
+    Returns:
+        float: Accuracy as a percentage.
+    """
     with torch.no_grad():
-        maxk = max(topk)
-        batch_size = target.size(0)
+        # Get the predicted class (0 or 1) by taking the index of the maximum logit.
+        pred = output.argmax(dim=1)
+        correct = (pred == target).sum().item()
+        accuracy = correct / target.size(0) * 100
+        return accuracy
 
-        _, pred = output.topk(maxk, 1, True, True)
-        pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-        res = []
-        for k in topk:
-            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
-            res.append(correct_k.mul_(100.0 / batch_size))
-        return res
 
 def validate(val_loader, model, criterion, device):
-    batch_time = AverageMeter('Time', ':6.3f')
-    losses = AverageMeter('Loss', ':.4e')
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    top5 = AverageMeter('Acc@5', ':6.2f')
+    """
+    Evaluates the model on the entire validation dataset for binary classification.
+
+    Args:
+        val_loader (DataLoader): DataLoader for validation data.
+        model (nn.Module): Model to evaluate.
+        criterion (nn.Module): Loss function.
+        device (torch.device): Device to run the model on.
+
+    Returns:
+        float: Overall accuracy of the model on the validation dataset.
+    """
     model.eval()
-
-    progress = ProgressMeter(
-        len(val_loader),
-        [batch_time, losses, top1, top5],
-        prefix='Test: ')
-
+    total_correct = 0
+    total_samples = 0
+    total_loss = 0.0
 
     with torch.no_grad():
-        end = time.time()
-        for i, (images, target) in enumerate(val_loader):
+        for images, targets in val_loader:
             images = images.to(device)
-            target = target.to(device)
+            targets = targets.to(device)
 
-            # compute output
-            output = model(images)
-            loss = criterion(output, target)
-            
-            # Get the number of classes from the output
-            num_classes = output.size(1)
+            # Compute output and loss
+            outputs = model(images)
+            loss = criterion(outputs, targets)
+            total_loss += loss.item() * images.size(0)
 
-            # Ensure topk doesn't exceed the number of classes
-            maxk = min(5, num_classes)  # Use top 5, or fewer if there are fewer classes
+            # Compute the number of correct predictions
+            _, predicted = outputs.max(1)
+            total_correct += (predicted == targets).sum().item()
+            total_samples += targets.size(0)
 
-            # measure accuracy and record loss
-            acc1, acc5 = accuracy(output, target, topk=(1, maxk))
-            losses.update(loss.item(), images.size(0))
-            top1.update(acc1[0], images.size(0))
-            top5.update(acc5[0], images.size(0))
+    # Calculate average loss and accuracy
+    average_loss = total_loss / total_samples
+    accuracy = total_correct / total_samples * 100
+    print(f'Validation Loss: {average_loss:.4f}, Accuracy: {accuracy:.2f}%')
+    return accuracy
 
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
 
-            if i % 20 == 0:
-                progress.display(i)
+def save_random_test_image(val_loader, model, device, class_names=('NC', 'AD'), output_dir='outputs'):
+    """
+    Randomly selects an image from the test dataset, makes a prediction, and saves the image
+    with a title showing the true and predicted labels.
 
-        # TODO: this should also be done with the cuda
-        print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-              .format(top1=top1, top5=top5))
-
-    return top1.avg
-  
+    Args:
+        val_loader (DataLoader): DataLoader for validation/test data.
+        model (nn.Module): The trained model.
+        device (torch.device): Device to run the model on.
+        class_names (tuple): Tuple containing the class names (default: ('NC', 'AD')).
+        output_dir (str): Directory to save the output image (default: 'output_images').
+    """
+    model.eval()
+    # Select a random batch and a random image from the batch
+    images, targets = next(iter(val_loader))
+    random_idx = random.randint(0, len(images) - 1)
+    image = images[random_idx]
+    target = targets[random_idx]
+    image = image.unsqueeze(0).to(device)
+    target = target.item()
+    # Make a prediction using the model
+    with torch.no_grad():
+        output = model(image)
+        predicted = output.argmax(dim=1).item()
+    # Convert the image tensor to a NumPy array for plotting
+    image_np = image.squeeze().cpu().numpy()
+    if image_np.ndim == 3 and image_np.shape[0] == 1:
+        image_np = image_np[0]
+    # Get the true and predicted class names
+    true_label = class_names[target]
+    predicted_label = class_names[predicted]
+    os.makedirs(output_dir, exist_ok=True)
+    # Plot the image with the true and predicted labels as the title
+    plt.figure()
+    plt.imshow(image_np, cmap='gray')
+    plt.title(f'True Label = {true_label}, Predicted = {predicted_label}')
+    plt.axis('off')
+    # Save image
+    output_path = os.path.join(output_dir, f'random_test_image_{random_idx}.png')
+    plt.savefig(output_path)
+    plt.close()
+    print(f'Image saved to {output_path} with True Label = {true_label} and Predicted = {predicted_label}')
 
 
 if __name__ == '__main__':
+    # Parse command-line arguments and start the main function
     parser = argparse.ArgumentParser('GFNet evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)

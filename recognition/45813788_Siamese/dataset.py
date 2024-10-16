@@ -96,7 +96,6 @@ class ISISCDataset(Dataset):
         labels = []
 
         #use 1 for similar and 0 for not 
-
         for _ in range(len(self.benign_ids)):
             img1, img2 = random.sample(self.benign_ids, 2)
             pairs.append((img1, img2))
@@ -114,7 +113,7 @@ class ISISCDataset(Dataset):
         # Negative Pairs
         for _ in range(len(self.benign_ids)):
             img1 = random.choice(self.benign_ids)
-            img2 = random.choice(self.benign_ids)
+            img2 = random.choice(self.malignant_ids) #change if bad
             pairs.append((img1, img2))
             labels.append(0)
 
@@ -143,8 +142,9 @@ class ISISCDataset(Dataset):
         img2_path = os.path.join(self.images_dir,img1_id + '.jpg')
 
         #normalise pixel values
-        img1 = io.read_image(img1_path).float() * SCALE_FACTOR
-        img2 = io.read_image(img2_path).float() * SCALE_FACTOR
+        img1 = Image.open(img1_path).convert('RGB')
+        img2 = Image.open(img2_path).convert('RGB')
+
 
         #transform the images
         img1 = self.apply_transform(img1_id, img1)
@@ -156,3 +156,41 @@ class ISISCDataset(Dataset):
 #print(benign)
 
 # Check if the path exists
+
+# Create an instance of the dataset
+dataset = ISISCDataset(
+    benign_df=benign,
+    malignant_df=malignant,
+    images_dir=images,
+    transform_benign=benign_aug,
+    transform_malignant=malig_aug,
+    augment_ratio=1.0
+)
+
+# Create a DataLoader to iterate through the dataset
+data_loader = DataLoader(dataset, batch_size=4, shuffle=True)  # Adjust batch size as needed
+
+# Get a batch of images from the loader
+for img1, img2, labels in data_loader:
+    # We are using the first batch here; you could loop over more if needed
+    break
+
+# Plot the images
+fig, axes = plt.subplots(2, 4, figsize=(12, 6))  # Create a grid for 4 pairs of images
+
+for i in range(4):
+    # Convert img1 and img2 tensors back to images
+    img1_np = tensor_to_image(img1[i])
+    img2_np = tensor_to_image(img2[i])
+    
+    # Display img1 and img2 side by side
+    axes[0, i].imshow(img1_np)
+    axes[0, i].axis('off')
+    axes[0, i].set_title(f'Image 1 (Label: {labels[i].item()})')
+
+    axes[1, i].imshow(img2_np)
+    axes[1, i].axis('off')
+    axes[1, i].set_title(f'Image 2 (Label: {labels[i].item()})')
+
+plt.tight_layout()
+plt.show()

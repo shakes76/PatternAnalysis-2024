@@ -103,13 +103,6 @@ def validate(test_loader, model, criterion):
                 progress.display(i)
 
         print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
-        plt.figure(1)
-        plt.title('Result')
-        plt.xlabel('Batch Number')
-        plt.ylabel('Acc @ 1')
-        plt.plot([x for x in range(len(acc1list))], acc1list)
-        plt.savefig('test/model/fig')
-        plt.show()
 
     return acc1list
 
@@ -136,4 +129,11 @@ if __name__ == '__main__':
     print('number of params:', n_parameters)
 
     criterion = torch.nn.CrossEntropyLoss().cuda()
-    validate(test_loader, model, criterion)
+    acc1list = validate(test_loader, model, criterion)
+    plt.figure(1)
+    plt.title('Result')
+    plt.xlabel('Batch Number')
+    plt.ylabel('Acc @ 1')
+    plt.plot([x for x in range(len(acc1list))], acc1list)
+    plt.savefig('test/model/fig')
+    plt.show()

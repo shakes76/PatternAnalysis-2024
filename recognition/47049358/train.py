@@ -4,7 +4,7 @@ should be imported from “modules.py” and the data loader should be imported 
 sure to plot the losses and metrics during training
 """
 
-from dataset import X_train, y_train, X_val, y_val, Prostate3dDataset
+from dataset import X_train, y_train, Prostate3dDataset
 from modules import ImprovedUnet
 import matplotlib.pyplot as plt
 import torch
@@ -15,12 +15,12 @@ from tqdm import tqdm
 import math
 
 
-NUM_EPOCHS = 1
-BATCH_SIZE = 1
+NUM_EPOCHS = 300
+BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
-LOSS_IDX = 0
+LOSS_IDX = 3
 
 class BaseDice(nn.Module):
     def __init__(self, epsilon = 1e-7):
@@ -126,7 +126,7 @@ class AlternativeLoss(BaseDice):
         overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
         return overall_loss, d_coefs, None
 
-def train(model, train_set, validation_set, loss, num_epochs=NUM_EPOCHS, device="cuda"):
+def train(model, train_set, loss, num_epochs=NUM_EPOCHS, device="cuda"):
 
     # set up criterion, optimiser, and scheduler for learning rate. 
     criterion = loss
@@ -137,10 +137,8 @@ def train(model, train_set, validation_set, loss, num_epochs=NUM_EPOCHS, device=
     model.train()
 
     training_losses = []
-    validation_losses = []
     
     train_loader = DataLoader(dataset = train_set, batch_size = BATCH_SIZE)
-    valid_loader = DataLoader(dataset = validation_set, batch_size = BATCH_SIZE)
 
     for epoch in range(num_epochs):
         running_loss = 0.0
@@ -175,35 +173,7 @@ def train(model, train_set, validation_set, loss, num_epochs=NUM_EPOCHS, device=
 
         print(f"Epoch {epoch + 1}, Training Loss: {running_loss / len(train_loader)}")
 
-        model.eval()
-        val_loss = 0.0
-        segment_coefs = None
-
-        # get validation losses. 
-        with torch.no_grad():
-            for val_inputs, val_masks in valid_loader:
-                val_inputs, val_masks = val_inputs.to(device), val_masks.to(device)
-                val_outputs = model(val_inputs)
-
-                loss, d_coefs, _ = criterion(val_outputs, val_masks)
-
-                if segment_coefs == None:
-                    segment_coefs = d_coefs
-                else:
-                    segment_coefs += d_coefs
-
-                val_loss += loss.item()
-
-        for i in range(len(segment_coefs)):
-
-            print(f"Epoch {epoch + 1} Segment {i} - Validation Dice Coefficient: {segment_coefs[i] / len(train_loader)}")
-
-        print(f"Epoch {epoch + 1}, Validation Loss: {val_loss / len(valid_loader)}")
-
-        training_losses.append(running_loss / len(train_loader))
-        validation_losses.append(val_loss / len(valid_loader))
-
-    return model, training_losses, validation_losses
+    return model, training_losses
 
 # connect to gpu
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -217,7 +187,6 @@ model = ImprovedUnet()
 # Importing Dataloader breaks the implementation. Hence they are loaded below instead:
 
 train_set = Prostate3dDataset(X_train, y_train)
-validation_set = Prostate3dDataset(X_val, y_val)
 
 loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss()}
 
@@ -228,7 +197,7 @@ print("> Start Training")
 start = time()
 
 # train improved unet
-trained_model, training_losses, validation_losses = train(model, train_set, validation_set, loss = loss,
+trained_model, training_losses = train(model, train_set, loss = loss,
                                                             device=device, num_epochs=NUM_EPOCHS)
 
 end = time()
@@ -237,15 +206,13 @@ elapsed_time = end - start
 print(f"Training completed in {elapsed_time:.2f} seconds")
 
 training_losses = []
-validation_losses = []
 
 plt.figure(figsize=(10,5))
 plt.plot(training_losses, label='Training Loss')
-plt.plot(validation_losses, label='Validation Loss')
 plt.title('Losses over epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'unet_losses_over_epochs_{str(loss)}.png')
+plt.savefig(f'unet_training_losses_over_epochs_{str(loss)}.png')
 plt.close()

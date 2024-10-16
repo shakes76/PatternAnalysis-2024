@@ -86,7 +86,7 @@ def plot_dice(dice, criterion, segment_scores):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_scores_test_{str(criterion)}.png')
+    plt.savefig(f'dice_scores_test_{str(criterion)}_without_validation.png')
     plt.close()
 
 

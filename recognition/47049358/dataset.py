@@ -172,21 +172,16 @@ rawImageNames = os.listdir(IMAGE_FILE_NAME)
 rawLabelNames = os.listdir(LABEL_FILE_NAME)
 
 # Split the set into train, validation, and test set (70:15:15 for train:valid:test)
-X_train, X_rem, y_train, y_rem = train_test_split(rawImageNames, rawLabelNames, train_size=0.8, random_state=RANDOM_STATE) # Split the data in training and remaining set
-X_val, X_test, y_val, y_test = train_test_split(X_rem, y_rem, train_size=0.5, random_state=RANDOM_STATE)
+X_train, X_test, y_train, y_test = train_test_split(rawImageNames, rawLabelNames, train_size=0.8, random_state=RANDOM_STATE) # Split the data in training and test set
 
 X_train = [os.path.join(IMAGE_FILE_NAME, image) for image in X_train]
-X_val = [os.path.join(IMAGE_FILE_NAME, image) for image in X_val]
 X_test = [os.path.join(IMAGE_FILE_NAME, image) for image in X_test]
 
 y_train = [os.path.join(LABEL_FILE_NAME, label) for label in y_train]
-y_val = [os.path.join(LABEL_FILE_NAME, label) for label in y_val]
 y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 
-X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
-X_val, y_val = load_images_and_labels(X_val, y_val, early_stop=True)
-X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
+X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=False)
+X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=False)
 
 X_train = X_train[: ,np.newaxis, :, :, :]
-X_val = X_val[:,np.newaxis, :, :, :]
 X_test = X_test[:, np.newaxis, :, :, :]

@@ -2,14 +2,14 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 
 # specify directory of data
 # dataroot = "/home/groups/comp3710/ADNI"
 dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/Denoising_Diffusion_ADNI_46966159/ADNI"
 
 # chosen hyperparameters
-batch_size = 32
+batch_size = 128
 image_size = 64
 
 # normalise, resize images and randomly flip
@@ -18,7 +18,7 @@ dataset = torchvision.datasets.ImageFolder(root=dataroot,
                                                transforms.Resize((image_size, image_size)),
                                                transforms.RandomHorizontalFlip(),
                                                transforms.ToTensor(),
-                                               transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                               transforms.Normalize((0.1798, 0.1798, 0.1798), (0.1964, 0.1964, 0.1964)),
                                            ]))
 
 # Create the dataloader
@@ -79,8 +79,39 @@ def show_forward(ddpm, loader):
             )
         break
 
+def calculate_mean_std():
+    """
+    Run once to calculate the mean and std of ADNI dataset
+    :return: mean, std
+    """
+    dataset = torchvision.datasets.ImageFolder(root=dataroot,
+                                               transform=transforms.Compose([
+                                                   transforms.Resize((image_size, image_size)),
+                                                   transforms.ToTensor(),
+                                               ]))
+
+    # Create the dataloader
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                         shuffle=True, num_workers=2)
+
+    # Calculate mean and std
+    mean = 0.0
+    std = 0.0
+    total_images = 0
+
+    for images, _ in tqdm(dataloader):
+        batch_samples = images.size(0)  # batch size (number of images in batch)
+        images = images.view(batch_samples, images.size(1), -1)  # Flatten the images
+        mean += images.mean(2).sum(0)  # Sum over the batch
+        std += images.std(2).sum(0)    # Sum over the batch
+        total_images += batch_samples
+
+    mean /= total_images
+    std /= total_images
+
+    return mean, std
+
 
 if __name__ == '__main__':
+    print(calculate_mean_std())
     show_first_batch(dataloader)
-    # ddpm = modules.UNET()
-    # show_forward(ddpm, dataloader)

@@ -1,14 +1,13 @@
 import tensorflow as tf
-import numpy as np
 import os
 
-def load_and_preprocess_adni(data_dirs, target_size=(256, 256), batch_size=64):  # Change target size to 256x256
+def load_and_preprocess_adni(data_dirs, target_size, batch_size):
     def process_image(img_path):
         img = tf.io.read_file(img_path)
-        img = tf.image.decode_png(img, channels=1)  # Assuming PNG images
+        img = tf.image.decode_png(img, channels=1)
         img = tf.image.resize(img, target_size)
         img = tf.cast(img, tf.float32)
-        img = (img - 127.5) / 127.5  # Normalize to [-1, 1]
+        img = (img - 127.5) / 127.5
         return img
 
     # Create a list of image paths
@@ -24,10 +23,10 @@ def load_and_preprocess_adni(data_dirs, target_size=(256, 256), batch_size=64): 
 
     # Create a TensorFlow dataset from the image paths
     dataset = tf.data.Dataset.from_tensor_slices(image_paths)
-    dataset = dataset.map(process_image, num_parallel_calls=tf.data.AUTOTUNE)  # Use parallel processing
-    dataset = dataset.shuffle(buffer_size=len(image_paths))  # Shuffle the dataset
-    dataset = dataset.batch(batch_size, drop_remainder=True)  # Batch the dataset
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch data for better performance
+    dataset = dataset.map(process_image, num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.shuffle(buffer_size=len(image_paths)) 
+    dataset = dataset.batch(batch_size, drop_remainder=True)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE) 
 
     return dataset
 

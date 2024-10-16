@@ -27,6 +27,15 @@ During the training process, the model learns the optimal parameters by minimizi
 The data is loaded from an .npz file containing node features, edge relations, and node labels and these three NumPy arrays are generated. The three NumPy arrays are converted to PyTorch tensor in the load_data() method. A self-loop is added to the edge tensor, which allows nodes to retain their features during message passing.
 The dataset was divided into a training set, a validation set, and a test set using random sampling. The training set constitutes 70% of the data, validation set 15% and test set 15%. Where training set is used to train the model and update the model parameters. The validation set is used to adjust the hyperparameters to avoid overfitting. Test set is used to finally ensure the performance of the model on unknown data.
 
+## Dependencies
+
+Python
+Pytorch
+Matplotlib
+Numpy
+scikit-learn
+
+
 
 
 

@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 
 # import from local files  
-from train import DiceCoefficientLoss, trained_model
+from train import *
 from dataset import X_test, y_test, Prostate3dDataset
 
 BATCH_SIZE = 2
@@ -27,7 +27,7 @@ BATCH_SIZE = 2
     Returns:
     - dice_scores (list): List of Dice coefficients for each image in the test dataset.
 """
-def test(model, test_loader, device):
+def test(model, test_loader, criterion, device):
     model.eval()  # Set the model to evaluation mode
     
     test_scores = [] # stores dice scores.
@@ -40,12 +40,12 @@ def test(model, test_loader, device):
 
     with torch.no_grad():
         
-        criterion = DiceCoefficientLoss()
+        criterion = criterion
 
         for inputs, masks in test_loader:
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
-            test_loss, dice_coefs = criterion(outputs, masks)
+            test_loss, dice_coefs, _ = criterion(outputs, masks)
 
             for i in range(len(dice_coefs)):
                 if i == 0:
@@ -86,7 +86,7 @@ def plot_dice(dice, segment_scores):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig('dice_scores_test_paper.png')
+    plt.savefig('dice_scores_test_weighted_loss.png')
     plt.close()
 
 
@@ -98,11 +98,14 @@ if __name__ == "__main__":
     # connect to gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    criterion = loss_map.get(LOSS_IDX)
+
     test_set = Prostate3dDataset(X_test, y_test)
     test_loader = DataLoader(dataset = test_set, batch_size = BATCH_SIZE)
 
     # perform predictions
-    dice_scores, s0, s1, s2, s3, s4, s5 = test(trained_model, test_loader, device)
+    dice_scores, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader, criterion = criterion,
+                                               device = device)
 
     average_dice = np.mean(dice_scores)
     print(f"Average Dice Coefficient: {average_dice:.4f}")

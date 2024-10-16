@@ -6,7 +6,6 @@ from tqdm import tqdm
 import pickle
 import numpy as np
 from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
 
 IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
 LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
@@ -184,9 +183,9 @@ y_train = [os.path.join(LABEL_FILE_NAME, label) for label in y_train]
 y_val = [os.path.join(LABEL_FILE_NAME, label) for label in y_val]
 y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 
-X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=False)
-X_val, y_val = load_images_and_labels(X_val, y_val, early_stop=False)
-X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=False)
+X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
+X_val, y_val = load_images_and_labels(X_val, y_val, early_stop=True)
+X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
 
 X_train = X_train[: ,np.newaxis, :, :, :]
 X_val = X_val[:,np.newaxis, :, :, :]

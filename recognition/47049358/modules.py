@@ -198,9 +198,9 @@ class ImprovedUnet(nn.Module):
         return output
     
 
-if __name__ == '__main__':
-    model = ImprovedUnet()
-    input_tensor = torch.randn(2, 1, 256, 256, 128)  # Input tensor with shape [2, 1, 256, 256, 128]
-    output_tensor = model(input_tensor)
-    print(f"Input shape: {input_tensor.shape}")
-    print(f"Output shape: {output_tensor.shape}")
+# if __name__ == '__main__':
+#     model = ImprovedUnet()
+#     input_tensor = torch.randn(2, 1, 256, 256, 128)  # Input tensor with shape [2, 1, 256, 256, 128]
+#     output_tensor = model(input_tensor)
+#     print(f"Input shape: {input_tensor.shape}")
+#     print(f"Output shape: {output_tensor.shape}")

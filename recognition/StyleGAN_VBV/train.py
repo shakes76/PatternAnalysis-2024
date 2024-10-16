@@ -109,15 +109,23 @@ def save_model(gen, critic, step):
 def plot_loss(losses_critic, losses_gen, step):
     """Generate and save a loss plot for the generator and critic."""
 
-    plt.figure(figsize=(10, 5))  # Set the figure size
-    plt.plot(losses_critic, label='Critic Loss')  # Plot critic loss
-    plt.plot(losses_gen, label='Generator Loss')  # Plot generator loss
-    plt.title(f'Losses at Step {step}')  # Title
+    plt.figure(figsize=(10, 5))
+    plt.plot(total_losses_critic, label='Critic Loss')
+    plt.title('Critic Loss')
     plt.xlabel('Batch Number')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('loss_final.png')  # Save the plot
-    plt.close()  # Close the plot
+    plt.savefig('critic_loss_final.png')
+    plt.close()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(total_losses_gen, label='Generator Loss')
+    plt.title('Generator Loss')
+    plt.xlabel('Batch Number')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('generator_loss_final.png')
+    plt.close()
 
 # Initialize generator and critic
 gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create generator

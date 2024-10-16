@@ -8,7 +8,7 @@ from monai.transforms import (
     Compose,
     EnsureTyped,
     RandFlipd,
-    Resized, RandRotated, Rand3DElasticd, RandSpatialCropd,
+    Resized, RandRotated, Rand3DElasticd, RandSpatialCropd, EnsureChannelFirstd,
 
 )
 # example_filename = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon\Case_004_Week0_SEMANTIC_LFOV.nii.gz"
@@ -39,36 +39,33 @@ class MRIDataset(Dataset):
     def __getitem__(self, idx):
         # 加载图像数据
         image = nib.load(self.image_paths[idx])
-        image_data = image.get_fdata().astype(self.dtype)
+        image_data = image.get_fdata().astype(self.dtype)  # 形状：[H, W, D]
 
-        # 如果有额外的维度则删除
-        if len(image_data.shape) == 4:
-            image_data = image_data[:, :, :, 0]
+        # 如果需要，调整维度顺序为 [C, H, W, D]
+        image_data = np.expand_dims(image_data, axis=0)  # 增加通道维度，形状：[1, H, W, D]
 
-        # 如果需要归一化
+        # 归一化
         if self.norm_image:
             image_data = (image_data - image_data.mean()) / image_data.std()
 
-        # 如果有标签数据，加载标签数据
+        # 加载标签数据
         if self.label_paths is not None:
             label = nib.load(self.label_paths[idx])
-            label_data = label.get_fdata().astype(np.uint8)
-            if len(label_data.shape) == 4:
-                label_data = label_data[:, :, :, 0]
-
-            if self.categorical:
-                label_data = self.to_channels(label_data)
+            label_data = label.get_fdata().astype(np.uint8)  # 形状：[H, W, D]
+            label_data = np.expand_dims(label_data, axis=0)  # 增加通道维度，形状：[1, H, W, D]
         else:
             label_data = None
 
         # 创建样本
-        sample = {'image': torch.tensor(image_data).unsqueeze(0)}  # 通道在第一维度
+        sample = {'image': torch.tensor(image_data)}
         if label_data is not None:
-            sample['label'] = torch.tensor(label_data).unsqueeze(0)
+            sample['label'] = torch.tensor(label_data)
 
-        # 应用手动定义的变换
+        # 应用变换
         if self.transform:
             sample = self.transform(sample)
+            print(f"After transform - Image shape: {sample['image'].shape}")
+            print(f"After transform - Label shape: {sample['label'].shape}")
 
         return sample
 

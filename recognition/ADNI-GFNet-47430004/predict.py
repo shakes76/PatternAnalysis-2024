@@ -13,6 +13,9 @@ import os
 
 import matplotlib.pyplot as plt
 
+out_dir = 'test/model/run/fig'
+model_path = "test/model/GFNet.pth"
+
 class AverageMeter(object):
     def __init__(self, name, fmt=':f'):
         self.name = name
@@ -91,7 +94,7 @@ def validate(test_loader, model, criterion):
             loss = criterion(output, target)
 
             # measure accuracy and record loss
-            acc1, _ = accuracy(output, target, topk=(1, 2))
+            acc1 = accuracy(output, target, topk=(1,))[0]
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
 
@@ -117,7 +120,6 @@ if __name__ == '__main__':
     model = GFNet(num_classes=2, in_chans=1)
     model.to(device)
 
-    model_path = "test/model/GFNet.pth"
 
     checkpoint = torch.load(model_path, map_location="cpu")
     model.load_state_dict(checkpoint["model"])
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     plt.xlabel('Batch Number')
     plt.ylabel('Acc @ 1')
     plt.plot([x for x in range(len(acc1list))], acc1list)
-    if not os.path.exists('test/model/fig'):
-        os.makedirs('test/model/fig')
-    plt.savefig('test/model/fig')
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    plt.savefig(out_dir)
     plt.show()

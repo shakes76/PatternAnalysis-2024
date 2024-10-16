@@ -1,3 +1,5 @@
+"""Visualisation and metric computing utilities"""
+
 import pathlib
 import logging
 

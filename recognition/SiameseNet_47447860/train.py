@@ -18,40 +18,51 @@ from predict import PredictData
 if __name__ == "__main__":
     # Set device to CUDA if a CUDA device is available, else CPU
     print(torch.cuda.is_available())
+    print(torch.cuda.device_count())  # Should print the number of GPUs detected
+    print(torch.cuda.get_device_name(0))  # Should print the name of the GPU
+    print(torch.version.cuda)
+    torch.cuda.empty_cache()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Parameter declaration
-    learning_rate = 0.0000001
-    num_epochs = 30
+    learning_rate = 0.000015
+    num_epochs = 20
     backbone = "resnet18"  # the feature extraction model we are using
     save_after = 10  # save the model's image every {20} epoch
 
     # path to write things to - includes summary writer, checkpoints,
     out_path = r'C:\Users\sebas\project\outputs'
-    #out_path = "~/project/outputs/"
+    #out_path = os.path.expanduser("~/project/outputs/")
 
-    """
-    # get data from the dataset.py file
-    #images_path = "~/.kaggle/train-image/image" -> for rangpur
-    #csv_path = "~/.kaggle/train-metadata.csv" -> for rangpur
-    images_path = "~/archive/train-image/image
-    csv_path = "~/archive/train-metadata.csv
-    """
+    train_data_path = r'C:\Users\sebas\archive\train_data'
+    test_data_path = r'C:\Users\sebas\archive\test_data'
+    val_data_path = r'C:\Users\sebas\archive\validation_data'
+    #data_path = os.path.expanduser("~/.kaggle/")
 
-    data_path = r'C:\Users\sebas\archive\large_dataset'
-    #data_path = "~/.kaggle/"
+    train_data = Dataset(train_data_path, dataset_size=4000)
+    train_data_loader = torch.utils.data.DataLoader(train_data, batch_size=128, num_workers=0)
+    print("Got training data")
+    ############################################################
+    test_data = Dataset(test_data_path, dataset_size=1000)
+    test_data_loader = torch.utils.data.DataLoader(test_data, batch_size=16, num_workers=0)
+    print("Got test data")
+    ############################################################
+    val_data = Dataset(val_data_path, dataset_size=1000)
+    val_data_loader = torch.utils.data.DataLoader(val_data, batch_size=16, num_workers=0)
+    print("Got validation data")
+    ############################################################
 
-    dataset = Dataset(data_path)
 
     # Get the splits
-    train_dataset = dataset.get_split('train')
-    val_dataset = dataset.get_split('val')
-    test_dataset = dataset.get_split('test')
+    train_dataset = train_data.get_split('train')
+    val_dataset = train_data.get_split('val')
+    test_dataset = train_data.get_split('test')
 
     # Create DataLoader for each split
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=256, num_workers=4)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=256, num_workers=4)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=256, num_workers=4)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, num_workers=2)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=16, num_workers=2)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, num_workers=2)
+
 
     model = SiameseNetwork()
     model.to(device)
@@ -61,6 +72,11 @@ if __name__ == "__main__":
 
     # summary writer - keeps track of training progression/visualising training progression
     writer = SummaryWriter(os.path.join(out_path, "summary"))
+
+    # Print size of datasets as a sanity check
+    print(f"Size of training data: {len(train_data)}")
+    print(f"Size of validation data: {len(val_data)}")
+    print(f"Size of test data: {len(test_data)}")
 
     best_val = 10000000000  # big value -> any new validation loss will be better
 
@@ -74,7 +90,7 @@ if __name__ == "__main__":
         total = 0
 
         # Training Loop Start
-        for (img1, img2), target, (class1, class2) in train_loader:
+        for (img1, img2), target, (class1, class2) in train_data_loader:
             img1, img2, target = map(lambda x: x.to(device), [img1, img2, target])
 
             similarity = model(img1, img2)
@@ -101,7 +117,7 @@ if __name__ == "__main__":
         correct = 0
         total = 0
 
-        for (img1, img2), target, (class1, class2) in val_loader:
+        for (img1, img2), target, (class1, class2) in val_data_loader:
             img1, img2, target = map(lambda x: x.to(device), [img1, img2, target])
 
             similarity = model(img1, img2)
@@ -144,5 +160,5 @@ if __name__ == "__main__":
             )
 
     # need to run the predict.py code to test the accuracy of the model on the test data
-    prediction = PredictData(test_loader)
+    prediction = PredictData(test_data_loader)
     prediction.predict()

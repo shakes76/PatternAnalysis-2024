@@ -1,8 +1,51 @@
 import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import ResNet18_Weights
+from torchvision.models import ResNet18_Weights, ResNet50_Weights
 
+
+class FeatureExtractorNetwork(nn.Module):
+    def __init__(self):
+        super(FeatureExtractorNetwork, self).__init__()
+
+        # Convolutional layers
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),  # input: 3x256x256 -> output: 32x256x256
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # output: 32x128x128
+
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # output: 64x128x128
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # output: 64x64x64
+
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),  # output: 128x64x64
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # output: 128x32x32
+
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # output: 256x32x32
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # output: 256x16x16
+        )
+
+        # Fully connected layers to reduce to 128-dimensional feature vector
+        self.fc = nn.Sequential(
+            nn.Linear(256 * 16 * 16, 512),  # input size after flattening
+            nn.ReLU(),
+            nn.Linear(512, 128),  # final output of size 128
+        )
+
+    def forward(self, x):
+        # Pass through convolutional layers
+        #print(x.shape)
+        x = self.conv_layers(x)
+
+        # Flatten the tensor before passing to fully connected layers
+        x = x.view(x.size(0), -1)  # Flatten
+
+        # Pass through fully connected layers
+        x = self.fc(x)
+
+        return x
 
 class SiameseNetwork(nn.Module):
     def __init__(self, backbone="resnet18"):
@@ -15,36 +58,50 @@ class SiameseNetwork(nn.Module):
 
         super().__init__()
 
-        self.dropout_rate = 0.5
+        self.dropout_rate = 0.1
 
         if backbone not in models.__dict__:
             raise Exception("No model named {} exists in torchvision.models.".format(backbone))
 
         # Create a feature extractor network from the pretrained models
         self.backbone = models.__dict__[backbone](weights=ResNet18_Weights.DEFAULT, progress=True)
+        #self.backbone = models.__dict__[backbone](weights=None, progress=True)
+
+        # remove the last layer of resnet18 (linear layer which is before avgpool layer)
+        # self.backbone = torch.nn.Sequential(*(list(self.backbone.children())[:-1]))
 
         # Get the number of features that are outputted by the last layer of feature extractor network
-        out_features = list(self.backbone.modules())[-1].out_features
+        out_features = list(self.backbone.modules())[-1].out_features  # if not removing last layer
+        #out_features = 512
+        """
+
+        self.backbone = FeatureExtractorNetwork()
+        out_features = 128
+        """
 
         # Our classification head with be an MLP with dense layers
         # The classification head classifies if the given combined feature
         # vector represents both malignant or both benign (same class of image) -> will return a value close to 1
         # Else if the images are of different classes, we want the head to return a value close to 0
         self.cls_head = nn.Sequential(
-            nn.Dropout(p=self.dropout_rate),
-            nn.Linear(3*out_features, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
 
-            nn.Dropout(p=self.dropout_rate),
-            nn.Linear(512, 64),
-            nn.BatchNorm1d(64),
+            #nn.Dropout(p=self.dropout_rate),
+            #nn.Linear(3*out_features, 512),
+            #nn.BatchNorm1d(512),
+            #nn.ReLU(),
+
+            #nn.Dropout(p=self.dropout_rate),
+
+            nn.Linear(3 * out_features, 64),
+            #nn.Linear(512, 64),
+            nn.BatchNorm1d(64, momentum=0.25),
             #nn.Sigmoid(),
-            nn.ReLU(),
-            nn.Dropout(p=self.dropout_rate),
+            nn.LeakyReLU(),
+            nn.AlphaDropout(p=0.5),
 
             nn.Linear(64, 1),
             nn.Sigmoid(),
+
         )
 
     def forward(self, img1, img2):

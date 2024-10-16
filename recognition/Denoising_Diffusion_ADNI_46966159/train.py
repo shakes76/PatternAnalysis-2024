@@ -68,4 +68,6 @@ def train(batch_size = ds.batch_size, num_time_steps = 1000, num_epochs = 15, em
     }
     torch.save(checkpoint, '/content/ddpm_checkpoint')
 
-train(checkpoint_path=None, epsilon=2e-5, num_epochs=100)
+
+if __name__ == "__main__":
+    train(checkpoint_path=None, epsilon=2e-5, num_epochs=15)

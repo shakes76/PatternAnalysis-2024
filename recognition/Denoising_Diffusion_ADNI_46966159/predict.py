@@ -63,4 +63,5 @@ def generate_images(checkpoint_path = None, num_time_steps = 1000, ema_decay = 0
             images = []
 
 
-generate_images('/content/ddpm_checkpoint')
+if __name__ == "__main__":
+    generate_images('ddpm_checkpoint')

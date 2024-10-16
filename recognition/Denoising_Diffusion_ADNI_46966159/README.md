@@ -1,4 +1,4 @@
-# Denoising Diffusion on ADNI
+# Denoising Diffusion on ADNI Dataset
 Denoising diffusion probabilistic model is a generative deep learning model that 
 can create data, images in this case. This is done by gradually adding noise to the source 
 or training images and then attempting to learn how to remove noise through a machine
@@ -8,6 +8,13 @@ diverse samples at the expense of slower sampling time[^5]. Compared with other 
 GANs generally output high quality images and are fast and sampling, but have low diversity.
 VAEs have fast sampling and high diversity, but suffer from lower quality samples, mostly due
 to blurring.
+
+This project implements a denoising diffusion model using PyTorch to analyze the Alzheimer’s 
+Disease Neuroimaging Initiative (ADNI) dataset, which includes images from patients diagnosed with 
+Alzheimer’s Disease (AD) and cognitively normal (CN) individuals. The goal is to enhance image quality 
+by reducing noise, thereby improving the accuracy of subsequent analyses, such as classification or segmentation tasks. 
+The diffusion process iteratively refines the images, effectively recovering meaningful features that may be obscured by
+noise, which is crucial for reliable diagnostic tools in Alzheimer's research.
 
 ## Requirements
 This project requires several Python packages to function properly. 
@@ -86,7 +93,7 @@ Once again, we will match the original paper by setting $`\beta_1=10^{-4}`$ and 
 intermediate $`\beta_i`$ set to increase linearly. 
 
 There are still many remaining parameters and hyperparameters left in the model to choose and justify.
-Many of these values were set to match the original paper: the learning rate $`\epsilon=2\times10^{-5}`$, 
+Many of these values were set to match the original paper: the learning rate $`\varepsilon=2\times10^{-5}`$, 
 the dropout probability was set to $`0.1`$. We also made use of the Adam optimiser. The algorithm also utilises
 exponential moving average which was set to $`0.9999`$. EMA offers smooth model updates by applying more weight to
 recent data points as opposed to older. The values from the original paper were matched because the original
@@ -125,22 +132,33 @@ found. Finally, the images were normalised and then converted to a tensor.
 ## Results
 ### Training
 ![training_img.png](figures/training_img.png)
-Example batch of training images
-### Sampling
+Above shows an example batch of training images.
 
-### t-SNE
 $`t`$-distributed stochastic neighbor embeddings is a non-linear dimensionality reduction technique
 used to visualise high-dimensional data[^4]. $`t`$-SNE measures similarity between data points by joint
 probabilities and then attempts to minimise the KL-divergence between the joint probabilities
 of the low-dimensional embedding and the high-dimensional data. Here we have performed dimensionality reduction
 down to just two dimensions. We have two classes of data: 0 - AD and 1 - CN. The embedding plot shows
 a high overlap between the two classes which indicates similarity between the classes.
-AD data in particular is fairly sparsely populated. This shows that the relationship between CN 
-and AD is extremely complex, and it would be difficult to classify and make predictions between the two classes 
+AD data in particular is fairly sparsely populated. This shows that the relationship between CN
+and AD is extremely complex, and it would be difficult to classify and make predictions between the two classes
 at least for these two dimensions.
 
 ![tsne.png](figures/tsne.png)
 *t-SNE embedding plot of ADNI images*
+
+### Sampling
+The loss function after 100 epochs looks like:
+![loss.png](figures/loss.png)
+
+We show a plot of 9 generated images. These are not very photo-realistic at this stage,
+but it is a starting point to go from.
+![sampled_images.png](figures/sampled_images.png)
+
+In addition, we can show the reverse process in action for some of the samples:
+![reverse1.png](figures/reverse1.png)
+![reverse2.png](figures/reverse2.png)
+![reverse3.png](figures/reverse3.png)
 
 [^1]: Denoising Diffusion Probabilistic Models https://arxiv.org/abs/1706.03762
 [^2]: U-Net: Convolutional Networks for Biomedical Image Segmentation https://arxiv.org/abs/1505.04597

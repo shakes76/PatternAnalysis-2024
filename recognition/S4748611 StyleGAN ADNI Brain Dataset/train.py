@@ -21,8 +21,8 @@ print("StyleGAN model loaded.")
 
 # Define initial learning rate and decay parameters for the generator
 initial_learning_rate = 0.00002
-decay_steps = 100 
-decay_rate = 1
+decay_steps = 1000
+decay_rate = 1.01
 
 # Create a learning rate schedule for the generator
 generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -34,8 +34,8 @@ generator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 
 # Define initial learning rate and decay parameters for the discriminator
 initial_discriminator_learning_rate = 0.00001
-discriminator_decay_steps = 100 
-discriminator_decay_rate = 1
+discriminator_decay_steps = 1000
+discriminator_decay_rate = 0.99
 
 # Create a learning rate schedule for the discriminator
 discriminator_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -79,6 +79,9 @@ print("ADNI dataset loaded.")
 # Define the loss function
 cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
+# Define label smoothing values
+REAL_LABEL_SMOOTHING = 0.9
+
 @tf.function
 def train_step(real_images):
     latent_vectors, constant_inputs = generate_random_inputs(BATCH_SIZE, LATENT_DIM, INITIAL_SIZE)
@@ -87,7 +90,7 @@ def train_step(real_images):
     with tf.GradientTape() as gen_tape:
         generated_images = generator([latent_vectors, constant_inputs], training=True)
         fake_output = discriminator(generated_images, training=True)
-        gen_loss = cross_entropy(tf.ones_like(fake_output), fake_output)
+        gen_loss = cross_entropy(tf.ones_like(fake_output), fake_output)  
 
     gen_gradients = gen_tape.gradient(gen_loss, generator.trainable_variables)
     generator_optimizer.apply_gradients(zip(gen_gradients, generator.trainable_variables))
@@ -96,8 +99,9 @@ def train_step(real_images):
     with tf.GradientTape() as disc_tape:
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
-        
-        real_loss = cross_entropy(tf.ones_like(real_output), real_output)
+
+        # Apply label smoothing for real and fake labels
+        real_loss = cross_entropy(tf.fill(tf.shape(real_output), REAL_LABEL_SMOOTHING), real_output)  
         fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
         disc_loss = real_loss + fake_loss
 
@@ -105,6 +109,7 @@ def train_step(real_images):
     discriminator_optimizer.apply_gradients(zip(disc_gradients, discriminator.trainable_variables))
 
     return gen_loss, disc_loss
+
 
 def train(epochs):
     print("Starting training...")

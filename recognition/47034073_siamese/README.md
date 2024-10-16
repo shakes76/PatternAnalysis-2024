@@ -91,12 +91,20 @@ The KNN used a custom uniform voting from the nearest neighbor and all neighbour
 
 ## Results
 The training loss curve for the embedding network can be seen in Figure [num]().
+
 ![Training Loss](readme_assets/train_loss.png "Training loss")
 *Figure num: Training loss for embedding network.*
 
 The number of triplets mined in each minibatch can be seen in Figure [num]().
+
 ![Number of triplets mined](readme_assets/mined.png "Number of mined triplets")
 *Figure num: Number of triplets mined in each minibatch.*
+
+We can visualize the embeddings and formed clusters in a 2-dimensional space by fitting a t-distributed Stochastic Neighbor Embedding (TSNE) model. A plot of this for the undersampled training data can be seen in Figure [num]().
+
+![TSNE clusters](readme_assets/train_tsne.png)
+
+We can see that reasonable separation appears to have occured.
 
 The best results were achieved using the SVM classifier. Using this classifier the The ROC and AUC for the train, validation and test sets can be seen in Figures num num and num respectively.
 

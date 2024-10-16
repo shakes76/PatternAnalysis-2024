@@ -12,7 +12,7 @@ Yadav, S. (2019, September 1). Understanding Vector Quantized Variational Autoen
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not torch.cuda.is_available():
-    print("Modules are switching to CPU.")
+    print("GPU not available, modules are switching to CPU.")
 else:
     print(f"Modules are using {device}.")
 

@@ -10,7 +10,8 @@ from matplotlib import transforms
 
 """
 REFERENCES (INCOMPLETE):
- Chandra, S. (2024).
+ Chandra, S. (2024). Report: Pattern Recognition, Version 1.56. Retrieved 26th September 2024 from 
+    https://learn.uq.edu.au/bbcswebdav/pid-10273751-dt-content-rid-65346599_1/xid-65346599_1
 Contains function to load Nifti files as well.
 """
 

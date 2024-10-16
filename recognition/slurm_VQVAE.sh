@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=s4878126_VQVAE
+#SBATCH --job-name=s4878126_model
 #--partition=comp3710
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1

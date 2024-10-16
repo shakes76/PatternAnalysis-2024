@@ -11,15 +11,19 @@ no change     /home/Student/s4878126/miniconda3/lib/python3.12/site-packages/xon
 no change     /home/Student/s4878126/miniconda3/etc/profile.d/conda.csh
 no change     /home/Student/s4878126/.bashrc
 No action taken.
-Matplotlib created a temporary cache directory at /scratch/209373/matplotlib-zokpnu37 because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
-Modules are using cuda.
-Matplotlib created a temporary cache directory at /scratch/209373/matplotlib-eug1hc3o because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
-Matplotlib created a temporary cache directory at /scratch/209373/matplotlib-t2r6eq8o because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
-Modules are using cuda.
+Matplotlib created a temporary cache directory at /scratch/215216/matplotlib-83d4rtsf because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+GPU not available, modules are switching to CPU.
+Matplotlib created a temporary cache directory at /scratch/215216/matplotlib-rq_37q8i because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+Matplotlib created a temporary cache directory at /scratch/215216/matplotlib-mkzpz2u4 because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+GPU not available, modules are switching to CPU.
 Getting testing data...
-  0%|          | 0/540 [00:00<?, ?it/s] 12%|█▏        | 67/540 [00:00<00:00, 666.45it/s] 25%|██▍       | 134/540 [00:00<00:00, 663.34it/s] 37%|███▋      | 201/540 [00:00<00:00, 661.26it/s] 50%|████▉     | 268/540 [00:00<00:00, 660.55it/s] 62%|██████▏   | 335/540 [00:00<00:00, 662.87it/s] 74%|███████▍  | 402/540 [00:00<00:00, 663.46it/s] 87%|████████▋ | 469/540 [00:00<00:00, 663.85it/s] 99%|█████████▉| 536/540 [00:00<00:00, 665.34it/s]100%|██████████| 540/540 [00:00<00:00, 663.70it/s]
+  0%|          | 0/540 [00:00<?, ?it/s] 12%|█▏        | 65/540 [00:00<00:00, 645.69it/s] 24%|██▍       | 131/540 [00:00<00:00, 648.61it/s] 36%|███▋      | 197/540 [00:00<00:00, 649.54it/s] 49%|████▊     | 263/540 [00:00<00:00, 650.52it/s] 61%|██████    | 329/540 [00:00<00:00, 650.79it/s] 73%|███████▎  | 395/540 [00:00<00:00, 648.80it/s] 85%|████████▌ | 460/540 [00:00<00:00, 648.96it/s] 97%|█████████▋| 525/540 [00:00<00:00, 544.88it/s]100%|██████████| 540/540 [00:00<00:00, 604.99it/s]
 torch.Size([1, 256, 128])
 Finished fetching testing data.
-VQVAE being tested on cuda.
+cuda not available
+VQVAE being tested on cpu.
 
-commitment loss = 0.011652575805783272, codebook loss = 0.04661030322313309, perplexity = 293.3341979980469
+torch.Size([100, 1, 256, 128])
+torch.Size([100, 1, 256, 128])
+commitment loss = 0.011653296649456024, codebook loss = 0.0466131865978241, perplexity = 293.36370849609375
+Structural Similarity Index Measure between original and reconstructed images = 0.6667280793190002

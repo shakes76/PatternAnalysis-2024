@@ -1,8 +1,5 @@
-import torch
-import torchvision
-from utils import load_data_2D, to_channels
-import nibabel as nib
-import os, glob
+from utils import load_data_2D
+import os
 
 """
 The files are stored in .NII format.

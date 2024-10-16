@@ -103,7 +103,7 @@ can be classified as quite complex and so the values are likely to work with the
 Some parameters we set, however, did diverge from the original paper. This was usually for reasons of 
 computation time and complexity, particularly during the training process. The input images were scaled down
 to $`64\times64`$ which resulted in output samples of the same size. A (reduced) batch size of 28 images was used.
-We also specified $`32`$ groups and $`8`$ heads. Finally, we trained with $`100`$ epochs.
+We also specified 32 groups and 8 heads for attention. Finally, we trained for 100 epochs.
 
 ### UNet
 Much like the authors of the original paper, the UNet model will be used as the deep learning model to

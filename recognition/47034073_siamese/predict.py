@@ -29,13 +29,15 @@ def main():
     else:
         trainer.load_model("best")
 
-    logger.info("Training SVM")
+    logger.info("Computing image embeddings...")
     train_meta_df = pd.read_csv("data/train.csv")
     _, svm_train_dataloader = utils.get_classifier_loader(
         train_meta_df, batch_size=128, num_workers=2
     )
     embeddings, labels = trainer.compute_all_embeddings(svm_train_dataloader)
     embeddings = preprocessing.normalize(embeddings)
+
+    logger.info("Training SVM")
     svc = svm.SVC(probability=True, random_state=42)
     svc = svc.fit(embeddings, labels)
 

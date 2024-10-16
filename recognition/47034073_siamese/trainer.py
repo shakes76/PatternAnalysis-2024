@@ -126,7 +126,9 @@ class SiameseController:
         Args:
             name: Model will be loaded from models/{name}.pt
         """
-        state = torch.load(MODEL_DIR / f"{name}.pt", weights_only=False)
+        state = torch.load(
+            MODEL_DIR / f"{name}.pt", weights_only=False, map_location=device
+        )
 
         self._model.load_state_dict(state["model_state"])
         self._optim.load_state_dict(state["optim_state"])

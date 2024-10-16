@@ -28,7 +28,7 @@ from modules import GFNet
 from dataset import get_dataloaders
 
 # Parameters
-# args.output_dir = 'test/model/run/'
+# output_dir = 'test/model/run/'
 
 # Hyperparameters
 # epochs = 50

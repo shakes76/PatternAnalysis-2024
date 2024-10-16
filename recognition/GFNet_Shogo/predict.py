@@ -3,4 +3,3 @@ Showing example usage of your trained model. Print out any results and / or prov
 
 Created by: Shogo Terashima
 """
-

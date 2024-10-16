@@ -69,13 +69,12 @@ class DropPath(nn.Module):
     '''
     Reference: https://stackoverflow.com/questions/69175642/droppath-in-timm-seems-like-a-dropout
     '''
-    def __init__(self, drop_prob=0.0, is_training=False):
+    def __init__(self, drop_prob=0.0):
         super().__init__()
         self.drop_prob = drop_prob
-        self.is_training = is_training
 
     def forward(self, x):
-        if self.drop_prob == 0. or not self.is_training:
+        if self.drop_prob == 0. or not self.training:
             return x
         keep_prob = 1 - self.drop_prob
         shape = (x.shape[0],) + (1,) * (x.ndim - 1)
@@ -88,11 +87,11 @@ class Block(nn.Module):
     '''
     Block to consist Global Filter Layer and Feed Forward Network
     '''
-    def __init__(self, height, width, dimension, mlp_drop=0.1, drop_path_rate=0.0, init_values=1e-5, is_training=False):
+    def __init__(self, height, width, dimension, mlp_drop=0.1, drop_path_rate=0.0, init_values=1e-5):
         super().__init__()
         self.global_filter = GlobalFilterLayer(height, width, dimension)
         self.mlp = MLP(input_dim=dimension, drop=mlp_drop)
-        self.drop_path = DropPath(drop_prob=drop_path_rate, is_training = is_training) if drop_path_rate > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_prob=drop_path_rate) if drop_path_rate > 0. else nn.Identity()
         self.gamma = nn.Parameter(init_values * torch.ones((dimension)), requires_grad=True)
     def forward(self, x):
         residual = x # use for skip connection
@@ -131,7 +130,7 @@ class Downlayer(nn.Module):
         return x
 class GFNet(nn.Module):
     def __init__(self, img_size=224, num_classes=1, initial_embed_dim=64, blocks_per_stage=[3, 3, 10, 3], 
-                 stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, is_training=False, dropcls=0.0):
+                 stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, dropcls=0.0):
         super().__init__()
 
         self.patch_embed = nn.ModuleList()
@@ -155,7 +154,7 @@ class GFNet(nn.Module):
         # Define the blocks for each stage
         self.blocks = nn.ModuleList([
             nn.ModuleList([Block(sizes[i], sizes[i], stage_dims[i], mlp_drop=drop_rate, drop_path_rate=drop_path_rate, 
-                                 init_values=init_values, is_training=is_training) for _ in range(blocks_per_stage[i])])
+                                 init_values=init_values) for _ in range(blocks_per_stage[i])])
             for i in range(4)
         ])
 

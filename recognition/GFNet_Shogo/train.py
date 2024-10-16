@@ -7,12 +7,14 @@ Created by: Shogo Terashima
 '''
 
 import torch
+import os
+import csv
 from dataset import TrainPreprocessing, TestPreprocessing
 from modules import GFNet
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-import matplotlib as plt
+from utils import EarlyStopping
 
 
 # Learning Rate: 1e-5 to 1e-2
@@ -21,39 +23,53 @@ import matplotlib as plt
 # Drop Path Rate: 0.0 to 0.5
 # Batch Size: 16, 32, 64
 
+# Hyper parameters
+learning_rate = 0.001
+weight_decay = 0.05
+drop_rate = 0.05
+drop_path_rate = 0.05
+batch_size = 128
 
-# path to datasets
+config = {
+    'lr': learning_rate,
+    'wd': weight_decay,
+    'drop': drop_rate,
+    'droppath': drop_path_rate,
+    'bs': batch_size
+}
+
+# Create folder based on hyper parameters
+folder_name = f"lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}"
+output_dir = os.path.join("experiments", folder_name) 
+os.makedirs(output_dir, exist_ok=True)
+
+
+# load data
 train_dataset_path = "../dataset/AD_NC/train"
-test_dataset_path = "../dataset/AD_NC/test"
 
 # Load train and validation data
-train_data = TrainPreprocessing(train_dataset_path, batch_size=128)
+train_data = TrainPreprocessing(train_dataset_path, batch_size=batch_size)
 train_loader, val_loader = train_data.get_train_val_loaders(val_split=0.2)
 
-# Load test data
-test_data = TestPreprocessing(test_dataset_path, batch_size=16)
-test_loader = test_data.get_test_loader()
-
+# model initalisation
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Initial settings
-test_model = GFNet(
+# Test model (tiny tiny)
+model = GFNet(
     img_size=224, 
     num_classes=1,
     initial_embed_dim=32, 
     blocks_per_stage=[1, 1, 1, 1], 
     stage_dims=[32, 64, 128, 256], 
-    drop_rate=0.05,
-    drop_path_rate=0.05,
-    init_values=1e-5,
-    is_training=True
+    drop_rate=drop_rate,
+    drop_path_rate=drop_path_rate,
+    init_values=1e-5
 )
-
-test_model.to(device)
+model.to(device)
 criterion = nn.BCEWithLogitsLoss()
-optimiser = optim.AdamW(test_model.parameters(), lr=1e-3, weight_decay=0.05)
+optimiser = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=100) 
-torch.nn.utils.clip_grad_norm_(test_model.parameters(), max_norm=1.0)
+checkpoint_path = os.path.join(output_dir, 'best_model.pt') 
+early_stopping = EarlyStopping(patience=5, min_delta=0.001, path=checkpoint_path)
 
 def train_one_epoch(model, train_loader, criterion, optimiser, device):
     model.train()
@@ -65,6 +81,8 @@ def train_one_epoch(model, train_loader, criterion, optimiser, device):
         loss = criterion(outputs, labels)
         loss.backward()
         optimiser.step()
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         running_loss += loss.item()
     epoch_loss = running_loss / len(train_loader)
     return epoch_loss
@@ -80,3 +98,42 @@ def validate(model, val_loader, criterion, device):
             running_loss += loss.item()
     epoch_loss = running_loss / len(val_loader)
     return epoch_loss
+
+
+# Training loop
+num_epochs = 10
+train_losses = []
+val_losses = []
+
+for epoch in range(1, num_epochs + 1):
+    print(f"Epoch {epoch}/{num_epochs}")
+    
+    # train
+    train_loss = train_one_epoch(model, train_loader, criterion, optimiser, device)
+    train_losses.append(train_loss)
+    print(f"Train Loss: {train_loss:.4f}")
+    
+    # validate
+    val_loss = validate(model, val_loader, criterion, device)
+    val_losses.append(val_loss)
+    print(f"Validation Loss: {val_loss:.4f}")
+    
+    scheduler.step()
+    early_stopping(val_loss, model)
+    
+    if early_stopping.early_stop:
+        print("Early stopping triggered. Stopping training.")
+        break
+
+print("Loading the best model from checkpoint.")
+model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
+
+# Reporting lossess
+loss_log_path = os.path.join(output_dir, 'loss_log.csv')
+with open(loss_log_path, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Epoch', 'Train Loss', 'Validation Loss'])
+    for epoch_num, (t_loss, v_loss) in enumerate(zip(train_losses, val_losses), start=1):
+        writer.writerow([epoch_num, t_loss, v_loss])
+
+print(f"Loss logs saved to {loss_log_path}")

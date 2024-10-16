@@ -1,3 +1,22 @@
+"""
+train.py
+--------
+This script trains a U-Net model on MRI data for prostate segmentation.
+
+Input:
+    - MRI slices and segmentation masks from the dataset.
+
+Output:
+    - Trained model weights (saved as `unet_model.pth`).
+    - Training loss curve displayed after training.
+
+Usage:
+    Run this script to start training the U-Net model.
+
+Author: Han Yang
+Date: 25/09/2024
+"""
+
 import os
 import torch
 import torch.nn as nn

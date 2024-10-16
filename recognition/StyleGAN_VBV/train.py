@@ -102,9 +102,8 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
 def save_model(gen, critic, step):
     """Save the generator and critic models to disk."""
 
-    # Save them
-    torch.save(gen.state_dict(), f'generator_step{step}.pth')  # Save generator's state
-    torch.save(critic.state_dict(), f'critic_step{step}.pth')  # Save critic's state
+    torch.save(gen.state_dict(), 'generator_final.pth')  # Save generator's state
+    torch.save(critic.state_dict(), 'critic_final.pth')  # Save critic's state
 
 # Function to plot and save the loss curves
 def plot_loss(losses_critic, losses_gen, step):
@@ -113,12 +112,12 @@ def plot_loss(losses_critic, losses_gen, step):
     plt.figure(figsize=(10, 5))  # Set the figure size
     plt.plot(losses_critic, label='Critic Loss')  # Plot critic loss
     plt.plot(losses_gen, label='Generator Loss')  # Plot generator loss
-    plt.title(f'Losses at Step {step}')  # Title for the plot
-    plt.xlabel('Batch Number')  # X-axis label
-    plt.ylabel('Loss')  # Y-axis label
-    plt.legend()  # Show the legend
-    plt.savefig(f'loss_step{step}.png')  # Save the plot to disk
-    plt.close()  # Close the plot to free up memory
+    plt.title(f'Losses at Step {step}')  # Title
+    plt.xlabel('Batch Number')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('loss_final.png')  # Save the plot
+    plt.close()  # Close the plot
 
 # Initialize generator and critic
 gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)  # Create generator
@@ -137,15 +136,15 @@ critic.train()
 # Calculate initial step based on starting image size
 step = int(log2(START_TRAIN_IMG_SIZE / 4))
 
+# Initialize lists to store losses for the total training
+total_losses_critic = []
+total_losses_gen = []
+
 # Loop over all specified epochs for each progressive step
 for num_epochs in PROGRESSIVE_EPOCHS[step:]:
     alpha = 1e-7  # Initialize alpha for progressive growing
     loader, dataset = get_loader(4 * 2**step)  # Load dataset for current resolution
     print('Current image size: ' + str(4 * 2**step))  # Print current image size
-
-    # Initialize lists to store losses for this step
-    losses_critic = []
-    losses_gen = []
 
     # Loop over the specified number of epochs
     for epoch in range(num_epochs):
@@ -157,8 +156,8 @@ for num_epochs in PROGRESSIVE_EPOCHS[step:]:
         )
 
         # Append losses from this epoch to the total losses
-        losses_critic.extend(step_losses_critic)
-        losses_gen.extend(step_losses_gen)
+        total_losses_critic.extend(step_losses_critic)
+        total_losses_gen.extend(step_losses_gen)
 
     # Generate and save example images from the generator
     generate_examples(gen, step)
@@ -169,4 +168,4 @@ for num_epochs in PROGRESSIVE_EPOCHS[step:]:
 save_model(gen, critic, step)
 
 # Plot and save losses after training
-plot_loss(losses_critic, losses_gen, step)
+plot_loss(total_losses_critic, total_losses_gen, step)

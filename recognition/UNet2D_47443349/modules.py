@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
+import torchvision.transforms.functional as TF
 
 
 class Block(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.conv = nn.Sequential(
+        super(Block, self).__init__()
+        self.double_conv = nn.Sequential(
             # First convolution
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -17,74 +18,57 @@ class Block(nn.Module):
         )
         
     def forward(self, x):
-        return self.conv(x)
-	
-
-class Encoder(nn.Module):
-    def __init__(self, in_channels, feature_sizes):
-        """
-        feature_sizes is a list with the number of channels/filters for each layer
-        """
-        super().__init__()
-        self.operations = []
-        # Each layer of the Encoder is a Block followed by a downsample
-        for feature_size in feature_sizes:
-            self.operations.append(Block(in_channels, feature_size))
-            self.operations.append(nn.MaxPool2d(kernel_size=2, stride=2))  # Downsample
-            in_channels = feature_size # Current feature_size will be the in_channels for next layer
-        self.encoder = nn.Sequential(*self.operations)
-
-    def forward(self, x):
-        return self.encoder(x)
-
-
-class Decoder(nn.Module):
-    def __init__(self, feature_sizes):
-        super().__init__()
-        self.operations = []
-        # Reverse through the feature_sizes used for Encoder
-        # Each layer of the Decoder is an upsample followed by a Block
-        for i in range(len(feature_sizes) - 1, 0, -1):
-            self.operations.append(nn.ConvTranspose2d(feature_sizes[i], feature_sizes[i-1], kernel_size=2, stride=2)) # Upsample
-            self.operations.append(Block(feature_sizes[i], feature_sizes[i-1]))
-        self.decoder = nn.Sequential(*self.operations)
-    
-    def forward(self, x):
-        return self.decoder(x)
+        return self.double_conv(x)
 
 
 class UNet2D(nn.Module):
-    def __init__(self, in_channels=1, out_channels=6, feature_sizes=[64, 128, 256], channel_dim=1):
-        super().__init__()
-        self.channel_dim = channel_dim # Dimension for skip connection concatenation
-        self.encoder = Encoder(in_channels, feature_sizes)
-        self.bottleneck = nn.Sequential(
-            Block(feature_sizes[-1], feature_sizes[-1] * 2),
-            nn.ConvTranspose2d(feature_sizes[-1] * 2, feature_sizes[-1], kernel_size=2, stride=2)
-        )
-        self.decoder = Decoder(feature_sizes)
-        self.segmentation = nn.Conv2d(feature_sizes[0], out_channels, kernel_size=1)
+    def __init__(self, in_channels=1, out_channels=6, initial_features=64, n_layers=5):
+        super(UNet2D, self).__init__()
+
+        self.CHANNEL_DIM = 1
+        features = initial_features
+        self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2) # For encoder downsample
+        
+        # Encoder layers
+        self.encoder = nn.ModuleList()
+        for _ in range(n_layers - 1):
+            self.encoder.append(Block(in_channels, features))
+            in_channels = features # Output feature size for this layer is input for next layer
+            features *= 2 # Double feature size each layer
+        self.bottleneck = Block(in_channels, features)
+
+        # Decoder layers
+        self.decoder = nn.ModuleList()
+        for _ in range(n_layers - 1):
+            upsample = nn.ConvTranspose2d(features, features // 2, kernel_size=2, stride=2)
+            block = Block(features, features // 2)
+            self.decoder.append(upsample)
+            self.decoder.append(block)
+            features = features // 2 # Half feature size each layer
+        
+        # Output segmentation
+        final_features = initial_features
+        self.segmentation = nn.Conv2d(final_features, out_channels, kernel_size=1)
         
     def forward(self, x):
         # Encoder
-        enc_outputs = []
-        for i, operation in enumerate(self.encoder.operations):
-            x = operation(x)
-            # Save output of a block (i%2 == 0 in operations) for skip connections
-            if i%2 == 0:
-                enc_outputs.append(x)
-
-        # Bottleneck
+        skip_connections = []
+        for block in self.encoder:
+            x = block(x)
+            skip_connections.append(x) # To concatenate with decoder
+            x = self.max_pool(x) # Downsample
         x = self.bottleneck(x)
-        
-        # Decoder
-        for i, operation in enumerate(self.decoder.operations):
-            x = operation(x)
-            # Concatenate with corresponding encoder output (skip connection) after upsample (i%2 == 0 in operations)
-            if i%2 == 0:
-                enc_output = enc_outputs[-(i//2)-1]
-                x = torch.cat((x, enc_output), dim=self.channel_dim)
 
-        # Output raw logits
+        # Decoder
+        skip_connections = skip_connections[::-1]
+        for idx in range(0, len(self.decoder), 2):
+            x = self.decoder[idx](x) # Upsample
+            skip_connection = skip_connections[idx//2] # Output from corresponding encoder layer
+            if x.shape != skip_connection.shape:
+                # Height and width dimensions need to be the same
+                x = TF.resize(x, size=skip_connection.shape[2:])
+            concatenated = torch.cat((skip_connection, x), dim=self.CHANNEL_DIM) # Concatenate skip connection
+            x = self.decoder[idx+1](concatenated) # Block
+
         return self.segmentation(x)
 

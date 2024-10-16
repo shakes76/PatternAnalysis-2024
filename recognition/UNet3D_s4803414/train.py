@@ -14,7 +14,7 @@ MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
 
 BATCH_SIZE = 32
 EPOCHS = 5
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3
 
 # Create dataset and dataloader
 dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None)

@@ -1,4 +1,10 @@
-"""Model components"""
+"""
+Model components, including
+- A Siamese network architecture (using a ResNet base)
+- A custom MajorityClassifier for use with a trained Siamese network
+- A convenience function to initialise and fit a MajorityClassifier with reference
+  images
+"""
 
 import torch
 import torch.nn as nn

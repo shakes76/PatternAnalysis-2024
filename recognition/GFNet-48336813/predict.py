@@ -1,3 +1,16 @@
+"""
+This script is used for evaluating the GFNet model on a test dataset, specifically for binary classification
+tasks (AD vs NC). It loads a trained model, builds the test dataset, and computes the overall accuracy 
+and loss on the test set.
+
+Additionally, the script includes a feature for randomly selecting an image from the test set, making a 
+prediction, and saving the image with a title displaying the true label and the model's prediction.
+
+@brief: Evaluation script for the GFNet model with accuracy computation and image inference.
+@date: 16 Oct 2024
+@author: Sean Bourchier
+"""
+
 import os
 import argparse
 import random
@@ -6,6 +19,7 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from functools import partial
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 from dataset import build_dataset
 from modules import GFNet, _cfg
@@ -19,7 +33,9 @@ def get_args_parser():
     """
     parser = argparse.ArgumentParser('GFNet testing script', add_help=False)
     parser.add_argument('--batch-size', default=128, type=int, help='Batch size for testing.')
-    parser.add_argument('--arch', default='gfnet-b', type=str, help='Model architecture to use.')
+    parser.add_argument('--arch', default='gfnet-s', type=str, help='Model architecture to use.',
+                        choices=['gfnet-ti', 'gfnet-xs', 'gfnet-s', 'gfnet-b']) 
+                        # Make sure to change 'default=' to the same model as checkpoint best!
     parser.add_argument('--input-size', default=224, type=int, help='Input image size.')
     parser.add_argument('--data-path', default='data/', type=str, help='Path to the dataset.')
     parser.add_argument('--data-set', default='ADNI', type=str, help='Dataset name.')
@@ -34,6 +50,9 @@ def get_args_parser():
 def main(args):
     """
     Main function for testing the GFNet model.
+        - Validate model on test set
+        - Return accuracy and produce Confusion Matrix
+        - Run inference on single random image from test set
 
     Args:
         args: Parsed command-line arguments.
@@ -72,7 +91,8 @@ def main(args):
 
     # Validate the model on the test data
     print('## Validating model on test dataset...')
-    validate(data_loader_test, model, criterion, device)
+    # validate(data_loader_test, model, criterion, device)
+    validate(data_loader_test, model, criterion, device, output_dir='outputs', class_names=('NC', 'AD'))
     # Making a single inference
     print('## Making a single inference and saving to output.')
     save_random_test_image(data_loader_test, model, device, class_names=('NC', 'AD'), output_dir='outputs')
@@ -141,17 +161,19 @@ def accuracy(output, target):
         accuracy = correct / target.size(0) * 100
         return accuracy
 
-
-def validate(val_loader, model, criterion, device):
+def validate(val_loader, model, criterion, device, output_dir='outputs', class_names=('NC', 'AD')):
     """
-    Evaluates the model on the entire validation dataset for binary classification.
+    Evaluates the model on the entire validation dataset for binary classification
+    and saves a confusion matrix as an image.
 
     Args:
         val_loader (DataLoader): DataLoader for validation data.
         model (nn.Module): Model to evaluate.
         criterion (nn.Module): Loss function.
         device (torch.device): Device to run the model on.
-
+        output_dir (str): Directory to save the confusion matrix image.
+        class_names (tuple): Tuple containing the class names.
+    
     Returns:
         float: Overall accuracy of the model on the validation dataset.
     """
@@ -159,6 +181,8 @@ def validate(val_loader, model, criterion, device):
     total_correct = 0
     total_samples = 0
     total_loss = 0.0
+    all_targets = []
+    all_predictions = []
 
     with torch.no_grad():
         for images, targets in val_loader:
@@ -170,15 +194,30 @@ def validate(val_loader, model, criterion, device):
             loss = criterion(outputs, targets)
             total_loss += loss.item() * images.size(0)
 
-            # Compute the number of correct predictions
+            # Compute the predictions
             _, predicted = outputs.max(1)
             total_correct += (predicted == targets).sum().item()
             total_samples += targets.size(0)
+
+            # Store all targets and predictions for the confusion matrix
+            all_targets.extend(targets.cpu().numpy())
+            all_predictions.extend(predicted.cpu().numpy())
 
     # Calculate average loss and accuracy
     average_loss = total_loss / total_samples
     accuracy = total_correct / total_samples * 100
     print(f'Validation Loss: {average_loss:.4f}, Accuracy: {accuracy:.2f}%')
+
+    # Create and save the confusion matrix
+    cm = confusion_matrix(all_targets, all_predictions)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot(cmap='Blues', values_format='d')
+    os.makedirs(output_dir, exist_ok=True)
+    cm_output_path = os.path.join(output_dir, 'confusion_matrix.png')
+    plt.title('Confusion Matrix')
+    plt.savefig(cm_output_path)
+    plt.close()
+    print(f'Confusion matrix saved to {cm_output_path}')
     return accuracy
 
 

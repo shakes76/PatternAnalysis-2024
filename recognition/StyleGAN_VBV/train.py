@@ -10,8 +10,8 @@ from predict import generate_examples
 
 # Constants
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available
-AD_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/AD'
-NC_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/NC'
+AD_PATH = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/AD_NC/AD/train'
+NC_PATH = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/AD_NC/NC/train'
 DATASET_PATH = AD_PATH  # Path to the dataset
 BATCH_SIZE = 32  # Number of images to process in each training batch
 Z_DIM = 512  # Dimensionality of the latent space
@@ -111,7 +111,7 @@ def save_model(gen, critic, step):
     torch.save(critic.state_dict(), CURRENT_DATASET+'critic_final.pth')  # Save critic's state
 
 # Function to plot and save the loss curves
-def plot_loss(losses_critic, losses_gen, step):
+def plot_loss(losses_critic, losses_gen, step, moving_average):
     """Generate and save a loss plot for the generator and critic."""
 
     plt.figure(figsize=(10, 5))
@@ -120,7 +120,10 @@ def plot_loss(losses_critic, losses_gen, step):
     plt.xlabel('Batch Number')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('critic_loss_final.png')
+    if moving_average:
+        plt.savefig(CURRENT_DATASET+'moving_average_critic_loss_final.png')
+    else:
+        plt.savefig(CURRENT_DATASET+'critic_loss_final.png')
     plt.close()
 
     plt.figure(figsize=(10, 5))
@@ -129,7 +132,10 @@ def plot_loss(losses_critic, losses_gen, step):
     plt.xlabel('Batch Number')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('generator_loss_final.png')
+    if moving_average:
+        plt.savefig(CURRENT_DATASET+'moving_average_generator_loss_final.png')
+    else:
+        plt.savefig(CURRENT_DATASET+'generator_loss_final.png')
     plt.close()
 
 def moving_average(data, window_size):
@@ -191,5 +197,8 @@ save_model(gen, critic, step)
 smoothed_losses_critic = moving_average(total_losses_critic, 10)
 smoothed_losses_gen = moving_average(total_losses_gen, 10)
 
-# Plot and save losses after training
-plot_loss(smoothed_losses_critic, smoothed_losses_gen, step)
+# Plot and save losses after training with moving average
+plot_loss(smoothed_losses_critic, smoothed_losses_gen, step, True)
+
+# Plot and save losses after training without moving average
+plot_loss(total_losses_critic, total_losses_gen, step, False)

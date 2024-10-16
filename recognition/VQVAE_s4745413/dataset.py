@@ -6,6 +6,7 @@ import os
 from torchvision import transforms
 from torchvision.transforms import functional as F
 import numpy as np
+torch.autograd.set_detect_anomaly(True)
 
 # Custom dataset class (similar to the one discussed previously)
 class NiftiDataset(Dataset):
@@ -74,9 +75,16 @@ class NiftiDataset(Dataset):
     def __len__(self):
         return len(self.image_paths)
 
+    def load_nifti(self, img_paths):
+        img = nib.load(img_paths)
+        img_data = img.get_fdata()
+        return img_data
+
     def __getitem__(self, idx):
+        image = self.load_nifti(self.image_paths[idx])
         image = self.images[idx]
         if self.transform:
+            image = torch.from_numpy(image).unsqueeze(0)
             image = self.transform(image)
         return torch.tensor(image, dtype=torch.float32)
 
@@ -102,14 +110,14 @@ class NiftiDataset(Dataset):
         return train_loader, val_loader, test_loader
 
 # Example usage:
-train_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_train"
-val_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_validate"
-test_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_test"
+#train_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_train"
+#val_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_validate"
+#test_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_test"
 
-base_dir = os.getcwd()
-train_dir = os.path.join(base_dir, train_dir)
-val_dir = os.path.join(base_dir, val_dir)
-test_dir = os.path.join(base_dir, test_dir)
+#base_dir = os.getcwd()
+#train_dir = os.path.join(base_dir, train_dir)
+#val_dir = os.path.join(base_dir, val_dir)
+#test_dir = os.path.join(base_dir, test_dir)
 
 # Transforms (optional)
 data_transforms = transforms.Compose([
@@ -136,7 +144,7 @@ def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, t
     return train_loader, val_loader, test_loader
 
 # train_loader, val_loader, test_loader = get_dataloaders(train_dir, val_dir, test_dir, batch_size=16, num_workers=4, transform=data_transforms)
-print("Success! - Made all the loaders from the directories")
+#print("Success! - Made all the loaders from the directories")
 
 #TODO: Number of workers may need to decrease to 1 to make it faster
 

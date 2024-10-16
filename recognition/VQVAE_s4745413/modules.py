@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+torch.autograd.set_detect_anomaly(True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Encoder(nn.Module):
@@ -34,9 +35,9 @@ class ResidualLayer(nn.Module):
     def __init__(self, in_dim, h_dim, res_h_dim):
         super(ResidualLayer, self).__init__()
         self.res_block = nn.Sequential(
-                nn.ReLU(True),
+                nn.ReLU(),
                 nn.Conv2d(in_dim, res_h_dim, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.ReLU(True),
+                nn.ReLU(),
                 nn.Conv2d(res_h_dim, h_dim, kernel_size=1, stride=1, bias=False)
                 )
 
@@ -141,7 +142,7 @@ class VQVAE(nn.Module):
         self.encoder=Encoder(1, h_dim, n_res_layers, res_h_dim)
         self.pre_quantization_conv = nn.Conv2d(h_dim, e_dim, kernel_size=1, stride=1)
         # pass latent vector through quantizer discretization bottleneck
-        self.vector_quantizaton = VectorQuantizer(n_emb, e_dim, commit_cost)
+        self.vector_quantization = VectorQuantizer(n_emb, e_dim, commit_cost)
         # decode discrete latent vector
         self.decoder = Decoder(e_dim, h_dim, n_res_layers, res_h_dim)
 
@@ -155,7 +156,7 @@ class VQVAE(nn.Module):
         x_hat = self.decoder(z_q)
         
         print("original shape: ", x.shape)
-        print("encoded shape: ", z_e.shape)
+        print("encoded shape: ", z_q.shape)
         
         return embed_loss, x_hat, perplexity
 

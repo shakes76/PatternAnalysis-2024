@@ -11,13 +11,13 @@ import time
 def train():
     # Load data and classes
     data, classes = load_data()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda')
     data = data.to(device)
 
     # Initialize model, optimizer, and loss function
     model = GNNModel(in_channels=data.num_features, hidden_channels=64, out_channels=len(classes)).to(device)
-    optimizer = SGD(model.parameters(), lr=0.1, weight_decay=5e-4, momentum=0.9)  # Changed to SGD with adjusted lr and momentum
-    scheduler = StepLR(optimizer, step_size=50, gamma=0.1)  # Initialize scheduler
+    optimizer = SGD(model.parameters(), lr=0.1, weight_decay=5e-4, momentum=0.95)  # Changed to SGD with adjusted lr and momentum
+    scheduler = StepLR(optimizer, step_size=50, gamma=0.01)  # Initialize scheduler
     criterion = torch.nn.CrossEntropyLoss()
 
     # Initialize variables for tracking training progress
@@ -120,29 +120,6 @@ def train():
         test_correct = pred[data.test_mask] == data.y[data.test_mask]
         test_acc = int(test_correct.sum()) / int(data.test_mask.sum())
         print(f'Test Accuracy: {test_acc:.4f}')
-
-    # Optionally, generate TSNE plot
-    generate_tsne_plot(model, data)
-
-def generate_tsne_plot(model, data):
-    from sklearn.manifold import TSNE
-
-    model.eval()
-    with torch.no_grad():
-        embeddings = model(data.x, data.edge_index).cpu().numpy()
-    labels = data.y.cpu().numpy()
-
-    tsne = TSNE(n_components=2, random_state=42)
-    embeddings_2d = tsne.fit_transform(embeddings)
-
-    plt.figure(figsize=(10, 10))
-    scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=labels, cmap='tab10', alpha=0.7)
-    plt.legend(handles=scatter.legend_elements()[0], labels=range(len(np.unique(labels))))
-    plt.title('TSNE of Node Embeddings with Ground Truth Labels')
-    plt.xlabel('TSNE Component 1')
-    plt.ylabel('TSNE Component 2')
-    plt.savefig('tsne_plot.png')
-    plt.show()
 
 if __name__ == '__main__':
     train()

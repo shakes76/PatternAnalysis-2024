@@ -1,3 +1,20 @@
+"""
+test_driver.py
+--------------
+Automated testing for the trained U-Net model using test data.
+
+Input:
+    - Trained model weights and test dataset.
+
+Output:
+    - Evaluation metrics such as Dice score displayed.
+
+Usage:
+    Run this script to evaluate the performance of the model on the test set.
+
+Author: Han Yang
+Date: 01/10/2024
+"""
 import os
 import torch
 from torch.utils.data import DataLoader

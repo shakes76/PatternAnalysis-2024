@@ -16,13 +16,36 @@ import torch.optim as optim
 from tqdm import tqdm
 from utils import EarlyStopping
 import optuna
+from optuna.terminator import EMMREvaluator, MedianErrorEvaluator, Terminator, TerminatorCallback
+import gc
 
+def train_one_epoch(model, train_loader, criterion, optimiser, device):
+    model.train()
+    running_loss = 0.0 
+    for inputs, labels in tqdm(train_loader):
+        inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device)  
+        optimiser.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimiser.step()
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        running_loss += loss.item()
+    epoch_loss = running_loss / len(train_loader)
+    return epoch_loss
 
-# Learning Rate: 1e-5 to 1e-2
-# Weight Decay: 1e-5 to 1e-2
-# Dropout Rate: 0.0 to 0.5
-# Drop Path Rate: 0.0 to 0.5
-# Batch Size: 16, 32, 64
+def validate(model, val_loader, criterion, device):
+    model.eval()
+    running_loss = 0.0
+    with torch.no_grad():
+        for inputs, labels in tqdm(val_loader):
+            inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device) 
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            running_loss += loss.item()
+    epoch_loss = running_loss / len(val_loader)
+    return epoch_loss
 
 def objective(trial):
     learning_rate = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
@@ -30,14 +53,6 @@ def objective(trial):
     drop_rate = trial.suggest_float('drop', 0.0, 0.5)
     drop_path_rate = trial.suggest_float('droppath', 0.0, 0.5)
     batch_size = trial.suggest_categorical('bs', [16, 32, 64, 128, 256])
-
-    config = {
-        'lr': learning_rate,
-        'wd': weight_decay,
-        'drop': drop_rate,
-        'droppath': drop_path_rate,
-        'bs': batch_size
-    }
 
     # Create folder based on hyper parameters
     folder_name = f"lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}"
@@ -58,11 +73,11 @@ def objective(trial):
         img_size=224, 
         num_classes=1,
         initial_embed_dim=32, 
-        blocks_per_stage=[1, 1, 1, 1], 
-        stage_dims=[32, 64, 128, 256], 
+        blocks_per_stage=[3, 3, 27, 3], 
+        stage_dims=[96, 192, 384, 768], 
         drop_rate=drop_rate,
         drop_path_rate=drop_path_rate,
-        init_values=1e-5
+        init_values=1e-6
     )
     model.to(device)
     criterion = nn.BCEWithLogitsLoss()
@@ -72,7 +87,7 @@ def objective(trial):
     early_stopping = EarlyStopping(patience=5, min_delta=0.001, path=checkpoint_path)
 
     # Training loop
-    num_epochs = 1
+    num_epochs = 200
     train_losses = []
     val_losses = []
 
@@ -108,39 +123,31 @@ def objective(trial):
             writer.writerow([epoch_num, t_loss, v_loss])
 
     print(f"Loss logs saved to {loss_log_path}")
+    
+    # clear cache
+    del model, optimiser, criterion, scheduler, early_stopping
+    torch.cuda.empty_cache()
+    gc.collect()
+
     return val_loss
 
-def train_one_epoch(model, train_loader, criterion, optimiser, device):
-    model.train()
-    running_loss = 0.0 
-    for inputs, labels in tqdm(train_loader):
-        inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device)  
-        optimiser.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimiser.step()
-        # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-        running_loss += loss.item()
-    epoch_loss = running_loss / len(train_loader)
-    return epoch_loss
-
-def validate(model, val_loader, criterion, device):
-    model.eval()
-    running_loss = 0.0
-    with torch.no_grad():
-        for inputs, labels in tqdm(val_loader):
-            inputs, labels = inputs.to(device), labels.float().unsqueeze(1).to(device) 
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            running_loss += loss.item()
-    epoch_loss = running_loss / len(val_loader)
-    return epoch_loss
-
 if __name__ == "__main__":
+    # Set up 
+    emmr_improvement_evaluator = EMMREvaluator()
+    median_error_evaluator = MedianErrorEvaluator(emmr_improvement_evaluator)
+    terminator = Terminator(
+        improvement_evaluator=emmr_improvement_evaluator,
+        error_evaluator=median_error_evaluator,
+    )
+    terminator_callback = TerminatorCallback(terminator)
+
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=3)
+    study.optimize(objective, n_trials=30, callbacks=[terminator_callback])
 
     print(f"Best hyperparameters: {study.best_params}")
     print(f"Best validation loss: {study.best_value}")
+
+    # Clear Cache
+    del emmr_improvement_evaluator, median_error_evaluator, terminator, terminator_callback, study
+    torch.cuda.empty_cache()
+    gc.collect()

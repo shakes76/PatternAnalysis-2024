@@ -144,10 +144,6 @@ class VectorQuantizer(nn.Module):
         self.decay = decay
         self.epsilon = epsilon
 
-        # # Initialises embeddings randomly
-        # limit = 3 ** 0.5
-        # self.embeddings = nn.Parameter(torch.FloatTensor(embedding_dim, num_embeddings).uniform_(-limit, limit))
-
         # TRY USE nn.Embedding() INSTEAD OF THE ABOVE 
         # Initialises embeddings using nn.Embedding
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
@@ -222,5 +218,6 @@ class VQVAE(nn.Module):
         z = self.pre_vq_conv(self.encoder(x))
         quantization_loss, z_quantized, encoding_indices = self.vq(z)
         x_recon = self.decoder(z_quantized)
-        return {"commitment_loss": quantization_loss, "x_recon": x_recon}
+        # I ADDED THE CODEBOOK_EMBEDDINGS PARAMETER
+        return {"commitment_loss": quantization_loss, "x_recon": x_recon, "codebook_embeddings": z_quantized}
 

@@ -97,6 +97,8 @@ def train():
             outputs = model(images)
             x_recon = outputs['x_recon']
             commitment_loss = outputs['commitment_loss']
+            # THE CODEBOOK_EMBEDDINGS PARAMETER ADDED HERE 
+            codebook_embeddings = outputs['codebook_embeddings']
 
             # Compute reconstruction loss (mean squared error)
             recon_loss = criterion(x_recon, images)
@@ -133,8 +135,9 @@ def train():
         train_ssim_scores.append(avg_ssim_train)
         train_losses.append(avg_train_loss)
 
+        # THE CODEBOOK_EMBEDDINGS PARAMETER ADDED HERE
         # Visualize and save reconstructed training images
-        visualize_reconstruction(images, x_recon, epoch, phase='train')
+        visualize_reconstruction(images, x_recon, codebook_embeddings, epoch, phase='train')
 
         # Switch to Validation Phase
         model.eval() # Switches the model to evaluation mode
@@ -146,6 +149,10 @@ def train():
                 outputs = model(val_images)
                 x_recon = outputs['x_recon']
                 commitment_loss = outputs['commitment_loss']
+
+                # THE CODEBOOK_EMBEDDINGS PARAMETER ADDED HERE
+                # Extract codebook embeddings
+                codebook_embeddings = outputs['codebook_embeddings']
 
                 # Validation reconstruction loss
                 val_recon_loss = criterion(x_recon, val_images)
@@ -167,8 +174,9 @@ def train():
         val_ssim_scores.append(avg_ssim_val)
         val_losses.append(avg_val_loss)
 
+        # THE CODEBOOK_EMBEDDINGS PARAMETER ADDED HERE
         # Visualize and save reconstructed validation images
-        visualize_reconstruction(val_images, x_recon, epoch, phase='val')
+        visualize_reconstruction(val_images, x_recon, codebook_embeddings, epoch, phase='val')
 
         # Saves the best model based on validation loss
         if avg_val_loss < best_val_loss:
@@ -236,6 +244,8 @@ def calculate_ssim(original_images, reconstructed_images):
 def visualize_reconstruction(original_images, reconstructed_images, epoch, phase='train'):
     original_images = original_images.cpu().data
     reconstructed_images = reconstructed_images.cpu().data
+    # THE CODEBOOK_EMBEDDINGS PARAMETER ADDED HERE
+    codebook_embeddings = codebook_embeddings.cpu().data
 
     # Denormalize images from [-1, 1] to [0, 1]
     original_images = (original_images + 1) / 2
@@ -256,6 +266,16 @@ def visualize_reconstruction(original_images, reconstructed_images, epoch, phase
         # Reconstructed images
         axes[1, i].imshow(reconstructed_images[i][0], cmap='gray')  # Assuming grayscale
         axes[1, i].axis('off')
+
+        # Uses the newly created visualization function to show input, embedding, and reconstructed images
+        visualize_comparison(
+            original_images[i].unsqueeze(0),  # Input image
+            codebook_embeddings[i].unsqueeze(0),  # Embedding
+            reconstructed_images[i].unsqueeze(0),  # Reconstructed image
+            epoch,
+            save_dir=f'./comparisons/{phase}',  # Save directory
+            img_name=f'comparison_epoch_{epoch}_image_{i}.png'  # Image filename
+        )
 
     # Save the plot with the phase (train/val) in the filename
     plt.savefig(f'{recon_save_dir}/epoch_{epoch + 1}_phase_{phase}.png')
@@ -282,7 +302,43 @@ def save_original_images(loader, save_dir='./original_images', img_name="origina
 
 # Function to denormalize images
 def denormalize(tensor):
-    return (tensor * 0.5) + 0.5  
+    return (tensor * 0.5) + 0.5 
+
+def visualize_comparison(input_image, codebook_embedding, reconstructed_image, epoch, save_dir='./comparisons', img_name="comparison.png"):
+    # Create the directory for saving comparisons if it doesn't exist
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Denormalize the images from [-1, 1] to [0, 1]
+    input_image = denormalize(input_image)
+    reconstructed_image = denormalize(reconstructed_image)
+
+    # Convert codebook embedding to a displayable format
+    # Reduce the codebook embedding to a 2D representation by averaging across channels (or selecting one channel)
+    codebook_embedding_vis = codebook_embedding.mean(dim=1).detach().cpu()  # Average across channels
+
+    # Create a comparison plot
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+    # Input Image
+    axes[0].imshow(input_image.cpu().squeeze(0).permute(1, 2, 0), cmap='gray')
+    axes[0].set_title("Input Image")
+    axes[0].axis('off')
+
+    # Codebook Embedding
+    axes[1].imshow(codebook_embedding_vis[0].cpu(), cmap='nipy_spectral')  # Different color map for embeddings
+    axes[1].set_title("Codebook Embedding")
+    axes[1].axis('off')
+
+    # Reconstructed Image
+    axes[2].imshow(reconstructed_image.cpu().squeeze(0).permute(1, 2, 0), cmap='gray')
+    axes[2].set_title("Reconstructed Image")
+    axes[2].axis('off')
+
+    # Save the comparison plot
+    comparison_path = os.path.join(save_dir, f'epoch_{epoch}_comparison.png')
+    plt.savefig(comparison_path)
+    plt.close()
+    # print(f"Saved image comparison for epoch {epoch} at {comparison_path}") 
 
 if __name__ == "__main__":
     train()

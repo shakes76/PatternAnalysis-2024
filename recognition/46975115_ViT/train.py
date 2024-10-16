@@ -71,7 +71,7 @@ def plot_metrics(train_acc, val_acc, train_loss, val_loss):
     plt.ylabel('Loss')
     plt.legend()
     plt.title('Training and Validation Loss')
-    plt.savefig('accuracy_&_loss_plot.png')
+    plt.savefig('accuracy_loss_plot.png')
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -12,10 +12,11 @@ def get_args_parser():
     """
     parser = argparse.ArgumentParser('GFNet training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int, help='Batch size for training')
-    parser.add_argument('--epochs', default=51, type=int, help='Number of training epochs')
+    parser.add_argument('--epochs', default=41, type=int, help='Number of training epochs')
 
     # Model parameters
-    parser.add_argument('--arch', default='gfnet-b', type=str, help='Name of model to train')
+    parser.add_argument('--arch', default='gfnet-s', type=str, help='Name of model to train',
+                        choices=['gfnet-ti', 'gfnet-xs', 'gfnet-s', 'gfnet-b'])
     parser.add_argument('--input-size', default=224, type=int, help='Input image size')
 
     parser.add_argument('--drop', type=float, default=0.0, metavar='PCT',
@@ -102,7 +103,7 @@ def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot
     # Plot Accuracy vs Epoch
     plt.figure()
     plt.plot(epochs, test_acc, marker='.')
-    plt.title(f'Accuracy vs Epoch ({architecture})')
+    plt.title(f'  Accuracy vs Epoch  ({architecture})')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
     plt.ylim(0, 100)
@@ -113,10 +114,10 @@ def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot
     # Plot Test Loss vs Epoch
     plt.figure()
     plt.plot(epochs, test_loss, marker='.')
-    plt.title(f'Loss vs Epoch ({architecture})')
+    plt.title(f'  Loss vs Epoch  ({architecture})')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.ylim(0, 1)
+    plt.ylim(0, max(1, (max(test_loss))))
     plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 20)))
     plt.savefig(os.path.join(plot_dir, f'{current_datetime}_{architecture}_loss_vs_epoch.png'))
     plt.close()

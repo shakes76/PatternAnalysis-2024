@@ -120,7 +120,7 @@ def setup_dataloaders(args):
     Returns:
         tuple: Training and validation data loaders, number of classes.
     """
-    dataset_train, args.nb_classes = build_dataset('test', args=args)
+    dataset_train, args.nb_classes = build_dataset('train', args=args)
     dataset_val, _ = build_dataset('val', args=args)
     
     sampler_train = torch.utils.data.RandomSampler(dataset_train)

@@ -30,9 +30,9 @@ from dataset import get_dataloaders
 output_dir = 'test/model/train'
 
 # Hyperparameters
-epochs = 2
+epochs = 50
 start_epoch = 0
-lr = 1e-6
+lr = 1e-4
 
 project = "ADNI-GFNet"
 group = "GFNet",

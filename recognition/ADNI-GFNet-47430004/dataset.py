@@ -96,7 +96,8 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
 
 # def get_mean_std():
 
-#     data_dir = "/home/groups/comp3710/ADNI/AD_NC"
+#     # data_dir = "/home/groups/comp3710/ADNI/AD_NC"
+#     data_dir = "/home/daqoblade/Uni/2024 Sem 2/COMP3710/PatternAnalysis-2024/resources/AD_NC"
 #     batch_size = 32
 
 #     transform = tf.Compose([

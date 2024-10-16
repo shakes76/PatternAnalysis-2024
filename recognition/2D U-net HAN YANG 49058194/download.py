@@ -1,3 +1,14 @@
+"""
+download.py
+-----------
+This script downloads and preprocesses MRI data for training a segmentation model.
+
+Usage:
+    Run this script to download and prepare the dataset for model training.
+
+Author: Han Yang
+Date: 24/09/2024
+"""
 import os
 import requests
 import zipfile

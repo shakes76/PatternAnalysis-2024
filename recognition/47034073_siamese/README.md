@@ -78,7 +78,7 @@ The ResNet50 produced 2048-dimensional features which were then passed through a
 
 Once embeddings are produced they are compared using triplet loss. The triplet loss requires the comparison of three training examples at a time, an anchor example, a positive example from the same class as the anchor, and a negative example from a different class to the anchor. 
 
-Let $l(x^a, x^p, x^n)$ be the loss for an single triplet with anchor $x^a$, positive $x^p$, and negative $x^n$ lesion images. Then $l$ is given by:
+Let $l(x^a, x^p, x^n)$ be the loss for a single triplet with anchor $x^a$, positive $x^p$, and negative $x^n$ lesion images. Then $l$ is given by:
 
 $$l(x^a, x^p, x^n) = \mathrm{ReLU}\left(\Vert f(x^a) - f(x^p) \Vert_2^2 - \Vert f(x^a) - f(x^n) \Vert_2^2 + m \right)$$
 
@@ -86,7 +86,7 @@ Where $m$ is some hyperparameter for the desired margin. Note that $\mathrm{ReLU
 
 One of the most important parts of triplet loss performance is the mining of triplets. This refers to the process of finding difficult triplets to train with, as triplets with zero loss have no learning signal. The most popular mining technique is semi-hard mining as introduced in [[5]](#5). This technique chooses triplets such that the positive example is closer to the anchor than the negative sample but the margin is still violated. These triplets are easier to improve than when the negative example is closer than the positive one but still provide a learning signal. This strategy is often used to improve the stability of learning. However, it was found that with this project's setup, the all-mining strategy worked the best. This strategy selects all triplets that violate the margin, that is, with non-zero loss. Triplets are sampled in an online-fashion from each minibatch as the difficulty of each triplet is highly dependent on the state of the embedding network which changes during training.
 
-After training the embedding network we use embeddings as an input to a separate classifier. For this project three classifiers were tried using sci-kit learn implementations, a K nearest neighbours (KNN), a support vector machine (SVM) and a multilayer perceptron (MLP). 
+After training the embedding network we use embeddings as an input to a separate classifier. For this project two classifiers were tried using sci-kit learn implementations, a K nearest neighbours (KNN), a support vector machine (SVM) and a multilayer perceptron (MLP). The KNN and SVM performed the best.
 
 ## Data Preparation
 Patient meta-data was not used for simplicity. Although it would be simple to incorporate this data by concatenating it to the outputted feature embeddings and applying appropriate normalization.
@@ -102,7 +102,7 @@ Equal class sampling during embedding network training was tried to help allevia
 ## Training Details
 The embedding network was trained with Pytorch using the Adam optimizer with a learning rate of $1 \times 10^{-5}$ and weight decay of $1 \times 10^{-6}$. All other Adam hyperparameters were set to the Pytorch defaults. The model was trained for 120 epochs with a batch size of 128. A margin of 1 was used for the triplet loss. The network was trained on a single RTX 3060 GPU.
 
-The KNN used a custom uniform voting from the nearest neighbour and all neighbours that were closer than $m$. The SVM used the default sci-kit learn hyperparameters, most notably a $C$ value of 1 and the Radial Basis Function kernel. The neural network architecture can be seen in Figure [num](), the Adam optimizer was used with a learning rate of 0.0001 and a momentum value of 0.9, and other Adam hyperparameters were set to the sci-kit learn defaults.
+The KNN used a custom uniform voting from the nearest neighbour and all neighbours that were closer than $m$. The SVM used the default sci-kit learn hyperparameters, most notably a $C$ value of 1 and the Radial Basis Function kernel. 
 
 ## Results
 The training loss curve for the embedding network can be seen in Figure [2](#fig2).
@@ -141,7 +141,7 @@ The best results were achieved using the SVM classifier. Using this classifier, 
 
 We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contained a higher proportion of the likely harder minority class compared to the validation and test sets. When not undersampling the classifier's training set an AUC of 1 was almost always reached on the training set but with bad performance on the others. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.
 
-The classification report for the SVM classifier on the test set can be seen in Table [1](#tab1). Class 0 and 1 represent the benign and malignant classes respectively. 
+The classification report for the SVM classifier and the KNN classifier on the test set can be seen in Tables [1](#tab1) and [2](#tab2) respectively. Class 0 and 1 represent the benign and malignant classes respectively. 
 
 *Table <a id=tab1>1</a>: Classification report for SVM on the test set.*
 |              | precision | recall | f1-score | support |
@@ -151,8 +151,20 @@ The classification report for the SVM classifier on the test set can be seen in 
 | **accuracy** |           |        | 0.90     | 6626    |
 | **macro avg**| 0.54      | 0.67   | 0.54     | 6626    |
 | **weighted avg** | 0.97  | 0.90   | 0.94     | 6626    |
+| **AUC**      | 0.844     |           |        |          |         |
 
-For the problem of malignant lesion detection, it could be argued that recall is more important than precision, as the cost of missing a malignant observation is high. The low precision could be costly too in that a patient may be given unnecessary treatment, however, this could be remedied in a real-world system by having a medical professional verify malignant detections. In the results, we can see that we reach a recall of 44%, which seems decently high for the 2% minority class in this highly imbalanced problem.
+*Table <a id=tab2>2</a>: Classification report for KNN on the test set.*
+|              | precision | recall | f1-score | support |
+|--------------|-----------|--------|----------|---------|
+| 0            | 0.99      | 0.87   | 0.93     | 6509    |
+| 1            | 0.07      | 0.54   | 0.12     | 117     |
+| **accuracy** |           |        | 0.86     | 6626    |
+| **macro avg**| 0.53      | 0.70   | 0.52     | 6626    |
+| **weighted avg** | 0.97  | 0.86   | 0.91     | 6626    |
+| **AUC**      | 0.809     |           |        |          |         |
+
+For the problem of malignant lesion detection, it could be argued that recall is more important than precision, as the cost of missing a malignant observation is high. The low precision could be costly too in that a patient may be given unnecessary treatment, however, this could be remedied in a real-world system by having a medical professional verify malignant detections. In the results, we can see that we reach a recall of 44% for SVM, which seems decently high for the 2% minority class in this highly imbalanced problem.
+
 
 
 ## References

@@ -60,9 +60,20 @@ The best results were achieved using the SVM classifier. Using this classifier t
 ![SVM test ROC](readme_assets/test(SVM)_roc.png)
 *Figure num: ROC for SVM on test set*
 
-We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contain a higher proportion of the likely harder minority class compared to the validation and test sets. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.
+We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contain a higher proportion of the likely harder minority class compared to the validation and test sets. When not undersampling the classifier's training set an AUC of 1 was almost always reached on the training set but with bad performance on the others. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.
 
+The classification report for the SVM classifier on the test set can be seen in Table [num](). 
 
+*Table num: Classification report for SVM on the test set.*
+|              | precision | recall | f1-score | support |
+|--------------|-----------|--------|----------|---------|
+| 0            | 0.99      | 0.91   | 0.95     | 6509    |
+| 1            | 0.08      | 0.44   | 0.14     | 117     |
+| **accuracy** |           |        | 0.90     | 6626    |
+| **macro avg**| 0.54      | 0.67   | 0.54     | 6626    |
+| **weighted avg** | 0.97  | 0.90   | 0.94     | 6626    |
+
+For the problem of malignant lesion detection, it could be argued that recall is more important than precision, as the cost of missing a malignant obersvation is high. The low precision could be costly too in that a patient may be given costly treatment, however this could be rememedied in a real world system by having a medical professional verify malignant detections. In the results we can see that we reach a decently high recall for an imbalanced problem of 44%.
 
 
 ## References

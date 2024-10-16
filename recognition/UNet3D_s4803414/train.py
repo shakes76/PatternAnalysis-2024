@@ -7,8 +7,8 @@ from dataset import MRIDataset
 from modules import UNet3D
 from torchvision import transforms
 
-IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_png_slices_train'
-MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_png_slices_seg_train'
+IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
+MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
 MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
 
 BATCH_SIZE = 2

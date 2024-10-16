@@ -77,35 +77,26 @@ class UNet3D(nn.Module):
     def forward(self, x):
         # Encoding path
         enc1 = self.enc1(x)
-        print("enc1 shape:", enc1.shape)  # Debug print
         enc2 = self.enc2(enc1)
-        print("enc2 shape:", enc2.shape)  # Debug print
         enc3 = self.enc3(enc2)
-        print("enc3 shape:", enc3.shape)  # Debug print
         enc4 = self.enc4(enc3)
-        print("enc4 shape:", enc4.shape)  # Debug print
 
         # Bottleneck
         bottleneck = self.bottleneck(enc4)
-        print("bottleneck shape:", bottleneck.shape)  # Debug print
 
         # Combine the cropped bottleneck and enc4
-        combined_input_dec4 = torch.cat((self.center_crop(bottleneck, enc4), enc4), dim=1)  # Concatenate on channel dimension
-        print("combined_input_dec4 shape:", combined_input_dec4.shape)  # Debug print
-        dec4 = self.dec4(combined_input_dec4)  # This should work now
-        print("dec4 shape:", dec4.shape)  # Debug print
+        dec4_input = torch.cat((self.center_crop(bottleneck, enc4), enc4), dim=1)  # Concatenate on channel dimension
+        dec4 = self.dec4(dec4_input)  # This should work now
 
         # Decoding path
-        dec4 = self.dec4(self.center_crop(bottleneck, enc4))  # Crop bottleneck to match enc4
-        print("dec4 shape before concat:", dec4.shape)  # Debug print
-        dec4 = torch.cat((dec4, enc4), dim=1)  # Skip connection with enc4
-        print("dec4 shape after concat:", dec4.shape)  # Debug print
-        dec3 = self.dec3(self.center_crop(dec4, enc3))  # Crop dec4 to match enc3
-        dec3 = torch.cat((dec3, enc3), dim=1)  # Skip connection with enc3
-        dec2 = self.dec2(self.center_crop(dec3, enc2))  # Crop dec3 to match enc2
-        dec2 = torch.cat((dec2, enc2), dim=1)  # Skip connection with enc2
-        dec1 = self.dec1(self.center_crop(dec2, enc1))  # Crop dec2 to match enc1
-        dec1 = torch.cat((dec1, enc1), dim=1)  # Skip connection with enc1
+        dec3_input = torch.cat((self.center_crop(dec4, enc3), enc3), dim=1)  # Concatenate with enc3
+        dec3 = self.dec3(dec3_input)  # Process dec3
+
+        dec2_input = torch.cat((self.center_crop(dec3, enc2), enc2), dim=1)  # Concatenate with enc2
+        dec2 = self.dec2(dec2_input)  # Process dec2
+
+        dec1_input = torch.cat((self.center_crop(dec2, enc1), enc1), dim=1)  # Concatenate with enc1
+        dec1 = self.dec1(dec1_input)  # Process dec1
 
         return self.final_conv(dec1)
 

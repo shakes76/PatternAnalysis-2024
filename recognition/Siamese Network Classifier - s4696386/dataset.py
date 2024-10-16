@@ -1,11 +1,11 @@
 from tkinter import filedialog
-import os, torch, random, pydicom, torchvision
-import matplotlib.pyplot as plt
+import os, numpy, torch, random, pydicom, torchvision
 
 BENIGN = 0
 MALIGNANT = 1
 SIMILAR = 1.0
 DISSIMILAR = 0.0
+IMG_HEIGHT, IMG_WIDTH = (480, 640) # Smallest size in dataset
 
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
@@ -22,9 +22,6 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
     
     # Move to that directory as our current working directory
     os.chdir(file_path_image_folder)
-    
-    # Create dictionary mapping image names to their file names
-    files: dict = {file.removesuffix(".dcm"): file for file in os.listdir()}
     
     # Create dictionary mapping image names to (patient_id, malignant)
     truths: dict[str, tuple[str, int]] = {}
@@ -45,16 +42,33 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
             else:
                 benigns.append(image_name)
     
+    # Create a mapping from image name to image
+    images: dict = {}
     # Cut down the data to reduce time spent
     benigns = benigns[:len(malignants)*2]
-    files2: dict = {}
     for b in benigns:
-        files2[b] = files.get(b, b+".dcm")
+        images[b] = load_image(b+".dcm")
     for m in malignants:
-        files2[m] = files.get(m, m+".dcm")
-    files = files2
+        images[m] = load_image(m+".dcm")
     
-    return files, truths, malignants, benigns
+    return images, truths, malignants, benigns
+
+def load_image(file_name):
+        """
+        Loads an image from the given filename. This function assumes the image format is `.dcm` (DICOM).
+        Modify as needed to handle other formats.
+        """
+        dicom = pydicom.dcmread(file_name)
+        image = dicom.pixel_array
+        # Resize the image to a fixed size
+        resize_transform = torchvision.transforms.Compose([
+            torchvision.transforms.ToPILImage(),
+            torchvision.transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
+            torchvision.transforms.ToTensor()
+        ])
+        image = resize_transform(image)
+        # Add channel dimension (1xHxW)
+        return image
 
 
 class APP_MATCHER(torch.utils.data.Dataset):
@@ -68,10 +82,9 @@ class APP_MATCHER(torch.utils.data.Dataset):
         self._train = train
         self.train_ratio = train_ratio
         self.test_ratio = 1 - train_ratio
-        self._image_height, self._image_width = (480, 640) # Smallest size in dataset
 
         # Use read_data function to load the local dataset
-        self.files, self.truths, self.malignants, self.benigns = read_data(image_folder,
+        self.images, self.truths, self.malignants, self.benigns = read_data(image_folder,
             ground_truth_file)
 
         # Group the examples based on malignancy
@@ -118,7 +131,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
 
         # Select a random image from the chosen class
         img_name_1 = random.choice(self.data_set[selected_class])
-        image_1 = self.load_image(self.files.get(img_name_1, None))
+        image_1 = self.images.get(img_name_1, None)
 
         if index % 2 == 0:
             # Positive example: Pick a different image from the same class
@@ -132,26 +145,9 @@ class APP_MATCHER(torch.utils.data.Dataset):
             img_name_2 = random.choice(self.data_set[other_class])
             target = torch.tensor(DISSIMILAR)  # Negative label
 
-        image_2 = self.load_image(self.files.get(img_name_2, None))
+        image_2 = self.images.get(img_name_2, None)
 
         return image_1, image_2, target
-
-    def load_image(self, file_name):
-        """
-        Loads an image from the given filename. This function assumes the image format is `.dcm` (DICOM).
-        Modify as needed to handle other formats.
-        """
-        dicom = pydicom.dcmread(file_name)
-        image = dicom.pixel_array
-        # Resize the image to a fixed size
-        resize_transform = torchvision.transforms.Compose([
-            torchvision.transforms.ToPILImage(),
-            torchvision.transforms.Resize((self._image_height, self._image_width)),
-            torchvision.transforms.ToTensor()
-        ])
-        image = resize_transform(image)
-        # Add channel dimension (1xHxW)
-        return image
     
     def is_train_set(self) -> bool:
         """

@@ -5,7 +5,10 @@ BENIGN = 0
 MALIGNANT = 1
 SIMILAR = 1.0
 DISSIMILAR = 0.0
+IMG_FILE_TYPE = ".jpg"
 IMG_HEIGHT, IMG_WIDTH = (480, 640) # Smallest size in dataset
+DEFAULT_LOCATION = "E:/COMP3710 Project/Images", "E:/COMP3710 Project/Truths.csv"
+PROCESSED_DATA = tuple[dict, dict[str, tuple[str, int]], list[str], list[str]]
 
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
@@ -13,12 +16,10 @@ IMG_HEIGHT, IMG_WIDTH = (480, 640) # Smallest size in dataset
 def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = None
         ) -> tuple[dict[str, str], dict[str, tuple[str, int]], list[str], list[str]]:
     
-    # Ensure we have a directory to take data from
-    if file_path_image_folder is None:
-        file_path_image_folder = filedialog.askdirectory()
-    # Ensure we have a collection of ground truths
-    if file_path_ground_truth is None:
-        file_path_ground_truth = filedialog.askopenfile().name
+    # Ensure we have a directory to take data from and a collection of ground truths
+    if (not os.path.exists(file_path_image_folder) or
+        not os.path.exists(file_path_ground_truth)):
+        file_path_image_folder, file_path_ground_truth = get_path()
     
     # Move to that directory as our current working directory
     os.chdir(file_path_image_folder)
@@ -28,58 +29,63 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
     # Maintain list of malignant & benign images
     malignants: list[str] = []
     benigns: list[str] = []
+
     # Populate dict and lists
-    with open(file_path_ground_truth) as file_ground_truth:
-        for i, line in enumerate(file_ground_truth):
-            if i == 0:
-                continue
-            image_name, patient_id,_,_,_,_, malignant, *_ = line.split(",")
-            # Assign numerical values to malignance
-            malignant = BENIGN if "benign" in malignant else MALIGNANT
-            truths[image_name] = patient_id, malignant
-            if malignant:
-                malignants.append(image_name)
-            else:
-                benigns.append(image_name)
+    truths, malignants, benigns = read_truths(file_path_ground_truth)
     
     # Create a mapping from image name to image
     images: dict = {}
     # Cut down the data to reduce time spent
     benigns = benigns[:len(malignants)*2]
     for b in benigns:
-        images[b] = load_image(b+".dcm")
+        images[b] = load_image(b+IMG_FILE_TYPE)
     for m in malignants:
-        images[m] = load_image(m+".dcm")
+        images[m] = load_image(m+IMG_FILE_TYPE)
     
     return images, truths, malignants, benigns
+
+def read_truths(file_path_ground_truth):
+    truths, malignants, benigns = {}, [], []
+    with open(file_path_ground_truth) as file_ground_truth:
+        for i, line in enumerate(file_ground_truth):
+            if i == 0:
+                continue
+            _, image_name, patient_id, malignant = line.split(",")
+            malignant = int(malignant)
+            # Assign numerical values to malignance
+            truths[image_name] = patient_id, malignant
+            if malignant:
+                malignants.append(image_name)
+            else:
+                benigns.append(image_name)
+    return truths, malignants, benigns
+
+def get_path():
+    file_path_image_folder = filedialog.askdirectory()
+    file_path_ground_truth = filedialog.askopenfile().name
+    return file_path_image_folder, file_path_ground_truth
 
 def load_image(file_name):
         """
         Loads an image from the given filename. This function assumes the image format is `.dcm` (DICOM).
         Modify as needed to handle other formats.
         """
-        dicom = pydicom.dcmread(file_name)
-        image = dicom.pixel_array
+        image = torchvision.io.read_image(file_name)
         # Define data augmentation transformations
         augment_and_resize = torchvision.transforms.Compose([
-            torchvision.transforms.ToPILImage(),
             torchvision.transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
             torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
-            torchvision.transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),  # Color jitter
-            torchvision.transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),  # Resize to fixed dimensions
-            torchvision.transforms.ToTensor()  # Convert to tensor
         ])
-        image = augment_and_resize(image)
-        # Add channel dimension (1xHxW)
+        image = augment_and_resize(image).float()
         return image
 
 
 class APP_MATCHER(torch.utils.data.Dataset):
     
     RANDOM_SEED = 69420
-    
-    def __init__(self, image_folder: str = None, ground_truth_file: str = None,
-            train: bool = True, train_ratio: float = 0.8):
+
+    def __init__(self, processed_data: PROCESSED_DATA,
+            train: bool, train_ratio: float = 0.8):
         super(APP_MATCHER, self).__init__()
         
         # Store splitting data
@@ -88,8 +94,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
         self.test_ratio = 1 - train_ratio
 
         # Use read_data function to load the local dataset
-        self.images, self.truths, self.malignants, self.benigns = read_data(image_folder,
-            ground_truth_file)
+        self.images, self.truths, self.malignants, self.benigns = processed_data
 
         # Group the examples based on malignancy
         self.grouped_examples = {BENIGN: self.benigns, MALIGNANT: self.malignants}
@@ -176,8 +181,9 @@ def main():
 
     current_directory = os.getcwd()
     with cProfile.Profile() as pr:
-        files, truths, malignants, benigns = read_data("E:/COMP3710 Project/ISIC_2020_Train_DICOM_corrected",
-            "E:/COMP3710 Project/ISIC_2020_Training_GroundTruth.csv")
+        files, truths, malignants, benigns = read_data(DEFAULT_LOCATION)
+        print(len(files))
+        print(len(malignants))
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     os.chdir(current_directory)

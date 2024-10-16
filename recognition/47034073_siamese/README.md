@@ -6,10 +6,11 @@ Run commands from root directory.
 ```bash
 mkdir data models plots
 ```
-### Downloading data
+### Downloading data (<1GB)
 ```bash
+curl -L -o data.7z https://www.dropbox.com/scl/fi/ug3dytouc5khwb2h7yuij/data.7z?rlkey=i6zbmtqegvukkkg6k0bvi3xow&st=vva7vx2k&dl=0
 ```
-### Downloading The Trained Model
+### Downloading The Trained Model (<1GB)
 ```bash
 curl -L -o best.7z https://www.dropbox.com/scl/fi/5g2ixlbrulqa3b3lzbj5d/best.7z?rlkey=hpei7h85kdg30nirr9mcurous&st=9kk0t6k0&dl=0
 ```

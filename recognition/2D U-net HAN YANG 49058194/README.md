@@ -185,6 +185,14 @@ In the prediction results, the prostate area seems to be well identified and seg
 The model successfully achieve a Dice score of at least 0.75 on the test set.<br />
 With `test_driver.py` output: `Model achieved the desired Dice score of 0.75 or above: 0.81`.
 
+## Discussion
+The results of the 2D U-Net model for prostate segmentation demonstrate the effectiveness of this architecture in medical image segmentation tasks. Achieving a Dice score of 0.81 on the test set indicates that the model performs well, surpassing the minimum target of 0.75. This suggests that the model is capable of accurately identifying and segmenting the prostate gland from MRI slices, which is crucial for applications like cancer detection, treatment planning, and monitoring disease progression.
+
+## Conclusion
+This project successfully applied a 2D U-Net model to segment prostate MRI images, achieving a Dice similarity coefficient of 0.81, surpassing the target threshold of 0.75. The results demonstrate that the U-Net architecture is well-suited for medical image segmentation tasks due to its encoder-decoder structure and skip connections, which effectively preserve spatial information.
+<br />
+While the model performs well, there is room for improvement, especially in handling complex regions and incorporating 3D spatial information. Future work could explore more advanced architectures, such as 3D U-Net, and incorporate post-processing techniques to enhance segmentation quality further. Overall, this project provides a solid foundation for prostate segmentation and highlights the potential of deep learning in medical imaging applications.
+
 ---
 
 ## References

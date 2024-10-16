@@ -64,8 +64,6 @@ class MRIDataset(Dataset):
         # 应用变换
         if self.transform:
             sample = self.transform(sample)
-            print(f"After transform - Image shape: {sample['image'].shape}")
-            print(f"After transform - Label shape: {sample['label'].shape}")
 
         return sample
 

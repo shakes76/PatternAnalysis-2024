@@ -2,6 +2,7 @@ import torch
 from torch_geometric.data import Data
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from torch_geometric.utils import add_self_loops
 
 def load_data():
     # Load the npz file
@@ -12,18 +13,12 @@ def load_data():
     print('x.shape:', x.shape)  # Debug output
 
     # Extract edge information
-    edge_index = torch.tensor(data_npz['edges'], dtype=torch.long)
-    print('Original edge_index.shape:', edge_index.shape)  # Debug output
+    edges = data_npz['edges']
+    edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
+    print('edge_index.shape:', edge_index.shape)  # Debug output
 
-    # Check the shape of edge_index, if it's [num_edges, 2], transpose it
-    if edge_index.shape[0] == 2:
-        # Shape is already [2, num_edges]
-        edge_index = edge_index
-    else:
-        # Transpose to match [2, num_edges]
-        edge_index = edge_index.T
-    edge_index = torch.tensor(edge_index, dtype=torch.long)
-    print('Adjusted edge_index.shape:', edge_index.shape)  # Debug output
+    # Add self-loops to the adjacency matrix
+    edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))
 
     # Extract labels
     y = data_npz['target']
@@ -40,17 +35,23 @@ def load_data():
     test_mask = torch.zeros(num_nodes, dtype=torch.bool)
 
     # Split dataset
-    labeled_indices = np.arange(num_nodes)
-    np.random.shuffle(labeled_indices)
-    train_size = int(0.6 * num_nodes)
-    val_size = int(0.2 * num_nodes)
-    train_indices = labeled_indices[:train_size]
-    val_indices = labeled_indices[train_size:train_size+val_size]
-    test_indices = labeled_indices[train_size+val_size:]
+    indices = np.arange(num_nodes)
+    np.random.shuffle(indices)
+    train_size = int(0.7 * num_nodes)
+    val_size = int(0.15 * num_nodes)
+    test_size = num_nodes - train_size - val_size
+
+    train_indices = indices[:train_size]
+    val_indices = indices[train_size:train_size+val_size]
+    test_indices = indices[train_size+val_size:]
 
     train_mask[train_indices] = True
     val_mask[val_indices] = True
     test_mask[test_indices] = True
+
+    print(f"Number of training nodes: {train_mask.sum().item()}")
+    print(f"Number of validation nodes: {val_mask.sum().item()}")
+    print(f"Number of test nodes: {test_mask.sum().item()}")
 
     # Create data object
     data = Data(x=x, edge_index=edge_index, y=y,

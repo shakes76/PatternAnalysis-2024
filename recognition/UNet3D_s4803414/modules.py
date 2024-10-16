@@ -14,11 +14,11 @@ class UNet3D(nn.Module):
         # Bottleneck
         self.bottleneck = self.contracting_block(512, 1024)
 
-        # Expanding path
-        self.dec4 = self.expanding_block(1024, 512)
-        self.dec3 = self.expanding_block(512, 256)
-        self.dec2 = self.expanding_block(256, 128)
-        self.dec1 = self.expanding_block(128, 64)
+        # Expanding path (adjust in_channels for concatenated skip connections)
+        self.dec4 = self.expanding_block(1024 + 512, 512)  # 1024 from bottleneck + 512 from enc4
+        self.dec3 = self.expanding_block(512 + 256, 256)   # 512 from dec4 + 256 from enc3
+        self.dec2 = self.expanding_block(256 + 128, 128)   # 256 from dec3 + 128 from enc2
+        self.dec1 = self.expanding_block(128 + 64, 64)     # 128 from dec2 + 64 from enc1
 
         # Final output layer
         self.final_conv = nn.Conv3d(64, out_channels, kernel_size=1)
@@ -56,15 +56,9 @@ class UNet3D(nn.Module):
         bottleneck = self.bottleneck(enc4)
 
         # Decoding path
-        dec4 = self.dec4(bottleneck)
-        dec4 = torch.cat((dec4, enc4), dim=1)  # Skip connection
-        dec3 = self.dec3(dec4)
-        dec3 = torch.cat((dec3, enc3), dim=1)  # Skip connection
-        dec2 = self.dec2(dec3)
-        dec2 = torch.cat((dec2, enc2), dim=1)  # Skip connection
-        dec1 = self.dec1(dec2)
-        dec1 = torch.cat((dec1, enc1), dim=1)  # Skip connection
+        dec4 = self.dec4(torch.cat((bottleneck, enc4), dim=1))  # Skip connection with enc4
+        dec3 = self.dec3(torch.cat((dec4, enc3), dim=1))        # Skip connection with enc3
+        dec2 = self.dec2(torch.cat((dec3, enc2), dim=1))        # Skip connection with enc2
+        dec1 = self.dec1(torch.cat((dec2, enc1), dim=1))        # Skip connection with enc1
 
         return self.final_conv(dec1)
-
-

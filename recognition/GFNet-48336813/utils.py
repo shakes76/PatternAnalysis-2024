@@ -1,3 +1,17 @@
+"""
+This script contains utility functions for configuring and managing the training and evaluation
+of the GFNet model. It provides a function for parsing command-line arguments, allowing users to 
+easily set parameters such as batch size, learning rate, and dataset paths.
+
+Additionally, it includes a function for plotting and saving training results, such as accuracy 
+and loss over epochs, which helps in visualizing model performance during training.
+
+@brief: Utility functions for argument parsing and result plotting for the GFNet model.
+@date: 16 Oct 2024
+@author: Sean Bourchier
+"""
+
+
 import os
 import argparse
 import numpy as np
@@ -107,7 +121,7 @@ def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
     plt.ylim(0, 100)
-    plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 20)))
+    plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 15)))
     plt.savefig(os.path.join(plot_dir, f'{current_datetime}_{architecture}_accuracy_vs_epoch.png'))
     plt.close()
 

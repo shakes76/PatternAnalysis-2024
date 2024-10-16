@@ -1,3 +1,16 @@
+"""
+This script defines the core modules and components for the GFNet model architecture, including custom layers
+and building blocks for deep learning models, specifically for binary classification (AD vs NC).
+It includes modules for global filtering, multi-layer perceptrons (MLPs), patch embedding, and transformer blocks,
+as well as the overall GFNet model.
+
+The script also provides utility functions for initialising model weights and managing model configurations.
+
+@brief: Core modules and architecture definition for the GFNet model.
+@date: 16 Oct 2024
+@author: Sean Bourchier
+"""
+
 import math
 import torch
 import torch.fft

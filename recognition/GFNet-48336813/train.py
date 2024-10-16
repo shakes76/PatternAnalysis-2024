@@ -1,3 +1,15 @@
+"""
+This script is used to train the GFNet model for binary classification, specifically distinguishing between
+AD (Alzheimer's Disease) and NC (Normal Cognition). It supports training on various devices (CPU, CUDA, MPS),
+loads training and validation datasets, configures the model architecture, optimizer, and learning rate scheduler,
+and saves checkpoints during the training process. The script also evaluates the model after each epoch 
+and tracks the training progress using accuracy and loss metrics.
+
+@brief: Training script for GFNet model with binary classification (AD vs NC).
+@date: 16 Oct 2024
+@author: Sean Bourchier
+"""
+
 import json
 import time
 import datetime
@@ -94,7 +106,7 @@ def evaluate(data_loader, model, device):
     accuracy = total_correct / total_samples * 100
 
     print(f'Test - Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
-    return {'loss': avg_loss, 'acc1': accuracy}
+    return {'loss': avg_loss, 'accuracy': accuracy}
 
 
 def setup_device():
@@ -210,16 +222,16 @@ def main():
 
         # Evaluate model
         test_stats = evaluate(data_loader_val, model, device)
-        test_acc_list.append(test_stats['acc1'])
+        test_acc_list.append(test_stats['accuracy'])
         test_loss_list.append(test_stats['loss'])
         epoch_list.append(epoch)
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
+        max_accuracy = max(max_accuracy, test_stats["accuracy"])
 
-        print(f"Accuracy of the network on the {len(data_loader_val.dataset)} test images: {test_stats['acc1']:.1f}%")
+        print(f"Accuracy of the network on the {len(data_loader_val.dataset)} test images: {test_stats['accuracy']:.1f}%")
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
         # Save the best model
-        if max_accuracy == test_stats["acc1"]:
+        if max_accuracy == test_stats["accuracy"]:
             save_checkpoint(epoch, model, optimizer, lr_scheduler, loss_scaler, args, output_dir, best=True)
         
         # Log and save results

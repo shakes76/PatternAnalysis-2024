@@ -1,3 +1,16 @@
+"""
+This script handles the creation and management of datasets for training, validation, and testing the GFNet model,
+specifically for binary classification tasks (AD vs NC). It defines a custom PyTorch dataset class for loading images
+from the ADNI dataset and applies necessary transformations such as resizing, normalization, and data augmentation.
+
+The script includes functions to build datasets for different phases (train, val, test) and compute statistics like 
+mean and standard deviation, which are crucial for preprocessing.
+
+@brief: Dataset management and preprocessing for the GFNet model.
+@date: 16 Oct 2024
+@author: Sean Bourchier
+"""
+
 import os
 import argparse
 from PIL import Image

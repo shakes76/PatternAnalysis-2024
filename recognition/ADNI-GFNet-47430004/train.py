@@ -210,10 +210,13 @@ def train_one_epoch(model: torch.nn.Module, criterion,
 
         optimizer.zero_grad()
 
-        # this attribute is added by timm on one optimizer (adahessian)
-        is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-        loss_scaler(loss, optimizer, clip_grad=max_norm,
-                        parameters=model.parameters(), create_graph=is_second_order)
+        # this attribute is added by timm on one optimizer (adahessian) - use Adam
+        # is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
+        # loss_scaler(loss, optimizer, clip_grad=max_norm,
+        #                 parameters=model.parameters(), create_graph=is_second_order)
+
+        loss.backward()
+        optimizer.step()
 
         if device == 'cuda':
             torch.cuda.synchronize()
@@ -236,7 +239,7 @@ def evaluate(data_loader, model, device):
     # switch to evaluation mode
     model.eval()
 
-    for images, target in metric_logger.log_every(data_loader, 200, header):
+    for images, target in metric_logger.log_every(data_loader, 100, header):
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
 
@@ -244,7 +247,7 @@ def evaluate(data_loader, model, device):
         output = model(images)
         loss = criterion(output, target)
 
-        acc1, _ = accuracy(output, target, topk=(1, 2))
+        acc1 = accuracy(output, target, topk=(1,))[0]
 
         batch_size = images.shape[0]
         metric_logger.update(loss=loss.item())

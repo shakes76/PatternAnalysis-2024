@@ -6,7 +6,7 @@ from dataset import APP_MATCHER
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
 
-def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_interval, dry_run):
+def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_interval, dry_run = False):
     model.train()
     
     criterion = model.loss_criterion
@@ -18,9 +18,9 @@ def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_int
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
+        print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
+        print(f"Loss: {loss.item()}")
         if batch_idx % log_interval == 0:
-            print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
-            print(f"Loss: {loss.item()}")
             if dry_run:
                 break
 
@@ -48,11 +48,11 @@ def main():
     batch_size = 16
     shuffle = True
     gamma = 0.7
-    epochs = 10
-    learning_rate = 1.0
+    epochs = 20
+    learning_rate = 0.1
     save_model = False
-    log_interval = 10
-    dry_run = True
+    log_interval = 2
+    dry_run = False
     
 
     torch.manual_seed(torch_seed)
@@ -69,7 +69,7 @@ def main():
     # Create the model
     model = SiameseNetwork().to(device)
     # Define which optimizer to use
-    optimizer = torch.optim.Adadelta(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     # Create scheduler
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=gamma)
     

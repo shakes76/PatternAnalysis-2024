@@ -57,6 +57,7 @@ def test(model: SiameseNetwork, device, test_loader, threshold = 0.5, verbose = 
 
     if verbose:
         print(f'Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset):.2f}%)')
+        print(f"Predictions: {all_preds}")
         print(f'Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}\n')
 
 

@@ -46,9 +46,9 @@ Total samples: 17200
 
 
 ## Training and Validation
-I initially trained the GFNet model using the [pre-existing GFNet classes](https://github.com/raoyongming/GFNet) on the preprocessed ADNI images, but I quickly realized that the performance was suboptimal due to the relatively small data size to a Transformer model as reflected in Figure 1 and 2. The test accuracy was only 67% and the model struggled to generalize effectively. To improve the results, I then applied transfer learning by loading a pretrained GFNet and fine-tuned it on my dataset. This approach yielded an improvement in test accuracy, reaching almost 77%. However, it also resulted in overfitting. I experimented two pretrained model (GFNet_H_Ti, GFNet_H_B) with different hyperparameters. The generalization performance reached the best when I set dropout rate set to 0.5, used CosineAnnealingLR scheduler with 5e-6 learning rate, set weight_decay to 1e-8, applied early stopping and more.  
+I initially trained the GFNet model using the [pre-existing GFNet classes](https://github.com/raoyongming/GFNet) on the preprocessed ADNI images, but I quickly realized that the performance was suboptimal due to the relatively small data size to a Transformer model. The model overfitted with training accuracy around 100% but only 70% for validation accuracy.  The test accuracy was only 67% and the model struggled to generalize effectively. I adjusted hyperparameters to deal with overfitting like adding dropout, weight decay and changing the learning rates. Figure 1 and 2 show the result after addressing overfitting.
 
-GFNet_H_B is a more complex model that uses `GFNetPyramid` class with more parameters than GFNet_H_TI and others that uses `GFNet` class. With the use of AdamW optimizer, CosineAnnealingLR scheduler and regularization techniques like weight decay and dropout, better generalization is resulted. The gap between training and validation accuracy is smaller. Overfitting can further be addressed. 
+To improve the results, I then applied transfer learning by loading a pretrained GFNet and fine-tuned it on my dataset. I trained the GFNet_H_Ti and GFNet_H_B model with the ADNI dataset and adjusted several hyperparameters. This approach yielded an improvement in test accuracy, reaching almost 77%. However, it also resulted in overfitting. The generalization performance reached the best when I set dropout rate set to 0.7, used CosineAnnealingLR scheduler with 5e-6 learning rate, set weight_decay to 1e-2, applied early stopping and more. GFNet_H_B is a more complex model that uses `GFNetPyramid` class with more parameters than GFNet_H_TI and others that uses `GFNet` class. With the use of AdamW optimizer, CosineAnnealingLR scheduler and regularization techniques like weight decay and dropout, better generalization is resulted. The gap between training and validation accuracy is smaller. 
 
   Train GFNet with pre-defined classes:
 <div style="display: flex; justify-content: center; gap: 10px;">
@@ -123,14 +123,32 @@ The following packages are needed to be installed with specified versions for re
 
 ## How it works
 
-### Download Model
-Download the pre-trained [GFNet_H_TI](https://drive.google.com/file/d/1Nrq5sfHD9RklCMl6WkcVrAWI5vSVzwSm/view?usp=sharing) and [GFNet_H_B](https://drive.google.com/file/d/1F900_-yPH7GFYfTt60xn4tu5a926DYL0/view?usp=sharing) and place them in the `ADNI_s4763354/` directory.
+If you would like to work with transfer learning and fine-tune pretrained model, download the pre-trained [GFNet_H_TI](https://drive.google.com/file/d/1Nrq5sfHD9RklCMl6WkcVrAWI5vSVzwSm/view?usp=sharing) and [GFNet_H_B](https://drive.google.com/file/d/1F900_-yPH7GFYfTt60xn4tu5a926DYL0/view?usp=sharing) and place them in the `ADNI_s4763354/` directory.
 
 Steps of running each files: python ....py
 
  **Reproducibility**:
    - Include all scripts and configuration files necessary to reproduce the results.
-   - Set random seeds for model initialization and data splitting.
+   - Set r andom seeds for model initialization and data splitting.
+
+
+Create a Slurm File for running the files: 
+```
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --gres=gpu:a100
+#SBATCH --job-name=gfnet
+#SBATCH -o output.out
+#SBATCH --time=0-10:00:00
+#SBATCH --partition=comp3710 
+#SBATCH --account=comp3710 
+conda activate torch
+python train.py  #Replace with predict.py for testing
+```
+
+
 
 
 

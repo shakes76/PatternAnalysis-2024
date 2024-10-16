@@ -147,7 +147,7 @@ class VQVAE(nn.Module):
 
         
     def forward(self, x):
-        print(x.shape, "og")
+        # print(x.shape, "og")
         encoded_output = self.encoder(x)
         # print(encoded_output.shape, "encode")
         encoded_output = self.pre_quant_conv(encoded_output)
@@ -175,7 +175,7 @@ train_losses = []
 best_epoch = 0
 
 def train_vqvae():
-    num_epochs = 8
+    num_epochs = 324
     opt = Adam(model.parameters(), lr=1E-3)
     criterion = torch.nn.MSELoss()
     
@@ -227,7 +227,7 @@ def train_vqvae():
     plt.figure(figsize=(10, 5))
     plt.plot(range(1, num_epochs + 1), ssim_scores, label='SSIM Scores')
     plt.xlabel('Epoch')
-    plt.ylabel('Loss')
+    plt.ylabel('SSIM Score')
     plt.title('SSIM Scores over Epochs')
     plt.legend()
     plt.grid()
@@ -265,6 +265,7 @@ def validate(epoch):
 def test():
     print("Testing")
     model.load_state_dict(torch.load(f'models/checkpoint_epoch{best_epoch}_vqvae.pt'))
+    torch.save(model.state_dict(), f'final_vqvae.pt')
     model.eval()
     total_ssim = 0
     
@@ -281,6 +282,8 @@ def test():
     
 
 def reconstruct_images():
+    print("Generating")
+    model.load_state_dict(torch.load(f'final_vqvae.pt'))
     model.eval()
     with torch.no_grad():        
         for im in test_loader:
@@ -305,8 +308,10 @@ def reconstruct_images():
     print('Done Reconstruction ...')
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":   
+    start = time.time() 
     train_vqvae()
-    reconstruct_images()
+    print(f"Took {(time.time() - start) / 60} minutes to train")
     test_ssim = test()
     print(f"Test SSIM achieved as {test_ssim}")
+    reconstruct_images()

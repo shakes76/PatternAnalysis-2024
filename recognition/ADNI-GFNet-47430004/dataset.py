@@ -53,7 +53,7 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         # data_dir = "/home/groups/comp3710/ADNI/AD_NC"
         # Local
         data_dir = "../../resources/AD_NC"
-    transform = tf.Compose([
+    train_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
         tf.CenterCrop(crop_size),
         tf.Resize((image_size, image_size)),
@@ -64,10 +64,19 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         tf.RandomHorizontalFlip(),
         tf.RandomVerticalFlip()
     ])
+    test_transform = tf.Compose([
+        tf.Grayscale(num_output_channels=1),
+        tf.CenterCrop(crop_size),
+        tf.Resize((image_size, image_size)),
+        tf.ToTensor(),
+        # Hardcoded to value found below
+        tf.Normalize(mean=[0.1415],
+                     std=[0.2385]),
+    ])
     
     # Create datasets
-    train_dataset = ADNIDataset(root_dir=data_dir, transform=transform, train=True)
-    test_dataset = ADNIDataset(root_dir=data_dir, transform=transform, train=False)
+    train_dataset = ADNIDataset(root_dir=data_dir, transform=train_transform, train=True)
+    test_dataset = ADNIDataset(root_dir=data_dir, transform=test_transform, train=False)
     
     # Create dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)

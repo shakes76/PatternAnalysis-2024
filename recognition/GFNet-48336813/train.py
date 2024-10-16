@@ -1,5 +1,3 @@
-import sys
-import math
 import json
 import time
 import datetime
@@ -10,11 +8,9 @@ import torch
 import torch.nn as nn
 from timm.scheduler import create_scheduler
 from timm.optim import create_optimizer
-from timm.utils import NativeScaler, accuracy
-from typing import Iterable
+from timm.utils import NativeScaler
 from pathlib import Path
 
-import utils
 from utils import get_args_parser, save_plots
 from dataset import build_dataset
 from modules import GFNet
@@ -24,7 +20,15 @@ def train_one_epoch(model, criterion, data_loader, optimizer, device, epoch, los
     Train the model for one epoch.
 
     Args:
-        ... (same as before)
+        model (torch.nn.Module): The model to train.
+        criterion (torch.nn.CrossEntropyLoss): Loss function.
+        data_loader (Iterable): Training data loader.
+        optimizer (torch.optim.Optimizer): Optimizer for model training.
+        device (torch.device): Device to run training on (CPU, GPU).
+        epoch (int): Current training epoch.
+        loss_scaler: Loss scaler for mixed precision training.
+        max_norm (float): Gradient clipping max norm.
+        set_training_mode (bool): Whether to set model to training mode.
 
     Returns:
         dict: Average loss and learning rate for the epoch.
@@ -61,7 +65,9 @@ def evaluate(data_loader, model, device):
     Evaluate the model on the validation dataset.
 
     Args:
-        ... (same as before)
+        data_loader (Iterable): Validation data loader.
+        model (torch.nn.Module): The model to evaluate.
+        device (torch.device): Device to run evaluation on (CPU, GPU).
 
     Returns:
         dict: Average loss and accuracy.
@@ -88,113 +94,7 @@ def evaluate(data_loader, model, device):
     accuracy = total_correct / total_samples * 100
 
     print(f'Test - Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
-    return {'loss': avg_loss, 'accuracy': accuracy}
-
-# def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.CrossEntropyLoss,
-#                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
-#                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
-#                     set_training_mode=True):
-#     """
-#     Train the model for one epoch.
-
-#     Args:
-#         model (torch.nn.Module): The model to train.
-#         criterion (torch.nn.CrossEntropyLoss): Loss function.
-#         data_loader (Iterable): Training data loader.
-#         optimizer (torch.optim.Optimizer): Optimizer for model training.
-#         device (torch.device): Device to run training on (CPU, GPU).
-#         epoch (int): Current training epoch.
-#         loss_scaler: Loss scaler for mixed precision training.
-#         max_norm (float): Gradient clipping max norm.
-#         set_training_mode (bool): Whether to set model to training mode.
-
-#     Returns:
-#         dict: Average metrics for the training epoch.
-#     """
-#     model.train(set_training_mode)
-#     metric_logger = utils.MetricLogger(delimiter="  ")
-#     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
-#     header = f'Epoch: [{epoch}]'
-#     print_freq = 10
-
-#     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-#         samples = samples.to(device, non_blocking=True)
-#         targets = targets.to(device, non_blocking=True)
-
-#         # Forward pass with optional mixed precision
-#         if device == "cuda":
-#             with torch.autocast(device_type="cuda"):
-#                 outputs = model(samples)
-#                 loss = criterion(outputs, targets)
-#         else:
-#             outputs = model(samples)
-#             loss = criterion(outputs, targets)
-
-#         loss_value = loss.item()
-
-#         if not math.isfinite(loss_value):
-#             print(f"Loss is {loss_value}, stopping training")
-#             sys.exit(1)
-
-#         optimizer.zero_grad()
-#         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-#         loss_scaler(loss, optimizer, clip_grad=max_norm,
-#                     parameters=model.parameters(), create_graph=is_second_order)
-        
-#         if device.type == 'cuda':
-#             torch.cuda.synchronize()
-#         elif device.type == 'mps':
-#             torch.mps.synchronize()
-
-#         metric_logger.update(loss=loss_value)
-#         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
-    
-#     print("Averaged stats:", metric_logger)
-#     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-
-
-# @torch.no_grad()
-# def evaluate(data_loader, model, device):
-#     """
-#     Evaluate the model on the validation dataset.
-
-#     Args:
-#         data_loader (Iterable): Validation data loader.
-#         model (torch.nn.Module): The model to evaluate.
-#         device (torch.device): Device to run evaluation on (CPU, GPU).
-
-#     Returns:
-#         dict: Average evaluation metrics including loss and accuracy.
-#     """
-#     criterion = torch.nn.CrossEntropyLoss()
-#     metric_logger = utils.MetricLogger(delimiter="  ")
-#     header = 'Test:'
-#     model.eval()
-
-#     for images, target in metric_logger.log_every(data_loader, 10, header):
-#         images = images.to(device, non_blocking=True)
-#         target = target.to(device, non_blocking=True)
-
-#         # Forward pass with optional mixed precision
-#         if device == "cuda":
-#             with torch.autocast(device_type="cuda"):
-#                 output = model(images)
-#                 loss = criterion(output, target)
-#         else:
-#             output = model(images)
-#             loss = criterion(output, target)
-
-#         # Compute accuracy
-#         acc1 = accuracy(output, target, topk=(1,))[0]
-
-#         batch_size = images.shape[0]
-#         metric_logger.update(loss=loss.item())
-#         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-    
-#     print('* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}'
-#           .format(top1=metric_logger.acc1, losses=metric_logger.loss))
-
-#     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    return {'loss': avg_loss, 'acc1': accuracy}
 
 
 def setup_device():
@@ -271,6 +171,7 @@ def main():
     """
     Main function to run training and evaluation.
     """
+    current_time = now.now().strftime('%Y-%m-%d %H:%M:%S')
     parser = argparse.ArgumentParser('GFNet training and validation script', parents=[get_args_parser()])
     args = parser.parse_args()
     
@@ -309,21 +210,21 @@ def main():
 
         # Evaluate model
         test_stats = evaluate(data_loader_val, model, device)
-        test_acc_list.append(test_stats['accuracy'])
+        test_acc_list.append(test_stats['acc1'])
         test_loss_list.append(test_stats['loss'])
         epoch_list.append(epoch)
-        max_accuracy = max(max_accuracy, test_stats["accuracy"])
+        max_accuracy = max(max_accuracy, test_stats["acc1"])
 
-        print(f"Accuracy of the network on the {len(data_loader_val.dataset)} test images: {test_stats['accuracy']:.1f}%")
+        print(f"Accuracy of the network on the {len(data_loader_val.dataset)} test images: {test_stats['acc1']:.1f}%")
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
         # Save the best model
-        if max_accuracy == test_stats["accuracy"]:
+        if max_accuracy == test_stats["acc1"]:
             save_checkpoint(epoch, model, optimizer, lr_scheduler, loss_scaler, args, output_dir, best=True)
         
         # Log and save results
-        log_training_stats(epoch, train_stats, test_stats, args, output_dir)
-        save_plots(args.arch, epoch_list, test_acc_list, test_loss_list, now.now().strftime('%Y-%m-%d %H:%M:%S'))
+        log_training_stats(epoch, train_stats, test_stats, args, output_dir, current_time)
+        save_plots(args.arch, epoch_list, test_acc_list, test_loss_list, current_time)
         print('Single epoch time: {}'.format(str(datetime.timedelta(seconds=int(time.time() - start_time_epoch)))))
     
     print('Training time: {}'.format(str(datetime.timedelta(seconds=int(time.time() - start_time)))))
@@ -353,7 +254,7 @@ def create_model(args):
     else:
         raise NotImplementedError(f"Model architecture {args.arch} not supported.")
 
-def log_training_stats(epoch, train_stats, test_stats, args, output_dir):
+def log_training_stats(epoch, train_stats, test_stats, args, output_dir, time):
     """
     Log training statistics to a file.
 
@@ -365,6 +266,8 @@ def log_training_stats(epoch, train_stats, test_stats, args, output_dir):
         output_dir (Path): Directory to save logs.
     """
     log_stats = {
+        'time': time,
+        'arch': args.arch,
         'epoch': epoch,
         **{f'train_{k}': v for k, v in train_stats.items()},
         **{f'test_{k}': v for k, v in test_stats.items()},

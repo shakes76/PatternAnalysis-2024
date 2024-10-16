@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from modules import *
 from dataset import *
+import torch.optim.lr_scheduler as lr_scheduler
 import matplotlib.animation as animation
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # List to store images for multiple points in each epoch
@@ -136,6 +137,31 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
     criterion = nn.MSELoss()
     epoch_losses = []  # List to store loss for each epoch
 
+    # Calculate an abstract milestone as half the total epochs
+    milestone = epochs // 3
+
+    # Define OneCycleLR for warm-up and initial phase
+    sched_one_cycle = lr_scheduler.OneCycleLR(
+        optimizer, max_lr=0.01, total_steps=epochs * len(dataloader),
+        anneal_strategy='linear', div_factor=10, final_div_factor=1e3
+    )
+
+    # Define CyclicLR with a reduced range
+    sched_cyclic = lr_scheduler.CyclicLR(
+        optimizer, base_lr=0.001, max_lr=0.01, step_size_up=30, step_size_down=30, mode="triangular"
+    )
+
+    # Define CosineAnnealingLR for smooth decay toward the end
+    sched_cosine = lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=epochs - milestone, eta_min=0.0001
+    )
+
+    # Use SequentialLR with adjusted milestones
+    scheduler = lr_scheduler.SequentialLR(
+        optimizer, schedulers=[sched_one_cycle, sched_cyclic, sched_cosine],
+        milestones=[milestone, int(epochs * 0.8)]
+    )
+
     for epoch in range(epochs):
         total_loss = 0  # Reset total loss for the current epoch
         
@@ -157,10 +183,15 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
             optimizer.step()
             total_loss += loss.item()  # Accumulate loss
 
+            # Step through scheduler for each batch
+            scheduler.step()
+
         # Calculate average loss for the epoch
         avg_loss = total_loss / len(dataloader)
         epoch_losses.append(avg_loss)  # Store the average loss
-        print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {avg_loss:.4f}")
+        # Retrieve the current learning rate from the optimizer
+        current_lr = optimizer.param_groups[0]['lr']
+        print(f"Epoch {epoch + 1}/{epochs}, Learning Rate: {current_lr:.6f}, Diffusion Model Loss: {avg_loss:.4f}")
 
         # Visualize final output images if desired
         visualize_images_final(output_images)
@@ -186,7 +217,6 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=10):
     ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
     ani.save('training_progress_encoder.gif', writer='imagemagick', fps=10)
     plt.close(fig)
-
 
 
 # Make sure this runs only when executed directly

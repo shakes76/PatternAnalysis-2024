@@ -20,7 +20,7 @@ BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
-LOSS_IDX = 3
+LOSS_IDX = 4
 
 class BaseDice(nn.Module):
     def __init__(self, epsilon = 1e-7):
@@ -125,6 +125,31 @@ class AlternativeLoss(BaseDice):
 
         overall_loss = 1 - (1 / num_masks) * torch.sum(d_coefs)
         return overall_loss, d_coefs, None
+    
+class PaperLossPlus(BaseDice):
+    def __init__(self, epsilon=1e-7):
+        super().__init__(epsilon)
+
+    def __str__(self):
+        return 'PaperLoss'
+
+    def forward(self, y_true, y_pred):
+
+        num_masks = y_true.size(-1)
+        
+        bce = nn.BCELoss()
+
+        d_coefs = torch.zeros(num_masks, device=y_true.device)
+        for i in range(num_masks):
+            ground_truth_seg = y_true[:, :, :, :, i]
+            pred_seg = y_pred[:, :, :, :, i]
+
+            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
+            d_coefs[i] = d_coef
+
+        overall_loss = (- 1 / num_masks) * torch.sum(d_coefs)
+        plus = overall_loss + bce(y_true, y_pred)
+        return overall_loss, d_coefs, plus
 
 def train(model, train_set, loss, num_epochs=NUM_EPOCHS, device="cuda"):
 
@@ -157,7 +182,7 @@ def train(model, train_set, loss, num_epochs=NUM_EPOCHS, device="cuda"):
             else:
                 segment_coefs += d_coefs
 
-            if weighted == None:
+            if weighted == None:  
                 loss.backward()
             else:
                 weighted.backward()
@@ -188,7 +213,7 @@ model = ImprovedUnet()
 
 train_set = Prostate3dDataset(X_train, y_train)
 
-loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss()}
+loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss(), 4 : PaperLossPlus()}
 
 loss = loss_map.get(LOSS_IDX)
 

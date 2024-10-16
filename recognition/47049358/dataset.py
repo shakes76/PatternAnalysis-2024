@@ -6,6 +6,11 @@ from tqdm import tqdm
 import pickle
 import numpy as np
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
+import torchvision.transforms.functional as F
+import random
+import matplotlib.pyplot as plt
+import torch
 
 IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
 LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
@@ -69,7 +74,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
     return (images, affines) if getAffines else images
 
-def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
+def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32, early_stop=False):
     '''
     Load medical image data from names, cases list provided into a list for each.
     This function pre-allocates 5D arrays for conv3d to avoid excessive memory usage.
@@ -123,24 +128,11 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
         if i > 20 and early_stop:
             break
 
-    return (images, affines) if getAffines else images
+    return images
 
 def load_images_and_labels(image_file_name, label_file_name, early_stop = False):
-    images = load_data_3D(imageNames=image_file_name, early_stop=early_stop)
+    images = load_data_3D(imageNames=image_file_name, normImage = True, early_stop=early_stop)
     labels = load_data_3D(imageNames=label_file_name, categorical=True, dtype=np.uint8, early_stop=early_stop)
-    return images, labels
-
-def save_data(images, labels, image_save_path, label_save_path):
-    with open(image_save_path, 'wb') as f:
-        pickle.dump(images, f)
-    with open(label_save_path, 'wb') as f:
-        pickle.dump(labels, f)
-
-def load_saved_data(image_save_path, label_save_path):
-    with open(image_save_path, 'rb') as f:
-        images = pickle.load(f)
-    with open(label_save_path, 'rb') as f:
-        labels = pickle.load(f)
     return images, labels
 
 """
@@ -180,8 +172,59 @@ X_test = [os.path.join(IMAGE_FILE_NAME, image) for image in X_test]
 y_train = [os.path.join(LABEL_FILE_NAME, label) for label in y_train]
 y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 
-X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=False)
-X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=False)
+X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
+X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
+
+X_train = torch.Tensor(X_train)
+y_train = torch.Tensor(y_train)
+
+def random_rotation(image: torch.Tensor):
+    angle = random.uniform(0, 180)
+    output = F.rotate(image, angle = angle)
+    return output, angle
+
+def gamma_correction(image: torch.Tensor):
+    gamma = random.uniform(0.25, 2)
+    output = F.adjust_gamma(image, gamma)
+    output = torch.nan_to_num(output, nan = 0)
+    return output
+
+def apply_transformation(image: torch.Tensor, angle = -1, is_mask = False, hflip = False, vflip = False):
+
+    if is_mask:
+
+        mask = image if angle == -1 else F.rotate(image, angle)
+        mask = F.hflip(mask)
+        return mask
+    
+    if random.randint(0, 1) == 1:
+        image, angle = random_rotation(image)
+    if random.randint(0, 1) == 1:
+        image = gamma_correction(image)
+    if random.randint(0, 1) == 1:
+        image = F.hflip(image)
+        hflip = True
+    if random.randint(0, 1) == 1:
+        image = F.vflip(image)
+        vflip = True
+    return image, angle, hflip, vflip
+
+for i in range(X_train.size(0)):
+    augment = random.randint(0, 1)
+    x = X_train[i, :, :, :]
+    y = y_train[i, :, :, :, :]
+    if augment == 1:
+        for j in range(x.size(-1)):
+            slice = x[ : , : , j]
+            slice = slice[np.newaxis, : , :]
+            transformed_img, angle, hflip, vflip = apply_transformation(slice)
+            X_train[i, : , : , j] = transformed_img
+            for k in range(y.size(-1)):
+                mask = y[ : , : , j, k]
+                mask = mask[np.newaxis, :, :]
+                transformed_mask = apply_transformation(mask, angle = angle, hflip = hflip, vflip = vflip, is_mask = True)
+                y_train[i, : , : , j, k] = transformed_mask
 
 X_train = X_train[: ,np.newaxis, :, :, :]
 X_test = X_test[:, np.newaxis, :, :, :]
+

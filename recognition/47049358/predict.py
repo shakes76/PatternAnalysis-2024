@@ -106,6 +106,14 @@ if __name__ == "__main__":
     # perform predictions
     dice_scores, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader, criterion = criterion,
                                                device = device)
+    
+    dice_scores = dice_scores.cpu().numpy()
+    s0 = s1.cpu().numpy()
+    s1 = s1.cpu().numpy()
+    s2 = s2.cpu().numpy()
+    s3 = s3.cpu().numpy()
+    s4 = s4.cpu().numpy()
+    s5 = s5.cpu().numpy()
 
     average_dice = np.mean(dice_scores)
     print(f"Average Dice Coefficient: {average_dice:.4f}")

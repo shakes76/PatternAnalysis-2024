@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 
-
-
 class UNet3D(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UNet3D, self).__init__()
@@ -21,7 +19,8 @@ class UNet3D(nn.Module):
         self.dec3 = self.expanding_block(512, 256)
         self.dec2 = self.expanding_block(256, 128)
         self.dec1 = self.expanding_block(128, 64)
-# Final output layer
+
+        # Final output layer
         self.final_conv = nn.Conv3d(64, out_channels, kernel_size=1)
 
     def contracting_block(self, in_channels, out_channels):

@@ -11,6 +11,7 @@ import torch
 import time
 import json
 import datetime
+import argparse
 
 import matplotlib.pyplot as plt
 import torch.optim as optim
@@ -272,6 +273,8 @@ def evaluate(data_loader, model, device):
 
 if __name__ == '__main__':
     print("Training GFNet for ADNI brain data\n")
+    parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
+    args = parser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     
@@ -292,7 +295,7 @@ if __name__ == '__main__':
 
     print(f"Start training for {epochs} epochs")
     print(f"Hyperparameters:")
-    print(f"lr = {lr}")
+    print(f"lr = {args.lr}")
     start_time = time.time()
     max_accuracy = 0.0
     for epoch in range(start_epoch, epochs):

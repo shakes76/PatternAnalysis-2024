@@ -139,5 +139,4 @@ if __name__ == '__main__':
     if not os.path.exists('test/model/fig'):
         os.makedirs('test/model/fig')
     plt.savefig('test/model/fig')
-    print(savedfig)
     plt.show()

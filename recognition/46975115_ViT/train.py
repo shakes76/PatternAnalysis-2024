@@ -87,7 +87,7 @@ def main():
     scheduler = ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.5)
 
     best_val_acc = 0
-    early_stopping_patience = 3
+    early_stopping_patience = 5
     patience_counter = 0
 
     epochs = params['num_epochs']

@@ -6,26 +6,11 @@ https://github.com/shakes76/GFNet
 import torch
 from modules import GFNet
 from dataset import ADNIDataset, get_dataloaders
-import argparse
-import datetime
-import numpy as np
 import time
 import torch
-import torch.nn as nn
 import torch.backends.cudnn as cudnn
-import json
 
-from pathlib import Path
-
-from timm.data import Mixup
-from timm.models import create_model
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-from timm.scheduler import create_scheduler
-from timm.optim import create_optimizer
-from timm.utils import NativeScaler, get_state_dict, ModelEma
-
-import utils
-from functools import partial
+import matplotlib.pyplot as plt
 
 class AverageMeter(object):
     def __init__(self, name, fmt=':f'):
@@ -81,21 +66,22 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-def validate(val_loader, model, criterion):
+def validate(test_loader, model, criterion):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     model.eval()
+    acc1list = []
 
     progress = ProgressMeter(
-        len(val_loader),
+        len(test_loader),
         [batch_time, losses, top1],
         prefix='Test: ')
 
 
     with torch.no_grad():
         end = time.time()
-        for i, (images, target) in enumerate(val_loader):
+        for i, (images, target) in enumerate(test_loader):
             images = images.cuda()
             target = target.cuda()
 
@@ -111,13 +97,21 @@ def validate(val_loader, model, criterion):
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
+            acc1list.append(acc1.cpu())
 
             if i % 100 == 0:
                 progress.display(i)
 
         print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
+        plt.figure(1)
+        plt.title('Result')
+        plt.xlabel('Batch Number')
+        plt.ylabel('Acc @ 1')
+        plt.plot([x for x in range(len(acc1list))], acc1list)
+        plt.savefig('test/model/fig')
+        plt.show()
 
-    return top1.avg
+    return acc1list
 
 if __name__ == '__main__':
     print("Main of Predict")

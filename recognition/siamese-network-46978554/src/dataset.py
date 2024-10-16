@@ -1,8 +1,8 @@
 """
-Data loader for loading and preprocessing data
+Data loader for loading and preprocessing data.
 
 Before using the package code, a train test split should be created with
-`create_train_test_split(DATA_DIR)`.
+`create_train_test_split(DATA_DIR)` to create the metadata CSVs for each split.
 """
 
 import math
@@ -40,8 +40,8 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 
         stratify=metadata["target"],
     )
 
+    # Further split into test and validation splits
     test_val_metadata = test_val_metadata.reset_index(drop=True)
-
     val_metadata, test_metadata = train_test_split(
         test_val_metadata,
         train_size=1 / 3,
@@ -50,10 +50,12 @@ def create_train_test_split(data_dir: Path, seed: int = 42, train_size: float = 
         stratify=test_val_metadata["target"],
     )
 
+    # Reset indices as they'll be scrambled after splitting
     train_metadata = train_metadata.reset_index(drop=True)
     test_metadata = test_metadata.reset_index(drop=True)
     val_metadata = val_metadata.reset_index(drop=True)
 
+    # Save splits to data directory
     train_metadata.to_csv(data_dir / "train-split-metadata.csv", index=False)
     test_metadata.to_csv(data_dir / "test-split-metadata.csv", index=False)
     val_metadata.to_csv(data_dir / "val-split-metadata.csv", index=False)
@@ -106,6 +108,7 @@ class MelanomaSkinCancerDataset(Dataset):
         Returns the (normalised) image and label at index idx in the metadata CSV. If a
         transform has been specified, it will be randomly applied to returned images.
         """
+        # Get label and image path from metadata
         label = self.metadata.iloc[idx]["target"]
         img_name = self.metadata.iloc[idx]["isic_id"] + ".jpg"
         img_path = self.data_dir / f"train-image/image/{img_name}"

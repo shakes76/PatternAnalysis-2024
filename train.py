@@ -480,3 +480,18 @@ def train_loop():
 
 if __name__ == "__main__":
     train_loop()
+
+
+"""
+#TODO:
+- Add header blocks (@author tag)
+- Add references in the ReadMe (Dice Loss?, 3DUnet paper?)
+- Add Comments throughout and deleted uneeded comments
+- Check if you need to use softmax in the model
+- Generate plots with TensorBoard for the ReadMe
+- ReadMe:
+    - File structure
+    - Example input/labels
+    - Explaining the usage
+    - Declare hyperparameters
+"""

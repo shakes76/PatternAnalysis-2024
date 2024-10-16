@@ -11,6 +11,7 @@ mkdir data models plots
 ```
 ### Downloading The Trained Model
 ```bash
+curl -L -o best.7z https://www.dropbox.com/scl/fi/5g2ixlbrulqa3b3lzbj5d/best.7z?rlkey=hpei7h85kdg30nirr9mcurous&st=9kk0t6k0&dl=0
 ```
 ### Moving files into correct directories.
 Extract the downloaded zip files into the following directories.

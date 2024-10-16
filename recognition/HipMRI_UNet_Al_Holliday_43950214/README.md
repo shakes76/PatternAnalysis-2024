@@ -13,7 +13,7 @@ This is an implementation of a 2D U-Net based on [1] that tries to produce segme
 
 ### Training and Results
 
-This model **in theory** should work, however there are one or two issues that prevent
+During training the following results were obtained:
 
 ## Author
 

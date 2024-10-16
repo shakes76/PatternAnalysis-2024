@@ -11,8 +11,6 @@ import torch
 import os
 import torchvision.transforms as transforms
 
-# TODO: may be treating 'seg_*' wrong; these may be the segment map LABELS as opposed to their own
-# image set
 class HipMRI2d(torch.utils.data.Dataset):
     def __init__(self, root, imgSet = "train", transform = None, applyTrans = False):
         self.root = root
@@ -43,8 +41,6 @@ class HipMRI2d(torch.utils.data.Dataset):
         with open(self.setFile) as f:
             for pic in f:
                 self.pics.append(pic.strip())
-        # TODO: change what trans represents. Something like:
-        # trans = torchvision.transforms.Compose([transforms.ToTensor(), transforms.Resize()])
         with open(self.segFile) as g:
             for seg in g:
                 self.segs.append(seg.strip())
@@ -77,9 +73,6 @@ class HipMRI2d(torch.utils.data.Dataset):
         imgTensor = torch.tensor(img)
         segTensor = torch.tensor(seg)
         if self.applyTrans:
-            # TODO: look up what this Nibabel affine object is and how to use it
-            # with PyTorch
-            #self.trans = niftiImg.affine
             imgTensor = self.trans(imgTensor)
             segTensor = self.trans(segTensor)
         return imgTensor, segTensor

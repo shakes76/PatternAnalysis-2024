@@ -65,12 +65,6 @@ print("Done")
 # save the weights
 torch.save(net.state_dict(), "./weights.pth")
 
-# test Cross Entropy Loss
-#imgBatch, segBatch = next(iter(trainLoader))
-#img = imgBatch[0].to(dev)
-#seg = segBatch[0].to(dev)
-
-#out = net(img)
 # one option is to upsize the output to the size of the original.
 # this probably won't work well as it's just blowing up a smaller image
 # and won't line up exactly with the target segment map.

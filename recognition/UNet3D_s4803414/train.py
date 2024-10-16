@@ -23,3 +23,28 @@ dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 model = UNet3D(in_channels=1, out_channels=6)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+# Training loop
+for epoch in range(EPOCHS):
+    model.train()  # Set the model to training mode
+    running_loss = 0.0
+
+    for images, masks in dataloader:
+        # Move to GPU if available
+        images = images.to('cuda') if torch.cuda.is_available() else images
+        masks = masks.to('cuda') if torch.cuda.is_available() else masks
+
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, masks.squeeze(1))  # Squeeze to match output shape
+
+        # Backward pass and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # Accumulate loss
+        running_loss += loss.item()
+
+        # Print loss for the epoch
+        print(f'Epoch [{epoch + 1}/{EPOCHS}], Loss: {running_loss / len(dataloader):.4f}')

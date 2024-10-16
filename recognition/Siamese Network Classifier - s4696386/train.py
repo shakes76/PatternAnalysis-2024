@@ -17,7 +17,7 @@ def train(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_int
     for batch_idx, (images_1, images_2, targets) in enumerate(train_loader):
         images_1, images_2, targets = images_1.to(device), images_2.to(device), targets.to(device)
         optimizer.zero_grad()
-        outputs = model(images_1, images_2).squeeze()
+        outputs: torch.Tensor = model(images_1, images_2).squeeze(1)
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
@@ -67,7 +67,7 @@ def test(model: SiameseNetwork, device, test_loader, epoch: int, threshold = 0.5
         print(f"Predicted {benign_count} benigns")
         print(f"Epoch: {epoch}\n")
     
-    save_model = benign_count > 0
+    save_model = accuracy > 0.7
 
     return save_model
 
@@ -105,7 +105,7 @@ def run_model(batch_size, epochs, learning_rate):
     # run epochs
     for epoch in range(1, epochs+1):
         train(model, device, train_loader, optimizer, epoch, log_interval, dry_run, verbose=False)
-        save_model = test(model, device, test_loader, epoch, verbose=True)
+        save_model = test(model, device, test_loader, epoch, verbose=False)
         scheduler.step()
 
     if save_model:
@@ -116,12 +116,9 @@ def run_model(batch_size, epochs, learning_rate):
         
 
 def main():
-    batch_sizes = [12]
-    epochs = [2]
-    learning_rates = [0.001]
-    # batch_sizes = [8, 16, 32, 64]
-    # epochs = [10, 20, 30]
-    # learning_rates = [0.0001, 0.001, 0.01, 0.1, 1]
+    batch_sizes = [8, 16, 32, 64]
+    epochs = [10, 20, 30]
+    learning_rates = [0.0001, 0.001, 0.01, 0.1, 1]
 
     for bs in batch_sizes:
         for e in epochs:

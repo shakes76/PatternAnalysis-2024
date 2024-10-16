@@ -48,3 +48,8 @@ for epoch in range(EPOCHS):
 
         # Print loss for the epoch
         print(f'Epoch [{epoch + 1}/{EPOCHS}], Loss: {running_loss / len(dataloader):.4f}')
+
+# Save the model
+os.makedirs(os.path.dirname(MODEL_SAVE_PATH), exist_ok=True)  # Create model directory if it doesn't exist
+torch.save(model.state_dict(), MODEL_SAVE_PATH)
+print(f'Model saved to {MODEL_SAVE_PATH}')

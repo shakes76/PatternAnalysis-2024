@@ -119,12 +119,15 @@ We can see that reasonable separation appears to have occured.
 The best results were achieved using the SVM classifier. Using this classifier the The ROC and AUC for the train, validation and test sets can be seen in Figures num num and num respectively.
 
 ![SVM train ROC](readme_assets/train(SVM)_roc.png)
+
 *Figure num: ROC for SVM on train set*
 
 ![SVM validation ROC](readme_assets/val(SVM)_roc.png)
+
 *Figure num: ROC for SVM on validation set*
 
 ![SVM test ROC](readme_assets/test(SVM)_roc.png)
+
 *Figure num: ROC for SVM on test set*
 
 We can see that the ROC was much better for the validation and test set than for the train set. This was possibly because the train ROC was calculated on the undersampled train set, therefore its distribution contain a higher proportion of the likely harder minority class compared to the validation and test sets. When not undersampling the classifier's training set an AUC of 1 was almost always reached on the training set but with bad performance on the others. We can also see that the test ROC was slightly better than the validation ROC, this may just be because there may have been some easier observations in the test set. The target goal of 0.8 AUC was achieved on both the validation and test set.

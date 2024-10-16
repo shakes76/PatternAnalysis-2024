@@ -51,7 +51,7 @@ Where possible, seeding has been used to ensure the reproducibility of results. 
 
 ## Model Usage
 
-1. Download the data from [here](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data), and unzip it into a directory called `data/` in the top level. This is a downsized version of the original dataset with images of size 256x256. A stratified (i.e. equal proportion of benign vs. malignant images) train/test/validation split should then be created from `train-metadat.csv`, using the `create_train_test_split()` function in `src/dataset.py` like so:
+1. Download the data from [here](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data), and unzip it into a directory called `data/` in the top level. This is a downsized version of the original dataset with images of size 256x256. A stratified (i.e. equal proportion of benign vs. malignant images) train/test/validation split should then be created from `train-metadata.csv`, using the `create_train_test_split()` function in `src/dataset.py` like so:
     ```python
     # DATA_DIR points to data/, see src/util.py
     create_train_test_split(DATA_DIR)
@@ -75,7 +75,7 @@ Some plotting functionality has also been provided in [src/util.py](src/util.py)
 
 The train/test/validation split used was 70/20/10 respectively, which corresponds to approximately 23,000 training samples, 6,600 test samples, and 3,300 validation samples.
 
-Below are the results from the models that performed the best. I found margins 0.3 and 0.5 to work the best through empirical testing using the validation set.
+Below are the results from the models that performed the best. These models were trained for around 120 epochs on Rangpur (with training sessions split over several job runs). From empirical testing using the validation set, I found margins 0.3 and 0.5 to produce the best classification performance.
 
 **Training and testing output**
 

@@ -28,11 +28,11 @@ from modules import GFNet
 from dataset import get_dataloaders
 
 # Parameters
-output_dir = 'test/model/run/'
+# args.output_dir = 'test/model/run/'
 
 # Hyperparameters
-epochs = 50
-start_epoch = 0
+# epochs = 50
+# start_epoch = 0
 # lr = 1e-3
 # min_lr = 1e-4
 # warmup_epoch = 5
@@ -41,25 +41,10 @@ start_epoch = 0
 project = "ADNI-GFNet"
 group = "GFNet",
 
-# To use create_scheduler without "args parser"
-# class defaultArgs(object):
-#     def __init__(self):
-#         self.sched = "cosine"
-#         self.lr_initial = lr
-#         self.epochs = epochs
-#         self.min_lr = min_lr
-#         # More info here for type of schedulers: https://timm.fast.ai/schedulers
-#         # "cosine" = SGDR
-#         # "step" = stepLR
-#         # "tanh" = TanhLR
-#         # "plateau" = plateau
-
-# config = defaultArgs()
-
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
-    parser.add_argument('--epochs', default=300, type=int)
+    parser.add_argument('--epochs', default=100, type=int)
 
     # Model parameters
     parser.add_argument('--arch', default='deit_small', type=str,
@@ -173,7 +158,7 @@ def get_args_parser():
                         choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
                         type=str, help='semantic granularity')
 
-    parser.add_argument('--output_dir', default='',
+    parser.add_argument('--output_dir', default='test/model/run/',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
@@ -278,8 +263,8 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     criterion = torch.nn.CrossEntropyLoss()
     train_loader, test_loader = get_dataloaders(None)
@@ -293,12 +278,12 @@ if __name__ == '__main__':
     loss_scaler = NativeScaler()
     lr_scheduler, _ = create_scheduler(args, optimizer)
 
-    print(f"Start training for {epochs} epochs")
+    print(f"Start training for {args.epochs} epochs")
     print(f"Hyperparameters:")
     print(f"lr = {args.lr}")
     start_time = time.time()
     max_accuracy = 0.0
-    for epoch in range(start_epoch, epochs):
+    for epoch in range(args.start_epoch, args.epochs):
         
         train_stats = train_one_epoch(
             model, criterion, train_loader,
@@ -308,7 +293,7 @@ if __name__ == '__main__':
         
         if (epoch + 1) % 20 == 0:
             file_name = 'checkpoint_epoch%d.pth' % epoch
-            checkpoint_path = os.path.join(output_dir, file_name)
+            checkpoint_path = os.path.join(args.output_dir, file_name)
             utils.save_on_master({
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
@@ -323,7 +308,7 @@ if __name__ == '__main__':
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
         if max_accuracy == test_stats["acc1"]:
-            checkpoint_path = os.path.join(output_dir, 'checkpoint_best.pth')
+            checkpoint_path = os.path.join(args.output_dir, 'checkpoint_best.pth')
             utils.save_on_master({
                     'model': model.state_dict(),
                     'optimizer': optimizer.state_dict(),
@@ -337,8 +322,8 @@ if __name__ == '__main__':
                      'epoch': epoch,
                      'n_parameters': n_parameters}
 
-        if output_dir and utils.is_main_process():
-            with open(output_dir + "log.txt", "a") as f:
+        if args.output_dir and utils.is_main_process():
+            with open(args.output_dir + "log.txt", "a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
     total_time = time.time() - start_time

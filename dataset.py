@@ -29,13 +29,17 @@ def get_dataloaders(batch_size):
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
     train_file_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+    test_file_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 
     train_files = sorted(glob.glob(f"{train_file_path}/**.nii.gz", recursive = True))
+    test_files = sorted(glob.glob(f"{test_file_path}/**.nii.gz", recursive = True))
 
     train_dataset = utils.load_data_2D(train_files[0:64])
+    test_dataset = utils.load_data_2D(test_files[0:64])
 
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    return train_dataloader
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+    return train_dataloader, test_dataloader
 
 def plot_from_dataloader(batch_size: int, dataloader):
     real_batch = next(iter(dataloader))
@@ -50,5 +54,5 @@ def plot_from_dataloader(batch_size: int, dataloader):
 
     plt.savefig("./Project/test1.png")
 
-train_dataloader = get_dataloaders(batch_size)
-plot_from_dataloader(batch_size, train_dataloader)
+train_dataloader, test_dataloader = get_dataloaders(batch_size)
+# plot_from_dataloader(batch_size, train_dataloader)

@@ -45,58 +45,92 @@ Total samples: 17200
 ```
 
 
-  Pretrain gfnet_h_ti model using Adam: 
+## Training and Validation
+I initially trained the GFNet model using the [pre-existing GFNet classes](https://github.com/raoyongming/GFNet) on the preprocessed ADNI images, but I quickly realized that the performance was suboptimal due to the relatively small data size to a Transformer model as reflected in Figure 1 and 2. The test accuracy was only 67% and the model struggled to generalize effectively. To improve the results, I then applied transfer learning by loading a pretrained GFNet and fine-tuned it on my dataset. This approach yielded an improvement in test accuracy, reaching almost 77%. However, it also resulted in overfitting. I experimented two pretrained model (GFNet_H_Ti, GFNet_H_B) with different hyperparameters. The generalization performance reached the best when I set dropout rate set to 0.5, used CosineAnnealingLR scheduler with 5e-6 learning rate, set weight_decay to 1e-8, applied early stopping and more.  
 
-  <img src="images/image.png" alt="description" width="300" height="200">
-  <img src="images/image-1.png" alt="description" width="300" height="200">
-   test_newmodules_h_ti.out
-   Early stopping triggered after 23 epochs
-   Final Train Loss: 0.0013, Train Acc: 99.99%
-   Final Val Loss: 0.3999, Val Acc: 92.29%
-   Test Accuracy: 72.19%
+GFNet_H_B is a more complex model that uses `GFNetPyramid` class with more parameters than GFNet_H_TI and others that uses `GFNet` class. With the use of AdamW optimizer, CosineAnnealingLR scheduler and regularization techniques like weight decay and dropout, better generalization is resulted. The gap between training and validation accuracy is smaller. Overfitting can further be addressed. 
+
+  Train GFNet with pre-defined classes:
+<div style="display: flex; justify-content: center; gap: 10px;">
+  <figure>
+    <img src="images/train_acc.png" alt="Training Accuracy Curve" width="400" height="200">
+    <figcaption>Figure 1: Training Accuracy Curve</figcaption>
+  </figure>
+
+  <figure>
+    <img src="images/train_loss.png" alt="Training Loss Curve" width="400" height="200">
+    <figcaption>Figure 2: Training Loss Curve</figcaption>
+  </figure>
+</div>
 
 
-   Pretrain gfnet_h_ti model using AdamW: 
+  Fine-tune pretrain gfnet_h_ti model: 
 
-   <img src="images/image-9.png" alt="description" width="300" height="200">
-   <img src="images/image-10.png" alt="description" width="300" height="200">
-   newmod_hti_adamw.out
-   Early stopping triggered after 39 epochs
-   Final Train Loss: 0.0001, Train Acc: 100.00%
-   Final Val Loss: 0.4848, Val Acc: 92.96%
-   Test Accuracy: 72.17%
+<div style="display: flex; justify-content: center; gap: 10px;">
+  <figure>
+    <img src="images/image.png" alt="Pretrain GFNet_H_Ti Model - Accuracy" width="400" height="200">
+    <figcaption>Figure 3: GFNet_H_Ti Model using Adam - Accuracy</figcaption>
+  </figure>
 
-   Pretrain gfnet_h_b model using Adam optimizer:
+  <figure>
+    <img src="images/image-1.png" alt="Pretrain GFNet_H_Ti Model - Loss" width="400" height="200">
+    <figcaption>Figure 4: GFNet_H_Ti Model using Adam - Loss</figcaption>
+  </figure>
+</div>
 
-   <img src="images/image-5.png" alt="gfnet_h_b model with AdamW" width="300" height="200">
-   <img src="images/image-6.png" alt="gfnet_h_b model with AdamW" width="300" height="200">
-   new_mod_hb.out
-   Early stopping triggered after 25 epochs
-   Final Train Loss: 0.0848, Train Acc: 96.63%
-   Final Val Loss: 0.2593, Val Acc: 93.91%
-   Test Accuracy: 73.49%
+ Fine-tune pretrain gfnet_h_b model: 
+<div style="display: flex; justify-content: center; gap: 10px;">
+  <figure>
+    <img src="images/image-8.png" alt="Pretrain GFNet_H_B Model - Accuracy" width="400" height="200">
+    <figcaption>Figure 5: GFNet_H_B Model with AdamW, CosineLR Scheduler - Accuracy</figcaption>
+  </figure>
 
-   Pretrain gfnet_h_b model using AdamW optimizer:
+  <figure>
+    <img src="images/image-7.png" alt="Pretrain GFNet_H_B Model - Loss" width="400" height="200">
+    <figcaption>Figure 6: GFNet_H_B Model with AdamW, Cosine LR Scheduler - Loss</figcaption>
+  </figure>
+</div>
 
-   <img src="images/image-2.png" alt="gfnet_h_b model with AdamW" width="300" height="200">
-   <img src="images/image-3.png" alt="gfnet_h_b model with AdamW" width="300" height="200">
 
-   newmod_hb_adamw.out
-   Early stopping triggered after 31 epochs
-   Final Train Loss: 0.0616, Train Acc: 97.91%
-   Final Val Loss: 0.2892, Val Acc: 93.45%
-   Test Accuracy: 73.73%
+## Result and Analysis
 
-   Pretrain gfnet_h_b model using AdamW optimizer and Cosine LR Scheduler:
+### Prediction
 
-   <img src="images/image-8.png" alt="gfnet_h_b model with AdamW" width="300" height="200">
-   <img src="images/image-7.png" alt="gfnet_h_b model with AdamW" width="300" height="200">
-   new_mod_hb_adamw_cosine.out:
-   Early stopping triggered after 22 epochs
-   Final Train Loss: 0.1063, Train Acc: 95.24%
-   Final Val Loss: 0.3107, Val Acc: 92.48%
-   Test Accuracy: 73.96%
+   Example input and prediction using gfnet_h_b model: 
 
+   <img src="images/example_classifications.png" alt="gfnet_h_b model with AdamW">
+
+   Confusion Matrix: 
+
+   <img src="images/confusion_matrix.png" alt="gfnet_h_b model with AdamW" width="500" height="400">
+
+Test accuracy: 
+
+## Dependencies
+The following packages are needed to be installed with specified versions for reproducibility:
+  ```
+  # Python >= 3.8
+  torch>=2.4.1 
+  torchvision>=0.19.1
+  numpy>=1.26.3
+  scikit-learn>=1.5.2
+  matplotlib>=3.9.2
+  tqdm>=4.66.5
+  pandas>=2.2.3
+  pillow>=10.2.0
+  seaborn>=0.13.2
+  ```
+
+## How it works
+
+### Download Model
+Download the pre-trained [GFNet_H_TI](https://drive.google.com/file/d/1Nrq5sfHD9RklCMl6WkcVrAWI5vSVzwSm/view?usp=sharing) and [GFNet_H_B](https://drive.google.com/file/d/1F900_-yPH7GFYfTt60xn4tu5a926DYL0/view?usp=sharing) and place them in the `ADNI_s4763354/` directory.
+
+Steps of running each files: python ....py
+
+ **Reproducibility**:
+   - Include all scripts and configuration files necessary to reproduce the results.
+   - Set random seeds for model initialization and data splitting.
 
 
 

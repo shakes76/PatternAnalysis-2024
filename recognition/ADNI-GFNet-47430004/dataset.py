@@ -61,8 +61,10 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         # Hardcoded to value found below
         tf.Normalize(mean=[0.1415],
                      std=[0.2385]),
+        # tf.Normalize(mean=[0.1156],
+        #              std=[0.2198],),
         tf.RandomHorizontalFlip(),
-        tf.RandomVerticalFlip()
+        tf.RandomVerticalFlip(),
     ])
     test_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
@@ -72,6 +74,8 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         # Hardcoded to value found below
         tf.Normalize(mean=[0.1415],
                      std=[0.2385]),
+        # tf.Normalize(mean=[0.1156],
+        #              std=[0.2198],),
     ])
     
     # Create datasets

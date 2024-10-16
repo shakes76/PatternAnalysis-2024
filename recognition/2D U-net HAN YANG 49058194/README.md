@@ -1,5 +1,8 @@
 # COMP3710-Report
 
+## Author
+Han Yang 49058194
+
 ## Introduction
 This project segments MRI images of the prostate using a 2D U-Net model with all labels having a minimum Dice similarity coefficient
 of 0.75 on the test set on the prostate label.

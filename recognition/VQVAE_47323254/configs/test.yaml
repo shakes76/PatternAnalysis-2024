@@ -1,0 +1,32 @@
+# Model
+model_parameters:
+  in_channels: 1 
+  hidden_channels: 128
+  res_channels: 32
+  nb_res_layers: 2
+  embed_dim: 64
+  nb_entries: 512
+  downscale_factor: 4
+
+pretrained_path: recognition/logs/train/no_augmentation/model.pth
+
+logs_root: recognition/logs/test
+log_dir_name: no_augmentation  # If empty, the current time will be used
+
+# Dataset 
+test_dataset_dir: recognition/HipMRI_study_keras_slices_data/keras_slices_test
+num_samples:  # If empty, all samples will be used
+
+# Augmentation
+test_transforms:
+  - name: CenterCrop
+    params: 
+      size: [256, 128]
+  # - name: Resize
+  #   params:
+  #     size: [256, 256]
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: [0.5]
+      std: [0.5]

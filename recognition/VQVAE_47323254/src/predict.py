@@ -1,5 +1,8 @@
+import argparse
 import logging
 import os
+import shutil
+import time
 
 import matplotlib.pyplot as plt
 import torch
@@ -10,52 +13,55 @@ from tqdm import tqdm
 
 from dataset import HipMRIDataset
 from modules import VQVAE
-from utils import calculate_ssim
+from utils import calculate_ssim, read_yaml_file, get_transforms, combine_images
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Test VQVAE model.')
+    parser.add_argument('--config', type=str, required=True, 
+                        help='Path to the configuration YAML file.')
+    config_path = parser.parse_args().config
+    config = read_yaml_file(config_path)
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Path
-    dir = "recognition/VQVAE_47323254"
-    log_dir = f'{dir}/logs/v1'
     
-    data_dir = f'{dir}/HipMRI_study_keras_slices_data'
-    pretrained_path = f"{log_dir}/model.pth"
-
-    # Configuration
-    num_samples = None
+    model_parameters = config['model_parameters']
+    pretrained_path = config['pretrained_path']
     
+    dataset_dir = config['test_dataset_dir']
+    num_samples = config['num_samples']
+    
+    log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
+        os.path.join(config['logs_root'], f"{time.strftime('%Y%m%d_%H%M%S')}")
+    
+    transforms = get_transforms(config['test_transforms'])
+    
+    os.makedirs(log_dir, exist_ok=True)
     logging.basicConfig(filename=os.path.join(log_dir, 'evaluation.log'), level=logging.INFO, 
                         format='%(asctime)s - %(levelname)s - %(message)s')
-
-    test_transform = transforms.Compose([
-        transforms.CenterCrop((256, 128)),
-        # transforms.Resize((256, 256)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    shutil.copy(config_path, log_dir)
     
-    dataset = HipMRIDataset(data_dir + "/keras_slices_test", test_transform, num_samples=num_samples)
+    dataset = HipMRIDataset(dataset_dir, transforms, num_samples=num_samples)
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     
-    model = VQVAE(in_channels=1, hidden_channels=128, res_channels=32, nb_res_layers=2, 
-                embed_dim=64, nb_entries=512, downscale_factor=4).to(device)
+    model = VQVAE(**model_parameters).to(device)
     
     model.load_state_dict(torch.load(pretrained_path, map_location=device))
     
+    # Evaluation
     losses = []
     ssim_values = []
-    for batch in tqdm(data_loader, desc="Evaluation"):
-        batch = batch.to(device).float()
-        reconstructed, vq_loss = model(batch)
-        recon_loss = F.mse_loss(reconstructed, batch)
-        
-        original_image = batch[0, 0].cpu().detach().numpy()
-        reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
-        
-        losses.append(recon_loss.item() + vq_loss.item())
-        ssim_values.append(calculate_ssim(original_image, reconstructed_image))
+    with torch.no_grad():
+        for batch in tqdm(data_loader, desc="Evaluation"):
+            batch = batch.to(device).float()
+            reconstructed, vq_loss = model(batch)
+            recon_loss = F.mse_loss(reconstructed, batch)
+            
+            original_image = batch[0, 0].cpu().detach().numpy()
+            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            
+            losses.append(recon_loss.item() + vq_loss.item())
+            ssim_values.append(calculate_ssim(original_image, reconstructed_image))
         
     logging.info(f"Average Loss: {sum(losses) / len(losses)}, Average SSIM: {sum(ssim_values) / len(ssim_values)}")
     
@@ -74,31 +80,28 @@ if __name__ == '__main__':
     axs[1].set_ylabel("Frequency")
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(log_dir, f'evaluation_metrics.png'))
+    plt.close()
     
     # Display some images
-    n = 5
-    for batch in data_loader:
-        if n == 0:
-            break
-        n -= 1
-        batch = batch.to(device).float()
-        reconstructed, _ = model(batch)
-        original_image = batch[0, 0].cpu().detach().numpy()
-        reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
-        
-        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-        axs = axs.flatten()
-        
-        axs[0].imshow(original_image, cmap='gray')
-        axs[0].set_title("Original Image")
-        axs[0].axis('off')
-        
-        axs[1].imshow(reconstructed_image, cmap='gray')
-        axs[1].set_title("Reconstructed Image")
-        axs[1].axis('off')
-        
-        plt.tight_layout()
-        plt.show()
-    
+    fig, axs = plt.subplots(2, 3, figsize=(12, 8))
+    axs = axs.flatten()
+    with torch.no_grad():
+        for i, batch in enumerate(data_loader):
+            if i == 6:
+                break
+            batch = batch.to(device).float()
+            reconstructed, _ = model(batch)
+            original_image = batch[0, 0].cpu().detach().numpy()
+            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            
+            combined_image = combine_images(original_image, reconstructed_image)
 
+            axs[i].imshow(combined_image, cmap='gray')
+            axs[i].set_title(f"Image {i + 1}")
+            axs[i].axis('off')
+        
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, f'images.png'))
+    plt.close()
+    

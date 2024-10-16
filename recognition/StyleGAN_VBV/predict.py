@@ -9,6 +9,10 @@ W_DIM = 512  # Dimensionality for the style space
 IN_CHANNELS = 512  # Number of input channels for the generator
 CHANNELS_IMG = 3  # Number of output channels for images (RGB)
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available, otherwise use CPU
+AD_IMAGES = "AD_"
+NC_IMAGES = "NC_"
+CURRENT_DATASET = AD_IMAGES
+
 
 def generate_examples(gen, steps, n=9):
     """
@@ -40,6 +44,6 @@ def generate_examples(gen, steps, n=9):
     grid = make_grid(torch.cat(images, dim=0), nrow=3)
 
     # Save the generated grid image; rescale to [0, 1] for saving
-    save_image(grid * 0.5 + 0.5, os.path.join(save_dir, f"grid_step{steps}.png"))
+    save_image(grid * 0.5 + 0.5, os.path.join(save_dir, CURRENT_DATASET + f"grid_step{steps}.png"))
     
     gen.train()  # Set the generator back to training mode

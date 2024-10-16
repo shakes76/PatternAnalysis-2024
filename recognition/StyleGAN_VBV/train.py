@@ -10,7 +10,9 @@ from predict import generate_examples
 
 # Constants
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available
-DATASET_PATH = '/home/groups/comp3710/ADNI'  # Path to the ADNI dataset
+AD_PATH = '/home/groups/comp3710/ADNI/train/AD'
+NC_PATH = '/home/groups/comp3710/ADNI/test/NC'
+DATASET_PATH = AD_PATH  # Path to the dataset
 BATCH_SIZE = 32  # Number of images to process in each training batch
 Z_DIM = 512  # Dimensionality of the latent space
 W_DIM = 512  # Dimensionality for the style space
@@ -20,6 +22,9 @@ LR = 1e-3  # Learning rate for the optimizers
 LAMBDA_GP = 10  # Weight for the gradient penalty term
 PROGRESSIVE_EPOCHS = [30, 30, 30, 30, 30, 30]  # Number of epochs for each progressive training stage
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
+AD_IMAGES = "AD_"
+NC_IMAGES = "NC_"
+CURRENT_DATASET = AD_IMAGES
 
 # Function to calculate the gradient penalty for the WGAN-GP
 def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
@@ -102,8 +107,8 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
 def save_model(gen, critic, step):
     """Save the generator and critic models to disk."""
 
-    torch.save(gen.state_dict(), 'generator_final.pth')  # Save generator's state
-    torch.save(critic.state_dict(), 'critic_final.pth')  # Save critic's state
+    torch.save(gen.state_dict(), CURRENT_DATASET+'generator_final.pth')  # Save generator's state
+    torch.save(critic.state_dict(), CURRENT_DATASET+'critic_final.pth')  # Save critic's state
 
 # Function to plot and save the loss curves
 def plot_loss(losses_critic, losses_gen, step):

@@ -35,6 +35,11 @@ Matplotlib
 Numpy
 scikit-learn
 
+## Visualisation and Results
+
+![accuracy](/Users/zhangxiangxu/PatternAnalysis-2024/accuracy_over_epochs.png)
+
+
 
 
 

@@ -36,7 +36,7 @@ To install the required packages, you can use the following command:
 ```bash
 pip install -r requirements.txt
 ```
-
+## Theory & Implementation
 ### Diffusion process
 The diffusion process or forward process is a Markov chain that adds noise to the data. The
 noise is samples from a Gaussian distribution. The Markov chain is a stochastic process that 

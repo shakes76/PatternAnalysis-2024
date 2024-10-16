@@ -50,9 +50,9 @@ class ADNIDataset(Dataset):
 def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
     if data_dir is None:
         # Rangpur
-        # data_dir = "/home/groups/comp3710/ADNI/AD_NC"
+        data_dir = "/home/groups/comp3710/ADNI/AD_NC"
         # Local
-        data_dir = "../../resources/AD_NC"
+        # data_dir = "../../resources/AD_NC"
     train_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
         tf.CenterCrop(crop_size),

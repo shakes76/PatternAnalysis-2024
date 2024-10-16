@@ -9,6 +9,7 @@ from dataset import ADNIDataset, get_dataloaders
 import time
 import torch
 import torch.backends.cudnn as cudnn
+import os
 
 import matplotlib.pyplot as plt
 
@@ -135,5 +136,8 @@ if __name__ == '__main__':
     plt.xlabel('Batch Number')
     plt.ylabel('Acc @ 1')
     plt.plot([x for x in range(len(acc1list))], acc1list)
+    if not os.path.exists('test/model/fig'):
+        os.makedirs('test/model/fig')
     plt.savefig('test/model/fig')
+    print(savedfig)
     plt.show()

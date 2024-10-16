@@ -1,3 +1,21 @@
+"""
+predict.py
+----------
+This script performs prediction using a trained U-Net model on test MRI slices.
+
+Input:
+    - Preprocessed MRI slices to predict on.
+    - Trained model weights (specified by `model_path`).
+
+Output:
+    - Predicted segmentation masks visualized alongside original images.
+
+Usage:
+    Run this script to visualize predictions on a set of test MRI images.
+
+Author: Han Yang
+Date: 30/09/2024
+"""
 import torch
 import numpy as np
 from modules import UNet

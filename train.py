@@ -8,6 +8,7 @@ from tqdm import tqdm
 from torch.optim import Adam
 from dataset import get_dataloaders
 from modules import *
+import matplotlib.pyplot as plt
 
 batch_size = 32
 n_updates = 5000
@@ -18,7 +19,7 @@ embedding_dim = 64
 n_embeddings = 512
 beta = 0.25
 learning_rate = 3e-4
-log_interval = 50
+log_interval = 5
 n_epochs = 15
 
 def train():
@@ -40,8 +41,12 @@ def train():
         'perplexities': [],
     }
 
+    losses = []
+
     for epoch in range(n_epochs):
         # (x, _) = next(iter(train_loader))
+        epoch_losses = []
+
         for im in tqdm(train_loader):
             im = im.float().unsqueeze(1).to(device)
             print(im.shape)
@@ -62,6 +67,8 @@ def train():
             results["loss_vals"].append(loss.cpu().detach().numpy())
             results["n_updates"] = epoch
 
+            epoch_losses.append(loss.cpu().detach().numpy())
+
             if epoch % log_interval == 0:
                 # """
                 # save model and print values
@@ -75,11 +82,28 @@ def train():
                     np.mean(results["recon_errors"][-log_interval:]),
                     'Loss', np.mean(results["loss_vals"][-log_interval:]),
                     'Perplexity:', np.mean(results["perplexities"][-log_interval:]))
+        
+        losses.append(np.mean(epoch_losses))
                 
         
         print(f"Finished epoch {epoch + 1}")
     
     print("---Training Complete---")
+
+
+    print("---Graphing Losses---")
+    print(losses)
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, n_epochs + 1), losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss over Epochs')
+    plt.legend()
+    plt.grid()
+    plt.savefig('training_loss.png')
+    plt.close()
+
+
 
 if __name__ == "__main__":
     train()

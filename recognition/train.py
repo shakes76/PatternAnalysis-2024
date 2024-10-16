@@ -1,26 +1,23 @@
 from torch.utils.data import *
 from dataset import *
-import matplotlib.pyplot as plt
 import torch
 from sklearn.metrics import accuracy_score
 from utiles import *
 from modules import *
-from sklearn.manifold import TSNE
 
 # Hyper-parameters
-
-num_epochs = 200
+num_epochs = 500
 hidden_layer = 64
 classes = ["Politicians", "Governmental Organisations", "Television Shows", "Companies"]
 learning_rate = 5e-4
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train_model():
-
+    # train model
     train_loss = []
     train_accuray = []
 
-    validation_loss = []
+    validation_loss = [] 
     validation_accuracy = []
 
     epoch_loss = 0
@@ -30,10 +27,11 @@ def train_model():
     for epoch in range(num_epochs):
         model.train()
         optimizer.zero_grad()
-        output = model(data.x, data.edge_index)
-        loss = criterion(output[train_mask].to(device), label_train.to(device))
-        accuracy = ((output.argmax(dim=1)[train_mask] == label_train).float()).mean()
-        loss.backward()
+        output = model(data.x, data.edge_index) # pass features and edges to model 
+        loss = criterion(output[train_mask].to(device), label_train.to(device)) # calculate loss on train data
+        # calculate accruacy by comparison to train label
+        accuracy = ((output.argmax(dim=1)[train_mask] == label_train).float()).mean() 
+        loss.backward() # back propogation
         optimizer.step()
 
         train_loss.append(loss.item())
@@ -46,7 +44,8 @@ def train_model():
         model.eval()
 
         output = model(data.x, data.edge_index)
-        loss = criterion(output[validation_mask].to(device), label_validation.to(device))
+        loss = criterion(output[validation_mask].to(device), label_validation.to(device)) # calculate loss on validation data
+        # calculate accruacy by comparison to validation label
         accuracy = ((output.argmax(dim=1)[validation_mask] == label_validation).float()).mean()
 
         validation_loss.append(loss.item())
@@ -55,10 +54,11 @@ def train_model():
 
         if epoch % 20 == 0:
             print(f"Epoch {epoch + 1}, Loss: {epoch_loss:.4f}, Acc: {epoch_accuracy:.4f}")
+
     print("Training Over")
-    plot_loss(train_loss, validation_loss)
+    plot_loss(train_loss, validation_loss) 
     plot_accuracy(train_accuray, validation_accuracy)
-    torch.save(model, "GCN.pth")
+    torch.save(model, "GCN.pth") 
             
 def test_model():
     # ----- Testing -----
@@ -75,7 +75,7 @@ def test_model():
 
 
 if __name__ == "__main__":
-    # Loading up the dataset and applying custom augmentations
+    # Load dataset with each train, validaiton and  test masks
     data, masks = load_data()
     train_mask = masks[0]
     test_mask = masks[1]
@@ -87,12 +87,13 @@ if __name__ == "__main__":
     label_test = data.y[test_mask]
     label_train = data.y[train_mask]
 
-    # Creating an instance of the UNet to be trained
+    # create GCN model 
     model = GCN(in_channels = number_of_features, hidden_channels= hidden_layer, out_channels =  len(classes))
     model = model.to(device)
 
     # Setup the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
+    # Setup the CrossEntropyLoss function
     criterion = torch.nn.CrossEntropyLoss()
     train_model()
     test_model()

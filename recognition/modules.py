@@ -14,9 +14,10 @@ class GCN(torch.nn.Module):
 
     def forward(self, x, edge_index):
         # First graph convolution layer + ReLU
+
         x = self.conv1(x, edge_index)
         x = F.relu(x)
-        
+
         # Second graph convolution layer + ReLU
         x = self.conv2(x, edge_index)
         x = F.relu(x)
@@ -26,7 +27,7 @@ class GCN(torch.nn.Module):
         x = F.relu(x)
         
         # Fourth graph convolution layer
-        x = self.conv4(x, edge_index)
-        
+        x = self.conv4(x, edge_index)   
+
         # Apply log_softmax for classification (if required)
         return F.log_softmax(x, dim=1)

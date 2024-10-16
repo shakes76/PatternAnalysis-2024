@@ -8,6 +8,7 @@ from train import *
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
+    #load data for prediction with masks
     data, masks = load_data()
     train_mask = masks[0]
     test_mask = masks[1]
@@ -18,12 +19,14 @@ if __name__ == "__main__":
     label_train = data.y[train_mask]
 
     try:
+        #load the saved model if possible 
         model = torch.load("GCN.pth")
         model = model.to(device)
     except FileNotFoundError:
         print(f"GCN.pth not found.")
     else:
         with torch.no_grad():
+            # evaluate model
             model.eval()
             output = model(data.x, data.edge_index)
             accuracy = ((output.argmax(dim=1)[test_mask] == label_test).float()).mean()

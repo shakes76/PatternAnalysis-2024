@@ -1,13 +1,12 @@
 from torch.utils.data import *
 from dataset import *
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
 from utiles import *
 from modules import *
 from sklearn.manifold import TSNE
 
 def plot_TSNE(output, y_true, classes):
-    # Plotting t-SNE
+    # Plotting t-SNE of whole dataset
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
     reduced_embeddings = tsne.fit_transform(output)
 
@@ -21,6 +20,7 @@ def plot_TSNE(output, y_true, classes):
     plt.savefig("TSNE_plot.png")
 
 def plot_loss(train_loss, val_loss):
+    # plotting loss of training and validation
     plt.figure(figsize=(10, 6))
 
     plt.plot(train_loss, label='Train Loss', color='red')
@@ -30,16 +30,17 @@ def plot_loss(train_loss, val_loss):
     plt.ylabel('Loss')
     plt.legend()
     plt.title('Training and Validation Loss graph')
-    plt.savefig("Training and Validation Loss graph.png")
+    plt.savefig("Training and Validation Loss graph_1.png")
 
 def plot_accuracy(train_accuracies, val_accuracies):
+    # plotting accuracy of training and validation 
     plt.figure(figsize=(10, 6))
 
     plt.plot(train_accuracies, label='Train Accuracy', color='red')
     plt.plot(val_accuracies, label='Validation Accuracy', color='blue')
-        
+
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
     plt.title('Training and Validation Accuracy')
-    plt.savefig("Training and Validation Accuracy.png")
+    plt.savefig("Training and Validation Accuracy_1.png")

@@ -71,14 +71,14 @@ class MRIDataset(Dataset):
     def apply_augmentation(self, image, mask):
         """Applies random augmentations to the image and mask."""
         if random.random() > 0.5:
-            image = np.flip(image, axis=3).copy()  # Flip along depth
-            mask = np.flip(mask, axis=3).copy()
-        if random.random() > 0.5:
-            image = np.flip(image, axis=2).copy()  # Flip along width
+            image = np.flip(image, axis=2).copy()  # Flip along depth
             mask = np.flip(mask, axis=2).copy()
         if random.random() > 0.5:
-            image = np.flip(image, axis=1).copy()  # Flip along height
+            image = np.flip(image, axis=1).copy()  # Flip along width
             mask = np.flip(mask, axis=1).copy()
+        if random.random() > 0.5:
+            image = np.flip(image, axis=0).copy()  # Flip along height
+            mask = np.flip(mask, axis=0).copy()
 
         if random.random() > 0.5:
             angle = random.uniform(-30, 30)  # Rotate between -30 and 30 degrees

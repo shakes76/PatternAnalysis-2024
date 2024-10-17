@@ -1,15 +1,10 @@
 import torch
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision.transforms as transforms
 from torchmetrics.functional.image \
     import structural_similarity_index_measure as ssim
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import random
 
-import train
 from dataset import HipMRILoader
 import modules
 
@@ -17,16 +12,14 @@ import modules
 # Model path for loading model
 model_path = 'saved_model/early_stopping_lr=0.002.pth'
 
-# Hyperparmeters if training again
-num_epochs = 100
-batch_size = 16
-lr = 0.002
-num_hiddens = 128
-num_residual_hiddens = 32
-num_channels = 1
-num_embeddings = 512
-dim_embedding = 64
-beta = 0.25
+# Hyperparmeters for loading model
+batch_size = 16            # Batch size for the dataloader
+num_hiddens = 128          # Number of hidden units in the VQ-VAE model
+num_residual_hiddens = 32  # Number of residual hidden units
+num_channels = 1           # Number of input channels (grayscale image)
+num_embeddings = 512       # Number of embeddings in the VQ-VAE model
+dim_embedding = 64         # Dimensionality of each embedding
+beta = 0.25                # Beta parameter for commitment loss in VQ-VAE
 
 # Directory for saving test images
 test_save_dir = f'test_images'
@@ -36,6 +29,17 @@ def predict(
         model_path=model_path, 
         test_save_dir=test_save_dir 
         ):
+    """
+    Loads the saved VQ-VAE model, evaluates it on the test set, calculates 
+    SSIM, and visualizes real vs. decoded images.
+
+    Args:
+        model_path (str): Path to the pre-trained model file.
+        test_save_dir (str): Directory where test images will be saved.
+
+    Returns:
+        None
+    """
     
     # Configure Pytorch
     seed = 42
@@ -77,10 +81,12 @@ def predict(
     # Test loop
     with torch.no_grad():
 
-        batch_SSIM = []
+        batch_SSIM = [] # Store SSIM per batch
 
+        # Loop through the test dataset
         for i, training_images in enumerate(test_loader):
 
+            # Pass images through the model to get reconstructed images
             training_images = training_images.to(device)
             _, test_output_images = model(training_images)
 

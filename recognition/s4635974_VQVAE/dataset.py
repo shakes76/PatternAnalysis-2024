@@ -2,11 +2,9 @@ import os
 import numpy as np
 import nibabel as nib
 from torch.utils.data import Dataset
-import torch
-import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import scipy.ndimage
-from torchvision import datasets, transforms
+
 
 # Directories for datasets
 train_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -15,6 +13,16 @@ validate_dir = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_
 
 # Helper function to load NIfTI files
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
+    """
+    Convert a 2D array into a one-hot encoded 3D array along a channel axis.
+    
+    Parameters:
+    - arr: 2D numpy array, input image array.
+    - dtype: Data type for the resulting array.
+    
+    Returns:
+    - 3D numpy array with channels representing one-hot encoded values.
+    """
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
     for c in channels:
@@ -24,6 +32,16 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
 # Helper function to ensure all images are of the same size
 def resize_image(inImage, target_shape):
+    """
+    Resize a 2D image to the target shape using bilinear interpolation.
+    
+    Parameters:
+    - inImage: Input image to be resized (2D numpy array).
+    - target_shape: Tuple (height, width) specifying the target size.
+    
+    Returns:
+    - Resized 2D image.
+    """
     # Get the zoom factors for resizing
     zoom_factors = [
         target_shape[i] / inImage.shape[i] for i in range(len(target_shape))
@@ -85,6 +103,16 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
 # Custom Dataset class for loading data into PyTorch
 class HipMRIDataset(Dataset):
+    """
+    Custom Dataset class to load MRI images from a directory for use in PyTorch.
+
+    The images are loaded, optionally transformed, and normalized.
+    
+    Attributes:
+    - image_dir: Directory where MRI images are stored.
+    - transform: Optional transform to be applied on each image.
+    - normImage: Boolean flag for normalizing images.
+    """
     def __init__(self, image_dir, transform=None, normImage=False):
         self.image_dir = image_dir
         self.image_names = [os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if fname.endswith('.nii.gz')]
@@ -95,6 +123,15 @@ class HipMRIDataset(Dataset):
         return len(self.image_names)
 
     def __getitem__(self, idx):
+        """
+        Load an image, apply transformations, and return it as a tensor.
+        
+        Parameters:
+        - idx: Index of the image to load.
+
+        Returns:
+        - Image tensor of shape [C, H, W] where C is the number of channels.
+        """
         # Get the image path
         image_path = self.image_names[idx]
 
@@ -116,6 +153,16 @@ class HipMRIDataset(Dataset):
 
 # Dataloader class for HipMRI data
 class HipMRILoader:
+    """
+    Class to create DataLoader instances for training, validation, and test datasets.
+    
+    Attributes:
+    - train_loader: DataLoader for the training set.
+    - validate_loader: DataLoader for the validation set.
+    - test_loader: DataLoader for the test set.
+    - train_mean: Mean value of the training data.
+    - train_variance: Variance of the training data.
+    """
     def __init__(self, train_dir, validate_dir, test_dir, batch_size=16, transform=None, num_workers=1):
         self.batch_size = batch_size
         self.transform = transform
@@ -158,68 +205,3 @@ class HipMRILoader:
     
     def get_mean(self):
         return self.train_mean
-    
-# # Example usage:
-# loader = HipMRILoader(train_dir, validate_dir, test_dir, batch_size=16)
-# train_loader, validate_loader, variance = loader.get_loaders()
-# mean = loader.get_mean()
-# std = variance ** 0.5
-
-# print(f'Training Mean: {mean}, Training Std: {std}, variance = {variance}')
-
-# test_loader = loader.get_test_loader()
-
-# print("Train: ", {len(train_loader.dataset)})
-# print("Val: ", {len(validate_loader.dataset)})
-# print("Test: ", {len(test_loader.dataset)})
-# Training Mean: -2.7069713723903988e-06, Training Std: 0.9999692733335542, variance = 0.9999385476112366
-    
-
-
-
-# def save_sample_images(dataset, num_images=5, save_dir='saved_images'):
-#     if not os.path.exists(save_dir):
-#         os.makedirs(save_dir)
-
-#     dataloader = DataLoader(dataset, batch_size=num_images, shuffle=True)
-    
-#     images = next(iter(dataloader))
-    
-#     # Loop over images and save each one
-#     for i in range(num_images):
-#         image = images[i].numpy()
-#         plt.imshow(image, cmap='gray')
-#         plt.axis('off')
-        
-#         save_path = os.path.join(save_dir, f'sample_image_{i}.png')
-#         plt.savefig(save_path)
-#         plt.close()  # Close figure after saving to avoid overwriting
-
-# dataset = HipMRIDataset(train_dir, normImage=True)
-
-# save_sample_images(dataset, num_images=5)
-
-# print("Start")
-# # Specify the file path
-# file_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train/case_012_week_6_slice_25.nii.gz'
-
-# # Load the NIfTI file
-# image_data = nib.load(file_path).get_fdata(caching='unchanged')
-
-# # Check the shape of the image
-# print("Shape of the image:", image_data.shape)
-
-# # Load the single image using load_data_2D
-# img = load_data_2D([file_path])  # Pass a list with the file path
-
-# # Extract the image slice (assuming it's a single slice)
-# image_slice = img[0]  # This gives you the 2D array of the first (and only) image
-
-# # Save the image using matplotlib
-# plt.imshow(image_slice, cmap='gray')  # Use 'gray' colormap for grayscale images
-# plt.axis('off')  # Hide axis
-# plt.savefig('case_012_week_6_slice_25.png', bbox_inches='tight', pad_inches=0)  # Save without padding
-# plt.close()  # Close the plot
-
-
-# print("End")

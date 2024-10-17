@@ -2,7 +2,6 @@
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-import torchvision.transforms as transforms
 from torchmetrics.functional.image \
     import structural_similarity_index_measure as ssim
 import numpy as np
@@ -14,6 +13,14 @@ from dataset import HipMRILoader
 import modules
 
 class ValidationLossEarlyStopping:
+    """Class to handle early stopping based on validation loss.
+
+    Attributes:
+        patience (int): Number of epochs to wait for an improvement in validation loss before stopping.
+        min_delta (float): Minimum change in validation loss to qualify as an improvement.
+        counter (int): Counts how many consecutive epochs with no significant improvement.
+        min_validation_loss (float): The best validation loss seen so far.
+    """
     def __init__(self, patience=1, min_delta=0.0):
         self.patience = patience  # number of times to allow for no improvement before stopping the execution
         self.min_delta = min_delta  # the minimum change to be counted as improvement
@@ -22,6 +29,14 @@ class ValidationLossEarlyStopping:
 
     # return True when validation loss is not decreased by the `min_delta` for `patience` times 
     def early_stop_check(self, validation_loss):
+        """Checks if training should be stopped based on validation loss.
+
+        Args:
+            validation_loss (float): The validation loss of the current epoch.
+
+        Returns:
+            bool: True if early stopping criteria are met, False otherwise.
+        """
         if ((validation_loss + self.min_delta) < self.min_validation_loss):
             self.min_validation_loss = validation_loss
             self.counter = 0  # reset the counter if validation loss decreased at least by min_delta
@@ -31,32 +46,20 @@ class ValidationLossEarlyStopping:
                 return True
         return False
 
-
-# Hyperparameters
-num_epochs = 140
-batch_size = 32
-lr = 0.0004
-num_hiddens = 128
-num_residual_hiddens = 32
-num_channels = 1
-num_embeddings = 512
-dim_embedding = 64
-beta = 0.25
+# Hyperparmeters for loading model
+num_epochs = 100           # Number of training epochs
+batch_size = 16            # Batch size for the dataloader
+lr = 0.002                 # Learning rate for the optimizer
+num_hiddens = 128          # Number of hidden units in the VQ-VAE model
+num_residual_hiddens = 32  # Number of residual hidden units
+num_channels = 1           # Number of input channels (grayscale image)
+num_embeddings = 512       # Number of embeddings in the VQ-VAE model
+dim_embedding = 64         # Dimensionality of each embedding
+beta = 0.25                # Beta parameter for commitment loss in VQ-VAE
 early_stopping = True
 
-# num_epochs = 150
-# batch_size = 16
-# lr = 0.002
-# num_hiddens = 128
-# num_residual_hiddens = 32
-# num_channels = 1
-# num_embeddings = 512
-# dim_embedding = 64
-# beta = 0.25
-# early_stopping = True
-
 # Enter a description of model. Used for identifying saved files
-model_description = '_lr=0.0004_bs=32'
+model_description = 'VQ-VAE'
 
 # Directory for saving images is named after model description 
 save_dir = model_description
@@ -82,7 +85,25 @@ def train_model(
         beta: float = beta,
         early_stopping: bool = early_stopping
         ):
+    """Main function to train the VQ-VAE model.
 
+    Args:
+        save_dir (str): Directory for saving results and images.
+        model_dir (str): Directory for saving the model.
+        save_data_dir (str): Directory for saving data for plotting.
+        num_epochs (int): Number of epochs for training.
+        batch_size (int): Batch size for training.
+        lr (float): Learning rate for the optimizer.
+        num_hiddens (int): Number of hidden units.
+        num_residual_hiddens (int): Number of residual hidden units.
+        num_channels (int): Number of channels in the input data.
+        num_embeddings (int): Number of embeddings in the VQ-VAE.
+        dim_embedding (int): Dimension of each embedding.
+        beta (float): Beta parameter for VQ-VAE loss.
+        early_stopping (bool): Flag for using early stopping.
+    """
+
+    # Printing hyperparameters so that each training script has a record
     print("==== Paramaters ====")
     print(f"Max Epochs: ", num_epochs)
     print(f"Batch size: ", batch_size)
@@ -124,15 +145,6 @@ def train_model(
         train_dir, validate_dir, test_dir,
         batch_size=batch_size, transform=None
         ).get_loaders()
-    print('Variance: ', data_variance)
-    print()
-
-    # Assuming you have a DataLoader defined as train_loader
-    # dataset_size = len(train_loader.dataset)  # Size of the training dataset
-    # iterations_per_epoch = len(train_loader)   # Number of batches per epoch
-
-    # print(f"Training dataset size: {dataset_size}") #11460
-    # print(f"Iterations per epoch: {iterations_per_epoch}")
 
     # Create model
     model = modules.VQVAE(

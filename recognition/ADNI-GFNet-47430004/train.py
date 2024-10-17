@@ -42,8 +42,8 @@ project = "ADNI-GFNet"
 group = "GFNet",
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
-    parser.add_argument('--batch-size', default=64, type=int)
+    parser = argparse.ArgumentParser('ADNI training and evaluation script', add_help=False)
+    parser.add_argument('--batch-size', default=32, type=int)
     parser.add_argument('--epochs', default=100, type=int)
 
     # Model parameters
@@ -77,7 +77,7 @@ def get_args_parser():
     # Learning rate schedule parameters
     parser.add_argument('--sched', default='cosine', type=str, metavar='SCHEDULER',
                         help='LR scheduler (default: "cosine"')
-    parser.add_argument('--lr', type=float, default=5e-4, metavar='LR',
+    parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 5e-4)')
     parser.add_argument('--lr-noise', type=float, nargs='+', default=None, metavar='pct, pct',
                         help='learning rate noise on/off epoch percentages')
@@ -265,6 +265,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
+
+    print(args)
     
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)

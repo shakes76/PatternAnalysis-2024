@@ -35,9 +35,13 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
+
+    N_IMAGES = len(train_dataloader.dataset)
+
     for epoch in range(EPOCHS):
+        print(f"Epoch {epoch} out of {EPOCHS}")
         model.train()
-        for images, targets in train_dataloader:
+        for batch, (images, targets) in enumerate(train_dataloader):
             images = images.to(device)
             targets = targets.to(device)
 
@@ -49,6 +53,11 @@ def main():
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
+            
+            if batch % 100 == 0:
+                loss, current = loss.item(), (batch + 1) * len(images)
+                print(f"loss: {loss:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
+
 
 def getAccuracy(test_dataloader, model):
     with torch.no_grad():

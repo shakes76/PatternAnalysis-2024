@@ -12,7 +12,7 @@ def main():
     Constants
     """
     IMAGESIZE = 240
-    ROOTDATAPATH = "/home/groups/comp3710/ADNI/"
+    ROOTDATAPATH = "/home/groups/comp3710/ADNI/AD_NC"
     EPOCHS = 100
     lr = 0.001
 
@@ -36,12 +36,14 @@ def main():
 
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     criterion = nn.CrossEntropyLoss()
-
+    
     print("Training start")
     time_s = time.time()
+    accuracy = []
+    max_accuracy = 0
     times_taken = []
+    N_BATCHES = len(train_dataloader)
     N_IMAGES = len(train_dataloader.dataset)
-
     for epoch in range(EPOCHS):
         print(f"Epoch {epoch} out of {EPOCHS}")
         model.train()
@@ -59,11 +61,18 @@ def main():
             optimizer.zero_grad()
             
             if batch % 100 == 0:
-                acc = getAccuracy(test_dataloader, model, device, 5)
                 loss, current = loss.item(), (batch + 1) * len(images)
-                print(f"loss: {loss:>7f} accuracy: {acc:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
+                print(f"loss: {loss:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
+
         times_taken.append(time.time() - time_s)
         print(f"{int(times_taken[-1] // 3600)}h {int((times_taken[-1] % 3600) // 60)}m {int(times_taken[-1] % 60)}s taken for epoch {epoch}")
+        acc = getAccuracy(test_dataloader, model, device, -1).item()
+        if acc > max_accuracy:
+            max_accuracy = acc
+            torch.save(model.state_dict(), 'model.pth')
+            print("New best model", end = " || ")
+        accuracy.append(acc)
+        print("Accuracy:", acc)
 
 if __name__ == "__main__":
     main()

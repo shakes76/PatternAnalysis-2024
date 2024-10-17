@@ -37,6 +37,7 @@ train_loader, val_loader, model = run_setup(
     method=method,
     batch_size=BATCH_SIZE,
     image_size=IMAGE_SIZE,
+    image_class='AD',
     image_transform=image_transform,
     hidden_dims=[64, 128, 256, 512, 1024],
     time_emb_dim=256,

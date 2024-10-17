@@ -1,7 +1,7 @@
 """
 This file contains the base components for the Stable Diffusion model
 This includes the UNet and Noise Scheduler for the diffusion process.
-Customer implementation of the Lookahead optimizer and CosineAnnealingWarmupScheduler
+Customer implementation of the CosineAnnealingWarmupScheduler
 are also included here.
 
 Author: Liam O'Sullivan
@@ -11,9 +11,7 @@ import torch
 import wandb
 import time
 import math
-from collections import defaultdict
 import torch.nn as nn
-from torch.optim import Optimizer
 import torch.nn.functional as F
 from tqdm import tqdm
 from torch.optim.lr_scheduler import _LRScheduler
@@ -552,76 +550,3 @@ class NoiseScheduler_Fast_DDPM():
             if isinstance(value, torch.Tensor):
                 setattr(self, key, value.to(device))
         return self
-
-
-class Lookahead(Optimizer):
-    """
-    Lookahead Optimizer
-    Improved performance by using a slow weights for the optimizer and fast weights for the model
-
-    Args:
-        optimizer: optimizer to be used
-        k: number of lookahead steps
-        alpha: learning rate multiplier for slow weights
-    """
-    def __init__(self, optimizer, k=5, alpha=0.5):
-        self.optimizer = optimizer
-        self.k = k
-        self.alpha = alpha
-        self.param_groups = self.optimizer.param_groups
-        self.state = defaultdict(dict)
-        self.fast_state = self.optimizer.state
-        for group in self.param_groups:
-            group["counter"] = 0
-
-        self.defaults = self.optimizer.defaults
-
-    def update(self, group):
-        for fast in group["params"]:
-            param_state = self.state[fast]
-            if "slow_param" not in param_state:
-                param_state["slow_param"] = torch.zeros_like(fast.data)
-                param_state["slow_param"].copy_(fast.data)
-            slow = param_state["slow_param"]
-            slow += (fast.data - slow) * self.alpha
-            fast.data.copy_(slow)
-
-    def update_lookahead(self):
-        for group in self.param_groups:
-            self.update(group)
-
-    def step(self, closure=None):
-        loss = self.optimizer.step(closure)
-        for group in self.param_groups:
-            if group["counter"] == 0:
-                self.update(group)
-            group["counter"] += 1
-            if group["counter"] >= self.k:
-                group["counter"] = 0
-        return loss
-
-    def state_dict(self):
-        fast_state_dict = self.optimizer.state_dict()
-        slow_state = {
-            (id(k) if isinstance(k, torch.Tensor) else k): v
-            for k, v in self.state.items()
-        }
-        fast_state = fast_state_dict["state"]
-        param_groups = fast_state_dict["param_groups"]
-        return {
-            "fast_state": fast_state,
-            "slow_state": slow_state,
-            "param_groups": param_groups,
-        }
-
-    def load_state_dict(self, state_dict):
-        fast_state_dict = {
-            "state": state_dict["fast_state"],
-            "param_groups": state_dict["param_groups"],
-        }
-        self.optimizer.load_state_dict(fast_state_dict)
-        slow_state_new = {
-            "slow_param": torch.zeros_like(v) for v in self.optimizer.state.values()
-        }
-        slow_state_new.update(state_dict["slow_state"])
-        self.state = defaultdict(dict, slow_state_new)

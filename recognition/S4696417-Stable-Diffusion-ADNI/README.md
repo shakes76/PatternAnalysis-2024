@@ -2,10 +2,13 @@
 
 #### COMP3710 - Pattern Analysis 2024
 **Task 8** - Generative model of the ADNI brain dataset using Stable Diffusion.
+**Author:** Liam O'Sullivan (46964173)
 
 ## Project Overview
 
-This project implements a Stable Diffusion model for generating brain MRI images, specifically trained on the ADNI dataset. The goal is to create a generative model capable of producing realistic brain MRI images, which could potentially be used for data augmentation, research, or as a tool for studying Alzheimer's Disease progression.
+This project implements a Stable Diffusion model for generating brain MRI images, specifically trained on the ADNI dataset. 
+The goal of this project is to create a generative model capable of producing realistic, reasonably clear brain MRI images.
+These could potentially be used for data research or as a tool for studying Alzheimer's Disease progression.
 
 ## Table of Contents
 
@@ -13,18 +16,19 @@ This project implements a Stable Diffusion model for generating brain MRI images
 2. [Dependencies](#dependencies)
 3. [Installation](#installation)
 4. [Data Preparation](#data-preparation)
-5. [Model Architecture](#model-architecture)
-6. [Training Process](#training-process)
-7. [Inference](#inference)
-8. [Visualisations](#visualisations)
-9. [Key Components](#key-components)
-10. [Performance Metrics](#performance-metrics)
-11. [Future Work](#future-work)
-12. [References](#references)
+5. [Usage](#usage)
+6. [Model Architecture](#model-architecture)
+7. [Training Process](#training-process)
+8. [Inference](#inference)
+9. [Visualisations](#visualisations)
+10. [Key Components](#key-components)
+11. [Performance Metrics](#performance-metrics)
+12. [Future Work](#future-work)
+13. [References](#references)
 
 ## Project Structure
 
-The project consists of several key scripts:
+The project consists of several key files:
 
 - [`train.py`](train.py): Main training script for the Stable Diffusion model
 - [`pre_train.py`](pre_train.py): Script for pre-training the VAE model
@@ -43,6 +47,10 @@ The project consists of several key scripts:
 - Torchvision >= 0.16.1
 - tqdm >= 4.66.5
 - wandb >= 0.12.4
+- matplotlib >= 3.9.2
+- numpy >= 1.26.2
+- scikit-learn >= 1.5.1
+- CUDA = 12.4
 ```
 
 ## Installation
@@ -71,7 +79,24 @@ data/
 ```
 
 Where AD represents Alzheimer's Disease samples and NC represents Normal Control samples. 
-Funcitonality has also been implemented to utilise the data paths on Rangpur with the 'Slurm' method.
+The training data has been split with 20% for validation and 80% for training to ensure the Unet does not overfit.
+
+## Usage
+
+### Training
+
+1. To run the training of the model, the data will need to be imported acording the the above structure. 
+2. Update [this](train.py#L44) line to match the file name of the pretrained model. 
+3. Run [pre_train.py](pre_train.py#L171) with appropriate settings to pretrain the autoencoder
+4. In [train.py](train.py#L40) you can edit the class name to generate either AD or NC in the model. 
+5. [wandb](https://wandb.ai/) will also need to be installed, logged in and a project initialised to store the results in. The entity and project name can be edited [here](utils.py#L153) 
+to match up with wandb.  
+6. Once any other settings are updated in [train.py](train.py) you can run the file to start training
+
+### Image Generation
+1. Download either the [AD](https://file.io/nP9xLiDerWfB) or [NC] checpoint file and add it to /checkpoints/Diffusion
+2. Update [the model path](predict.py#L22) to match the path of the downloaded checkpoint
+3. Set the number of image generations and image size and run [predict.py](predict.py)
 
 ## Model Architecture
 
@@ -99,11 +124,7 @@ The VAE uses residual blocks and attention mechanisms to improve performance.
 
 ### U-Net
 
-The U-Net is implemented in [`modules.py`](modules.py) and is responsible for predicting noise at each timestep. It uses:
-
-- Residual blocks for better gradient flow
-- Attention blocks to capture long-range dependencies
-- Time embeddings to condition the model on the diffusion timestep
+The U-Net is implemented in [`modules.py`](modules.py) and is responsible for predicting noise at each timestep. 
 
 <a href="https://towardsdatascience.com/you-cant-spell-diffusion-without-u-60635f569579" target="_blank"><img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Ec3V_Ox2-CrLfhxKXOlOEQ.png" width=650></a>
 
@@ -127,7 +148,9 @@ The training process is divided into two main stages:
     The AdamW optimiser was used with weight decay for fast convergence. The ReduceLROnPlateau scheduler was used to ensure the reconstructions continued to improve in later training. 
     <p>The pre-training was run for 100 epochs when an acceptable reconstruction quality was obtained. The final reconstruction quality is shown below.
 
-    <img src="visualisations/vae_reconstructions.gif" width=1000>
+    <img src="visualisations/vae_reconstructions.gif" width=1000> <br>
+    <img src="visualisations/vae_pretrain_val_kld.png" width=500>
+    <img src="visualisations/pretrain_vae_val_mse.png" width=500>
 
 
 2. **Stable Diffusion Training**: The full Stable Diffusion model is trained using [`train.py`](train.py). This process involves:
@@ -154,6 +177,7 @@ The training process is divided into two main stages:
     
     - SSIM is a method for predicting the perceived quality of digital television and cinematic pictures, as well as other kinds of digital images. At the end of training the model produced a value of 0.702 from a possible range of 0 to 1, with 1 meaning the reference and sample are identical. This is considered moderate to good for a generatedd image, considerring we do not want the generated sample to be identical to the reference image.
 
+    ### Alzheimer's Disease (AD)
     <img src="visualisations/diffusion_training.gif" width=1000>
 
     #### Metrics and Stats
@@ -162,6 +186,10 @@ The training process is divided into two main stages:
     <img src="visualisations/stable-diffusion-generated-psnr.png" width=400>
     <img src="visualisations/stable-diffusion-generated-ssim.png" width=400>
     <img src="visualisations/stable-diffusion-lr.png" width=400>
+
+    ### Normal Control (NC)
+
+    #### Metrics and Stats
 
 ### Optimisation Choices
 
@@ -203,20 +231,6 @@ There are two sampling methods which have been implemented.
 
 - **Training Process**: The training process automatically logs samples form the model to wandb every 10 epochs. The gif of this process is shown above in the training section. 
 
-## Key Components
-
-### Fast Sampling
-
-I have also implemented a fast sampling method based on the [Fast-DDPM paper](https://arxiv.org/pdf/2405.14802), allowing for quicker image generation with fewer steps with similar generation quality. 
-
-### Lookahead Optimizer
-
-While not used in the final implementation, I include a [`Lookahead`](modules.py#L541) optimizer. This optimizer can potentially improve convergence by maintaining a set of slow weights updated less frequently.
-
-### Custom Dataset
-
-The [`ADNIDataset`](dataset.py#L8) class is tailored for loading and preprocessing ADNI images, ensuring efficient data handling during training.
-
 ## Performance Metrics
 
 I used several metrics to evaluate model performance:
@@ -227,13 +241,6 @@ I used several metrics to evaluate model performance:
 
 These metrics are logged using Weights & Biases (wandb) for easy tracking and visualisation.
 
-## Future Work
-
-Potential areas for improvement and expansion include:
-
-1. Experimenting with different U-Net architectures or attention mechanisms.
-2. Incorporating conditional generation to control for specific attributes (e.g., age, disease progression).
-3. Exploring other diffusion model variants or noise schedules.
 
 ## References
 

@@ -54,6 +54,7 @@ def run_setup(
         method,
         image_size,
         batch_size,
+        image_class,
         image_transform,
         vae_path,
         hidden_dims=[64, 128, 256, 512, 1024],
@@ -83,13 +84,13 @@ def run_setup(
     if method == 'Local':
         os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
         train_loader, val_loader = get_dataloader(
-            'data/train/AD',
+            f'data/train/{image_class}',
             batch_size=batch_size,
             transform=image_transform)
 
     elif method == 'Slurm':
         train_loader, val_loader = get_dataloader(
-            '/home/groups/comp3710/ADNI/AD_NC/train/AD',
+            f'/home/groups/comp3710/ADNI/AD_NC/train/{image_class}',
             batch_size=batch_size,
             transform=image_transform)
 

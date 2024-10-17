@@ -63,4 +63,7 @@ def main(image_path, mask_path, model_path):
                     mask_data[0, :, :] if mask_data is not None else np.zeros_like(image_data[0, :, :]), prediction,
                     slice_index)
 
-
+if __name__ == "__main__":
+    image_path = "path_to_your_mri_image.nii.gz"  # Replace with your image path
+    model_path = "model.pth"  # Path to your trained model
+    main(image_path, model_path)

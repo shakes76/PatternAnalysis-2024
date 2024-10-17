@@ -29,10 +29,13 @@ def makeTSNE(model, data, num):
 
 
 def main():
-    
+    #Model definition
     model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10)
+    #Visualise initial positions of ground truth values before training
     makeTSNE(model, graph_data, 1)
+    #Load the weights determined during training
     model.load_state_dict(torch.load('weights.pth'))
+    #Visualise ground truth values after training
     makeTSNE(model, graph_data, 2)
 
 

@@ -53,3 +53,36 @@ class StyleConv(nn.Module):
         output = self.noise(output, noise)
         output = self.adain(output, style)
         return self.activation(output)
+
+class Generator(nn.Module):
+    def __init__(self, style_dim, num_layers, channels):
+        super().__init__()
+        self.style_dim = style_dim
+        self.num_layers = num_layers
+        self.channels = channels
+        self.input = nn.Parameter(torch.randn(1, channels[0], 4, 4))
+        self.conv1 = StyleConv(channels[0], channels[0], 3, style_dim, upsample=True)
+        self.to_rgb1 = nn.Conv2d(channels[0], 3, 1)
+
+        self.convs = nn.ModuleList()
+        self.to_rgbs = nn.ModuleList()
+
+        for i in range(1, num_layers):
+            self.convs.append(StyleConv(channels[i-1], channels[i], 3, style_dim, upsample=True))
+            self.to_rgbs.append(nn.Conv2d(channels[i], 3, 1))
+
+    def foward(self, styles, noise = None):
+        if noise is None:
+            noise = [None] * self.num_layers
+
+        out = self.input.repeat(styles.shape[0], 1, 1, 1)
+        out = self.conv1(out, styles[:, 0], noise[0])
+
+        skip = self.to_rgb1(out)
+
+        for i in range(1, self.num_layers):
+            out = self.convs[i](out, styles[:, i], noise[i])
+            skip = skip + self.to_rgbs[i](out)
+
+        image = skip / self.num_layers
+        return image

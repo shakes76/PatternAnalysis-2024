@@ -13,7 +13,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-out_dir = 'test/model/run/figs'
+out_dir = 'test/model/run/figs/'
 model_path = "test/model/GFNet.pth"
 
 class AverageMeter(object):

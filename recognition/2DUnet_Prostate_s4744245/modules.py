@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
-def unet_model(input_size=(256, 128, 1)):
+def unet_model(n_classes, input_size=(256, 128, 1)):
     inputs = layers.Input(input_size)
     
     # Encoder (downsampling)
@@ -46,7 +46,7 @@ def unet_model(input_size=(256, 128, 1)):
     conv9 = layers.Conv2D(64, 3, activation='relu', padding='same')(merge9)    # 256x128x64
     conv9 = layers.Conv2D(64, 3, activation='relu', padding='same')(conv9)     # 256x128x64
 
-    conv10 = layers.Conv2D(1, 1, activation='sigmoid')(conv9)                  # 256x128x2 - Output segmentation map
+    conv10 = layers.Conv2D(n_classes, (1, 1), activation='softmax')(conv9)                  # 256x128xn_classes - Output segmentation map
 
     model = models.Model(inputs=inputs, outputs=conv10)
     

@@ -1,6 +1,5 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import glob
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
@@ -9,51 +8,19 @@ from tensorflow.keras import backend as K
 import os
 
 
-from dataset import load_data_2D
+from dataset import load_data
 from modules import unet_model
 
+n_classes = 5
 
-# Get all file paths for train, test, and validate sets
-#train_files = glob.glob(r'C:\Users\jackr\Desktop\HipMRI_study_keras_slices_data\keras_slices_train/*.nii.gz')
-#test_files = glob.glob(r'C:\Users\jackr\Desktop\HipMRI_study_keras_slices_data\keras_slices_test/*.nii.gz')
-#validate_files = glob.glob(r'C:\Users\jackr\Desktop\HipMRI_study_keras_slices_data\keras_slices_validate/*.nii.gz')
-
-#seg_train_files = glob.glob(r'C:\Users\jackr\Desktop\HipMRI_study_keras_slices_data\keras_slices_seg_train/*.nii.gz')
-#seg_test_files = glob.glob(r'C:\Users\jackr\Desktop\HipMRI_study_keras_slices_data\keras_slices_seg_test/*.nii.gz')
-#seg_validate_files = glob.glob(r'C:\Users\jackr\Desktop\HipMRI_study_keras_slices_data\keras_slices_seg_validate/*.nii.gz')
-
-train_files = glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train/*.nii.gz')
-test_files = glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test/*.nii.gz')
-validate_files = glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate/*.nii.gz')
-
-seg_train_files = glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train/*.nii.gz')
-seg_test_files = glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test/*.nii.gz')
-seg_validate_files = glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate/*.nii.gz')
-
-# Load the images using the load_data_2D function
-images_train = load_data_2D(train_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128))
-images_test = load_data_2D(test_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128))
-images_validate = load_data_2D(validate_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128))
-
-images_seg_train = load_data_2D(seg_train_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128))
-images_seg_test = load_data_2D(seg_test_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128))
-images_seg_validate = load_data_2D(seg_validate_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128))
-
-# print the shapes of the loaded datasets
-print(f"Training data shape: {images_train.shape}")
-print(f"Test data shape: {images_test.shape}")
-print(f"Validation data shape: {images_validate.shape}")
-print(f"Segement Training data shape: {images_seg_train.shape}")
-print(f"Segement Test data shape: {images_seg_test.shape}")
-print(f"Segement Validation data shape: {images_seg_validate.shape}")
+images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
 
 #check if GPU is available
 tf.config.experimental.list_physical_devices('GPU')
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 
-# Initialize the U-Net model with the adjusted input size
-model = unet_model(input_size=(256, 128, 1))
+
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -62,10 +29,12 @@ def dice_coefficient(y_true, y_pred, smooth=1e-6):
     intersection = K.sum(y_true_f * y_pred_f)  # Intersection between true and predicted
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
-# Define the Dice loss (if you want to use it as a loss function as well)
+# Define the Dice loss 
 def dice_loss(y_true, y_pred):
     return 1 - dice_coefficient(y_true, y_pred)
 
+# Initialize the U-Net model
+model = unet_model(n_classes, input_size=(256, 128, 1))
 
 #temp compile to check model summary
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=[dice_coefficient])
@@ -122,9 +91,6 @@ def train_unet_model(model,
     return history
 
 
-# Create the U-Net model
-model = unet_model(input_size=(256, 128, 1))
-
 # Train the U-Net model
 history = train_unet_model(model, 
                            images_train, images_seg_train, 
@@ -153,19 +119,19 @@ def save_validation_image(image, mask, prediction, index):
     
     # Original image
     plt.subplot(1, 3, 1)
-    plt.imshow(image.squeeze(), cmap='gray')  # Use 'gray' for single-channel images
+    plt.imshow(image.squeeze(), cmap='gray')  
     plt.title('Original Image')
     plt.axis('off')
     
     # Ground truth mask
     plt.subplot(1, 3, 2)
-    plt.imshow(mask.squeeze(), cmap='gray')  # Use 'gray' for single-channel images
+    plt.imshow(mask.squeeze(), cmap='gray')  
     plt.title('Ground Truth Mask')
     plt.axis('off')
     
     # Predicted mask
     plt.subplot(1, 3, 3)
-    plt.imshow(prediction.squeeze(), cmap='gray')  # Use 'gray' for single-channel images
+    plt.imshow(prediction.squeeze(), cmap='gray')  
     plt.title('Predicted Mask')
     plt.axis('off')
     

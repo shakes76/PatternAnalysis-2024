@@ -6,7 +6,36 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import argparse
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
+# Function to create the plots
+def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots"):
+    Path(save_dir).mkdir(parents=True, exist_ok=True)  # Ensure plots directory exists
+    
+    # Plotting loss
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.title('Loss over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"{save_dir}/loss_plot.png")  # Save the plot
+    plt.close()  # Close the figure to free memory
+    
+    # Plotting accuracy
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_accuracies, label='Training Accuracy')
+    plt.plot(val_accuracies, label='Validation Accuracy')
+    plt.title('Accuracy over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy (%)')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"{save_dir}/accuracy_plot.png")  # Save the plot
+    plt.close()
 
 # Function to train for one epoch
 def train_one_epoch(model, dataloader, optimizer, criterion, device):
@@ -16,11 +45,12 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
     total = 0
     batch_losses = []
 
-    for (i, (images, labels)) in enumerate(dataloader):
+    for (i, (images, labels)) in enumerate(tqdm(dataloader, desc="Training", leave=False)):
         # Move data to device (GPU or CPU)
         images = images.to(device)
         labels = labels.to(device)
 
+        print(images.shape, labels.shape)
         # Zero gradients so we don't update wrongly
 
         optimizer.zero_grad()
@@ -34,15 +64,15 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
         optimizer.step()
 
         # Track loss and accuracy
-        running_loss += loss.item()
+        running_loss += loss.detach().cpu().item()
 
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0) # Each batch size, except for potentially the last batch if it's not divisible by batch size yknow.
         correct += (predicted == labels).sum().item()
 
         ## Should we print batch loss data hmm
-        if (i + 1) % 10 == 0:  # Print every 10 batches
-            print(f"Batch {i+1}, Avg Loss: {loss.item():.4f}, Correct Predictions: {correct}")
+        if (i + 1) % 100 == 0:  # Print every 100 batches
+            print(f"Batch {i+1}, Avg Loss: {loss.item():.4f}, Correct Predictions: {correct} / {total}")
             batch_losses.append(loss.item())  # Append batch loss to list
         
     # Return average loss and accuracy
@@ -58,9 +88,9 @@ def evaluate(model, dataloader, criterion, device):
     total = 0
 
     with torch.no_grad():  # Disable gradient calculation for evaluation
-        for (i, (images, labels)) in enumerate(dataloader):
-            images = images.to(device)
-            labels = labels.to(device)
+        for (i, (images, labels)) in enumerate(tqdm(dataloader, desc="Evaluating", leave=False)):
+            images = images.to(device) # torch.Size([32, 3, 224, 224])
+            labels = labels.to(device) # torch.Size([32])
 
             # Forward pass
             outputs = model(images)
@@ -73,7 +103,7 @@ def evaluate(model, dataloader, criterion, device):
             total_correct += (predicted == labels).sum().item()
 
             ## Should we print batch loss data hmm
-            if (i + 1) % 10 == 0:  # Print every 10 batches
+            if (i + 1) % 100 == 0:  # Print every 10 batches
                 print(f"Validation Batch {i+1}, Avg Loss: {loss.item():.4f}, Correct Predictions: {total_correct}")
 
     # Return average loss and accuracy
@@ -149,8 +179,11 @@ def main():
     parser.add_argument('--image_size', type=int, default=224, help='Height/Width size to set images to.')
     parser.add_argument('--path', type=str, default="/home/groups/comp3710/ADNI/AD_NC", help='Path to the dataset')
 
-    parser.add_argument('--plot', type=bool, default=False, help='Include plot after training')
     parser.add_argument('--transformer_layers', type=int, default=12, help='Number of transformer layers you want the model to have. Default 12.')
+    # Plotting flag (default True)
+    parser.add_argument('--plot', dest='plot', action='store_true', default=True, help='Enable plotting (default is True)')
+    parser.add_argument('--no-plot', dest='plot', action='store_false', help='Disable plotting')
+
     # Parse arguments
     if torch.cuda.is_available():
         print("GPU available yay!!")
@@ -179,13 +212,21 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     ## Train the model
-    train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, num_epochs = 20, device=device)
+    train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, num_epochs = num_epochs, device=device)
 
     print("stuff", train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses)
 
     ## Test model on test dataset for final evaluation
     test_loss, test_acc = evaluate(model, test_dataloader, criterion, device)
     print(f"Test: Loss {test_loss:.4f}, Accuracy {test_acc:.4f}")
+    print("Model finished training!")
+
+
+        # Save plots if required
+    if args.plot:
+        print("Plotting!")
+        save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots")
+
 
 if __name__ == "__main__":
     main()

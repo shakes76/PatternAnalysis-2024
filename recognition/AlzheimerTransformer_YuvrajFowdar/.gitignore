@@ -6,3 +6,6 @@ COMP3710*
 *.pt
 run_model.sh
 *.out
+models/
+logs/
+plots/

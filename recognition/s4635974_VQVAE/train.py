@@ -1,4 +1,27 @@
-# In your train.py
+"""
+COMP3710 VQ-VAE report
+Author: David Collie
+Date: October, 2024
+
+VQ-VAE Training Script
+
+This script defines and trains a Vector Quantized Variational Autoencoder (VQ-VAE) model on the HIP Mri dataset for prostate cancer. It includes the following key components:
+
+1. **ValidationLossEarlyStopping Class**: A helper class that monitors the validation loss during training and implements early stopping functionality to prevent overfitting. The training will halt if the validation loss does not improve for a specified number of epochs.
+
+2. **Hyperparameters**: The script sets hyperparameters for training, including the number of epochs, batch size, learning rate, model architecture parameters, and the use of early stopping.
+
+3. **Train Model Function**: The `train_model` function orchestrates the training process, including:
+   - Loading the MRI datasets using the `HipMRILoader` class.
+   - Initializing the VQ-VAE model and the optimizer.
+   - Executing the training loop where the model learns from the training dataset.
+   - Evaluating the model on a validation dataset after each epoch, calculating reconstruction loss, VQ loss, and Structural Similarity Index Measure (SSIM) for quality assessment.
+   - Saving images of real and decoded outputs every 10 epochs for visual inspection of the model's performance.
+   - Implementing early stopping based on validation loss if specified.
+
+4. **Data Visualization**: At the end of training, the script saves training and validation loss data for visualization, enabling the creation of plots to analyze the model's performance over epochs.
+"""
+
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -47,7 +70,7 @@ class ValidationLossEarlyStopping:
         return False
 
 # Hyperparmeters for loading model
-num_epochs = 100           # Number of training epochs
+num_epochs = 3           # Number of training epochs
 batch_size = 16            # Batch size for the dataloader
 lr = 0.002                 # Learning rate for the optimizer
 num_hiddens = 128          # Number of hidden units in the VQ-VAE model
@@ -166,46 +189,46 @@ def train_model(
         early_stopper = ValidationLossEarlyStopping(40, 0.01)
 
     # Training mectrics
-    epoch_training_output_loss = []
+    epoch_training_reconstruction_loss = []
     epoch_training_vq_loss = []
 
-    epoch_validation_output_loss = []
+    epoch_validation_reconstruction_loss = []
     epoch_validation_vq_loss = []
     epoch_ssim = []
 
     # Training loop
     for epoch in range(num_epochs):
         model.train()
-        training_output_error = []
+        training_reconstruction_error = []
         training_vq_error = []
 
         # Training set loop
-        for i, training_images in enumerate(train_loader):
+        for _, training_images in enumerate(train_loader):
             training_input_images = training_images.to(device)
 
             optimizer.zero_grad()
             vq_loss, training_output_images = model(training_input_images)
 
             # Calculate reconstruction loss
-            output_loss = F.mse_loss(training_output_images, training_input_images)
-            loss = output_loss + vq_loss
+            reconstruction_loss = F.mse_loss(training_output_images, training_input_images)
+            loss = reconstruction_loss + vq_loss
             loss.backward()
 
             optimizer.step()
 
-            training_output_error.append(output_loss.item())
+            training_reconstruction_error.append(reconstruction_loss.item())
             training_vq_error.append(vq_loss.item())
         
         # Calculate and store average training losses
-        training_output_loss = np.mean(training_output_error)
-        epoch_training_output_loss.append(training_output_loss)
+        training_reconstruction_loss = np.mean(training_reconstruction_error)
+        epoch_training_reconstruction_loss.append( training_reconstruction_loss)
         training_vq_loss = np.mean(training_vq_error)
         epoch_training_vq_loss.append(training_vq_loss)
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Training output loss: {training_output_loss:.5f}, Training VQ loss: {training_vq_loss}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Training reconstruction loss: { training_reconstruction_loss:.5f}, Training VQ loss: {training_vq_loss}')
 
         # Evaluate on the validation dataset
         model.eval()
-        validation_output_error = []
+        validation_reconstruction_error = []
         validation_vq_error = []
         validation_ssim = []
         
@@ -223,19 +246,19 @@ def train_model(
                 similarity = ssim(decoded_image, real_image).item() #, data_range=1.0
                 validation_ssim.append(similarity)
 
-                # Calculate output loss for validation
-                validation_output_loss = F.mse_loss(validation_output_images, validation_input_images)
-                validation_output_error.append(validation_output_loss.item())
+                # Calculate reconstruction loss for validation
+                validation_reconstruction_loss = F.mse_loss(validation_output_images, validation_input_images)
+                validation_reconstruction_error.append(validation_reconstruction_loss.item())
                 validation_vq_error.append(validation_vq_loss.item())
 
         # Average validation loss and SSIM
-        average_validation_loss = np.mean(validation_output_error)
-        epoch_validation_output_loss.append(average_validation_loss)
+        average_validation_loss = np.mean(validation_reconstruction_error)
+        epoch_validation_reconstruction_loss.append(average_validation_loss)
         average_validation_vq_loss = np.mean(validation_vq_error)
         epoch_validation_vq_loss.append(average_validation_vq_loss)
         average_ssim = np.mean(validation_ssim)
         epoch_ssim.append(average_ssim)
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Validation output loss: {average_validation_loss:.5f}, Validation VQ loss: {average_validation_vq_loss}, Average SSIM: {average_ssim:.5f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Validation reconstruction loss: {average_validation_loss:.5f}, Validation VQ loss: {average_validation_vq_loss}, Average SSIM: {average_ssim:.5f}')
 
         # Save resl vs. decoded image after every 10 epochs
         if (epoch + 1) % 10 == 0:
@@ -282,9 +305,9 @@ def train_model(
 
     # After training, save the lists to a file
     data = {
-        "training_output_loss": epoch_training_output_loss,
+        " training_reconstruction_loss": epoch_training_reconstruction_loss,
         "training_vq_loss": epoch_training_vq_loss,
-        "validation_output_loss": epoch_validation_output_loss,
+        "validation_reconstruction_loss": epoch_validation_reconstruction_loss,
         "validation_vq_loss": epoch_validation_vq_loss,
         "ssim": epoch_ssim
     }
@@ -294,18 +317,18 @@ def train_model(
             pickle.dump(data, f)
 
     if type(save_dir) == str:
-        epochs = range(1, len(epoch_training_output_loss) + 1)
+        epochs = range(1, len(epoch_training_reconstruction_loss) + 1)
 
-        # 1. Plot Training Output Loss vs. Validation Output Loss
+        # 1. Plot Training reconstruction Loss vs. Validation reconstruction Loss
         plt.figure(figsize=(12, 6))  # Width of normal page
-        plt.plot(epochs, epoch_training_output_loss, label='Training Output Loss')
-        plt.plot(epochs, epoch_validation_output_loss, label='Validation Output Loss')
+        plt.plot(epochs, epoch_training_reconstruction_loss, label='Training reconstruction Loss')
+        plt.plot(epochs, epoch_validation_reconstruction_loss, label='Validation reconstruction Loss')
         plt.xlabel('Epochs')
-        plt.ylabel('Output Loss')
-        plt.title('Training and Validation Output Loss per Epoch')
+        plt.ylabel('reconstruction Loss')
+        plt.title('Training and Validation reconstruction Loss per Epoch')
         plt.legend()
         plt.grid(True)
-        plt.savefig(os.path.join(save_dir, 'output_loss_per_epoch.png'))
+        plt.savefig(os.path.join(save_dir, 'reconstruction_loss_per_epoch.png'))
         plt.close()
 
         # 2. Plot Training VQ Loss vs. Validation VQ Loss
@@ -321,8 +344,8 @@ def train_model(
         plt.close()
 
         # 3. Plot Combined Training Loss vs. Validation Loss
-        combined_training_loss = [x + y for x, y in zip(epoch_training_output_loss, epoch_training_vq_loss)]
-        combined_validation_loss = [x + y for x, y in zip(epoch_validation_output_loss, epoch_validation_vq_loss)]
+        combined_training_loss = [x + y for x, y in zip(epoch_training_reconstruction_loss, epoch_training_vq_loss)]
+        combined_validation_loss = [x + y for x, y in zip(epoch_validation_reconstruction_loss, epoch_validation_vq_loss)]
 
         plt.figure(figsize=(12, 6))
         plt.plot(epochs, combined_training_loss, label='Combined Training Loss')

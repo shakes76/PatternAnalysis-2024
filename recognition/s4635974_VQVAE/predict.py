@@ -1,9 +1,31 @@
+"""
+COMP3710 VQ-VAE report
+Author: David Collie
+Date: October, 2024
+
+VQ-VAE Model Evaluation and Visualization
+
+This file contains the implementation for evaluating the VQ-VAE (Vector Quantized Variational Autoencoder) 
+model on a test dataset.
+It loads the pre-trained model, computes the Structural Similarity Index Measure (SSIM) for the reconstructed 
+images, and visualizes the results.
+
+The key components of this implementation are:
+- **Model Loading**: Loads the VQ-VAE model from a specified path and configures it for evaluation.
+- **Test Data Preparation**: Utilizes the `HipMRILoader` class to prepare the test dataset for evaluation.
+- **SSIM Calculation**: Computes the SSIM between real and reconstructed images to assess the model's performance.
+- **Image Visualization**: Displays real and decoded images side by side for visual comparison.
+- **Loss and SSIM Graphs**: Loads previously saved training metrics and generates plots for training and validation 
+reconstruction loss, VQ loss, and SSIM over epochs.
+"""
+
 import torch
 from torchmetrics.functional.image \
     import structural_similarity_index_measure as ssim
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 from dataset import HipMRILoader
 import modules
@@ -48,7 +70,7 @@ def predict(
     print("Device: ", device)
     print()
     
-    # Create a new instance of your model
+    # Create a new instance of the model
     model = modules.VQVAE(
         num_channels=num_channels,
         num_hiddens=num_hiddens,
@@ -105,7 +127,7 @@ def predict(
     average_SSIM = np.mean(SSIM)
     print("Average SSIM on test set: ", average_SSIM)
 
-    # Visualize 4 random images through the model and save in test_save_dir
+    # Visualize 4 images through the model and save in test_save_dir
     # Create a figure to plot the images
     fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(8, 16))
 
@@ -137,6 +159,77 @@ def predict(
     # Save the figure
     plt.tight_layout()
     plt.savefig(os.path.join(test_save_dir, 'real_vs_decoded.png'))
+
+    # Print graphs from trained model
+    # Save directory for graphs
+    save_dir = "graphs"
+    os.makedirs(save_dir, exist_ok=True)
+
+    open_dir = 'data_viz/VQ-VAE.pkl'
+
+    # Load the saved data using pickle
+    with open(open_dir, 'rb') as f:
+        data = pickle.load(f)
+
+    # Access the lists
+    training_reconstruction_loss = data["training_reconstruction_loss"]
+    training_vq_loss = data["training_vq_loss"]
+    validation_reconstruction_loss = data["validation_reconstruction_loss"]
+    validation_vq_loss = data["validation_vq_loss"]
+    ssim = data["ssim"]
+
+    epochs = 150
+
+    if epochs > len(training_reconstruction_loss) + 1:
+        epochs = len(training_reconstruction_loss) + 1
+
+    # Plot training and validation reconstruction loss
+    epochs = range(1, epochs)
+    plt.figure(figsize=(12, 6))
+    plt.plot(epochs, training_reconstruction_loss, label="Training Reconstruction Loss")
+    plt.plot(epochs, validation_reconstruction_loss, label="Validation Reconstruction Loss")
+    plt.xlabel('Epoch')
+    plt.ylabel('Training Reconstruction Loss')
+    plt.title('Training Reconstruction Loss over Epochs')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the figure to save_dir
+    save_path = os.path.join(save_dir, 'training_reconstruction_loss.png')
+    plt.savefig(save_path)
+    plt.close()  # Close the plot to prevent it from displaying
+
+
+    # Plot Training and Validation VQ Loss
+    plt.figure(figsize=(12, 6))
+    plt.plot(epochs, training_vq_loss, label="Training VQ Loss")
+    plt.plot(epochs, validation_vq_loss, label="Validation VQ Loss")
+    plt.ylim(0, 50000) 
+    plt.xlabel('Epoch')
+    plt.ylabel('VQ Loss')
+    plt.title('VQ Loss over Epochs')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the VQ Loss figure
+    save_path_vq = os.path.join(save_dir, 'vq_loss.png')
+    plt.savefig(save_path_vq)
+    plt.close()  # Close the plot to prevent displaying
+
+
+    # Plot SSIM over epochs
+    plt.figure(figsize=(12, 6))
+    plt.plot(epochs, ssim, label="SSIM")
+    plt.xlabel('Epoch')
+    plt.ylabel('SSIM')
+    plt.title('SSIM over Epochs')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the SSIM figure
+    save_path_ssim = os.path.join(save_dir, 'ssim.png')
+    plt.savefig(save_path_ssim)
+    plt.close()  # Close the plot to prevent displaying
     
     print("End")
 

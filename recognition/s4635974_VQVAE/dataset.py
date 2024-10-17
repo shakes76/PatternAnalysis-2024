@@ -1,3 +1,25 @@
+"""
+COMP3710 VQ-VAE Report
+Author: David Collie
+Date: October, 2024
+
+VQ-VAE Dataset Processing
+
+This file defines the dataset handling and data loader classes for the HipMRI dataset.
+It includes helper functions for loading and resizing medical images, and a custom
+PyTorch `Dataset` class for loading MRI images from disk. The `HipMRILoader` class
+is responsible for creating data loaders for training, validation, and test datasets.
+
+Classes:
+- `HipMRIDataset`: Handles the loading and transformation of MRI images.
+- `HipMRILoader`: Creates data loaders for the HipMRI dataset and computes data statistics.
+
+Helper Functions:
+- `to_channels`: Converts 2D arrays into one-hot encoded 3D arrays.
+- `resize_image`: Resizes 2D images to a target shape.
+- `load_data_2D`: Loads and normalises Nifti MRI data into image data from file paths. 
+"""
+
 import os
 import numpy as np
 import nibabel as nib

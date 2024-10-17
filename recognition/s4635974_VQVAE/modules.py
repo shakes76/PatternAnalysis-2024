@@ -1,3 +1,25 @@
+"""
+COMP3710 VQ-VAE report
+Author: David Collie
+Date: October, 2024
+
+VQ-VAE Model Implementation
+
+This file contains the implementation of the VQ-VAE (Vector Quantized Variational Autoencoder) model.
+It includes all key components: the encoder, vector quantizer, and decoder.
+
+The VQ-VAE model is composed of:
+- `ResidualBlock`: Implements a residual block with skip connections to enhance feature learning.
+- `Encoder`: A convolutional encoder that down-samples the input using convolutions and residual blocks.
+- `VectorQuantizer`: Responsible for quantizing the encoded features to discrete latent embeddings.
+- `Decoder`: A transposed convolutional decoder that reconstructs the input from quantized embeddings.
+- `VQVAE`: Integrates the encoder, vector quantizer, and decoder into a full VQ-VAE model, handling both 
+the forward pass and loss computation.
+
+This modular design allows the VQ-VAE to efficiently encode images, quantize the latent representations, 
+and decode them, while minimizing reconstruction loss and commitment loss.
+""" 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

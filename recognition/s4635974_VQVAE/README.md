@@ -71,7 +71,7 @@ Once the model has finished training, we evaluate its performance on the test se
 
 *Figure 3. pytorchinfo summary: input_size=(16, 1, 256, 128)*
 
-Above, we have the torchinfo summary of the specific VQ-VAE model used in this report. The batch size is 16. Our image size is 1 x 256 x 128. 
+Above, we have the torchinfo summary of the specific VQ-VAE model used in this report. The batch size is 16. Our image size is 1 x 256 x 128. I used the original paper [2] and a model based on this paper [3] for guidance on building this specific model. AI [6] was used for help with understanding the model and how it links to the original paper.
 
 ### Hyperparameters
 
@@ -132,7 +132,7 @@ In figure 7 we see that we go beyond our goal of achieving an SSIM of 0.6, with 
 
 *Figure 8. Image reconstructions on the validation set after 60 Epochs*
 
-Figure 8 shows a sample of 4 images taken from the validation set and passed through our model at the 60th epoch. We can see that the decoded images resmeble the real images very well. 
+Figure 8 shows a sample of 4 images taken from the validation set and passed through our model at the 60th epoch. We can see that the decoded images resemble the real images very well. 
 
 
 ### Testing
@@ -193,7 +193,7 @@ To train the model run `train.py`
 
 #### Testing
 
-To test the model run `predict.py`
+To test the model run `predict.py` . By running this file you will be able to compute the average SSIM score on the testing set and generate some images on the test set. Furthermore, some graphs will be saved from the original trained model. You can find the graphs in the `graphs` folder.  
 
 - Be sure to enter the correct model path that you would like to load under the `model_path` variable (default is the model I trained). 
   
@@ -213,7 +213,7 @@ To test the model run `predict.py`
 
 [5] Nawras. "early stopping in PyTorch." stackoverflow.com. Accessed: Oct. 10, 2024. [Online.] Available: https://stackoverflow.com/questions/71998978/early-stopping-in-pytorch
 
-[6] ChatGPT...
+[6] ChatGPT. (GPT-4o). OpenAI. Accessed: Oct., 2024. [Online]. Available: https://chat.openai.com/chat
 
 
 

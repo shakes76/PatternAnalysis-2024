@@ -15,7 +15,7 @@ import os
 import math
 
 # rangpur or local machine
-LOCAL = False
+LOCAL = True
 OUTPUT_DIR = "model"
 
 # hyperparameters
@@ -47,11 +47,11 @@ def main() -> None:
     # setup data
     if LOCAL:
         dataset = ProstateDataset(LOCAL_DATA_DIR + SEMANTIC_MRS + WINDOWS_SEP,
-                                  LOCAL_DATA_DIR + SEMANTIC_LABELS + WINDOWS_SEP, NUM_CLASSES, num_load=NUM_LOADED)
+                                  LOCAL_DATA_DIR + SEMANTIC_LABELS + WINDOWS_SEP, NUM_CLASSES, num_load=NUM_LOADED, start_t=script_start_t)
         sep = WINDOWS_SEP
     else:  # on rangpur
         dataset = ProstateDataset(RANGPUR_DATA_DIR + SEMANTIC_MRS + LINUX_SEP,
-                                  RANGPUR_DATA_DIR + SEMANTIC_LABELS + LINUX_SEP, NUM_CLASSES, num_load=NUM_LOADED)
+                                  RANGPUR_DATA_DIR + SEMANTIC_LABELS + LINUX_SEP, NUM_CLASSES, num_load=NUM_LOADED, start_t=script_start_t)
         sep = LINUX_SEP
 
     data_loader = DataLoader(dataset, batch_size=BATCH_SIZE,
@@ -91,6 +91,8 @@ def main() -> None:
     model_start_t = time.time()
 
     for epoch in range(EPOCHS):
+        print(f"[{cur_time(script_start_t)}] beginning epoch {
+              epoch} at {cur_time(model_start_t)}")
         for step, (image, mask) in enumerate(data_loader):
             image = image.to(device)
             mask = mask.to(device)
@@ -116,5 +118,8 @@ def main() -> None:
     print(f"Training took {cur_time(model_start_t)} in total")
 
 
-if __name__ == "__main__":
+if LOCAL:
+    if __name__ == "__main__":
+        main()
+else:
     main()

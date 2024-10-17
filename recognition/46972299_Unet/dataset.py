@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import v2 as transforms
 from pathlib import Path
-from utils import load_data_3D
+from utils import load_data_3D, cur_time
 
 # HipMRO_Study_open
 # --> semantic_labels_only
@@ -29,7 +29,7 @@ WINDOWS_SEP = "\\"
 class ProstateDataset(Dataset):
     FILE_TYPE = "*.nii.gz"
 
-    def __init__(self, image_dir: str, mask_dir: str, num_classes: int, num_load: int = None) -> None:
+    def __init__(self, image_dir: str, mask_dir: str, num_classes: int, num_load: int = None, start_t: float = None) -> None:
         images = [
             image_dir + file.name for file in Path(image_dir).glob(self.FILE_TYPE) if file.is_file()]
         masks = [
@@ -38,9 +38,11 @@ class ProstateDataset(Dataset):
         if num_load is None:
             num_load = len(images)
 
-        print(f"Loading {num_load} images from {image_dir}")
+        print(f"[{cur_time(start_t) if start_t is not None else "i"}] Loading {
+              num_load} images from {image_dir}")
         self.image_3D_data = load_data_3D(images[:num_load])
-        print(f"Loading {num_load} masks from {mask_dir}")
+        print(f"[{cur_time(start_t) if start_t is not None else "i"}] Loading {
+              num_load} masks from {mask_dir}")
         self.mask_3D_data = load_data_3D(masks[:num_load])
 
     def __len__(self) -> int:

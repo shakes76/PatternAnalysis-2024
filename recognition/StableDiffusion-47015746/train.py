@@ -233,7 +233,7 @@ if __name__ == '__main__':
     decoder = pre_trained_vae.decoder  # Use pre-trained decoder
 
     # Define the UNet and noise scheduler for the diffusion model
-    unet = UNet(latent_dim=128).to(device)
+    unet = UNet().to(device)
     noise_scheduler = NoiseScheduler(timesteps=1000)
     unet.train()
     # Instantiate diffusion model with frozen encoder and decoder

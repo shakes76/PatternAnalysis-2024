@@ -6,8 +6,9 @@ from modules import GFNet
 import time
 from functools import partial
 from predict import getAccuracy
+from sys import argv
 
-def main():
+def main(args):
     """
     Constants
     """
@@ -15,6 +16,13 @@ def main():
     ROOTDATAPATH = "/home/groups/comp3710/ADNI/AD_NC"
     EPOCHS = 100
     lr = 0.001
+    
+    if len(args) >= 4:
+        ROOTDATAPATH = args[3]
+    if len(args) >= 3:
+        EPOCHS = int(args[2])
+    if len(args) >= 2:
+        IMAGESIZE = int(args[1])
 
     # Set device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -36,6 +44,7 @@ def main():
 
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     criterion = nn.CrossEntropyLoss()
+    #scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=0)
     
     print("Training start")
     time_s = time.time()
@@ -60,6 +69,8 @@ def main():
             optimizer.step()
             optimizer.zero_grad()
             
+            #scheduler.step()
+            
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(images)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
@@ -75,4 +86,4 @@ def main():
         print("Accuracy:", acc)
 
 if __name__ == "__main__":
-    main()
+    main(argv)

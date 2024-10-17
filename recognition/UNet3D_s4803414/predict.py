@@ -7,7 +7,7 @@ from torchvision import transforms
 from dataset import MRIDataset
 from modules import UNet3D
 
-def main(image_path, model_path):
+def main(image_path, mask_path, model_path):
     # Load the trained model
     model = UNet3D(1, 6)  # Initialize your model architecture
     model.load_state_dict(torch.load(model_path))
@@ -31,3 +31,6 @@ def main(image_path, model_path):
         prediction = torch.argmax(prediction, dim=1)  # Get predicted class
         prediction = prediction.squeeze().cpu().numpy()  # Shape: (256, 256, 128)
 
+        # Load the Mask image
+        mask_data = nib.load(mask_path).get_fdata()
+        mask_data = image_data[:, :, :128]

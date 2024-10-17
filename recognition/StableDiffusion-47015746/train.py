@@ -41,12 +41,12 @@ def visualize_images(im1, im2, im3, im4, epoch):
         # Original Images
         axes[0, i].imshow(np.transpose(im1[i].numpy(), (1, 2, 0)))
         axes[0, i].axis('off')
-        axes[0, i].set_title("Original Image")
+        axes[0, i].set_title("Noisy Latent")
 
         # Reconstructed from Latent (Encoder → Decoder)
         axes[1, i].imshow(np.transpose(im2[i].numpy(), (1, 2, 0)))
         axes[1, i].axis('off')
-        axes[1, i].set_title("Image After Noise")
+        axes[1, i].set_title("Noise")
 
         # Final Reconstructed (Full Model Output)
         axes[2, i].imshow(np.transpose(im3[i].numpy(), (1, 2, 0)))
@@ -56,7 +56,7 @@ def visualize_images(im1, im2, im3, im4, epoch):
         # Final Reconstructed (Full Model Output)
         axes[3, i].imshow(np.transpose(im4[i].numpy(), (1, 2, 0)))
         axes[3, i].axis('off')
-        axes[3, i].set_title("Image After Noise - Predicted Noise")
+        axes[3, i].set_title("Output Image Prediction")
 
 
     plt.suptitle(f"Epoch {epoch} - Model Outputs")
@@ -135,23 +135,23 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
 
 # Instantiate and train only the diffusion model
 # Adjust the training function
-def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
+def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=25):
     diffusion_model.unet.train()  # Only UNet should be in training mode
     epoch_losses = []  # List to store loss for each epoch
 
     # Calculate an abstract milestone as half the total epochs
-    #milestone = epochs // 2
+    milestone = epochs // 4
 
     # Define schedulers without the verbose parameter
-    #sched_linear_1 = lr_scheduler.CyclicLR(
-        #optimizer, base_lr=0.005, max_lr=0.05, step_size_up = milestone // 2, step_size_down = milestone // 2, mode="triangular"
-    #)
-    #sched_linear_3 = lr_scheduler.LinearLR(
-        #optimizer, start_factor= 1, end_factor= 0.1
-    #)
-    #scheduler = lr_scheduler.SequentialLR(
-        #optimizer, schedulers=[sched_linear_1, sched_linear_3], milestones=[milestone]
-    #)
+    sched_linear_1 = lr_scheduler.CyclicLR(
+        optimizer, base_lr=0.001, max_lr=0.01, step_size_up = milestone // 2, step_size_down = milestone // 2, mode="triangular"
+    )
+    sched_linear_3 = lr_scheduler.LinearLR(
+        optimizer, start_factor= 1, end_factor= 0.01
+    )
+    scheduler = lr_scheduler.SequentialLR(
+        optimizer, schedulers=[sched_linear_1, sched_linear_3], milestones=[milestone]
+    )
 
     # Training loop with the two-phase learning rate schedule
     for epoch in range(epochs):
@@ -159,9 +159,8 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
 
         for images, _ in dataloader:
             images = images.to(device)
-            
-            optimizer.zero_grad()
 
+            optimizer.zero_grad()
             # Random timestep for diffusion
             t = torch.randint(0, diffusion_model.noise_scheduler.timesteps, (images.size(0),)).long().to(device)
 
@@ -171,13 +170,14 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
             # Calculate loss for denoising
             loss = F.smooth_l1_loss(noise, predicted_noise)
 
+            
             # Backward pass and optimize
             loss.backward()
             optimizer.step()
             total_loss += loss.item()  # Accumulate loss
 
         # Step through SequentialLR scheduler once per epoch
-        #scheduler.step()
+        scheduler.step()
 
         # Calculate average loss for the epoch
         avg_loss = total_loss / len(dataloader)
@@ -187,12 +187,12 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
         #current_lr = scheduler.get_last_lr()[0]  # get_last_lr() returns a list
         #print(f"Epoch {epoch + 1}/{epochs}, Learning Rate: {current_lr:.6f}, Diffusion Model Loss: {avg_loss:.4f}")
         print(f"Epoch {epoch + 1}/{epochs}, Diffusion Model Loss: {avg_loss:.4f}")
-
-        visualize_images(diffusion_model.decoder(latent), diffusion_model.decoder(noisy_latent), diffusion_model.decoder(predicted_noise), diffusion_model.decoder(noisy_latent - predicted_noise), epoch + 1)
-
+        final = diffusion_model.noise_scheduler.remove_noise(noisy_latent, predicted_noise, t)    
+        #visualize_images(diffusion_model.decoder(noisy_latent), diffusion_model.decoder(noise), diffusion_model.decoder(predicted_noise), diffusion_model.decoder(final), epoch + 1)
+        visualize_images_final(diffusion_model.decoder(final))
     # Save the model's state dictionary after training completes
-    torch.save(diffusion_model.state_dict(), 'diffusion_model_state_dict.pth')
-    print("Model saved as 'diffusion_model_state_dict.pth'")
+    #torch.save(diffusion_model.state_dict(), 'diffusion_model_state_dict.pth')
+    #print("Model saved as 'diffusion_model_state_dict.pth'")
 
     # Plot loss vs. epoch
     plt.figure(figsize=(8, 6))
@@ -208,8 +208,10 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
     fig = plt.figure(figsize=(8, 8))
     plt.axis("off")
     ims = [[plt.imshow(np.transpose(img, (1, 2, 0)), animated=True)] for img in img_list]
-    ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-    ani.save('training_progress_encoder.gif', writer='imagemagick', fps=10)
+    # Increase interval for slower animation (e.g., 2000 ms for 2 seconds per frame)
+    ani = animation.ArtistAnimation(fig, ims, interval=2000, repeat_delay=2000, blit=True)
+    # Lower fps to make each frame stay longer in the GIF file
+    ani.save('training_progress.gif', writer='imagemagick', fps=5)
     plt.close(fig)
 
 
@@ -240,10 +242,10 @@ if __name__ == '__main__':
     diffusion_model = DiffusionModel(encoder, unet, decoder, noise_scheduler).to(device)
 
     # Define optimizer for only the UNet part
-    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr=1e-3)
+    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters())
 
     # Train the diffusion model as before
-    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=100)
+    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=25)
 
 
     #stable_diffusion_model = StableDiffusionModel(latent_dim, timesteps)

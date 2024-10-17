@@ -15,3 +15,15 @@ class MappingNetwork(nn.Module):
             return self.mapping(z)
 
 
+class NoiseInjection(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
+
+    def foward(self, image, noise):
+        if noise is None:
+            batch, _, height, width = image.shape
+            noise = image.new_empty(batch, 1, height, width).normal_()
+        return image + self.weight * noise
+
+

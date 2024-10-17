@@ -8,6 +8,7 @@ from torchvision import transforms
 from sklearn.model_selection import train_test_split
 from scipy.ndimage import zoom
 import matplotlib.pyplot as plt
+from PIL import Image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,34 +33,27 @@ class ADNIDataset(Dataset):
 
     def load_data(self):
         """
-        Load the ADNI dataset from NIFTI files.
+        Load the ADNI dataset from JPEG files.
         Returns:
-            tuple: (images, labels)
+            tuple: (image_paths, labels)
         """
-        images = []
+        image_paths = []
         labels = []
-        class_dirs = ['AD', 'CN']  # Alzheimer's Disease and Cognitive Normal
+        class_dirs = ['AD', 'NC']  # Alzheimer's Disease and Cognitive Normal
 
         for class_idx, class_name in enumerate(class_dirs):
             class_dir = os.path.join(self.root_dir, class_name)
             logger.info(f"Loading {class_name} images from {class_dir}")
 
             for filename in os.listdir(class_dir):
-                if filename.endswith('.nii') or filename.endswith('.nii.gz'):
+                if filename.endswith('.jpg') or filename.endswith('.jpeg'):
                     file_path = os.path.join(class_dir, filename)
-                    try:
-                        image = self.load_nifti(file_path)
-                        images.append(image)
-                        labels.append(class_idx)
-                    except Exception as e:
-                        logger.error(f"Error loading {file_path}: {str(e)}")
-
-        images = np.array(images)
-        labels = np.array(labels)
+                    image_paths.append(file_path)
+                    labels.append(class_idx)
 
         # Split the data into training and testing sets
         X_train, X_test, y_train, y_test = train_test_split(
-            images, labels, test_size=self.test_size, random_state=self.random_state, stratify=labels
+            image_paths, labels, test_size=self.test_size, random_state=self.random_state, stratify=labels
         )
 
         if self.train:
@@ -69,41 +63,6 @@ class ADNIDataset(Dataset):
             logger.info(f"Test set size: {len(X_test)}")
             return X_test, y_test
 
-    def load_nifti(self, file_path):
-        """
-        Load a NIFTI file and preprocess the image.
-        Args:
-            file_path (string): Path to the NIFTI file.
-        Returns:
-            numpy.ndarray: The preprocessed image.
-        """
-        nifti_img = nib.load(file_path)
-        image_data = nifti_img.get_fdata()
-
-        # Preprocess the image
-        preprocessed_image = self.preprocess_image(image_data)
-        return preprocessed_image
-
-    def preprocess_image(self, image):
-        """
-        Preprocess the loaded NIFTI image.
-        Args:
-            image (numpy.ndarray): The loaded image data.
-        Returns:
-            numpy.ndarray: The preprocessed image.
-        """
-        # Normalize the image
-        image = (image - image.min()) / (image.max() - image.min())
-
-        # Resize to a fixed size (e.g., 128x128x128)
-        zoom_factors = np.array([128, 128, 128]) / np.array(image.shape)
-        image = zoom(image, zoom_factors, order=1)
-
-        # Take a central slice (for 2D StyleGAN2)
-        central_slice = image[:, :, image.shape[2] // 2]
-
-        return central_slice
-
     def __len__(self):
         return len(self.images)
 
@@ -111,14 +70,14 @@ class ADNIDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        image = self.images[idx]
+        img_path = self.images[idx]
+        image = Image.open(img_path).convert('L')  # Open as grayscale
         label = self.labels[idx]
 
         if self.transform:
             image = self.transform(image)
 
         return image, label
-
 
 def get_transform():
     """
@@ -127,11 +86,10 @@ def get_transform():
         transforms.Compose: The transformation pipeline.
     """
     return transforms.Compose([
+        transforms.Resize((256, 240)),  # Ensure the image is 256x240
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,)),
-        transforms.Resize((128, 128)),  # Adjust size as needed for StyleGAN2
+        transforms.Normalize((0.5,), (0.5,)),  # Normalize for grayscale images
     ])
-
 
 def get_dataloader(root_dir, batch_size, train=True, num_workers=4):
     """
@@ -147,10 +105,9 @@ def get_dataloader(root_dir, batch_size, train=True, num_workers=4):
     dataset = ADNIDataset(root_dir, transform=get_transform(), train=train)
     return DataLoader(dataset, batch_size=batch_size, shuffle=train, num_workers=num_workers)
 
-
 # Example usage
 if __name__ == "__main__":
-    root_dir = "/home/groups/comp3710/ADNI"
+    root_dir = "C:\\Users\\Ovint\\Documents\\PatternAnalysis-2024\\recognition\\styleGAN2_s4743209\\dataset\\ADNI\\train"
     train_loader = get_dataloader(root_dir, batch_size=32, train=True)
     test_loader = get_dataloader(root_dir, batch_size=32, train=False)
 
@@ -160,9 +117,3 @@ if __name__ == "__main__":
         logger.info(f"Labels shape: {labels.shape}")
         logger.info(f"Label distribution: {np.bincount(labels)}")
         break
-
-    # Visualize a sample image
-    plt.imshow(images[0][0], cmap='gray')
-    plt.title(f"Label: {'AD' if labels[0] == 0 else 'CN'}")
-    plt.savefig('sample_adni_image.png')
-    logger.info("Sample image saved as 'sample_adni_image.png'")

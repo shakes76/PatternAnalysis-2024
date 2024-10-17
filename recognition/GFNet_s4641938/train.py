@@ -5,6 +5,7 @@ from dataset import ADNI_DataLoader
 from modules import GFNet
 import time
 from functools import partial
+from predict import getAccuracy
 
 def main():
     """
@@ -64,25 +65,6 @@ def main():
                 print(f"loss: {loss:>7f} accuracy: {acc:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
         times_taken.append(time.time() - time_s)
         print(f"{int(times_taken[-1] // 3600)}h {int((times_taken[-1] % 3600) // 60)}m {int(times_taken[-1] % 60)}s taken for epoch {epoch}")
-
-
-def getAccuracy(test_dataloader, model, device, max_subset : int = -1):
-    with torch.no_grad():
-        total_correct = 0
-        total_images = 0
-        for batch, (images, targets) in enumerate(test_dataloader):
-            images = images.to(device)
-            targets = targets.to(device)
-            outputs = model(images)
-            most_likely = torch.max(outputs, dim=1).indices #get class with highest score
-            correct = most_likely == targets
-            total_correct += correct.sum()
-            total_images += len(images)
-
-            print(f"[{batch}/{len(test_dataloader)}] Batch accuracy: {correct.sum()/len(images)}")
-            if max_subset != -1 and batch > max_subset:
-                break
-        return total_correct/total_images
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,8 @@
+'''
+This file responsible for loading the dataset with appropriate setting 
+and ready to be used for training and testing
+'''
+
 import os
 from PIL import Image
 import torch

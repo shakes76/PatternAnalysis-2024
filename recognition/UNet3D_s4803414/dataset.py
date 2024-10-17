@@ -82,8 +82,8 @@ class MRIDataset(Dataset):
 
         if random.random() > 0.5:
             angle = random.uniform(-30, 30)  # Rotate between -30 and 30 degrees
-            image = scipy.ndimage.rotate(image, angle, axes=(2, 3), reshape=False, mode='nearest')
-            mask = scipy.ndimage.rotate(mask, angle, axes=(2, 3), reshape=False, mode='nearest', order=0)
+            image = scipy.ndimage.rotate(image, angle, axes=(1, 2), reshape=False, mode='nearest')
+            mask = scipy.ndimage.rotate(mask, angle, axes=(1, 2), reshape=False, mode='nearest', order=0)
 
         if random.random() > 0.5:
             zoom_factor = random.uniform(0.9, 1.1)  # Zoom between 90% and 110%

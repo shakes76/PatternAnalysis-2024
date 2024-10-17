@@ -101,15 +101,15 @@ def siamese_train():
         model.train()
         epoch_loss = 0.0
 
-        for img1, img2, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
-            img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
-
-            print(f"Shape of labels before loss: {labels.shape}")  # Debugging line
-
+        for img1, img2, label1, label2 in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
+            img1, img2, label1, label2 = img1.to(device), img2.to(device), label1.to(device), label2.to(device)
 
             # Forward pass
             y1, y2 = model(img1, img2)
-            loss = contrastive_loss(y1, y2, labels.squeeze())
+            embeddings = torch.cat([y1,y2], dim=0)
+            labels = torch.cat([label1, label2], dim=0)
+
+            loss = contrastive_loss(embeddings, labels)
 
             # Backward pass and optimization
             optimizer.zero_grad()
@@ -125,11 +125,16 @@ def siamese_train():
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for img1, img2, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validation"):
-                img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
+            for img1, img2, label1, label2 in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
+                img1, img2, label1, label2 = img1.to(device), img2.to(device), label1.to(device), label2.to(device)
 
+                # Forward pass
                 y1, y2 = model(img1, img2)
-                loss = contrastive_loss(y1, y2, labels.squeeze())
+                embeddings = torch.cat([y1,y2], dim=0)
+                labels = torch.cat([label1, label2], dim=0)
+
+
+                loss = contrastive_loss(embeddings, labels)
 
                 val_loss += loss.item()
 

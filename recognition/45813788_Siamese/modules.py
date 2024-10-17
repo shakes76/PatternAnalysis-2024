@@ -10,7 +10,7 @@ class FeatureExtraction(nn.Module):
         super(FeatureExtraction, self).__init__()
 
         #Load resnet
-        self.model = models.resnet18(pretrained=False)
+        self.model = models.resnet18(weights=False)
 
         #remove fully connected
         self.model = nn.Sequential(*list(self.model.children())[:-1])

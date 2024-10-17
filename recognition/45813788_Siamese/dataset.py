@@ -60,35 +60,38 @@ class ISISCDataset(Dataset):
         self.malignant_ids = self.malignant_df['isic_id'].tolist()
 
         #Gen paris
-        self.pairs, self.labels = self.create_pairs()
+        self.pairs = self.create_pairs()
 
     def create_pairs(self):
         pairs = []
-        labels = []
+        labels1 = []
+        labels2 = []
 
-        #use 1 for similar and 0 for not 
+        #0 for malig, 1 for benign
         for _ in range(len(self.benign_ids)):
             img1, img2 = random.sample(self.benign_ids, 2)
             pairs.append((img1, img2))
-            labels.append(1)
+            labels1.append(0)
+            labels2.append(0)
 
         for _ in range(len(self.malignant_ids)):
             img1, img2 = random.sample(self.malignant_ids, 2)
             pairs.append((img1, img2))
-            labels.append(1)
-
-            if self.augment_ratio > 0 and random.random() < self.augment_ratio:
-                pairs.append((img1,img2))
-                labels.append(1)
+            labels1.append(1)
+            labels2.append(1)
 
         # Negative Pairs
         for _ in range(len(self.benign_ids)):
             img1 = random.choice(self.benign_ids)
             img2 = random.choice(self.malignant_ids) #change if bad
             pairs.append((img1, img2))
-            labels.append(0)
+            labels1.append(0)
+            labels2.append(1)
 
-        return pairs, labels
+        self.labels1 = labels1
+        self.labels2 = labels2
+
+        return pairs
 
     def __len__(self):
         return len(self.pairs)
@@ -106,7 +109,9 @@ class ISISCDataset(Dataset):
 
     def __getitem__(self, index):
         img1_id, img2_id = self.pairs[index]
-        label = self.labels[index]
+        
+        label1 = self.labels1[index]
+        label2 = self.labels2[index]
 
         #get images
         img1_path = os.path.join(self.images_dir,img1_id + '.jpg')
@@ -121,7 +126,7 @@ class ISISCDataset(Dataset):
         img1 = self.apply_transform(img1_id, img1)
         img2 = self.apply_transform(img2_id, img2)
         
-        return img1, img2, torch.tensor(label, dtype=torch.float32)
+        return img1, img2, torch.tensor(label1, dtype=torch.float32), torch.tensor(label2, dtype=torch.float32)
 
 #print(malignant)
 #print(benign)

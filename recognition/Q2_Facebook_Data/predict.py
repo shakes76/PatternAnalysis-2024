@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from modules import GNNModel
+from modules import GNNModel, AdvanceGNNModel
 from dataset import load_facebook_data, split_data
 from train import train_model, test_model
 import matplotlib.pyplot as plt
@@ -93,10 +93,12 @@ if __name__ == '__main__':
     data.test_mask = test_mask
 
     # initialize the model
-    model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
+    # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[128,1028,512,64])
 
+    path2 =  "recognition/Q2_Facebook_Data/modelAdvancedGNN2.pth"
     # Load trained model weights
-    model.load_state_dict(torch.load('recognition/Q2_Facebook_Data/modelEnhance1.pth'))
+    model.load_state_dict(torch.load(path2))
     
     # predict the labels
     pred = predict(data, model)

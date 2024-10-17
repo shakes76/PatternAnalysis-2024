@@ -1,12 +1,12 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from modules import GNNModel
+from modules import GNNModel , AdvanceGNNModel
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import load_facebook_data, split_data
 import matplotlib.pyplot as plt
 
-def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=1e-4):
+def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4, patience=20):
     """
     This function trains the given model on the given data.
     The training loop is run for the specified number of epochs.
@@ -24,8 +24,10 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=1e-4)
         The number of epochs to train the model for
     learning_rate : float, optional (default=0.001)
         The learning rate for the Adam optimiser
-    weight_decay : float, optional (default=1e-4)
+    weight_decay : float, optional (default=2e-4)
         The weight decay for the Adam optimiser
+    patience : int, optional (default=20)
+        The number of epochs to wait for an improvement in validation accuracy before stopping training
     
     Returns:
     --------
@@ -52,6 +54,9 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=1e-4)
     train_losses = []
     val_accuracies = []
 
+    # early stop setup
+    best_val_acc = 0
+    patience_counter = 0
     # training loop
     for epoch in range(epochs):
         model.train()
@@ -61,7 +66,6 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=1e-4)
 
         # loss
         loss = loss_fn(out[data.train_mask], data.y[data.train_mask])
-
         # backward pass
         loss.backward()
         # optimiser step
@@ -80,10 +84,23 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=1e-4)
             val_accuracies.append(val_acc)
 
         # early stopping
-        if len(val_accuracies) > 5:
-            if val_accuracies[-1] < val_accuracies[-2] < val_accuracies[-3] < val_accuracies[-4] < val_accuracies[-5]:
-                break
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            patience_counter = 0
 
+            # save the model
+            torch.save(model.state_dict(), "recognition/Q2_Facebook_Data/modelAdvancedGNN2.pth")
+
+        else:
+            patience_counter += 1
+
+        # stop training if no improement in validation accuracy
+        if patience_counter >= patience:
+            print(f"Early stopping at epoch {epoch}")
+            break
+
+        # learning rate scheduler
+        scheduler.step(val_acc)
         # print (each value upto 4 deicmal places)
         print(f"Epoch: {epoch}, Loss: {loss.item():.4f}, Val Acc: {val_acc:.4f}")
 
@@ -143,7 +160,8 @@ if __name__ == '__main__':
 
 
     # initialise the model
-    model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
+    # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[128,1028,512,64])
 
     # train the model
     model = train_model(data, model)
@@ -154,5 +172,5 @@ if __name__ == '__main__':
 
 
     # save the model
-    modelName = "recognition/Q2_Facebook_Data/modelEnhance1.pth"
-    torch.save(model.state_dict(), modelName)
+    # modelName = "recognition/Q2_Facebook_Data/modelAdvance1.pth"
+    # torch.save(model.state_dict(), modelName)

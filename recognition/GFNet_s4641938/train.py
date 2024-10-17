@@ -50,5 +50,16 @@ def main():
             optimizer.step()
             optimizer.zero_grad()
 
+def getAccuracy(test_dataloader, model):
+    with torch.no_grad():
+        total_correct = 0
+        total_images = 0
+        for images, targets in test_dataloader:
+            outputs = model(images)
+            total_correct += outputs == targets
+            total_images += len(images)
+    
+    return total_correct/total_images
+
 if __name__ == "__main__":
     main()

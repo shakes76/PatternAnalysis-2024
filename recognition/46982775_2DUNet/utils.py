@@ -1,14 +1,16 @@
 """
-Helper file with various functions to load 2D Nifti image files using the Nibabel library.
+Helper file with various functions to load 2D Nifti files.
 
-Author: Shekhar "Shakes" Chandra
+Original Author: Shekhar "Shakes" Chandra
+Modified: Joseph Reid
 
-Dependencies: numpy nibabel tqdm
+Dependencies: numpy nibabel tqdm scikit-image
 """
 
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+from skimage.transform import resize
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -33,7 +35,6 @@ def load_data_2D (imageNames, normImage=False, categorical=False, dtype = np.flo
 
     # get fixed size
     num = len(imageNames)
-    print(imageNames[0])
     first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
     if len(first_case.shape) == 3:
         first_case = first_case[:, :, 0] # sometimes extra dims , remove
@@ -49,17 +50,19 @@ def load_data_2D (imageNames, normImage=False, categorical=False, dtype = np.flo
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching = 'unchanged') # read disk only
         affine = niftiImage.affine
+        # print(f"Index: {i}, Shape: {inImage.shape}")
         if len (inImage.shape) == 3:
             inImage = inImage[:, :, 0] # sometimes extra dims in HipMRI_study data
+        inImage = resize(inImage, (rows, cols), order=1, preserve_range=True)
         inImage = inImage.astype(dtype)
         if normImage:
             # ~ inImage = inImage / np . linalg . norm ( inImage )
             # ~ inImage = 255. * inImage / inImage . max ()
             inImage = (inImage - inImage.mean()) / inImage.std()
-        if categorical :
+        if categorical:
             inImage = to_channels(inImage, dtype = dtype)
             images[i, : , : , :] = inImage
-        else :
+        else:
             images[i, : , :] = inImage
 
         affines.append(affine)

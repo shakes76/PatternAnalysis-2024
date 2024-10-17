@@ -1,0 +1,11 @@
+ADNI/
+COMP3710*
+.conda
+*pycache*
+*.pth
+*.pt
+run_model.sh
+*.out
+models/
+logs/
+plots/

@@ -104,7 +104,7 @@ class FullUNet3D(nn.Module):
             self.analysis_path.append(new_layer)
             cur_width *= 2
         
-        self.synthesis_path = []
+        self.synthesis_path:list[SynthesisLayer] = []
         while cur_width < start_width:
             new_layer = SynthesisLayer(base_width=cur_width,target_width=cur_width//2,padding=synth_pad)
             self.synthesis_path.append(new_layer)
@@ -122,3 +122,11 @@ class FullUNet3D(nn.Module):
             x = layer(to_shortcut.pop(), x)
         x = self.final_conv(x)
         return x
+    
+    def to(self, device:torch.device|None=None,dtype:torch.dtype|None=None,non_blocking=False):
+        super(FullUNet3D, self).to(device=device,dtype=dtype,non_blocking=non_blocking)
+        for layer in self.analysis_path:
+            layer.to(device=device,dtype=dtype,non_blocking=non_blocking)
+        for layer in self.synthesis_path:
+            layer.to(device=device,dtype=dtype,non_blocking=non_blocking)
+        return self

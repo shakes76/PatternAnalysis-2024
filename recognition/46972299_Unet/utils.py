@@ -1,6 +1,9 @@
 """
 Contains helper miscellaneous functions used
+
+@author Carl Flottmann
 """
+
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm

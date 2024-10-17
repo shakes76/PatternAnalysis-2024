@@ -1,5 +1,7 @@
 """
 Contains the code for calculating losses and metrics for the Unet
+
+@author Carl Flottmann
 """
 
 # will use https://smp.readthedocs.io/en/latest/index.html for Dice loss

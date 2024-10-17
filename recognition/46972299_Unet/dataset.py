@@ -1,9 +1,11 @@
 """
 File for loading the required dataset for the Unet
+
+@author Carl Flottmann
 """
 import torch
 from torch.utils.data import Dataset
-import torchio as tio
+from torchvision.transforms import v2 as transforms
 from pathlib import Path
 from utils import load_data_3D
 
@@ -35,29 +37,18 @@ class ProstateDataset(Dataset):
         print(f"Loading {num_load} masks from {mask_dir}")
         self.mask_3D_data = load_data_3D(masks[:num_load])
 
-        self.transform = tio.Compose([
-            tio.RescaleIntensity((0, 1)),
-            tio.ZNormalization(),
-            tio.OneHot(num_classes)
-        ])
-
-        self.processed = []
-
     def __len__(self) -> int:
         return len(self.image_3D_data)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         image = self.image_3D_data[idx]
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
+        # Rescale intensity to (0, 1)
+        image = (image - image.min()) / (image.max() - image.min())
+        # Normalisation
+        image = (image - image.mean()) / image.std()
 
         mask = self.mask_3D_data[idx]
-        mask = torch.tensor(mask, dtype=torch.float32).unsqueeze(0)
+        mask = torch.tensor(mask, dtype=torch.int64).unsqueeze(0)
 
-        subject = tio.Subject(
-            image=tio.ScalarImage(tensor=image),
-            mask=tio.LabelMap(tensor=mask)
-        )
-        subject = self.transform(subject)
-        self.processed.append(subject)
-
-        return subject['image'].data, subject['mask'].data
+        return image, mask

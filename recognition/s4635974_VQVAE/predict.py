@@ -10,7 +10,7 @@ import modules
 
 
 # Model path for loading model
-model_path = 'saved_model/early_stopping_lr=0.002.pth'
+model_path = 'saved_model/VQ-VAE.pth'
 
 # Hyperparmeters for loading model
 batch_size = 16            # Batch size for the dataloader

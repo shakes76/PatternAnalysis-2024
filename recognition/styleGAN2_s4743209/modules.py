@@ -86,3 +86,21 @@ class Generator(nn.Module):
 
         image = skip / self.num_layers
         return image
+
+class Discriminator(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.channels = channels[::-1]
+
+        layers = []
+        for i in range(len(self.channels) - 1):
+            layers.append(nn.Conv2d(self.channels[i], self.channels[i+1], 3, padding=1))
+            layers.append(nn.LeakyReLU(0.2))
+
+        self.convs = nn.Sequential(*layers)
+        self.final_conv = nn.Conv2d(self.channels[-1], 1, 4)
+
+    def forward(self, input):
+        out = self.convs(input)
+        out = self.final_conv(out)
+        return out.view(out.shape[0], -1)

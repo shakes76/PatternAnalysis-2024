@@ -3,23 +3,23 @@ import torch
 from torch_geometric.data import Data
 
 
-#Load in the facebook lagre page network dataset
+#Load in the facebook large page network dataset
 data = np.load('facebook.npz')
 
 #Explore the file names
-print("Data Files")
-print(data.files)
+#print("Data Files")
+#print(data.files)
 
 #Determine allocate each part of the data and determine the size 
 edges = data['edges']  
-print("edge size")
-print(edges.shape)
+#print("edge size")
+#print(edges.shape)
 features = data['features'] 
-print("Feature Size") 
-print(features.shape)
+#print("Feature Size") 
+#print(features.shape)
 target = data['target']  
-print("Target Size")
-print(target.shape)
+#print("Target Size")
+#print(target.shape)
 
 # create a tensor of edges, features and targets
 edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
@@ -35,7 +35,7 @@ train[:int(0.7 *  X.shape[0])] = True
 
 val = torch.zeros( X.shape[0], dtype=torch.bool)
 #10% For Validation 
-ValueError[int(0.7 *  X.shape[0]):int(0.8 *  X.shape[0])] = True
+val[int(0.7 *  X.shape[0]):int(0.8 *  X.shape[0])] = True
 
 test = torch.zeros( X.shape[0], dtype=torch.bool)
 #Remaining 20% for testing 

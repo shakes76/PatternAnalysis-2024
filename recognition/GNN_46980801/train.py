@@ -51,29 +51,49 @@ def evaluate(model, data):
 #input dim, hidden dim to be tuned according ot training
 model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10)
 
+#Configure epochs
+epochs = range(10)
+
 losses = []
 train_accs = []
 test_accs = []
 
-for epoch in range(10):
+#Every epoch record and display key metrics (loss, train acc, test acc)
+for epoch in epochs:
 
     loss = train(model, graph_data)
-    if epoch % 1 == 0:
-        acc_train, acc_test = evaluate(model, graph_data)
-        losses.append(loss)
-        train_accs.append(acc_train)
-        test_accs.append(acc_test)
-        print(f'Epoch: {epoch}, Loss: {loss:.4f}, Train Acc: {acc_train:.4f}, Test Acc: {acc_test:.4f}')
+    
+    acc_train, acc_test = evaluate(model, graph_data)
+    losses.append(loss)
+    train_accs.append(acc_train)
+    test_accs.append(acc_test)
+    print(f'Epoch: {epoch}, Loss: {loss:.4f}, Train Acc: {acc_train:.4f}, Test Acc: {acc_test:.4f}')
 
 torch.save(model.state_dict(), 'weights.pth')
 
-epochs = range(10)
+#Loss Plot
+plt.figure()
 plt.plot(epochs, losses, label="Losses")
+plt.xlabel("Epochs")
+plt.title("Loss Vs Epoch")
+plt.ylabel("Loss")
+plt.savefig('loss.png')
+
+#Train accuracy plot
+plt.figure()
 plt.plot(epochs, train_accs, label="Training Accuracy")
+plt.xlabel("Epochs")
+plt.title("Training Accuracy Vs Epoch")
+plt.ylabel("Accuracy")
+plt.savefig('train_acc.png')
+
+
+#test accuracy plot
+plt.figure()
 plt.plot(epochs, test_accs, label="Test Accuracy")
 plt.xlabel("Epochs")
-plt.title("Multiple Lines Plot")
-plt.legend()
-plt.title("")
-plt.show()
+plt.title("Test Accuracy Vs Epoch")
+plt.ylabel("Accuracy")
+plt.savefig('test_acc.png')
+
 

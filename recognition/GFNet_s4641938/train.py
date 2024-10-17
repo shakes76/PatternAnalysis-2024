@@ -39,7 +39,7 @@ def main(args):
 
     # Create model
     print("Creating GFNet model")
-    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), dropcls=0.25)
+    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.1, dropcls=0.25)
     model.to(device)
 
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)

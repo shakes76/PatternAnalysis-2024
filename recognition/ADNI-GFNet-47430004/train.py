@@ -328,6 +328,9 @@ if __name__ == '__main__':
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
 
+    if not os.path.exists(args.output_dir + "figs/"):
+        os.makedirs(args.output_dir + "figs/")
+    
     plt.figure(figsize=(10,5))
     plt.title("Training and Test Loss per epoch")
     plt.plot(training_losses, label="Training Loss")

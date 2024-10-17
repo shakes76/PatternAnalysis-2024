@@ -43,3 +43,31 @@ class EquilizerKG(nn.Module):
 
     def forward(self):
         return self.weight * self.constanted
+
+class Generator(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        pass
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        pass
+
+class StyleGAN2(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        pass
+
+class NoiseInjection(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        pass

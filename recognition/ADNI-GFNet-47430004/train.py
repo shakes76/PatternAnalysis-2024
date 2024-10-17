@@ -301,7 +301,7 @@ if __name__ == '__main__':
         test_stats = evaluate(test_loader, model, device)
         print(f"Accuracy of the network on the {len(test_loader)} test images: {test_stats['acc1']:.1f}%")
         training_losses.append(train_stats["loss"])
-        test_losses.append(test_stats.["loss"])
+        test_losses.append(test_stats["loss"])
         test_acc.append(test_stats["acc1"])
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')

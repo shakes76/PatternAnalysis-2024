@@ -7,6 +7,28 @@ from torchvision import transforms
 from dataset import MRIDataset
 from modules import UNet3D
 
+
+def visualise_slice(image, mask, prediction, slice_index):
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 3, 1)
+    plt.title("Image Slice")
+    plt.imshow(image[:, :, slice_index], cmap='gray')
+    plt.axis('off')
+
+    plt.subplot(1, 3, 2)
+    plt.title("Mask Slice")
+    plt.imshow(mask[:, :, slice_index], cmap='gray')
+    plt.axis('off')
+
+    plt.subplot(1, 3, 3)
+    plt.title("Prediction Slice")
+    plt.imshow(prediction[:, :, slice_index], cmap='gray')
+    plt.axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
 def main(image_path, mask_path, model_path):
     # Load the trained model
     model = UNet3D(1, 6)  # Initialize your model architecture

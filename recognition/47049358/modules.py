@@ -140,7 +140,6 @@ class ImprovedUnet(nn.Module):
 
 
     def forward(self, x):
-
         conv_out_1 = self.block1(x)
         context_out_1 = self.context1(conv_out_1)
         element_sum_1 = conv_out_1 + context_out_1
@@ -185,16 +184,13 @@ class ImprovedUnet(nn.Module):
         seg_sum_1 = upscale_out_1 + segment_out_2
         
         upscale_out_2 = self.upscale_2(seg_sum_1)
-
         convoutput_out = self.conv_output(concat_4)
         segment_out_3 = self.segmentation3(convoutput_out)
 
         final_sum = upscale_out_2 + segment_out_3
-
-        output = torch.permute(final_sum, (0, 2, 3, 4, 1))
-
-        output =  torch.softmax(output, dim = -1)
         
+        output = torch.permute(final_sum, (0, 2, 3, 4, 1))
+        output =  torch.softmax(output, dim = -1)
         return output
     
 

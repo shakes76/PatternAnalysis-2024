@@ -31,13 +31,13 @@ BATCH_SIZE = 2
 def test(model, test_loader, criterion, device):
     model.eval()  # Set the model to evaluation mode
     
-    test_scores = np.array([]) # stores dice scores.
-    seg_0_scores = np.array([])
-    seg_1_scores = np.array([])
-    seg_2_scores = np.array([])
-    seg_3_scores = np.array([])
-    seg_4_scores = np.array([])
-    seg_5_scores = np.array([])
+    test_dice_coefs = np.array([]) # stores dice scores.
+    seg_0_dice_coef = np.array([])
+    seg_1_dice_coef = np.array([])
+    seg_2_dice_coef = np.array([])
+    seg_3_dice_coef = np.array([])
+    seg_4_dice_coef = np.array([])
+    seg_5_dice_coef = np.array([])
 
     with torch.no_grad():
         
@@ -45,48 +45,49 @@ def test(model, test_loader, criterion, device):
 
         for i, (inputs, masks) in enumerate(test_loader):
             print(f'Test No.{i}')
+
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
-            test_loss, dice_coefs, _ = criterion(outputs, masks)
+            test_loss, segment_coefs, test_dice = criterion(outputs, masks)
 
-            for i in range(len(dice_coefs)):
+            for i in range(len(segment_coefs)):
                 if i == 0:
-                    seg_0_scores = np.append(seg_0_scores, dice_coefs[i])
+                    seg_0_dice_coef = np.append(seg_0_dice_coef, segment_coefs[i])
                 elif i == 1:
-                    seg_1_scores = np.append(seg_1_scores, dice_coefs[i])
+                    seg_1_dice_coef = np.append(seg_1_dice_coef, segment_coefs[i])
                 elif i == 2:
-                    seg_2_scores = np.append(seg_2_scores, dice_coefs[i])
+                    seg_2_dice_coef = np.append(seg_2_dice_coef, segment_coefs[i])
                 elif i == 3:
-                    seg_3_scores = np.append(seg_3_scores, dice_coefs[i])
+                    seg_3_dice_coef = np.append(seg_3_dice_coef, segment_coefs[i])
                 elif i == 4:
-                    seg_4_scores = np.append(seg_4_scores, dice_coefs[i])
+                    seg_4_dice_coef = np.append(seg_4_dice_coef, segment_coefs[i])
                 else:
-                    seg_5_scores = np.append(seg_5_scores, dice_coefs[i])
+                    seg_5_dice_coef = np.append(seg_5_dice_coef, segment_coefs[i])
                 
-            test_scores = np.append(test_scores, test_loss.item())
+            test_dice_coefs = np.append(test_dice_coefs, test_dice.item())
 
-    return test_scores, seg_0_scores, seg_1_scores, seg_2_scores, seg_3_scores, seg_4_scores, seg_5_scores
+    return test_dice_coefs, seg_0_dice_coef, seg_1_dice_coef, seg_2_dice_coef, seg_3_dice_coef, seg_4_dice_coef, seg_5_dice_coef
 
 """
     Plots dice coefficients of the whole test dataset.
     Takes an array of dice scores as input. 
 """
-def plot_dice(dice, criterion, segment_scores):
+def plot_dice(dice_coefs, criterion, segment_coefs):
 
-    x_values = np.arange(len(dice))  # Generate x-values as indices
+    x_values = np.arange(len(dice_coefs))  # Generate x-values as indices
     # Plot overall dice scores
-    plt.plot(x_values, dice_scores, label='Overall Dice Scores')
+    plt.plot(x_values, dice_coefs, label='Overall Dice Coefficient')
     
     # Plot segment scores
-    for i, segment_score in enumerate(segment_scores):
-        plt.plot(x_values, segment_score, label=f'Segment {i} Dice Scores')
+    for i, segment_coef in enumerate(segment_coefs):
+        plt.plot(x_values, segment_coef, label=f'Segment {i} Dice Coefficients')
 
     plt.xlabel("Image Index")
     plt.ylabel("Dice Coefficient")
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_scores_test_{str(criterion)}.png')
+    plt.savefig(f'dice_coefs_test_{str(criterion)}.png')
     plt.close()
 
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     start = time()
 
     # perform predictions
-    dice_scores, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader, criterion = criterion,
+    dice_coefs, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader, criterion = criterion,
                                                device = device)
     
     end = time()
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     
     print(f"> Testing completed in {elapsed_time:.2f} seconds")
 
-    average_dice = np.mean(dice_scores)
+    average_dice = np.mean(dice_coefs)
     print(f"Average Dice Coefficient: {average_dice:.4f}")
 
     average_s0 = np.mean(s0)
@@ -134,9 +135,9 @@ if __name__ == "__main__":
     average_s5 = np.mean(s5)
     print(f"Segment 5 Dice Coefficient: {average_s5:.4f}")
 
-    segment_scores = [s0, s1, s2, s3, s4, s5]
+    segment_coefs = [s0, s1, s2, s3, s4, s5]
 
     # plot dice scores across the dataset.
-    plot_dice(dice_scores, criterion, segment_scores)
+    plot_dice(dice_coefs, criterion, segment_coefs)
 
 

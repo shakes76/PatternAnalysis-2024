@@ -169,8 +169,8 @@ X_test = [os.path.join(IMAGE_FILE_NAME, image) for image in X_test]
 y_train = [os.path.join(LABEL_FILE_NAME, label) for label in y_train]
 y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 
-# X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=True)
-X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=True)
+X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=False)
+X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=False)
 
 def random_rotation(image: torch.Tensor):
     angle = random.uniform(0, 180)

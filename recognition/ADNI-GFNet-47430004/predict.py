@@ -13,7 +13,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-out_dir = 'test/model/run/fig'
+out_dir = 'test/model/run/figs'
 model_path = "test/model/GFNet.pth"
 
 class AverageMeter(object):
@@ -140,5 +140,5 @@ if __name__ == '__main__':
     plt.plot([x for x in range(len(acc1list))], acc1list)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    plt.savefig(out_dir)
+    plt.savefig(out_dir + "test")
     plt.show()

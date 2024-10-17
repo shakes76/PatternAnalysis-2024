@@ -87,8 +87,10 @@ class MRIDataset(Dataset):
 
         if random.random() > 0.5:
             zoom_factor = random.uniform(0.9, 1.1)  # Zoom between 90% and 110%
-            image = scipy.ndimage.zoom(image, (1, zoom_factor, zoom_factor, zoom_factor), order=1)
-            mask = scipy.ndimage.zoom(mask, (1, zoom_factor, zoom_factor, zoom_factor), order=0)
+            # Adjust the zoom factor to match the number of dimensions
+            zoom_factors = (1, zoom_factor, zoom_factor, zoom_factor)
+            image = scipy.ndimage.zoom(image, zoom_factors, order=1)
+            mask = scipy.ndimage.zoom(mask, zoom_factors, order=0)
 
             # Resize back to target size after zoom
             image = self.resize(image, self.target_size)

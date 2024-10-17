@@ -28,3 +28,14 @@ def makeTSNE(model, data, num):
     plt.show()
 
 
+def main():
+    
+    model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10)
+    makeTSNE(model, graph_data, 1)
+    model.load_state_dict(torch.load('weights.pth'))
+    makeTSNE(model, graph_data, 2)
+
+
+
+if __name__ == "__main__":
+    main()

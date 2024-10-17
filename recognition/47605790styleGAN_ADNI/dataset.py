@@ -26,17 +26,16 @@ class ADNIDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        """Load an image and return it"""
         img_path = self.image_paths[idx]
+        image = Image.open(img_path).convert('RGB')
 
-        # Load the image 
-        image = Image.open(img_path).convert('RGB') 
+        # Extract label based on directory structure
+        label = 1 if "AD" in img_path else 0 
 
-        # Apply transformations 
         if self.transform:
             image = self.transform(image)
 
-        return image 
+        return image, label
 
 # Function to create DataLoader for training the GAN
 def load_data(train_dir, test_dir, batch_size=32):

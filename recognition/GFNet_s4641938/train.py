@@ -35,5 +35,17 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
+    for epoch in range(EPOCHS):
+        model.train()
+        for images, targets in train_dataloader:
+            # Prediciton & Error
+            outputs = model(images)
+            loss = criterion(outputs, targets)
+
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
 if __name__ == "__main__":
     main()

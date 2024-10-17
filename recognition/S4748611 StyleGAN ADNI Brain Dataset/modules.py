@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, BatchNormalization, Add
+from tensorflow.keras.layers import Input, Dense, Reshape, Conv2D, Conv2DTranspose, LeakyReLU, Flatten, Layer, UpSampling2D, BatchNormalization, Add, Lambda
 from tensorflow.keras.models import Model
 import numpy as np
 
@@ -29,20 +29,40 @@ class AdaIN(Layer):
         return normalized * (1 + style_scale[:, None, None, :]) + style_shift[:, None, None, :]
 
     def get_config(self):
-        # Return the configuration of the layer to be used during loading
         config = super(AdaIN, self).get_config()
+        config.update({
+            "num_channels": self.num_channels,
+        })
+        print(f"AdaIN Layer: get_config called. Config: {config}")
         return config
 
     @classmethod
     def from_config(cls, config):
-        # Create a new instance of the layer from the config
+        print(f"AdaIN Layer: from_config called with config: {config}")
         return cls(**config)
 
 
-def apply_noise(x):
-    noise = tf.random.normal(shape=tf.shape(x), mean=0.0, stddev=1.0)
-    noise_weight = tf.Variable(initial_value=tf.zeros(shape=(x.shape[-1],)), trainable=True)
-    return x + noise * noise_weight
+class ApplyNoise(Layer):
+    def __init__(self, channels, **kwargs):
+        super(ApplyNoise, self).__init__(**kwargs)
+        self.channels = channels
+
+    def build(self, input_shape):
+        self.noise_weight = self.add_weight(shape=(self.channels,),
+                                            initializer='zeros',
+                                            trainable=True)
+
+    def call(self, inputs, **kwargs):
+        noise = tf.random.normal(shape=tf.shape(inputs), mean=0.0, stddev=1.0)
+        return inputs + noise * self.noise_weight
+
+    def get_config(self):
+        config = super(ApplyNoise, self).get_config()
+        config.update({
+            "channels": self.channels,
+        })
+        return config
+
 
 def build_mapping_network():
     latent_input = Input(shape=(LATENT_DIM,))
@@ -60,30 +80,27 @@ def build_synthesis_network():
     
     # Initial convolution
     x = Conv2D(512, 3, padding='same')(x)
-    x = apply_noise(x)
+    x = ApplyNoise(x.shape[-1])(x)
     x = AdaIN()([x, style_input])
     x = LeakyReLU(0.2)(x)
 
-    # Upsampling blocks with increased complexity
+    # Upsampling blocks
     for i, filters in enumerate([512, 256, 128, 64]):
         x = UpSampling2D()(x)
         x = Conv2D(filters, 3, padding='same')(x)
-        x = apply_noise(x)
+        x = ApplyNoise(x.shape[-1])(x)
         x = BatchNormalization()(x)  
         x = AdaIN()([x, style_input])
         x = LeakyReLU(0.2)(x)
 
-        # Adding an additional convolutional layer for more complexity
         x = Conv2D(filters, 3, padding='same')(x)
-        x = apply_noise(x)
+        x = ApplyNoise(x.shape[-1])(x)
         x = BatchNormalization()(x)
         x = LeakyReLU(0.2)(x)
 
-    # Final convolution to get the desired number of channels
+    # Final convolution
     x = Conv2D(NUM_CHANNELS, 1, activation='tanh')(x)
     
-    print(f"Generator output shape: {x.shape}")
-
     return Model([constant_input, style_input], x, name="synthesis_network")
 
 def build_generator():
@@ -115,7 +132,6 @@ def build_discriminator():
     x = Dense(1, activation='sigmoid')(x)
 
     return Model(input_image, x, name="discriminator")
-
 
 def build_stylegan():
     latent_input = Input(shape=(LATENT_DIM,))

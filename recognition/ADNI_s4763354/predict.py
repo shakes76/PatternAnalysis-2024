@@ -1,3 +1,7 @@
+'''
+Author: Lok Yee Joey Cheung 
+This file is created as a test script to produce test output of the trained model, with visualizations. 
+'''
 import torch
 import torch.nn.functional as F
 from torchvision import transforms, datasets
@@ -9,7 +13,7 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import os
 import random
-from modules_BEST import GFNetPyramid
+from modules import GFNetPyramid, GFNet
 import torch.nn as nn
 
 def show_example_images(model, test_loader, num_examples=5, class_names=['NC', 'AD']):
@@ -88,10 +92,8 @@ def main(model_path, test_dir, num_samples=5):
         nn.Dropout(0.5),
         nn.Linear(512, 2)
     )
-
     model.load_state_dict(torch.load(model_path, map_location=device))
     model = model.to(device)
-    model.eval()
 
     # Define the transformations
     transform = transforms.Compose([
@@ -100,13 +102,13 @@ def main(model_path, test_dir, num_samples=5):
         transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.shape[0] == 1 else x),  # Ensure 3 channels
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-
     # Create the dataset and data loader
     test_dataset = datasets.ImageFolder(root=test_dir, transform=transform)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, pin_memory=True)
 
     all_preds = []
     all_labels = []
+    model.eval()
 
     # Run predictions on all test images
     for images, labels in test_loader:

@@ -187,6 +187,8 @@ After training, the SSIM scores and training reconstruction losses for each batc
   
 ### Results  
   
+The images below show the original training images (top row) vs. the reconstructed images by the VQ-VAE model after certain epoch's (bottom row)  
+   
 After 1 epoch:  
 ![A Batch of Training Images vs Reconstructed Images - Epoch 1](resources/epoch_1_phase_train(ssim=0.3209).png)  
   
@@ -196,13 +198,27 @@ After 5 epochs:
 After 20 epochs:  
 ![A Batch of Training Images vs Reconstructed Images - Epoch 20](resources/epoch_20_phase_train(ssim=0.8056).png)  
   
-SSIM scores for each epoch:  
+As previously mentioned above, the SSIM scores for each epoch were calculated and plotted:  
 ![SSIM Scores per Epoch](resources/ssim_scores.png)  
   
-Training reconstruction losses per batch:  
+Observing the SSIM graph above, both training and validation SSIM scores clearly show that the model is steadily improving its ability to reconstruct images as it goes through more training. Both the training and validation scores cross the 0.6 score threshold quite early on during training and steadily increase to around 0.8 by epoch 20. More specifically, the SSIM scores significantly increase during the first few epochs, but start to decrease their rate of improvement the more epochs it goes through. This suggests that the VQ-VAE model learns rapidly at the beginning, but as training progresses, it reaches diminishing returns in further improving the quality of the generated images. Furthermore, it can be seen that the validation SSIM follows the training SSIM fairly closely which indicates that the model is not overfitting and generalising well.  
+  
+The following statistics below show the highest and lowest SSIM scores for the training and validation sets, as well as which epoch it occured in:  
+  
+`Highest SSIM score:`  
+`Train SSIM: 0.8056 (Epoch = 20)`  
+`Validation SSIM: 0.7978 (Epoch = 20)`  
+  
+`Lowest SSIM score:`  
+`Train SSIM: 0.3486 (Epoch = 1)`  
+`Validation SSIM: 0.5117 (Epoch = 1)`  
+  
+Similarly, the training reconstruction losses per batch were plotted:  
 ![Training Reconstruction losses per bath no.](resources/batch_losses.png)  
   
-Input validation image vs. codebook embedding representation vs. reconstructed validation image:  
+Looking at the plot above, the low final loss value indicates that the model has performed well in reconstrucing the input images after encoding them through the learned latent space.  
+  
+The image below shows the input validation image vs. codebook embedding representation vs. reconstructed validation image:  
 ![Codebook Representation for Comparison](resources/epoch_19_comparison_val.png)
 
 ## 4. VQ-VAE Testing Process

@@ -29,7 +29,7 @@ def main():
     # Create model
     #Could try converting into binary classification (classification head becomes sigmoid?)
     print("Creating GFNet model")
-    model = GFNet(img_size=IMAGESIZE)
+    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4)
     model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)

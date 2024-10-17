@@ -58,7 +58,7 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
     losses_critic = []
     losses_gen = []
 
-    for batch_idx, (real, _) in enumerate(loop):
+    for batch_idx, real in enumerate(loop):
         real = real.to(DEVICE)  # Move real images to the device
         cur_batch_size = real.shape[0]  # Current batch size
         noise = torch.randn(cur_batch_size, Z_DIM).to(DEVICE)  # Generate random noise for the generator

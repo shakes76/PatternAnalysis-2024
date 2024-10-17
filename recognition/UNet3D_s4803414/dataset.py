@@ -34,8 +34,8 @@ class MRIDataset(Dataset):
         mask = nib.load(mask_path).get_fdata()
 
         # Crop to (256, 256, 128)
-        image = image[:, :, :128]
-        mask = mask[:, :, :128]
+        image = image[:, :256, :256, :128]
+        mask = mask[:, :256, :256, :128]
 
         # Normalize image (0 to 1 range)
         image_min, image_max = image.min(), image.max()

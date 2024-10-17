@@ -13,7 +13,7 @@ def visualize_embeddings(model, data):
     tsne_result = tsne.fit_transform(embeddings)
     plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=data.y.cpu().numpy(), cmap='Spectral')
     plt.title('TSNE Visualization of Node Embeddings')
-    plt.savefig('TSNE_Visualization.png')
+    plt.savefig('../plot/TSNE_Visualization.png')
     plt.show()
 
 def calculate_accuracy(model, data, mask):

@@ -79,7 +79,7 @@ def train(data, model, optimizer, loss_fn, epochs=100, patience=10):
     plt.ylabel('Loss')
     plt.title('Loss over Epochs')
     plt.legend()
-    plt.savefig('loss_over_epochs.png')
+    plt.savefig('../plot/loss_over_epochs.png')
     plt.close()
 
     # 绘制并保存准确率曲线
@@ -90,7 +90,7 @@ def train(data, model, optimizer, loss_fn, epochs=100, patience=10):
     plt.ylabel('Accuracy')
     plt.title('Accuracy over Epochs')
     plt.legend()
-    plt.savefig('accuracy_over_epochs.png')
+    plt.savefig('../plot/accuracy_over_epochs.png')
     plt.close()
 
 if __name__ == "__main__":

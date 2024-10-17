@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import time
 import utils
 import os
+from itertools import cycle
 
 class ResidualLayer(nn.Module):
     """
@@ -140,7 +141,7 @@ class VQVAE(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers),
             nn.ConvTranspose2d(h_dim, h_dim // 2, kernel_size=kernel, stride=stride, padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(h_dim // 2, 3, kernel_size=kernel, stride=stride, padding=1)
+            nn.ConvTranspose2d(h_dim // 2, 1, kernel_size=kernel, stride=stride, padding=1),
         )
         
         self.apply(utils.weights_init)
@@ -159,24 +160,31 @@ class VQVAE(nn.Module):
         decoded_output = self.decoder(quantised_output)
         # print(decoded_output.shape, "decoded")
         
-        return decoded_output, embedding_loss
+        return decoded_output, embedding_loss, encoded_output, quantised_output
 
 # Initialize
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 train_loader, test_loader, val_loader = load_data()
-model = VQVAE(128, 32, 2, 512, 64).to(device)
+model = VQVAE(128, 32, 5, 512, 64).to(device)
 opt = torch.optim.Adam(model.parameters(), lr=1e-3, amsgrad=True)
 scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.9)
 if not os.path.exists('models'):
     os.makedirs('models')
+else:
+    utils.clear_folder('models')
+    
+if not os.path.exists('epoch_reconstructions'):
+    os.makedirs('epoch_reconstructions')
+else:
+    utils.clear_folder('epoch_reconstructions')
 
 ssim_scores = []
 train_losses = []
 best_epoch = 0
 
 def train_vqvae():
-    num_epochs = 324
-    opt = Adam(model.parameters(), lr=1E-3)
+    num_epochs = 100
+    opt = Adam(model.parameters(), lr=2E-4)
     criterion = torch.nn.MSELoss()
     
     for epoch_idx in range(num_epochs):
@@ -189,7 +197,7 @@ def train_vqvae():
             im = im.float().unsqueeze(1).to(device)
             opt.zero_grad()
             
-            decoded_output, embedding_loss = model(im)
+            decoded_output, embedding_loss, encoded_output, quantised_output = model(im)
             recon_loss = criterion(decoded_output, im)
             loss = recon_loss + embedding_loss
             loss.backward()
@@ -205,13 +213,17 @@ def train_vqvae():
                     time.time() - start_time
                 ))
         
+        if (epoch_idx + 1) % 2 == 0:
+            print("Generating Epoch Image")
+            generate_samples(epoch_idx+1)
+        
         avg_epoch_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_epoch_loss)
         print('Finished epoch {} in time: {} with loss:'.format(
             epoch_idx + 1, epoch_start - time.time(), avg_epoch_loss))
         
         validate(epoch_idx+1)
-
+        
     print('Done Training...')
 
     plt.figure(figsize=(10, 5))
@@ -221,7 +233,7 @@ def train_vqvae():
     plt.title('Training Loss over Epochs')
     plt.legend()
     plt.grid()
-    plt.savefig('training_loss.png')
+    plt.savefig('outputs/training_loss.png')
     plt.close()
     
     plt.figure(figsize=(10, 5))
@@ -231,7 +243,7 @@ def train_vqvae():
     plt.title('SSIM Scores over Epochs')
     plt.legend()
     plt.grid()
-    plt.savefig('ssim_scores.png')
+    plt.savefig('outputs/ssim_scores.png')
     plt.close()
     
 
@@ -245,7 +257,7 @@ def validate(epoch):
         for batch, im in enumerate(val_loader):
             im = im.float().unsqueeze(1).to(device)
             
-            decoded_output, _ = model(im)
+            decoded_output, _, _, _ = model(im)
             
             total_ssim += utils.calc_ssim(decoded_output, im)
         
@@ -273,40 +285,49 @@ def test():
         for batch, im in enumerate(test_loader):
             im = im.float().unsqueeze(1).to(device)
             
-            decoded_output, _ = model(im)
+            decoded_output, _, _, _ = model(im)
             
             total_ssim += utils.calc_ssim(decoded_output, im)
         
     total_test_ssim = total_ssim/(batch + 1)
     return total_test_ssim
     
-
-def reconstruct_images():
+def generate_samples(epoch = -1):
+    """Generates and saves reconstructed samples for a given epoch."""
     print("Generating")
-    model.load_state_dict(torch.load(f'final_vqvae.pt'))
+    if epoch == -1:
+        model.load_state_dict(torch.load(f'final_vqvae.pt'))
     model.eval()
-    with torch.no_grad():        
-        for im in test_loader:
-            ims = im.float().unsqueeze(1).to(device)
-            break
+    test_loader_iter = cycle(test_loader) # Initialize cycling iterator here
+    x = next(test_loader_iter)  # Get a batch of samples using the cycling iterator
+    x = x[:32].float().unsqueeze(1).to(device)
 
-        generated_im, _ = model(ims)
+    x_tilde, _, _, _ = model(x)
+    
+    # Define a 4x8 grid for images (2 rows for inputs, 2 rows for outputs)
+    fig, axes = plt.subplots(4, 8, figsize=(16, 8))
+    axes = axes.flatten()
 
-        ims = (ims + 1) / 2
-        generated_im = 1 - (generated_im + 1) / 2
+    # Plot 16 input images in the first two rows
+    for i in range(16):
+        img = x[i, :, :].squeeze().cpu().numpy()  # Remove the extra dimension
+        axes[i].imshow(img, cmap='gray')         
+        axes[i].axis("off")
 
-        print(ims.shape, "og ims")
-        print(generated_im.shape)
-        generated_im_resized = F.interpolate(generated_im, size=(256, 128), mode='bilinear')
-        out = torch.hstack([ims, generated_im_resized])
-        output = rearrange(out, 'b c h w -> b () h (c w)')
+    # Plot 16 corresponding output images in the next two rows
+    for i in range(16):
+        img_tilde = x_tilde[i, :, :].squeeze().detach().cpu().numpy()  # Detach from computation graph
+        axes[i+16].imshow(img_tilde, cmap='gray')
+        axes[i+16].axis("off")
 
-        grid = torchvision.utils.make_grid(output.detach().cpu(), nrow=10)
-        img = torchvision.transforms.ToPILImage()(grid)
-        img.save('reconstruction3.png')
-
-    print('Done Reconstruction ...')
-
+    plt.tight_layout()
+    plt.show()
+    
+    if epoch == -1:
+        plt.savefig(f'./outputs/final_image.png')
+    else:
+        plt.savefig(f'./epoch_reconstructions/epoch{epoch}.png')
+    plt.close()
 
 if __name__ == "__main__":   
     start = time.time() 
@@ -314,4 +335,4 @@ if __name__ == "__main__":
     print(f"Took {(time.time() - start) / 60} minutes to train")
     test_ssim = test()
     print(f"Test SSIM achieved as {test_ssim}")
-    reconstruct_images()
+    generate_samples()

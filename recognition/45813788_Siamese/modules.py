@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
+from torchvision.models import ResNet18_Weights
 
 class FeatureExtraction(nn.Module):
     #CHANGE PRETRAINED TO TRUE IF IT SUCKS
@@ -10,7 +11,7 @@ class FeatureExtraction(nn.Module):
         super(FeatureExtraction, self).__init__()
 
         #Load resnet
-        self.model = models.resnet18(weights=False)
+        self.model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
 
         #remove fully connected
         self.model = nn.Sequential(*list(self.model.children())[:-1])

@@ -13,8 +13,10 @@ import random
 SCALE_FACTOR = 1.0/255
 
 current_dir = os.getcwd()
-excel = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-metadata.csv')
-images = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-image','image')
+#excel = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-metadata.csv')
+#images = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-image','image')
+excel = os.path.join(current_dir,'dataset', 'train-metadata.csv')
+images = os.path.join(current_dir,'dataset', 'train-image','image')
 
 df = pd.read_csv(excel)
 

@@ -12,6 +12,7 @@ from pytorch_metric_learning.distances import LpDistance
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 def load_data(excel):
@@ -25,8 +26,9 @@ def load_data(excel):
 def siamese_train():
     # Paths
     current_dir = os.getcwd()
-    excel = os.path.join(current_dir, 'recognition', '45813788_Siamese', 'dataset', 'train-metadata.csv')
-    images = os.path.join(current_dir, 'recognition', '45813788_Siamese', 'dataset', 'train-image', 'image')
+    print("Working dir", current_dir)
+    excel = os.path.join(current_dir, 'dataset', 'train-metadata.csv')
+    images = os.path.join(current_dir, 'dataset', 'train-image', 'image')
 
     # Load data
     malignant_df, benign_df = load_data(excel=excel)
@@ -90,8 +92,11 @@ def siamese_train():
     # Initialize optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
+    #scheduler
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2, verbose=True)
+
     # Training parameters
-    epochs = 5
+    epochs = 30
     best_loss = float('inf')
     train_losses = []
     val_losses = []
@@ -125,7 +130,7 @@ def siamese_train():
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for img1, img2, label1, label2 in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
+            for img1, img2, label1, label2 in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
                 img1, img2, label1, label2 = img1.to(device), img2.to(device), label1.to(device), label2.to(device)
 
                 # Forward pass
@@ -142,8 +147,10 @@ def siamese_train():
         val_losses.append(avg_val_loss)
 
         print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+        # Step the scheduler
+        scheduler.step(avg_val_loss)
 
-        # Checkpointing
+        # save current pest model
         if avg_val_loss < best_loss:
             best_loss = avg_val_loss
             torch.save(model.state_dict(), 'siamese_resnet18_best.pth')

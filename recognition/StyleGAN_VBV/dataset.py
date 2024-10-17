@@ -5,10 +5,13 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets
 import matplotlib.pylab as plt
 from math import log2
+import pandas as pd
+from torchvision.io import read_image
+from PIL import Image
 
 # Constants for dataset and model configuration
-AD_PATH = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/AD_NC/AD'
-NC_PATH = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/AD_NC/NC'
+AD_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD']
+NC_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/NC'
 DATASET_PATH = AD_PATH  # Path to the dataset
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available, otherwise use CPU
@@ -20,6 +23,32 @@ W_DIM = 512  # Style space dimension
 IN_CHANNELS = 512  # Input channels for the generator
 LAMBDA_GP = 10  # Weight for the gradient penalty
 PROGRESSIVE_EPOCHS = [30] * len(BATCH_SIZES)  # Number of epochs for each batch size
+
+# Costomized ImageFolder to read image data
+# Reference: https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
+class CustomImageDataset(Dataset):
+    def __init__(self, img_dirs, transform=None):
+        #self.img_dir = img_dir
+        #self.img_files = os.listdir(img_dir)
+        self.transform = transform
+
+        # Read all the three OASIS files from rangpur
+        self.img_files = []
+        for dir_path in img_dirs:
+            self.img_files += [os.path.join(dir_path, fname) for fname in os.listdir(dir_path)]
+
+    def __len__(self):
+        return len(self.img_files)
+
+    def __getitem__(self, idx):
+        #img_name = os.path.join(self.img_dir, self.img_files[idx])
+        img_name = self.img_files[idx]
+        image = Image.open(img_name).convert("RGB")
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image
 
 def get_loader(image_size):
     """
@@ -49,7 +78,7 @@ def get_loader(image_size):
     batch_size = BATCH_SIZES[int(log2(image_size / 4))]
     
     # Load the dataset from the specified directory
-    dataset = datasets.ImageFolder(root=DATASET_PATH, transform=transform)
+    dataset = CustomImageDataset(DATASET_PATH, transform=transform)
     
     # Create a DataLoader for the dataset
     loader = DataLoader(

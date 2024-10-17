@@ -65,6 +65,7 @@ for epoch in range(10):
         test_accs.append(acc_test)
         print(f'Epoch: {epoch}, Loss: {loss:.4f}, Train Acc: {acc_train:.4f}, Test Acc: {acc_test:.4f}')
 
+torch.save(model.state_dict(), 'weights.pth')
 
 epochs = range(10)
 plt.plot(epochs, losses, label="Losses")

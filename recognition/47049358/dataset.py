@@ -188,7 +188,8 @@ def apply_transformation(image: torch.Tensor, angle = -1, is_mask = False, hflip
     if is_mask:
 
         mask = image if angle == -1 else F.rotate(image, angle)
-        mask = F.hflip(mask)
+        mask = F.hflip(mask) if hflip else mask
+        mask = F.vflip(mask) if vflip else mask
         return mask
     
     if random.randint(0, 1) == 1:

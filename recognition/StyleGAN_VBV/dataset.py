@@ -32,7 +32,7 @@ class CustomImageDataset(Dataset):
         #self.img_files = os.listdir(img_dir)
         self.transform = transform
 
-        # Read all the three OASIS files from rangpur
+        # Read all the files from rangpur
         self.img_files = []
         for dir_path in img_dirs:
             self.img_files += [os.path.join(dir_path, fname) for fname in os.listdir(dir_path)]

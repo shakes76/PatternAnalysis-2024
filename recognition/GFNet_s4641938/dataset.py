@@ -30,11 +30,27 @@ class ADNI_DataLoader():
                 [transforms.Resize(self.imageSize),
                 transforms.CenterCrop(self.imageSize),
                 transforms.ToTensor(),
-                transforms.Normalize(0.5, 0.5)]) #TODO calculate mean and standard deviation of ADNI to use in normalization
+                transforms.Normalize([0.0385, 0.0385, 0.0385], [0.0741, 0.0741, 0.0741])])
         return all_transforms
 
-    def __calc_mean_and_std(self): #TODO calculate mean & std here
-        pass
+    def __calc_mean_and_std(self):
+        # Initialize sums
+        mean, std = 0, 0
+        total_images = 0
+        # Iterate through the dataset
+        for images, _ in self.trainDataset:
+            # Reshape images to [C, H, W]
+            images = images.view(images.size(0), images.size(1), -1)
+            # Calculate mean and std for the batch
+            mean += images.mean(dim=(1,2))  # Sum means for all images
+            std += images.std(dim=(1,2))    # Sum stds for all images
+            total_images += images.size(0)
+
+        mean /= total_images
+        std /= total_images
+
+        return mean, std
+
     
     def get_dataloader(self, data_type: str):
         if (data_type == "train"):

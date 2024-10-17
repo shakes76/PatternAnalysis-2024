@@ -89,10 +89,9 @@ class MRIDataset(Dataset):
             image = scipy.ndimage.zoom(image, (1, zoom_factor, zoom_factor, zoom_factor), order=1)
             mask = scipy.ndimage.zoom(mask, (1, zoom_factor, zoom_factor, zoom_factor), order=0)
 
-            # Crop back to original size if zoomed
-            if image.shape[1] > 256:
-                image = image[:, :256, :256, :128]
-                mask = mask[:, :256, :256, :128]
+        # Crop back to original size
+        image = image[:, :256, :256, :128]
+        mask = mask[:, :256, :256, :128]
 
         return image, mask
 

@@ -228,7 +228,7 @@ trained_model, training_losses = train(model, train_set, loss = loss,
 end = time()
 
 elapsed_time = end - start
-print(f"Training completed in {elapsed_time:.2f} seconds")
+print(f"> Training completed in {elapsed_time:.2f} seconds")
 
 training_losses = []
 

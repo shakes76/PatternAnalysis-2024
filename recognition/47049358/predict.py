@@ -7,10 +7,11 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from time import time
 
 
 # import from local files  
-from train import *
+from train import trained_model, loss_map, LOSS_IDX
 from dataset import X_test, y_test, Prostate3dDataset
 
 BATCH_SIZE = 2
@@ -30,38 +31,39 @@ BATCH_SIZE = 2
 def test(model, test_loader, criterion, device):
     model.eval()  # Set the model to evaluation mode
     
-    test_scores = [] # stores dice scores.
-    seg_0_scores = []
-    seg_1_scores = []
-    seg_2_scores = []
-    seg_3_scores = []
-    seg_4_scores = []
-    seg_5_scores = []
+    test_scores = np.array([]) # stores dice scores.
+    seg_0_scores = np.array([])
+    seg_1_scores = np.array([])
+    seg_2_scores = np.array([])
+    seg_3_scores = np.array([])
+    seg_4_scores = np.array([])
+    seg_5_scores = np.array([])
 
     with torch.no_grad():
         
         criterion = criterion
 
-        for inputs, masks in test_loader:
+        for i, (inputs, masks) in enumerate(test_loader):
+            print(f'Test No.{i}')
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
             test_loss, dice_coefs, _ = criterion(outputs, masks)
 
             for i in range(len(dice_coefs)):
                 if i == 0:
-                    seg_0_scores.append(dice_coefs[i])
+                    seg_0_scores = np.append(seg_0_scores, dice_coefs[i])
                 elif i == 1:
-                    seg_1_scores.append(dice_coefs[i])
+                    seg_1_scores = np.append(seg_1_scores, dice_coefs[i])
                 elif i == 2:
-                    seg_2_scores.append(dice_coefs[i])
+                    seg_2_scores = np.append(seg_2_scores, dice_coefs[i])
                 elif i == 3:
-                    seg_3_scores.append(dice_coefs[i])
+                    seg_3_scores = np.append(seg_3_scores, dice_coefs[i])
                 elif i == 4:
-                    seg_4_scores.append(dice_coefs[i])
+                    seg_4_scores = np.append(seg_4_scores, dice_coefs[i])
                 else:
-                    seg_5_scores.append(dice_coefs[i])
+                    seg_5_scores = np.append(seg_5_scores, dice_coefs[i])
                 
-            test_scores.append(test_loss.item())
+            test_scores = np.append(test_scores, test_loss.item())
 
     return test_scores, seg_0_scores, seg_1_scores, seg_2_scores, seg_3_scores, seg_4_scores, seg_5_scores
 
@@ -70,9 +72,8 @@ def test(model, test_loader, criterion, device):
     Takes an array of dice scores as input. 
 """
 def plot_dice(dice, criterion, segment_scores):
-    x_values = np.arange(len(dice))  # Generate x-values as indices
-    plt.figure(figsize=(8, 6))
 
+    x_values = np.arange(len(dice))  # Generate x-values as indices
     # Plot overall dice scores
     plt.plot(x_values, dice_scores, label='Overall Dice Scores')
     
@@ -80,20 +81,15 @@ def plot_dice(dice, criterion, segment_scores):
     for i, segment_score in enumerate(segment_scores):
         plt.plot(x_values, segment_score, label=f'Segment {i} Dice Scores')
 
-
     plt.xlabel("Image Index")
     plt.ylabel("Dice Coefficient")
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_scores_test_{str(criterion)}_without_validation.png')
+    plt.savefig(f'dice_scores_test_{str(criterion)}.png')
     plt.close()
 
 
-"""
-    Driver method 
-
-"""
 if __name__ == "__main__":
     # connect to gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -103,17 +99,19 @@ if __name__ == "__main__":
     test_set = Prostate3dDataset(X_test, y_test)
     test_loader = DataLoader(dataset = test_set, batch_size = BATCH_SIZE)
 
+    print('> Start Testing')
+
+    start = time()
+
     # perform predictions
     dice_scores, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader, criterion = criterion,
                                                device = device)
     
-    dice_scores = dice_scores.cpu().numpy()
-    s0 = s1.cpu().numpy()
-    s1 = s1.cpu().numpy()
-    s2 = s2.cpu().numpy()
-    s3 = s3.cpu().numpy()
-    s4 = s4.cpu().numpy()
-    s5 = s5.cpu().numpy()
+    end = time()
+
+    elapsed_time = end - start
+    
+    print(f"> Testing completed in {elapsed_time:.2f} seconds")
 
     average_dice = np.mean(dice_scores)
     print(f"Average Dice Coefficient: {average_dice:.4f}")

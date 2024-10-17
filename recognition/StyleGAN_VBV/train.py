@@ -10,8 +10,11 @@ from predict import generate_examples
 
 # Constants
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available
-AD_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD']
-NC_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/NC', '/home/groups/comp3710/ADNI/AD_NC/test/NC']
+AD_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD'] # path to all ad images
+NC_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/NC', '/home/groups/comp3710/ADNI/AD_NC/test/NC'] # path to all nc images
+AD_IMAGES = "AD_" # ad label
+NC_IMAGES = "NC_" # nc label
+CURRENT_DATASET = NC_IMAGES # select current dataset for naming
 DATASET_PATH = NC_PATH  # Path to the dataset
 BATCH_SIZE = 32  # Number of images to process in each training batch
 Z_DIM = 512  # Dimensionality of the latent space
@@ -22,9 +25,6 @@ LR = 1e-3  # Learning rate for the optimizers
 LAMBDA_GP = 10  # Weight for the gradient penalty term
 PROGRESSIVE_EPOCHS = [30, 30, 30, 30, 30, 30]  # Number of epochs for each progressive training stage
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
-AD_IMAGES = "AD_"
-NC_IMAGES = "NC_"
-CURRENT_DATASET = AD_IMAGES
 
 # Function to calculate the gradient penalty for the WGAN-GP
 def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):

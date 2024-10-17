@@ -24,3 +24,10 @@ def main(image_path, model_path):
 
     # Convert to PyTorch tensor
     image_tensor = torch.from_numpy(image_data.astype(np.float32)).unsqueeze(0)  # Shape: (1, 1, 256, 256, 128)
+
+    # Make predictions
+    with torch.no_grad():
+        prediction = model(image_tensor)
+        prediction = torch.argmax(prediction, dim=1)  # Get predicted class
+        prediction = prediction.squeeze().cpu().numpy()  # Shape: (256, 256, 128)
+

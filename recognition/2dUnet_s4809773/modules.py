@@ -92,4 +92,4 @@ class UNet(nn.Module):
 
         # Final output layer
         output = self.output_conv(up4)  # Final 1x1 convolution for classification
-        return output
+        return output #outputs the logit feature maps to be processed

@@ -26,10 +26,9 @@ import torch.nn.functional as F
 import nibabel as nib
 from modules import UNet3D
 from dataset import NiftiDataset
+from utils import per_class_dice_loss, weighted_dice_loss
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import OneCycleLR
-from sklearn.utils.class_weight import compute_class_weight
-from torchmetrics.classification import Dice
 
 
 def train_loop():
@@ -136,7 +135,7 @@ def train_loop():
         transform=None
     )
 
-    batch_size = 2 
+    batch_size = 2
     num_workers = 1
 
     train_loader = DataLoader(
@@ -186,63 +185,6 @@ def train_loop():
         return dice_loss
     
 
-    # Pre-computed class weights
-    class_weights = torch.tensor([0.2769, 0.4681, 4.9273, 28.8276, 117.5489, 161.1025], device=device)
-    def per_class_dice_loss(pred, target, num_classes=6, epsilon=1e-6):
-        """
-        Computes Dice loss for each class separately.
-
-        Args:
-            pred (torch.Tensor): Predicted logits with shape (batch_size, num_classes, D, H, W).
-            target (torch.Tensor): Ground truth labels with shape (batch_size, D, H, W).
-            num_classes (int): Number of classes.
-            epsilon (float): Small constant to avoid division by zero.
-
-        Returns:
-            torch.Tensor: Dice loss per class with shape (num_classes,).
-        """
-        pred_probs = F.softmax(pred, dim=1)  # Convert logits to probabilities
-        target_one_hot = F.one_hot(target, num_classes=num_classes)  # One-hot encode targets
-        target_one_hot = target_one_hot.permute(0, 4, 1, 2, 3).float()  # Reshape to (batch_size, num_classes, D, H, W)
-
-        # Flatten spatial dimensions
-        pred_flat = pred_probs.view(pred_probs.size(0), num_classes, -1)
-        target_flat = target_one_hot.view(target_one_hot.size(0), num_classes, -1)
-
-        intersection = (pred_flat * target_flat).sum(-1)
-        union = pred_flat.sum(-1) + target_flat.sum(-1)
-
-        dice_score = (2 * intersection + epsilon) / (union + epsilon)
-        dice_loss = 1 - dice_score  # Shape: (batch_size, num_classes)
-
-        # Average over the batch
-        dice_loss = dice_loss.mean(dim=0)  # Shape: (num_classes,)
-        return dice_loss  # Returns loss per class
-    
-    def weighted_dice_loss(pred, target, num_classes=6, class_weights=class_weights, epsilon=1e-6):
-        """
-        Computes weighted sum of per-class Dice losses.
-
-        Args:
-            pred (torch.Tensor): Predicted logits with shape (batch_size, num_classes, D, H, W).
-            target (torch.Tensor): Ground truth labels with shape (batch_size, D, H, W).
-            num_classes (int): Number of classes.
-            class_weights (torch.Tensor or None): Weights for each class. Shape: (num_classes,).
-            epsilon (float): Small constant to avoid division by zero.
-
-        Returns:
-            torch.Tensor: Weighted Dice loss (scalar).
-        """
-        dice_loss = per_class_dice_loss(pred, target, num_classes, epsilon)  # Shape: (num_classes,)
-
-        if class_weights is not None:
-            # Ensure class_weights is a tensor on the same device as dice_loss
-            class_weights = class_weights.to(dice_loss.device) #TODO smplify this
-            weighted_loss = dice_loss * class_weights
-        else:
-            weighted_loss = dice_loss  # Equal weights if none provided
-
-        return weighted_loss.sum()  # Scalar loss
 
     model = UNet3D().to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
@@ -314,6 +256,7 @@ def train_loop():
     is_first = True
     model.eval()
     test_loss = 0.0
+    dice_score = np.zeros(6)
     with torch.no_grad():
         for batch_images, batch_labels in test_loader:
             batch_images = batch_images.to(device)
@@ -323,6 +266,7 @@ def train_loop():
 
             # Extract predicted and actual labels for visual comparison
             if is_first:
+
                 print(f"Image shape: {outputs.shape}")
                 print(f"Label shape: {batch_labels.shape}")
                 pred_class = torch.argmax(outputs, dim=1)[0]
@@ -343,10 +287,19 @@ def train_loop():
             loss = weighted_dice_loss(outputs, batch_labels)
             test_loss += loss.item() * batch_images.size(0)
 
+            # Compute per-class Dice loss and accumulate
+            per_class_scores = per_class_dice_loss(outputs, batch_labels).cpu().numpy()  # Shape: (num_classes,)
+            dice_score += per_class_scores
+
+    # Calculate average loss
     avg_test_loss = test_loss / len(test_dataset)
     print(f"Test Loss: {avg_test_loss:.4f}")
-    # Since we are using Dice Loss, the Dice Score is 1 - Loss
-    print(f"Average Dice Score: {1 - avg_test_loss:.4f}")
+
+    # Calculate average Dice score per class
+    avg_dice_score = dice_score / len(test_dataset)
+    # Print average Dice scores for each class
+    for class_idx, score in enumerate(avg_dice_score):
+        print(f"Class {class_idx}: Average Dice Score: {score:.4f}")
 
 if __name__ == "__main__":
     train_loop()

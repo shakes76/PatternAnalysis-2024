@@ -13,7 +13,7 @@ def visualize_embeddings(model, data):
     tsne_result = tsne.fit_transform(embeddings)
     plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=data.y.cpu().numpy(), cmap='Spectral')
     plt.title('TSNE Visualization of Node Embeddings')
-    plt.savefig('TSNE Visualization.png')
+    plt.savefig('TSNE_Visualization.png')
     plt.show()
 
 def calculate_accuracy(model, data, mask):
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # 加载模型（确保模型已正确训练）
     model = GNN(in_channels=data.num_features, out_channels=4)
-    model.load_state_dict(torch.load("model.pth"))
+    model.load_state_dict(torch.load("model.pth",weights_only= True))
     model = model.to(device)
 
     # 计算并打印验证集和测试集上的准确率

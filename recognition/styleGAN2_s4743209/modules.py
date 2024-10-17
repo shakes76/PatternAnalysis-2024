@@ -104,3 +104,17 @@ class Discriminator(nn.Module):
         out = self.convs(input)
         out = self.final_conv(out)
         return out.view(out.shape[0], -1)
+
+class StyleGAN2(nn.Module):
+    def __init__(self, z_dim, w_dim, num_layers, channels):
+        super().__init__()
+        self.mapping = MappingNetwork(z_dim, w_dim, 8)
+        self.generator = Generator(w_dim, num_layers, channels)
+        self.discriminator = Discriminator(channels[::-1])
+
+    def generate(self, z):
+        styles = self.mapping(z)
+        return self.generator(styles)
+
+    def discriminate(self, image):
+        return self.discriminator(image)

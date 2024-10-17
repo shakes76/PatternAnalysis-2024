@@ -13,7 +13,10 @@ def main():
     base_lr = 0.0001  # Minimum learning rate
     max_lr = 0.001    # Maximum learning rate
     num_epochs = 80
-    step_size = 5    
+    step_size = 5
+
+    T_0 = 10  # Number of epochs for the first restart
+    T_mult = 2  # Increase T_0 after each restart    
 
     # Load data
     train_loader, val_loader = get_adni_dataloader(batch_size=batch_size, train=True)
@@ -23,8 +26,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=base_lr)
 
     # cosine lr
-    scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, 
-                                            step_size_up=step_size, mode='triangular')
+    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=T_0, T_mult=T_mult, eta_min=base_lr)
 
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []

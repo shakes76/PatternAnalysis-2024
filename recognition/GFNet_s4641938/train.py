@@ -38,7 +38,10 @@ def main():
     for epoch in range(EPOCHS):
         model.train()
         for images, targets in train_dataloader:
-            # Prediciton & Error
+            images = images.to(device)
+            targets = targets.to(device)
+
+            # Prediction & Error
             outputs = model(images)
             loss = criterion(outputs, targets)
 

@@ -272,7 +272,7 @@ if __name__ == '__main__':
         os.makedirs(args.output_dir)
 
     criterion = torch.nn.CrossEntropyLoss()
-    train_loader, test_loader = get_dataloaders(None)
+    train_loader, test_loader = get_dataloaders(None, batch_size=args.batch_size)
     epoch = 0
 
     model = GFNet(num_classes=2, in_chans=1)

@@ -4,6 +4,7 @@ import torch.optim as optim
 from dataset import ADNI_DataLoader
 from modules import GFNet
 import time
+from functools import partial
 
 def main():
     """
@@ -30,10 +31,10 @@ def main():
     # Create model
     #Could try converting into binary classification (classification head becomes sigmoid?)
     print("Creating GFNet model")
-    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4)
+    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6))
     model.to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     criterion = nn.CrossEntropyLoss()
 
     print("Training start")

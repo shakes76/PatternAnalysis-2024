@@ -28,7 +28,7 @@ class ADNI_DataLoader():
     def __create_transforms__(self):
         all_transforms = transforms.Compose(
                 [transforms.Resize(self.imageSize),
-                transforms.CenterCrop(),
+                transforms.CenterCrop(self.imageSize),
                 transforms.ToTensor(),
                 transforms.Normalize(0.5, 0.5)]) #TODO calculate mean and standard deviation of ADNI to use in normalization
         return all_transforms
@@ -36,8 +36,8 @@ class ADNI_DataLoader():
     def __calc_mean_and_std(self): #TODO calculate mean & std here
         pass
     
-    def get_dataloader(self, is_train: bool):
-        if (is_train):
+    def get_dataloader(self, data_type: str):
+        if (data_type == "train"):
             if (not self.__gotTrain):
                 path_to_dataset = join(self.rootDataPath, 'train')
                 self.trainDataset = datasets.ImageFolder(path_to_dataset, transform=self.dataTransforms)
@@ -45,11 +45,10 @@ class ADNI_DataLoader():
                 self.__gotTrain = True
             return self.trainLoader
             
-        else:
+        elif (data_type == "test"):
             if (not self.__gotTest):
                 path_to_dataset = join(self.rootDataPath, 'test')
                 self.testDataset = datasets.ImageFolder(path_to_dataset, transform=self.dataTransforms)
                 self.testLoader = DataLoader(self.trainDataset, batch_size=64, shuffle=True)
                 self.__gotTest = True
             return self.testLoader
-

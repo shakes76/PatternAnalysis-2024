@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from dataset import ADNI_DataLoader
+from modules import GFNet
 
 def main():
     """
@@ -24,6 +25,15 @@ def main():
     full_dataHandler = ADNI_DataLoader(rootData=ROOTDATAPATH, imageSize=IMAGESIZE)
     train_dataloader = full_dataHandler.get_dataloader(data_type="train")
     test_dataloader = full_dataHandler.get_dataloader(data_type="test")
+
+    # Create model
+    #Could try converting into binary classification (classification head becomes sigmoid?)
+    print("Creating GFNet model")
+    model = GFNet(img_size=IMAGESIZE)
+    model.to(device)
+
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.CrossEntropyLoss()
 
 if __name__ == "__main__":
     main()

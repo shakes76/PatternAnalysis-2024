@@ -2,6 +2,7 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 from skimage.transform import resize
+from skimage.metrics import structural_similarity
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -63,5 +64,12 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
-
+def batch_ssim(generated, real):
+    ssim_values = []
+    generated = generated.cpu().detach().numpy()
+    real = real.cpu().detach().numpy() 
+    size = real.shape[0]
+    for i in range(size):
+        ssim_values.append(structural_similarity(generated[i, 0], real[i, 0], data_range=1))
+    return np.mean(ssim_values)
 

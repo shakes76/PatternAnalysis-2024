@@ -14,7 +14,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
-import cv2
 from torch.utils.data import Dataset
 import time
 import numpy as np

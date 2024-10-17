@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from dataset import ADNI_DataLoader
 from modules import GFNet
+import time
 
 def main():
     """
@@ -35,7 +36,9 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
-
+    print("Training start")
+    time_s = time.time()
+    times_taken = []
     N_IMAGES = len(train_dataloader.dataset)
 
     for epoch in range(EPOCHS):
@@ -58,6 +61,8 @@ def main():
                 acc = getAccuracy(test_dataloader, model, device, 5)
                 loss, current = loss.item(), (batch + 1) * len(images)
                 print(f"loss: {loss:>7f} accuracy: {acc:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
+        times_taken.append(time.time() - time_s)
+        print(f"{int(times_taken[-1] // 3600)}h {int((times_taken[-1] % 3600) // 60)}m {int(times_taken[-1] % 60)}s taken for epoch {epoch}")
 
 
 def getAccuracy(test_dataloader, model, device, max_subset : int = -1):

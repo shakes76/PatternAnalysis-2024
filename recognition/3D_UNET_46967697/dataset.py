@@ -11,24 +11,45 @@ from utils import *
 
 import numpy as np
 import nibabel as nib
+import torchio as tio
 import tqdm 
 import torch
 import os
 
 class Prostate3DDataset(torch.utils.data.Dataset):
     def __init__(self, semantic_MRs_path, semantic_labels_path, transforms=None):
-        semantic_MRs_files = [file for file in os.listdir(semantic_MRs_path)]
-        semantic_labels_files = [file for file in os.listdir(semantic_labels_path)]
+        semantic_MRs_files = [f"{semantic_MRs_path}/{file}" for file in os.listdir(semantic_MRs_path)]
+        semantic_labels_files = [f"{semantic_labels_path}/{file}" for file in os.listdir(semantic_labels_path)]
 
-        self.MRs = load_data_3D(semantic_MRs_files)
-        self.labels = load_data_3D(semantic_labels_files)
+        semantic_MRs_files.sort()
+        semantic_labels_files.sort()
+
+        MRs = load_data_3D(semantic_MRs_files)
+        labels = load_data_3D(semantic_labels_files)
+
+        self.subjects = []
+
+        # Create TorchIO subjects and apply optional transformations
+        for mr, label in zip(MRs, labels):
+            subject = tio.Subject(
+                image=tio.ScalarImage(tensor=torch.from_numpy(mr).unsqueeze(0).float()),
+                mask=tio.LabelMap(tensor=torch.from_numpy(label).unsqueeze(0).long())
+            )
+            
+            # Store transformed or original subjects
+            if transforms:
+                subject = transforms(subject)
+            self.subjects.append(subject)
 
     def __len__(self):
-        return len(self.MRs)
+        return len(self.subjects)
     
     def __getitem__(self, idx):
-        mr = self.MRs[idx]
-        label = self.labels[idx]
+        subject = self.subjects[idx]
+
+        # Extract image and mask tensors
+        mr = subject['image'].data
+        label = subject['mask'].data
 
         return mr, label
     

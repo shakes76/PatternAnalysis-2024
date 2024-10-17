@@ -202,7 +202,7 @@ def elastic_transformation(image: torch.Tensor, alpha = 5.0, sigma = 0.5, is_mas
     if is_mask:
 
         mask = elastic_transformation(image)
-        mask = torch.clamp(torch.round(mask), min = 0, mask = 1)
+        mask = torch.clamp(torch.round(mask), min = 0, max = 1)
 
         return mask
 

@@ -2,7 +2,7 @@ import torch
 from dataset import ADNI_DataLoader
 from modules import GFNet
 from functools import partial
-from predict import getAccuracy
+from sys import argv
 
 def getAccuracy(test_dataloader, model, device, max_subset : int = -1):
     with torch.no_grad():
@@ -17,13 +17,13 @@ def getAccuracy(test_dataloader, model, device, max_subset : int = -1):
             total_correct += correct.sum()
             total_images += len(images)
 
-            #print(f"[{batch}/{len(test_dataloader)}] Batch accuracy: {correct.sum()/len(images)}")
+            print(f"[{batch}/{len(test_dataloader)}] Ongoing accuracy: {total_correct/total_images}")
             if max_subset != -1 and batch > max_subset:
                 break
         return total_correct/total_images
 
 
-def main():
+def main(args):
     """
     Constants
     """
@@ -32,6 +32,13 @@ def main():
     MODELPATH = "./model.pth"
     GOAL_ACCURACY = 0.8 # Goal accuracy to achieve
     
+    if len(args) >= 4:
+        ROOTDATAPATH = args[3]
+    if len(args) >= 3:
+        MODELPATH = args[2] 
+    if len(args) >= 2:
+        IMAGESIZE = int(args[1])
+
     # Set device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
@@ -56,4 +63,4 @@ def main():
         print(f"Model performs worse than goal accuracy of {GOAL_ACCURACY}")
 
 if __name__ == "__main__":
-    main()
+    main(argv)

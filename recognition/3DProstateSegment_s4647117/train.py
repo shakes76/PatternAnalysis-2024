@@ -27,6 +27,7 @@ import nibabel as nib
 from modules import UNet3D
 from dataset import NiftiDataset
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import OneCycleLR
 
 
 def train_loop():
@@ -157,10 +158,18 @@ def train_loop():
         num_workers=num_workers
     )
 
-    # Custom loss function that uses Dice Similarity Coefficient
-    # The loss function is 1 - Dice Score, minimising this will
-    # maximise the Dice Score overall
     def dice_loss(pred, target, epsilon=1e-6):
+        """
+        Computes the Dice Loss, which measures the overlap between predicted and target masks.
+
+        Args:
+            pred (torch.Tensor): Predicted logits with shape (batch_size, num_classes, D, H, W).
+            target (torch.Tensor): Ground truth labels with shape (batch_size, D, H, W).
+            epsilon (float): Small constant to avoid division by zero.
+
+        Returns:
+            torch.Tensor: Dice loss value.
+        """
         pred_probs = F.softmax(pred, dim=1)
         num_classes = pred.shape[1]
         target_one_hot = F.one_hot(target, num_classes=num_classes)
@@ -178,6 +187,20 @@ def train_loop():
     optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
 
     num_epochs = 20
+
+    total_steps = num_epochs * len(train_loader)
+
+    # Initialize OneCycleLR scheduler
+    scheduler = OneCycleLR(
+        optimizer,
+        max_lr=1e-3,  # Maximum learning rate
+        total_steps=total_steps,
+        pct_start=0.3,  # Percentage of cycle spent increasing the lr
+        anneal_strategy='cos',  # 'cos' for cosine annealing
+        div_factor=25.0,  # Initial lr = max_lr/div_factor
+        final_div_factor=1e4  # Final lr = initial lr/final_div_factor
+    )
+
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}/{num_epochs}")
 
@@ -198,6 +221,8 @@ def train_loop():
             loss = dice_loss(outputs, batch_labels)
             loss.backward()
             optimizer.step()
+
+            scheduler.step()
 
             running_loss += loss.item() * batch_images.size(0)
 
@@ -237,16 +262,20 @@ def train_loop():
 
             # Extract predicted and actual labels for visual comparison
             if is_first:
-                pred_class = torch.argmax(outputs, dim=1)
-                pred_class = pred_class.squeeze(0)
+                print(f"Image shape: {outputs.shape}")
+                print(f"Label shape: {batch_labels.shape}")
+                pred_class = torch.argmax(outputs, dim=1)[0]
+                # pred_class = pred_class.squeeze(0)
                 pred_class = pred_class.detach().cpu().numpy().astype(np.int16)
                 pred_image = nib.Nifti1Image(pred_class, np.eye(4))
                 nib.save(pred_image, "predicted_seg.nii.gz")
 
-                actual = batch_labels.squeeze(0)
+                actual = batch_labels[0]#.squeeze(0)
                 actual = actual.detach().cpu().numpy().astype(np.int16)
                 actual = nib.Nifti1Image(actual, np.eye(4))
                 nib.save(actual, "actual_seg.nii.gz")
+                print(f"Predicted shape: {pred_class.shape}")
+                print(f"Actual shape: {actual.shape}")
 
                 is_first = False
 

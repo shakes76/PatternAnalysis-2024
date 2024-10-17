@@ -55,19 +55,22 @@ def main():
             optimizer.zero_grad()
             
             if batch % 100 == 0:
+                acc = getAccuracy(test_dataloader, model, 5)
                 loss, current = loss.item(), (batch + 1) * len(images)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
+                print(f"loss: {loss:>7f} accuracy: {acc:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
 
 
-def getAccuracy(test_dataloader, model):
+def getAccuracy(test_dataloader, model, max_subset : int = -1):
     with torch.no_grad():
         total_correct = 0
         total_images = 0
-        for images, targets in test_dataloader:
+        for batch, (images, targets) in enumerate(test_dataloader):
             outputs = model(images)
             total_correct += outputs == targets
             total_images += len(images)
-    
+            if max_subset != -1 and batch > max_subset:
+                break
+
     return total_correct/total_images
 
 if __name__ == "__main__":

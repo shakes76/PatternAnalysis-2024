@@ -13,7 +13,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.b
 
 data = Dataset()
 
-noise_level = 0.5
+noise_level = 0.1
 
 # Function to display images
 def display_images(images, num_images=5):
@@ -98,7 +98,7 @@ def reparameterize(mu, logvar):
 class UNet(nn.Module):
     def __init__(self, latent_dim=256, num_classes=2):
         super(UNet, self).__init__()
-        self.label_embedding = nn.Embedding(num_classes, latent_dim)
+        #self.label_embedding = nn.Embedding(num_classes, latent_dim)
 
         # Encoder part (downsampling)
         self.enc1 = nn.Sequential(
@@ -149,7 +149,7 @@ class UNet(nn.Module):
 
     def forward(self, x, labels):
         # Get the label embeddings
-        label_emb = self.label_embedding(labels).unsqueeze(-1).unsqueeze(-1)
+        #label_emb = self.label_embedding(labels).unsqueeze(-1).unsqueeze(-1)
         # Concatenate the label embeddings with the input
         #x = torch.cat((x, label_emb.repeat(1, 1, x.size(2), x.size(3))), dim=1)
         
@@ -164,7 +164,7 @@ class UNet(nn.Module):
         # Pass through the decoder with skip connections
         dec3 = self.crop_and_add(self.dec3(bottleneck_out), enc2_out)
         dec2 = self.crop_and_add(self.dec2(dec3), enc1_out)
-        dec1 = self.crop_and_add(self.dec1(dec2), x)
+        dec1 = self.crop(self.dec1(dec2), x)
 
         return dec1
 
@@ -175,6 +175,14 @@ class UNet(nn.Module):
         _, _, h, w = skip_connection.size()
         upsampled = upsampled[:, :, :h, :w]
         return upsampled + skip_connection
+    
+    def crop(self, upsampled, skip_connection):
+        """
+        Crops the upsampled tensor to match the size of the skip connection tensor.
+        """
+        _, _, h, w = skip_connection.size()
+        upsampled = upsampled[:, :, :h, :w]
+        return upsampled
 
 
 # Function to add noise at each step
@@ -191,9 +199,9 @@ unet = UNet(latent_dim=latent_dim, num_classes=num_classes)
 
 # Loss functions and optimizers
 vae_criterion = nn.MSELoss()
-diffusion_criterion = nn.MSELoss()
+diffusion_criterion = nn.SmoothL1Loss()
 vae_optimizer = optim.Adam(list(vae_encoder.parameters()) + list(vae_decoder.parameters()), lr=1e-4)
-unet_optimizer = optim.Adam(unet.parameters(), lr=0.001)
+unet_optimizer = optim.Adam(unet.parameters(), lr=1e-4)
 
 def weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
@@ -205,8 +213,8 @@ vae_decoder.apply(weights_init)
 unet.apply(weights_init)
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 4
-for epoch in range(num_epochs):
+num_epochs = 50
+'''for epoch in range(num_epochs):
     for images, labels in tqdm(data_loader):
         images = images.to('cuda' if torch.cuda.is_available() else 'cpu')
         labels = labels.to(images.device)
@@ -237,7 +245,7 @@ for epoch in range(num_epochs):
             display_images(generated_images, num_images=5)
 
 torch.save(vae_encoder, "models/encoder.model")
-torch.save(vae_decoder, "models/decoder.model")
+torch.save(vae_decoder, "models/decoder.model")'''
 
 vae_encoder = torch.load("models/encoder.model", weights_only=False)
 vae_encoder.eval()
@@ -280,16 +288,31 @@ for epoch in range(num_epochs):
         denoised_latent = noisy_latent - predicted_noise
 
     # Print losses and display samples every 10 epochs
-    print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}, Diffusion Loss: {diffusion_loss.item()}")
-    if epoch % 2 == 0:
+    print(f"Epoch [{epoch+1}/{num_epochs}], Diffusion Loss: {diffusion_loss.item()}")
+    if epoch % 10 == 0:
         with torch.no_grad():
             # Decode denoised latent to generate images
             generated_images = vae_decoder(denoised_latent).clamp(-1, 1)
             display_images(generated_images, num_images=5)
-            generated_images = vae_decoder(predicted_noise).clamp(-1, 1)
-            display_images(generated_images, num_images=5)
+            z = torch.randn(5, latent_dim, 25, 25).to('cuda' if torch.cuda.is_available() else 'cpu')
+        
+            # Add noise to the latent space
+            noisy_latent, noise = add_noise(z, noise_level=noise_level)
+            
+            # Predict the noise using the UNet (conditioning on the provided label)
+            predicted_noise = unet(noisy_latent, [])
+            
+            # Denoise the latent representation using the predicted noise
+            denoised_latent = noisy_latent - predicted_noise
+            
+            # Decode the denoised latent representation to generate images
+            output_images = vae_decoder(denoised_latent).clamp(-1, 1)
+            display_images(output_images, num_images=5)
+    noise_level += 0.1
 
 print("Training completed!")
+
+torch.save(unet, "models/unet.model")
 
 def generate_sample(label, model, vae_decoder, num_samples=1, noise_level=noise_level):
     model.eval()

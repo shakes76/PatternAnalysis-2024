@@ -47,7 +47,7 @@ class ValidationLossEarlyStopping:
         return False
 
 # Hyperparmeters for loading model
-num_epochs = 3           # Number of training epochs
+num_epochs = 100           # Number of training epochs
 batch_size = 16            # Batch size for the dataloader
 lr = 0.002                 # Learning rate for the optimizer
 num_hiddens = 128          # Number of hidden units in the VQ-VAE model

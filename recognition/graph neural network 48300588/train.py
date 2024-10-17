@@ -30,8 +30,6 @@ def train():
     train_accuracies = []
     val_accuracies = []
 
-    start_time = time.time()
-
     for epoch in range(1, epochs + 1):
         # Training phase
         model.train()
@@ -79,9 +77,6 @@ def train():
         if patience_counter >= patience:
             print(f'Early stopping at epoch {epoch}')
             break
-
-    total_time = time.time() - start_time
-    print(f'Training completed in {total_time:.2f} seconds.')
 
     # Load the best model state
     if best_model_state is not None:

@@ -16,11 +16,18 @@ TRAIN_TRANSFORM = transforms.Compose([
     transforms.Resize(IMG_SIZE),
     transforms.RandomCrop(IMG_SIZE),
     transforms.RandAugment(num_ops = 3),
-    transforms.ToTensor()
+    transforms.Grayscale(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean = 0.1155, std = 0.2224)
 ])
 TEST_TRANSFORM = transforms.Compose([
     transforms.Resize(IMG_SIZE),
     transforms.CenterCrop(IMG_SIZE),
+    transforms.Grayscale(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean = 0.1155, std = 0.2224)
+])
+CALC_TRANSFORM = transforms.Compose([
     transforms.ToTensor()
 ])
 
@@ -39,7 +46,7 @@ def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuff
         root = path,
         transform = TRAIN_TRANSFORM
     )
-    trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle, num_workers=4, pin_memory = gpu)
+    trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle, num_workers=1, pin_memory = gpu)
     return trainLoader
 
 def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True, gpu = False):
@@ -57,7 +64,7 @@ def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True, gpu
         root = path,
         transform = TEST_TRANSFORM
     )
-    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=4, pin_memory = gpu)
+    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=1, pin_memory = gpu)
     return valLoader
 
 def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):
@@ -71,12 +78,12 @@ def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):
     Returns:
         Pytorch DataLoader with ADNI test data loaded
     '''
-    trainData = ImageFolder(
+    testData = ImageFolder(
         root = path,
         transform = TEST_TRANSFORM
     )
-    trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle)
-    return trainLoader
+    testLoader = DataLoader(testData, batch_size = batchSize, shuffle = shuffle)
+    return testLoader
 
 def formatByPatient(path = ROOT, newPath = NEW_ROOT):
     if os.path.exists(newPath):
@@ -131,3 +138,30 @@ def formatByPatient(path = ROOT, newPath = NEW_ROOT):
             for item in (os.listdir(p)):
                 os.mkdir(os.path.join(newP, item))
                 valq.append((os.path.join(p, item), os.path.join(newP, item)))
+
+import torch
+
+def meanStdCalc(path = NEW_ROOT + TRAINPATH, device = "cpu"):
+    trainData = ImageFolder(
+            root = path,
+            transform = CALC_TRANSFORM
+        )
+
+    trainLoader = DataLoader(trainData, batch_size = 128)
+
+    mean = 0.0
+    std = 0.0
+    nb_samples = 0.0
+    
+    for data in trainLoader:
+        data = data[0]
+        batch_samples = data.size(0)
+        data = data.view(batch_samples, data.size(1), -1)
+        mean += data.mean(2).sum(0)
+        std += data.std(2).sum(0)
+        nb_samples += batch_samples
+
+    mean /= nb_samples
+    std /= nb_samples
+
+    return (mean, std)

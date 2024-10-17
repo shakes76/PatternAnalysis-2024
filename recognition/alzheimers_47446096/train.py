@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from torch.cuda.amp import GradScaler
 
 def train(device: str = "cpu"):
-    NUM_EPOCH = 600
+    NUM_EPOCH = 1000
     LEARNING_RATE = 0.0002
 
-    model = VisionTransformer(8, 32, (3, 256, 256), 512, 8, 4, device).to(device)
-    print(summary(model, (3, 256, 256)))
+    model = VisionTransformer(6, 16, (1, 256, 256), 256, 8, 8, device).to(device)
+    print(summary(model, (1, 256, 256)))
     trainLoader = getTrainLoader(gpu = True)
     valLoader = getValLoader(gpu = True)
 
@@ -23,7 +23,7 @@ def train(device: str = "cpu"):
 
     crit = torch.nn.CrossEntropyLoss()
     opt = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
-
+    maxValAcc = 0
     print("Beginning Training")
     for epoch in range(NUM_EPOCH):
         print(f'Epoch {epoch+1}/{NUM_EPOCH}:', end = ' ')
@@ -61,25 +61,28 @@ def train(device: str = "cpu"):
                 valLoss = 0
                 torch.no_grad()
                 for i, (imgs, trueLabels) in enumerate(valLoader):
-                    
+
                     imgs = imgs.to(device)
                     trueLabels = trueLabels.to(device)
                     outputs = model(imgs)
-                    
+
                     loss = crit(outputs, trueLabels)
-                
+
                     a, predLabels = torch.max(outputs.data, 1)
-                    
+
                     valAcc += (trueLabels == predLabels).sum().item()
                     valLoss += loss.item()
-
                 valAcc /= len(valLoader.dataset)
                 valLoss /= len(valLoader)
                 valAccList.append(valAcc)
                 valLossList.append(valLoss) 
                 print(f"Validation Loss = {valLoss}, Validation Accuracy = {100 * valAcc} %")
+        
+        #if (valAccList[-1] > maxValAcc or valAccList[-1] >= 0.8):
+        #    maxValAcc = valAccList[-1]
+        #    torch.save(model, f"model_epoch_{epoch + 1}")
+        
         if ((epoch + 1) % 20 == 0):
-            torch.save(model, f"model_epoch_{epoch + 1}")
             plt.plot(range(1, epoch + 2), trainAccList, label = "Train Accuracy")
             plt.savefig("trainAccuracyPlot.jpg")
             plt.close()

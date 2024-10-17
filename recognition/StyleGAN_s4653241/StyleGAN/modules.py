@@ -6,12 +6,36 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from math import sqrt # yet to use
+from math import sqrt
 
 
 class MappingNetwork(nn.Module):
-    def __init__(self,z_dim,w_dim):
+    def __init__(self,z_dim,w_dim,activation = nn.ReLU):
         super().__init__()
+
+        # Mapping network
+        self.mapping = nn.Sequential(
+            EqualizerStraights(z_dim, w_dim),
+            activation(),
+            EqualizerStraights(w_dim, w_dim),
+            activation(),
+            EqualizerStraights(z_dim, w_dim),
+            activation(),
+            EqualizerStraights(w_dim, w_dim),
+            activation(),
+            EqualizerStraights(z_dim, w_dim),
+            activation(),
+            EqualizerStraights(w_dim, w_dim),
+            activation(),
+            EqualizerStraights(z_dim, w_dim),
+            activation(),
+            EqualizerStraights(w_dim, w_dim)
+        )
+
+    def forward(self, x):
+        # Normalize the input tensor
+        x = x / torch.sqrt(torch.mean(x**2, dim = 1, keepdim = True) + 1e-8)
+        return self.mapping(x)
 
 # Equalizer for the fully connected layer
 '''
@@ -44,6 +68,19 @@ class EquilizerKG(nn.Module):
     def forward(self):
         return self.weight * self.constanted
 
+'''
+Not implemented yet
+'''
+class SynthesisNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        pass
+
+'''
+Not implemented yet
+'''
 class Generator(nn.Module):
     def __init__(self):
         super().__init__()
@@ -51,6 +88,9 @@ class Generator(nn.Module):
     def forward(self, x):
         pass
 
+'''
+Not implemented yet
+'''
 class Discriminator(nn.Module):
     def __init__(self):
         super().__init__()
@@ -58,6 +98,9 @@ class Discriminator(nn.Module):
     def forward(self, x):
         pass
 
+'''
+Not implemented yet
+'''
 class StyleGAN2(nn.Module):
     def __init__(self):
         super().__init__()
@@ -65,6 +108,9 @@ class StyleGAN2(nn.Module):
     def forward(self, x):
         pass
 
+'''
+Not implemented yet
+'''
 class NoiseInjection(nn.Module):
     def __init__(self):
         super().__init__()

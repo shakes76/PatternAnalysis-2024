@@ -17,6 +17,7 @@ def main():
 
     # Set seed to make replicable
     seed = 42
+    torch.manual_seed(seed)
 
     # Get the data
     print("Loading ADNI brain data")

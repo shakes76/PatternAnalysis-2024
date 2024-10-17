@@ -17,7 +17,7 @@ def getAccuracy(test_dataloader, model, device, max_subset : int = -1):
             total_correct += correct.sum()
             total_images += len(images)
 
-            print(f"[{batch}/{len(test_dataloader)}] Ongoing accuracy: {total_correct/total_images}")
+            #print(f"[{batch}/{len(test_dataloader)}] Ongoing accuracy: {total_correct/total_images}")
             if max_subset != -1 and batch > max_subset:
                 break
         return total_correct/total_images

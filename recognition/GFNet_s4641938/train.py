@@ -39,10 +39,10 @@ def main(args):
 
     # Create model
     print("Creating GFNet model")
-    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6))
+    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), dropcls=0.25)
     model.to(device)
 
-    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
     criterion = nn.CrossEntropyLoss()
     #scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=0)
     
@@ -70,7 +70,7 @@ def main(args):
             optimizer.zero_grad()
             
             #scheduler.step()
-            
+            #print(getAccuracy(test_dataloader, model, device, 1).item())
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(images)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")

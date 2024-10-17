@@ -13,13 +13,13 @@ IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
 MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
 
-BATCH_SIZE = 2
+BATCH_SIZE = 16
 EPOCHS = 5
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3
 SPLIT_RATIO = [0.8, 0.1, 0.1]  # Train, validation, and test split
 
 # Create the dataset
-dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None)
+dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None, augment=True)
 
 # Calculate split sizes
 train_size = int(SPLIT_RATIO[0] * len(dataset))

@@ -13,8 +13,8 @@ IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
 MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
 
-BATCH_SIZE = 8
-EPOCHS = 20
+BATCH_SIZE = 4
+EPOCHS = 10
 LEARNING_RATE = 1e-3
 SPLIT_RATIO = [0.8, 0.1, 0.1]  # Train, validation, and test split
 

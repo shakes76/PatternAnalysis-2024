@@ -26,4 +26,13 @@ class NoiseInjection(nn.Module):
             noise = image.new_empty(batch, 1, height, width).normal_()
         return image + self.weight * noise
 
+class AdaIN(nn.Module):
+    def __init__(self, in_channel, w_dim):
+        super().__init__()
+        self.norm = nn.InstanceNorm2d(in_channel)
+        self.style = nn.Linear(w_dim, in_channel * 2)
 
+    def forward(self, image, w):
+        style = self.style(w).unsqueeze(2).unsqueeze(3)
+        gamma, beta = style.chunk(2, dim=1)
+        return (1 + gamma) * self.norm(image) + beta

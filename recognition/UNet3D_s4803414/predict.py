@@ -31,6 +31,14 @@ def main(image_path, mask_path, model_path):
         prediction = torch.argmax(prediction, dim=1)  # Get predicted class
         prediction = prediction.squeeze().cpu().numpy()  # Shape: (256, 256, 128)
 
-        # Load the Mask image
-        mask_data = nib.load(mask_path).get_fdata()
-        mask_data = image_data[:, :, :128]
+    # Load the Mask image
+    mask_data = nib.load(mask_path).get_fdata()
+    mask_data = image_data[:, :, :128]
+
+    # Visualise slices
+    slice_index = 64  # Choose a slice to visualize (middle slice)
+    visualise_slice(image_data[0, :, :],
+                    mask_data[0, :, :] if mask_data is not None else np.zeros_like(image_data[0, :, :]), prediction,
+                    slice_index)
+
+

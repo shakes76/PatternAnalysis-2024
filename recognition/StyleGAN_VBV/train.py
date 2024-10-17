@@ -11,8 +11,8 @@ from predict import generate_examples
 # Constants
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available
 AD_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD']
-NC_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/NC'
-DATASET_PATH = AD_PATH  # Path to the dataset
+NC_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/NC', '/home/groups/comp3710/ADNI/AD_NC/test/NC']
+DATASET_PATH = NC_PATH  # Path to the dataset
 BATCH_SIZE = 32  # Number of images to process in each training batch
 Z_DIM = 512  # Dimensionality of the latent space
 W_DIM = 512  # Dimensionality for the style space

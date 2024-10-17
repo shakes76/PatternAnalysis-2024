@@ -11,8 +11,8 @@ from PIL import Image
 
 # Constants for dataset and model configuration
 AD_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD']
-NC_PATH = '/home/groups/comp3710/ADNI/AD_NC/train/NC'
-DATASET_PATH = AD_PATH  # Path to the dataset
+NC_PATH = ['/home/groups/comp3710/ADNI/AD_NC/train/NC', '/home/groups/comp3710/ADNI/AD_NC/test/NC']
+DATASET_PATH = NC_PATH  # Path to the dataset
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available, otherwise use CPU
 LR = 1e-3  # Learning rate

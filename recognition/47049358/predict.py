@@ -44,8 +44,7 @@ def test(model, test_loader, criterion, device):
         criterion = criterion
 
         for i, (inputs, masks) in enumerate(test_loader):
-            print(f'Test No.{i}')
-
+            masks = masks.float()
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
             test_loss, segment_coefs, test_dice = criterion(outputs, masks)
@@ -63,6 +62,8 @@ def test(model, test_loader, criterion, device):
                     seg_4_dice_coef = np.append(seg_4_dice_coef, segment_coefs[i])
                 else:
                     seg_5_dice_coef = np.append(seg_5_dice_coef, segment_coefs[i])
+            
+            print(f'Test No.{i} - Overall Dice Coefficient: {test_dice}')
                 
             test_dice_coefs = np.append(test_dice_coefs, test_dice.item())
 

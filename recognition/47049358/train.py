@@ -27,7 +27,7 @@ class BaseDice(nn.Module):
         super(BaseDice, self).__init__()
         self.epsilon = epsilon
 
-    def forward(self, y_true, y_pred):
+    def forward(self, y_pred, y_true):
         raise NotImplementedError("Sublasses should implement this method.")
 
 class ExponentialWeightedLoss(BaseDice):
@@ -37,7 +37,7 @@ class ExponentialWeightedLoss(BaseDice):
     def __str__(self):
         return 'ExponentialWeightedLoss'
 
-    def forward(self, y_true, y_pred):
+    def forward(self, y_pred, y_true):
 
         num_masks = y_true.size(-1)
         segment_coefs = torch.zeros(num_masks, device=y_true.device)
@@ -64,7 +64,7 @@ class ArithmeticWeightedLoss(BaseDice):
     def __str__(self):
         return 'ArithmeticWeightedLoss'
 
-    def forward(self, y_true, y_pred):
+    def forward(self, y_pred, y_true):
 
         num_masks = y_true.size(-1)
         segment_coefs = torch.zeros(num_masks, device=y_true.device)
@@ -91,7 +91,7 @@ class PaperLoss(BaseDice):
     def __str__(self):
         return 'PaperLoss'
 
-    def forward(self, y_true, y_pred):
+    def forward(self, y_pred, y_true):
 
         num_masks = y_true.size(-1)
         segment_coefs = torch.zeros(num_masks, device=y_true.device)
@@ -113,7 +113,7 @@ class AlternativeLoss(BaseDice):
     def __str__(self):
         return 'AlternativeLoss'
 
-    def forward(self, y_true, y_pred):
+    def forward(self, y_pred, y_true):
 
         num_masks = y_true.size(-1)
         segment_coefs = torch.zeros(num_masks, device=y_true.device)
@@ -135,7 +135,7 @@ class PaperLossPlus(BaseDice):
     def __str__(self):
         return 'PaperLossPlus'
 
-    def forward(self, y_true, y_pred):
+    def forward(self, y_pred, y_true):
 
         num_masks = y_true.size(-1)
         bce = nn.BCELoss()
@@ -149,7 +149,7 @@ class PaperLossPlus(BaseDice):
             segment_coefs[i] = d_coef
 
         d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = (- 1 / num_masks) * torch.sum(segment_coefs) + bce(y_true, y_pred)
+        loss = (- 1 / num_masks) * torch.sum(segment_coefs) + bce(y_pred, y_true)
         return loss, segment_coefs, d_coef
 
 def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
@@ -171,13 +171,13 @@ def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
         running_dice = 0.0
         total_segment_coefs = torch.zeros(y_train.shape[-1], device=device)
         for inputs, masks in train_loader:
-
+            masks = masks.float()
             inputs, masks = inputs.to(device), masks.to(device)
             optimiser.zero_grad()
             outputs = model(inputs)
 
             # the weighted value is only used for updating gradients!
-            loss, segment_coefs, d_coef = criterion(y_true = masks, y_pred = outputs) 
+            loss, segment_coefs, d_coef = criterion(y_pred = outputs, y_true = masks) 
 
             total_segment_coefs += segment_coefs
 

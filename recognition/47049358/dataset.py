@@ -1,3 +1,6 @@
+# ==========================
+# Imports
+# ==========================
 import os
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -6,12 +9,20 @@ from tqdm import tqdm
 import numpy as np
 from torch.utils.data import Dataset
 import torchvision.transforms.functional as F
+import torchvision.transforms as transforms
 import random
 import torch
 
+# ==========================
+# Constants
+# ==========================
+
 IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
 LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
-RANDOM_STATE = 47049358
+
+# ==========================
+# Loading Dataset
+# ==========================
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -129,21 +140,9 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
 def load_images_and_labels(image_file_name, label_file_name, early_stop = False):
     images = load_data_3D(imageNames=image_file_name, normImage = True, early_stop=early_stop)
-    labels = load_data_3D(imageNames=label_file_name, categorical=True, early_stop=early_stop)
+    labels = load_data_3D(imageNames=label_file_name, categorical=True, dtype = np.uint8, early_stop=early_stop)
     return images, labels
 
-"""
-    PyTorch Dataset class for loading ISIC melanoma detection dataset.
-
-    Parameters:
-    - img_path (str): Path to the directory containing image files.
-    - mask_path (str): Path to the directory containing mask files.
-    - transform (call): Transform to be applied on the images and masks.
-
-    Methods:
-    - __len__(): Returns the total number of images in the dataset.
-    - __getitem__(idx): Returns the image and its corresponding mask at the given index `idx`. Resizes image and converts to correct colour channels. 
-    """
 class Prostate3dDataset(Dataset):
     def __init__(self, images, labels):
         self.images = images
@@ -156,12 +155,133 @@ class Prostate3dDataset(Dataset):
         img = self.images[idx]
         mask = self.labels[idx]
         return img, mask
+    
+# ==========================
+# Image Augmentation
+# ==========================
+
+def random_rotation(image: torch.Tensor, angle = 0.0):
+        
+    image = F.rotate(image, angle = angle, fill = image.min().item())
+
+    return image
+
+def random_resize_with_padding(image: torch.Tensor, height = 256, width = 256, is_mask = False):
+
+    original_height = image.size(1)
+    original_width = image.size(2)
+
+    top_p = (original_height - height) // 2
+    bottom_p = (original_height - height) - top_p
+    right_p = (original_width - width) // 2
+    left_p = (original_width - width) - right_p
+    resized = F.resize(image, size = (height, width))
+    padding = (left_p, top_p, right_p, bottom_p)
+    image = F.pad(resized, padding = padding, fill = image.min().item())
+
+    if is_mask:
+        image = torch.clamp(torch.round(image), min = 0, max = 1)
+
+    return image
+
+def gamma_correction(image: torch.Tensor, gamma = 1):
+        
+    image = F.adjust_gamma(image, gamma)
+    image = torch.nan_to_num(image, nan = 0)
+
+    return image
+
+def elastic_transformation(image: torch.Tensor, alpha = 5.0, sigma = 0.5, is_mask = False):
+
+    elastic_transformation = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.ElasticTransform(alpha=alpha, sigma=sigma),
+            transforms.PILToTensor()
+    ])
+
+    if is_mask:
+
+        mask = elastic_transformation(image)
+        mask = torch.clamp(torch.round(mask), min = 0, mask = 1)
+
+        return mask
+
+    image = elastic_transformation(image)
+
+    return image
+
+def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor):
+
+    alpha = random.uniform(0.0, 10.0)
+    sigma = random.uniform(0.0, 1.0)
+    make_elastic = random.choice([True, False])
+    
+    angle = random.uniform(0, 180)
+    rotate = random.choice([True, False])
+
+    height = random.randint(128, 256)
+    width = random.randint(128, 256)
+    resize = random.choice([True, False])
+        
+    gamma = random.uniform(0.25, 2)
+    adjust_gamma = random.choice([True, False])
+    
+    hflip = random.choice([True, False])
+
+    vflip = random.choice([True, False])
+
+    for j in range(image.shape[-1]):
+
+        slice = image[ : , : , j]
+        slice = torch.Tensor(slice[np.newaxis, : , :])
+        masks = masks_3d[: , : , j , :]
+        masks = torch.Tensor(masks[np.newaxis, : , :, : ])
+
+        slice = elastic_transformation(image = slice, alpha = alpha, sigma = sigma) if make_elastic else slice
+        slice = random_rotation(image = slice, angle = angle) if rotate else slice
+        slice = random_resize_with_padding(image = slice, height = height, width = width) if resize else slice
+        slice = gamma_correction(image = slice, gamma = gamma) if adjust_gamma else slice
+        slice = F.hflip(slice) if hflip else slice
+        slice = F.vflip(slice) if vflip else slice
+
+        for i in range(masks.size(-1)):
+            mask = masks[ : , : , : , i]
+
+            mask = elastic_transformation(image = mask, alpha = alpha, sigma = sigma, is_mask = True) if make_elastic else mask
+            mask = random_rotation(image = mask, angle = angle) if rotate else mask
+            mask = random_resize_with_padding(image = mask, height = height, width = width, is_mask=True) if resize else mask
+            mask = F.hflip(mask) if hflip else mask
+            mask = F.vflip(mask) if vflip else mask
+
+            masks[ : , : , : , i] = mask
+
+        masks_3d[: , : , j , :] = masks.cpu().numpy()
+        
+        image[ : , : , j] = slice.cpu().numpy()
+        
+    return image, masks_3d
+
+def augment_training_set(X_train, y_train):
+
+    for i in range(X_train.shape[0]):
+
+        image = X_train[i, : , : , : ]
+        masks_3d = y_train[i, : , : , : , :]
+
+        transformed_img, transformed_masks_3d = apply_transformation(image = image, masks_3d = masks_3d)
+
+        X_train[i, : , : , : ] = transformed_img
+        y_train[i, : , : , : , :] = transformed_masks_3d
+
+    return X_train, y_train
+
+print('> Loading Dataset')
 
 rawImageNames = os.listdir(IMAGE_FILE_NAME)
 rawLabelNames = os.listdir(LABEL_FILE_NAME)
 
-# Split the set into train, validation, and test set (70:15:15 for train:valid:test)
-X_train, X_test, y_train, y_test = train_test_split(rawImageNames, rawLabelNames, train_size=0.8, random_state=RANDOM_STATE) # Split the data in training and test set
+# Split the set into train, validation, and test set (80 : 20 for train:test)
+X_train, X_test, y_train, y_test = train_test_split(rawImageNames, rawLabelNames, train_size=0.8) # Split the data in training and test set
 
 X_train = [os.path.join(IMAGE_FILE_NAME, image) for image in X_train]
 X_test = [os.path.join(IMAGE_FILE_NAME, image) for image in X_test]
@@ -172,58 +292,33 @@ y_test = [os.path.join(LABEL_FILE_NAME, label) for label in y_test]
 X_train, y_train = load_images_and_labels(X_train, y_train, early_stop=False)
 X_test, y_test = load_images_and_labels(X_test, y_test, early_stop=False)
 
-def random_rotation(image: torch.Tensor):
-    angle = random.uniform(0, 180)
-    output = F.rotate(image, angle = angle)
-    return output, angle
-
-def gamma_correction(image: torch.Tensor):
-    gamma = random.uniform(0.25, 2)
-    output = F.adjust_gamma(image, gamma)
-    output = torch.nan_to_num(output, nan = 0)
-    return output
-
-def apply_transformation(image: torch.Tensor, angle = -1, is_mask = False, hflip = False, vflip = False):
-
-    if is_mask:
-
-        mask = image if angle == -1 else F.rotate(image, angle)
-        mask = F.hflip(mask) if hflip else mask
-        mask = F.vflip(mask) if vflip else mask
-        return mask
-    
-    if random.randint(0, 1) == 1:
-        image, angle = random_rotation(image)
-    if random.randint(0, 1) == 1:
-        image = gamma_correction(image)
-    if random.randint(0, 1) == 1:
-        image = F.hflip(image)
-        hflip = True
-    if random.randint(0, 1) == 1:
-        image = F.vflip(image)
-        vflip = True
-    return image, angle, hflip, vflip
-
 print('> Start Random Augmentation')
 
-for i in range(X_train.shape[0]):
-    augment = random.randint(0, 1)
-    x = X_train[i, :, :, :]
-    y = y_train[i, :, :, :, :]
-    if augment == 1:
-        for j in range(x.shape[-1]):
-            slice = x[ : , : , j]
-            slice = torch.Tensor(slice[np.newaxis, : , :])
-            transformed_img, angle, hflip, vflip = apply_transformation(slice)
-            X_train[i, : , : , j] = transformed_img.cpu().numpy()
-            for k in range(y.shape[-1]):
-                mask = y[ : , : , j, k]
-                mask = torch.Tensor(mask[np.newaxis, :, :])
-                transformed_mask = apply_transformation(mask, angle = angle, hflip = hflip, vflip = vflip, is_mask = True)
-                y_train[i, : , : , j, k] = transformed_mask.cpu().numpy()
+X_train, y_train = augment_training_set(X_train, y_train)
 
-print('> Augmentation Finished')
+print('> Augmentation Complete')
 
 X_train = X_train[: ,np.newaxis, :, :, :]
 X_test = X_test[:, np.newaxis, :, :, :]
 
+# if __name__ == '__main__':
+#     # Generate random noise with shape (256, 256, 128)
+#     image_file_name = [os.path.join(IMAGE_FILE_NAME, image) for image in os.listdir(IMAGE_FILE_NAME)][0]
+#     noise = torch.Tensor(load_data_3D(imageNames=[image_file_name], normImage = True, early_stop=True))
+
+#     import matplotlib.pyplot as plt
+
+#     torch.set_printoptions(threshold=float('inf'))
+
+#     image = noise[: , :, :, 10]
+
+#     print(image)
+
+#     plt.imshow(image[0, :, :], cmap='gray')
+#     plt.show()
+#     print(image.shape)
+#     image = F.hflip(image)
+#     plt.imshow(image[0, :, :], cmap='gray')
+#     plt.show()
+
+#     print(image)

@@ -27,24 +27,13 @@ import utils
 from modules import GFNet
 from dataset import get_dataloaders
 
-# Parameters
-# output_dir = 'test/model/run/'
-
-# Hyperparameters
-# epochs = 50
-# start_epoch = 0
-# lr = 1e-3
-# min_lr = 1e-4
-# warmup_epoch = 5
-# warmup_lr = 1e-6
-
 project = "ADNI-GFNet"
 group = "GFNet",
 
 def get_args_parser():
     parser = argparse.ArgumentParser('ADNI training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=32, type=int)
-    parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--epochs', default=200, type=int)
 
     # Model parameters
     parser.add_argument('--arch', default='deit_small', type=str,
@@ -85,7 +74,7 @@ def get_args_parser():
                         help='learning rate noise limit percent (default: 0.67)')
     parser.add_argument('--lr-noise-std', type=float, default=1.0, metavar='STDDEV',
                         help='learning rate noise std-dev (default: 1.0)')
-    parser.add_argument('--warmup-lr', type=float, default=1e-6, metavar='LR',
+    parser.add_argument('--warmup-lr', type=float, default=1e-5, metavar='LR',
                         help='warmup learning rate (default: 1e-6)')
     parser.add_argument('--min-lr', type=float, default=1e-5, metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0 (1e-5)')
@@ -277,7 +266,6 @@ if __name__ == '__main__':
 
     model = GFNet(num_classes=2, in_chans=1)
     model.to(device)
-    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     optimizer = create_optimizer(args, model)
     loss_scaler = NativeScaler()
@@ -288,6 +276,9 @@ if __name__ == '__main__':
     print(f"lr = {args.lr}")
     start_time = time.time()
     max_accuracy = 0.0
+    training_losses = []
+    test_losses = []
+    test_acc = []
     for epoch in range(args.start_epoch, args.epochs):
         
         train_stats = train_one_epoch(
@@ -309,6 +300,9 @@ if __name__ == '__main__':
 
         test_stats = evaluate(test_loader, model, device)
         print(f"Accuracy of the network on the {len(test_loader)} test images: {test_stats['acc1']:.1f}%")
+        training_losses.append(train_stats.loss)
+        test_losses.append(test_stats.loss)
+        test_acc.append(test_stats["acc1"])
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
@@ -324,8 +318,7 @@ if __name__ == '__main__':
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},
-                     'epoch': epoch,
-                     'n_parameters': n_parameters}
+                     'epoch': epoch}
 
         if args.output_dir and utils.is_main_process():
             with open(args.output_dir + "log.txt", "a") as f:

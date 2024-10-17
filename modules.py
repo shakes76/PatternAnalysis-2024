@@ -166,7 +166,7 @@ class VQVAE(nn.Module):
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 train_loader, test_loader, val_loader = load_data()
 model = VQVAE(128, 32, 5, 512, 64).to(device)
-opt = torch.optim.Adam(model.parameters(), lr=1e-3, amsgrad=True)
+opt = torch.optim.Adam(model.parameters(), lr=2e-4, amsgrad=True)
 scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.9)
 if not os.path.exists('models'):
     os.makedirs('models')
@@ -183,8 +183,7 @@ train_losses = []
 best_epoch = 0
 
 def train_vqvae():
-    num_epochs = 100
-    opt = Adam(model.parameters(), lr=2E-4)
+    num_epochs = 342
     criterion = torch.nn.MSELoss()
     
     for epoch_idx in range(num_epochs):
@@ -213,7 +212,7 @@ def train_vqvae():
                     time.time() - start_time
                 ))
         
-        if (epoch_idx + 1) % 2 == 0:
+        if (epoch_idx + 1) % 10 == 0:
             print("Generating Epoch Image")
             generate_samples(epoch_idx+1)
         
@@ -277,7 +276,7 @@ def validate(epoch):
 def test():
     print("Testing")
     model.load_state_dict(torch.load(f'models/checkpoint_epoch{best_epoch}_vqvae.pt'))
-    torch.save(model.state_dict(), f'final_vqvae.pt')
+    torch.save(model.state_dict(), f'outputs/final_vqvae.pt')
     model.eval()
     total_ssim = 0
     
@@ -311,13 +310,15 @@ def generate_samples(epoch = -1):
     # Plot 16 input images in the first two rows
     for i in range(16):
         img = x[i, :, :].squeeze().cpu().numpy()  # Remove the extra dimension
-        axes[i].imshow(img, cmap='gray')         
+        # axes[i].imshow(img, cmap='gray')         
+        axes[i].imshow(img)         
         axes[i].axis("off")
 
     # Plot 16 corresponding output images in the next two rows
     for i in range(16):
         img_tilde = x_tilde[i, :, :].squeeze().detach().cpu().numpy()  # Detach from computation graph
-        axes[i+16].imshow(img_tilde, cmap='gray')
+        # axes[i+16].imshow(img_tilde, cmap='gray')
+        axes[i+16].imshow(img_tilde)
         axes[i+16].axis("off")
 
     plt.tight_layout()
@@ -330,9 +331,9 @@ def generate_samples(epoch = -1):
     plt.close()
 
 if __name__ == "__main__":   
-    start = time.time() 
-    train_vqvae()
-    print(f"Took {(time.time() - start) / 60} minutes to train")
-    test_ssim = test()
-    print(f"Test SSIM achieved as {test_ssim}")
+    # start = time.time() 
+    # train_vqvae()
+    # print(f"Took {(time.time() - start) / 60} minutes to train")
+    # test_ssim = test()
+    # print(f"Test SSIM achieved as {test_ssim}")
     generate_samples()

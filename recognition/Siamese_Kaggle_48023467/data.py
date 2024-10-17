@@ -11,12 +11,13 @@ import logging
 from PIL import Image   
 from sklearn.model_selection import train_test_split
 import random
+import shutil
 
 # Class for storing and pre-processing the ISIC Dataset
 class ISICDataset(Dataset):
-    def __init__(self, dir, split_ratio, oversample_ratio, transform=None, mode="train", first_run=True):
+    def __init__(self, img_dir, output_dir, label_csv, split_ratio, oversample_ratio, transform=None, mode="train", first_run=True):
         
-        self._dir = dir
+        self._dir = img_dir
         self._imgs = []
         self._mode = mode
         self._split_ratio = split_ratio
@@ -25,7 +26,7 @@ class ISICDataset(Dataset):
         
         # Preprocess images and labels if first time running model
         if first_run:
-            self.preprocess()
+            self.preprocess(label_csv, img_dir)
         
         # Get benign and malignant images and store into labelled reference arrays
         benign_refs = self.generate_img_references(os.path.join(self._dir, 'benign'), 0)
@@ -51,7 +52,7 @@ class ISICDataset(Dataset):
             malignant_count = len(malignant_train)
             
             # Calculate amount minority class (malignant) needs to increase by
-            oversample_count = ((benign_count * oversample_ratio) - malignant_count)
+            oversample_count = int((benign_count * oversample_ratio) - malignant_count)
             
             # Randomly resample if oversample count is valid (>0)
             if oversample_count > 0:
@@ -61,16 +62,47 @@ class ISICDataset(Dataset):
                     
         else:
             self._imgs = img_val
+            
+        # CHECK ERROR BELOW, IMG REGISTERING AS INT
         
         # Split image array into seperate arrays based on labels
         benign_indices, malignant_indices = [], []
-        for i, img in enumerate(self._imgs):
+        i = 0
+        for img in self._imgs:
             benign_indices.append(i) if img[1] == 0 else malignant_indices.append(i)
+            i += 1
             
         self._imgs_split = {0:benign_indices, 1:malignant_indices}
         return
     
-    def preprocess(self):
+    # Seperate and group image data based on labels
+    def preprocess(self, labelCSV, img_path):
+        print("Initial run: Preprocessing data...")
+        df = pd.read_csv(labelCSV)
+        
+        output_benign = os.path.join(img_path, "benign")
+        output_malignant = os.path.join(img_path, "malignant")
+        
+        # Generate output directories if necessary
+        if not os.path.exists(output_benign):
+            os.makedirs(output_benign)
+        if not os.path.exists(output_malignant):
+            os.makedirs(output_malignant)
+            
+        for _, row in df.iterrows():
+            img_name = row["image_name"] + ".jpg"
+            img_src = os.path.join(img_path, img_name)
+            
+            if os.path.isfile(img_src):
+            
+                # Seperate based on label
+                if row["target"] == 0:
+                    img_dst = os.path.join(output_benign, img_name)
+                elif row["target"] == 1:
+                    img_dst = os.path.join(output_malignant, img_name)
+                
+                shutil.copy(img_src, img_dst)
+            
         return
     
     def __len__(self):
@@ -105,7 +137,7 @@ class ISICDataset(Dataset):
     def generate_img_references(self, dir, label):
         refs = []
         for file in os.listdir(dir):
-            if file.endswith(".png", ".jpg", ".svg", ".jpeg"): # Common image extensions DEBUG - MENTION IN README
+            if file.endswith((".png", ".jpg", ".svg")): # Common image extensions DEBUG - MENTION IN README
                 img_ref = os.path.join(dir, file)
                 refs.append((img_ref, label))
         return refs
@@ -117,12 +149,76 @@ class ISICDataset(Dataset):
         return img
     
 # Create dataloaders for testing and validating
-def generate_dataloader(dir, batch_size=16, ratio=0.75, n_workers=4):
-    return
+def generate_dataloaders(dir, batch_size=16, ratio=0.75, n_workers=4):
+    # Augmentation transformations applied only to training dataset
+    train_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    val_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    # Load params
+    _, label_csv, output_dir, _, oversample_ratio, initial_run, _ = load_params()
+    
+    # Generate datasets
+    train_dataset = ISICDataset(img_dir=dir, output_dir=output_dir, label_csv=label_csv, split_ratio=ratio, oversample_ratio=oversample_ratio, transform=train_transform, mode="train", first_run=initial_run)
+    val_dataset = ISICDataset(img_dir=dir, output_dir=output_dir, label_csv=label_csv, split_ratio=ratio, oversample_ratio=oversample_ratio, transform=val_transform, mode="test", first_run=initial_run)
+    
+    # Generate dataloaders
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        num_workers=n_workers,
+        pin_memory=True
+    )
+
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        shuffle=False,
+        num_workers=n_workers,
+        pin_memory=True
+    )
+
+    return train_loader, val_loader
     
 # Load relavent dataloading parameters from config.yaml
-def load_params(self):
-    return
+def load_params():
+    with open("config.yaml", 'r') as f:
+        data = yaml.load(f, Loader=yaml.SafeLoader)
+
+    data_dir = data["DatasetImageDir"]
+    label_csv = data["LabelCSV"]
+    output_dir = data["OutputDir"]
+    train_ratio = data["TrainTestRario"]
+    oversample_ratio = data["OversampleRatio"]
+    initial_run = data["FirstRun"]
+    batch_size = data["BatchSize"]
+    
+    return data_dir, label_csv, output_dir, train_ratio, oversample_ratio, initial_run, batch_size
     
 if __name__ == "__main__":
-    pass
+    # Load params
+    data_dir, _, output_dir, train_ratio, _, _, batch_size = load_params()
+    
+    # Get data
+    train_loader, val_loader = generate_dataloaders(data_dir, ratio=train_ratio, batch_size=batch_size)
+    train_dataset = train_loader.dataset
+    val_dataset = val_loader.dataset
+    
+    # Verify data presence and count
+    benign_count_train = len(label for label in train_dataset.labels if label == 0)
+    malignant_count_train = len(label for label in train_dataset.labels if label == 1)
+    benign_count_val = len(label for label in val_dataset.labels if label == 0)
+    malignant_count_val = len(label for label in val_dataset.labels if label == 1)
+
+    print("\nData loading successful:")
+    print(f"Training data - Total: {len(train_dataset)}, Benign: {benign_count_train}, Malignant: {malignant_count_train}")
+    print(f"Validation data - Total: {len(val_dataset)}, Benign: {benign_count_val}, Malignant: {malignant_count_val}")

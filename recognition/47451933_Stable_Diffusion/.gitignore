@@ -5,3 +5,4 @@
 .DS_Store
 /models
 test*.py
+/checkpoints

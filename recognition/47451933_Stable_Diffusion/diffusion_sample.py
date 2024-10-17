@@ -172,7 +172,7 @@ def add_noise(x, noise_level):
     return x + noise, noise
 
 # Training setup
-latent_dim = 768
+latent_dim = 100
 num_classes = 2  # Update this according to your dataset
 vae_encoder = VAEEncoder(latent_dim=latent_dim)
 vae_decoder = VAEDecoder(latent_dim=latent_dim)
@@ -194,7 +194,7 @@ vae_decoder.apply(weights_init)
 unet.apply(weights_init)
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 100
+num_epochs = 768
 for epoch in range(num_epochs):
     for images, labels in tqdm(data_loader):
         images = images.to('cuda' if torch.cuda.is_available() else 'cpu')
@@ -218,6 +218,11 @@ for epoch in range(num_epochs):
         vae_optimizer.step()
 
     print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}")
+    if epoch % 2 == 0:
+        with torch.no_grad():
+            # Decode denoised latent to generate images
+            generated_images = vae_decoder(z).clamp(-1, 1)
+            display_images(generated_images, num_images=5)
 
 torch.save(vae_encoder, "recognition/47451933_Stable_Diffusion/models/encoder.model")
 torch.save(vae_decoder, "recognition/47451933_Stable_Diffusion/models/decoder.model")

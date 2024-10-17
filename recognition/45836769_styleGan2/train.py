@@ -46,6 +46,8 @@ num_layers = 7
 ngf = 256 # Num generator features
 ndf = 256 # Num disciminator features
 batch_size = 4
+accumulation_steps = 8  # Simulate a batch size 8 times larger
+effective_batch_size = batch_size * accumulation_steps
 num_epochs = 100
 lr = 0.00001
 beta1 = 0.0
@@ -186,22 +188,27 @@ for epoch in range(num_epochs):
         requires_grad(generator, False)
         requires_grad(discriminator, True)
         
-        with amp.autocast(device_type='cuda'): # Use mixed precision
-            # Generate fake images
-            z = torch.randn(real_images.size(0), z_dim).to(device)
-            fake_images = generator(z, labels)
-            fake_output = discriminator(fake_images.detach()) # Want these predictions close to 0 for Discrim
-            real_output = discriminator(real_images) # Want these predictions clsoe to 1
-            d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
-            d_losses.append(d_loss.item())
+        d_loss_accumulator = 0
+        
+        for _ in range(accumulation_steps):
+            with amp.autocast(device_type='cuda'):
+                # Generate fake images
+                z = torch.randn(real_images.size(0), z_dim).to(device)
+                fake_images = generator(z, labels)
+                fake_output = discriminator(fake_images.detach()) # Want these predictions close to 0 for Discrim
+                real_output = discriminator(real_images) # Want these predictions clsoe to 1
+                d_loss = (criterion(fake_output, torch.zeros_like(fake_output)) + 
+                          criterion(real_output, torch.ones_like(real_output))) / accumulation_steps
+                d_losses.append(d_loss.item() * accumulation_steps)
             
-        d_optim.zero_grad()
-        scaler.scale(d_loss).backward()
+            scaler.scale(d_loss).backward()
+        
         scaler.step(d_optim)
         scaler.update()
+        d_optim.zero_grad(set_to_none=True)
         
         # Discrimnator R1 regularisation 
-        if i % d_reg_interval == 0:
+        if i % (d_reg_interval * accumulation_steps) == 0:
             real_images.requires_grad = True
             with amp.autocast(device_type='cuda'):
                 real_pred = discriminator(real_images)
@@ -215,21 +222,25 @@ for epoch in range(num_epochs):
         requires_grad(generator, True)
         requires_grad(discriminator, False)
         
-        with amp.autocast(device_type='cuda'):
-            z = torch.randn(real_images.size(0), z_dim).to(device)
-            fake_images = generator(z, labels)
-            fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
-            # Generator loss
-            g_loss = criterion(fake_pred, torch.ones_like(fake_pred))
-            g_losses.append(g_loss.item())
+        g_loss_accumulator = 0
         
-        g_optim.zero_grad()
-        scaler.scale(g_loss).backward()
+        for _ in range(accumulation_steps):
+            with amp.autocast(device_type='cuda'):
+                z = torch.randn(real_images.size(0), z_dim).to(device)
+                fake_images = generator(z, labels)
+                fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
+                # Generator loss
+                g_loss = criterion(fake_pred, torch.ones_like(fake_pred)) / accumulation_steps
+                g_losses.append(g_loss.item() * accumulation_steps)
+            
+            scaler.scale(g_loss).backward()
+        
         scaler.step(g_optim)
         scaler.update()
+        g_optim.zero_grad(set_to_none=True)
         
-        # Generator path length regularisation
-        if i % g_reg_interval == 0:
+        # Generator path length regularization
+        if i % (g_reg_interval * accumulation_steps) == 0:
             with amp.autocast(device_type='cuda'):
                 fake_images, latents = generator(z, labels, return_latents=True)
                 path_loss, mean_path_length = g_path_regularise(fake_images, latents, mean_path_length, pl_decay)
@@ -241,13 +252,8 @@ for epoch in range(num_epochs):
         # Print losses
         if i % print_interval == 0:
             print(f"Epoch [{epoch+1}/{num_epochs}] Batch [{i+1}/{total_batches}] "
-                  f"D_loss: {d_loss.item():.4f} G_loss: {g_loss.item():.4f}")
+                  f"D_loss: {d_loss.item()*accumulation_steps:.4f} G_loss: {g_loss.item()*accumulation_steps:.4f}")
 
-        # # Save progress images
-        # if i % save_interval == 0:
-        #     save_images(generator, fixed_z['AD'], fixed_labels['AD'], epoch, i)
-        #     save_images(generator, fixed_z['NC'], fixed_labels['NC'], epoch, i)
-    
     print(f"Epoch [{epoch+1}/{num_epochs}] completed")
     
     # Save checkpoints and generate images every 5 epochs
@@ -267,8 +273,6 @@ for epoch in range(num_epochs):
         print(f"Generating UMAP plot for epoch {epoch+1}")
         plot_umap(generator, discriminator, dataloader, epoch)
 
-
-    
 plot_losses(d_losses, g_losses)
 
 print("Training complete!")

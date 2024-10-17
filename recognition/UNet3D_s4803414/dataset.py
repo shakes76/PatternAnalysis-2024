@@ -87,8 +87,8 @@ class MRIDataset(Dataset):
 
         if random.random() > 0.5:
             zoom_factor = random.uniform(0.9, 1.1)  # Zoom between 90% and 110%
-            # Adjust the zoom factor to match the number of dimensions
-            zoom_factors = (1, zoom_factor, zoom_factor, zoom_factor)
+            # Ensure zoom_factors matches the number of dimensions
+            zoom_factors = (zoom_factor, zoom_factor, zoom_factor)  # The first dimension is the channel dimension
             image = scipy.ndimage.zoom(image, zoom_factors, order=1)
             mask = scipy.ndimage.zoom(mask, zoom_factors, order=0)
 

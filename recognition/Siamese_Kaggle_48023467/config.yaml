@@ -1,0 +1,7 @@
+DatasetImageDir: "data/train"
+LabelCSV: "data/ISIC_2020_Training_GroundTruth_v2.csv"
+OutputDir: "data/processed"
+TrainTestRario: 0.8
+OversampleRatio: 0.6
+FirstRun: True
+BatchSize: 16

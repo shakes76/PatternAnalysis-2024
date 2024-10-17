@@ -34,16 +34,35 @@ print(device)
 
 # hyper-parameters
 learning_rate = 0.001
-weight_decay = 0.005
-dropout = 0.4
-drop_path = 0.4
+weight_decay = 0.001
+dropout = 0.0
+drop_path = 0.1
 
-batches = 50
-patch_size = 32
-embed_dim = 156
-depth = 12
-ff_ratio = 3
-epochs = 50
+learning_rate = 0.001 
+weight_decay = 0.001 
+dropout = 0.0 
+drop_path = 0.1 
+ 
+batches = 32 
+patch_size = 16 
+embed_dim = 783 
+depth = 8 
+ff_ratio = 3 
+epochs = 100
+
+print("learning_rate = ", learning_rate)
+print("weight_decay = ", weight_decay)
+print("dropout = ", dropout)
+print("drop_path = ", drop_path)
+
+print("batches = ", batches)
+print("patch_size = ", patch_size)
+print("embed_dim = ", embed_dim)
+print("depth = ", depth)
+print("ff_ratio = ", ff_ratio)
+print("epochs = ", epochs)
+
+
 
 ## Load data
 gfDataloader = GFNetDataloader(batches)
@@ -129,7 +148,7 @@ def evaluate_model(loader, estimate=True):
     return accuracy, (avg_loss / count)
 
 
-def output_results():
+def output_results(i):
     with open('{}/losses-{}.csv'.format(tag, tag), 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(training_losses)
@@ -144,6 +163,9 @@ def output_results():
         writer.writerow(test_losses_est)
     with open('{}/est-test_accuracy-{}.csv'.format(tag, tag), 'w', newline='') as f:
         writer = csv.writer(f)
+        writer.writerow(test_accuracy_est)
+    with open('./update_flag'.format(tag, tag), 'w', newline='') as f:
+        f.write('updated' + i)
         writer.writerow(test_accuracy_est)
 
 
@@ -163,23 +185,23 @@ def train_model():
             optimizer.step()
             training_losses.append(train_loss.item())
         
-            if i % 10 == 0:
+            if i % 2 == 0:
                 print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, len(training), train_loss.item()))
 
         result, test_loss = evaluate_model(test) 
         if epoch % 10 == 0:
             result, test_loss = evaluate_model(validation, False) 
             torch.save(model.state_dict(), '{}/Checkpoint-GFNET-e{}-{}-{}.pth'.format(tag, epoch, round(result, 4), tag))
-            output_results()
+            output_results(epoch)
 
-            if abs(test_loss - train_loss.item()) > 0.35:
+            if abs(test_loss - train_loss.item()) > 0.9:
                 print('=======OVERFITTED-TERMINATED======')
                 exit(2)
 
         scheduler.step() 
     result, final_accuracy = evaluate_model(validation, False) 
     torch.save(model.state_dict(), '{}/FINAL_GFNET-{}-{}.pth'.format(tag, round(result, 4), tag))
-    output_results()
+    output_results(100)
     with open('{}/{}-acc.out'.format(tag, tag), 'w', newline='') as f:
         f.write('{} -- Final Accuracy {}\n'.format(tag, final_accuracy))
 

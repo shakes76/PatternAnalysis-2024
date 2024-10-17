@@ -40,8 +40,8 @@ class GFNetDataloader():
             transforms.ToTensor(),
         ])
 
-        dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=init_trans)
-        # dataset = datasets.ImageFolder(root='./AD_NC/train', transform=init_trans)
+        # dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=init_trans)
+        dataset = datasets.ImageFolder(root='./AD_NC/train', transform=init_trans)
         loader = DataLoader(dataset, batch_size=128, shuffle=False)
         self._mean, self._std, self._total_images = get_dist(loader)
 
@@ -69,16 +69,15 @@ class GFNetDataloader():
         self.img_size = 256
 
 
-        # train_images = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
-        # test_images = datasets.ImageFolder(root='./AD_NC/test', transform=val_trans)
+        train_data = datasets.ImageFolder(root='./AD_NC/train', transform=_transform)
+        val_data = datasets.ImageFolder(root='./AD_NC/test', transform=val_trans)
 
-        train_data = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
-        val_data = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=val_trans)
+        # train_data = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=_transform)
+        # val_data = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=val_trans)
+        
+        _, test_split = random_split(val_data, [0.9, 0.1], generator=self.gen) 
 
-        train_split, test_split = random_split(train_data, [0.9, 0.1], generator=self.gen)
-
-
-        self.train_loader = DataLoader(train_split, batch_size=self.batch_size, shuffle=True)
+        self.train_loader = DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
         self.test_loader = DataLoader(test_split, batch_size=self.batch_size, shuffle=True)
         self.val_loader = DataLoader(val_data, batch_size=self.batch_size, shuffle=False)
 

@@ -52,7 +52,7 @@ def evaluate(model, data):
 model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10)
 
 #Configure epochs
-epochs = range(10)
+epochs = range(200)
 
 losses = []
 train_accs = []

@@ -36,3 +36,20 @@ class AdaIN(nn.Module):
         style = self.style(w).unsqueeze(2).unsqueeze(3)
         gamma, beta = style.chunk(2, dim=1)
         return (1 + gamma) * self.norm(image) + beta
+
+class StyleConv(nn.Module):
+    def __init(self, in_channel, out_channel, kernel_size, style_dim, upsample=False):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channel, out_channel, kernel_size, padding=kernel_size//2)
+        self.noise = NoiseInjection(out_channel)
+        self.adain = AdaIN(out_channel, style_dim)
+        self.activation = nn.LeakyReLU(0.2)
+        self.upsample = upsample
+
+    def foward(self, input, style, noise=None):
+        if self.upsample:
+            input = F.interpolate(input, scale_factor=2, mode='bilinear', align_corners=False)
+        output = self.conv(input)
+        output = self.noise(output, noise)
+        output = self.adain(output, style)
+        return self.activation(output)

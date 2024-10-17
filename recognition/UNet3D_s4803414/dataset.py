@@ -33,9 +33,6 @@ class MRIDataset(Dataset):
         image = nib.load(image_path).get_fdata()
         mask = nib.load(mask_path).get_fdata()
 
-        # Crop to (256, 256, 128)
-        image = image[:, :256, :256, :128]
-        mask = mask[:, :256, :256, :128]
 
         # Normalize image (0 to 1 range)
         image_min, image_max = image.min(), image.max()
@@ -56,9 +53,14 @@ class MRIDataset(Dataset):
         if self.augment:
             image, mask = self.apply_augmentation(image, mask)
 
+        # Crop to (256, 256, 128)
+        image = image[:, :256, :256, :128]
+        mask = mask[:, :256, :256, :128]
+
         # Convert to PyTorch tensors
         image_tensor = torch.from_numpy(image)
         mask_tensor = torch.from_numpy(mask)
+
 
         return image_tensor, mask_tensor
 
@@ -89,9 +91,6 @@ class MRIDataset(Dataset):
             image = scipy.ndimage.zoom(image, (1, zoom_factor, zoom_factor, zoom_factor), order=1)
             mask = scipy.ndimage.zoom(mask, (1, zoom_factor, zoom_factor, zoom_factor), order=0)
 
-        # Crop back to original size
-        image = image[:, :256, :256, :128]
-        mask = mask[:, :256, :256, :128]
 
         return image, mask
 

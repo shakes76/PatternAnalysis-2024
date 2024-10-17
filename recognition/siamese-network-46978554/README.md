@@ -75,7 +75,7 @@ Some plotting functionality has also been provided in [src/util.py](src/util.py)
 
 The train/test/validation split used was 70/20/10 respectively, which corresponds to approximately 23,000 training samples, 6,600 test samples, and 3,300 validation samples.
 
-Below are the results from the models that performed the best. These models were trained for around 120 epochs on Rangpur (with training sessions split over several job runs). From empirical testing using the validation set, I found margins 0.3 and 0.5 to produce the best classification performance.
+Below are the results from the models that performed the best. From empirical testing using the validation set, I found margins 0.3 and 0.5 to produce the best classification performance. All the models collated below were trained for 70 epochs on Rangpur (with training sessions split over several job runs). A few models were trained for a further 50 epochs, but this did not yield much improvement in the predictive performance, and so these checkpoints were not considered. 
 
 **Training and testing output**
 

@@ -6,4 +6,4 @@
 #SBATCH --output=test_final.out
 
 conda activate torch
-python predict.py
+python train.py

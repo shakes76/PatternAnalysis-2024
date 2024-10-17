@@ -33,7 +33,7 @@ group = "GFNet",
 def get_args_parser():
     parser = argparse.ArgumentParser('ADNI training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=32, type=int)
-    parser.add_argument('--epochs', default=200, type=int)
+    parser.add_argument('--epochs', default=100, type=int)
 
     # Model parameters
     parser.add_argument('--arch', default='deit_small', type=str,
@@ -300,8 +300,8 @@ if __name__ == '__main__':
 
         test_stats = evaluate(test_loader, model, device)
         print(f"Accuracy of the network on the {len(test_loader)} test images: {test_stats['acc1']:.1f}%")
-        training_losses.append(train_stats.loss)
-        test_losses.append(test_stats.loss)
+        training_losses.append(train_stats["loss"])
+        test_losses.append(test_stats.["loss"])
         test_acc.append(test_stats["acc1"])
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
@@ -327,3 +327,20 @@ if __name__ == '__main__':
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
+
+    plt.figure(figsize=(10,5))
+    plt.title("Training and Test Loss per epoch")
+    plt.plot(training_losses, label="Training Loss")
+    plt.plot(test_losses, label="Test Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("loss")
+    plt.legend()
+    plt.savefig(args.output_dir + "figs/Losses")
+    plt.clf()
+    plt.figure(figsize=(10,5))
+    plt.title("Accuracy over time")
+    plt.plot(test_acc, label="Acc @ 1")
+    plt.xlabel("Epoch")
+    plt.ylabel("Acc1")
+    plt.legend()
+    plt.savefig(args.output_dir + "figs/Accs")

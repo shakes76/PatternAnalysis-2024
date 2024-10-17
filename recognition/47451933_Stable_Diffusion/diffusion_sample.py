@@ -13,7 +13,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.b
 
 data = Dataset()
 
-noise_level = 0.05
+noise_level = 0.5
 
 # Function to display images
 def display_images(images, num_images=5):
@@ -42,19 +42,19 @@ class VAEDecoder(nn.Module):
     def __init__(self, latent_dim=256):
         super(VAEDecoder, self).__init__()
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 512 * 4 * 4),  # Update for the new size
-            nn.ReLU(),
-            nn.Unflatten(1, (512, 4, 4)),  # Update for the new size
-            nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1),  # 4x4 -> 8x8
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),  # 8x8 -> 16x16
+            #nn.Linear(latent_dim, 512 * 4 * 4),  # Update for the new size
+            #nn.ReLU(),
+            #nn.Unflatten(1, (512, 4, 4)),  # Update for the new size
+            #nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1),  # 4x4 -> 8x8
+            #nn.BatchNorm2d(256),
+            #nn.ReLU(),
+            nn.ConvTranspose2d(latent_dim, 128, kernel_size=4, stride=2, padding=1),  # 8x8 -> 16x16
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 16x16 -> 32x32
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),  # 32x32 -> 64x64
+            nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1),  # 32x32 -> 64x64
             nn.Tanh()
         )
 
@@ -66,27 +66,27 @@ class VAEEncoder(nn.Module):
     def __init__(self, latent_dim=256):
         super(VAEEncoder, self).__init__()
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),  # 64x64 -> 32x32
+            nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1),  # 64x64 -> 32x32
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 32x32 -> 16x16
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),  # 16x16 -> 8x8
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # 8x8 -> 4x4
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.Flatten()
+            nn.Conv2d(128, latent_dim, kernel_size=4, stride=2, padding=1),  # 16x16 -> 8x8
+            nn.BatchNorm2d(latent_dim),
+            #nn.ReLU(),
+            #nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # 8x8 -> 4x4
+            #nn.BatchNorm2d(512),
+            #nn.ReLU(),
+            #nn.Flatten()
         )
         self.fc_mu = nn.Linear(512 * 4 * 4, latent_dim)  # Update for the new size
         self.fc_logvar = nn.Linear(512 * 4 * 4, latent_dim)  # Update for the new size
 
     def forward(self, x):
         h = self.encoder(x)
-        mu = self.fc_mu(h)
-        logvar = self.fc_logvar(h)
-        return mu, logvar
+        #mu = self.fc_mu(h)
+        #logvar = self.fc_logvar(h)
+        return h#mu, logvar
 
 # Reparameterization trick for VAE
 def reparameterize(mu, logvar):
@@ -96,13 +96,13 @@ def reparameterize(mu, logvar):
 
 # UNet for denoising, now accepts label embeddings
 class UNet(nn.Module):
-    def __init__(self, latent_dim=256, num_classes=10):
+    def __init__(self, latent_dim=256, num_classes=2):
         super(UNet, self).__init__()
         self.label_embedding = nn.Embedding(num_classes, latent_dim)
 
         # Encoder part (downsampling)
         self.enc1 = nn.Sequential(
-            nn.Conv2d(latent_dim + latent_dim, 128, kernel_size=3, padding=1),
+            nn.Conv2d(latent_dim, 128, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(128, 128, kernel_size=3, padding=1),
             nn.ReLU()
@@ -130,25 +130,28 @@ class UNet(nn.Module):
 
         # Decoder part (upsampling)
         self.dec3 = nn.Sequential(
-            nn.ConvTranspose2d(512, 512, kernel_size=2, stride=2),
+            nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2, padding=1),  # Upsample
             nn.ReLU(),
             nn.Conv2d(512, 256, kernel_size=3, padding=1),
             nn.ReLU()
         )
         self.dec2 = nn.Sequential(
-            nn.ConvTranspose2d(256, 256, kernel_size=2, stride=2),  # Adjust input channels
+            nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1),  # Upsample
             nn.ReLU(),
             nn.Conv2d(256, 128, kernel_size=3, padding=1),
             nn.ReLU()
         )
-        # Change the output channels to match latent_dim
-        self.dec1 = nn.Conv2d(128, latent_dim, kernel_size=4, stride=4)
+        self.dec1 = nn.Sequential(
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, latent_dim, kernel_size=3, padding=1)
+        )
 
     def forward(self, x, labels):
         # Get the label embeddings
         label_emb = self.label_embedding(labels).unsqueeze(-1).unsqueeze(-1)
         # Concatenate the label embeddings with the input
-        x = torch.cat((x, label_emb.repeat(1, 1, x.size(2), x.size(3))), dim=1)
+        #x = torch.cat((x, label_emb.repeat(1, 1, x.size(2), x.size(3))), dim=1)
         
         # Pass through the encoder
         enc1_out = self.enc1(x)
@@ -159,17 +162,25 @@ class UNet(nn.Module):
         bottleneck_out = self.bottleneck(enc3_out)
         
         # Pass through the decoder with skip connections
-        dec3_out = self.dec3(bottleneck_out)
-        dec2_out = self.dec2(dec3_out)  # Use the correct skip connection
-        dec1_out = self.dec1(dec2_out)
-        
-        return dec1_out
+        dec3 = self.crop_and_add(self.dec3(bottleneck_out), enc2_out)
+        dec2 = self.crop_and_add(self.dec2(dec3), enc1_out)
+        dec1 = self.crop_and_add(self.dec1(dec2), x)
+
+        return dec1
+
+    def crop_and_add(self, upsampled, skip_connection):
+        """
+        Crops the upsampled tensor to match the size of the skip connection tensor.
+        """
+        _, _, h, w = skip_connection.size()
+        upsampled = upsampled[:, :, :h, :w]
+        return upsampled + skip_connection
 
 
 # Function to add noise at each step
 def add_noise(x, noise_level):
-    noise = torch.randn_like(x) * noise_level
-    return x + noise, noise
+    noise = torch.randn_like(x)
+    return x + noise * noise_level, noise
 
 # Training setup
 latent_dim = 100
@@ -194,7 +205,7 @@ vae_decoder.apply(weights_init)
 unet.apply(weights_init)
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 768
+num_epochs = 4
 for epoch in range(num_epochs):
     for images, labels in tqdm(data_loader):
         images = images.to('cuda' if torch.cuda.is_available() else 'cpu')
@@ -203,14 +214,15 @@ for epoch in range(num_epochs):
         vae_decoder = vae_decoder.to(images.device)
         
         # VAE Forward pass
-        mu, logvar = vae_encoder(images)
-        z = reparameterize(mu, logvar)
+        z = vae_encoder(images)
+
+        #z = reparameterize(mu, logvar)
         reconstructed_images = vae_decoder(z)
         
         # VAE Loss
         recon_loss = vae_criterion(reconstructed_images, images)
-        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        vae_loss = recon_loss + 0.05 * kl_div
+        #kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        vae_loss = recon_loss #+ 0.05 * kl_div
         
         # Backpropagation for VAE
         vae_optimizer.zero_grad()
@@ -218,19 +230,19 @@ for epoch in range(num_epochs):
         vae_optimizer.step()
 
     print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}")
-    if epoch % 2 == 0:
+    if epoch % 20 == 0:
         with torch.no_grad():
             # Decode denoised latent to generate images
             generated_images = vae_decoder(z).clamp(-1, 1)
             display_images(generated_images, num_images=5)
 
-torch.save(vae_encoder, "recognition/47451933_Stable_Diffusion/models/encoder.model")
-torch.save(vae_decoder, "recognition/47451933_Stable_Diffusion/models/decoder.model")
+torch.save(vae_encoder, "models/encoder.model")
+torch.save(vae_decoder, "models/decoder.model")
 
-vae_encoder = torch.load("recognition/47451933_Stable_Diffusion/models/encoder.model", weights_only=False)
+vae_encoder = torch.load("models/encoder.model", weights_only=False)
 vae_encoder.eval()
 
-vae_decoder = torch.load("recognition/47451933_Stable_Diffusion/models/decoder.model", weights_only=False)
+vae_decoder = torch.load("models/decoder.model", weights_only=False)
 vae_decoder.eval()
 
 for epoch in range(num_epochs):
@@ -244,8 +256,8 @@ for epoch in range(num_epochs):
         unet = unet.to(images.device)
         
         # VAE Forward pass
-        mu, logvar = vae_encoder(images)
-        z = reparameterize(mu, logvar)
+        z = vae_encoder(images)
+        #z = reparameterize(mu, logvar)
         
         # Detach latent variables to avoid retaining the graph
         z = z.detach()
@@ -254,10 +266,10 @@ for epoch in range(num_epochs):
         noisy_latent, noise = add_noise(z, noise_level=noise_level)
         
         # Predict the noise using the UNet
-        predicted_noise = unet(noisy_latent.unsqueeze(-1).unsqueeze(-1), labels)  # Pass labels to UNet
+        predicted_noise = unet(noisy_latent, labels)  # Pass labels to UNet
         
         # Diffusion Loss: Predict the added noise
-        diffusion_loss = diffusion_criterion(predicted_noise.squeeze(-1).squeeze(-1), noise)
+        diffusion_loss = diffusion_criterion(predicted_noise, noise)
         
         # Backpropagation for diffusion
         unet_optimizer.zero_grad()
@@ -265,7 +277,7 @@ for epoch in range(num_epochs):
         unet_optimizer.step()
         
         # Denoise the latent representation using the predicted noise
-        denoised_latent = noisy_latent - predicted_noise.squeeze(-1).squeeze(-1)
+        denoised_latent = noisy_latent - predicted_noise
 
     # Print losses and display samples every 10 epochs
     print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}, Diffusion Loss: {diffusion_loss.item()}")
@@ -274,7 +286,7 @@ for epoch in range(num_epochs):
             # Decode denoised latent to generate images
             generated_images = vae_decoder(denoised_latent).clamp(-1, 1)
             display_images(generated_images, num_images=5)
-            generated_images = vae_decoder(predicted_noise.squeeze(-1).squeeze(-1)).clamp(-1, 1)
+            generated_images = vae_decoder(predicted_noise).clamp(-1, 1)
             display_images(generated_images, num_images=5)
 
 print("Training completed!")
@@ -285,17 +297,17 @@ def generate_sample(label, model, vae_decoder, num_samples=1, noise_level=noise_
     
     with torch.no_grad():
         # Create a random latent vector
-        z = torch.randn(num_samples, latent_dim).to('cuda' if torch.cuda.is_available() else 'cpu')
+        z = torch.randn(num_samples, latent_dim, 25, 25).to('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Add noise to the latent space
         noisy_latent, noise = add_noise(z, noise_level=noise_level)
         
         # Predict the noise using the UNet (conditioning on the provided label)
         label_tensor = torch.tensor([label] * num_samples).to(noisy_latent.device)
-        predicted_noise = model(noisy_latent.unsqueeze(-1).unsqueeze(-1), label_tensor)
+        predicted_noise = model(noisy_latent, label_tensor)
         
         # Denoise the latent representation using the predicted noise
-        denoised_latent = noisy_latent - predicted_noise.squeeze(-1).squeeze(-1)
+        denoised_latent = noisy_latent - predicted_noise
         
         # Decode the denoised latent representation to generate images
         output_images = vae_decoder(denoised_latent).clamp(-1, 1)

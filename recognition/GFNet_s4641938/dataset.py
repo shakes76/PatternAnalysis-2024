@@ -49,6 +49,6 @@ class ADNI_DataLoader():
             if (not self.__gotTest):
                 path_to_dataset = join(self.rootDataPath, 'test')
                 self.testDataset = datasets.ImageFolder(path_to_dataset, transform=self.dataTransforms)
-                self.testLoader = DataLoader(self.trainDataset, batch_size=64, shuffle=True)
+                self.testLoader = DataLoader(self.testDataset, batch_size=64, shuffle=True)
                 self.__gotTest = True
             return self.testLoader

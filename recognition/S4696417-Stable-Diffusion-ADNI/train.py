@@ -1,3 +1,11 @@
+"""
+This file contains the primary training and validation loop for the diffusion model.
+The image size and latent dimension must match the VAE model used for pretraining.
+Wandb account will need to be setup and logged in before running the training.
+
+Author: Liam O'Sullivan
+"""
+
 import os
 import wandb
 import torch

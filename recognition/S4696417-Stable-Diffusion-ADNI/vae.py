@@ -1,3 +1,11 @@
+"""
+This file contains the implementation of the Variational Autoencoder (VAE) model
+used in the stable diffusion model for encoding images to a latent space.
+The base components are still stored in modules.py
+
+Author: Liam O'Sullivan
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

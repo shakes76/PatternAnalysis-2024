@@ -1,3 +1,11 @@
+"""
+This file is used to run the pretraining of the VAE model
+on the ADNI dataset. It is important to note the image size and latent dimension
+as these will be used in the diffusion model.
+
+Author: Liam O'Sullivan
+"""
+
 import torch
 import wandb
 import os

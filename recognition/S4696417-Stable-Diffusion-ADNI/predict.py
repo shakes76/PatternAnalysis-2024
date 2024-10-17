@@ -1,3 +1,9 @@
+"""
+This file is used to generate new sample images from the trained diffusion model.
+
+Author: Liam O'Sullivan
+"""
+
 import torch
 import wandb
 import os

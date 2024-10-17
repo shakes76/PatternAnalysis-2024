@@ -1,3 +1,10 @@
+"""
+This file contains all function for loading the ADNI
+dataset into dataloaders for training and validation
+
+Author: Liam O'Sullivan
+"""
+
 import cv2
 import os
 import torch

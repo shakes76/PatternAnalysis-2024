@@ -1,3 +1,12 @@
+"""
+This file contains the base components for the Stable Diffusion model
+This includes the UNet and Noise Scheduler for the diffusion process.
+Customer implementation of the Lookahead optimizer and CosineAnnealingWarmupScheduler
+are also included here.
+
+Author: Liam O'Sullivan
+"""
+
 import torch
 import wandb
 import time

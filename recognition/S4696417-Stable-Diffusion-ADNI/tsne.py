@@ -1,3 +1,10 @@
+"""
+This file is used to generate the TSNE embeddings for the generated latent space
+This will help to visualise the separation between the ADNI class samples.
+
+Author: Liam O'Sullivan
+"""
+
 import torch
 import numpy as np
 from sklearn.manifold import TSNE

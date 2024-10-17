@@ -1,3 +1,13 @@
+"""
+This file utility functions for training and visualisation.
+- Visualise denoising process will allow images to be generated at stages of the denoising process
+- Run setup will initialise the model and dataloaders based on the passed arguments
+- Get warmup steps will return the number of warmup steps and total steps for the lr scheduler
+- Init wandb will initialise the wandb project logging with the passed arguments
+
+Author: Liam O'Sullivan
+"""
+
 import torch
 import wandb
 import os

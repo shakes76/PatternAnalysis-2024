@@ -15,7 +15,7 @@ class TrainPreprocessing:
         batch_size (int)
         num_workers (int)
     '''
-    def __init__(self, dataset_path, batch_size=64, num_workers=4):
+    def __init__(self, dataset_path, batch_size=64, num_workers=1):
         self.dataset_path = dataset_path
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -67,7 +67,7 @@ class TestPreprocessing:
         num_workers (int)
     '''
 
-    def __init__(self, dataset_path, batch_size=64, num_workers=4):
+    def __init__(self, dataset_path, batch_size=64, num_workers=1):
         self.dataset_path = dataset_path
         self.batch_size = batch_size
         self.num_workers = num_workers

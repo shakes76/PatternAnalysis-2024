@@ -51,7 +51,7 @@ def objective(trial):
     weight_decay = trial.suggest_float('wd', 1e-5, 1e-2, log=True)
     drop_rate = trial.suggest_float('drop', 0.0, 0.5)
     drop_path_rate = trial.suggest_float('droppath', 0.0, 0.5)
-    batch_size = trial.suggest_categorical('bs', [16, 32, 64, 128, 256])
+    batch_size = trial.suggest_categorical('bs', [16, 32, 64, 128])
 
     # Create folder based on hyper parameters
     folder_name = f"lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}"
@@ -60,18 +60,32 @@ def objective(trial):
 
     # load data
     #train_dataset_path = "../dataset/AD_NC/train"
-    train_dataset_path = " /home/groups/comp3710/ADNI/AD_NC/train"
+    train_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/train"
     # Load train and validation data
     train_data = TrainPreprocessing(train_dataset_path, batch_size=batch_size)
     train_loader, val_loader = train_data.get_train_val_loaders(val_split=0.2)
 
     # model initalisation
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    #print(device)
+    # Test model (tiny tiny)
+    # model = GFNet(
+    #     img_size=224, 
+    #     num_classes=1,
+    #     initial_embed_dim=8, 
+    #     blocks_per_stage=[1, 1, 1, 1], 
+    #     stage_dims=[8, 16, 32, 64], 
+    #     drop_rate=drop_rate,
+    #     drop_path_rate=drop_path_rate,
+    #     init_values=1e-5
+    # )
+    
     # Base model 
     model = GFNet(
         img_size=224, 
         num_classes=1,
-        initial_embed_dim=32, 
+        initial_embed_dim=96, 
         blocks_per_stage=[3, 3, 27, 3], 
         stage_dims=[96, 192, 384, 768], 
         drop_rate=drop_rate,
@@ -86,7 +100,7 @@ def objective(trial):
     early_stopping = EarlyStopping(patience=5, min_delta=0.001, path=checkpoint_path)
 
     # Training loop
-    num_epochs = 200
+    num_epochs = 150
     train_losses = []
     val_losses = []
 
@@ -102,7 +116,7 @@ def objective(trial):
         val_loss = validate(model, val_loader, criterion, device)
         val_losses.append(val_loss)
         print(f"Validation Loss: {val_loss:.4f}")
-        
+
         scheduler.step()
         early_stopping(val_loss, model)
         
@@ -113,7 +127,7 @@ def objective(trial):
     print("Loading the best model from checkpoint.")
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
 
-    # Reporting lossess
+    # Save lossess
     loss_log_path = os.path.join(output_dir, 'loss_log.csv')
     with open(loss_log_path, mode='w', newline='') as file:
         writer = csv.writer(file)
@@ -124,14 +138,14 @@ def objective(trial):
     print(f"Loss logs saved to {loss_log_path}")
     
     # clear cache
-    del model, optimiser, criterion, scheduler, early_stopping
+    del model, optimiser, criterion, scheduler, early_stopping, train_loader, val_loader, train_data
     torch.cuda.empty_cache()
     gc.collect()
 
     return val_loss
 
 if __name__ == "__main__":
-    # Set up 
+    # Set up optuna
     emmr_improvement_evaluator = EMMREvaluator()
     median_error_evaluator = MedianErrorEvaluator(emmr_improvement_evaluator)
     terminator = Terminator(
@@ -141,7 +155,7 @@ if __name__ == "__main__":
     terminator_callback = TerminatorCallback(terminator)
 
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=30, callbacks=[terminator_callback])
+    study.optimize(objective, n_trials=20, callbacks=[terminator_callback])
 
     print(f"Best hyperparameters: {study.best_params}")
     print(f"Best validation loss: {study.best_value}")

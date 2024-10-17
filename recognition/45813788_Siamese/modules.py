@@ -17,8 +17,9 @@ class FeatureExtraction(nn.Module):
 
         self.embedding = nn.Linear(512, embedding_dim)
 
+        #true to train all layers false if not
         for param in self.model.parameters():
-            param.requires_grad = False
+            param.requires_grad = True
 
     def forward(self, x):
 
@@ -30,6 +31,17 @@ class FeatureExtraction(nn.Module):
 
         return embeddings
     
-    
+class SiameseNN(nn.Module):
+    def __init__(self, embedding_dim=256):
+        super(SiameseNN, self).__init__()
+
+        self.feature_extractor = FeatureExtraction(embedding_dim)
+
+    def forward(self, x1, x2):
+
+        y1 = self.feature_extractor(x1)
+        y2 = self.feature_extractor(x2)
+
+        return y1, y2
 
     

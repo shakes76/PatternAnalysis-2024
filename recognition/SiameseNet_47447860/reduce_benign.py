@@ -2,7 +2,8 @@ import os
 import shutil
 import random
 
-def copy_random_images(source_dir, destination_dir, percentage=0.4):
+
+def copy_random_images(source_dir, destination_dir, percentage):
     # Make sure the source directory exists
     if not os.path.exists(source_dir):
         print(f"Source directory does not exist: {source_dir}")

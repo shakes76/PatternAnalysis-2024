@@ -1,163 +1,184 @@
-# the data loader for loading and preprocessing your data
-import torch
-from torchvision.transforms import v2
-import torchvision
-import pandas as pd
-from torch.utils.data import Dataset, DataLoader, random_split
 import os
+import glob
+import time
+
+import numpy as np
 from PIL import Image
-import torchvision.transforms as transforms
 
-# Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-if not torch.cuda.is_available():
-    print("Warning: CUDA not Found. Using CPU")
+import random
 
-H, W = 256, 256
+import torch
+from torchvision import transforms
+from torchvision.transforms import v2
 
 
-# Define a ISICDataLoader class
-class ISICDataLoader:
-    def __init__(self, csv_file, img_dir, batch_size=32):
-        """
-        Args:
-            csv_file (string): Path to the csv file containing image information.
-            img_dir (string): Directory with all the images
-            batch_size (int): Batch size for the data loaders
-        """
-        self.csv_file = csv_file
-        self.img_dir = img_dir
-        self.batch_size = batch_size
-
-        # Device configuration
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if not torch.cuda.is_available():
-            print("Warning: CUDA not Found. Using CPU")
-
-        # Setting up transformers
-        self.augment_transform = v2.Compose([
-            v2.RandomResizedCrop(size=(256, 256), antialias=True),
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.ToDtype(torch.float32, scale=True),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-
-        # Transformer used for incoming benign data
-        self.transform_w_normalise = transforms.Compose([
-            transforms.Resize((256, 256)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize (ImageNet values)
-        ])
-
-        # Transformer used for incoming malignant data (without normalization initially)
-        self.transform_no_normalise = transforms.Compose([
-            transforms.Resize((256, 256)),
-            transforms.ToTensor(),
-        ])
-
-        # Load the CSV and calculate the ratio for balancing -> number of times we need to augment each image
-        self.csv = pd.read_csv(self.csv_file)
-        total_rows = len(self.csv)
-        malignant_count = self.csv['target'].sum()
-        benign_count = total_rows - malignant_count
-        self.num_augmentations = benign_count // malignant_count
-
-        # Initialize the dataset
-        self.dataset = self.ISICDataset(self.csv_file, self.img_dir)
-
-    class ISICDataset(Dataset):
-        def __init__(self, csv_file, img_dir, transform=None):
-            """
-            Args:
-                csv_file (string): Path to the csv file with image names and classifications.
-                img_dir (string): Directory with all the images.
-            """
-            self.data = pd.read_csv(csv_file)  # Load the CSV file
-            self.img_dir = img_dir  # Path to the image directory
-
-        def __len__(self):
-            return len(self.data)  # Return size of the dataset
-
-        def __getitem__(self, idx):
-            # For a particular index, get the image name and its classification
-            img_name = os.path.join(self.img_dir, self.data.iloc[idx, 1])  # image names are 2nd column
-            label = self.data.iloc[idx, 3]  # classification is in 4th column
-
-            # Load the image and apply appropriate transformation
-            image = Image.open(img_name)
-            if label == 1:  # Malignant
-                image = ISICDataLoader().transform_no_normalise(image)
-            else:  # Benign
-                image = ISICDataLoader().transform_w_normalise(image)
-
-            return image, label
-
-    def filter_dataset_by_label(self, dataset, label):
-        """
-        Filter the dataset to only include samples with the given label.
-        Args:
-            dataset: The dataset to filter
-            label: The label to filter by (e.g., 0 or 1)
+class Dataset(torch.utils.data.IterableDataset):
+    def __init__(self, path, shuffle_pairs=True, dataset_size=None, augment=False):
+        '''
         Returns:
-            A filtered dataset containing only the specified label.
-        """
-        indices = [i for i, (_, lbl) in enumerate(dataset) if lbl == label]
-        return torch.utils.data.Subset(dataset, indices)
+                output (torch.Tensor): shape=[b, 1], Similarity of each pair of images,
+                where b = batch size
+        '''
+        self.path = path
+        self.dataset_size = dataset_size
 
-    class AugmentedISICDataset(Dataset):
-        def __init__(self, base_dataset, num_augmentations=1):
-            """
-            Args:
-                base_dataset (Dataset): The original dataset with images to augment.
-                num_augmentations (int): How many times to apply transformations to augment the data.
-            """
-            self.base_dataset = base_dataset
-            self.num_augmentations = num_augmentations
+        self.shuffle_pairs = shuffle_pairs
 
-        def __len__(self):
-            # The length is the original dataset size multiplied by the number of augmentations
-            return len(self.base_dataset) * self.num_augmentations  # creating a virtual extended dataset
+        self.malignant = '1'
+        self.benign = '0'
 
-        def __getitem__(self, idx):
-            # When we want to access a new (augmented image),
-            # use modulo to get a corresponding index to an existing image in the original dataset
-            original_idx = idx % len(self.base_dataset)
-            # We get the image and a label (which should always be 1 (malignant))
-            image, label = self.base_dataset[original_idx]
-            # We then augment this existing image and return it as a 'new' image
-            augmented_image = ISICDataLoader().augment_transform(image)
-            # This means we aren't pre-computing every augmented image we need,
-            # but that we are doing the augmentation on the fly when we need the image
-            return augmented_image, label
+        self.feed_shape = [3, 224, 224]
 
-    def get_data_loaders(self):
-        """
-        Creates the data loaders for benign and augmented malignant datasets.
-        Returns:
-            Tuple of benign and malignant data loaders.
-        """
-        # Filter the dataset for each classification
-        benign_dataset = self.filter_dataset_by_label(self.dataset, label=0)
-        malignant_dataset = self.filter_dataset_by_label(self.dataset, label=1)
+        # Define transform
+        self.transform = transforms.Compose([
+            transforms.RandomAffine(degrees=90, translate=(0.3, 0.3), shear=0.3),
+            transforms.RandomResizedCrop(size=(224, 224), scale=(0.8, 1.2)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            transforms.Resize(self.feed_shape[1:], antialias=True)
+        ])
 
-        # Augment malignant multiple times to balance it
-        augmented_malignant_dataset = self.AugmentedISICDataset(malignant_dataset, self.num_augmentations)
+        self.image_paths, self.image_classes, self.class_indices = self.load_data()
+        # re-balance the classes if needed
+        if augment:
+            self.augment_data()
+            self.image_paths, self.image_classes, self.class_indices = self.load_data()
 
-        # Split the data
-        train_benign, remaining_benign = random_split(benign_dataset, [0.7, 0.3])
-        test_benign, val_benign = random_split(remaining_benign, [0.5, 0.5])
+        self.indices1, self.indices2 = self.create_pairs()
 
-        train_malignant, remaining_malignant = random_split(malignant_dataset, [0.7, 0.3])
-        test_malignant, val_malignant = random_split(remaining_malignant, [0.5, 0.5])
+    def load_data(self):
+        # load in the benign data
+        image_paths = glob.glob(os.path.join(self.path, "0/*.jpg"))
+        # check how much of the benign data we want to use
+        if self.dataset_size and self.dataset_size <= len(image_paths):
+            image_paths = random.sample(image_paths, self.dataset_size)
+        # load in the malignant data
+        image_paths = image_paths + (glob.glob(os.path.join(self.path, "1/*.jpg")))
+        # shuffle the data together
+        random.shuffle(image_paths)
 
-        # Create data loaders  ---- fix
-        benign_loader = DataLoader(benign_dataset, batch_size=self.batch_size, shuffle=True)
-        malignant_loader = DataLoader(augmented_malignant_dataset, batch_size=self.batch_size, shuffle=True)
+        image_classes = []  # holds the class of every image (length = total num images)
+        class_indices = {}  # mapping of class to every image (using the image's index) in the class
 
-        return benign_loader, malignant_loader
+        for image_path in image_paths:
+            image_class = image_path.split(os.path.sep)[-2]
+            image_classes.append(image_class)
 
-        # We want to change this function to return data loaders for train, validation and test data
-        # I think that there's a way to imbed the classification onto each item in the data loader (means we can dilute)
+            if image_class not in class_indices:
+                class_indices[image_class] = []
+            class_indices[image_class].append(image_paths.index(image_path))
 
-    def
+        return image_paths, image_classes, class_indices
 
+    def augment_data(self):
+        num_images_to_generate = len(self.class_indices[self.benign])
+
+        # Set up the augmentation transform (without normalizing)
+        augment_transform = transforms.Compose([
+            transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), shear=0.2),
+            transforms.RandomResizedCrop(size=(224, 224), scale=(0.7, 1.0)),
+            transforms.RandomHorizontalFlip(p=0.5)
+        ])
+
+        # Load the existing malignant images
+        existing_images_count = len(self.class_indices[self.malignant])
+
+        # Check how many more images are needed
+        needed_images = num_images_to_generate - existing_images_count
+
+        if needed_images > 0:
+            print(f"Need to generate {needed_images} images.")
+
+            # put all the used image names into a set
+            used_numbers = set()
+            for filename in os.listdir(os.path.join(self.path, self.malignant)):
+                if filename.startswith('ISIC_') and filename.endswith('.jpg'):
+                    # Extract the 7-digit number from the filename
+                    number = filename.split('_')[1].split('.')[0]
+                    used_numbers.add(number)
+
+            # Loop to generate additional images
+            for i in range(needed_images):
+                # Randomly choose an existing image to augment
+                img_index = np.random.choice(self.class_indices[self.malignant])
+                img_path = self.image_paths[img_index]
+                img = Image.open(img_path)
+
+                # Apply augmentation transform to the image
+                augmented_img = augment_transform(img)
+
+                # Save the augmented image back to the same directory with a new name
+                while True:
+                    # Generate a random 7-digit number
+                    random_number = '{:07d}'.format(random.randint(0, 9999999))
+
+                    if random_number not in used_numbers:
+                        # If the number is not used, return the new unique name
+                        img_name = f'ISIC_{random_number}.jpg'
+                        break
+
+                augmented_img.save(os.path.join(self.path, self.malignant, img_name))
+            print("Done Augmenting")
+        else:
+            print(f"No new images are needed. The directory already has {existing_images_count} images.")
+
+    def create_pairs(self):
+        '''
+        Creates two lists of indices that will form the pairs, to be fed for training or evaluation.
+        '''
+        # indices1 is the index for number of total images there are (0, 1, ..., n)
+        indices1 = np.arange(len(self.image_paths))
+
+        if self.shuffle_pairs:
+            np.random.seed(int(time.time()))
+            np.random.shuffle(indices1)
+        else:
+            # If shuffling is set to off, set the random seed to 1, to make it deterministic.
+            np.random.seed(1)
+
+        # make an array of random true/false values with length = the total number of images
+        select_pos_pair = np.random.rand(len(self.image_paths)) < 0.5
+
+        indices2 = []
+
+        # iterate through every image index and its corresponding random true/false value
+        for i, pos in zip(indices1, select_pos_pair):
+            class1 = self.image_classes[i]
+            if pos:
+                # we want a matching image, make classes the same
+                class2 = class1
+            else:
+                # else we want a different class of image, randomly pick other class after removing class 1
+                class2 = np.random.choice(list(set(self.class_indices.keys()) - {class1}))
+            # randomly pick an image from this class
+            idx2 = np.random.choice(self.class_indices[class2])
+            # add this image to the indices2, its corresponding pair and whether they match
+            # are saved in image_paths and select_pos_pair
+            indices2.append(idx2)
+
+        # vectorise so we can turn it to a tensor
+        return indices1, np.array(indices2)
+
+    def __iter__(self):
+        '''
+                    Iterates through the dataset split and yields pairs of images and similarity labels.
+                    '''
+        for idx, idx2 in zip(self.indices1, self.indices2):
+            image_path1 = self.image_paths[idx]
+            image_path2 = self.image_paths[idx2]
+
+            class1 = self.image_classes[idx]
+            class2 = self.image_classes[idx2]
+
+            image1 = Image.open(image_path1).convert("RGB")
+            image2 = Image.open(image_path2).convert("RGB")
+
+            if self.transform:
+                image1 = self.transform(image1).float()
+                image2 = self.transform(image2).float()
+
+            yield (image1, image2), torch.FloatTensor([class1 == class2]), (class1, class2)
+
+    def __len__(self):
+        return len(self.image_paths)

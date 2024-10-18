@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from modules import SiameseNetwork
-from dataset_3 import Dataset
+from dataset import Dataset
 from predict import PredictData
 
 if __name__ == "__main__":
@@ -26,18 +26,20 @@ if __name__ == "__main__":
 
     # Parameter declaration
     learning_rate = 0.000015
-    num_epochs = 20
+    num_epochs = 2
     backbone = "resnet18"  # the feature extraction model we are using
     save_after = 10  # save the model's image every {20} epoch
 
-    # path to write things to - includes summary writer, checkpoints,
-    out_path = r'C:\Users\sebas\project\outputs'
-    #out_path = os.path.expanduser("~/project/outputs/")
+    # General Path
+    general_path = r'C:\Users\sebas\project'
+    data_path = r'C:\Users\sebas\archive'
 
-    train_data_path = r'C:\Users\sebas\archive\train_data'
-    test_data_path = r'C:\Users\sebas\archive\test_data'
-    val_data_path = r'C:\Users\sebas\archive\validation_data'
-    #data_path = os.path.expanduser("~/.kaggle/")
+    # path to write things to - includes summary writer, checkpoints,
+    out_path = os.path.join(general_path, "outputs")
+
+    train_data_path = os.path.join(data_path, "train_data")
+    test_data_path = os.path.join(data_path, "test_data")
+    val_data_path = os.path.join(data_path, "validation_data")
 
     train_data = Dataset(train_data_path, dataset_size=4000)
     train_data_loader = torch.utils.data.DataLoader(train_data, batch_size=128, num_workers=0)
@@ -51,18 +53,6 @@ if __name__ == "__main__":
     val_data_loader = torch.utils.data.DataLoader(val_data, batch_size=16, num_workers=0)
     print("Got validation data")
     ############################################################
-
-
-    # Get the splits
-    train_dataset = train_data.get_split('train')
-    val_dataset = train_data.get_split('val')
-    test_dataset = train_data.get_split('test')
-
-    # Create DataLoader for each split
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, num_workers=2)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=16, num_workers=2)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, num_workers=2)
-
 
     model = SiameseNetwork()
     model.to(device)
@@ -78,7 +68,7 @@ if __name__ == "__main__":
     print(f"Size of validation data: {len(val_data)}")
     print(f"Size of test data: {len(test_data)}")
 
-    best_val = 10000000000  # big value -> any new validation loss will be better
+    best_val = 10000000000  # big value -> any new validation loss will be better (hopefully XD)
 
     for epoch in range(num_epochs):
         print("[{} / {}]".format(epoch, num_epochs))
@@ -160,5 +150,5 @@ if __name__ == "__main__":
             )
 
     # need to run the predict.py code to test the accuracy of the model on the test data
-    prediction = PredictData(test_data_loader)
+    prediction = PredictData(test_data_loader, general_path)
     prediction.predict()

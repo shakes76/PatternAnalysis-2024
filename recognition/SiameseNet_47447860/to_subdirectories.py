@@ -3,8 +3,8 @@ import shutil
 import pandas as pd
 
 # Paths
-base_dir = '~/.kaggle'
-# base_dir = r'C:\Users\sebas\archive'
+# base_dir = '~/.kaggle'
+base_dir = r'C:\Users\sebas\archive'
 csv_file = os.path.join(base_dir, 'train-metadata.csv')
 image_dir = os.path.join(base_dir, 'train-image', 'image')
 

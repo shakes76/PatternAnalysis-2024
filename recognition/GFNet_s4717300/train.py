@@ -6,6 +6,7 @@
 '''
 from dataset import GFNetDataloader
 from modules import GFNet
+from utils import Environment
 import predict
 import torch.optim.adamw
 import torch
@@ -15,40 +16,8 @@ import csv
 import argparse
 import os
 
-# Setting up CUDA
-device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-print(device)
-
-class Environment():
-    """
-    Container for hyperparameter and other miscellaneous
-    """
-    def __init__(self) -> None:
-        # Hyperparameter
-        self.learning_rate  = 0.001 
-        self.weight_decay   = 0.001
-        self.dropout        = 0.0
-        self.drop_path      = 0.1       # Probability of dropping an entire network path from an iteration
-        self.batch_size     = 32 
-        self.patch_size     = 16        # Size of the chunks to split up the image in pixels
-        self.embed_dim      = 783 
-        self.depth          = 8         # Number of global filter layers to use in the network
-        self.ff_ratio       = 3         # Ratio of input to hidden layer size in the classification feed forward network
-        self.epochs         = 100
-
-        # Model Metadata
-        self.dataset_path   = None      # Path of training and testing data
-        self.save_check     = False     # True if use wants to save checkpoints every 10 epochs
-        self.model_path     = None      # Path of a model checkpoint to be loaded
-        self.tag            = "GFNet"   # Name of the model, will be appended to all output
-
-        # Data collection
-        self.training_losses = []
-        self.estimated_test_losses = []
-        self.test_losses = []
-        self.estimated_test_accuracy = []
-        self.test_accuracy = []
-
+# NOTE: 
+# Environment Hyperparameter and other misc values are in utils.py
 
 def setup_environment() -> Environment:
     """
@@ -61,7 +30,8 @@ def setup_environment() -> Environment:
     # Define custom arguments
     parser = argparse.ArgumentParser(description='Custom parameters for training the model')
     parser.add_argument('-c', '--checkpoint', type=str, help='Model weights to load')
-    parser.add_argument('-s', '--save_checkpoint', type=str, help='Optionally save checkpoints as every 10 epochs')
+    parser.add_argument('-m', '--monitor', action='store_true', help='Create estimates of loss and accuracy every iteration')
+    parser.add_argument('-s', '--save_checkpoint', action='store_true', help='Optionally save checkpoints as every 10 epochs')
     parser.add_argument('-t', '--tag', type=str, help='Tag to label the models')
 
     # hyperparameter arguments
@@ -80,8 +50,10 @@ def setup_environment() -> Environment:
     if not args.dataset_path:
         print('Error: No path given for training and test data. See useage for details')
         exit(1)
+    env.dataset_path = args.dataset_path
 
     if args.checkpoint: env.model_path = args.checkpoint
+    if args.monitor: env.monitor = args.monitor
     if args.save_checkpoint: env.save_check = args.save_check
     if args.tag: env.tag = args.tag
 
@@ -95,7 +67,7 @@ def setup_environment() -> Environment:
     return env
 
 
-def train_model(model, env, train, test, validation):
+def train_model(model, env: Environment, train, test):
     """
     The main training loop of the model. Uses all the parameters in the env
     variable. Returns nothing but saves all output to the tag directory.
@@ -127,15 +99,18 @@ def train_model(model, env, train, test, validation):
         
             # Print out progress
             if i % 10 == 0:
-                print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(epoch+1, epochs, i+1, len(training), train_loss.item())) #type: ignore
+                print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.5f}" .format(
+                    epoch+1, env.epochs, i+1, len(training), train_loss.item())) #type: ignore
 
-        if epoch % 10 == 0:
+        if env.monitor:
+            predict.evaluate_model(model, test, criterion, env, device, estimate=True)
+        if env.save_check and epoch % 10 == 0:
             torch.save(model.state_dict(), '{}/Checkpoint-epoch{}-{}.pth'.format(env.tag, epoch, env.tag))
             output_results(env)
 
         scheduler.step() 
 
-    torch.save(model.state_dict(), '{}/{}.pth'.format(env.tag))
+    torch.save(model.state_dict(), '{}/{}.pth'.format(env.tag, env.tag))
     output_results(env)
 
     # End timer
@@ -170,13 +145,18 @@ def output_results(env: Environment):
 
 
 if __name__ == '__main__':
+    # Setting up CUDA
+    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    print(device)
+
     env = setup_environment()
 
     # Load data
     gfDataloader = GFNetDataloader(env.batch_size)
     gfDataloader.load(env.dataset_path)
 
-    training, test, validation = gfDataloader.get_data()
+    # training, test, validation = gfDataloader.get_data()
+    validation, training, test = gfDataloader.get_data()
     meta = gfDataloader.get_meta()
 
     # Image Info
@@ -186,10 +166,11 @@ if __name__ == '__main__':
     img_shape = (channels, image_size, image_size)
 
     if not training or not test:
-        print("Problem loading data, please check dataset is commpatable with dataloader including all hyprparameters")
+        print("Problem loading data, please check dataset is \
+                commpatable with dataloader including all hyprparameters")
         exit(1)
 
-
+    # Create model
     model = GFNet(img_size=image_size,
                      patch_size=env.patch_size,
                      in_chans=channels,
@@ -204,11 +185,11 @@ if __name__ == '__main__':
     if env.model_path:
         model.load_state_dict(torch.load(env.model_path, weights_only=False))
 
+    # Prepare model training
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
-
     optimizer = torch.optim.AdamW(model.parameters(), lr=env.learning_rate, weight_decay=env.weight_decay) #type: ignore
     scheduler = OneCycleLR(optimizer,max_lr=env.learning_rate, steps_per_epoch=len(training), epochs=env.epochs)
 
-    train_model(model, env, training, test, validation)
+    train_model(model, env, training, test)
     predict.evaluate_model(model, validation, criterion, env, device, False)
 

@@ -28,7 +28,6 @@ class GFNet(nn.Module):
         h = img_size // patch_size
         w = h // 2 + 1
 
-        print('using linear droppath with expect rate', drop_path_rate * 0.5)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
 
         self.blocks = nn.ModuleList([

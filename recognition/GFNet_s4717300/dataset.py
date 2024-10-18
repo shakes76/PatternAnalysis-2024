@@ -26,7 +26,7 @@ class GFNetDataloader():
         self.val_loader     = None
         self.img_size       = None
         self.datapath       = None
-        self.n_classes        = 0
+        self.n_classes      = 0
 
         self.gen = Generator().manual_seed(4717300) # Student number as seed
 
@@ -47,12 +47,15 @@ class GFNetDataloader():
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         self._mean, self._std, self._total_images = get_distribution(loader)
 
+        # Get the shape of the images
+        images, _ = next(iter(loader))
+        image_size = min(images.shape[-2:])
+
         # Transformation for the validation set: (No augmentation)
         val_trans = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Grayscale(num_output_channels=1),
-                transforms.Resize(240),
-                transforms.Pad((0, 8), fill=0),
+                transforms.Resize((image_size, image_size)),
                 transforms.Normalize(mean=self._mean, std=self._std)
                 ])
 
@@ -60,23 +63,19 @@ class GFNetDataloader():
         _transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Grayscale(num_output_channels=1),
-            transforms.Resize(240),
-            transforms.Pad((0, 8), fill=0),
+            transforms.Resize((image_size, image_size)),
             transforms.RandomHorizontalFlip(),              # Flip horizontally
             transforms.RandomVerticalFlip(p=0.5),           # Flip vertically with 50% probability
             transforms.RandomRotation(30),                  # Random rotation within ±30 degrees
             transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Randomly change brightness/contrast
             transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # Random translation
-            transforms.RandomCrop(256, padding=8, padding_mode='reflect'),
+            transforms.RandomCrop(image_size, padding=8, padding_mode='reflect'),
             transforms.Normalize(mean=self._mean, std=self._std),  # Use computed mean and std
             ])
-        self.img_size = 256
-
+        self.img_size = image_size
 
         train_data = datasets.ImageFolder(root=datapath+'/train', transform=_transform)
         val_data = datasets.ImageFolder(root=datapath+'/test', transform=val_trans)
-
-        
 
         # Create a random subset of the validation set to be used as an estimate
         _, test_split = random_split(val_data, [0.9, 0.1], generator=self.gen)
@@ -85,6 +84,18 @@ class GFNetDataloader():
         self.test_loader = DataLoader(test_split, batch_size=self.batch_size, shuffle=True)
         self.val_loader = DataLoader(val_data, batch_size=self.batch_size, shuffle=False)
         self.n_classes = len(train_data.classes)
+
+    def transform_val(self, data, image_size):
+        """
+        Used for transforming single images using inference
+        """
+        val_trans = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.Resize((image_size, image_size)),
+                ])
+        return val_trans(data)
+
 
     def get_data(self):
         return self.train_loader, self.test_loader, self.val_loader
@@ -120,4 +131,3 @@ def get_distribution(loader):
     mean /= total_images
     std /= total_images
     return mean, std, total_images
-

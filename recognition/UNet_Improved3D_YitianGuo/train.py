@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from torch.cuda.amp import autocast, GradScaler
 from sklearn.model_selection import train_test_split
 import nibabel as nib
+import csv
 
 # 设置随机种子以保证结果可复现
 seed = 42
@@ -27,7 +28,7 @@ parser = argparse.ArgumentParser(description='3D UNet Training Script')
 parser.add_argument('--lr', type=float, default=0.001)
 parser.add_argument('--epoch', type=int, default=20)
 parser.add_argument('--device', type=str, default='cuda')
-parser.add_argument('--loss', type=str, default='dice', choices=['mse', 'dice', 'ce', 'combined'])
+parser.add_argument('--loss', type=str, default='combined', choices=['dice', 'ce', 'combined'])
 parser.add_argument('--dataset_root', type=str, default='/home/groups/comp3710/HipMRI_Study_open')
 args = parser.parse_args()
 # 获取图像和标签路径
@@ -62,6 +63,15 @@ val_dataset = MRIDataset(
 # 使用 DataLoader 进行数据加载
 train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
+
+def save_best_dice(best_class_dice, file_path='best_class_dice.csv'):
+    with open(file_path, mode='w', newline='') as csv_file:
+        fieldnames = ['Class', 'Best_Dice_Score']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for class_name, dice_score in best_class_dice.items():
+            writer.writerow({'Class': class_name, 'Best_Dice_Score': dice_score})
 
 def compute_class_weights(label_paths, num_classes):
     class_counts = np.zeros(num_classes)
@@ -134,20 +144,21 @@ scaler = torch.cuda.amp.GradScaler()
 # 初始化损失和指标记录列表
 train_losses = []
 valid_losses = []
-train_dice_scores = []
 valid_dice_scores = []
 # 新增的初始化列表
 val_losses = []
 val_dices = []
 
+train_dice_scores = {f'Class_{i}': [] for i in range(num_classes)}
+val_dice_scores = {f'Class_{i}': [] for i in range(num_classes)}
 def plot_metrics(train_losses, val_losses, train_dices, val_dices, save_path='metrics.png'):
-    """绘制训练和验证损失以及Dice系数"""
-    epochs = range(1, len(train_losses) + 1)  # 现在长度等于 epoch 的数量
+    """绘制训练和验证损失以及每个类别的Dice系数"""
+    epochs = range(1, len(train_losses) + 1)
 
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(20, 10))
 
     # 绘制损失
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 1, 1)
     plt.plot(epochs, train_losses, 'b-', label='Training Loss')
     plt.plot(epochs, val_losses, 'r-', label='Validation Loss')
     plt.xlabel('Epoch')
@@ -155,15 +166,16 @@ def plot_metrics(train_losses, val_losses, train_dices, val_dices, save_path='me
     plt.title('Loss During Training')
     plt.legend()
 
-    # 绘制Dice系数
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs, train_dices, 'b-', label='Training Dice')
-    plt.plot(epochs, val_dices, 'r-', label='Validation Dice')
+    # 绘制每个类别的Dice系数
+    plt.subplot(2, 1, 2)
+    for class_index in range(num_classes):
+        class_name = f'Class_{class_index}'
+        plt.plot(epochs, train_dice_scores[class_name], label=f'Train Dice {class_name}')
+        plt.plot(epochs, val_dice_scores[class_name], linestyle='--', label=f'Val Dice {class_name}')
     plt.xlabel('Epoch')
     plt.ylabel('Dice Coefficient')
-    plt.title('Dice Coefficient During Training')
-    plt.legend()
-
+    plt.title('Dice Coefficient Per Class During Training')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     plt.savefig(save_path)
     plt.show()
@@ -171,12 +183,12 @@ def plot_metrics(train_losses, val_losses, train_dices, val_dices, save_path='me
 def evaluate(model, val_loader, criterion, device):
     model.eval()
     val_loss = 0
-    val_dice = 0
-    num_classes = model.final_conv.out_channels  # 获取类别数量
+    class_dice = np.zeros(num_classes)
+    class_counts = np.zeros(num_classes)
     with torch.no_grad():
         for batch in val_loader:
-            images = batch['image'].to(device)  # [B, 1, D, H, W]
-            labels = batch['label'].to(device).long()  # [B, D, H, W] 或 [B, 1, D, H, W]
+            images = batch['image'].to(device, dtype=torch.float32)  # [B, 1, D, H, W]
+            labels = batch['label'].to(device, dtype=torch.long)  # [B, D, H, W] 或 [B, 1, D, H, W]
 
             if labels.dim() == 5 and labels.size(1) == 1:
                 labels = labels.squeeze(1)  # 现在 labels 是 [B, D, H, W]
@@ -194,26 +206,24 @@ def evaluate(model, val_loader, criterion, device):
             targets = labels
 
             # 计算每个类别的 Dice 系数
-            dice_scores = []
             for class_index in range(num_classes):
                 pred_class = (preds == class_index).float()
                 target_class = (targets == class_index).float()
 
-                intersection = (pred_class * target_class).sum()
-                union = pred_class.sum() + target_class.sum()
+                intersection = (pred_class * target_class).sum().item()
+                union = pred_class.sum().item() + target_class.sum().item()
                 if union == 0:
                     dice = 1.0  # 如果分母为0，表示没有该类别，设定 dice 为1
                 else:
                     dice = (2. * intersection) / (union + 1e-8)
-                dice_scores.append(dice.item())
+                class_dice[class_index] += dice
+                if union > 0:
+                    class_counts[class_index] += 1
 
-            # 计算平均 Dice 系数（如果需要，可以排除背景类）
-            avg_dice_score = np.mean(dice_scores[1:])  # 排除背景类（索引为0）
-            val_dice += avg_dice_score
-
+    # 计算每个类别的平均 Dice 系数
+    avg_class_dice = class_dice / np.maximum(class_counts, 1)
     avg_loss = val_loss / len(val_loader)
-    avg_dice = val_dice / len(val_loader)
-    return avg_loss, avg_dice
+    return avg_loss, avg_class_dice
 
 def main():
     start_time = time.time()
@@ -222,11 +232,18 @@ def main():
     save_path = 'best_model.pth'
     num_classes = model.final_conv.out_channels
 
+    # 初始化一个字典来存储每个类别的最佳Dice分数
+    best_class_dice = {f'Class_{i}': 0.0 for i in range(num_classes)}
+
+    # 早停参数
+    patience = 10
+    counter = 0
+
     print("begin training")
     for epoch in range(1, num_epochs + 1):
         model.train()
         epoch_train_loss = []
-        epoch_train_dice = []
+        epoch_train_dice = {f'Class_{i}': [] for i in range(num_classes)}
 
         for idx, batch in enumerate(train_dataloader):
             images = batch['image'].to(args.device, dtype=torch.float32)
@@ -247,25 +264,21 @@ def main():
 
             epoch_train_loss.append(loss.item())
 
-            # 计算Dice系数
+            # 计算每个类别的 Dice 系数
             preds = torch.argmax(outputs, dim=1)
             targets = labels
 
-            dice_scores = []
             for class_index in range(num_classes):
                 pred_class = (preds == class_index).float()
                 target_class = (targets == class_index).float()
 
-                intersection = (pred_class * target_class).sum()
-                union = pred_class.sum() + target_class.sum()
+                intersection = (pred_class * target_class).sum().item()
+                union = pred_class.sum().item() + target_class.sum().item()
                 if union == 0:
                     dice = 1.0
                 else:
                     dice = (2. * intersection) / (union + 1e-8)
-                dice_scores.append(dice.item())
-
-            avg_dice_score = np.mean(dice_scores[1:])  # 排除背景类
-            epoch_train_dice.append(avg_dice_score)
+                epoch_train_dice[f'Class_{class_index}'].append(dice)
 
             # 打印训练进度
             if (idx + 1) % max(1, len(train_dataloader) // 2) == 0:
@@ -277,31 +290,52 @@ def main():
 
         # 在每个 epoch 结束时记录平均损失和 Dice 系数
         avg_train_loss = np.mean(epoch_train_loss)
-        avg_train_dice = np.mean(epoch_train_dice)
+        avg_train_dice = {class_name: np.mean(dice_list) for class_name, dice_list in epoch_train_dice.items()}
         train_losses.append(avg_train_loss)
-        train_dice_scores.append(avg_train_dice)
+        for class_name, dice in avg_train_dice.items():
+            train_dice_scores[class_name].append(dice)
 
         # 验证阶段
-        avg_val_loss, avg_val_dice = evaluate(model, val_loader, criterion, args.device)
+        avg_val_loss, avg_val_dice = evaluate(model, val_loader, criterion, args.device, num_classes)
         val_losses.append(avg_val_loss)
-        val_dices.append(avg_val_dice)
+        for class_index, dice in enumerate(avg_val_dice):
+            class_name = f'Class_{class_index}'
+            val_dice_scores[class_name].append(dice)
 
-        print(
-            f"Epoch [{epoch}/{num_epochs}], Training Loss: {avg_train_loss:.4f}, "
-            f"Training Dice: {avg_train_dice:.4f}, Validation Loss: {avg_val_loss:.4f}, "
-            f"Validation Dice: {avg_val_dice:.4f}"
-        )
+        # 检查每个类别是否有改进
+        improved = False
+        for class_index in range(num_classes):
+            class_name = f'Class_{class_index}'
+            if avg_val_dice[class_index] > best_class_dice[class_name]:
+                best_class_dice[class_name] = avg_val_dice[class_index]
+                improved = True
 
-        # 保存最好的模型
-        if avg_val_dice > best_val_dice:
-            best_val_dice = avg_val_dice
+        if improved:
             torch.save(model.state_dict(), save_path)
-            print(f"Saved the best model, Validation Dice: {best_val_dice:.4f}")
+            print(f"Saved the best model at epoch {epoch}")
+            print(f"Best Class Dice Scores: {best_class_dice}")
+            counter = 0  # 重置早停计数器
+        else:
+            counter += 1
+            if counter >= patience:
+                print("Early stopping triggered")
+                break
+
+        # 打印当前epoch的验证结果
+        print(f"Epoch [{epoch}/{num_epochs}], Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+        print("Validation Dice Scores:")
+        for class_index, dice in enumerate(avg_val_dice):
+            print(f"  Class {class_index}: {dice:.4f}")
 
     # 绘制损失和Dice系数
-    plot_metrics(train_losses, val_losses, train_dice_scores, val_dices, save_path='training_metrics.png')
+    plot_metrics(train_losses, val_losses, train_dice_scores, val_dice_scores, num_classes,
+                 save_path='training_metrics.png')
+
+    # 保存每个类别的最佳Dice分数
+    save_best_dice(best_class_dice)
 
     print("Finished Training")
+
 
 if __name__ == '__main__':
     main()

@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from torch import Generator
 from torch.utils.data import random_split
+import os
 
 
 class GFNetDataloader():
@@ -43,7 +44,7 @@ class GFNetDataloader():
         ])
 
         # Normalise the data
-        dataset = datasets.ImageFolder(root=datapath, transform=init_trans)
+        dataset = datasets.ImageFolder(root=os.path.join(datapath, 'train'), transform=init_trans)
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         self._mean, self._std, self._total_images = get_distribution(loader)
 
@@ -70,12 +71,12 @@ class GFNetDataloader():
             transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Randomly change brightness/contrast
             transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # Random translation
             transforms.RandomCrop(image_size, padding=8, padding_mode='reflect'),
-            transforms.Normalize(mean=self._mean, std=self._std),  # Use computed mean and std
+            transforms.Normalize(mean=self._mean, std=self._std),  # Use computed mean and stdk
             ])
         self.img_size = image_size
 
-        train_data = datasets.ImageFolder(root=datapath+'/train', transform=_transform)
-        val_data = datasets.ImageFolder(root=datapath+'/test', transform=val_trans)
+        train_data = datasets.ImageFolder(root=os.path.join(datapath, 'train'), transform=_transform)
+        val_data = datasets.ImageFolder(root=os.path.join(datapath, 'test'), transform=val_trans)
 
         # Create a random subset of the validation set to be used as an estimate
         _, test_split = random_split(val_data, [0.9, 0.1], generator=self.gen)
@@ -84,6 +85,41 @@ class GFNetDataloader():
         self.test_loader = DataLoader(test_split, batch_size=self.batch_size, shuffle=True)
         self.val_loader = DataLoader(val_data, batch_size=self.batch_size, shuffle=False)
         self.n_classes = len(train_data.classes)
+
+    def load_validation(self, datapath):
+        """
+        Similar to load except we're only accessing a directory of images instead of the train/test splits
+        """
+        # Convert all images into greyscale
+        init_trans = transforms.Compose([
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor(),
+        ])
+
+        # Normalise the data
+        dataset = datasets.ImageFolder(root=datapath, transform=init_trans)
+        loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+        self._mean, self._std, self._total_images = get_distribution(loader)
+
+        # Get the shape of the images
+        images, _ = next(iter(loader))
+        image_size = min(images.shape[-2:])
+
+        # Transformation for the validation set: (No augmentation)
+        val_trans = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.Resize((image_size, image_size)),
+                transforms.Normalize(mean=self._mean, std=self._std)
+                ])
+        self.img_size = image_size
+
+        val_data = datasets.ImageFolder(root=os.path.join(datapath), transform=val_trans)
+
+
+        self.val_loader = DataLoader(val_data, batch_size=self.batch_size, shuffle=False)
+        self.n_classes = len(val_data.classes)
+
 
     def transform_val(self, data, image_size):
         """
@@ -95,7 +131,6 @@ class GFNetDataloader():
                 transforms.Resize((image_size, image_size)),
                 ])
         return val_trans(data)
-
 
     def get_data(self):
         return self.train_loader, self.test_loader, self.val_loader

@@ -113,7 +113,7 @@ if __name__ == '__main__':
     if args.evaluation:
         # Load the evaluation batch
         loader.load(args.path)
-        train, test, val = loader.get_data()
+        val = loader.val_loader
         meta = loader.get_meta()
 
         # Image Info
@@ -121,11 +121,6 @@ if __name__ == '__main__':
         num_classes = meta['n_classes']
         image_size = meta['img_size']
         img_shape = (channels, image_size, image_size)
-
-        if not train or not test:
-            print("Problem loading data, please check dataset is commpatable \
-                    with dataloader including all hyprparameters")
-            exit(1)
     else:
         # Single image inference
         image = Image.open(args.path)

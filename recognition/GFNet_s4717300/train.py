@@ -54,7 +54,7 @@ def setup_environment() -> Environment:
 
     if args.checkpoint: env.model_path = args.checkpoint
     if args.monitor: env.monitor = args.monitor
-    if args.save_checkpoint: env.save_check = args.save_check
+    if args.save_checkpoint: env.save_check = args.save_checkpoint
     if args.tag: env.tag = args.tag
 
     if args.batch_size: env.batch_size = args.tag
@@ -67,7 +67,7 @@ def setup_environment() -> Environment:
     return env
 
 
-def train_model(model, env: Environment, train, test):
+def train_model(model, env: Environment, train, test, val):
     """
     The main training loop of the model. Uses all the parameters in the env
     variable. Returns nothing but saves all output to the tag directory.
@@ -105,6 +105,7 @@ def train_model(model, env: Environment, train, test):
         if env.monitor:
             predict.evaluate_model(model, test, criterion, env, device, estimate=True)
         if env.save_check and epoch % 10 == 0:
+            predict.evaluate_model(model, val, criterion, env, device, estimate=False)
             torch.save(model.state_dict(), '{}/Checkpoint-epoch{}-{}.pth'.format(env.tag, epoch, env.tag))
             output_results(env)
 
@@ -155,8 +156,7 @@ if __name__ == '__main__':
     gfDataloader = GFNetDataloader(env.batch_size)
     gfDataloader.load(env.dataset_path)
 
-    # training, test, validation = gfDataloader.get_data()
-    validation, training, test = gfDataloader.get_data()
+    training, test, validation = gfDataloader.get_data()
     meta = gfDataloader.get_meta()
 
     # Image Info
@@ -190,6 +190,6 @@ if __name__ == '__main__':
     optimizer = torch.optim.AdamW(model.parameters(), lr=env.learning_rate, weight_decay=env.weight_decay) #type: ignore
     scheduler = OneCycleLR(optimizer,max_lr=env.learning_rate, steps_per_epoch=len(training), epochs=env.epochs)
 
-    train_model(model, env, training, test)
+    train_model(model, env, training, test, validation)
     predict.evaluate_model(model, validation, criterion, env, device, False)
 

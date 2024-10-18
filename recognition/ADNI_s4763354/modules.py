@@ -1,3 +1,7 @@
+'''
+Author: Lok Yee Joey Cheung
+This file contains source codes of the classes and functions of GFNet architecture namely blocks, layers, global filters etc.
+'''
 import math
 import logging
 from functools import partial

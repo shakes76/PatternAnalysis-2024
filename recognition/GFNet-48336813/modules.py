@@ -4,10 +4,7 @@ and building blocks for deep learning models, specifically for binary classifica
 It includes modules for global filtering, multi-layer perceptrons (MLPs), patch embedding, and transformer blocks,
 as well as the overall GFNet model.
 
-The script also provides utility functions for initialising model weights and managing model configurations.
-
 @brief: Core modules and architecture definition for the GFNet model.
-@date: 16 Oct 2024
 @author: Sean Bourchier
 """
 
@@ -19,33 +16,6 @@ from functools import partial
 from collections import OrderedDict
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-from dataset import ADNI_DEFAULT_MEAN_TEST, ADNI_DEFAULT_STD_TEST
-
-def _cfg(url='', **kwargs):
-    """
-    Helper function to create model configuration.
-    
-    Args:
-        url (str): URL for pretrained model weights.
-        **kwargs: Additional configuration parameters.
-        
-    Returns:
-        dict: Configuration dictionary for model initialization.
-    """
-    return {
-        'url': url,
-        'num_classes': 2, 
-        'input_size': (1, 224, 224), 
-        'pool_size': None,
-        'crop_pct': 0.9, 
-        'interpolation': 'bicubic',
-        'mean': ADNI_DEFAULT_MEAN_TEST, 
-        'std': ADNI_DEFAULT_STD_TEST,
-        'first_conv': 'patch_embed.proj', 
-        'classifier': 'head',
-        **kwargs
-    }
-
 class Mlp(nn.Module):
     """
     Multi-layer perceptron (MLP) block.
@@ -54,6 +24,8 @@ class Mlp(nn.Module):
 
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         """
+        Initialises the MLP block with optional hidden features and dropout.
+
         Args:
             in_features (int): Number of input features.
             hidden_features (int): Number of hidden features.
@@ -62,6 +34,7 @@ class Mlp(nn.Module):
             drop (float): Dropout rate (default: 0.0).
         """
         super().__init__()
+        # Define fully connected layers, activation, and dropout
         hidden_features = hidden_features or in_features
         out_features = out_features or in_features
         self.fc1 = nn.Linear(in_features, hidden_features)
@@ -79,9 +52,12 @@ class Mlp(nn.Module):
         Returns:
             torch.Tensor: Output tensor after linear, activation, and dropout layers.
         """
+        # Pass through the first linear layer, activation, and dropout
         x = self.fc1(x)
         x = self.act(x)
         x = self.drop(x)
+        
+        # Pass through the second linear layer and dropout
         x = self.fc2(x)
         x = self.drop(x)
         return x
@@ -93,19 +69,22 @@ class GlobalFilter(nn.Module):
 
     def __init__(self, dim, h=14, w=8):
         """
+        Initialises the global filter with FFT parameters.
+
         Args:
             dim (int): Dimension of the input features.
             h (int): Height of the FFT filter.
             w (int): Width of the FFT filter.
         """
         super().__init__()
+        # Initialise learnable complex weights for filtering
         self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
         self.w = w
         self.h = h
 
     def forward(self, x, spatial_size=None):
         """
-        Forward pass through the global filter.
+        Forward pass through the global filter using 2D FFT.
 
         Args:
             x (torch.Tensor): Input tensor of shape (B, N, C).
@@ -117,14 +96,16 @@ class GlobalFilter(nn.Module):
         B, N, C = x.shape
         a, b = spatial_size if spatial_size else (int(math.sqrt(N)), int(math.sqrt(N)))
 
+        # Reshape and perform FFT
         x = x.view(B, a, b, C).to(torch.float32)
-
-        # Apply 2D FFT, filtering with complex weights, and inverse FFT
         x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
+
+        # Multiply FFT results with complex weights
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
-        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
 
+        # Perform inverse FFT and reshape output
+        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
         return x.reshape(B, N, C)
 
 class Block(nn.Module):
@@ -134,6 +115,8 @@ class Block(nn.Module):
 
     def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
         """
+        Initialises the transformer block.
+
         Args:
             dim (int): Dimension of the input features.
             mlp_ratio (float): Ratio of MLP hidden dimension to input dimension.
@@ -145,6 +128,7 @@ class Block(nn.Module):
             w (int): Width for the global filter.
         """
         super().__init__()
+        # Define normalization, global filter, drop path, and MLP layers
         self.norm1 = norm_layer(dim)
         self.filter = GlobalFilter(dim, h=h, w=w)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -154,7 +138,7 @@ class Block(nn.Module):
 
     def forward(self, x):
         """
-        Forward pass through the block.
+        Forward pass through the transformer block.
         
         Args:
             x (torch.Tensor): Input tensor.
@@ -162,6 +146,7 @@ class Block(nn.Module):
         Returns:
             torch.Tensor: Output tensor after the block.
         """
+        # Apply normalization, filtering, MLP, and dropout with skip connection
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
@@ -174,12 +159,15 @@ class BlockLayerScale(Block):
     def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, 
                  norm_layer=nn.LayerNorm, h=14, w=8, init_values=1e-5):
         """
+        Initialises the transformer block with learnable scaling parameter.
+
         Args:
             dim (int): Dimension of input features.
             init_values (float): Initial values for the learnable scaling parameter.
             Other parameters as in the Block class.
         """
         super().__init__(dim, mlp_ratio, drop, drop_path, act_layer, norm_layer, h, w)
+        # Initialise learnable scaling parameter
         self.gamma = nn.Parameter(init_values * torch.ones((dim)), requires_grad=True)
 
     def forward(self, x):
@@ -192,6 +180,7 @@ class BlockLayerScale(Block):
         Returns:
             torch.Tensor: Output tensor after applying the block with scaling.
         """
+        # Apply block operations with scaling
         x = x + self.drop_path(self.gamma * self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
@@ -202,6 +191,8 @@ class PatchEmbed(nn.Module):
 
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768):
         """
+        Initialises the patch embedding layer.
+
         Args:
             img_size (int): Input image size.
             patch_size (int): Size of each patch.
@@ -209,13 +200,13 @@ class PatchEmbed(nn.Module):
             embed_dim (int): Dimension of the output embedding.
         """
         super().__init__()
+        # Calculate the number of patches and define the convolution layer for embedding
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
         num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
         self.img_size = img_size
         self.patch_size = patch_size
         self.num_patches = num_patches
-
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
@@ -228,6 +219,7 @@ class PatchEmbed(nn.Module):
         Returns:
             torch.Tensor: Patch embeddings of shape (B, num_patches, embed_dim).
         """
+        # Project input image into patch embeddings
         B, C, H, W = x.shape
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
@@ -241,12 +233,15 @@ class DownLayer(nn.Module):
 
     def __init__(self, img_size=56, dim_in=64, dim_out=128):
         """
+        Initialises the downsampling layer.
+
         Args:
             img_size (int): Input image size.
             dim_in (int): Input channel dimension.
             dim_out (int): Output channel dimension.
         """
         super().__init__()
+        # Define the convolutional layer for downsampling
         self.img_size = img_size
         self.proj = nn.Conv2d(dim_in, dim_out, kernel_size=2, stride=2)
         self.num_patches = img_size * img_size // 4
@@ -261,6 +256,7 @@ class DownLayer(nn.Module):
         Returns:
             torch.Tensor: Downsampled tensor.
         """
+        # Reshape, apply convolution, and return downsampled output
         B, N, C = x.size()
         x = x.view(B, self.img_size, self.img_size, C).permute(0, 3, 1, 2)
         x = self.proj(x).permute(0, 2, 3, 1)
@@ -277,6 +273,8 @@ class GFNet(nn.Module):
                  mlp_ratio=4., uniform_drop=False, drop_rate=0., drop_path_rate=0., 
                  norm_layer=None, dropcls=0):
         """
+        Initialises the GFNet model with configurable parameters.
+
         Args:
             img_size (int): Input image size.
             patch_size (int): Patch size.
@@ -292,6 +290,7 @@ class GFNet(nn.Module):
             dropcls (float): Dropout rate before classifier.
         """
         super().__init__()
+        # Initialise the patch embedding, positional embedding, transformer blocks, and classifier head
         self.num_classes = num_classes
         self.embed_dim = embed_dim
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
@@ -331,11 +330,12 @@ class GFNet(nn.Module):
 
     def _init_weights(self, m):
         """
-        Initialize weights of the model.
+        Initialise weights of the model.
         
         Args:
-            m (nn.Module): The module whose weights are to be initialized.
+            m (nn.Module): The module whose weights are to be Initialised.
         """
+        # Apply initialisation to Linear and LayerNorm layers
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
             if m.bias is not None:
@@ -354,6 +354,7 @@ class GFNet(nn.Module):
         Returns:
             torch.Tensor: Feature tensor.
         """
+        # Embed patches and pass through transformer blocks
         B = x.shape[0]
         x = self.patch_embed(x)
         x = x + self.pos_embed
@@ -375,6 +376,7 @@ class GFNet(nn.Module):
         Returns:
             torch.Tensor: Output logits.
         """
+        # Perform feature extraction and classification
         x = self.forward_features(x)
         x = self.final_dropout(x)
         x = self.head(x)

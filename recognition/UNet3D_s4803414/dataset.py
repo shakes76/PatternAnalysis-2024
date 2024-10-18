@@ -96,6 +96,23 @@ class MRIDataset(Dataset):
             image = self.resize(image, self.target_size)
             mask = self.resize(mask, self.target_size, is_mask=True)
 
+        # Add Gaussian noise
+        if random.random() > 0.5:
+            image = self.add_noise(image)
+
+        # Random intensity scaling
+        if random.random() > 0.5:
+            image = self.random_intensity_scaling(image)
+
         return image, mask
 
+    def add_noise(self, image):
+        """Add random Gaussian noise to the image."""
+        noise = np.random.normal(0, 0.01, image.shape)  # mean=0, std=0.01
+        return image + noise
+
+    def random_intensity_scaling(self, image):
+        """Randomly scale the intensity of the image."""
+        scale = random.uniform(0.9, 1.1)  # Scale between 90% and 110%
+        return image * scale
 

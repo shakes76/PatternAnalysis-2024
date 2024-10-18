@@ -42,10 +42,10 @@ class ExponentialWeightedLoss(BaseDice):
             d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
             segment_coefs[i] = d_coef
 
-        weighted, _ = torch.sort(segment_coefs, descending=True)
+        weighted, _ = torch.sort(segment_coefs)
 
         for i in range(num_masks):
-            weighted[i] = segment_coefs[i] / (math.e ** i)
+            weighted[i] = segment_coefs[i] * (math.e ** i)
         
         d_coef = (1 / num_masks) * torch.sum(segment_coefs)
         loss = 1 - (1 / num_masks) * torch.sum(weighted)
@@ -69,10 +69,10 @@ class ArithmeticWeightedLoss(BaseDice):
             d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
             segment_coefs[i] = d_coef
 
-        weighted, _ = torch.sort(segment_coefs, descending=True)
+        weighted, _ = torch.sort(segment_coefs)
 
         for i in range(num_masks):
-            weighted[i] = segment_coefs[i] / (i + 1)
+            weighted[i] = segment_coefs[i] * (i + 1)
         
         d_coef = (1 / num_masks) * torch.sum(segment_coefs)
         loss = 1 - (1 / num_masks) * torch.sum(weighted)

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # Function to create the plots
-def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots"):
+def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots", exp_name="experiment"):
     Path(save_dir).mkdir(parents=True, exist_ok=True)  # Ensure plots directory exists
     
     # Plotting loss
@@ -22,7 +22,7 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
     plt.ylabel('Loss')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f"{save_dir}/loss_plot.png")  # Save the plot
+    plt.savefig(f"{save_dir}/{exp_name}_loss_plot.png")  # Save the plot
     plt.close()  # Close the figure to free memory
     
     # Plotting accuracy
@@ -34,7 +34,7 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
     plt.ylabel('Accuracy (%)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f"{save_dir}/accuracy_plot.png")  # Save the plot
+    plt.savefig(f"{save_dir}/{exp_name}_accuracy_plot.png")  # Save the plot
     plt.close()
 
 # Function to train for one epoch
@@ -111,13 +111,13 @@ def evaluate(model, dataloader, criterion, device):
     return avg_loss, accuracy
 
 # Function to save only the best model checkpoint
-def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="models/best_model.pth"):
+def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="models/best_model.pth", exp_name="test"):
     # Create the directory if it doesn't exist
     model_dir = Path("models")
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Always save to the same file to overwrite old models
-    save_path = model_dir / "best_model.pth"
+    save_path = model_dir / f"{exp_name}best_model.pth"
     
     torch.save({
         'epoch': epoch,
@@ -131,7 +131,7 @@ def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="models/be
 
 
 # Function for full training loop
-def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device):
+def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, exp_name):
     best_val_loss = float('inf')
 
     # Lists to store training/validation loss and accuracy for each epoch
@@ -163,7 +163,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         # Save the model if it has the best validation loss
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_model_checkpoint(model, optimizer, epoch, val_accuracy)
+            save_model_checkpoint(model, optimizer, epoch, val_accuracy, exp_name=exp_name)
 
     print("Training complete")
     # Return losses and accuracies for plotting
@@ -184,6 +184,8 @@ def main():
     # Plotting flag (default True)
     parser.add_argument('--plot', dest='plot', action='store_true', default=True, help='Enable plotting (default is True)')
     parser.add_argument('--no-plot', dest='plot', action='store_false', help='Disable plotting')
+    # Add experiment name to argument parser
+    parser.add_argument('--exp_name', type=str, default="experiment", help='Name of the experiment for naming plots and models')
 
     # Parse arguments
     if torch.cuda.is_available():
@@ -199,7 +201,7 @@ def main():
     image_size = args.image_size 
     dataset_path = args.path
     num_transformer_layers = args.transformer_layers
-
+    exp_name = args.exp_name
 
     # Get all the loaders 
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(batch_size=batch_size,
@@ -213,7 +215,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     ## Train the model
-    train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, num_epochs = num_epochs, device=device)
+    train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, num_epochs = num_epochs, device=device, exp_name = exp_name)
 
     print("stuff", train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses)
 
@@ -226,7 +228,7 @@ def main():
         # Save plots if required
     if args.plot:
         print("Plotting!")
-        save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots")
+        save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots", exp_name=exp_name)
 
 
 if __name__ == "__main__":

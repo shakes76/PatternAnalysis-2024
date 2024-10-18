@@ -6,10 +6,10 @@ from torch_geometric.nn import GATConv
 class GNN(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GNN, self).__init__()
-        self.conv1 = GATConv(input_dim, hidden_dim, heads=4)  # First GAT layer with multi-head attention
-        self.conv2 = GATConv(hidden_dim * 4, hidden_dim, heads=4)  # Second GAT layer, increasing feature capacity
-        self.conv3 = GATConv(hidden_dim * 4, hidden_dim, heads=4)  # Third GAT layer to increase depth
-        self.conv4 = GATConv(hidden_dim * 4, output_dim, heads=1)  # Output layer with single head
+        self.conv1 = GATConv(input_dim, hidden_dim, heads=8)  # First GAT layer with 8 attention heads
+        self.conv2 = GATConv(hidden_dim * 8, hidden_dim, heads=8)  # Second GAT layer with 8 attention heads
+        self.conv3 = GATConv(hidden_dim * 8, hidden_dim, heads=8)  # Third GAT layer with 8 attention heads
+        self.conv4 = GATConv(hidden_dim * 8, output_dim, heads=1)  # Output layer with single head
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index

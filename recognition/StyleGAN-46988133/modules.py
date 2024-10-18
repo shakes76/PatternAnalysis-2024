@@ -76,17 +76,17 @@ class Generator(nn.Module):
 
         # Models all generator layers from a 4x4 feature map up to a scaled 256x256 feature map
         self.gen_layers = nn.ModuleList([
-            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE, first_layer=True), # Output: 4x4 Feature Map
-            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE // 2),              # Output: 8x8 Feature Map
-            GenLayer(hp.LATENT_SIZE // 2, hp.LATENT_SIZE // 4),         # Output: 16x16 Feature Map
-            GenLayer(hp.LATENT_SIZE // 4, hp.LATENT_SIZE // 8),         # Output: 32x32 Feature Map
-            GenLayer(hp.LATENT_SIZE // 8, hp.LATENT_SIZE // 16),        # Output: 64x64 Feature Map
-            GenLayer(hp.LATENT_SIZE // 16, hp.LATENT_SIZE // 32),       # Output: 128x128 Feature Map
-            GenLayer(hp.LATENT_SIZE // 32, hp.LATENT_SIZE // 64),       # Output: 256x256 Feature Map
+            GenLayer(hp.LATENT_SIZE, hp.LATENT_SIZE, first_layer=True),      # Output: 4x4 Feature Map
+            GenLayer(hp.LATENT_SIZE, hp.GEN_FEATURE_SIZE // 2),              # Output: 8x8 Feature Map
+            GenLayer(hp.GEN_FEATURE_SIZE // 2, hp.GEN_FEATURE_SIZE // 4),    # Output: 16x16 Feature Map
+            GenLayer(hp.GEN_FEATURE_SIZE // 4, hp.GEN_FEATURE_SIZE // 8),    # Output: 32x32 Feature Map
+            GenLayer(hp.GEN_FEATURE_SIZE // 8, hp.GEN_FEATURE_SIZE // 16),   # Output: 64x64 Feature Map
+            GenLayer(hp.GEN_FEATURE_SIZE // 16, hp.GEN_FEATURE_SIZE // 32),  # Output: 128x128 Feature Map
+            GenLayer(hp.GEN_FEATURE_SIZE // 32, hp.GEN_FEATURE_SIZE // 64),  # Output: 256x256 Feature Map
         ])
 
         # Used to convert the feature map back into a greyscale image
-        self.final_output = nn.Conv2d(hp.LATENT_SIZE // 64, hp.NUM_CHANNELS, kernel_size=1)
+        self.final_output = nn.Conv2d(hp.GEN_FEATURE_SIZE // 64, hp.NUM_CHANNELS, kernel_size=1)
 
         # Used to embed the AD and CN labels into the style vector
         self.label_embedding = torch.nn.Embedding(num_embeddings=hp.LABEL_DIMENSIONS, embedding_dim=hp.EMBED_DIMENSIONS)
@@ -246,16 +246,16 @@ class Discriminator(nn.Module):
         self.embedding_layer = nn.Conv2d(in_channels=(hp.EMBED_DIMENSIONS + hp.NUM_CHANNELS), out_channels=hp.NUM_CHANNELS, kernel_size=1)
 
         self.disc_layers = nn.ModuleList([
-            DiscLayer(hp.NUM_CHANNELS, hp.LATENT_SIZE // 64 // 4),       # Output: 128x128 Feature Map
-            DiscLayer(hp.LATENT_SIZE // 64 // 4, hp.LATENT_SIZE // 32 // 4),  # Output: 64x64 Feature Map
-            DiscLayer(hp.LATENT_SIZE // 32 // 4, hp.LATENT_SIZE // 16 // 4),  # Output: 32x32 Feature Map
-            DiscLayer(hp.LATENT_SIZE // 16 // 4, hp.LATENT_SIZE // 8 // 4),   # Output: 16x16 Feature Map
-            DiscLayer(hp.LATENT_SIZE // 8 // 4, hp.LATENT_SIZE // 4 // 4),    # Output: 8x8 Feature Map
-            DiscLayer(hp.LATENT_SIZE // 4 // 4, hp.LATENT_SIZE // 2 // 4),    # Output: 4x4 Feature Map
+            DiscLayer(hp.NUM_CHANNELS, hp.DISC_FEATURE_SIZE // 64),             # Output: 128x128 Feature Map
+            DiscLayer(hp.DISC_FEATURE_SIZE // 64, hp.DISC_FEATURE_SIZE // 32),  # Output: 64x64 Feature Map
+            DiscLayer(hp.DISC_FEATURE_SIZE // 32, hp.DISC_FEATURE_SIZE // 16),  # Output: 32x32 Feature Map
+            DiscLayer(hp.DISC_FEATURE_SIZE // 16, hp.DISC_FEATURE_SIZE // 8),   # Output: 16x16 Feature Map
+            DiscLayer(hp.DISC_FEATURE_SIZE // 8, hp.DISC_FEATURE_SIZE // 4),    # Output: 8x8 Feature Map
+            DiscLayer(hp.DISC_FEATURE_SIZE // 4, hp.DISC_FEATURE_SIZE // 2),    # Output: 4x4 Feature Map
         ])
 
         # The amount of features present after flattening the features map
-        self.feature_size = (hp.LATENT_SIZE // 2 // 4) * 4 * 4 # For a 4x4 feature map
+        self.feature_size = (hp.DISC_FEATURE_SIZE // 2) * 4 * 4 # For a 4x4 feature map
 
         # Output layer for real/fake image classification
         self.real_fake_layer = nn.Linear(self.feature_size, 1)

@@ -17,8 +17,27 @@ NUM_CHANNELS = 1
 # Represents the number of labels/classes used in the ADNI dataset (i.e. AD and CN)
 LABEL_DIMENSIONS = 2
 
+################################## Mapping Network ###############################
+
+# The amount of fully connected layers within the StyleGAN Mapping Network
+MAPPING_LAYERS = 8
+
+# The size of the latent space vector and style vector within the StyleGAN Mapping Network
+LATENT_SIZE = 512
+
+# Controls the negative slope angle used for the leaky ReLu function
+LRELU_SLOPE_ANGLE = 0.2
+
+######################### Generator and Discriminator #############################
+
 # Represents the size of the vector used to embed each class label
-EMBED_DIMENSIONS = 4
+EMBED_DIMENSIONS = 8
+
+# The amount of features used within the generator
+GEN_FEATURE_SIZE = 512
+
+# The amount of features used within the discriminator
+DISC_FEATURE_SIZE = 128
 
 ################################## Training Loop #################################
 
@@ -41,17 +60,6 @@ COSINE_ANNEALING_RATE = 0.1
 
 # The number of epochs used during training
 NUM_OF_EPOCHS = 5
-
-################################## Mapping Network ###############################
-
-# The amount of fully connected layers within the StyleGAN Mapping Network
-MAPPING_LAYERS = 8
-
-# The size of the latent space vector and style vector within the StyleGAN Mapping Network
-LATENT_SIZE = 512
-
-# Controls the negative slope angle used for the leaky ReLu function
-LRELU_SLOPE_ANGLE = 0.2
 
 ################################## Helper Functions and Classes ##################
 

@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torch import Tensor
+from einops import rearrange
 import functools
 class VisionTransformer(nn.Module):
 
@@ -42,7 +43,6 @@ class VisionTransformer(nn.Module):
             x = block(x)
         x = self.l1(self.n1(x)[:, 0])
         return x
-
 
 class TransformerEncBlk(nn.Module):
     def __init__(self, dim: int, nHeads: int, hiddenMul:int , device:str = 'cpu') -> None:
@@ -185,5 +185,34 @@ class PatchSplitter(nn.Module):
         Returns: Tensor - Computed values after the final linear Layer
         '''
         return self.linear(self.partition(x).transpose(2, 1))
+    
+class ConvolutionalPatchSplitter(nn.Module):
+    '''
+    #TODO
+    '''
+    def __init__(self, kernal: int, imgDims: tuple[int, int, int], outputDim: int, stride: int, padding: int, device: str = 'cpu') -> None:
+        '''
+        #TODO
+        '''
+        super(ConvolutionalPatchSplitter, self).__init__()
+        self.kernal = kernal
+        self.imgDims = imgDims
+        self.stride = stride
+        self.device = device
+        self.outputDim = outputDim
+        self.padding = padding
+        channels, height, width = self.imgDims
+        #* Ensure that the image can be correctly split into patches
+        assert height % self.kernal == 0
+        assert width % self.kernal == 0
+        self.conv = nn.Conv2d(channels, self.outputDim, self.kernal, self.stride, padding= self.padding, device = self.device)
+        self.norm = nn.BatchNorm2d(self.outputDim, device = self.device)
+    
+    def forward(self, x: Tensor) -> Tensor:
+        '''
+        #TODO
+        '''
+        return self.norm(self.conv(x))
+    
 
-
+    

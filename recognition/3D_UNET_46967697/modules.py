@@ -90,8 +90,8 @@ class Unet3D(nn.Module):
         return self.output(x)
     
 
-class DiceLoss(nn.Module):
-    def __init__(self, smooth=1e-6):
+"""class DiceLoss(nn.Module):
+    def __init__(self, smooth=SMOOTH):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
 
@@ -103,4 +103,4 @@ class DiceLoss(nn.Module):
         
         dice_coefficient = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)
         
-        return 1 - dice_coefficient
+        return 1 - dice_coefficient"""

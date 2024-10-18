@@ -10,6 +10,7 @@ DATASET_PATH = '../../../data_copy/HipMRI_Study_open'
 KERAS_SLICES_PATH = DATASET_PATH + '/keras_slices_data'
 SEMANTIC_LABELS_PATH = DATASET_PATH + '/semantic_labels_only'
 SEMANTIC_MRS_PATH = DATASET_PATH + '/semantic_MRs'
+MODEL_PATH = '3d_unet_model.pth'
 
 # PARAMETERS
 RANDOM_SEED = 1
@@ -26,6 +27,8 @@ WEIGHT_DECAY = 1e-8
 # scheduler parameters
 STEP_SIZE = 10
 GAMMA = 0.1
+# dice loss parameters
+SMOOTH = 1e-6
 
 # HELPER FUNCTIONS
 import os

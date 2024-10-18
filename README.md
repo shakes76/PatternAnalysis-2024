@@ -107,8 +107,9 @@ No additional preprocessing was applied to the dataset, as it was already in a u
 - **Test Split**: 10% of the nodes.
 
 ## Possible Improvements
-1**Other GNN Variants**: Testing other GNN variants like GraphSAGE or GCN could potentially improve accuracy on this dataset.
-2**UMAP Optimization**: Tuning the UMAP parameters may result in better visual separation of the node embeddings.
+1. **Other GNN Variants**: Testing other GNN variants like GraphSAGE or GCN could potentially improve accuracy on this dataset.
+
+2. **UMAP Optimization**: Tuning the UMAP parameters may result in better visual separation of the node embeddings.
 
 ## Conclusion
 The GNN model with GAT layers was able to classify nodes in the Facebook Page-Page Network dataset with high accuracy. UMAP visualization also demonstrated the model’s ability to separate different node classes. Future work can explore other GNN architectures and advanced regularization techniques to further improve performance.

@@ -36,17 +36,19 @@ def test_model(device, model, test_loader, criterion):
     print(f'Average Dice Score: {avg_dice_score}')
 
 
-# Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-if not torch.cuda.is_available():
-    print("WARNING: CUDA is not available. Running on CPU")
+if __name__ == "__main__":
 
-# Data loaders
-_, test_loader = get_data_loaders()
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if not torch.cuda.is_available():
+        print("WARNING: CUDA is not available. Running on CPU")
 
-# Load saved model
-model = Unet3D(IN_DIM, NUM_CLASSES, NUM_FILTERS).to(device)
-model.load_state_dict(torch.load(MODEL_PATH))
+    # Data loaders
+    _, test_loader = get_data_loaders()
 
-# Test the model
-test_model(device, model, test_loader, DiceLoss(mode='multiclass', from_logits=False, smooth=SMOOTH))
+    # Load saved model
+    model = Unet3D(IN_DIM, NUM_CLASSES, NUM_FILTERS).to(device)
+    model.load_state_dict(torch.load(MODEL_PATH))
+
+    # Test the model
+    test_model(device, model, test_loader, DiceLoss(mode='multiclass', from_logits=False, smooth=SMOOTH))

@@ -55,8 +55,15 @@ class Prostate3DDataset(torch.utils.data.Dataset):
     
 
 def get_data_loaders():
+    # Transforms
+    transforms = tio.Compose([
+        tio.ZNormalization(),
+        tio.RescaleIntensity((0, 1)),
+        tio.Resize((128,128,128)),
+    ])
+
     # Data
-    data = Prostate3DDataset(SEMANTIC_MRS_PATH, SEMANTIC_LABELS_PATH)
+    data = Prostate3DDataset(SEMANTIC_MRS_PATH, SEMANTIC_LABELS_PATH, transforms=transforms)
     generator = torch.Generator().manual_seed(RANDOM_SEED)
     train_data, test_data = torch.utils.data.random_split(data, [TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT], generator=generator)
 

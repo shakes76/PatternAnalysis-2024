@@ -12,7 +12,6 @@ from predict import test_model
 
 import torch
 import torch.utils
-from segmentation_models_pytorch.losses import DiceLoss
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -26,7 +25,7 @@ train_loader, test_loader = get_data_loaders()
 model = Unet3D(IN_DIM, NUM_CLASSES, NUM_FILTERS).to(device)
 
 # Loss and optimizer
-criterion = DiceLoss(mode='multiclass', from_logits=False, smooth=SMOOTH)
+criterion = DiceLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=STEP_SIZE, gamma=GAMMA)
 

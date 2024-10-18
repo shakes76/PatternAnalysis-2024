@@ -15,7 +15,7 @@ MODEL_PATH = '3d_unet_model.pth'
 # PARAMETERS
 RANDOM_SEED = 1
 TRAIN_TEST_SPLIT = 0.8
-EPOCHS = 2
+EPOCHS = 50
 BATCH_SIZE = 2
 # model parameters
 IN_DIM = 1

@@ -9,6 +9,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils import *
+
 class DoubleConv(nn.Module):
     def __init__(self, in_dim, out_dim):
         super().__init__()
@@ -90,7 +92,7 @@ class Unet3D(nn.Module):
         return self.output(x)
     
 
-"""class DiceLoss(nn.Module):
+class DiceLoss(nn.Module):
     def __init__(self, smooth=SMOOTH):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
@@ -103,4 +105,4 @@ class Unet3D(nn.Module):
         
         dice_coefficient = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)
         
-        return 1 - dice_coefficient"""
+        return 1 - dice_coefficient

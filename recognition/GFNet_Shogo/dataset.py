@@ -57,7 +57,7 @@ class TrainPreprocessing:
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
         val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)  # No need to shuffle for validation
 
-        return train_loader, val_loader      
+        return train_loader, val_loader
 class TestPreprocessing:
     '''
     This class is to load and preprocess test set

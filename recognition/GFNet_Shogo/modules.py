@@ -129,17 +129,17 @@ class Downlayer(nn.Module):
         x = x.reshape(batch_size, -1, self.dim_out)  # (B, num_patches, dim_out)
         return x
 class GFNet(nn.Module):
-    def __init__(self, img_size=224, num_classes=1, initial_embed_dim=64, blocks_per_stage=[3, 3, 10, 3], 
+    def __init__(self, img_size=224, num_classes=1, blocks_per_stage=[3, 3, 10, 3], 
                  stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, dropcls=0.0):
         super().__init__()
 
         self.patch_embed = nn.ModuleList()
         self.pos_embed = nn.ParameterList() 
         
-        patch_embed = PatchEmbedding(dim_in=1, embed_dim=initial_embed_dim, patch_size=4)
+        patch_embed = PatchEmbedding(dim_in=1, embed_dim=stage_dims[0], patch_size=4)
         num_patches = (img_size // 4) * (img_size // 4)
         self.patch_embed.append(patch_embed)
-        self.pos_embed.append(nn.Parameter(torch.zeros(1, num_patches, initial_embed_dim)))
+        self.pos_embed.append(nn.Parameter(torch.zeros(1, num_patches, stage_dims[0])))
 
         # Define DownLayers and patch embedding
         sizes = [56, 28, 14, 7]

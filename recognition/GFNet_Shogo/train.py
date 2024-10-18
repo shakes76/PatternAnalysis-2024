@@ -85,7 +85,6 @@ def objective(trial):
     model = GFNet(
         img_size=224, 
         num_classes=1,
-        initial_embed_dim=96, 
         blocks_per_stage=[3, 3, 27, 3], 
         stage_dims=[96, 192, 384, 768], 
         drop_rate=drop_rate,
@@ -97,7 +96,7 @@ def objective(trial):
     optimiser = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=100) 
     checkpoint_path = os.path.join(output_dir, 'best_model.pt') 
-    early_stopping = EarlyStopping(patience=5, min_delta=0.001, path=checkpoint_path)
+    early_stopping = EarlyStopping(patience=5, min_delta=0.0001, path=checkpoint_path)
 
     # Training loop
     num_epochs = 150

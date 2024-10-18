@@ -23,14 +23,6 @@ class EarlyStopping:
         self.best_model_state = None
 
     def __call__(self, validation_loss, model):
-        '''
-        Check the early stopping conditions based on train and validation loss.
-        Stop if overfitting.
-        Stop if losses are converged.
-        Args:
-            model
-            validation_loss (float): Current validation loss.
-        '''
         score = -validation_loss
 
         if self.best_score is None:
@@ -39,17 +31,13 @@ class EarlyStopping:
         elif score < self.best_score + self.min_delta:
             self.counter += 1
             if self.counter >= self.patience:
+                print(f"Early stopping triggered after {self.counter} consecutive epochs.")
                 self.early_stop = True
+                self.stop_training = True
         else:
             self.best_score = score
             self.save_checkpoint(model)
             self.counter = 0
-            
-        # Stop training if patience is exceeded
-        if self.counter >= self.patience:
-            print(f"Early stopping triggered after {self.counter} consecutive epochs.")
-            self.stop_training = True
-
     def save_checkpoint(self, model):
         '''
         Save model

@@ -147,13 +147,14 @@ class MriData3D(Dataset):
     Mri Dataset class to Load in segments of the Hip Mri dataset. Is also able to load other simmilar
     datasets. 
     """
-    def __init__(self, data_path:str = DATASET_PATH, target_data:list[str]|None=None, transform=None, label_transform=None) -> None:
+    def __init__(self, data_path:str = DATASET_PATH, target_data:list[str]|None=None, transform=None, label_transform=None, target_depth = 128) -> None:
         self.main_data_path = data_path + "/semantic_MRs/"
         self.data_label_path = data_path + "/semantic_labels_only/"
         self.transform = transform
         self.label_transform = label_transform
         self.data_files = os.listdir(self.main_data_path)
         self.label_files = os.listdir(self.data_label_path)
+        self.target_depth = target_depth
         if target_data:
             self.data_files = [name for name in self.data_files if name[:10] in target_data]
             self.label_files = [name for name in self.label_files if name[:10] in target_data]
@@ -164,6 +165,8 @@ class MriData3D(Dataset):
     def __getitem__(self, index) -> tuple[np.ndarray, np.ndarray]:
         image = load_data_3d([os.path.join(self.main_data_path, self.data_files[index])])
         label = load_data_3d([os.path.join(self.data_label_path, self.label_files[index])])
+        image = image[:, :, :, :self.target_depth]
+        label = label[:, :, :, :self.target_depth]
         if self.transform:
             image = self.transform(image)
         if self.label_transform:

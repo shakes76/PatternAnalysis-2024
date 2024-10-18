@@ -7,10 +7,8 @@ Additionally, it includes a function for plotting and saving training results, s
 and loss over epochs, which helps in visualizing model performance during training.
 
 @brief: Utility functions for argument parsing and result plotting for the GFNet model.
-@date: 16 Oct 2024
 @author: Sean Bourchier
 """
-
 
 import os
 import argparse
@@ -25,15 +23,16 @@ def get_args_parser():
         argparse.ArgumentParser: Argument parser with training and evaluation options.
     """
     parser = argparse.ArgumentParser('GFNet training and evaluation script', add_help=False)
-    parser.add_argument('--batch-size', default=64, type=int, help='Batch size for training')
-    parser.add_argument('--epochs', default=41, type=int, help='Number of training epochs')
+    parser.add_argument('--batch-size', default=32, type=int, help='Batch size for training')
+    parser.add_argument('--epochs', default=81, type=int, help='Number of training epochs')
 
     # Model parameters
     parser.add_argument('--arch', default='gfnet-s', type=str, help='Name of model to train',
                         choices=['gfnet-ti', 'gfnet-xs', 'gfnet-s', 'gfnet-b'])
     parser.add_argument('--input-size', default=224, type=int, help='Input image size')
 
-    parser.add_argument('--drop', type=float, default=0.0, metavar='PCT',
+    # Drop out parameters
+    parser.add_argument('--drop', type=float, default=0.1, metavar='PCT',
                         help='Dropout rate (default: 0.0)')
     parser.add_argument('--drop-path', type=float, default=0.1, metavar='PCT',
                         help='Drop path rate (default: 0.1)')
@@ -64,7 +63,7 @@ def get_args_parser():
                         help='Minimum learning rate (default: 1e-5)')
 
     # Scheduler timing parameters
-    parser.add_argument('--decay-epochs', type=float, default=30, metavar='N',
+    parser.add_argument('--decay-epochs', type=float, default=20, metavar='N',
                         help='Epoch interval to decay LR (default: 30)')
     parser.add_argument('--warmup-epochs', type=int, default=5, metavar='N',
                         help='Number of epochs to warmup LR (default: 5)')
@@ -98,8 +97,7 @@ def get_args_parser():
 
     return parser
 
-
-def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot_dir='images'):
+def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot_dir='plots'):
     """
     Save accuracy and loss plots for training progress.
 
@@ -121,7 +119,7 @@ def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
     plt.ylim(0, 100)
-    plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 15)))
+    plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 10)))
     plt.savefig(os.path.join(plot_dir, f'{current_datetime}_{architecture}_accuracy_vs_epoch.png'))
     plt.close()
 
@@ -132,6 +130,6 @@ def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.ylim(0, max(1, (max(test_loss))))
-    plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 20)))
+    plt.xticks(np.arange(min(epochs), max(epochs) + 1, step=max(1, (max(epochs) + 1) // 10)))
     plt.savefig(os.path.join(plot_dir, f'{current_datetime}_{architecture}_loss_vs_epoch.png'))
     plt.close()

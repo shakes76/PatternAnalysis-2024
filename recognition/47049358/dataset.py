@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-import numpy as np
 from torch.utils.data import Dataset
 import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
@@ -210,7 +209,7 @@ def elastic_transformation(image: torch.Tensor, alpha = 5.0, sigma = 0.5, is_mas
 
     return image
 
-def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor):
+def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor, device = 'cpu'):
 
     alpha = random.uniform(0.0, 10.0)
     sigma = random.uniform(0.0, 1.0)
@@ -230,12 +229,18 @@ def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor):
 
     vflip = random.choice([True, False])
 
+    image = torch.Tensor(image)
+    masks_3d = torch.Tensor(masks_3d)
+
+    image = image.to(device)
+    masks_3d = masks_3d.to(device)
+
     for j in range(image.shape[-1]):
 
         slice = image[ : , : , j]
-        slice = torch.Tensor(slice[np.newaxis, : , :])
+        slice = slice[np.newaxis, : , :]
         masks = masks_3d[: , : , j , :]
-        masks = torch.Tensor(masks[np.newaxis, : , :, : ])
+        masks = masks[np.newaxis, : , :, : ]
 
         slice = elastic_transformation(image = slice, alpha = alpha, sigma = sigma) if make_elastic else slice
         slice = random_rotation(image = slice, angle = angle) if rotate else slice
@@ -255,20 +260,25 @@ def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor):
 
             masks[ : , : , : , i] = mask
 
-        masks_3d[: , : , j , :] = masks.cpu().numpy()
+        masks_3d[: , : , j , :] = masks
         
-        image[ : , : , j] = slice.cpu().numpy()
+        image[ : , : , j] = slice
+
+    image = image.cpu().numpy()
+    masks_3d = masks_3d.cpu().numpy()
         
     return image, masks_3d
 
 def augment_training_set(X_train, y_train):
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     for i in range(X_train.shape[0]):
 
         image = X_train[i, : , : , : ]
         masks_3d = y_train[i, : , : , : , :]
 
-        transformed_img, transformed_masks_3d = apply_transformation(image = image, masks_3d = masks_3d)
+        transformed_img, transformed_masks_3d = apply_transformation(image = image, masks_3d = masks_3d, device = device)
 
         X_train[i, : , : , : ] = transformed_img
         y_train[i, : , : , : , :] = transformed_masks_3d
@@ -300,25 +310,3 @@ print('> Augmentation Complete')
 
 X_train = X_train[: ,np.newaxis, :, :, :]
 X_test = X_test[:, np.newaxis, :, :, :]
-
-# if __name__ == '__main__':
-#     # Generate random noise with shape (256, 256, 128)
-#     image_file_name = [os.path.join(IMAGE_FILE_NAME, image) for image in os.listdir(IMAGE_FILE_NAME)][0]
-#     noise = torch.Tensor(load_data_3D(imageNames=[image_file_name], normImage = True, early_stop=True))
-
-#     import matplotlib.pyplot as plt
-
-#     torch.set_printoptions(threshold=float('inf'))
-
-#     image = noise[: , :, :, 10]
-
-#     print(image)
-
-#     plt.imshow(image[0, :, :], cmap='gray')
-#     plt.show()
-#     print(image.shape)
-#     image = F.hflip(image)
-#     plt.imshow(image[0, :, :], cmap='gray')
-#     plt.show()
-
-#     print(image)

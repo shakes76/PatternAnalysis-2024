@@ -1,9 +1,3 @@
-"""
-containing the source code for training, validating, testing and saving your model. The model
-should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
-sure to plot the losses and metrics during training
-"""
-
 from dataset import X_train, y_train, Prostate3dDataset
 from modules import ImprovedUnet
 import matplotlib.pyplot as plt
@@ -12,6 +6,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 from time import time
 import math
+import numpy as np
 
 
 NUM_EPOCHS = 300
@@ -161,7 +156,13 @@ def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
     model.to(device)
     model.train()
 
-    training_dice_coefs = []
+    training_dice_coefs = np.zeros(NUM_EPOCHS)
+    seg_0_dice_coefs = np.zeros(NUM_EPOCHS)
+    seg_1_dice_coefs = np.zeros(NUM_EPOCHS)
+    seg_2_dice_coefs = np.zeros(NUM_EPOCHS)
+    seg_3_dice_coefs = np.zeros(NUM_EPOCHS)
+    seg_4_dice_coefs = np.zeros(NUM_EPOCHS)
+    seg_5_dice_coefs = np.zeros(NUM_EPOCHS)
 
     train_set = Prostate3dDataset(X_train, y_train)
     train_loader = DataLoader(dataset = train_set, batch_size = BATCH_SIZE)
@@ -191,10 +192,18 @@ def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
         for i in range(len(total_segment_coefs)):
             print(f"Epoch {epoch + 1} Segment {i} - Training Dice Coefficient: {total_segment_coefs[i] / len(train_loader)}")
 
-        print(f"Epoch {epoch + 1}, Training Overall Dice Coefficient: {running_dice / len(train_loader)}")
-        training_dice_coefs.append(running_dice / len(train_loader))
+        seg_0_dice_coefs[epoch] = (total_segment_coefs[0] / len(train_loader))
+        seg_1_dice_coefs[epoch] = (total_segment_coefs[1] / len(train_loader))
+        seg_2_dice_coefs[epoch] = (total_segment_coefs[2] / len(train_loader))
+        seg_3_dice_coefs[epoch] = (total_segment_coefs[3] / len(train_loader))
+        seg_4_dice_coefs[epoch] = (total_segment_coefs[4] / len(train_loader))
+        seg_5_dice_coefs[epoch] = (total_segment_coefs[5] / len(train_loader))
 
-    return model, training_dice_coefs
+        print(f"Epoch {epoch + 1}, Training Overall Dice Coefficient: {running_dice / len(train_loader)}")
+        training_dice_coefs[epoch] = (running_dice / len(train_loader))
+
+    return (model, training_dice_coefs, seg_0_dice_coefs, seg_1_dice_coefs,
+             seg_2_dice_coefs, seg_3_dice_coefs, seg_4_dice_coefs, seg_5_dice_coefs)
 
 # connect to gpu
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -216,7 +225,7 @@ print("> Start Training")
 start = time()
 
 # train improved unet
-trained_model, training_dice_coefs = train(model, X_train, y_train, loss = loss,
+trained_model, training_dice_coefs, seg0, seg1, seg2, seg3, seg4, seg5 = train(model, X_train, y_train, loss = loss,
                                                             device=device, num_epochs=NUM_EPOCHS)
 
 end = time()
@@ -224,8 +233,13 @@ end = time()
 elapsed_time = end - start
 print(f"> Training completed in {elapsed_time:.2f} seconds")
 
-plt.figure(figsize=(10,5))
 plt.plot(training_dice_coefs, label='Training Dice Coefficient')
+plt.plot(seg0, label='Segment 0 Dice Coefficient')
+plt.plot(seg1, label='Segment 1 Dice Coefficient')
+plt.plot(seg2, label='Segment 2 Dice Coefficient')
+plt.plot(seg3, label='Segment 3 Dice Coefficient')
+plt.plot(seg4, label='Segment 4 Dice Coefficient')
+plt.plot(seg5, label='Segment 5 Dice Coefficient')
 plt.title('Dice Coefficient Over Epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')

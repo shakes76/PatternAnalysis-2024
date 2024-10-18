@@ -49,20 +49,13 @@ def test(model, test_loader, criterion, device):
             outputs = model(inputs)
             test_loss, segment_coefs, test_dice = criterion(outputs, masks)
 
-            for i in range(len(segment_coefs)):
-                if i == 0:
-                    seg_0_dice_coef = np.append(seg_0_dice_coef, segment_coefs[i].item())
-                elif i == 1:
-                    seg_1_dice_coef = np.append(seg_1_dice_coef, segment_coefs[i].item())
-                elif i == 2:
-                    seg_2_dice_coef = np.append(seg_2_dice_coef, segment_coefs[i].item())
-                elif i == 3:
-                    seg_3_dice_coef = np.append(seg_3_dice_coef, segment_coefs[i].item())
-                elif i == 4:
-                    seg_4_dice_coef = np.append(seg_4_dice_coef, segment_coefs[i].item())
-                else:
-                    seg_5_dice_coef = np.append(seg_5_dice_coef, segment_coefs[i].item())
-            
+            seg_0_dice_coef = np.append(seg_0_dice_coef, segment_coefs[0].item())
+            seg_1_dice_coef = np.append(seg_1_dice_coef, segment_coefs[1].item())
+            seg_2_dice_coef = np.append(seg_2_dice_coef, segment_coefs[2].item())
+            seg_3_dice_coef = np.append(seg_3_dice_coef, segment_coefs[3].item())
+            seg_4_dice_coef = np.append(seg_4_dice_coef, segment_coefs[4].item())
+            seg_5_dice_coef = np.append(seg_5_dice_coef, segment_coefs[5].item())
+        
             print(f'Test No.{i} - Overall Dice Coefficient: {test_dice}')
                 
             test_dice_coefs = np.append(test_dice_coefs, test_dice.item())

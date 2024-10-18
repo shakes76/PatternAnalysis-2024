@@ -53,6 +53,7 @@ class EqualizerStraights(nn.Module):
         # Linear transformation
         return F.linear(x, self.weight(), bias = self.bias)
 
+
 # Weight equalizer
 '''
 Maintains the weights in the network  at a similar scale during training.
@@ -69,6 +70,31 @@ class EquilizerKG(nn.Module):
     def forward(self):
         return self.weight * self.constanted
 
+# -----------------Synthesis Network-----------------#
+
+# Drip Block, basically Style Block
+class DripBlock(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self):
+        pass
+
+class Weight_Demod(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self):
+        pass
+'''
+Not implemented yet
+'''
+class NoiseInjection(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        pass
+
 '''
 Not implemented yet
 '''
@@ -82,7 +108,7 @@ class SynthesisNetwork(nn.Module):
 '''
 Not implemented yet
 '''
-class Generator(nn.Module):
+class Generator_Block(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -184,25 +210,3 @@ class Dis_Conv2d(nn.Module):
         return F.conv2d(x, self.weight(), bias = self.bias, padding = self.padding)
 
 #---------------------------#
-
-
-
-'''
-Not implemented yet
-'''
-class StyleGAN2(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        pass
-
-'''
-Not implemented yet
-'''
-class NoiseInjection(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        pass

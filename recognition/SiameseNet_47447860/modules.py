@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from torchvision import models
@@ -129,9 +130,9 @@ class SiameseNetwork(nn.Module):
         # Combine this similarity vector with the original 2 feature vectors to pass to the Siamese net
         # This gives the dense Siamese layers the most opportunity to learn all patterns within the feature vectors
         final_vector = torch.cat((feat1, feat2, combined_features), dim=1)
+        #final_vector = torch.cat((feat1, feat2), dim=1)
 
         # Flatten the 3xN tensor to 1x(3*N) -> the MLP requires a flat input vector
-        #flattened_combined = final_vector.view(-1)
         flattened_combined = final_vector.view(final_vector.size(0), -1)
 
         # Pass the final feature vector through classification head to get similarity value in the range of 0 to 1.

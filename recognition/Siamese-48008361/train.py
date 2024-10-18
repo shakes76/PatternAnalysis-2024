@@ -7,13 +7,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import get_data_loaders
 from modules import get_model, get_loss
 import numpy as np
-from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, accuracy_score
+from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
 import logging
-import datetime
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def train_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, device, scaler):

@@ -110,7 +110,7 @@ class GlobalFilter(nn.Module):
 
 class Block(nn.Module):
     """
-    Transformer block with normalization, global filtering, and MLP layers.
+    Transformer block with normalisation, global filtering, and MLP layers.
     """
 
     def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
@@ -123,12 +123,12 @@ class Block(nn.Module):
             drop (float): Dropout rate.
             drop_path (float): Drop path rate.
             act_layer (nn.Module): Activation function.
-            norm_layer (nn.Module): Normalization layer.
+            norm_layer (nn.Module): Normalisation layer.
             h (int): Height for the global filter.
             w (int): Width for the global filter.
         """
         super().__init__()
-        # Define normalization, global filter, drop path, and MLP layers
+        # Define normalisation, global filter, drop path, and MLP layers
         self.norm1 = norm_layer(dim)
         self.filter = GlobalFilter(dim, h=h, w=w)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -146,7 +146,7 @@ class Block(nn.Module):
         Returns:
             torch.Tensor: Output tensor after the block.
         """
-        # Apply normalization, filtering, MLP, and dropout with skip connection
+        # Apply normalisation, filtering, MLP, and dropout with skip connection
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
@@ -286,7 +286,7 @@ class GFNet(nn.Module):
             uniform_drop (bool): Whether to use uniform drop path.
             drop_rate (float): Dropout rate.
             drop_path_rate (float): Drop path rate for stochastic depth.
-            norm_layer (nn.Module): Normalization layer.
+            norm_layer (nn.Module): Normalisation layer.
             dropcls (float): Dropout rate before classifier.
         """
         super().__init__()
@@ -333,7 +333,7 @@ class GFNet(nn.Module):
         Initialise weights of the model.
         
         Args:
-            m (nn.Module): The module whose weights are to be Initialised.
+            m (nn.Module): The module whose weights are to be initialised.
         """
         # Apply initialisation to Linear and LayerNorm layers
         if isinstance(m, nn.Linear):

@@ -11,7 +11,6 @@ import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
 from time import time
-from tqdm import tqdm
 import math
 
 

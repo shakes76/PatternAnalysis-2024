@@ -7,17 +7,13 @@ The script includes functions to build datasets for different phases (train, val
 mean and standard deviation, which are crucial for preprocessing.
 
 @brief: Dataset management and preprocessing for the GFNet model.
-@date: 16 Oct 2024
 @author: Sean Bourchier
 """
 
 import os
-import argparse
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-
-from utils import get_args_parser
 
 # Mean and standard deviation values for different splits of the ADNI dataset
 ADNI_DEFAULT_MEAN_TRAIN = 0.19868804514408112
@@ -185,12 +181,3 @@ def get_mean_and_std(dataset):
     
     return mean.item(), std.item()
 
-
-if __name__ == "__main__":
-    # Example usage to calculate mean and std for a dataset split
-    parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
-    args = parser.parse_args()
-    split = 'test'  # Change to 'train', 'val', or 'test'
-    dataset, nb_classes = build_dataset(split=split, args=args)
-    mean, std = get_mean_and_std(dataset)
-    print(f"Mean: {mean}, Std: {std}")

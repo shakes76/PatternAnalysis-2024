@@ -17,6 +17,14 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
     return res
 
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        try:
+            nn.init.xavier_uniform_(m.weight.data)
+            m.bias.data.fill_(0)
+        except AttributeError:
+            print("Skipping initialization of ", classname)
     
 def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
     '''
@@ -84,3 +92,19 @@ def calc_ssim(x, y):
     mean_ssim = np.mean(ssim_values)
     return mean_ssim
     
+def clear_folder(folder_path):
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+def folder_check()
+    if not os.path.exists('models'):
+        os.makedirs('models')
+    else:
+        clear_folder('models')
+        
+    if not os.path.exists('epoch_reconstructions'):
+        os.makedirs('epoch_reconstructions')
+    else:
+        clear_folder('epoch_reconstructions')

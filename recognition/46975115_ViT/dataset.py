@@ -44,9 +44,7 @@ def get_dataloaders(data_dir, batch_size=32, validation_split=0.2):
         transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(30),
-        transforms.ColorJitter(brightness=0.3, contrast=0.4, saturation=0.3, hue=0.2),
         transforms.RandomVerticalFlip(),
-        transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)),
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])
     ])

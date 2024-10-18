@@ -3,7 +3,7 @@ hyperparameters.py created by Matthew Lockett 46988133
 """
 # The root directory for where the ADNI dataset is stored
 # See torchvision ImageFolder class for the required dataset structure 
-ROOT = r"C:\Users\Mathew\AD_NC"
+ROOT = r"C:\Users\Mathew\ADNI_Dataset"
 
 # The relative path to a folder where all training output will be saved
 SAVED_OUTPUT_DIR = r"recognition/StyleGAN-46988133/saved_output/"

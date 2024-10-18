@@ -51,7 +51,7 @@ if __name__ == "__main__":
     learning_rate = 0.0001
     weight_decay = 0.01
     drop_rate = 0.4
-    drop_path_rate = 0.3 #! need to reconsider!
+    drop_path_rate = 0.3 
     batch_size = 16
 
     # Create folder based on hyperparameters
@@ -61,13 +61,15 @@ if __name__ == "__main__":
 
     # Load train and validation data
     train_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/train"
+    #train_dataset_path = "../dataset/AD_NC/train"
     train_data = TrainPreprocessing(train_dataset_path, batch_size=batch_size)
     train_loader, val_loader = train_data.get_train_val_loaders(val_split=0.2)
 
     # Model initialization
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
     model = GFNet(
-        img_size=224, 
+        image_size=224, 
         num_classes=1,
         blocks_per_stage=[3, 3, 27, 3], 
         stage_dims=[96, 192, 384, 768], 
@@ -100,14 +102,14 @@ if __name__ == "__main__":
         val_losses.append(val_loss)
         print(f"Validation Loss: {val_loss:.4f}")
 
-        #! off early stopping for testing
+        #! turne off early stopping for testing
         # scheduler.step()
         # early_stopping(val_loss, model)
         
         # if early_stopping.early_stop:
         #     print("Early stopping triggered. Stopping training.")
         #     break
-    torch.save(model.state_dict(), checkpoint_path)
+    torch.save(model.state_dict(), checkpoint_path) # delete this when turn on early stopping
 
     #print("Loading the best model from checkpoint.")
     #model.load_state_dict(torch.load(checkpoint_path, weights_only=True))

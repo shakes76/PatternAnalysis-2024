@@ -15,8 +15,7 @@ import torch
 import torch.nn as nn
 import torch.fft
 import torch.nn.functional as F
-from timm.models.layers import DropPath #! need to install
-
+from timm.layers import DropPath
 
 class GlobalFilterLayer(nn.Module):
     '''
@@ -88,10 +87,10 @@ class Block(nn.Module):
     '''
     Block to consist Global Filter Layer and Feed Forward Network
     '''
-    def __init__(self, height, width, dimension, mlp_drop=0.1, drop_path_rate=0.0, init_values=1e-5):
+    def __init__(self, height, width, dimension, drop_rate=0.1, drop_path_rate=0.0, init_values=1e-5):
         super().__init__()
         self.global_filter = GlobalFilterLayer(height, width, dimension)
-        self.feed_foward = FeedForwardLayer(input_dim=dimension, drop=mlp_drop)
+        self.feed_foward = FeedForwardLayer(input_dim=dimension, drop=drop_rate)
         self.drop_path = DropPath(drop_path_rate)
         self.gamma = nn.Parameter(init_values * torch.ones((dimension)), requires_grad=True)
     def forward(self, x):
@@ -130,6 +129,7 @@ class DownSamplingLayer(nn.Module):
         x = self.downsample(x).permute(0, 2, 3, 1) # to (B, dim_out, H/2, W/2)
         x = x.reshape(batch_size, -1, self.dim_out)  # (B, num_patches, dim_out)
         return x
+    
 class GFNet(nn.Module):
     def __init__(self, image_size=224, num_classes=1, blocks_per_stage=[3, 3, 10, 3], 
                  stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, dropcls=0.0):
@@ -142,13 +142,13 @@ class GFNet(nn.Module):
         num_patches = (image_size // 4) * (image_size // 4)
         self.patch_embedding.append(patch_embedding)
         self.position_embedding.append(nn.Parameter(torch.zeros(1, num_patches, stage_dims[0])))
-        self.position_drop = nn.Dropout(drop_rate) #! ???
+        #self.position_drop = nn.Dropout(drop_rate)
 
         # Define DownSamplingLayers and patch embedding
-        sizes = [56*image_size, 28*image_size, 14*image_size, 7*image_size] # Generally speaking, we can start from a large feature map (e.g., 56 × 56) and gradually perform downsampling after a few blocks. 
+        sizes = [56*image_size//224, 28*image_size//224, 14*image_size//224, 7*image_size//224] # Generally speaking, we can start from a large feature map (e.g., 56 × 56) and gradually perform downsampling after a few blocks. 
 
         for i in range(len(sizes)-1):
-            patch_embedding = DownSamplingLayer(sizes[i], stage_dims[0], stage_dims[i+1])
+            patch_embedding = DownSamplingLayer(stage_dims[i], stage_dims[i+1])
             self.patch_embedding.append(patch_embedding)
 
         # storchastic drop path rate
@@ -158,26 +158,25 @@ class GFNet(nn.Module):
         
         # Define the blocks for each stage
         self.blocks = nn.ModuleList()
-        
+        current_block_index = 0
         for stage_index in range(len(sizes)):
             height = sizes[stage_index]
             width = height // 2 + 1 
-        
-            stage_blocks = nn.Sequential(*[
-                Block(
+            num_blocks = blocks_per_stage[stage_index]
+            blocks_for_current_stage = []
+            for block_index in range(num_blocks):
+                block = Block(
                     height=height,
                     width=width,
                     dimension=stage_dims[stage_index],
-                    mlp_ratio=4, 
-                    drop_path=drop_path_probabilities[current_block_index + block_index],
+                    drop_rate=drop_rate,
+                    drop_path_rate=drop_path_probabilities[current_block_index + block_index],
                     init_values=init_values
-            ) 
-            for block_index in range(stage_dims[stage_index])
-            ])
-            self.blocks.append(stage_blocks)
-            current_block_index += stage_dims[stage_index]
+                )
+                blocks_for_current_stage.append(block)
+            self.blocks.append(nn.Sequential(*blocks_for_current_stage)) 
+            current_block_index += num_blocks
         
-        #Todo: From here
         self.norm = nn.LayerNorm(stage_dims[-1]) #? dim?
         self.head = nn.Linear(stage_dims[-1], num_classes)  # Linear head
   
@@ -185,33 +184,21 @@ class GFNet(nn.Module):
         # Stage 1:
         x = self.patch_embedding[0](x)
         x = x + self.position_embedding[0]
-        x = self.position_drop(x)
-
-        for block in self.blocks[0]:
-            x = block(x)
-        x = self.patch_embedding[1](x)  # Downsample and patch embed for stage 2
-
+        x = self.blocks[0](x)
+        
         # Stage 2:
-        x = x + self.position_embedding[1]
-        for block in self.blocks[1]:
-            x = block(x)
-        x = self.patch_embedding[2](x)  # Downsample and patch embed for stage 3
+        x = self.patch_embedding[1](x)
+        x = self.blocks[1](x)
 
         # Stage 3:
-        x = x + self.position_embedding[2]
-        for block in self.blocks[2]:
-            x = block(x)
-        x = self.patch_embedding[3](x)  # Downsample and patch embed for stage 4
+        x = self.patch_embedding[2](x)
+        x = self.blocks[2](x)
 
         # Stage 4:
-        x = x + self.position_embedding[3]
-        for block in self.blocks[3]:
-            x = block(x)
-
-        # Global average pooling
-        x = x.mean(1)  # (B, num_patches, embed_dim)
-
-        # normalization -> head dropout -> classification
+        x = self.patch_embedding[3](x)
+        x = self.blocks[3](x)
+        
         x = self.norm(x)
+        x = x.mean(1) # Global average pooling
         x = self.head(x)
         return x

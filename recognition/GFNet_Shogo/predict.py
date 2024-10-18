@@ -39,9 +39,8 @@ model = GFNet(
 )
 model.to(device)
 # Load model
-#checkpoint_path = f"./experiments/lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}/best_model.pt"
-checkpoint_path = "./experiments/lr_4.740668664000694e-05_wd_5.366743960698246e-05_drop_0.20676852620489247_droppath_0.1987960305289435_bs_128/lr_0.00014064028273686496_wd_0.009762551374557771_drop_0.4236238197816006_droppath_0.30353223689964426_bs_16/best_model.pt"
-csv_path = "./experiments/lr_4.740668664000694e-05_wd_5.366743960698246e-05_drop_0.20676852620489247_droppath_0.1987960305289435_bs_128/lr_0.00014064028273686496_wd_0.009762551374557771_drop_0.4236238197816006_droppath_0.30353223689964426_bs_16/loss_log.csv"
+checkpoint_path = f"./experiments/lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}/best_model.pt"
+csv_path = f"./experiments/lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}//loss_log.csv"
 
 model.load_state_dict(torch.load(checkpoint_path, weights_only = True))
 

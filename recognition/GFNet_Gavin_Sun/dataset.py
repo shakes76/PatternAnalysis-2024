@@ -10,17 +10,18 @@ ADNI_ROOT_PATH = Path('/home', 'groups', 'comp3710', 'ADNI', 'AD_NC')
 
 
 TRAIN_TRANSFORM = transforms.Compose([
-    transforms.RandomResizedCrop(224),
-    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(degrees=10),
+    transforms.RandomResizedCrop(size=224),
+    transforms.ColorJitter(brightness=(0.8, 1.2)), 
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=[0.0062], std=[0.0083])
 ])
 
 TEST_TRANSFORM = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(224),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=[0.0062], std=[0.0083])
 ])
 
 
@@ -32,12 +33,10 @@ class ADNIDataset(Dataset):
         self.image_paths = []
         self.labels = []
 
-
         ad_path = self.root_dir / 'AD'
         ad_files = os.listdir(ad_path)
         self.image_paths.extend([ad_path / file for file in ad_files])
         self.labels.extend([1] * len(ad_files))  
-
       
         nc_path = self.root_dir / 'NC'
         nc_files = os.listdir(nc_path)
@@ -51,7 +50,7 @@ class ADNIDataset(Dataset):
         image_path = self.image_paths[idx]
         label = self.labels[idx]
 
-        image = Image.open(image_path).convert('RGB')
+        image = Image.open(image_path).convert('L')
         if self.transform:
             image = self.transform(image)
 
@@ -71,12 +70,11 @@ def get_adni_dataloader(batch_size, train=True, val_split=0.2):
         full_dataset = ADNIDataset(root_dir=ADNI_ROOT_PATH, train=True, transform=TRAIN_TRANSFORM)
         train_size = int((1 - val_split) * len(full_dataset))
         val_size = len(full_dataset) - train_size
-
         train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
-
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
         return train_loader, val_loader
+    
     else:
         test_dataset = ADNIDataset(root_dir=ADNI_ROOT_PATH, train=False, transform=TEST_TRANSFORM)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)

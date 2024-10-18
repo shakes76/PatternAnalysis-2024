@@ -8,4 +8,4 @@ def get_hyperparameters():
     }
 
 def get_optimizer(model, params):
-    return optim.Adam(model.parameters(), lr=params['learning_rate'])
+    return optim.Adam(model.parameters(), lr=params['learning_rate'], weight_decay=1e-4)

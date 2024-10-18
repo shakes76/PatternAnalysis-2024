@@ -23,17 +23,17 @@ from modules import *
 matplotlib.use("Agg")
 
 # Force the creation of a folder to save figures if not present 
-os.makedirs(hp.SAVED_FIGURES_DIR, exist_ok=True)
+os.makedirs(hp.SAVED_OUTPUT_DIR, exist_ok=True)
 
 # PyTorch Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not torch.cuda.is_available():
     print("Warning CUDA not Found. Using CPU.")
 
-# # Set random seed for reproducibility
-# print("Random Seed Used: ", hp.RANDOM_SEED)
-# random.seed(hp.RANDOM_SEED)
-# torch.manual_seed(hp.RANDOM_SEED)
+# Set random seed for reproducibility
+print("Random Seed Used: ", hp.RANDOM_SEED)
+random.seed(hp.RANDOM_SEED)
+torch.manual_seed(hp.RANDOM_SEED)
 # os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 # torch.use_deterministic_algorithms(True) # Needed for reproducible results
 
@@ -46,7 +46,7 @@ plt.figure(figsize=(8,8))
 plt.axis("off")
 plt.title("Sample Training Images for the ADNI Dataset")
 plt.imshow(np.transpose(vutils.make_grid(real_batch[0].to(device)[:64], padding=2, normalize=True).cpu(),(1,2,0)))
-plt.savefig(os.path.join(hp.SAVED_FIGURES_DIR, "adni_sample_images.png"), bbox_inches='tight', pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "adni_sample_images.png"), bbox_inches='tight', pad_inches=0)
 plt.close()
 
 # Setup both the generator and discriminator models
@@ -220,6 +220,10 @@ for epoch in range(hp.NUM_OF_EPOCHS):
 total_training_time = ((time.time() - training_start_time) / 60) # In minutes
 print(f"Total training time: {total_training_time:.2f} minutes")
 
+# Save the models for later use in inference 
+torch.save(gen.state_dict(), os.path.join(hp.SAVED_OUTPUT_DIR, "generator_model.pth"))
+torch.save(disc.state_dict(), os.path.join(hp.SAVED_OUTPUT_DIR, "discriminator_model.pth"))
+
 ###################################### Training Loop End #################################
 
 # REF: The following lines of code for plotting losses and image outputs was inspired by 
@@ -234,7 +238,7 @@ plt.plot(D_losses,label="Discriminator")
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
 plt.legend()
-plt.savefig(os.path.join(hp.SAVED_FIGURES_DIR, "training_loss_plot.png"), bbox_inches='tight', pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "training_loss_plot.png"), bbox_inches='tight', pad_inches=0)
 plt.close()
 
 # Visualise the evolution of the generator 
@@ -242,7 +246,7 @@ fig = plt.figure(figsize=(8,8))
 plt.axis("off")
 ims = [[plt.imshow(np.transpose(i,(1,2,0)), animated=True)] for i in img_list]
 ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-ani.save(os.path.join(hp.SAVED_FIGURES_DIR, "image_generation_over_time.gif"), writer='pillow', fps=1) 
+ani.save(os.path.join(hp.SAVED_OUTPUT_DIR, "image_generation_over_time.gif"), writer='pillow', fps=1) 
 
 # Grab a batch of real images from the train_loader
 real_batch = next(iter(train_loader))
@@ -259,5 +263,5 @@ plt.subplot(1,2,2)
 plt.axis("off")
 plt.title(f"Generated Images - {hp.NUM_OF_EPOCHS} Epochs")
 plt.imshow(np.transpose(img_list[-1],(1,2,0)))
-plt.savefig(os.path.join(hp.SAVED_FIGURES_DIR, "real_versus_fake_images.png"), bbox_inches='tight', pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "real_versus_fake_images.png"), bbox_inches='tight', pad_inches=0)
 plt.close()

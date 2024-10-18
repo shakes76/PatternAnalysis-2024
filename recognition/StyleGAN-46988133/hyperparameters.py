@@ -5,8 +5,8 @@ hyperparameters.py created by Matthew Lockett 46988133
 # See torchvision ImageFolder class for the required dataset structure 
 ROOT = r"C:\Users\Mathew\AD_NC"
 
-# The relative path to a folder where all figures will be saved
-SAVED_FIGURES_DIR = r"recognition/StyleGAN-46988133/saved_figures/"
+# The relative path to a folder where all training output will be saved
+SAVED_OUTPUT_DIR = r"recognition/StyleGAN-46988133/saved_output/"
 
 # The IMAGE_SIZExIMAGE_SIZE pixel dimension of the images loaded into the model
 IMAGE_SIZE = 256
@@ -27,14 +27,14 @@ RANDOM_SEED = 999
 BATCH_SIZE = 128
 
 # The learning rates used by Adam optimisers
-GEN_LEARNING_RATE = 0.001
-DISC_LEARNING_RATE = 0.001
+GEN_LEARNING_RATE = 0.004
+DISC_LEARNING_RATE = 0.002
 
 # Controls the T_Max variable of the Cosine Annealing Scheduler
-COSINE_ANNEALING_RATE = 0.75 
+COSINE_ANNEALING_RATE = 0.1
 
 # The number of epochs used during training
-NUM_OF_EPOCHS = 5
+NUM_OF_EPOCHS = 1
 
 ################################## Mapping Network ###############################
 

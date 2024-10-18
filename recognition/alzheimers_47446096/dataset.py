@@ -10,7 +10,7 @@ NEW_ROOT = "../../../PatientSplit"
 TESTPATH = "/test"
 TRAINPATH = "/train"
 VALPATH = "/val"
-IMG_SIZE = 256
+IMG_SIZE = 224
 
 TRAIN_TRANSFORM = transforms.Compose([
     transforms.Resize(IMG_SIZE),

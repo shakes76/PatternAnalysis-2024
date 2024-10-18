@@ -1,4 +1,4 @@
-from modules import VisionTransformer
+from modules import ConvolutionalVisionTransformer
 from dataset import *
 import torch
 from torchsummary import summary
@@ -9,10 +9,10 @@ def train(device: str = "cpu"):
     NUM_EPOCH = 1000
     LEARNING_RATE = 0.0002
 
-    model = VisionTransformer(6, 16, (1, 256, 256), 256, 8, 8, device).to(device)
+    model = ConvolutionalVisionTransformer(device)
     print(summary(model, (1, 256, 256)))
-    trainLoader = getTrainLoader(gpu = True)
-    valLoader = getValLoader(gpu = True)
+    trainLoader = getTrainLoader(gpu = True, batchSize=128, workers=1)
+    valLoader = getValLoader(gpu = True, batchSize=128)
 
     scaler = GradScaler()
 
@@ -54,7 +54,7 @@ def train(device: str = "cpu"):
         trainLossList.append(trainLoss) 
         print(f"Training Loss = {trainLoss}, Training Accuracy = {trainAcc}")  
         
-        if ((epoch + 1) % 5 == 0):
+        if ((epoch + 1) % 1 == 0):
             with torch.no_grad():
                 model.eval()
                 valAcc = 0
@@ -89,10 +89,10 @@ def train(device: str = "cpu"):
             plt.plot(range(1, epoch + 2), trainLossList, label = "Train Loss")
             plt.savefig("trainLossPlot.jpg")
             plt.close()
-            plt.plot(range(5, epoch + 2, 5), valAccList, label = "Validation Accuracy")
+            plt.plot(range(1, epoch + 2, 1), valAccList, label = "Validation Accuracy")
             plt.savefig("valAccuracyPlot.jpg")
             plt.close()
-            plt.plot(range(5, epoch + 2, 5), valLossList, label = "Validation Loss")
+            plt.plot(range(1, epoch + 2, 1), valLossList, label = "Validation Loss")
             plt.savefig("valLossPlot.jpg")
             plt.close()
 

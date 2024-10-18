@@ -7,7 +7,6 @@ Additionally, the script includes a feature for randomly selecting an image from
 prediction, and saving the image with a title displaying the true label and the model's prediction.
 
 @brief: Evaluation script for the GFNet model with accuracy computation and image inference.
-@date: 16 Oct 2024
 @author: Sean Bourchier
 """
 
@@ -22,7 +21,8 @@ from functools import partial
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 from dataset import build_dataset
-from modules import GFNet, _cfg
+from modules import GFNet
+from dataset import ADNI_DEFAULT_MEAN_TEST, ADNI_DEFAULT_STD_TEST
 
 def get_args_parser():
     """
@@ -33,13 +33,13 @@ def get_args_parser():
     """
     parser = argparse.ArgumentParser('GFNet testing script', add_help=False)
     parser.add_argument('--batch-size', default=128, type=int, help='Batch size for testing.')
-    parser.add_argument('--arch', default='gfnet-s', type=str, help='Model architecture to use.',
+    parser.add_argument('--arch', default='gfnet-b', type=str, help='Model architecture to use.',
                         choices=['gfnet-ti', 'gfnet-xs', 'gfnet-s', 'gfnet-b']) 
                         # Make sure to change 'default=' to the same model as checkpoint best!
     parser.add_argument('--input-size', default=224, type=int, help='Input image size.')
     parser.add_argument('--data-path', default='data/', type=str, help='Path to the dataset.')
     parser.add_argument('--data-set', default='ADNI', type=str, help='Dataset name.')
-    parser.add_argument('--seed', default=0, type=int, help='Random seed for reproducibility.')
+    parser.add_argument('--seed', default=1, type=int, help='Random seed for reproducibility.')
     parser.add_argument('--model-path', default='outputs/checkpoint_best.pth', help='Path to the model checkpoint.')
     parser.add_argument('--num_workers', default=10, type=int, help='Number of workers for data loading.')
     parser.add_argument('--pin-mem', action='store_true', help='Pin CPU memory in DataLoader for better GPU transfer.')
@@ -161,7 +161,7 @@ def accuracy(output, target):
         accuracy = correct / target.size(0) * 100
         return accuracy
 
-def validate(val_loader, model, criterion, device, output_dir='outputs', class_names=('NC', 'AD')):
+def validate(val_loader, model, criterion, device, output_dir='images', class_names=('NC', 'AD')):
     """
     Evaluates the model on the entire validation dataset for binary classification
     and saves a confusion matrix as an image.
@@ -221,7 +221,7 @@ def validate(val_loader, model, criterion, device, output_dir='outputs', class_n
     return accuracy
 
 
-def save_random_test_image(val_loader, model, device, class_names=('NC', 'AD'), output_dir='outputs'):
+def save_random_test_image(val_loader, model, device, class_names=('NC', 'AD'), output_dir='images'):
     """
     Randomly selects an image from the test dataset, makes a prediction, and saves the image
     with a title showing the true and predicted labels.
@@ -264,6 +264,30 @@ def save_random_test_image(val_loader, model, device, class_names=('NC', 'AD'), 
     plt.close()
     print(f'Image saved to {output_path} with True Label = {true_label} and Predicted = {predicted_label}')
 
+def _cfg(url='', **kwargs):
+    """
+    Helper function to create model configuration.
+    
+    Args:
+        url (str): URL for pretrained model weights.
+        **kwargs: Additional configuration parameters.
+        
+    Returns:
+        dict: Configuration dictionary for model initialization.
+    """
+    return {
+        'url': url,
+        'num_classes': 2, 
+        'input_size': (1, 224, 224), 
+        'pool_size': None,
+        'crop_pct': 0.9, 
+        'interpolation': 'bicubic',
+        'mean': ADNI_DEFAULT_MEAN_TEST, 
+        'std': ADNI_DEFAULT_STD_TEST,
+        'first_conv': 'patch_embed.proj', 
+        'classifier': 'head',
+        **kwargs
+    }
 
 if __name__ == '__main__':
     # Parse command-line arguments and start the main function

@@ -12,10 +12,9 @@ class Siamese(nn.Module):
         self.resnet = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         
         # Strip ther final FC layer as it is implemented seperately in Siamese
-        self.resnet = nn.Sequential(*list(resnet50.children())[:-1])
+        self.resnet = nn.Sequential(*list(self.resnet.children())[:-1])
         
-        # Evaluate number of output features for FC
-        resnet_out_features = self.resnet.fc.in_features * 2
+        resnet_out_features = 2048
         
         # Freeze parameters of feature extractor
         for param in self.resnet.parameters():
@@ -39,8 +38,6 @@ class Siamese(nn.Module):
             nn.Linear(64, 2),
             nn.Sigmoid()
         )
-        
-        self.tripletLoss = nn.TripletMarginLoss(margin=1.0)
     
         return
     
@@ -62,3 +59,6 @@ class Siamese(nn.Module):
         out_pos = self.forward_once(pos)
         out_neg = self.forward_once(neg)
         return out_data, out_pos, out_neg
+    
+    def loss(self, margin=1.0):
+        return nn.TripletMarginLoss(margin=margin)

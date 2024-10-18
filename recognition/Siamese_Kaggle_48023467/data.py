@@ -17,7 +17,7 @@ import shutil
 class ISICDataset(Dataset):
     def __init__(self, img_dir, output_dir, label_csv, split_ratio, oversample_ratio, transform=None, mode="train", first_run=True):
         
-        self._dir = img_dir
+        self._dir = output_dir
         self._imgs = []
         self._mode = mode
         self._split_ratio = split_ratio
@@ -26,7 +26,7 @@ class ISICDataset(Dataset):
         
         # Preprocess images and labels if first time running model
         if first_run:
-            self.preprocess(label_csv, img_dir)
+            self.preprocess(label_csv, img_dir, output_dir)
         
         # Get benign and malignant images and store into labelled reference arrays
         benign_refs = self.generate_img_references(os.path.join(self._dir, 'benign'), 0)
@@ -76,12 +76,12 @@ class ISICDataset(Dataset):
         return
     
     # Seperate and group image data based on labels
-    def preprocess(self, labelCSV, img_path):
+    def preprocess(self, labelCSV, img_path, output_dir):
         print("Initial run: Preprocessing data...")
         df = pd.read_csv(labelCSV)
         
-        output_benign = os.path.join(img_path, "benign")
-        output_malignant = os.path.join(img_path, "malignant")
+        output_benign = os.path.join(output_dir, "benign")
+        output_malignant = os.path.join(output_dir, "malignant")
         
         # Generate output directories if necessary
         if not os.path.exists(output_benign):
@@ -90,7 +90,7 @@ class ISICDataset(Dataset):
             os.makedirs(output_malignant)
             
         for _, row in df.iterrows():
-            img_name = row["image_name"] + ".jpg"
+            img_name = row["isic_id"] + ".jpg"
             img_src = os.path.join(img_path, img_name)
             
             if os.path.isfile(img_src):
@@ -205,6 +205,8 @@ def load_params():
     return data_dir, label_csv, output_dir, train_ratio, oversample_ratio, initial_run, batch_size
     
 if __name__ == "__main__":
+    # For standalone data processing and storage testing, as well as manual resource validation
+    
     # Load params
     data_dir, _, output_dir, train_ratio, _, _, batch_size = load_params()
     

@@ -84,7 +84,7 @@ def visualize_tsne(embeddings, labels):
 def main():
     # Hyperparameters
     batch_size = 32
-    embedding_dim = 256
+    embedding_dim = 320
     data_dir = 'preprocessed_data/'
     model_path = 'best_model.pth'
 

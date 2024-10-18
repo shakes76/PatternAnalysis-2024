@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision import models
 
 class SiameseNetwork(nn.Module):
-    def __init__(self, embedding_dim=64, dropout_rate=0.3):
+    def __init__(self, embedding_dim):
         super(SiameseNetwork, self).__init__()
 
         # Load pre-trained ResNet50 model
@@ -15,22 +15,24 @@ class SiameseNetwork(nn.Module):
         
         # Freeze the parameters of the feature extractor
         for param in self.feature_extractor.parameters():
-            param.requires_grad = False
+            param.requires_grad = True
         
         # ResNet50 output features
         resnet_output_features = 2048
         
         # Fully connected layers
         self.fc_layers = nn.Sequential(
-            nn.Linear(resnet_output_features, 512),
+            nn.Linear(resnet_output_features, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             
-            nn.Linear(512, 256),
+            nn.Linear(1024, 512),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             
-            nn.Linear(256, embedding_dim)
+            nn.Linear(512, embedding_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5)
         )
         
         # Classifier
@@ -68,7 +70,7 @@ class TripletLoss(nn.Module):
         return loss.mean()
 
 # Basic helpers to later be imported in train.py
-def get_model(embedding_dim=256):
+def get_model(embedding_dim):
     return SiameseNetwork(embedding_dim=embedding_dim)
 
 def get_loss(margin=1.0):

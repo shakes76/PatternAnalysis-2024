@@ -1,3 +1,13 @@
+"""
+dataset.py
+
+This module handles the preprocessing, loading, and batching of the ISIC 2020 dataset
+for a Siamese network-based skin lesion classification task.
+
+Author: Zain Al-Saffi
+Date: 18th October 2024
+"""
+
 import os
 import random
 from collections import OrderedDict
@@ -12,11 +22,17 @@ import pandas as pd
 import shutil
 from tqdm import tqdm
 
+# Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def preprocess_dataset(csv_file, img_dir, output_dir):
     """
     Preprocesses the ISIC 2020 dataset by organizing images into 'benign' and 'malignant' directories.
+
+    Args:
+        csv_file (str): Path to the CSV file containing image metadata.
+        img_dir (str): Directory containing the original images.
+        output_dir (str): Directory where the organized dataset will be saved.
     """
     df = pd.read_csv(csv_file)
     benign_dir = os.path.join(output_dir, 'benign')
@@ -25,7 +41,7 @@ def preprocess_dataset(csv_file, img_dir, output_dir):
     os.makedirs(malignant_dir, exist_ok=True)
 
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing images"):
-        img_name = row['image_name'] + '.jpg'
+        img_name = row['isic_id'] + '.jpg'
         src_path = os.path.join(img_dir, img_name)
         
         if row['target'] == 0:  # Benign
@@ -41,14 +57,27 @@ def preprocess_dataset(csv_file, img_dir, output_dir):
     logging.info(f"Preprocessing complete. Images organized in {output_dir}")
 
 class ISIC2020Dataset(Dataset):
+    """
+    Custom Dataset class for the ISIC 2020 dataset.
+    Handles loading of images, creation of triplets, and oversampling of minority class.
+
+    Args:
+        data_dir (str): Root directory containing the dataset.
+        transform (callable, optional): Optional transform to be applied on a sample.
+        mode (str): 'train' for training set, 'test' for validation/test set.
+        split_ratio (float): Ratio for splitting data into train and validation sets.
+        oversample_factor (int, optional): Factor by which to oversample the minority class.
+    """
     def __init__(self, data_dir, transform=None, mode='train', split_ratio=0.7, oversample_factor=None):
         self.data_dir = data_dir
         self.transform = transform
         self.mode = mode
 
+        # Define paths for benign and malignant images
         self.benign_dir = os.path.join(data_dir, 'benign')
         self.malignant_dir = os.path.join(data_dir, 'malignant')
 
+        # Load image paths and labels
         benign_images = self.get_image_paths(self.benign_dir, 0)
         malignant_images = self.get_image_paths(self.malignant_dir, 1)
 
@@ -74,7 +103,7 @@ class ISIC2020Dataset(Dataset):
                 # Calculate oversample_factor to achieve desired balance (e.g., 60% benign, 40% malignant)
                 benign_count = len([x for x in train_images if x[1] == 0])
                 malignant_count = len([x for x in train_images if x[1] == 1])
-                desired_malignant_count = int(benign_count * (40 / 60))  # Adjust the ratio as needed
+                desired_malignant_count = int(benign_count * (50 / 50))  # Adjust the ratio as needed
                 oversample_factor = max(desired_malignant_count // malignant_count, 1)
             self.images = self.oversample_minority_class(train_images, oversample_factor)
         else:
@@ -84,12 +113,23 @@ class ISIC2020Dataset(Dataset):
         self.image_paths = [img_path for img_path, _ in self.images]
         self.labels = [label for _, label in self.images]
 
+        # Create dictionaries to store indices for each class
         self.class_to_indices = {
             0: [i for i, label in enumerate(self.labels) if label == 0],
             1: [i for i, label in enumerate(self.labels) if label == 1]
         }
 
     def get_image_paths(self, directory, label):
+        """
+        Helper method to get all valid image paths from a directory.
+
+        Args:
+            directory (str): Path to the directory containing images.
+            label (int): Label to assign to all images in this directory.
+
+        Returns:
+            list: List of tuples (image_path, label) for all valid images in the directory.
+        """
         image_paths = []
         for img in os.listdir(directory):
             if img.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -101,6 +141,16 @@ class ISIC2020Dataset(Dataset):
         return image_paths
 
     def oversample_minority_class(self, images, factor):
+        """
+        Oversample the minority class (malignant) to balance the dataset.
+
+        Args:
+            images (list): List of tuples (image_path, label) for all images.
+            factor (int): Factor by which to oversample the minority class.
+
+        Returns:
+            list: Balanced list of tuples (image_path, label) with oversampled minority class.
+        """
         benign = [img for img in images if img[1] == 0]
         malignant = [img for img in images if img[1] == 1]
         
@@ -112,9 +162,21 @@ class ISIC2020Dataset(Dataset):
         return combined
 
     def __len__(self):
+        """Return the total number of samples in the dataset."""
         return len(self.images)
 
     def __getitem__(self, idx):
+        """
+        Fetch a triplet (anchor, positive, negative) of images.
+        The anchor and positive are from the same class, while the negative is from a different class.
+
+        Args:
+            idx (int): Index of the sample to fetch.
+
+        Returns:
+            tuple: (anchor, positive, negative, label) where anchor, positive, and negative are PIL Images
+                   and label is an integer.
+        """
         img_path, label = self.images[idx]
         anchor = self.load_image(img_path)
 
@@ -133,6 +195,15 @@ class ISIC2020Dataset(Dataset):
         return anchor, positive, negative, label
 
     def load_image(self, img_path):
+        """
+        Load an image from a file path, handling potential errors.
+
+        Args:
+            img_path (str): Path to the image file.
+
+        Returns:
+            PIL.Image: Loaded image, or a blank image if loading fails.
+        """
         try:
             image = Image.open(img_path).convert('RGB')
             return image
@@ -141,6 +212,14 @@ class ISIC2020Dataset(Dataset):
             return Image.new('RGB', (224, 224), color='gray')  # Return a blank image in case of error
 
 class BalancedBatchSampler(Sampler):
+    """
+    Sampler that yields a mini-batch of indices balanced between classes.
+    This helps to handle class imbalance during training.
+
+    Args:
+        dataset (ISIC2020Dataset): The dataset to sample from.
+        batch_size (int): Number of samples per batch.
+    """
     def __init__(self, dataset, batch_size):
         self.dataset = dataset
         self.batch_size = batch_size
@@ -155,6 +234,7 @@ class BalancedBatchSampler(Sampler):
                                len(self.majority_indices) // self.majority_batch_size)
 
     def __iter__(self):
+        """Yield balanced batches of indices."""
         for _ in range(self.num_batches):
             minority_batch = np.random.choice(self.minority_indices, self.minority_batch_size, replace=False)
             majority_batch = np.random.choice(self.majority_indices, self.majority_batch_size, replace=False)
@@ -163,11 +243,25 @@ class BalancedBatchSampler(Sampler):
             yield batch
 
     def __len__(self):
+        """Return the number of batches per epoch."""
         return self.num_batches
 
 def get_data_loaders(data_dir, batch_size=32, split_ratio=0.8, num_workers=4):
+    """
+    Create and return data loaders for training and validation.
+    Applies appropriate transformations and uses BalancedBatchSampler for training.
+
+    Args:
+        data_dir (str): Directory containing the dataset.
+        batch_size (int): Number of samples per batch.
+        split_ratio (float): Ratio for splitting data into train and validation sets.
+        num_workers (int): Number of subprocesses to use for data loading.
+
+    Returns:
+        tuple: (train_loader, val_loader) containing the DataLoader objects for training and validation.
+    """
+    # Define transformations for training data (with augmentation)
     train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(10),
@@ -177,18 +271,21 @@ def get_data_loaders(data_dir, batch_size=32, split_ratio=0.8, num_workers=4):
                             std=[0.229, 0.224, 0.225]),
     ])
 
+    # Define transformations for validation data (without augmentation)
     val_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225]),
     ])
 
+    # Create dataset instances
     train_dataset = ISIC2020Dataset(data_dir, transform=train_transform, mode='train', split_ratio=split_ratio)
     val_dataset = ISIC2020Dataset(data_dir, transform=val_transform, mode='test', split_ratio=split_ratio)
 
+    # Create balanced sampler for training data
     train_sampler = BalancedBatchSampler(train_dataset, batch_size)
 
+    # Create data loaders
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_sampler=train_sampler,
@@ -207,36 +304,22 @@ def get_data_loaders(data_dir, batch_size=32, split_ratio=0.8, num_workers=4):
     return train_loader, val_loader
 
 if __name__ == '__main__':
-    csv_file = 'ISIC_2020_Training_GroundTruth_v2.csv'
-    img_dir = 'data/ISIC_2020_Training_JPEG/train/'
+    # Example usage and dataset statistics
+    csv_file = 'data/train-metadata.csv'
+    img_dir = 'data/train-image/image'
     output_dir = 'preprocessed_data'
     
     # Uncomment the following line if you need to preprocess the dataset (do it in the first run only)
-    # preprocess_dataset(csv_file, img_dir, output_dir)
+    preprocess_dataset(csv_file, img_dir, output_dir)
     
     data_dir = 'preprocessed_data'
     train_loader, val_loader = get_data_loaders(data_dir, batch_size=32)
     
-    print("\nBatch Compositions:")
-    for i, (anchor, positive, negative, labels) in enumerate(train_loader):
-        print(f"Batch {i}:")
-        print(f"Anchor shape: {anchor.shape}")
-        print(f"Positive shape: {positive.shape}")
-        print(f"Negative shape: {negative.shape}")
-        print(f"Labels shape: {labels.shape}")
-        print(f"Labels: {labels}")
-        print(f"Class distribution in this batch:")
-        print(f"  Benign: {(labels == 0).sum().item()}")
-        print(f"  Malignant: {(labels == 1).sum().item()}")
-        print()
-        
-        if i == 4:  # Print info for first 5 batches
-            break
-
     # Print overall dataset statistics
     train_dataset = train_loader.dataset
     val_dataset = val_loader.dataset
     
+    #Checking if we balanced the dataset for real
     train_benign_count = sum(1 for label in train_dataset.labels if label == 0)
     train_malignant_count = sum(1 for label in train_dataset.labels if label == 1)
     val_benign_count = sum(1 for label in val_dataset.labels if label == 0)

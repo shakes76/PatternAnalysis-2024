@@ -35,6 +35,8 @@ def train_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, d
             loss = triplet_loss_val + classifier_loss_val
 
         scaler.scale(loss).backward()
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         scaler.step(optimizer)
         scaler.update()
         #optimizer.zero_grad()
@@ -129,38 +131,26 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, train_aucs, val
 def main():
     # Hyperparameters
     batch_size = 32
-    embedding_dim = 256
+    embedding_dim = 320
     learning_rate = 1e-3 
-    num_epochs = 20
+    num_epochs = 30
     data_dir = 'preprocessed_data/'
 
     # Early stopping threshold for validation AUC-ROC
-    early_stopping_threshold = 0.84
+    early_stopping_threshold = 0.80
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device: {device}")
 
     train_loader, val_loader = get_data_loaders(data_dir=data_dir, batch_size=batch_size)
     logging.info("Data loaded successfully")
 
-    # # After loading train_loader and val_loader
-    # train_dataset = train_loader.dataset
-    # train_labels = train_dataset.labels
-    # train_benign_count = sum(1 for label in train_labels if label == 0)
-    # train_malignant_count = sum(1 for label in train_labels if label == 1)
-    # total_count = train_benign_count + train_malignant_count
-
-    # # Compute class weights
-    # class_weights = [total_count / train_benign_count, total_count / train_malignant_count]
-    # class_weights = torch.FloatTensor(class_weights).to(device)
-
-    # logging.info(f"Class Weights: {class_weights.cpu().numpy()}")
     
 
     model = get_model(embedding_dim=embedding_dim).to(device)
     triplet_loss = get_loss(margin=1.0).to(device)
-    classifier_loss = nn.CrossEntropyLoss().to(device)
+    classifier_loss = nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate)
-    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=5, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, verbose=True)
     scaler = GradScaler()
 
     train_losses, val_losses = [], []
@@ -171,10 +161,6 @@ def main():
     for epoch in range(num_epochs):
         logging.info(f"Epoch {epoch+1}/{num_epochs}")
 
-        # if epoch == 5:
-        #     for param in model.feature_extractor.parameters():
-        #         param.requires_grad = True
-        #     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         
         train_loss, train_acc, train_auc = train_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, device, scaler)
         val_loss, val_acc, val_auc = validate(model, val_loader, triplet_loss, classifier_loss, device)
@@ -196,7 +182,7 @@ def main():
             torch.save(model.state_dict(), 'best_model.pth')
             logging.info(f"New best model saved with validation AUC-ROC: {best_val_auc:.4f}")
 
-        if val_auc >= early_stopping_threshold and epoch >= 10:
+        if val_auc >= early_stopping_threshold and epoch >= 15:
             if val_acc > 0.80:
                 logging.info(f"Early stopping triggered. Validation AUC-ROC {val_auc:.4f} exceeds threshold of {early_stopping_threshold}")
                 break

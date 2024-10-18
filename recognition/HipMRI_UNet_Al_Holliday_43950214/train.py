@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 
 import dataset
 import modules
+from dice import dice_coeff
 
 
 def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
@@ -81,11 +82,20 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
                 #plt.imshow(out[0].cpu().detach().squeeze().numpy())
 
     print("Done!")
-    #print("Testing")
+    print("Testing")
     # save the weights
     torch.save(net.state_dict(), "./weights.pth")
     # TODO: maybe perform initial testing (i.e. NOT validation) here
     # (This needs the Dice similarity coefficient implemented)
+    net.eval()
+    with torch.no_grad():
+        for img, seg in testLoader:
+            img = img.to(dev)
+            seg = seg.squeeze().long()
+            seg = seg.to(dev)
+            out = net(img)
+            diceSimilarity = dice_coeff(out, seg, dev)
+            print("current dice: {:.5f}".format(out.cpu().item())) 
     
     return net
 

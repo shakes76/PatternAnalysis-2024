@@ -12,7 +12,7 @@ data = Data(x=features, edge_index=edge_index, y=labels).to(device)
 
 # Define the GNN model with matching dimensions
 input_dim = features.shape[1]
-hidden_dim = 256
+hidden_dim = 1024
 output_dim = len(page_type_mapping)
 model = GNN(input_dim, hidden_dim, output_dim).to(device)
 

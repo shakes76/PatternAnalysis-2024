@@ -73,20 +73,20 @@ class VAEEncoder(nn.Module):
             nn.ReLU(),
             nn.Conv2d(128, latent_dim, kernel_size=4, stride=2, padding=1),  # 16x16 -> 8x8
             nn.BatchNorm2d(latent_dim),
-            #nn.ReLU(),
+            nn.ReLU(),
             #nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # 8x8 -> 4x4
             #nn.BatchNorm2d(512),
             #nn.ReLU(),
             #nn.Flatten()
         )
-        self.fc_mu = nn.Linear(512 * 4 * 4, latent_dim)  # Update for the new size
-        self.fc_logvar = nn.Linear(512 * 4 * 4, latent_dim)  # Update for the new size
+        self.conv_mu = nn.Conv2d(latent_dim, latent_dim, kernel_size=1)
+        self.conv_logvar = nn.Conv2d(latent_dim, latent_dim, kernel_size=1)
 
     def forward(self, x):
         h = self.encoder(x)
-        #mu = self.fc_mu(h)
-        #logvar = self.fc_logvar(h)
-        return h#mu, logvar
+        mu = self.conv_mu(h)  # Get the mean using a 1x1 convolution
+        logvar = self.conv_logvar(h)  # Get the log variance using a 1x1 convolution
+        return mu, logvar
 
 # Reparameterization trick for VAE
 def reparameterize(mu, logvar):
@@ -103,20 +103,26 @@ class UNet(nn.Module):
         # Encoder part (downsampling)
         self.enc1 = nn.Sequential(
             nn.Conv2d(latent_dim, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU()
         )
         self.enc2 = nn.Sequential(
             nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # Downsample
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
             nn.ReLU()
         )
         self.enc3 = nn.Sequential(
             nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # Downsample
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
             nn.ReLU()
         )
 
@@ -131,18 +137,23 @@ class UNet(nn.Module):
         # Decoder part (upsampling)
         self.dec3 = nn.Sequential(
             nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2, padding=1),  # Upsample
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.Conv2d(512, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
             nn.ReLU()
         )
         self.dec2 = nn.Sequential(
             nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1),  # Upsample
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU()
         )
         self.dec1 = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, latent_dim, kernel_size=3, padding=1)
         )
@@ -188,7 +199,7 @@ class UNet(nn.Module):
 # Function to add noise at each step
 def add_noise(x, noise_level):
     noise = torch.randn_like(x)
-    return x + noise * noise_level, noise
+    return x + noise, noise
 
 # Training setup
 latent_dim = 100
@@ -198,10 +209,12 @@ vae_decoder = VAEDecoder(latent_dim=latent_dim)
 unet = UNet(latent_dim=latent_dim, num_classes=num_classes)
 
 # Loss functions and optimizers
-vae_criterion = nn.MSELoss()
+vae_criterion = nn.MSELoss(reduction='sum')
 diffusion_criterion = nn.SmoothL1Loss()
-vae_optimizer = optim.Adam(list(vae_encoder.parameters()) + list(vae_decoder.parameters()), lr=1e-4)
+vae_optimizer = optim.Adam(list(vae_encoder.parameters()) + list(vae_decoder.parameters()), lr=1e-3)
+
 unet_optimizer = optim.Adam(unet.parameters(), lr=1e-4)
+unet_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(unet_optimizer, 'min', patience=3, factor=0.5, threshold=0.01)
 
 def weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
@@ -213,8 +226,8 @@ vae_decoder.apply(weights_init)
 unet.apply(weights_init)
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 50
-'''for epoch in range(num_epochs):
+num_epochs = 25
+for epoch in range(num_epochs):
     for images, labels in tqdm(data_loader):
         images = images.to('cuda' if torch.cuda.is_available() else 'cpu')
         labels = labels.to(images.device)
@@ -222,15 +235,15 @@ num_epochs = 50
         vae_decoder = vae_decoder.to(images.device)
         
         # VAE Forward pass
-        z = vae_encoder(images)
+        mu, logvar = vae_encoder(images)
 
-        #z = reparameterize(mu, logvar)
+        z = reparameterize(mu, logvar)
         reconstructed_images = vae_decoder(z)
         
         # VAE Loss
         recon_loss = vae_criterion(reconstructed_images, images)
-        #kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        vae_loss = recon_loss #+ 0.05 * kl_div
+        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        vae_loss = recon_loss + kl_div
         
         # Backpropagation for VAE
         vae_optimizer.zero_grad()
@@ -238,14 +251,14 @@ num_epochs = 50
         vae_optimizer.step()
 
     print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}")
-    if epoch % 20 == 0:
-        with torch.no_grad():
-            # Decode denoised latent to generate images
-            generated_images = vae_decoder(z).clamp(-1, 1)
-            display_images(generated_images, num_images=5)
+    #if epoch % 20 == 0:
+    #    with torch.no_grad():
+    #        # Decode denoised latent to generate images
+    #        generated_images = vae_decoder(z).clamp(-1, 1)
+    #        display_images(generated_images, num_images=5)
 
 torch.save(vae_encoder, "models/encoder.model")
-torch.save(vae_decoder, "models/decoder.model")'''
+torch.save(vae_decoder, "models/decoder.model")
 
 vae_encoder = torch.load("models/encoder.model", weights_only=False)
 vae_encoder.eval()
@@ -264,8 +277,8 @@ for epoch in range(num_epochs):
         unet = unet.to(images.device)
         
         # VAE Forward pass
-        z = vae_encoder(images)
-        #z = reparameterize(mu, logvar)
+        mu, logvar = vae_encoder(images)
+        z = reparameterize(mu, logvar)
         
         # Detach latent variables to avoid retaining the graph
         z = z.detach()
@@ -288,26 +301,27 @@ for epoch in range(num_epochs):
         denoised_latent = noisy_latent - predicted_noise
 
     # Print losses and display samples every 10 epochs
+    unet_scheduler.step(diffusion_loss)
     print(f"Epoch [{epoch+1}/{num_epochs}], Diffusion Loss: {diffusion_loss.item()}")
-    if epoch % 10 == 0:
-        with torch.no_grad():
-            # Decode denoised latent to generate images
-            generated_images = vae_decoder(denoised_latent).clamp(-1, 1)
-            display_images(generated_images, num_images=5)
-            z = torch.randn(5, latent_dim, 25, 25).to('cuda' if torch.cuda.is_available() else 'cpu')
-        
-            # Add noise to the latent space
-            noisy_latent, noise = add_noise(z, noise_level=noise_level)
-            
-            # Predict the noise using the UNet (conditioning on the provided label)
-            predicted_noise = unet(noisy_latent, [])
-            
-            # Denoise the latent representation using the predicted noise
-            denoised_latent = noisy_latent - predicted_noise
-            
-            # Decode the denoised latent representation to generate images
-            output_images = vae_decoder(denoised_latent).clamp(-1, 1)
-            display_images(output_images, num_images=5)
+    #if epoch % 10 == 0:
+    #    with torch.no_grad():
+    #        # Decode denoised latent to generate images
+    #        generated_images = vae_decoder(denoised_latent).clamp(-1, 1)
+    #        display_images(generated_images, num_images=5)
+    #        z = torch.randn(5, latent_dim, 25, 25).to('cuda' if torch.cuda.is_available() else 'cpu')
+    #   
+    #        # Add noise to the latent space
+    #        noisy_latent, noise = add_noise(z, noise_level=noise_level)
+    #        
+    #        # Predict the noise using the UNet (conditioning on the provided label)
+    #        predicted_noise = unet(noisy_latent, [])
+    #        
+    #        # Denoise the latent representation using the predicted noise
+    #        denoised_latent = noisy_latent - predicted_noise
+    #        
+    #        # Decode the denoised latent representation to generate images
+    #        output_images = vae_decoder(denoised_latent).clamp(-1, 1)
+    #        display_images(output_images, num_images=5)
     noise_level += 0.1
 
 print("Training completed!")

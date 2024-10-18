@@ -1,13 +1,15 @@
-'''
-This file contain all the main component of StyleGAN including Mapping Network, 
-Adaptive Instance Normalization Layer (AdaIN), 
-Noise Injection Layer with the StyleGAN Generator and Discriminator 
-'''
+"""
+This file contains all the main components of StyleGAN including:
+- Mapping Network
+- Adaptive Instance Normalization Layer (AdaIN)
+- Noise Injection Layer
+- StyleGAN Generator and Discriminator
+"""
 
 import torch
 import torch.nn as nn
 
-# Mapping Network for transforming latent vector z to intermediate space w
+# MappingNetwork: Converts a latent vector (z) into an intermediate space (w) through multiple fully connected layers.
 class MappingNetwork(nn.Module):
     def __init__(self, latent_dim=512, n_layers=8):
         super(MappingNetwork, self).__init__()
@@ -15,9 +17,16 @@ class MappingNetwork(nn.Module):
         self.mapping = nn.Sequential(*layers)
     
     def forward(self, z):
+        """
+        Forward pass for the mapping network.
+        Args:
+            z: Latent vector.
+        Returns:
+            w: Mapped latent vector in intermediate space.
+        """
         return self.mapping(z)
 
-# Adaptive Instance Normalization (AdaIN) Layer
+# AdaIN: Adaptive Instance Normalization, modulates feature maps using style information from w.
 class AdaIN(nn.Module):
     def __init__(self, style_dim, channels):
         super(AdaIN, self).__init__()
@@ -25,23 +34,39 @@ class AdaIN(nn.Module):
         self.fc = nn.Linear(style_dim, channels * 2)  # Learnable scale and bias
     
     def forward(self, x, style):
+        """
+        Applies Adaptive Instance Normalization to the input feature maps.
+        Args:
+            x: Input feature map.
+            style: Style vector for modulation.
+        Returns:
+            Modulated feature maps.
+        """
         normalized = self.norm(x)
         style = self.fc(style).view(-1, 2, x.size(1), 1, 1)
         scale, bias = style[:, 0], style[:, 1]
         return scale * normalized + bias
 
-# Noise Injection Layer
+# NoiseInjection: Adds random noise to the input for increased variation in the generated images.
 class NoiseInjection(nn.Module):
     def __init__(self, channels):
         super(NoiseInjection, self).__init__()
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
     
     def forward(self, x, noise=None):
+        """
+        Injects noise into the input to introduce variation.
+        Args:
+            x: Input feature map.
+            noise: Optional precomputed noise; if not provided, generated internally.
+        Returns:
+            Noisy input.
+        """
         if noise is None:
             noise = torch.randn(x.size(), device=x.device)
         return x + self.weight * noise
 
-# StyleGAN Generator with Progressive Growing and Modulated Convolutions
+# ModulatedConv2d: Modulated convolution with style-based scaling, controlling the convolution weights.
 class ModulatedConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, style_dim, demodulate=True):
         super(ModulatedConv2d, self).__init__()
@@ -50,11 +75,16 @@ class ModulatedConv2d(nn.Module):
         self.demodulate = demodulate
     
     def forward(self, x, style):
-        # Style modulation
+        """
+        Applies modulated convolution to the input.
+        Args:
+            x: Input feature map.
+            style: Style vector for scaling the convolution filters.
+        Returns:
+            Output feature map after convolution.
+        """
         mod = self.style(style).view(-1, x.size(1), 1, 1)
         x = x * mod
-        
-        # Convolution
         out = self.conv(x)
         
         if self.demodulate:
@@ -62,6 +92,7 @@ class ModulatedConv2d(nn.Module):
         
         return out
 
+# Generator: The core model that generates images using modulated convolutions, noise injection, and AdaIN.
 class Generator(nn.Module):
     def __init__(self, latent_dim=512, style_dim=512, img_size=128, channels=3):
         super(Generator, self).__init__()
@@ -91,6 +122,14 @@ class Generator(nn.Module):
         ])
     
     def forward(self, z, style):
+        """
+        Forward pass for the generator.
+        Args:
+            z: Latent vector.
+            style: Style vector for modulating feature maps.
+        Returns:
+            Generated image.
+        """
         out = self.l1(z)
         out = out.view(out.size(0), 128, self.init_size, self.init_size)
         
@@ -102,7 +141,7 @@ class Generator(nn.Module):
                 out = block[3](out)  # Upsample or other layers
         return out
 
-# Discriminator model
+# Discriminator: Classifies whether an image is real or generated.
 class Discriminator(nn.Module):
     def __init__(self, img_size=128, channels=3):
         super(Discriminator, self).__init__()
@@ -124,10 +163,17 @@ class Discriminator(nn.Module):
         self.adv_layer = nn.Sequential(nn.Linear(128 * (img_size // 16) ** 2, 1), nn.Sigmoid())
 
     def forward(self, img):
+        """
+        Forward pass for the discriminator.
+        Args:
+            img: Input image.
+        Returns:
+            Validity score (real or fake).
+        """
         out = self.model(img)
         out = out.view(out.shape[0], -1)
         validity = self.adv_layer(out)
         return validity
 
-# Loss functions
+# Loss function for adversarial training
 adversarial_loss = nn.BCELoss()

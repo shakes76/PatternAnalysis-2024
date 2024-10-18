@@ -14,6 +14,10 @@ vae_config = AutoencoderKL.from_pretrained(repo_id).config
 vae = AutoencoderKL.from_config(vae_config)
 
 #Models retrieved frol CLIP
-text_encoder_config = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32").config
+text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32")
+
 #Tokenizer retrieved from CLIP
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+
+#Pipeline
+modelPipeline = DiffusionPipeline(unet=unet, vae=vae, text_encoder=text_encoder, tokenizer=tokenizer)

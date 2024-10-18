@@ -33,7 +33,7 @@ group = "GFNet",
 def get_args_parser():
     parser = argparse.ArgumentParser('ADNI training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=32, type=int)
-    parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--epochs', default=300, type=int)
 
     # Model parameters
     parser.add_argument('--arch', default='deit_small', type=str,

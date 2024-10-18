@@ -84,11 +84,7 @@ def main():
     
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = get_optimizer(model, params)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.5)
-
-    best_val_acc = 0
-    early_stopping_patience = 5
-    patience_counter = 0
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1, verbose=True)
 
     epochs = params['num_epochs']
     
@@ -108,17 +104,6 @@ def main():
 
         print(f'Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, '
               f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
-        
-        # Early stopping
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            patience_counter = 0
-        else:
-            patience_counter += 1
-
-        if patience_counter >= early_stopping_patience:
-            print("Early stopping triggered")
-            break
 
         scheduler.step(val_loss)
     

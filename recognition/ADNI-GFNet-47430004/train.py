@@ -40,7 +40,7 @@ def get_args_parser():
                         help='Name of model to train')
     parser.add_argument('--input-size', default=224, type=int, help='images input size')
 
-    parser.add_argument('--drop', type=float, default=0.0, metavar='PCT',
+    parser.add_argument('--drop', type=float, default=0.5, metavar='PCT',
                         help='Dropout rate (default: 0.)')
     parser.add_argument('--drop-path', type=float, default=0.1, metavar='PCT',
                         help='Drop path rate (default: 0.1)')
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(None, batch_size=args.batch_size)
     epoch = 0
 
-    model = GFNet(num_classes=2, in_chans=1)
+    model = GFNet(num_classes=2, in_chans=1, drop_rate=args.drop)
     model.to(device)
 
     optimizer = create_optimizer(args, model)

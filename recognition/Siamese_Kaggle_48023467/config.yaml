@@ -1,7 +1,11 @@
-DatasetImageDir: "data/train"
-LabelCSV: "data/ISIC_2020_Training_GroundTruth_v2.csv"
-OutputDir: "data/processed"
+FirstRun: False
+DatasetImageDir: "data/train-image/image"
+LabelCSV: "data/train-metadata.csv"
+OutputDir: "data/preprocessed"
 TrainTestRario: 0.8
 OversampleRatio: 0.6
-FirstRun: True
 BatchSize: 16
+ModelDropoutRate: 0.3
+TripletLossMargin: 1.0
+LearningRate: 0.001
+EpochCount: 25

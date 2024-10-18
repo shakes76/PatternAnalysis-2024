@@ -28,7 +28,13 @@ class NoiseScheduler:
         noise = torch.randn_like(x).to(device)
         alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x.device)
         return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise, noise
-
+    def remove_noise(self, x_noisy, noise, t):
+        # Get the alpha value for the given timestep
+        alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x_noisy.device)
+        
+        # Reverse the noise addition formula
+        x = (x_noisy - torch.sqrt(1 - alpha_t) * noise) / torch.sqrt(alpha_t)
+        return x
 # Define a class for a residual network block
 class ResNetBlock(nn.Module):
     def __init__(self, in_channels, out_channels, time_emb=32):

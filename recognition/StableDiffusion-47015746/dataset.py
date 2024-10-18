@@ -1,12 +1,13 @@
 import torch
-import torch.utils.data
+import torch.utils.data as data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
 
-def load_data(root):
+def load_data(root_Train, root_Test):
     # Root directory for dataset
-    dataroot = root
+    data_Train = root_Train
+    data_Test = root_Test
 
 
     # Spatial size of training images
@@ -18,15 +19,23 @@ def load_data(root):
     # Batch size during training
     batch_size = 32
 
-    # Dataset and DataLoader
-    dataset = dset.ImageFolder(root=dataroot,
-                                transform=transforms.Compose([
-                                    transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                                ]))
+    # Transformation (same for both datasets)
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ])
+    # Load the 'train' dataset
+    train_dataset = dset.ImageFolder(root= data_Train, transform=transform)
 
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-                                                shuffle=True, num_workers=workers)
+    # Load the 'test' dataset
+    test_dataset = dset.ImageFolder(root= data_Test, transform=transform)
+
+    # Combine the train and test datasets
+    combined_dataset = data.ConcatDataset([train_dataset, test_dataset])
+
+    # Create DataLoader for the combined dataset
+    dataloader = data.DataLoader(combined_dataset, batch_size, shuffle=True, num_workers= workers)
+    
     return dataloader
 
 

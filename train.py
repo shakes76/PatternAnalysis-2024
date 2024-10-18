@@ -1,5 +1,6 @@
 import torch
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
 from dataset import load_facebook_data
 from modules import GNNModel
 
@@ -32,6 +33,11 @@ best_val_loss = float('inf')
 patience = 10
 patience_counter = 0
 
+# Lists to store the loss and accuracy for plotting
+losses = []
+val_losses = []
+accuracies = []
+
 # Training
 def train():
     model.train()
@@ -41,21 +47,19 @@ def train():
     loss.backward()  # Backpropagate the gradients
     optimizer.step()  # Update the model weights
 
-
-    #  loss value for monitoring
-    return loss.item()
+    return loss.item()  # Return the loss value for monitoring
 
 # Validation and testing function
 def test():
     model.eval()
     with torch.no_grad():
         out = model(data)  # Forward pass through the model
-        val_loss = loss_fn(out[val_mask], data.y[val_mask]).item()  #  validation loss
+        val_loss = loss_fn(out[val_mask], data.y[val_mask]).item()  # Calculate validation loss
 
         # Get the predicted class for test set
         test_pred = out[test_mask].argmax(dim=1)
 
-        #  test accuracy
+        # Calculate test accuracy
         test_acc = accuracy_score(data.y[test_mask].cpu(), test_pred.cpu())
     return val_loss, test_acc  # Return the validation loss and test accuracy
 
@@ -65,6 +69,12 @@ for epoch in range(200):
     scheduler.step()  # Update learning rate
 
     val_loss, test_acc = test()  # Evaluate the model
+
+    # Store the loss and accuracy for plotting
+    losses.append(loss)
+    val_losses.append(val_loss)
+    accuracies.append(test_acc)
+
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         patience_counter = 0
@@ -78,6 +88,16 @@ for epoch in range(200):
 
     if epoch % 10 == 0:
         print(f'Epoch: {epoch}, Loss: {loss:.4f}, Val Loss: {val_loss:.4f}, Test Accuracy: {test_acc:.4f}')
+
+# Plot the loss and accuracy curves
+plt.figure(figsize=(10, 6))
+plt.plot(losses, label='Training Loss')
+plt.plot(val_losses, label='Validation Loss')
+plt.legend()
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
+plt.show()
 
 # Save the final trained model
 torch.save(model.state_dict(), 'gnn_model.pth')

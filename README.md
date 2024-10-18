@@ -97,7 +97,7 @@ This will generate a UMAP plot of the node embeddings and display how well the m
     ```
     Epoch: 0, Loss: 1.4992, Val Loss: 1.1625, Test Accuracy: 0.5336
     Epoch: 10, Loss: 0.4408, Val Loss: 0.4362, Test Accuracy: 0.8540
-    Epoch: 190, Loss: 0.0365, Val Loss: 0.0770, Test Accuracy: 0.9804
+    Epoch: 190, Loss: 0.0365, Val Loss: 0.0770, Test Accuracy: 0.9853
     ```
 
 ## Preprocessing

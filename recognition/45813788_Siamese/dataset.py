@@ -31,6 +31,8 @@ malig_aug = transforms.Compose([
     transforms.Resize((224,224)),
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
+    transforms.RandomRotation(30),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     #normalise using ImageNet (pytorch defaults)
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -48,87 +50,50 @@ benign_aug = transforms.Compose([
                          std=[0.229, 0.224, 0.225])
 ])
 
-class ISISCDataset(Dataset):
-    def __init__(self, benign_df, malignant_df, images_dir, transform_benign=None, transform_malignant=None, augment_ratio=1.0):
-        self.benign_df = benign_df
-        self.malignant_df = malignant_df
+class ISICDataset(Dataset):
+    def __init__(self, df, images_dir, transform_benign=None, transform_malignant=None, augment_ratio=1.0):
+        self.df = df
         self.images_dir = images_dir
         self.transform_benign = transform_benign
         self.transform_malignant = transform_malignant
         self.augment_ratio = augment_ratio
 
         #list of image IDs
-        self.benign_ids = self.benign_df['isic_id'].tolist()
-        self.malignant_ids = self.malignant_df['isic_id'].tolist()
-
-        #Gen paris
-        self.pairs = self.create_pairs()
-
-    def create_pairs(self):
-        pairs = []
-        labels1 = []
-        labels2 = []
-
-        #0 for malig, 1 for benign
-        for _ in range(len(self.benign_ids)):
-            img1, img2 = random.sample(self.benign_ids, 2)
-            pairs.append((img1, img2))
-            labels1.append(0)
-            labels2.append(0)
-
-        for _ in range(len(self.malignant_ids)):
-            img1, img2 = random.sample(self.malignant_ids, 2)
-            pairs.append((img1, img2))
-            labels1.append(1)
-            labels2.append(1)
-
-        # Negative Pairs
-        for _ in range(len(self.benign_ids)):
-            img1 = random.choice(self.benign_ids)
-            img2 = random.choice(self.malignant_ids) #change if bad
-            pairs.append((img1, img2))
-            labels1.append(0)
-            labels2.append(1)
-
-        self.labels1 = labels1
-        self.labels2 = labels2
-
-        return pairs
+        self.image_ISIC = df['isic_id'].tolist()
+        self.labels = df['target'].astype(int).tolist()
 
     def __len__(self):
-        return len(self.pairs)
+        return len(self.image_ISIC)
 
-    def apply_transform(self, img_id, img):
+    def apply_transform(self, img, label):
         # we only need to look at malignant class and if its not in there
         # then we carry on
-        if img_id in self.malignant_ids:
-            img = self.transform_malignant(img)
-        else:
+        #actually no need to make sure its exclusively benign all else consider malig
+        if label == 0:
             if self.transform_benign:
                 img = self.transform_benign(img)
+        else:
+            if self.transform_malignant:
+                img = self.transform_malignant(img)
 
         return img
 
     def __getitem__(self, index):
-        img1_id, img2_id = self.pairs[index]
-        
-        label1 = self.labels1[index]
-        label2 = self.labels2[index]
-
+        img_id = self.image_ISIC[index]    
+        label = self.labels[index]
+       
         #get images
-        img1_path = os.path.join(self.images_dir,img1_id + '.jpg')
-        img2_path = os.path.join(self.images_dir,img2_id + '.jpg')
-
+        img_path = os.path.join(self.images_dir,img_id + '.jpg')
+        
         #normalise pixel values
-        img1 = Image.open(img1_path).convert('RGB')
-        img2 = Image.open(img2_path).convert('RGB')
+        img = Image.open(img_path).convert('RGB')
 
 
         #transform the images
-        img1 = self.apply_transform(img1_id, img1)
-        img2 = self.apply_transform(img2_id, img2)
+        img = self.apply_transform(img, label)
+     
         
-        return img1, img2, torch.tensor(label1, dtype=torch.float32), torch.tensor(label2, dtype=torch.float32)
+        return img, torch.tensor(label, dtype=torch.long)
 
 #print(malignant)
 #print(benign)

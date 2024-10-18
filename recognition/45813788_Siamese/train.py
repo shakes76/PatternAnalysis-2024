@@ -2,7 +2,7 @@
 
 import torch
 from torch.utils.data import DataLoader
-from dataset import ISISCDataset, malig_aug, benign_aug
+from dataset import ISICDataset, malig_aug, benign_aug
 from modules import SiameseNN
 import pandas as pd
 import os
@@ -18,9 +18,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 def load_data(excel):
     df = pd.read_csv(excel)
     df = df.drop(columns=['Unnamed: 0', 'patient_id'])
-    benign = df[df['target'] == 0].reset_index(drop=True)
-    malignant = df[df['target'] == 1].reset_index(drop=True)
-    return malignant, benign
+    return df
+
 
 
 def siamese_train():
@@ -29,31 +28,25 @@ def siamese_train():
     print("Working dir", current_dir)
     excel = os.path.join(current_dir, 'dataset', 'train-metadata.csv')
     images = os.path.join(current_dir, 'dataset', 'train-image', 'image')
+    df = load_data(excel=excel)
 
     # Load data
-    malignant_df, benign_df = load_data(excel=excel)
-
-    # Train-validation split with stratification
-    benign_train, benign_val = train_test_split(
-        benign_df, test_size=0.1, stratify=benign_df['target'], random_state=42
+    train_df, val_df = train_test_split (
+        df,test_size=0.2, stratify=df['target'], random_state=42
     )
-    malignant_train, malignant_val = train_test_split(
-        malignant_df, test_size=0.1, stratify=malignant_df['target'], random_state=42
-    )
+ 
 
     # Initialize training and validation datasets
-    train_dataset = ISISCDataset(
-        benign_df=benign_train,
-        malignant_df=malignant_train,
+    train_dataset = ISICDataset(
+        df = train_df,
         images_dir=images,
         transform_benign=benign_aug,
         transform_malignant=malig_aug,
         augment_ratio=0.5  # Adjust based on your needs
     )
 
-    val_dataset = ISISCDataset(
-        benign_df=benign_val,
-        malignant_df=malignant_val,
+    val_dataset = ISICDataset(
+        df=val_df,
         images_dir=images,
         transform_benign=benign_aug,
         transform_malignant=malig_aug,
@@ -90,13 +83,13 @@ def siamese_train():
     )
     
     # Initialize optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
     #scheduler
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2, threshold=0.01, verbose=True)
 
     # Training parameters
-    epochs = 30
+    epochs = 50
     best_loss = float('inf')
     train_losses = []
     val_losses = []
@@ -106,13 +99,10 @@ def siamese_train():
         model.train()
         epoch_loss = 0.0
 
-        for img1, img2, label1, label2 in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
-            img1, img2, label1, label2 = img1.to(device), img2.to(device), label1.to(device), label2.to(device)
-
+        for images, labels  in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
+            images, labels = images.to(device), labels.to(device)
             # Forward pass
-            y1, y2 = model(img1, img2)
-            embeddings = torch.cat([y1,y2], dim=0)
-            labels = torch.cat([label1, label2], dim=0)
+            embeddings = model(images)
 
             loss = contrastive_loss(embeddings, labels)
 
@@ -126,18 +116,15 @@ def siamese_train():
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)
 
-        # Validation phase
+        # Validation
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for img1, img2, label1, label2 in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
-                img1, img2, label1, label2 = img1.to(device), img2.to(device), label1.to(device), label2.to(device)
+            for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
+                images, labels = images.to(device), labels.to(device)
 
                 # Forward pass
-                y1, y2 = model(img1, img2)
-                embeddings = torch.cat([y1,y2], dim=0)
-                labels = torch.cat([label1, label2], dim=0)
-
+                embeddings = model(images)
 
                 loss = contrastive_loss(embeddings, labels)
 
@@ -149,6 +136,9 @@ def siamese_train():
         print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
         # Step the scheduler
         scheduler.step(avg_val_loss)
+        # Monitor learning rate
+        for idx, param_group in enumerate(optimizer.param_groups):
+            print(f"Learning rate for param group {idx}: {param_group['lr']}")
 
         # save current pest model
         if avg_val_loss < best_loss:

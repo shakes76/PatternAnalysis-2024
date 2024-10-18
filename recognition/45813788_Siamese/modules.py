@@ -11,13 +11,19 @@ class FeatureExtraction(nn.Module):
         super(FeatureExtraction, self).__init__()
 
         #Load resnet
-        self.model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+        self.model = models.resnet18(weights=False)#ResNet18_Weights.IMAGENET1K_V1)
 
         #remove fully connected
         self.model = nn.Sequential(*list(self.model.children())[:-1])
 
-        self.embedding = nn.Linear(512, embedding_dim)
+        self.embedding = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(512, embedding_dim),
+            nn.ReLU(),
+            nn.Dropout(p=0.3)
 
+        )
+ 
         #true to train all layers false if not
         for param in self.model.parameters():
             param.requires_grad = True
@@ -26,7 +32,7 @@ class FeatureExtraction(nn.Module):
 
 
         features = self.model(x) #[batch_Size, 512, 1 ,1]
-        features = features.view(features.size(0), -1) #[batch_Size, 512]
+        #features = features.view(features.size(0), -1) #[batch_Size, 512]
         embeddings = self.embedding(features) #[batch_size, embedding_dim]
         
 
@@ -38,11 +44,10 @@ class SiameseNN(nn.Module):
 
         self.feature_extractor = FeatureExtraction(embedding_dim)
 
-    def forward(self, x1, x2):
+    def forward(self, x):
 
-        y1 = self.feature_extractor(x1)
-        y2 = self.feature_extractor(x2)
+        y = self.feature_extractor(x)
 
-        return y1, y2
+        return y
 
     

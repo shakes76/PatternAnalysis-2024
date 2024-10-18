@@ -14,6 +14,12 @@ IMAGE_SIZE = 256
 # The number of channels of the images loaded into the model (1 = Greyscale)
 NUM_CHANNELS = 1
 
+# Represents the number of labels/classes used in the ADNI dataset (i.e. AD and CN)
+LABEL_DIMENSIONS = 2
+
+# Represents the size of the vector used to embed each class label
+EMBED_DIMENSIONS = 4
+
 ################################## Training Loop #################################
 
 # Mixing Regularisation ratio and probability
@@ -27,14 +33,14 @@ RANDOM_SEED = 999
 BATCH_SIZE = 128
 
 # The learning rates used by Adam optimisers
-GEN_LEARNING_RATE = 0.004
-DISC_LEARNING_RATE = 0.002
+GEN_LEARNING_RATE = 0.001
+DISC_LEARNING_RATE = 0.0005
 
 # Controls the T_Max variable of the Cosine Annealing Scheduler
 COSINE_ANNEALING_RATE = 0.1
 
 # The number of epochs used during training
-NUM_OF_EPOCHS = 1
+NUM_OF_EPOCHS = 5
 
 ################################## Mapping Network ###############################
 

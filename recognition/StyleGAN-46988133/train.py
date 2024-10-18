@@ -46,7 +46,7 @@ plt.figure(figsize=(8,8))
 plt.axis("off")
 plt.title("Sample Training Images for the ADNI Dataset")
 plt.imshow(np.transpose(vutils.make_grid(real_batch[0].to(device)[:64], padding=2, normalize=True).cpu(),(1,2,0)))
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "adni_sample_images.png"), bbox_inches='tight', pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "adni_sample_images.png"), pad_inches=0)
 plt.close()
 
 # Setup both the generator and discriminator models
@@ -63,8 +63,9 @@ disc_opt = optim.Adam(disc.parameters(), lr=hp.DISC_LEARNING_RATE, betas=(0.0, 0
 gen_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(gen_opt, T_0=math.ceil(hp.NUM_OF_EPOCHS*hp.COSINE_ANNEALING_RATE), T_mult=2)
 disc_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(disc_opt, T_0=math.ceil(hp.NUM_OF_EPOCHS*hp.COSINE_ANNEALING_RATE), T_mult=2)
 
-# Use Binary Cross Entropy Loss (BCELoss)
-criterion = nn.BCELoss()
+# Initialise Loss Functions
+adversial_criterion = nn.BCELoss()
+class_criterion = nn.CrossEntropyLoss()
 
 # Initialise the real and fake labels for training
 real_label = 1.0
@@ -96,7 +97,19 @@ for epoch in range(hp.NUM_OF_EPOCHS):
    epoch_start_time = time.time()
 
    # Iterate over every batch in the dataset
-   for i, batch in enumerate(train_loader, 0):
+   for i, (real_images, class_labels) in enumerate(train_loader, 0):
+        
+        # Move real images and labels from the ADNI dataset onto the GPU
+        real_images = real_images.to(device)
+        class_labels = class_labels.to(device)
+        
+        # Determine the batch size 
+        batch_size = real_images.shape[0]
+        
+        # Create real, fake and random class labels
+        real_labels = torch.full((batch_size,), real_label, dtype=torch.float, device=device)
+        fake_labels = torch.full((batch_size,), fake_label, dtype=torch.float, device=device)
+        rand_class_labels = torch.randint(0, 2, (batch_size,), device=device)
        
         # ---------------------------------------------------------------------------
         # (1) - Update the Discriminator by training with real images 
@@ -105,33 +118,21 @@ for epoch in range(hp.NUM_OF_EPOCHS):
         # Reset gradients of the discriminator
         disc.zero_grad()
 
-        # Extract real images
-        real_images = batch[0].to(device)
-
-        # Create a real label to be applied to each image
-        batch_size = real_images.size(0)
-        label = torch.full((batch_size,), real_label, dtype=torch.float, device=device)
-
         # Forward pass the real batch through the discriminator
-        output = disc(real_images).view(-1)
+        real_pred, class_real_pred, features_real = disc(real_images, labels=class_labels)
 
-        # Calculate the real image discriminator loss
-        real_loss_disc = criterion(output, label)
-
-        # Calculate gradients of the real images for the discriminator
-        real_loss_disc.backward()
+        # Calculate the real image discriminator losses
+        real_loss_disc = adversial_criterion(real_pred.view(-1), real_labels)
+        real_class_loss_disc = class_criterion(class_real_pred, class_labels)
 
         # Calculate average output value of discriminator
-        real_disc_avg = output.mean().item()
+        real_disc_avg = real_pred.mean().item()
 
         # ---------------------------------------------------------------------------
         # (2) - Update the Discriminator by training with fake images (by generator)
         # ---------------------------------------------------------------------------
 
-        # Used to apply fake labels
-        label.fill_(fake_label)
-
-        # Generate a batch of latent vectors to input into the generator
+        # Generate a batch of latent vectors and labels to input into the generator
         latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
 
         # Create a second latent space vector randomly for mixing regularisation
@@ -141,24 +142,23 @@ for epoch in range(hp.NUM_OF_EPOCHS):
             latent2 = None
 
         # Generate fake images using the generator and mixing regularisation
-        fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0))
+        fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels)
 
         # Apply the discriminator to classify fake images
-        output = disc(fake_images.detach()).view(-1)
+        fake_pred, class_fake_pred, features_fake = disc(fake_images.detach(), labels=rand_class_labels)
 
-        # Calculate the fake image discriminator loss
-        fake_loss_disc = criterion(output, label)
-
-        # Calculate the gradients of the fake images for the discriminator
-        fake_loss_disc.backward()
+        # Calculate the fake image discriminator losses
+        fake_loss_disc = adversial_criterion(fake_pred.view(-1), fake_labels)
+        fake_class_loss_disc = class_criterion(class_fake_pred, rand_class_labels)
 
         # Calculate average output value of discriminator
-        fake_disc_avg = output.mean().item()
+        fake_disc_avg = fake_pred.mean().item()
 
         # Calculate the total error of the discriminator
-        loss_disc = real_loss_disc + fake_loss_disc
+        tot_loss_disc = real_loss_disc + real_class_loss_disc + fake_loss_disc + fake_class_loss_disc
 
-        # Update the discriminator based on gradients
+        # Update the discriminator based on gradients and losses
+        tot_loss_disc.backward()
         disc_opt.step()
 
         # ---------------------------------------------------------------------------
@@ -168,22 +168,21 @@ for epoch in range(hp.NUM_OF_EPOCHS):
         # Reset gradients of the generator
         gen.zero_grad()
 
-        # Apply a real label to fake image output, due to the generator wanting to appear 'real'
-        label.fill_(real_label)
-
         # Output new classified images, due the discriminator being previously updated above
-        output = disc(fake_images).view(-1)
+        fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels)
 
-        # Calculate the loss of the generator
-        loss_gen = criterion(output, label)
+        # Calculate the losses of the generator
+        loss_gen = adversial_criterion(fake_pred.view(-1), real_labels)
+        loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
 
-        # Calculate the gradients of the generator
-        loss_gen.backward()
+        # Calculate the total loss of the gradient
+        tot_loss_gen = loss_gen + loss_class_gen
 
         # Calculate average output value of discriminator due to generator "real" images
-        gen_avg = output.mean().item()
+        gen_avg = fake_pred.mean().item()
 
         # Update the generator based on gradients
+        tot_loss_gen.backward()
         gen_opt.step()
 
         # ---------------------------------------------------------------------------
@@ -194,11 +193,11 @@ for epoch in range(hp.NUM_OF_EPOCHS):
         if i % 15 == 0:
             print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
                 % (epoch, hp.NUM_OF_EPOCHS, i, len(train_loader),
-                    loss_disc.item(), loss_gen.item(), real_disc_avg, fake_disc_avg, gen_avg))
+                    tot_loss_disc.item(), tot_loss_gen.item(), real_disc_avg, fake_disc_avg, gen_avg))
 
         # Save Losses for plotting later
-        G_losses.append(loss_gen.item())
-        D_losses.append(loss_disc.item())
+        G_losses.append(tot_loss_gen.item())
+        D_losses.append(tot_loss_disc.item())
 
         # Regularly save an image out of the generator to see progress overtime 
         if (iters % 239 == 0) or ((epoch == hp.NUM_OF_EPOCHS-1) and (i == len(train_loader)-1)):
@@ -238,7 +237,7 @@ plt.plot(D_losses,label="Discriminator")
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
 plt.legend()
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "training_loss_plot.png"), bbox_inches='tight', pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "training_loss_plot.png"), pad_inches=0)
 plt.close()
 
 # Visualise the evolution of the generator 
@@ -263,5 +262,5 @@ plt.subplot(1,2,2)
 plt.axis("off")
 plt.title(f"Generated Images - {hp.NUM_OF_EPOCHS} Epochs")
 plt.imshow(np.transpose(img_list[-1],(1,2,0)))
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "real_versus_fake_images.png"), bbox_inches='tight', pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "real_versus_fake_images.png"), pad_inches=0)
 plt.close()

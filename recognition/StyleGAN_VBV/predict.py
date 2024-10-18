@@ -11,17 +11,12 @@ CHANNELS_IMG = 3  # Number of output channels for images (RGB)
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available, otherwise use CPU
 AD_IMAGES = "AD_"
 NC_IMAGES = "NC_"
-CURRENT_DATASET = AD_IMAGES
+CURRENT_DATASET = NC_IMAGES
 
 
 def generate_examples(gen, steps, n=9):
     """
-    Generate and save example images using the trained generator model.
-
-    Parameters:
-        gen (Generator): The trained generator model.
-        steps (int): The current training step (resolution) of the generator.
-        n (int): Number of images to generate and save.
+    Generate and save n example images in a grid of size 3x3 using the trained generator model.
     """
     gen.eval()  # Set the generator to evaluation mode
     alpha = 1.0  # Set alpha to 1 for full resolution generation
@@ -47,3 +42,29 @@ def generate_examples(gen, steps, n=9):
     save_image(grid * 0.5 + 0.5, os.path.join(save_dir, CURRENT_DATASET + f"grid_step{steps}.png"))
     
     gen.train()  # Set the generator back to training mode
+
+
+def generate_examples_seperate(gen, steps, n=100):
+    """
+    Generate and save example images using the trained generator model.
+    """
+    gen.eval()  # Set the generator to evaluation mode
+    alpha = 1.0  # Set alpha to 1 for full resolution generation
+
+    # Create a directory for saving images
+    save_dir = f'saved_examples_seperate/{CURRENT_DATASET}'
+    os.makedirs(save_dir, exist_ok=True)
+
+    for i in range(n):  # Generate 'n' images
+        with torch.no_grad():  # Disable gradient calculation for inference
+            # Generate random noise input for the generator
+            noise = torch.randn(1, Z_DIM).to(DEVICE)
+            # Generate an image from the noise input using the generator
+            img = gen(noise, alpha, steps)
+
+            # Save each image separately
+            img_path = os.path.join(save_dir, CURRENT_DATASET+f"image_{i+1}_step{steps}.png")
+            save_image(img * 0.5 + 0.5, img_path)  # Rescale to [0, 1] for saving
+
+    gen.train()  # Set the generator back to training mode
+

@@ -13,53 +13,54 @@ ad_image_dir = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN
 nc_image_dir = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/saved_examples/step5/seperate_images/NC' 
 
 # Load the pre-trained ResNet model
-model = models.resnet50(weights='IMAGENET1K_V1')  # Use appropriate weights version
-model.eval()  # Set the model to evaluation mode
+model = models.resnet50(weights='IMAGENET1K_V1')  # Load ResNet50 model with ImageNet weights
+model.eval()  # Set to evaluation mode
 
-# Define the preprocessing transformations
+# Define the preprocessing transformations for the input images
 preprocess = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize to 224x224
-    transforms.ToTensor(),  # Convert to tensor
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize
+    transforms.Resize((224, 224)),  # Resize imgs to 224x224
+    transforms.ToTensor(),  # Convert imgs to tensor format
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize based on ImageNet stats
 ])
 
-# Function to load and preprocess images
+
 def load_and_preprocess_images(image_dir, label):
-    features = []
-    labels = []
+    """ Load and preprocess images from a specified directory. """
+    features = []  # List to hold extracted features
+    labels = []    # List to hold corresponding labels
 
+    # Iterate over each image in the directory
     for img_name in os.listdir(image_dir):
-        img_path = os.path.join(image_dir, img_name)
-        img = Image.open(img_path).convert('RGB')  # Open image
+        img_path = os.path.join(image_dir, img_name)  # Construct full image path
+        img = Image.open(img_path).convert('RGB')  # Open image and convert to RGB
         img_tensor = preprocess(img)  # Preprocess image
-        img_tensor = img_tensor.unsqueeze(0)  # Add batch dimension
+        img_tensor = img_tensor.unsqueeze(0)  # Add a batch dimension for model input
 
-        # Extract features
-        with torch.no_grad():  # Disable gradient computation
+        # Extract features using the pre-trained model
+        with torch.no_grad():  # Disable gradient computation for inference
             feature = model(img_tensor)
-        features.append(feature.numpy().flatten())
-        labels.append(label)  # Append the label for this set
+        features.append(feature.numpy().flatten())  # Flatten the feature tensor and append to the list
+        labels.append(label)  # Append the label for this image
 
-    return np.array(features), labels
+    return np.array(features), labels  # Return the features and labels as arrays
 
-# Load images for both sets and extract features
+# Load images for both NC and AD sets and extract features
 nc_features, nc_labels = load_and_preprocess_images(nc_image_dir, label=0)  # Label 0 for NC
 ad_features, ad_labels = load_and_preprocess_images(ad_image_dir, label=1)  # Label 1 for AD
 
-# Combine features and labels
-features = np.vstack((nc_features, ad_features))
-labels = np.array(nc_labels + ad_labels)
+# Combine features and labels from both sets
+features = np.vstack((nc_features, ad_features))  # Stack features vertically
+labels = np.array(nc_labels + ad_labels)  # Concatenate labels
 
-# Optional: Reduce dimensions with PCA
-pca = PCA(n_components=min(10, len(features)))
-reduced_features = pca.fit_transform(features)
+# Optional: Reduce dimensions using PCA for visualization
+pca = PCA(n_components=min(10, len(features)))  # Choose the number of components
+reduced_features = pca.fit_transform(features)  # Fit and transform the features
 
-# Apply t-SNE
-tsne = TSNE(n_components=2, perplexity=5, random_state=42)  # Adjust perplexity
-tsne_results = tsne.fit_transform(reduced_features)
+# Apply t-SNE for further dimensionality reduction and visualization
+tsne = TSNE(n_components=2, perplexity=5, random_state=42)  # Define t-SNE parameters
+tsne_results = tsne.fit_transform(reduced_features)  # Fit and transform the PCA-reduced features
 
-
-# Visualize the results
+# Visualize the t-SNE results
 plt.figure(figsize=(10, 8))
 scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=labels, cmap='viridis', alpha=0.7)
 plt.colorbar(scatter, ticks=[0, 1], label='Class')

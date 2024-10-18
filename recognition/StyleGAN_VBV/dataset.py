@@ -53,13 +53,7 @@ class CustomImageDataset(Dataset):
 def get_loader(image_size):
     """
     Create a DataLoader for the dataset with the specified image size.
-
-    Parameters:
-        image_size (int): The target size for resizing images.
-
-    Returns:
-        loader (DataLoader): The DataLoader for the dataset.
-        dataset (Dataset): The dataset object.
+    Returns Dataloader for the dataset and the dataset object.
     """
     # Define image transformations
     transform = transforms.Compose(

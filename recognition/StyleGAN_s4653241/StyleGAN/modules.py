@@ -89,7 +89,8 @@ class Generator(nn.Module):
         pass
 
 '''
-Not implemented yet
+Implementation of the discriminator network
+Is mostly the same as GAN discriminator network
 '''
 class Discriminator(nn.Module):
     def __init__(self):

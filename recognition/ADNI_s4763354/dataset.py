@@ -1,3 +1,8 @@
+'''
+Author: Lok Yee Joey Cheung
+This file contains the function for data loading, data augmentation, patient ID split in train and validation sets and optional class balancing.
+'''
+
 import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
@@ -62,7 +67,7 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     train_subset.dataset.transform = train_transform
     val_subset.dataset.transform = val_test_transform
     
-    # Calculate class weights for balanced sampling
+    # (Optional) Calculate class weights for balanced sampling for class balancing
     train_labels = [full_dataset.targets[i] for i in train_indices]
     class_counts = torch.bincount(torch.tensor(train_labels))
     class_weights = 1. / class_counts.float()
@@ -73,33 +78,5 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     test_dataset = datasets.ImageFolder(root=test_dir, transform=val_test_transform)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
-    
-    #print_class_distribution(full_dataset, train_indices, val_indices)
 
     return train_loader, val_loader, test_loader
-
-# from collections import Counter
-# def print_class_distribution(full_dataset, train_indices, val_indices):
-#     train_labels = [full_dataset.targets[i] for i in train_indices]
-#     val_labels = [full_dataset.targets[i] for i in val_indices]
-
-#     train_counter = Counter(train_labels)
-#     val_counter = Counter(val_labels)
-
-#     print("\nClass Distribution:")
-#     print("------------------")
-#     print("Training Set:")
-#     for class_idx, count in train_counter.items():
-#         class_name = full_dataset.classes[class_idx]
-#         print(f"  Class '{class_name}' (Index {class_idx}): {count} samples")
-
-#     print("\nValidation Set:")
-#     for class_idx, count in val_counter.items():
-#         class_name = full_dataset.classes[class_idx]
-#         print(f"  Class '{class_name}' (Index {class_idx}): {count} samples")
-
-#     print("\nTotal:")
-#     total_counter = train_counter + val_counter
-#     for class_idx, count in total_counter.items():
-#         class_name = full_dataset.classes[class_idx]
-

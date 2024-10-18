@@ -24,6 +24,18 @@ Diffusion refers to the movement of substances from a region of higher concentra
 
 The diffusion model mainly consists of two phases: Forward Noising and Backward Denoising. Basically, noise is continuously added to the image, and the challenge is to reverse this process to recover the original image. (the u-net model usually used to predict the noise or velocity)
 
+## Forward Diffusion Process
+![Forward](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/forward_equation.png)
+During the Forward Diffusion phase, a Markov chain is defined, where each timestep where each timestep t only depends on the previous timestep t−1. We use a variance schedule β to control the mean and variance, with β₀ < β₁< … < βt. We begin at X0, which is sampled from the real data distribution q(x), and iteratively adjust the mean and variance to generate X1, and so on, until reaching the final state XT, which is Gaussian noise. This process can be thought of as gradually pushing the image away from the real data distribution until it becomes indistinguishable from noise.
+![Forward](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/Diffusion_process.png)
+
+## Backward Denoising Process
+
+
+![training_loss](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/training_loss.jpg)
+
+
+
 -   Image Compression
 -   Denoising
 -   Image Generation

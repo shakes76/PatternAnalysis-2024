@@ -1,11 +1,17 @@
 """
-DOCSTRING ABOUT WHAT THIS FILE IS HERE 
+This module provides utility functions for handling image datasets, including loading datasets,
+splitting them into training, validation, and test sets, and calculating dataset statistics
+such as mean and standard deviation. These statistics are used for normalization to improve
+the training process for deep learning models.
 
+Key Functions:
+1. `get_mean_std`: Computes the mean and standard deviation of a dataset.
+2. `get_dataloaders`: Loads the dataset, applies transformations, and returns DataLoaders for 
+   the training, validation, and test datasets.
+3. `main`: Example function to calculate the mean and standard deviation for the training set.
 
-Mean and standard deviation (for normalisation) should be calculated with the training dataset;
-
-And then this mean/std should be used to normalise the train, val and test dataset! (Don't use test dataset to find mean/std, that causes data leakage).
-
+Note: The mean and standard deviation should be calculated using only the training dataset
+to avoid data leakage. These values should then be used to normalize the training, validation, and test datasets during model training.
 """
 import torch
 import torchvision
@@ -14,6 +20,19 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 
 def get_mean_std(loader: DataLoader):
+    """
+    Computes the mean and standard deviation of the dataset for normalization.
+
+    Args:
+        loader (torch.utils.data.DataLoader): DataLoader for the dataset to calculate mean and std.
+
+    Returns:
+        mean (torch.Tensor): Tensor containing the mean value for each channel (R, G, B).
+        std (torch.Tensor): Tensor containing the standard deviation for each channel (R, G, B).
+    
+    Note:
+        This function assumes the input images have 3 channels (R, G, B). If using grayscale images, you should modify the mean and std calculation for a single channel.
+    """
     mean = torch.zeros(3)
     squared_mean = torch.zeros(3)
     N = 0 # Number of batches
@@ -35,8 +54,32 @@ def get_mean_std(loader: DataLoader):
     return mean, std
 
 
-def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction = 0.9, num_workers = 2, path: str = "./ADNI/AD_NC"):
-     # train fraction: What percentage is used for training vs validation (0.9 is 90%).
+def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction = 0.9, num_workers = 2, path: str = "./ADNI/AD_NC", use_transforms = True):
+    """
+    Loads the training, validation, and test datasets, applies optional transformations,
+    and returns DataLoaders for each dataset.
+
+    Args:
+        batch_size (int, optional): Batch size for DataLoaders. Default is 32.
+        image_size (int, optional): Image size to resize the images. Default is 224.
+        train_fraction (float, optional): Fraction of the data used for training. Default is 0.9.
+        num_workers (int, optional): Number of workers for data loading. Default is 2.
+        path (str, optional): Path to the dataset directory. Default is './ADNI/AD_NC'.
+        use_transforms (bool, optional): Whether to apply data augmentation and normalization 
+            transforms. Default is True.
+
+    Returns:
+        tuple: A tuple containing:
+            - train_dataloader (torch.utils.data.DataLoader): DataLoader for the training dataset.
+            - val_dataloader (torch.utils.data.DataLoader): DataLoader for the validation dataset.
+            - test_dataloader (torch.utils.data.DataLoader): DataLoader for the test dataset.
+    
+    Note:
+        The mean and standard deviation for normalization are pre-calculated based on the training
+        dataset. These values are used consistently across training, validation, and test datasets
+        to avoid data leakage.
+    """
+
 
     train_dir = f"{path}/train"
     test_dir = f"{path}/test"
@@ -45,13 +88,21 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
     mean = torch.Tensor([0.1156, 0.1156, 0.1156]) 
     std =  torch.Tensor([0.2229, 0.2229, 0.2229])
 
-    data_transforms = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.RandomHorizontalFlip(), # For augmentation and better generalisation
-        transforms.RandomRotation(degrees=10),  # Random rotation between -10 and +10 degrees
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std) # Mean and std from previous cell
-    ])
+    ### Optional parameter, where you can turn advanced transforms like normalisation off (NOT RECOMMENDED!!). This was only to see the difference in performance between two models.
+    if use_transforms:
+        data_transforms = transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.RandomHorizontalFlip(), # For augmentation and better generalisation
+            transforms.RandomRotation(degrees=10),  # Random rotation between -10 and +10 degrees
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std) # Mean and std from previous cell
+        ])
+    else:
+        data_transforms = transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+        ])
+
 
     # Load the full train dataset
     train_data = datasets.ImageFolder(root=train_dir, transform=data_transforms)

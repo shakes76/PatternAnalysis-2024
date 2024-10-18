@@ -37,7 +37,6 @@ class MLP(nn.Module):
         x = self.dropout(x)
         return x
 
-#https://arxiv.org/abs/2010.11929
 #https://tintn.github.io/Implementing-Vision-Transformer-from-Scratch/
 class EncoderBlock(nn.Module):
     """
@@ -77,6 +76,7 @@ class Encoder(nn.Module):
         x = self.layers(x)
         return self.norm_layer(x)
 
+#https://arxiv.org/abs/2010.11929
 #https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py
 class VisionTransformer(nn.Module):
     """

@@ -232,6 +232,10 @@ def train_loop():
         epoch_loss = running_loss / len(train_dataset)
         print(f"Training Loss: {epoch_loss:.4f}")
 
+        # Retrieve and print the current learning rate
+        current_lr = scheduler.get_last_lr()[0]
+        print(f"Learning Rate: {current_lr}")
+
         # Validation phase
         model.eval()
         val_loss = 0.0
@@ -289,7 +293,7 @@ def train_loop():
 
             # Compute per-class Dice loss and accumulate
             per_class_scores = per_class_dice_loss(outputs, batch_labels).cpu().numpy()  # Shape: (num_classes,)
-            dice_score += per_class_scores
+            dice_score += np.ones(6) - per_class_scores
 
     # Calculate average loss
     avg_test_loss = test_loss / len(test_dataset)

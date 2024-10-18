@@ -2,7 +2,9 @@ import torch
 import torch.nn.functional as F
 
 # Pre-computed class weights
-CLASS_WEIGHTS = torch.tensor([0.2769, 0.4681, 4.9273, 28.8276, 117.5489, 161.1025])
+# Class weights = 1 / count in that class then normalised
+# CLASS_WEIGHTS = torch.tensor([0.2769, 0.4681, 4.9273, 28.8276, 117.5489, 161.1025])
+CLASS_WEIGHTS = torch.tensor([1, 2, 3, 4, 5, 6])
 
 def per_class_dice_loss(pred, target, num_classes=6, epsilon=1e-6):
     """

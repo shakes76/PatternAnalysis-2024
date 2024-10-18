@@ -170,7 +170,7 @@ class MriData3D(Dataset):
             label = self.label_transform(label)
         return image, label
 
-def mri_split(data_path:str = DATASET_PATH,proportions:Iterable[float] = [0.7,0.2,0.1]) -> list[list[str]]:
+def mri_split(data_path:str = DATASET_PATH,proportions:Iterable[float] = [0.7,0.2,0.1],random_state:int|None=None) -> list[list[str]]:
     """Creates a split on sample names from the MRI's for training a neural network
 
     Args:
@@ -190,11 +190,13 @@ def mri_split(data_path:str = DATASET_PATH,proportions:Iterable[float] = [0.7,0.
         return []
     result = []
     while len(proportions) > 1:
-        to_append, to_split = train_test_split(targets, train_size=proportions[0])
+        to_append, to_split = train_test_split(targets, train_size=proportions[0],random_state=random_state)
         targets = to_split
         result.append(to_append)
         proportions = proportions[1:]
         new_sum = sum(proportions)
+        if random_state is not None:
+            random_state += 1
         if new_sum != 1 and new_sum:
             proportions = [x/new_sum for x in proportions]
     result.append(to_split)

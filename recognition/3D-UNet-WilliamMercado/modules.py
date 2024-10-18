@@ -72,13 +72,13 @@ class SynthesisLayer(nn.Module):
 
     def forward(self, shortcut, x):
         x = self.upconv(x)
-        torch.cat(shortcut, x)
+        x = torch.cat((shortcut, x),dim = 1,out=x)
         x = self.sequence(x)
         return x
 
 class FullUNet3D(nn.Module):
     "Full UNet 3D model built from analysis layers and synthesis layers. Has final 1x1x1 conv."
-    def __init__(self, input_width=3, analysis_pad=0,synth_pad = 0,start_width=64,end_width=512) -> None:
+    def __init__(self, input_width=3, analysis_pad=1,synth_pad = 1,start_width=64,end_width=512) -> None:
         """
         Initializer for Full 3D UNet. Allows for general alterations including altering the maximum
         width of the analysis, the padding for both analysis and synthesis, and the input width
@@ -100,12 +100,12 @@ class FullUNet3D(nn.Module):
         self.analysis_path = [AnalysisLayer(base_width=input_width,target_width=start_width,padding=analysis_pad,pool=False)]
         cur_width = start_width
         while cur_width < end_width:
-            new_layer = AnalysisLayer(base_width=start_width,target_width=start_width*2,padding=analysis_pad,pool=True)
+            new_layer = AnalysisLayer(base_width=cur_width,target_width=cur_width*2,padding=analysis_pad,pool=True)
             self.analysis_path.append(new_layer)
             cur_width *= 2
         
         self.synthesis_path:list[SynthesisLayer] = []
-        while cur_width < start_width:
+        while cur_width > start_width:
             new_layer = SynthesisLayer(base_width=cur_width,target_width=cur_width//2,padding=synth_pad)
             self.synthesis_path.append(new_layer)
             cur_width //= 2

@@ -2,7 +2,7 @@
 train.py
 """
 import numpy as np
-from const import DATASET_PATH
+from const import DATASET_PATH, NET_OUTPUT_TARGET
 from dataset import mri_split, MriData3D
 from modules import FullUNet3D
 from torch.utils.data import DataLoader
@@ -43,7 +43,6 @@ for epoch in range(num_epochs):
         images = torch.tensor(images,device=device)
         labels = torch.tensor(labels,device=device)
         b_size = images.size(0)
-        print(images.shape)
 
         # --- Train ---
         model.train()
@@ -56,13 +55,14 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         # Training stats
-        if i % 20 == 0:
+        if i % 1 == 0:
             print('[%d/%d][%d/%d]\tLoss: %.4f'
                   % (epoch, num_epochs, i, len(train_dataloader),
                      calc_loss.item()), flush=True)
-            
+
         # Save loss
         # losses.append(calc_loss.item())
 
-# Save model
 
+# Save model
+torch.save(model, NET_OUTPUT_TARGET)

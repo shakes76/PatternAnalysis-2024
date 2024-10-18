@@ -25,11 +25,53 @@ Diffusion refers to the movement of substances from a region of higher concentra
 The diffusion model mainly consists of two phases: Forward Noising and Backward Denoising. Basically, noise is continuously added to the image, and the challenge is to reverse this process to recover the original image. (the u-net model usually used to predict the noise or velocity)
 
 ## Forward Diffusion Process
-![Forward](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/forward_equation.png)
+<p align="center">
+  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/forward.png" alt="Backward" />
+</p>
+
 During the Forward Diffusion phase, a Markov chain is defined, where each timestep where each timestep t only depends on the previous timestep t−1. We use a variance schedule β to control the mean and variance, with β₀ < β₁< … < βt. We begin at X0, which is sampled from the real data distribution q(x), and iteratively adjust the mean and variance to generate X1, and so on, until reaching the final state XT, which is Gaussian noise. This process can be thought of as gradually pushing the image away from the real data distribution until it becomes indistinguishable from noise.
 ![Forward](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/Diffusion_process.png)
 
 ## Backward Denoising Process
+
+<p align="center">
+  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/backward_1.png" alt="Backward" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/backward_2.png" alt="Backward" />
+</p>
+
+To remove noise from the noisy image distribution, we need to find an estimated reverse distribution p(x_t-1 | x_t), which is defined as a normal distribution with parameters μ and σ. In the DDPM paper, assuming σ is close to βt, the reverse distribution p(x_t−1|x_t) could be written as:  (the below equation require the number of time step to be large enough e.g. 1000, 2000)
+
+<p align="center">
+  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/p(x-1|x).png" alt="Backward" />
+</p>
+
+The sampling process of DDPM is defined as follows. This process allows us to remove the noise from the noisy image Xt through an iterative denoising procedure. The only unknown parameter required for the p(x_t−1∣x_t) distribution is Є_θ, which can be estimated by the U-Net model. (In this report I also inplement DDIM, a variation of DDPM which has a faster smapling process)
+<p align="center">
+  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/DDPM_process.png" alt="Backward" />
+</p>
+
+## Training
+
+#### Requirements
+
+#### Model Archetecture
+
+#### Hyperparameter
+
+#### loss
+
+
+
+
+
+
+
+
+
+
 
 
 ![training_loss](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/training_loss.jpg)

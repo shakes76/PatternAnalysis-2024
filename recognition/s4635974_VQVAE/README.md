@@ -98,7 +98,7 @@ Without further pre-processing I was able to achieve our goal of over 0.6 SSIM a
 ## Model Results
 
 ### Training
-The model was trained with the above parameters. I experimented with varying the learning rate and batch size and found the above hyperparameters to give the best accuracy in the least amount of training time (without the training becoming unstable). Early stopping was used [5] to stop the training when there was no further improvement in validation loss. This can help avoid overfitting and save on computational resources. Little improvement was achieved beyond 60 epochs. 
+The model was trained with the above parameters. I experimented with varying the learning rate and batch size and found the above hyperparameters to give the best accuracy in the least amount of training time (without the training becoming unstable). Early stopping was used [5] to stop the training when there was no further improvement in validation loss. This can help avoid overfitting and save on computational resources. Little improvement was achieved beyond 60 epochs (I tried training the model for a maximum of 200 epochs). 
 
 #### Training and Validation output losses (reconstruction loss)
 ![Training and validation output loss](report_images/output_loss_per_epoch.png)

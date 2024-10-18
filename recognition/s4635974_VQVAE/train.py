@@ -70,7 +70,7 @@ class ValidationLossEarlyStopping:
         return False
 
 # Hyperparmeters for loading model
-num_epochs = 3           # Number of training epochs
+num_epochs = 150           # Number of training epochs
 batch_size = 16            # Batch size for the dataloader
 lr = 0.002                 # Learning rate for the optimizer
 num_hiddens = 128          # Number of hidden units in the VQ-VAE model
@@ -325,7 +325,7 @@ def train_model(
         plt.plot(epochs, epoch_validation_reconstruction_loss, label='Validation reconstruction Loss')
         plt.xlabel('Epochs')
         plt.ylabel('reconstruction Loss')
-        plt.title('Training and Validation reconstruction Loss per Epoch')
+        plt.title('Training and Validation Reconstruction Loss per Epoch')
         plt.legend()
         plt.grid(True)
         plt.savefig(os.path.join(save_dir, 'reconstruction_loss_per_epoch.png'))
@@ -373,9 +373,9 @@ def train_model(
         # Save the model state_dict
         torch.save(model.state_dict(), model_dir)
 
-    return model
+    print("End")
 
-print("End")
+    return model
 
 if (__name__ == "__main__"):
     model = train_model(

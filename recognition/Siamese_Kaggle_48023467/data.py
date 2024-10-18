@@ -44,7 +44,7 @@ class ISICDataset(Dataset):
         if mode == 'train':
             # Manual oversampling due to data storage method
             benign_train, malignant_train = [], []
-            self._imgs += benign_train
+            self._imgs = benign_train
             for img in img_train:
                 benign_train.append(img) if img[1] == 0 else malignant_train.append(img)
                 
@@ -58,12 +58,12 @@ class ISICDataset(Dataset):
             if oversample_count > 0:
                 for _ in range(0, oversample_count):
                     sample = random.choice(malignant_train)
-                    self._imgs += sample
+                    self._imgs.append(sample)
                     
         else:
             self._imgs = img_val
-            
-        # CHECK ERROR BELOW, IMG REGISTERING AS INT
+        
+        random.shuffle(self._imgs)
         
         # Split image array into seperate arrays based on labels
         benign_indices, malignant_indices = [], []
@@ -209,15 +209,16 @@ if __name__ == "__main__":
     data_dir, _, output_dir, train_ratio, _, _, batch_size = load_params()
     
     # Get data
+    print("Loading data...")
     train_loader, val_loader = generate_dataloaders(data_dir, ratio=train_ratio, batch_size=batch_size)
     train_dataset = train_loader.dataset
     val_dataset = val_loader.dataset
     
     # Verify data presence and count
-    benign_count_train = len(label for label in train_dataset.labels if label == 0)
-    malignant_count_train = len(label for label in train_dataset.labels if label == 1)
-    benign_count_val = len(label for label in val_dataset.labels if label == 0)
-    malignant_count_val = len(label for label in val_dataset.labels if label == 1)
+    benign_count_train = len([label for label in train_dataset._imgs if label[1] == 0])
+    malignant_count_train = len([label for label in train_dataset._imgs if label[1] == 1])
+    benign_count_val = len([label for label in val_dataset._imgs if label[1] == 0])
+    malignant_count_val = len([label for label in val_dataset._imgs if label[1] == 1])
 
     print("\nData loading successful:")
     print(f"Training data - Total: {len(train_dataset)}, Benign: {benign_count_train}, Malignant: {malignant_count_train}")

@@ -50,7 +50,7 @@ def validate():
     return val_loss.item()
 
 # Train the model
-num_epochs = 1000
+num_epochs = 1500
 losses = []
 val_losses = []
 

@@ -47,12 +47,11 @@ def validate(model, val_loader, criterion, device):
     return epoch_loss
 
 if __name__ == "__main__":
-    # {'lr': 0.00014064028273686496, 'wd': 0.009762551374557771, 'drop': 0.4236238197816006, 'droppath': 0.30353223689964426, 'bs': 16}
     # Hyperparameters
     learning_rate = 0.0001
     weight_decay = 0.01
     drop_rate = 0.4
-    drop_path_rate = 0.3
+    drop_path_rate = 0.3 #! need to reconsider!
     batch_size = 16
 
     # Create folder based on hyperparameters
@@ -101,15 +100,17 @@ if __name__ == "__main__":
         val_losses.append(val_loss)
         print(f"Validation Loss: {val_loss:.4f}")
 
-        scheduler.step()
-        early_stopping(val_loss, model)
+        #! off early stopping for testing
+        # scheduler.step()
+        # early_stopping(val_loss, model)
         
-        if early_stopping.early_stop:
-            print("Early stopping triggered. Stopping training.")
-            break
+        # if early_stopping.early_stop:
+        #     print("Early stopping triggered. Stopping training.")
+        #     break
+    torch.save(model.state_dict(), checkpoint_path)
 
-    print("Loading the best model from checkpoint.")
-    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+    #print("Loading the best model from checkpoint.")
+    #model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
 
     # Save losses
     loss_log_path = os.path.join(output_dir, 'loss_log.csv')

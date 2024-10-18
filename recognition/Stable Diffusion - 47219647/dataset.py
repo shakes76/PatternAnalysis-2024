@@ -20,24 +20,28 @@ def data_set_creator():
     data_dir = 'recognition/Stable Diffusion - 47219647/AD_NC/test'
     dataset = datasets.ImageFolder(root=data_dir, transform=augmentation_transforms)
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=True, num_workers=6)
-    
 
-    #Shows the first few comments for quality check
-    #Uncomment if needed
-    # def show_image(image_tensor):
+    # Shows the first few comments for quality check
+    # Uncomment if needed
+    # def show_image(image_tensor,title):
     #     image = image_tensor.permute(1, 2, 0).numpy()
     #     plt.imshow(image)
+    #     plt.title(title)
     #     plt.axis('off')
     #     plt.show()
 
     # num_images_to_show = 5
-    # for i in range(num_images_to_show):
-    #     image, _ = dataset[i] 
-    #     show_image(image)
 
-    return data_loader
+    # for batch_images, batch_labels in data_loader:
+    #     for i in range(num_images_to_show):
+    #         show_image(batch_images[i], f"Label: {batch_labels[i]}")
+    #     break
+    
+    label_map = {0: "Alzheimer's disease", 1: "Normal control"}
+
+    return data_loader, label_map
 
 
-data_set_creator()
-
+# if __name__ == "__main__":
+#     data_loader = data_set_creator()
 

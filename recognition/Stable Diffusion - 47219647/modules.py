@@ -21,3 +21,4 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 
 #Pipeline
 modelPipeline = DiffusionPipeline(unet=unet, vae=vae, text_encoder=text_encoder, tokenizer=tokenizer)
+

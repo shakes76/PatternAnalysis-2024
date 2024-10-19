@@ -16,6 +16,14 @@ import nibabel as nib
 import numpy as np
 import os
 from tqdm import tqdm
+from torchvision import transforms
+
+
+transform = transforms.Compose([
+    transforms.RandomCrop(64),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor()
+])
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
@@ -32,6 +40,7 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
 
     num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
+    
     if len(first_case.shape) == 3:
         first_case = first_case[:,:,0]
 
@@ -72,7 +81,7 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
 
 
 class VQVAENIfTIDataset(Dataset):
-    def __init__(self, data_dir, transform = None, normImage = True, categorical = False):
+    def __init__(self, data_dir, transform = transform, normImage = True, categorical = False):
         self.data_dir = data_dir
         self.transform = transform
         self.normImage = normImage

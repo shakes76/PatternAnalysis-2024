@@ -63,15 +63,15 @@ def save_model(model, epoch, output_dir):
 
 
 def main(
-        data_dir, 
-        output_dir, 
-        batch_size = 16, 
-        num_epochs = 1, 
-        lr = 1e-3, 
-        hidden_dims = [128, 256], 
-        num_embeddings = [512, 1024], 
-        embedding_dims = [64, 64], 
-        commitment_cost = 0.25, 
+        data_dir,
+        output_dir,
+        batch_size = 64,
+        num_epochs = 1,
+        lr = 1e-3,
+        hidden_dims = [128, 256],
+        num_embeddings = [512, 1024],
+        embedding_dims = [64, 64],
+        commitment_cost = 0.25,
         num_workers = 4):
     # Check if output directory exists
     if not os.path.exists(output_dir):
@@ -88,8 +88,8 @@ def main(
     in_channels = 1  # Assuming single-channel (grayscale) images
     model = VQVAE2(in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost).to(device)
 
-    # Optimizer
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    # Optimiser
+    optimiser = optim.Adam(model.parameters(), lr=lr)
 
     # Lists to store losses
     train_losses = []
@@ -100,7 +100,7 @@ def main(
         print(f'Epoch {epoch}/{num_epochs}')
 
         # Train for one epoch
-        train_loss = train_epoch(model, train_loader, optimizer, device)
+        train_loss = train_epoch(model, train_loader, optimiser, device)
         train_losses.append(train_loss)
 
         # Validate for one epoch
@@ -121,6 +121,6 @@ def main(
 
 
 if __name__ == "__main__":
-    data_dir = './HipMRI_study_keras_slices_data'
+    data_dir = 'recognition/VQVAE_s4803279/HipMRI_study_keras_slices_data'
     output_dir = './trained_vqvae2_model'
     main(data_dir, output_dir)

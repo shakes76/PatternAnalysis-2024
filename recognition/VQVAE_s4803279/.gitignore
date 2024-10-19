@@ -20,4 +20,4 @@ Thumbs.db
 *.nii.gz
 
 # PyCache files
-.pyc
+*.pyc

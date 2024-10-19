@@ -36,10 +36,9 @@ def data_set_creator():
     #     for i in range(num_images_to_show):
     #         show_image(batch_images[i], f"Label: {batch_labels[i]}")
     #     break
-    
-    label_map = {0: "Alzheimer's disease", 1: "Normal control"}
 
-    return data_loader, label_map
+
+    return data_loader
 
 
 # if __name__ == "__main__":

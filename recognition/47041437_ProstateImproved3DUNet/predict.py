@@ -10,7 +10,7 @@ os.chdir(os.path.dirname(__file__))
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = UNet3D().to(device)
-model.load_state_dict(torch.load('net_paras_mine2.pth', map_location=device))
+model.load_state_dict(torch.load('ImprovedUNET3DsegmentationModel.pth', map_location=device))
 model.eval()
 
 image_path = '~/HipMRI_study_complete_release_v1/semantic_MRs_anon/Case_004_Week0_LFOV.nii.gz'

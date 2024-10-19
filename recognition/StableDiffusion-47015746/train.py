@@ -1,14 +1,11 @@
 import torch
 import torch.optim as optim
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
 from modules import *
 from dataset import *
 import torch.optim.lr_scheduler as lr_scheduler
-import matplotlib.animation as animation
 import pandas as pd
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # List to store images for multiple points in each epoch
@@ -16,78 +13,7 @@ img_list = []
 
 img_list_encoder = []
 
-def visualize_images(im1, im2, im3, im4, epoch):
-    # Move images back to CPU and detach
-    im1= im1.cpu().detach()
-    im2= im2.cpu().detach()
-    im3= im3.cpu().detach()
-    im4= im4.cpu().detach()
-    
 
-    # Unnormalize images to bring them from [-1, 1] to [0, 1] for visualization
-    def unnormalize(imgs):
-        return imgs * 0.5 + 0.5
-
-    im1= unnormalize(im1)
-    im2= unnormalize(im2)
-    im3= unnormalize(im3)
-    im4= unnormalize(im4)
-    
-
-    # Display first 8 images
-    num_images = 8
-    fig, axes = plt.subplots(4, num_images, figsize=(15, 5))
-
-    for i in range(num_images):
-        # Original Images
-        axes[0, i].imshow(np.transpose(im1[i].numpy(), (1, 2, 0)))
-        axes[0, i].axis('off')
-        axes[0, i].set_title("Noisy Latent")
-
-        # Reconstructed from Latent (Encoder → Decoder)
-        axes[1, i].imshow(np.transpose(im2[i].numpy(), (1, 2, 0)))
-        axes[1, i].axis('off')
-        axes[1, i].set_title("Noise")
-
-        # Final Reconstructed (Full Model Output)
-        axes[2, i].imshow(np.transpose(im3[i].numpy(), (1, 2, 0)))
-        axes[2, i].axis('off')
-        axes[2, i].set_title("Predicted Noise")
-
-        # Final Reconstructed (Full Model Output)
-        axes[3, i].imshow(np.transpose(im4[i].numpy(), (1, 2, 0)))
-        axes[3, i].axis('off')
-        axes[3, i].set_title("Output Image Prediction")
-
-
-    plt.suptitle(f"Epoch {epoch} - Model Outputs")
-    plt.show()
-
-def visualize_images_final(final_reconstructed):
-    # Move images back to CPU and detach
-    final_reconstructed = final_reconstructed.cpu().detach()
-
-    # Unnormalize images to bring them from [-1, 1] to [0, 1] for visualization
-    def unnormalize(imgs):
-        return imgs * 0.5 + 0.5
-
-    final_reconstructed = unnormalize(final_reconstructed)
-
-    # Take the first image from batch for the GIF and store it
-    img_list.append(final_reconstructed[0].numpy())
-
-def visualize_images_encoder(encoder_reconstructed):
-    # Move images back to CPU and detach
-    encoder_reconstructed = encoder_reconstructed.cpu().detach()
-
-    # Unnormalize images to bring them from [-1, 1] to [0, 1] for visualization
-    def unnormalize(imgs):
-        return imgs * 0.5 + 0.5
-
-    encoder_reconstructed = unnormalize(encoder_reconstructed)
-
-    # Take the first image from batch for the GIF and store it
-    img_list_encoder.append(encoder_reconstructed[0].numpy())
 
 
 
@@ -113,7 +39,7 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
             total_loss = loss.item()
 
         print(f"Epoch {epoch + 1}/{epochs}, VAE Loss: {total_loss:.4f}")
-        visualize_images_encoder(reconstructed)
+        
 
 
     # Save the model's state dictionary after training completes
@@ -121,13 +47,7 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
     print("Model saved as 'vae_state_dict.pth'")
 
 
-    # Create and save GIF
-    fig = plt.figure(figsize=(8, 8))
-    plt.axis("off")
-    ims = [[plt.imshow(np.transpose(img, (1, 2, 0)), animated=True)] for img in img_list_encoder]
-    ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-    ani.save('training_progress_encoder.gif', writer='imagemagick', fps=10)
-    plt.close(fig)
+    
 
 
 
@@ -136,7 +56,7 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
 
 # Instantiate and train only the diffusion model
 # Adjust the training function
-def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=2):
+def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
     diffusion_model.unet.train()  # Only UNet should be in training mode
     epoch_losses = []  # List to store loss for each epoch
     #learning_rates = []
@@ -161,14 +81,14 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=2):
 
         for images, labels in dataloader:
             images = images.to(device)
-           
+         
             optimizer.zero_grad()
             # Random timestep for diffusion
             t = torch.randint(0, diffusion_model.noise_scheduler.timesteps, (images.size(0),)).long().to(device)
 
             # Forward pass through diffusion model
             latent, noisy_latent, predicted_noise, noise = diffusion_model(images, t)
-
+            
             # Calculate loss for denoising
             loss = F.smooth_l1_loss(noise, predicted_noise)
             
@@ -216,10 +136,10 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=2):
 
 if __name__ == '__main__':
     # Load data
-    #data_train = "C:/Users/msi/Desktop/AD_NC/train" 
-    #data_test = "C:/Users/msi/Desktop/AD_NC/test" 
-    data_train = "/home/groups/comp3710/ADNI/AD_NC/train"
-    data_test = "/home/groups/comp3710/ADNI/AD_NC/test"
+    data_train = "C:/Users/msi/Desktop/AD_NC/train" 
+    data_test = "C:/Users/msi/Desktop/AD_NC/test" 
+    #data_train = "/home/groups/comp3710/ADNI/AD_NC/train"
+    #data_test = "/home/groups/comp3710/ADNI/AD_NC/test"
     dataloader = load_data(data_train, data_test)
 
     # Instantiate the model
@@ -241,10 +161,10 @@ if __name__ == '__main__':
     diffusion_model = DiffusionModel(encoder, unet, decoder, noise_scheduler).to(device)
 
     # Define optimizer for only the UNet part
-    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr= 0.0005)
+    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr= 0.00001)
 
     # Train the diffusion model as before
-    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=2)
+    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=100)
 
 
     #stable_diffusion_model = StableDiffusionModel(latent_dim, timesteps)

@@ -28,6 +28,10 @@ class NoiseScheduler:
         noise = torch.randn_like(x).to(device)
         alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x.device)
         return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise, noise
+    def add_noise_partial(self, x, t, partial):
+        noise = torch.randn_like(x).to(device)
+        alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x.device)
+        return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise * partial
     def remove_noise(self, x_noisy, noise, t):
         # Get the alpha value for the given timestep
         alpha_t = self.alphas[t].view(-1, 1, 1, 1).to(x_noisy.device)

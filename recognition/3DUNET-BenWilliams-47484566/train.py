@@ -22,7 +22,7 @@ from dataset import MRI3DDataset
 
 
 # Training loop (simplified)
-def train_model(model, criterion, optimizer):
+def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cuda'):
     model = model.to(device)
     model.train()
 
@@ -37,8 +37,8 @@ def train_model(model, criterion, optimizer):
 
             optimizer.zero_grad()
 
-            outputs = model(inputs
-            loss = criterion(outputs, labels))
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
 
             loss.backward()
             optimizer.step()

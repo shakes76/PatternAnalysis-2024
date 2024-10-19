@@ -104,3 +104,68 @@ def initialize_scheduler(optimizer: optim.Optimizer, config: Dict) -> optim.lr_s
         verbose=True
     )
     return scheduler
+
+def train_model(model: nn.Module, 
+                device: torch.device, 
+                train_loader: DataLoader, 
+                val_loader: DataLoader, 
+                criterion: nn.Module, 
+                optimizer: optim.Optimizer, 
+                scheduler: optim.lr_scheduler.ReduceLROnPlateau, 
+                num_epochs: int, 
+                save_path: str) -> None:
+    """Train the UNet model."""
+    best_dice = 0.0
+    for epoch in range(1, num_epochs + 1):
+        model.train()
+        epoch_loss = 0.0
+        train_dice = 0.0
+        
+        with tqdm(total=len(train_loader), desc=f'Epoch {epoch}/{num_epochs}', unit='batch') as pbar:
+            for images, masks in train_loader:
+                images = images.to(device, non_blocking=True)
+                masks = masks.to(device, non_blocking=True)
+                
+                optimizer.zero_grad()
+                outputs = model(images)
+                loss = criterion(outputs, masks)
+                loss.backward()
+                optimizer.step()
+                
+                epoch_loss += loss.item()
+                train_dice += dice_coefficient(outputs, masks)
+                
+                pbar.set_postfix({'loss': loss.item(), 'dice': train_dice / (pbar.n + 1)})
+                pbar.update(1)
+        
+        avg_loss = epoch_loss / len(train_loader)
+        avg_dice = train_dice / len(train_loader)
+        print(f"Epoch {epoch} Training Loss: {avg_loss:.4f}, Dice Coefficient: {avg_dice:.4f}")
+        
+        # Validation
+        model.eval()
+        val_loss = 0.0
+        val_dice = 0.0
+        with torch.no_grad():
+            for images, masks in val_loader:
+                images = images.to(device, non_blocking=True)
+                masks = masks.to(device, non_blocking=True)
+                outputs = model(images)
+                loss = criterion(outputs, masks)
+                val_loss += loss.item()
+                val_dice += dice_coefficient(outputs, masks)
+        
+        avg_val_loss = val_loss / len(val_loader)
+        avg_val_dice = val_dice / len(val_loader)
+        print(f"Epoch {epoch} Validation Loss: {avg_val_loss:.4f}, Dice Coefficient: {avg_val_dice:.4f}")
+        
+        # Step the scheduler
+        scheduler.step(avg_val_loss)
+        
+        # Checkpoint
+        if avg_val_dice > best_dice:
+            best_dice = avg_val_dice
+            torch.save(model.state_dict(), os.path.join(save_path, 'best_model.pth'))
+            print(f"Best model saved with Dice Coefficient: {best_dice:.4f}")
+    
+    print(f"Training complete. Best Dice Coefficient: {best_dice:.4f}")

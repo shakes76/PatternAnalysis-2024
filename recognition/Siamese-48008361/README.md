@@ -245,7 +245,7 @@ Analysis:
 | Malignant Accuracy | 88% |
 | Benign Accuracy | 76% |
 
-The high sensitivity to malignant cases (87%) aligns with clinical priorities. The lower benign accuracy reflects a cautious approach, potentially leading to some unnecessary follow-ups but minimizing missed malignancies. This was done on purpose as a false positive is less harmful than a false negative in this context after consulting with dermatologists. Therefore the model does achieve the goal of 80% accuracy as requested.
+The high sensitivity to malignant cases (87%) aligns with clinical priorities. The lower benign accuracy reflects a cautious approach, potentially leading to some unnecessary follow-ups but minimizing missed malignancies. This was done on purpose as a false positive is less harmful than a false negative in this context after consulting with dermatologists. Therefore the model does achieve the goal of classifying images with 80% accuracy as requested.
 
 ## Future Directions
 
@@ -261,7 +261,7 @@ Based on results and dermatologist consultations:
 
 5. Clinical validation through real-world trials
 
-6. Using ensemble methods to combine multiple models for improved performance
+6. Using ensemble methods to combine multiple models for improved performance, or considering simpler models to reduce overfitting
 
 ## References
 

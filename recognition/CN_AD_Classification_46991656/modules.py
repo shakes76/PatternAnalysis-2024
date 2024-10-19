@@ -91,4 +91,19 @@ class FourierTransformLayer(nn.Module):
         return x_fft
 
 
+def get_model():
+    """
+    Utility function to create the GFNet model.
+    """
+    model = GFNet(
+        img_size=224, 
+        patch_size=16, 
+        in_channels=3, 
+        embed_dim=768, 
+        num_classes=2, 
+        num_layers=6, 
+        dropout=0.1
+    )
+    return model
+
 

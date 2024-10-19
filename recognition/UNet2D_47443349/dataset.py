@@ -1,6 +1,5 @@
 import numpy as np
 import nibabel as nib
-from tqdm import tqdm
 import os
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
@@ -20,7 +19,7 @@ def load_data_2D(imageNames, normImage=False, dtype=np.float32, getAffines=False
     images = np.zeros((num, IMAGE_HEIGHT, IMAGE_WIDTH), dtype=dtype)
     affines = []
 
-    for i, inName in enumerate(tqdm(imageNames)):
+    for i, inName in enumerate(imageNames):
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching='unchanged') # Read disk only
 

@@ -1,6 +1,7 @@
+# Reference Link:
+# https://www.kaggle.com/code/mrmohammadi/2d-unet-pytorch
 
 
-# Given code from assignment spec
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
@@ -16,7 +17,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
 
 # load medical image functions
-def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, 
+def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32,
                  getAffines=False, early_stop=False):
     '''
     Load medical image data from names, cases list provided into a list for each.
@@ -68,7 +69,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images
 
 
-def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32, 
+def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32,
                  getAffines=False, orient=False, early_stop=False):
     '''
     Load medical image data from names, cases list provided into a list for each.
@@ -135,3 +136,67 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+
+
+import os
+
+# online uq root
+dataroot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/"
+
+testroot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+
+# List all NIfTI files in the folder (ending with .nii.gz)
+nifti_files = [os.path.join(testroot, f) for f in os.listdir(testroot) if f.endswith('.nii.gz')]
+
+images = load_data_2D(nifti_files, normImage=True, categorical=False, dtype=np.float32, getAffines=False, early_stop=True)
+
+# After loading, `images` will contain the processed data ready for training your UNet
+print(f"Loaded {len(images)} images from {testroot}")
+
+
+
+#Test to download an image to ensure nifti files are being read correctly.
+import numpy as np
+import matplotlib
+
+# Set MPLCONFIGDIR to a writable directory
+os.environ['MPLCONFIGDIR'] = '/home/Student/s4838078/matplotlib_cache'
+
+# Verify that MPLCONFIGDIR is set correctly
+print(f"MPLCONFIGDIR is set to: {os.environ.get('MPLCONFIGDIR')}")
+
+# Check if the directory exists and create it if needed
+if not os.path.exists(os.environ['MPLCONFIGDIR']):
+    os.makedirs(os.environ['MPLCONFIGDIR'])
+
+# Import matplotlib after setting MPLCONFIGDIR
+import matplotlib.pyplot as plt
+
+print(f"Matplotlib cache directory: {matplotlib.get_cachedir()}")
+
+# Assuming "images" is the array returned by load_data_2D
+# Example: images = load_data_2D(nifti_files, normImage=True, categorical=False, dtype=np.float32)
+
+# Select a random index from the images array
+random_idx = np.random.randint(0, images.shape[0])
+
+# Get the image at that index (assuming it's a 2D image, or a slice if it's 3D)
+random_image = images[random_idx]
+
+# If "random_image" has multiple channels (e.g., for segmentation masks), select the first channel
+if len(random_image.shape) > 2:
+    random_image = random_image[:, :, 0]  # Modify this depending on the actual image shape
+
+#output_filepath = "/home/Student/s4838078/testimages/random_image_test.png"
+# Ensure the directory exists (this will create the directory if it does not exist)
+output_dir = "/home/Student/s4838078/testimages"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# Full path to the output image
+output_filepath = os.path.join(output_dir, "random_image_test.png")
+
+# Save the selected image as a PNG file for download
+plt.imshow(random_image, cmap='gray')
+plt.axis('off')  # Hide axes for a cleaner image
+plt.savefig(output_filepath, bbox_inches='tight', pad_inches=0)

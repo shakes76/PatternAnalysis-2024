@@ -1,6 +1,16 @@
+import os
+import torch
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+
+
+#image = load_data_3D('semantic_MRs_anon', normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False)
+#label = load_data_3D('semantic_labels_anon', normImage=False, categorical=False, dtype=np.uint8, getAffines=False, orient=False, early_stop=False)
+
+image = torch.tensor(image, dtype=torch.float32)
+label = torch.tensor(label, dtype=torch.long)
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -129,3 +139,26 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+
+class MRI3DDataset(Dataset):
+    def __init__(self, image_folder, label_folder, normImage=False):
+        self.image_folder = image_folder
+        self.label_folder = label_folder
+        self.image_filenames = sorted([os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii')])
+        self.label_filenames = sorted([os.path.join(label_folder, f) for f in os.listdir(label_folder) if f.endswith('.nii')])
+        self.normImage = normImage
+
+    def __len__(self):
+        return len(self.image_filenames)
+
+    def __getitem__(self, idx):
+        image = load_data_3D([self.image_filenames[idx]], normImage=self.normImage)
+        label = load_data_3D([self.label_filenames[idx]], dtype=np.uint8)
+
+        image = torch.tensor(image, dtype=torch.float32)
+        label = torch.tensor(label, dtype=torch.long)
+
+        return image, label
+
+
+

@@ -25,7 +25,7 @@ gen.eval()
 disc.eval()
 
 # Load the ADNI dataset validation images
-image_loader = load_ADNI_dataset(training_set=False)
+image_loader = load_ADNI_dataset(image_size=hp.DESIRED_IMAGE_SIZE, training_set=False)
 
 # Stores the features and labels for each batch
 features_list = []

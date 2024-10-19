@@ -1,3 +1,4 @@
+
 import os
 import torch
 import torch.nn as nn
@@ -5,7 +6,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from dataset import MRIDataset
 from modules import UNet3D
-from torchvision import transforms
+
 from torch.amp import autocast, GradScaler
 import numpy as np
 
@@ -14,12 +15,13 @@ torch.cuda.empty_cache()
 # Directories and parameters
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
-MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/model.pth'
+MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/saved_model.pth'
 
-BATCH_SIZE = 4  # Reduced batch size
-EPOCHS = 5
-LEARNING_RATE = 1e-4
+BATCH_SIZE = 2  # Reduced batch size
+EPOCHS = 8
+LEARNING_RATE = 1e-3
 SPLIT_RATIO = [0.8, 0.1, 0.1]  # Train, validation, and test split
+EARLY_STOPPING_THRESHOLD = 0.7
 
 # Create the dataset
 dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None, augment=True)
@@ -65,6 +67,7 @@ def dice_score(pred, target, num_classes):
 
     return dice_per_class
 
+best_dice_score = 0.0  # Track the best Dice score
 
 # Training loop
 for epoch in range(EPOCHS):
@@ -98,7 +101,7 @@ for epoch in range(EPOCHS):
     # Validation loop with Dice score evaluation
     model.eval()
     val_loss = 0.0
-    dice_scores = np.zeros(6)  # Assuming 6 classes
+    dice_scores = np.zeros(6)
     with torch.no_grad():
         for images, masks in val_loader:
             images = images.to(device)
@@ -113,8 +116,21 @@ for epoch in range(EPOCHS):
 
     # Average the dice scores
     avg_dice_scores = dice_scores / len(val_loader)
+    avg_val_dice = np.mean(avg_dice_scores)  # Calculate average Dice score across all classes
     print(f'Validation Loss after Epoch [{epoch + 1}/{EPOCHS}]: {val_loss / len(val_loader):.4f}')
     print(f'Class-specific Dice Scores: {avg_dice_scores}')
+    print(f'Average Validation Dice Score: {avg_val_dice:.4f}')
+
+    # Check for early stopping
+    if avg_val_dice > best_dice_score:
+        best_dice_score = avg_val_dice
+        # Save the best model
+        torch.save(model.state_dict(), MODEL_SAVE_PATH)
+        print(f'New best model saved with Dice score: {best_dice_score:.4f}')
+
+    if avg_val_dice >= EARLY_STOPPING_THRESHOLD:
+        print(f'Early stopping at epoch {epoch + 1}, Dice score: {avg_val_dice:.4f}')
+        break
 
 # Testing loop
 model.eval()  # Set model to evaluation mode for testing

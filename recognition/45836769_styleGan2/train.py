@@ -38,8 +38,8 @@ import matplotlib.pyplot as plt
 
 # Hyperparams - mostly following StyleGAN2 paper
 z_dim = 256 # Latent dims (z: input, w: intermediate)
-w_dim = 256
-num_mapping_layers = 8
+w_dim = 256  
+num_mapping_layers = 4
 mapping_dropout = 0.1
 label_dim = 2  # AD and NC
 num_layers = 7
@@ -47,11 +47,11 @@ ngf = 256 # Num generator features
 ndf = 256 # Num disciminator features
 batch_size = 4
 num_epochs = 100
-lr = 0.00001
+lr = 0.0001
 beta1 = 0.0
 beta2 = 0.99  # Adam betas
-r1_gamma = 20.0  # R1 regularisation weight
-pl_weight = 4.0  # Path length regularisation weight
+r1_gamma = 10.0  # R1 regularisation weight
+pl_weight = 2.0  # Path length regularisation weight
 pl_decay = 0.01  # Path length decay
 d_reg_interval = 16  # Discrim regularisation interval
 g_reg_interval = 4  # Generator regularisation interval

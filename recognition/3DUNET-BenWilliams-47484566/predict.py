@@ -1,14 +1,24 @@
-import dataset.py
-import train.py
-import modules.py
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader
+
+from dataset import MRI3DDataset
+from train import train_model
+import modules
 
 
+image_folder = 'semantic_MRs_anon'
+label_folder = 'semantic_labels_anon'
 
-image = dataset.load_data_3D('semantic_MRs_anon', normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False)
-label = dataset.load_data_3D('semantic_labels_anon', normImage=False, categorical=False, dtype=np.uint8, getAffines=False, orient=False, early_stop=False)
+# Load dataset and dataloader
+dataset = MRI3DDataset(image_folder, label_folder, normImage=True)
+dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
-image = torch.tensor(image, dtype=torch.float32)
-label = torch.tensor(label, dtype=torch.long)
+# Initialize model, criterion, and optimizer
+model = modules.UNet3D(in_channels=3, out_channels=3)
+criterion = modules.CrossEntropyLoss(weight=torch.tensor([1.0, 1.0, 1.0]))
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-train_loader = DataLoader(image, batch_size=1, shuffle=True)
-train.train_model(model, trainloader, criterion, optimizer, num_epochs=25)
+dice_scores = train_model(model, dataloader, criterion, optimizer, num_epochs=25)
+
+print(f"Final Dice scores after training: {dice_scores}")

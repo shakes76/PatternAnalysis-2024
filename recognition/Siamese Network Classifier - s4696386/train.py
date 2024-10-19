@@ -34,7 +34,6 @@ def test(model: SiameseNetwork, device, test_loader, epoch: int, threshold = 0.5
     correct = 0
     all_targets = []
     all_preds = []
-    save_model = False
     benign_count = 0
 
     criterion = model.loss_criterion
@@ -67,11 +66,10 @@ def test(model: SiameseNetwork, device, test_loader, epoch: int, threshold = 0.5
         print(f"Predicted {benign_count} benigns")
         print(f"Epoch: {epoch}\n")
     
-    save_model = accuracy > 0.7
 
-    return save_model
+    return accuracy
 
-def run_model(batch_size, epochs, learning_rate):
+def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: PROCESSED_DATA):
     print("="*200)
     print(f"Training with: batch_size {batch_size}, epochs {epochs}, learning_rate {learning_rate}")
     torch_seed = 10
@@ -86,14 +84,13 @@ def run_model(batch_size, epochs, learning_rate):
     # Use cuda device if available
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
+    
 
     # Create Datasets and place them into DataLoaders
     train_dataset = APP_MATCHER(processed_data, train=True)
     test_dataset = APP_MATCHER(processed_data, train=False)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size, shuffle)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle)
-    print("Data Loaded\n")
 
     # Create the model
     model = SiameseNetwork().to(device)
@@ -104,26 +101,42 @@ def run_model(batch_size, epochs, learning_rate):
     
     # run epochs
     for epoch in range(1, epochs+1):
+        test_verbose = epoch == epochs
         train(model, device, train_loader, optimizer, epoch, log_interval, dry_run, verbose=False)
-        save_model = test(model, device, test_loader, epoch, verbose=False)
+        accuracy = test(model, device, test_loader, epoch, verbose=test_verbose)
+        save_model = accuracy > 0.8
         scheduler.step()
 
     if save_model:
         save_loc = f"{DEFAULT_SAVE_LOCATION}siamese_network_{batch_size}_{epochs}_{learning_rate}.pt"
         torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
-        print(os.getcwd())
         print(f"Saved to {save_loc}")
+
+    return accuracy, batch_size, epochs, learning_rate
         
 
 def main():
-    batch_sizes = [8, 16, 32, 64]
-    epochs = [10, 20, 30]
-    learning_rates = [0.0001, 0.001, 0.01, 0.1, 1]
+
+    processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
+
+    batch_sizes = [8, 16, 32]
+    epochs = [10, 30, 40]
+    learning_rates = [i/10000 for i in range(2, 7)]
+
+    accuracies = []
+
+    os.chdir(DEFAULT_SAVE_LOCATION)
+    print(os.getcwd())
 
     for bs in batch_sizes:
         for e in epochs:
             for lr in learning_rates:
-                run_model(bs, e, lr)
+                accuracy = run_model(bs, e, lr, processed_data)
+                accuracies.append(accuracy)
+                with open("results.txt", "a") as results:
+                    results.write(str(accuracy) + "\n")
+
+    print(max(accuracies, key=lambda x: x[0]))
 
 # Only run main when running file directly (not during imports)
 if __name__ == "__main__":

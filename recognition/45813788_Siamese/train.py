@@ -1,40 +1,23 @@
-# train.py
-
+import os
 import torch
 from torch.utils.data import DataLoader
-from dataset import ISICDataset, malig_aug, benign_aug
+from dataset import ISICDataset, malig_aug, benign_aug 
 from modules import SiameseNN
-import pandas as pd
-import os
+from utils import visualise_embededding, plot_loss
 from pytorch_metric_learning.losses import ContrastiveLoss
 from pytorch_metric_learning.reducers import AvgNonZeroReducer
 from pytorch_metric_learning.distances import LpDistance
-from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
-def load_data(excel):
-    df = pd.read_csv(excel)
-    df = df.drop(columns=['Unnamed: 0', 'patient_id'])
-    return df
 
 
+def siamese_train(current_dir, train_df, val_df, images, plots=False):
 
-def siamese_train():
-    # Paths
-    current_dir = os.getcwd()
-    print("Working dir", current_dir)
-    excel = os.path.join(current_dir, 'dataset', 'train-metadata.csv')
-    images = os.path.join(current_dir, 'dataset', 'train-image', 'image')
-    df = load_data(excel=excel)
-
-    # Load data
-    train_df, val_df = train_test_split (
-        df,test_size=0.2, stratify=df['target'], random_state=42
-    )
- 
+    #make a directory to save models if not there
+    save_dir = os.path.join(current_dir,'models')
+    os.makedirs(save_dir, exist_ok=True)
 
     # Initialize training and validation datasets
     train_dataset = ISICDataset(
@@ -86,7 +69,7 @@ def siamese_train():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
     #scheduler
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2, threshold=0.01, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, threshold=0.01)
 
     # Training parameters
     epochs = 50
@@ -119,6 +102,8 @@ def siamese_train():
         # Validation
         model.eval()
         val_loss = 0.0
+        all_embeddings = []
+        all_labels = []
         with torch.no_grad():
             for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
                 images, labels = images.to(device), labels.to(device)
@@ -129,6 +114,10 @@ def siamese_train():
                 loss = contrastive_loss(embeddings, labels)
 
                 val_loss += loss.item()
+
+                # Collect embeddings and labels for visualization
+                all_embeddings.append(embeddings.cpu())
+                all_labels.extend(labels.cpu().numpy())
 
         avg_val_loss = val_loss / len(val_loader)
         val_losses.append(avg_val_loss)
@@ -143,29 +132,24 @@ def siamese_train():
         # save current pest model
         if avg_val_loss < best_loss:
             best_loss = avg_val_loss
-            torch.save(model.state_dict(), 'siamese_resnet18_best.pth')
+            file_name = 'siamese_resnet18_best.pth'
+            save_path = os.path.join(save_dir, file_name)
+            torch.save(model.state_dict(), save_path)
             print("Validation loss decreased. Saving model.")
         else:
             print("No improvement in validation loss.")
 
+        # Visualize embeddings using t-SNE and PCA
+        if plots == True:
+            all_embeddings_tensor = torch.cat(all_embeddings)
+            visualise_embededding (all_embeddings_tensor, all_labels, epoch+1)
+
+
     # Save the final model
-    torch.save(model.state_dict(), 'siamese_resnet18.pth')
+    file_name = 'siamese_resnet18.pth'
+    save_path = os.path.join(save_dir, file_name)
+    torch.save(model.state_dict(), save_path)
     print("Training complete. Models saved.")
 
-    # Plotting the Loss Curves
-    plt.figure(figsize=(10,5))
-    plt.plot(range(1, len(train_losses)+1), train_losses, label='Training Loss')
-    plt.plot(range(1, len(val_losses)+1), val_losses, label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss Curves')
-    plt.legend()
-    plt.show()
-
-
-# Run the training
-def main():
-    siamese_train()
-
-if __name__ == "__main__":
-    main()
+    if plots == True:
+        plot_loss(train_losses,val_losses)

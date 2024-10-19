@@ -11,7 +11,7 @@ class FeatureExtraction(nn.Module):
         super(FeatureExtraction, self).__init__()
 
         #Load resnet
-        self.model = models.resnet18(weights=False)#ResNet18_Weights.IMAGENET1K_V1)
+        self.model = models.resnet18(weights=None)#ResNet18_Weights.IMAGENET1K_V1)
 
         #remove fully connected
         self.model = nn.Sequential(*list(self.model.children())[:-1])
@@ -20,8 +20,6 @@ class FeatureExtraction(nn.Module):
             nn.Flatten(),
             nn.Linear(512, embedding_dim),
             nn.ReLU(),
-            nn.Dropout(p=0.3)
-
         )
  
         #true to train all layers false if not

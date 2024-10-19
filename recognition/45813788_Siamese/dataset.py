@@ -1,30 +1,11 @@
 '''preprocess dataset'''
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader, dataloader, Dataset
+from torch.utils.data import Dataset
 import os
-from torchvision import transforms, io
+from torchvision import transforms
 from PIL import Image
-#import matplotlib as plt
-import matplotlib.pyplot as plt
-import random
-
-
-SCALE_FACTOR = 1.0/255
-
-current_dir = os.getcwd()
-#excel = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-metadata.csv')
-#images = os.path.join(current_dir,'recognition','45813788_Siamese','dataset', 'train-image','image')
-excel = os.path.join(current_dir,'dataset', 'train-metadata.csv')
-images = os.path.join(current_dir,'dataset', 'train-image','image')
-
-df = pd.read_csv(excel)
-
-df= df.drop(columns=['Unnamed: 0'])
-df= df.drop(columns=['patient_id'])
-
-benign = df[df['target'] == 0].reset_index(drop=True)
-malignant = df[df['target'] == 1].reset_index(drop=True)
+from sklearn.model_selection import train_test_split
 
 #augument dataset since theres only 584 malignant and 30000 non malig
 malig_aug = transforms.Compose([
@@ -95,8 +76,30 @@ class ISICDataset(Dataset):
         
         return img, torch.tensor(label, dtype=torch.long)
 
-#print(malignant)
-#print(benign)
+def load_data(excel):
+    df = pd.read_csv(excel)
+    df = df.drop(columns=['Unnamed: 0', 'patient_id'])
+    return df
+
+def split_data(df, train_ratio=0.75, val_ratio=0.15, test_ratio=0.10, random_state=42):
+    train_df, temp_df = train_test_split(
+        df,
+        test_size=(1-train_ratio),
+        stratify=df['target'],
+        random_state=random_state
+    )
+
+    #split temp into training and validation
+    val_ratio_adjusted = val_ratio / (val_ratio + test_ratio)
+    val_df, test_df = train_test_split(
+        temp_df,
+        test_size=(1 - val_ratio_adjusted),
+        stratify=temp_df['target'],
+        random_state=random_state
+    )
+
+    return train_df, val_df, test_df
+
 '''
 # Get the path to the image
 image_name = benign['isic_id'][0]  # Replace with malignant['isic_id'][0] if you want a malignant image

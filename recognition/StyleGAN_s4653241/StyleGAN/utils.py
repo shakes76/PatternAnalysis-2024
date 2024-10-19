@@ -33,3 +33,15 @@ def load_checkpoint(path, G, D, optimizer_G, optimizer_D):
     torch.cuda.set_rng_state_all(checkpoint['cuda_random_state'])
 
     return epoch, gen_loss, disc_loss
+
+def devicer():
+    # Prioritize CUDA, then MPS, and finally CPU
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
+    print(f'Using device: {device}', flush=True)
+    return device

@@ -1,5 +1,8 @@
+"""
+Configuration file: set hyperparameters and labels here.
+"""
 # relative path to dataset
-DATASET = '../ADNI_AD_NC_2D/AD_NC/test'
+DATASET = "../ADNI_AD_NC_2D/AD_NC/test"
 
 # hyperparameters
 START_TRAIN_AT_IMG_SIZE = 8 #The authors start from 8x8 images instead of 4x4
@@ -10,5 +13,6 @@ Z_DIM                   = 256
 W_DIM                   = 256
 IN_CHANNELS             = 256
 LAMBDA_GP               = 10
-PROGRESSIVE_EPOCHS      = [30] * len(BATCH_SIZES)
+PROGRESSIVE_EPOCHS      = [5] * len(BATCH_SIZES)
 IMG_SIZE                = 128
+MODEL_LABEL             = "5 Epoch Trial ADNI"

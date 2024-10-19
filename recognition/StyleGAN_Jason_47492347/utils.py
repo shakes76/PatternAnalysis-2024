@@ -4,6 +4,7 @@ Imports and utility functions are organised here.
 
 
 import os
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,3 +23,21 @@ from settings import *
 
 # set device
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def generate_examples(gen, steps, n=100):
+    """
+    Function used to evaluate the generator by outputting example images. This
+    is used during training to monitor progress, and can also be used on a
+    fully trained model to generate images.
+    """
+    gen.eval()
+    alpha = 1.0
+    for i in range(n):
+        with torch.no_grad():
+            noise = torch.randn(1, Z_DIM).to(DEVICE)
+            img = gen(noise, alpha, steps)
+            if not os.path.exists(f'saved_examples/{MODEL_LABEL}/step{steps}'):
+                os.makedirs(f'saved_examples/{MODEL_LABEL}/step{steps}')
+            vutils.save_image(img*0.5+0.5, f"saved_examples/{MODEL_LABEL}/step{steps}/img_{i}.png")
+    gen.train()

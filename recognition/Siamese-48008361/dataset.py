@@ -67,7 +67,7 @@ class ISIC2020Dataset(Dataset):
         split_ratio (float): Ratio for splitting data into train and validation sets.
         oversample_factor (int, optional): Factor by which to oversample the minority class.
     """
-    def __init__(self, data_dir, transform=None, mode='train', split_ratio=0.7, oversample_factor=None):
+    def __init__(self, data_dir, transform=None, mode='train', split_ratio=0.8, oversample_factor=None):
         self.data_dir = data_dir
         self.transform = transform
         self.mode = mode

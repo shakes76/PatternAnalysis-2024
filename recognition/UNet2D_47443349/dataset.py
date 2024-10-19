@@ -4,9 +4,8 @@ from tqdm import tqdm
 import os
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
-
-IMAGE_HEIGHT = 256
-IMAGE_WIDTH = 144
+from utils import IMAGE_HEIGHT, IMAGE_WIDTH
+from utils import TRAIN_IMG_DIR, TRAIN_MASK_DIR
 
 def load_data_2D(imageNames, normImage=False, dtype=np.float32, getAffines=False, early_stop=False):
     """
@@ -72,9 +71,6 @@ class ProstateDataset(Dataset):
         return (image, mask)
 
 def test():
-    TRAIN_IMG_DIR = "C:/Users/21pit/OneDrive/Desktop/COMP3710/Project/PatternAnalysis-2024/recognition/UNet2D_47443349/keras_slices_train"
-    TRAIN_MASK_DIR = "C:/Users/21pit/OneDrive/Desktop/COMP3710/Project/PatternAnalysis-2024/recognition/UNet2D_47443349/keras_slices_seg_train"
-
     imageNames = get_names(TRAIN_IMG_DIR)
     images = load_data_2D(imageNames, normImage=False)
     print(images.shape)

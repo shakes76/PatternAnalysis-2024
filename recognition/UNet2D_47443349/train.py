@@ -79,7 +79,7 @@ def validate_function(loader, model, criterion, device):
 
             # Loss tracking
             running_loss += loss.item()
-            if (batch_idx + 1) % 100 == 0:
+            if (batch_idx + 1) % 10 == 0:
                 print("Step [{}/{}], Validation Loss: {:.5f}".format(batch_idx + 1, total_step, loss.item()))
     # Store loss (average over epoch)
     validation_losses.append(running_loss / len(loader))

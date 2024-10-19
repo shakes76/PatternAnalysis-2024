@@ -5,7 +5,7 @@ from torchvision.models import ResNet18_Weights
 
 class FeatureExtraction(nn.Module):
     #CHANGE PRETRAINED TO TRUE IF IT SUCKS
-    def __init__(self, embedding_dim = 256):
+    def __init__(self, embedding_size = 256):
         "Init feature extractor using Resnet18 for our siamese networks"
 
         super(FeatureExtraction, self).__init__()
@@ -18,7 +18,7 @@ class FeatureExtraction(nn.Module):
 
         self.embedding = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(512, embedding_dim),
+            nn.Linear(512, embedding_size),
             nn.ReLU(),
         )
  
@@ -30,17 +30,16 @@ class FeatureExtraction(nn.Module):
 
 
         features = self.model(x) #[batch_Size, 512, 1 ,1]
-        #features = features.view(features.size(0), -1) #[batch_Size, 512]
         embeddings = self.embedding(features) #[batch_size, embedding_dim]
         
 
         return embeddings
     
 class SiameseNN(nn.Module):
-    def __init__(self, embedding_dim=256):
+    def __init__(self, embedding_size=256):
         super(SiameseNN, self).__init__()
 
-        self.feature_extractor = FeatureExtraction(embedding_dim)
+        self.feature_extractor = FeatureExtraction(embedding_size)
 
     def forward(self, x):
 
@@ -48,4 +47,25 @@ class SiameseNN(nn.Module):
 
         return y
 
+#classification network
+class Classifier(nn.Module):
+    
+    def __init__(self, input_size=256, hidden_size=128):
+        
+        super(Classifier, self).__init__()
+
+        self.classifier = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            #add dropout if needed
+            nn.Linear(hidden_size, 1),
+            nn.Sigmoid()
+        )
+        
+            
+    def foward(self, x):
+        
+        x = self.classifier(x)
+
+        return x
     

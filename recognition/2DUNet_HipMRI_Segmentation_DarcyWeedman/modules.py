@@ -126,3 +126,11 @@ class UNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+
+if __name__ == "__main__":
+    model = UNet(n_channels=1, n_classes=1)
+    x = torch.randn(1, 1, 256, 256)  # Example input tensor
+    with torch.no_grad():
+        y = model(x)
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {y.shape}")

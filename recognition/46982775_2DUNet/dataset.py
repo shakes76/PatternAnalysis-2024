@@ -7,7 +7,6 @@ import numpy as np
 import utils
 import torch
 from torch.utils.data import Dataset
-import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 
 class ProstateDataset(Dataset):
@@ -52,7 +51,7 @@ class ProstateDataset(Dataset):
         fig = plt.figure(figsize=(8, 8))
         cols, rows = 4, 3
         count = 0
-        for idx in range(0, cols * rows):
+        for idx in range(0, (cols * rows) // 2):
             img = self.imgs[idx]
             mask = self.masks[idx]
             count += 1
@@ -82,5 +81,6 @@ if __name__ == "__main__":
 
     train_dataset = ProstateDataset(train_image_path, train_mask_path)
     print(len(train_dataset))
+    print(type(train_dataset))
     print(train_dataset[1])
     train_dataset.img_show()

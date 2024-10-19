@@ -39,3 +39,24 @@ def dice_coefficient(preds: torch.Tensor, targets: torch.Tensor, smooth: float =
     intersection = (preds * targets).sum(dim=(1,2,3))
     dice = (2. * intersection + smooth) / (preds.sum(dim=(1,2,3)) + targets.sum(dim=(1,2,3)) + smooth)
     return dice.mean().item()
+
+def initialize_dataloaders(config: Dict) -> Tuple[DataLoader, DataLoader]:
+    """Initialize training and validation dataloaders."""
+    train_dataset = HipMRIDataset(data_dir=config['data_dir'], seg_dir=config['seg_dir'])
+    val_dataset = HipMRIDataset(data_dir=config['val_data_dir'], seg_dir=config['val_seg_dir'])
+    
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=config['batch_size'], 
+        shuffle=True, 
+        num_workers=config['num_workers'],
+        pin_memory=True
+    )
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=config['batch_size'], 
+        shuffle=False, 
+        num_workers=config['num_workers'],
+        pin_memory=True
+    )
+    return train_loader, val_loader

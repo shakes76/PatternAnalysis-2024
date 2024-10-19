@@ -44,9 +44,13 @@ DISC_FEATURE_SIZE = 512
 # Different batch sizes required for different image resolutions
 BATCH_SIZES = [256, 128, 64, 32, 16, 8, 8]
 
-# The order of image resolutions for the discriminator
-DISC_RESOLUTIONS = [256, 128, 64, 32, 16, 8]
+# All image resolutions that the Progressive GAN Style will go through 
+RESOLUTIONS = [8, 16, 32, 64, 128, 256]
 
+# The discriminator factors that influence the feature map sizes
+GEN_FACTORS = [LATENT_SIZE, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64]
+
+# The discriminator factors that influence the feature map sizes
 DISC_FACTORS = [NUM_CHANNELS, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2]
 
 ################################## Training Loop #################################

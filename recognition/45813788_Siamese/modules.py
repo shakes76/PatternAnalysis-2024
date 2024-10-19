@@ -62,10 +62,10 @@ class Classifier(nn.Module):
             nn.Sigmoid()
         )
         
-            
-    def foward(self, x):
-        
-        x = self.classifier(x)
 
-        return x
+    def forward(self, x):
+        
+        y = self.classifier(x)
+
+        return y
     

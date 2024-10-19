@@ -1,8 +1,9 @@
 import os
 import torch
+from torch.nn import BCELoss
 from torch.utils.data import DataLoader
 from dataset import ISICDataset, malig_aug, benign_aug 
-from modules import SiameseNN
+from modules import SiameseNN, Classifier
 from utils import visualise_embededding, plot_loss
 from pytorch_metric_learning.losses import ContrastiveLoss
 from pytorch_metric_learning.reducers import AvgNonZeroReducer
@@ -15,6 +16,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def siamese_train(current_dir, train_df, val_df, images, plots=False):
 
+    print("Training Siamese Netowork")
+
     #make a directory to save models if not there
     save_dir = os.path.join(current_dir,'models')
     os.makedirs(save_dir, exist_ok=True)
@@ -25,7 +28,7 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
         images_dir=images,
         transform_benign=benign_aug,
         transform_malignant=malig_aug,
-        augment_ratio=0.5  # Adjust based on your needs
+        augment_ratio=0.5
     )
 
     val_dataset = ISICDataset(
@@ -33,14 +36,14 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
         images_dir=images,
         transform_benign=benign_aug,
         transform_malignant=malig_aug,
-        augment_ratio=0.0  # No augmentation for validation
+        augment_ratio=0.0  
     )
 
     # Initialize DataLoaders
     train_loader = DataLoader(
         train_dataset, 
         batch_size=32,
-        shuffle=True,  # Shuffling training data
+        shuffle=True, 
         num_workers=4,
         pin_memory=True
     )
@@ -48,7 +51,7 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
     val_loader = DataLoader(
         val_dataset, 
         batch_size=32,
-        shuffle=False,  # No shuffling for validation data
+        shuffle=False, 
         num_workers=4,
         pin_memory=True
     )
@@ -57,15 +60,15 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = SiameseNN(embedding_dim=256).to(device)
 
-    # Initialize Contrastive Loss from PyTorch Metric Learning
-    contrastive_loss = ContrastiveLoss(
+    # Contrastive Loss from PyTorch Metric Learning
+    loss = ContrastiveLoss(
         pos_margin=0,
         neg_margin=1,
         distance=LpDistance(normalize_embeddings=True, p=2, power=1),
         reducer=AvgNonZeroReducer(),
     )
     
-    # Initialize optimizer
+    # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
     #scheduler
@@ -83,11 +86,11 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
         epoch_loss = 0.0
 
         for images, labels  in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device), labels.float().to(device)
             # Forward pass
             embeddings = model(images)
 
-            loss = contrastive_loss(embeddings, labels)
+            loss = loss(embeddings, labels)
 
             # Backward pass and optimization
             optimizer.zero_grad()
@@ -106,12 +109,12 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
         all_labels = []
         with torch.no_grad():
             for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
-                images, labels = images.to(device), labels.to(device)
+                images, labels = images.to(device), labels.float().to(device)
 
                 # Forward pass
                 embeddings = model(images)
 
-                loss = contrastive_loss(embeddings, labels)
+                loss = loss(embeddings, labels)
 
                 val_loss += loss.item()
 
@@ -153,3 +156,134 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
 
     if plots == True:
         plot_loss(train_losses,val_losses)
+
+
+def classifier_train(current_dir, train_df, val_df, images, siamese, plots=False):
+
+    print("Training classifier")
+
+    #make a directory to save models if not there
+    save_dir = os.path.join(current_dir,'models')
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Initialize training and validation datasets
+    train_dataset = ISICDataset(
+        df = train_df,
+        images_dir=images,
+        transform_benign=benign_aug,
+        transform_malignant=malig_aug,
+        augment_ratio=0.5
+    )
+
+    val_dataset = ISICDataset(
+        df=val_df,
+        images_dir=images,
+        transform_benign=benign_aug,
+        transform_malignant=malig_aug,
+        augment_ratio=0.0  
+    )
+
+    # Initialize DataLoaders
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=32,
+        shuffle=True, 
+        num_workers=4,
+        pin_memory=True
+    )
+    
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=32,
+        shuffle=False, 
+        num_workers=4,
+        pin_memory=True
+    )
+
+    # Initialize model and move to device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    siamese.to(device)
+    siamese.eval()
+    classifier = Classifier().to(device)
+    classifier.train()
+
+    # optimizer
+    optimizer = torch.optim.Adam(classifier.parameters(), lr=1e-3, weight_decay=1e-5)
+
+    #Criterion
+    criterion = BCELoss()
+
+   # Training parameters
+    epochs = 50
+    best_loss = float('inf')
+    train_losses = []
+    val_losses = []
+
+    for epoch in range(epochs):
+        # Training phase
+        classifier.train()
+        epoch_loss = 0.0
+
+        for images, labels  in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
+            images, labels = images.to(device), labels.to(device)
+           
+            #pass through siamese to get features then pass through classifer
+            with torch.no_grad():
+                embeddings = siamese(images)
+
+            optimizer.zero_grad()
+            output = classifier(embeddings).squeeze()
+            loss = criterion(output, labels)
+            loss.backward()
+            optimizer.step()
+
+            epoch_loss += loss.item()
+
+        avg_train_loss = epoch_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
+
+        # Validation
+        classifier.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
+                images, labels = images.to(device), labels.to(device)
+
+                #pass through siamese to get features then pass through classifer
+                with torch.no_grad():
+                    embeddings = siamese(images)
+
+                
+                output = classifier(embeddings).squeeze()
+                loss = criterion(output, labels)
+                
+                val_loss += loss.item()
+        avg_val_loss = val_loss / len(val_loader)
+        val_losses.append(avg_val_loss)
+        print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+
+        # Monitor learning rate
+        for idx, param_group in enumerate(optimizer.param_groups):
+            print(f"Learning rate for param group {idx}: {param_group['lr']}")
+
+        # save current pest model
+        if avg_val_loss < best_loss:
+            best_loss = avg_val_loss
+            file_name = 'classifier_best.pth'
+            save_path = os.path.join(save_dir, file_name)
+            torch.save(classifier.state_dict(), save_path)
+            print("Validation loss decreased. Saving model.")
+        else:
+            print("No improvement in validation loss.")
+
+
+    # Save the final model
+    file_name = 'classifier.pth'
+    save_path = os.path.join(save_dir, file_name)
+    torch.save(classifier.state_dict(), save_path)
+    print("Classifier Training complete. Models saved.")
+
+    if plots == True:
+        plot_loss(train_losses,val_losses)
+

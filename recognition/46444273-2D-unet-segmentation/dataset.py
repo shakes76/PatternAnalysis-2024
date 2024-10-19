@@ -1,6 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nib
 import pathlib
+import tensorflow as tf
 from tqdm import tqdm
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -93,3 +95,26 @@ seg_train_data = load_data_2D(list(seg_train_data_dir.glob('*.nii')), normImage=
 test_data = load_data_2D(list(test_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True)[:100,:,:]
 # loading testing masks
 seg_test_data = load_data_2D(list(seg_test_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True).astype(np.uint8)[:100,:,:]
+
+# convert masks to categorical
+n_classes = 6
+
+from keras.utils import to_categorical
+train_labels = to_categorical(seg_train_data, num_classes=n_classes)
+train_labels = train_labels.reshape((seg_train_data.shape[0], seg_train_data.shape[1], seg_train_data.shape[2], n_classes))
+
+test_labels = to_categorical(seg_test_data, num_classes=n_classes)
+test_labels = test_labels.reshape((seg_test_data.shape[0], seg_test_data.shape[1], seg_test_data.shape[2], n_classes))
+
+#TODO: Normalize input data
+
+X_train, X_test, y_train, y_test = train_data, test_data, train_labels, test_labels
+
+from util import plot_images_labels, plot_index
+
+# check image mask pairs look correct
+plot_images_labels(X_train, y_train)
+plot_images_labels(X_test, y_test)
+
+# check image-mask pair at index 0
+plot_index(0, X_train, y_train)

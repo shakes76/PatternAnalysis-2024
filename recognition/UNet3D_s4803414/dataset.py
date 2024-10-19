@@ -51,8 +51,8 @@ class MRIDataset(Dataset):
         mask = np.expand_dims(mask, axis=0)  # Shape: (1, 256, 256, 128)
 
         # Convert to PyTorch tensors
-        image_tensor = torch.from_numpy(image)
-        mask_tensor = torch.from_numpy(mask)
+        image_tensor = torch.from_numpy(image).float()
+        mask_tensor = torch.from_numpy(mask).long()
 
         return image_tensor, mask_tensor
 

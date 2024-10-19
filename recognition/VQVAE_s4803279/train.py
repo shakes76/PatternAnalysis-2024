@@ -121,6 +121,6 @@ def main(
 
 
 if __name__ == "__main__":
-    data_dir = r"C:\Users\GamingPC\OneDrive - The University of Queensland\School\2024\Sem2\COMP3710\Project\HipMRI_study_keras_slices_data"
+    data_dir = './HipMRI_study_keras_slices_data'
     output_dir = './trained_vqvae2_model'
     main(data_dir, output_dir)

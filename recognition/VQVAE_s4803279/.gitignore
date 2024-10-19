@@ -16,5 +16,8 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
+*.zip
+*.nii.gz
 
+# PyCache files
 .pyc

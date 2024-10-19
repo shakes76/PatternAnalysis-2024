@@ -15,8 +15,9 @@ set_seed(SEED)
 # Hyperparameters
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 16
-NUM_EPOCHS = 20
+NUM_EPOCHS = 30
 LEARNING_RATE = 1e-4
+LABEL_WEIGHTS = torch.tensor([0.60, 0.60, 1.40, 1.40, 2.20, 2.20]).to(DEVICE)
 
 # Data loading
 transform = transforms.Compose([
@@ -31,7 +32,7 @@ validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=Fa
 
 # Initialisations
 model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=5).to(DEVICE)
-criterion = nn.CrossEntropyLoss() # For multi-class segmentation with pixel-wise classification
+criterion = nn.CrossEntropyLoss(weight=LABEL_WEIGHTS) # For multi-class segmentation with pixel-wise classification
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 # Lists to store epoch losses for plotting

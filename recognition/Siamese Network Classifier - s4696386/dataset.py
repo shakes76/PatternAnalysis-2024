@@ -8,7 +8,7 @@ DISSIMILAR = 0.0
 IMG_FILE_TYPE = ".jpg"
 IMG_HEIGHT, IMG_WIDTH = (480, 640) # Smallest size in dataset
 DEFAULT_LOCATION = "E:/COMP3710 Project/Images", "E:/COMP3710 Project/Truths.csv"
-PROCESSED_DATA = tuple[dict, dict[str, tuple[str, int]], list[str], list[str]]
+PROCESSED_DATA = tuple[dict, list[str], list[str]]
 
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
@@ -24,43 +24,53 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
     # Move to that directory as our current working directory
     os.chdir(file_path_image_folder)
     
-    # Create dictionary mapping image names to (patient_id, malignant)
-    truths: dict[str, tuple[str, int]] = {}
     # Maintain list of malignant & benign images
     malignants: list[str] = []
     benigns: list[str] = []
 
     # Populate dict and lists
-    truths, malignants, benigns = read_truths(file_path_ground_truth)
+    malignants, benigns = read_truths(file_path_ground_truth)
     
     # Create a mapping from image name to image
     images: dict = {}
     # Cut down the data to reduce time spent
     benigns = benigns[:len(malignants)*2]
+    new_benigns = []
+    new_malignants = []
     for b in benigns:
-        images[b] = load_image(b+IMG_FILE_TYPE)
+        b2 = b+"_2"
+        image1, image2 = load_image(b+IMG_FILE_TYPE)
+        images[b] = image1
+        images[b2] = image2
+        new_benigns.append(b2)
+    benigns.extend(new_benigns)
+        
     for m in malignants:
-        images[m] = load_image(m+IMG_FILE_TYPE)
+        m2 = m+"_2"
+        image1, image2 = load_image(m+IMG_FILE_TYPE)
+        images[m] = image1
+        images[m2] = image2
+        new_malignants.append(m2)
+    malignants.extend(new_malignants)
     
-    print("Data Loaded\n")
+    print(f"Loaded {len(malignants)} malignants\n")
     
-    return images, truths, malignants, benigns
+    return images, malignants, benigns
 
 def read_truths(file_path_ground_truth):
-    truths, malignants, benigns = {}, [], []
+    malignants, benigns = [], []
     with open(file_path_ground_truth) as file_ground_truth:
         for i, line in enumerate(file_ground_truth):
             if i == 0:
                 continue
-            _, image_name, patient_id, malignant = line.split(",")
-            malignant = int(malignant)
+            _, image_name, _, malignant = line.split(",")
             # Assign numerical values to malignance
-            truths[image_name] = patient_id, malignant
+            malignant = int(malignant)
             if malignant:
                 malignants.append(image_name)
             else:
                 benigns.append(image_name)
-    return truths, malignants, benigns
+    return malignants, benigns
 
 def get_path():
     file_path_image_folder = filedialog.askdirectory()
@@ -78,8 +88,9 @@ def load_image(file_name):
             torchvision.transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
             torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
         ])
-        image = augment_and_resize(image).float()
-        return image
+        image2 = augment_and_resize(image).float()
+        image1 = image.float()
+        return image1, image2
 
 
 class APP_MATCHER(torch.utils.data.Dataset):
@@ -96,7 +107,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
         self.test_ratio = 1 - train_ratio
 
         # Use read_data function to load the local dataset
-        self.images, self.truths, self.malignants, self.benigns = processed_data
+        self.images, self.malignants, self.benigns = processed_data
 
         # Group the examples based on malignancy
         self.grouped_examples = {BENIGN: self.benigns, MALIGNANT: self.malignants}
@@ -117,7 +128,7 @@ class APP_MATCHER(torch.utils.data.Dataset):
 
         for malignancy in self.grouped_examples:
             examples = self.grouped_examples[malignancy]
-            random.shuffle(examples)  # Shuffle the examples
+            random.shuffle(examples)
             split_index = int(len(examples) * train_ratio)
             train_examples[malignancy] = examples[:split_index]
             test_examples[malignancy] = examples[split_index:]

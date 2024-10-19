@@ -44,6 +44,11 @@ DISC_FEATURE_SIZE = 512
 # Different batch sizes required for different image resolutions
 BATCH_SIZES = [256, 128, 64, 32, 16, 8, 8]
 
+# The order of image resolutions for the discriminator
+DISC_RESOLUTIONS = [256, 128, 64, 32, 16, 8]
+
+DISC_FACTORS = [NUM_CHANNELS, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2]
+
 ################################## Training Loop #################################
 
 # Mixing Regularisation ratio and probability
@@ -64,7 +69,7 @@ DISC_LEARNING_RATE = 0.001
 COSINE_ANNEALING_RATE = 0.1
 
 # The number of epochs used during training
-NUM_OF_EPOCHS = 1
+NUM_OF_EPOCHS = 3
 
 ################################## Helper Functions and Classes ##################
 

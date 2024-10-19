@@ -3,6 +3,14 @@ This file contains the source code for the VQVAE model.
 
 Each component of the VQVAE is implemented as a class.
 """
+
+
+"""
+regarding the model, can i just use the structure that i find in papers and online resources?
+    can use a premade model just understand how it works and augment the data in my own way.
+"""
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

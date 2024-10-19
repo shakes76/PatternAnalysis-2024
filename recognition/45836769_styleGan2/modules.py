@@ -405,6 +405,10 @@ class StyleGAN2Generator(nn.Module):
                 SynthesisBlock(in_channels, out_channels, w_dim, up=up, final_resolution=final_resolution)
             )
             in_channels = out_channels
+            
+        # Add a final convolution layer to reduce to 1 channel
+        self.to_rgb = nn.Conv2d(int(self.ngf * channel_multipliers[-1]), 1, kernel_size=1)
+
 
     def forward(self, z, labels, return_latents=False):
         """
@@ -427,7 +431,9 @@ class StyleGAN2Generator(nn.Module):
         # Apply synthesis blocks
         for block in self.synthesis_network:
             x = block(x, w)
-            
+        
+        # Apply the final convolution to get 1 channel output
+        x = self.to_rgb(x)
         x = torch.tanh(x)  # Force output range [-1, 1]
         
         if return_latents:

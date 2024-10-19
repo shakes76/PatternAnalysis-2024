@@ -147,8 +147,17 @@ if __name__ == "__main__":
 
         path_length_penalty = PathLengthPenalty(0.99)
         path_length_penalty.load_state_dict(torch.load("model/stylegan2ANDC/PLP.pth"))
+        
+        opt_gen = optim.Adam(gen.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+        opt_gen.load_state_dict(torch.load("model/stylegan2ANDC/generator_opt.pth"))
 
-    get = gen.to(DEVICE)
+        opt_critic = optim.Adam(critic.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+        opt_critic.load_state_dict(torch.load("model/stylegan2ANDC/discriminator_opt.pth"))
+        
+        opt_mapping_network = optim.Adam(mapping_network.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
+        opt_mapping_network.load_state_dict(torch.load("model/stylegan2ANDC/mapping_opt.pth"))
+
+    gen = gen.to(DEVICE)
     critic = critic.to(DEVICE)
     mapping_network = mapping_network.to(DEVICE)
     path_length_penalty = path_length_penalty.to(DEVICE)
@@ -177,8 +186,11 @@ if __name__ == "__main__":
         torch.save(critic.state_dict(), "model/stylegan2ANDC/discriminator.pth")
         torch.save(mapping_network.state_dict(), "model/stylegan2ANDC/mapping.pth")
         torch.save(path_length_penalty.state_dict(), "model/stylegan2ANDC/PLP.pth")
+        torch.save(opt_gen.state_dict(), "model/stylegan2ANDC/generator_opt.pth")
+        torch.save(opt_critic.state_dict(), "model/stylegan2ANDC/discriminator_opt.pth")
+        torch.save(opt_mapping_network.state_dict(), "model/stylegan2ANDC/mapping_opt.pth")
         if total_epochs % 10 == 0:
-            generate_examples(gen, epoch, 12)
+            generate_examples(gen, total_epochs, 12)
         total_epochs += 1
         json_data["epochs"] += 1
         json_data["G_loss"] = generator_loss

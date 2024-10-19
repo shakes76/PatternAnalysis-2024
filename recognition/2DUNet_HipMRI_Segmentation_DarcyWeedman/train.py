@@ -17,3 +17,25 @@ def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
+
+# Dice Loss
+class DiceLoss(nn.Module):
+    def __init__(self, smooth: float = 1.):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+    
+    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        preds = torch.sigmoid(preds)
+        preds = preds.view(-1)
+        targets = targets.view(-1)
+        intersection = (preds * targets).sum()
+        dice = (2. * intersection + self.smooth) / (preds.sum() + targets.sum() + self.smooth)
+        return 1 - dice
+
+def dice_coefficient(preds: torch.Tensor, targets: torch.Tensor, smooth: float = 1.) -> float:
+    preds = torch.sigmoid(preds)
+    preds = (preds > 0.5).float()
+    targets = targets.float()
+    intersection = (preds * targets).sum(dim=(1,2,3))
+    dice = (2. * intersection + smooth) / (preds.sum(dim=(1,2,3)) + targets.sum(dim=(1,2,3)) + smooth)
+    return dice.mean().item()

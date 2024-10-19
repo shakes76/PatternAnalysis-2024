@@ -60,3 +60,31 @@ def initialize_dataloaders(config: Dict) -> Tuple[DataLoader, DataLoader]:
         pin_memory=True
     )
     return train_loader, val_loader
+
+def initialize_model(config: Dict, device: torch.device) -> nn.Module:
+    """Initialize the UNet model and move it to the specified device."""
+    model = UNet(
+        n_channels=config['n_channels'], 
+        n_classes=config['n_classes'], 
+        bilinear=config['bilinear'],
+        base_filters=config['base_filters'],
+        use_batchnorm=config['use_batchnorm']
+    ).to(device)
+    return model
+
+def initialize_loss_function() -> nn.Module:
+    """Initialize the combined loss function (BCE + Dice)."""
+    bce_loss = nn.BCEWithLogitsLoss()
+    dice_loss = DiceLoss()
+    
+    class CombinedLoss(nn.Module):
+        def __init__(self, bce: nn.Module, dice: nn.Module, alpha: float = 0.5):
+            super(CombinedLoss, self).__init__()
+            self.bce = bce
+            self.dice = dice
+            self.alpha = alpha
+        
+        def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+            return self.alpha * self.bce(preds, targets) + (1 - self.alpha) * self.dice(preds, targets)
+    
+    return CombinedLoss(bce_loss, dice_loss, alpha=0.5)

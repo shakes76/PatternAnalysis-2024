@@ -98,6 +98,8 @@ class DiceLoss(nn.Module):
         self.smooth = smooth
 
     def forward(self, inputs, targets):
+        inputs = torch.softmax(inputs, dim=1)
+        
         inputs = inputs.contiguous().view(-1)
         targets = targets.contiguous().view(-1)
         

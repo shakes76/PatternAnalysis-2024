@@ -11,11 +11,16 @@ KERAS_SLICES_PATH = DATASET_PATH + '/keras_slices_data'
 SEMANTIC_LABELS_PATH = DATASET_PATH + '/semantic_labels_only'
 SEMANTIC_MRS_PATH = DATASET_PATH + '/semantic_MRs'
 MODEL_PATH = '3d_unet_model.pth'
+SAVED_IMAGES_PATH = 'saved_images'
+PREDICTION_PATH = SAVED_IMAGES_PATH + '/predictions'
+ORIGINAL_IMAGES_PATH = SAVED_IMAGES_PATH + '/original_images'
+ORIGINAL_LABELS_PATH = SAVED_IMAGES_PATH + '/original_labels'
+DICE_LOSS_GRAPH_PATH = 'dice_loss_graph.png'
 
 # PARAMETERS
 RANDOM_SEED = 1
 TRAIN_TEST_SPLIT = 0.8
-EPOCHS = 50
+EPOCHS = 200
 BATCH_SIZE = 2
 # model parameters
 IN_DIM = 1

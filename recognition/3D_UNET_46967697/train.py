@@ -8,7 +8,7 @@ The model is trained using the Dice loss function and the AdamW optimizer.
 from utils import *
 from modules import *
 from dataset import *
-from predict import test_model
+from predict import *
 
 import torch
 import torch.utils
@@ -28,6 +28,8 @@ model = Unet3D(IN_DIM, NUM_CLASSES, NUM_FILTERS).to(device)
 criterion = DiceLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=STEP_SIZE, gamma=GAMMA)
+
+dice_losses = []
 
 # Training the model
 model.train()
@@ -49,6 +51,7 @@ for epoch in range(EPOCHS):
         optimizer.step()
 
     scheduler.step()
+    dice_losses.append(loss.item())
     print (f'Epoch [{epoch+1}/{EPOCHS}], Loss: {loss.item()}')
 
 # Save the model
@@ -56,3 +59,9 @@ torch.save(model.state_dict(), MODEL_PATH)
 
 # Test the model
 test_model(device, model, test_loader, criterion)
+
+# Save the Dice loss graph
+save_dice_loss_graph(dice_losses)
+
+# Save prediction images
+save_prediction_images(device, model, test_loader)

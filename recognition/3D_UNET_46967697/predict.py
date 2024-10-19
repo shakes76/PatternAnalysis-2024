@@ -1,16 +1,19 @@
 """
-#TODO
+Tests the model and prints out predictions for the test set
 
 @author Damian Bellew
 """
 
+import torchvision.utils
 from utils import *
 from modules import *
 from dataset import *
 
 import torch
 import torch.utils
+import torchvision
 from segmentation_models_pytorch.losses import DiceLoss
+import matplotlib.pyplot as plt
 
 def test_model(device, model, test_loader, criterion):
     model.eval()
@@ -34,6 +37,31 @@ def test_model(device, model, test_loader, criterion):
     avg_dice_score = dice_score / len(test_loader)
 
     print(f'Average Dice Score: {avg_dice_score}')
+
+
+def save_dice_loss_graph(dice_losses):
+    plt.plot(dice_losses)
+    plt.xlabel('Epoch')
+    plt.ylabel('Dice Loss')
+    plt.title('Dice Loss vs Epoch')
+    plt.savefig(DICE_LOSS_GRAPH_PATH)
+
+def save_prediction_images(device, model, test_loader):
+    model.eval()
+    
+    with torch.no_grad():
+        for idx, (image, label) in enumerate(test_loader):
+            image = image.to(device)
+            label = label.to(device)
+
+            # Prediction
+            output = torch.softmax(model(image), dim=1)
+            predicted = torch.argmax(output, dim=1)
+
+            # Save images
+            torchvision.utils.save_image(image, f'{ORIGINAL_IMAGES_PATH}/image_{idx}_input.png')
+            torchvision.utils.save_image(label.unsqueeze(1).float(), f'{ORIGINAL_LABELS_PATH}/image_{idx}_label.png')
+            torchvision.utils.save_image(predicted.unsqueeze(1).float(), f'{PREDICTION_PATH}/image_{idx}_output.png')
 
 
 if __name__ == "__main__":

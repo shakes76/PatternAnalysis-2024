@@ -18,6 +18,7 @@ def save_model(epoch,G,D,optimizer_G,optimizer_D, gen_loss, disc_loss,path = con
 
     }
     torch.save(checkpoint, path)
+    print(f"Checkpoint saved at epoch {epoch}.", flush =True)
 
 def load_checkpoint(path, G, D, optimizer_G, optimizer_D):
     checkpoint = torch.load(path)

@@ -19,10 +19,11 @@ These could potentially be used for data research or as a tool for studying Alzh
 5. [Usage](#usage)
 6. [Model Architecture](#model-architecture)
 7. [Training Process](#training-process)
-8. [Inference](#inference)
-9. [Visualisations](#visualisations)
-10. [Performance Metrics](#performance-metrics)
-11. [References](#references)
+8. [Results](#results)
+9. [Inference](#inference)
+10. [Visualisations](#visualisations)
+11. [Performance Metrics](#performance-metrics)
+12. [References](#references)
 
 ## Project Structure
 
@@ -167,31 +168,31 @@ The training process is divided into two main stages:
     - Scaler: Gradscaler
     - Scheduler: CosineAnnealingWarmupScheduler
 
-    #### Results
+## Results
 
-    <p> Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM) were the two primary metrics used to assess the quality of the image generations.
+<p> Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM) were the two primary metrics used to assess the quality of the image generations.
 
-    - PSNR is a metric used to measure the quality of reconstructed or generated images compared to a reference image. It is expressed in decibels (dB) and is commonly used to assess how much noise or distortion has been introduced during the image generation or compression process. This will help to determine how much of original nois eis still present in the output image. At the end of training the PSNR was 15.707. This is considered a low PSNR and implies a poor reconstruction quality, so there is still room for improvement in the model. 
-    
-    - SSIM is a method for predicting the perceived quality of digital television and cinematic pictures, as well as other kinds of digital images. At the end of training the model produced a value of 0.702 from a possible range of 0 to 1, with 1 meaning the reference and sample are identical. This is considered moderate to good for a generatedd image, considerring we do not want the generated sample to be identical to the reference image.
+- PSNR is a metric used to measure the quality of reconstructed or generated images compared to a reference image. It is expressed in decibels (dB) and is commonly used to assess how much noise or distortion has been introduced during the image generation or compression process. This will help to determine how much of original nois eis still present in the output image. At the end of training the PSNR was 15.707. This is considered a low PSNR and implies a poor reconstruction quality, so there is still room for improvement in the model. 
 
-    ### Alzheimer's Disease (AD)
-    <img src="visualisations/AD_diffusion_training.gif" width=1000>
+- SSIM is a method for predicting the perceived quality of digital television and cinematic pictures, as well as other kinds of digital images. At the end of training the model produced a value of 0.702 from a possible range of 0 to 1, with 1 meaning the reference and sample are identical. This is considered moderate to good for a generatedd image, considerring we do not want the generated sample to be identical to the reference image.
 
-    #### Metrics and Stats
-    <img src="visualisations/ADNI_AD_avg_train_loss.png" width=500>
-    <img src="visualisations/ADNI_AD_avg_val_loss.png" width=500><br>
-    <img src="visualisations/ADNI_AD_generated_psnr.png" width=500>
-    <img src="visualisations/ADNI_AD_generated_ssim.png" width=500>
+### Alzheimer's Disease (AD)
+<img src="visualisations/AD_diffusion_training.gif" width=1000>
 
-    ### Normal Control (NC)
-    <img src="visualisations/NC_diffusion_training.gif" width=1000>
+#### Metrics and Stats
+<img src="visualisations/ADNI_AD_avg_train_loss.png" width=500>
+<img src="visualisations/ADNI_AD_avg_val_loss.png" width=500><br>
+<img src="visualisations/ADNI_AD_generated_psnr.png" width=500>
+<img src="visualisations/ADNI_AD_generated_ssim.png" width=500>
 
-    #### Metrics and Stats
-    <img src="visualisations/ADNI_NC_avg_train_loss.png" width=500>
-    <img src="visualisations/ADNI_NC_avg_val_loss.png" width=500><br>
-    <img src="visualisations/ADNI_NC_generated_psnr.png" width=500>
-    <img src="visualisations/ADNI_NC_generated_ssim.png" width=500>
+### Normal Control (NC)
+<img src="visualisations/NC_diffusion_training.gif" width=1000>
+
+#### Metrics and Stats
+<img src="visualisations/ADNI_NC_avg_train_loss.png" width=500>
+<img src="visualisations/ADNI_NC_avg_val_loss.png" width=500><br>
+<img src="visualisations/ADNI_NC_generated_psnr.png" width=500>
+<img src="visualisations/ADNI_NC_generated_ssim.png" width=500>
 
 ### Optimisation Choices
 

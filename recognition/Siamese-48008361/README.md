@@ -42,11 +42,25 @@ This project implements a Siamese network-based classifier for the ISIC 2020 Cha
 ## Data Preparation
 
 The ISIC 2020 dataset is known for its significant class imbalance, which can pose challenges for model training. The mOur preprocessing script (`dataset.py`) addresses this issue and prepares the data for effective training. For starters in the csv file, we chose to focus on the 'target' column and 'isic_id' only, when consulting with dermatologists, it was said that the location of the lesion is not important at all, and hence splitting the data based on location of lesions was disregarded and instead only split by target variable. 
-
-Execute the preprocessing script:
+Firstly, download the dataset from the link provided in the references (make sure to download the images and the csv file). Then create a directory called 'data' and place the downloaded files in it. Then Execute the preprocessing script:
 
 ```
 python3 dataset.py
+```
+
+You should get a structure like this:
+```
+preprocessed_data/
+│
+├── benign/
+│   ├── benign_image_1.jpg
+│   ├── benign_image_2.jpg
+│   └── ...
+│
+└── malignant/
+    ├── malignant_image_1.jpg
+    ├── malignant_image_2.jpg
+    └── ...
 ```
 
 This script performs the following steps:

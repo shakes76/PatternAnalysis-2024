@@ -4,15 +4,12 @@ This file contains the data loader for preprocessing the data.
 The data is augmented and then packed into loaders for the model.
 """
 
-
 """
 after the images are converted to numpy arrays and should i convert the images to tensors and then
 load them into datasets?
     based on the batch size of the loader, only take the required images and turn them into arrays
     and tensors for each epoch
 """
-
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 import nibabel as nib
@@ -50,11 +47,14 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching = 'unchanged')
         affine = niftiImage.affine
+
         if len(inImage.shape) == 3:
             inImage = inImage[:,:,0]
         inImage = inImage.astype(dtype)
+
         if normImage:
             inImage = (inImage - inImage.mean()) / inImage.std()
+
         if categorical:
             inImage = to_channels(inImage, dtype = dtype)
             images[i,:,:,:] = inImage

@@ -17,13 +17,21 @@ import numpy as np
 import os
 from tqdm import tqdm
 from torchvision import transforms
+import skimage.transform
 
 
 transform = transforms.Compose([
     transforms.RandomCrop(64),
     transforms.RandomHorizontalFlip(),
-    transforms.ToTensor()
+    # transforms.ToTensor()
 ])
+
+
+def resize_image(image, target_shape):
+    ''' 
+    Resize an image to a target shape using interpolation 
+    '''
+    return skimage.transform.resize(image, target_shape, mode = 'reflect', anti_aliasing = True)
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
@@ -35,21 +43,26 @@ def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     return res
 
 
-def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False):
+def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False, target_shape = None):
     affines = []
-
     num = len(imageNames)
+    
+    # Load the first image to get the shape
     first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
     
     if len(first_case.shape) == 3:
-        first_case = first_case[:,:,0]
+        first_case = first_case[:, :, 0]
+
+    # Use the first case's shape if no target shape is provided
+    if target_shape is None:
+        target_shape = first_case.shape
 
     if categorical:
         first_case = to_channels(first_case, dtype = dtype)
-        rows, cols, channels = first_case.shape
+        rows, cols, channels = target_shape[0], target_shape[1], first_case.shape[-1]
         images = np.zeros((num, rows, cols, channels), dtype = dtype)
     else:
-        rows, cols = first_case.shape
+        rows, cols = target_shape
         images = np.zeros((num, rows, cols), dtype = dtype)
 
     for i, inName in enumerate(tqdm(imageNames)):
@@ -58,19 +71,24 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
         affine = niftiImage.affine
 
         if len(inImage.shape) == 3:
-            inImage = inImage[:,:,0]
+            inImage = inImage[:, :, 0]
         inImage = inImage.astype(dtype)
 
         if normImage:
             inImage = (inImage - inImage.mean()) / inImage.std()
 
+        # Resize the image to the target shape if needed
+        if inImage.shape != target_shape:
+            inImage = resize_image(inImage, target_shape)
+
         if categorical:
             inImage = to_channels(inImage, dtype = dtype)
-            images[i,:,:,:] = inImage
+            images[i, :, :, :] = inImage
         else:
-            images[i,:,:] = inImage
+            images[i, :, :] = inImage
 
         affines.append(affine)
+
         if i > 20 and early_stop:
             break
 
@@ -81,11 +99,12 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
 
 
 class VQVAENIfTIDataset(Dataset):
-    def __init__(self, data_dir, transform = transform, normImage = True, categorical = False):
+    def __init__(self, data_dir, transform = transform, normImage = True, categorical = False, target_shape = (128, 128)):
         self.data_dir = data_dir
         self.transform = transform
         self.normImage = normImage
         self.categorical = categorical
+        self.target_shape = target_shape
         self.file_list = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.nii.gz')]
         self.images = load_data_2D(self.file_list, normImage = self.normImage, categorical = self.categorical)
 
@@ -110,7 +129,7 @@ class VQVAENIfTIDataset(Dataset):
         return image_tensor
 
 
-def create_nifti_data_loaders(data_dir, batch_size, num_workers = 4, normImage = True, categorical = False):
-    dataset = VQVAENIfTIDataset(data_dir, normImage = normImage, categorical = categorical)
+def create_nifti_data_loaders(data_dir, batch_size, num_workers = 4, normImage = True, categorical = False, target_shape = (128, 128)):
+    dataset = VQVAENIfTIDataset(data_dir, normImage = normImage, categorical = categorical, target_shape = target_shape)
     data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers)
     return data_loader

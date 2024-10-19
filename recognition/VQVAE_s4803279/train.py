@@ -79,10 +79,13 @@ def main(
 
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("Device being used:", device, "\n")
 
     # Data loaders
+    print("Starting data loading.")
     train_loader = create_nifti_data_loaders(os.path.join(data_dir, 'keras_slices_train'), batch_size, num_workers)
     val_loader = create_nifti_data_loaders(os.path.join(data_dir, 'keras_slices_validate'), batch_size, num_workers)
+    print("Done loading data.\n")
 
     # Initialize the model
     in_channels = 1  # Assuming single-channel (grayscale) images
@@ -96,7 +99,8 @@ def main(
     val_losses = []
 
     # Training loop
-    for epoch in tqdm(range(1, num_epochs + 1)):
+    print("Starting Training:")
+    for epoch in tqdm(range(num_epochs)):
         print(f'Epoch {epoch}/{num_epochs}')
 
         # Train for one epoch
@@ -121,6 +125,6 @@ def main(
 
 
 if __name__ == "__main__":
-    data_dir = 'recognition/VQVAE_s4803279/HipMRI_study_keras_slices_data'
-    output_dir = './trained_vqvae2_model'
+    data_dir = 'HipMRI_study_keras_slices_data'
+    output_dir = 'trained_vqvae2_model'
     main(data_dir, output_dir)

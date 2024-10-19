@@ -71,7 +71,7 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding = 1)
         self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding = 1)
-        self.relu = nn.ReLU(inplace = True)
+        self.relu = nn.ReLU(inplace = False)
 
         if in_channels != out_channels:
             self.projection = nn.Conv2d(in_channels, out_channels, 1)
@@ -112,7 +112,7 @@ class VQVAE2(nn.Module):
         self.encoder_top = nn.Sequential(
             nn.Conv2d(in_channels, hidden_dims[0], 4, stride = 2, padding = 1),
             ResidualBlock(hidden_dims[0], hidden_dims[0]),
-            nn.ReLU(inplace = True),
+            nn.ReLU(inplace = False),
             nn.Conv2d(hidden_dims[0], embedding_dims[0], 1)
         )
 
@@ -120,7 +120,7 @@ class VQVAE2(nn.Module):
         self.encoder_bottom = nn.Sequential(
             nn.Conv2d(in_channels, hidden_dims[1], 4, stride = 2, padding = 1),
             ResidualBlock(hidden_dims[1], hidden_dims[1]),
-            nn.ReLU(inplace = True),
+            nn.ReLU(inplace = False),
             nn.Conv2d(hidden_dims[1], embedding_dims[1], 1)
         )
 
@@ -132,13 +132,13 @@ class VQVAE2(nn.Module):
         self.decoder_top = nn.Sequential(
             nn.ConvTranspose2d(embedding_dims[0], hidden_dims[0], 4, stride = 2, padding = 1),
             ResidualBlock(hidden_dims[0], hidden_dims[0]),
-            nn.ReLU(inplace = True)
+            nn.ReLU(inplace = False)
         )
 
         self.decoder_bottom = nn.Sequential(
             nn.ConvTranspose2d(embedding_dims[1] + hidden_dims[0], hidden_dims[1], 4, stride = 2, padding = 1),
             ResidualBlock(hidden_dims[1], hidden_dims[1]),
-            nn.ReLU(inplace = True),
+            nn.ReLU(inplace = False),
             nn.Conv2d(hidden_dims[1], in_channels, 1)
         )
 

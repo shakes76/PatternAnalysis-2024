@@ -7,6 +7,16 @@ from torchvision import transforms
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
+#default transform
+default_aug = transforms.Compose([
+    transforms.Resize((224,224)),
+    transforms.ToTensor(),
+    #normalise using ImageNet (pytorch defaults)
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+])
+
+
 #augument dataset since theres only 584 malignant and 30000 non malig
 malig_aug = transforms.Compose([
     transforms.Resize((224,224)),
@@ -23,6 +33,10 @@ malig_aug = transforms.Compose([
 #augument dataset since theres only 584 malignant and 30000 non malig
 benign_aug = transforms.Compose([
     transforms.Resize((224,224)),
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.RandomVerticalFlip(p=0.5),
+    transforms.RandomRotation(30),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     #normalise using ImageNet (pytorch defaults)
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -45,13 +59,19 @@ class ISICDataset(Dataset):
         return len(self.image_ISIC)
 
     def apply_transform(self, img, label):
+        transform = None
         #need to make sure its exclusively benign all else consider malig
         if label == 0:
             if self.transform_benign:
-                img = self.transform_benign(img)
+                transform = self.transform_benign
         else:
             if self.transform_malignant:
-                img = self.transform_malignant(img)
+                transform=self.transform_benign
+
+        if transform is None:
+            transform = default_aug
+
+        img = transform(img)
 
         return img
 

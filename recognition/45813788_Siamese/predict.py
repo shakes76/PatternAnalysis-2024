@@ -19,8 +19,8 @@ def test(siamese, classifier, test_df, images):
     test_dataset = ISICDataset(
     df=test_df,
     images_dir=images,
-    transform_benign=benign_aug,
-    transform_malignant=malig_aug,
+    #transform_benign=benign_aug,
+    #transform_malignant=malig_aug,
     augment_ratio=0.0  
     )
 

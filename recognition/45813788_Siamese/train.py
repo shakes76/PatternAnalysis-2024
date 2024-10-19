@@ -58,10 +58,10 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
 
     # Initialize model and move to device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = SiameseNN(embedding_dim=256).to(device)
+    model = SiameseNN(embedding_size=256).to(device)
 
     # Contrastive Loss from PyTorch Metric Learning
-    loss = ContrastiveLoss(
+    criterion = ContrastiveLoss(
         pos_margin=0,
         neg_margin=1,
         distance=LpDistance(normalize_embeddings=True, p=2, power=1),
@@ -72,7 +72,7 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
     #scheduler
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, threshold=0.01)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
 
     # Training parameters
     best_loss = float('inf')
@@ -85,19 +85,17 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
         epoch_loss = 0.0
 
         for images, labels  in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
-            images, labels = images.to(device), labels.float().to(device)
-            # Forward pass
-            embeddings = model(images)
-
-            loss = loss(embeddings, labels)
-
-            # Backward pass and optimization
+            images, labels = images.to(device), labels.to(device)
+            
             optimizer.zero_grad()
+            # Forward pass
+            embeddings = model(images)            
+            loss = criterion(embeddings, labels)
+            # Backward pass and optimization
             loss.backward()
             optimizer.step()
 
             epoch_loss += loss.item()
-            
 
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)
@@ -109,12 +107,12 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
         all_labels = []
         with torch.no_grad():
             for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
-                images, labels = images.to(device), labels.to(device).float()
+                images, labels = images.to(device), labels.to(device)
 
                 # Forward pass
                 embeddings = model(images)
 
-                loss = loss(embeddings, labels)
+                loss = criterion(embeddings, labels)
 
                 val_loss += loss.item()
 
@@ -177,8 +175,6 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
     val_dataset = ISICDataset(
         df=val_df,
         images_dir=images,
-        transform_benign=benign_aug,
-        transform_malignant=malig_aug,
         augment_ratio=0.0  
     )
 

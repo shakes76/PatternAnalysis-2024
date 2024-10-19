@@ -16,8 +16,9 @@ def data_set_creator():
         transforms.ToTensor()
     ])
 
-
-    data_dir = 'recognition/Stable Diffusion - 47219647/AD_NC/test'
+    #Change the directory to what is needed
+    data_dir = 'recognition/Style GAN - 47219647/AD_NC/test'
+    
     dataset = datasets.ImageFolder(root=data_dir, transform=augmentation_transforms)
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=True, num_workers=6)
 

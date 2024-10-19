@@ -16,3 +16,10 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             inImage = (inImage - inImage.mean()) / inImage.std()
         images.append(inImage)
     return np.array(images)
+
+class HipMRIDataset(Dataset):
+    def __init__(self, data_dir, seg_dir, transform=None):
+        self.data_dir = data_dir
+        self.seg_dir = seg_dir
+        self.transform = transform
+        self.image_files = sorted([f for f in os.listdir(data_dir) if f.endswith('.nii.gz')])

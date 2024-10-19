@@ -12,7 +12,7 @@ def main():
     batch_size = 8
     base_lr = 0.0001  # Minimum learning rate
     max_lr = 0.001    # Maximum learning rate
-    num_epochs = 80
+    num_epochs = 90
     step_size = 5
 
     T_0 = 10  # Number of epochs for the first restart
@@ -26,7 +26,8 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=base_lr)
 
     # cosine lr
-    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=T_0, T_mult=T_mult, eta_min=base_lr)
+    scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, 
+                                            step_size_up=step_size, mode='triangular')
 
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []

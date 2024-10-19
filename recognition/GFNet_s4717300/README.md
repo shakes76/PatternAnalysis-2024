@@ -35,7 +35,7 @@ Comparison of an MRI of of a patient with Alzheimers Disease (AD) on the left an
 
 ## GFNet Structure
 
-![GFNet Architecture](./assets/GFNET_structure.pdf)
+![GFNet Architecture](./assets/GFNET_Structure.png)
 
 ### Model Overview
 

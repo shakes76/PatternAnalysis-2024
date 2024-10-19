@@ -35,6 +35,7 @@ import os
 import gc
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.nn.utils import clip_grad_norm_
 
 # Hyperparams - mostly following StyleGAN2 paper, adjusted for smaller network
 z_dim = 128 # Latent dims (z: input, w: intermediate)
@@ -52,6 +53,7 @@ beta1 = 0.5
 beta2 = 0.999  # Adam betas
 r1_gamma = 10.0  # R1 regularisation weight
 d_reg_interval = 16  # Discrim regularisation interval
+max_grad_norm = 1.0  # Maximum norm for gradient clipping
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Create results dir
@@ -129,17 +131,18 @@ for epoch in range(num_epochs):
         requires_grad(generator, False)
         requires_grad(discriminator, True)
         
-        with amp.autocast(device_type='cuda'): # Use mixed precision
-            # Generate fake images
+        with amp.autocast(device_type='cuda'):
             z = torch.randn(real_images.size(0), z_dim).to(device)
             fake_images = generator(z, labels)
-            fake_output = discriminator(fake_images.detach()) # Want these predictions close to 0 for Discrim
-            real_output = discriminator(real_images) # Want these predictions close to 1
+            fake_output = discriminator(fake_images.detach())
+            real_output = discriminator(real_images)
             d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
             d_losses.append(d_loss.item())
             
         d_optim.zero_grad()
         scaler.scale(d_loss).backward()
+        scaler.unscale_(d_optim)
+        clip_grad_norm_(discriminator.parameters(), max_grad_norm)
         scaler.step(d_optim)
         scaler.update()
         
@@ -151,6 +154,8 @@ for epoch in range(num_epochs):
                 r1_loss = d_r1_loss(real_pred, real_images)
             d_optim.zero_grad()
             scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward()
+            scaler.unscale_(d_optim)
+            clip_grad_norm_(discriminator.parameters(), max_grad_norm)
             scaler.step(d_optim)
             scaler.update()
         
@@ -161,20 +166,25 @@ for epoch in range(num_epochs):
         with amp.autocast(device_type='cuda'):
             z = torch.randn(real_images.size(0), z_dim).to(device)
             fake_images = generator(z, labels)
-            fake_pred = discriminator(fake_images) # Want this close to 1 for Gen
-            # Generator loss
+            fake_pred = discriminator(fake_images)
             g_loss = criterion(fake_pred, torch.ones_like(fake_pred))
             g_losses.append(g_loss.item())
         
         g_optim.zero_grad()
         scaler.scale(g_loss).backward()
+        scaler.unscale_(g_optim)
+        clip_grad_norm_(generator.parameters(), max_grad_norm)
         scaler.step(g_optim)
         scaler.update()
 
-        # Print losses
+        # Print losses and check for NaN
         if i % print_interval == 0:
             print(f"Epoch [{epoch+1}/{num_epochs}] Batch [{i+1}/{total_batches}] "
                   f"D_loss: {d_loss.item():.4f} G_loss: {g_loss.item():.4f}")
+            
+        if torch.isnan(d_loss) or torch.isnan(g_loss):
+            print(f"NaN loss detected at Epoch {epoch+1}, Batch {i+1}. Break.")
+            break
     
     print(f"Epoch [{epoch+1}/{num_epochs}] completed")
     

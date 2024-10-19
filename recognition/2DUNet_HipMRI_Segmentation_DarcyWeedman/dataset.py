@@ -51,14 +51,38 @@ class HipMRIDataset(Dataset):
         return image, mask
     
 if __name__ == "__main__":
-    train_dataset = HipMRIDataset("keras_slices_train", "keras_slices_seg_train")
-    val_dataset = HipMRIDataset("keras_slices_validate", "keras_slices_seg_validate")
-    test_dataset = HipMRIDataset("keras_slices_test", "keras_slices_seg_test")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    train_data_dir = os.path.join(base_dir, "keras_slices_train")
+    train_seg_dir = os.path.join(base_dir, "keras_slices_seg_train")
+    val_data_dir = os.path.join(base_dir, "keras_slices_validate")
+    val_seg_dir = os.path.join(base_dir, "keras_slices_seg_validate")
+    test_data_dir = os.path.join(base_dir, "keras_slices_test")
+    test_seg_dir = os.path.join(base_dir, "keras_slices_seg_test")
+
+    train_dataset = HipMRIDataset(train_data_dir, train_seg_dir)
+    val_dataset = HipMRIDataset(val_data_dir, val_seg_dir)
+    test_dataset = HipMRIDataset(test_data_dir, test_seg_dir)
     
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Validation dataset size: {len(val_dataset)}")
     print(f"Test dataset size: {len(test_dataset)}")
     
+    print("\nChecking data directories:")
+    for dir_name in [train_data_dir, train_seg_dir, val_data_dir, val_seg_dir, test_data_dir, test_seg_dir]:
+        print(f"{dir_name}: {'Exists' if os.path.exists(dir_name) else 'Does not exist'}")
+
     sample_image, sample_mask = train_dataset[0]
-    print(f"Sample image shape: {sample_image.shape}")
+    print(f"\nSample image shape: {sample_image.shape}")
     print(f"Sample mask shape: {sample_mask.shape}")
+
+    print("\nFirst few files in train data directory:")
+    for file in sorted(os.listdir(train_data_dir))[:5]:
+        print(file)
+
+    if os.path.exists(train_seg_dir):
+        print("\nFirst few files in train segmentation directory:")
+        for file in sorted(os.listdir(train_seg_dir))[:5]:
+            print(file)
+    else:
+        print(f"\nTrain segmentation directory does not exist: {train_seg_dir}")

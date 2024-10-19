@@ -115,13 +115,13 @@ I initially trained the GFNet model using the [pre-existing GFNet classes](https
 - Normalization layer: LayerNorm is applied at each stage for stable training.
 - Dropout rates: They are used to prevent overfitting by randomly dropping some connections or neurons, set to 0.25.
 
-But I quickly realized that the performance was suboptimal due to the relatively small data size to a Transformer model (66% test accuracy). Transformer model usually requires a substantial amount of data for robust performance. Initially, my model overfitted with training accuracy around 100% but only 70% for validation accuracy. I adjusted hyperparameters to deal with overfitting like:
+But I quickly realized that the performance was suboptimal due to the relatively small data size to a Transformer model, reaching 66% test accuracy. Transformer model usually requires a substantial amount of data for robust performance. Initially, my model overfitted with training accuracy around 96.77% but only 78.33% and 57.41% for validation and test accuracy respectively. I adjusted hyperparameters to deal with overfitting as follows. The training and validation accuracy is 83% and 72%, with 66% test accuracy.
 ```
  Dropout:0.7
  Weight decay: 1e-2
  Learning rates: 1e-4
  Batch Size: 64
- Epochs: Early stopped at 23 epochs
+ Epochs: Early stopped at 13 epochs
  ```
  Figure 1 and 2 show the training loss and accuracy of Approach 1:
 

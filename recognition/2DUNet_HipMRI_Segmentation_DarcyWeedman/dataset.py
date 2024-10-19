@@ -23,3 +23,6 @@ class HipMRIDataset(Dataset):
         self.seg_dir = seg_dir
         self.transform = transform
         self.image_files = sorted([f for f in os.listdir(data_dir) if f.endswith('.nii.gz')])
+        
+    def __len__(self):
+        return len(self.image_files)

@@ -14,12 +14,14 @@ The architecture consists of a Generator and a Discriminator, operating in an ad
 - **Output**: Generated brain images in the specified output directory.
 
 ## Pre-processing Steps
-- **Image Normalization**: Images were resized to 256x256 pixels and normalized to [0, 1].
-- **Augmentation**: Random transformations (flipping, rotation) were applied to enhance dataset diversity.
+- **Resize**: Images are resized to a specified size.
+- **To Tensor**: Converted to PyTorch tensors, normalizing pixel values to [0, 1].
+- **Random Horizontal Flip:**: Applied with a 50% chance to augment the dataset.
+- **Normalization:**: Images are normalized to have a mean and standard deviation of 0.5 for each channel.
 
 ### Generator
 
-The Generator is responsible for creating synthetic images from random noise. It utilizes a progressive growth approach, allowing it to generate images at varying resolutions. Key components include:
+The Generator takes latent vectors sampled from a normal distribution and transforms them into high-resolution brain images. It employs a Mapping Network to convert the latent vectors into style vectors, which are then processed through multiple progressive blocks that incorporate Adaptive Instance Normalization (AdaIN) and noise injection. The generation process uses a fade-in technique to smoothly transition between resolutions, enhancing the realism of the synthesized images. Key components include:
 
 - **Mapping Network**: Transforms latent vectors (noise) into a style space using a series of weighted sum linear layers and pixel normalization.
   
@@ -34,7 +36,7 @@ The Generator is responsible for creating synthetic images from random noise. It
 
 ### Discriminator
 
-The Discriminator evaluates the authenticity of images (real vs. fake). It employs a similar progressive growth architecture, enabling it to discern finer details as resolution increases. Key components include:
+The Discriminator evaluates the authenticity of both real and generated images. It uses a series of convolutional blocks to progressively process the input images, employing techniques like minibatch standard deviation to capture variations across batches. The Discriminator also utilizes a fade-in technique to effectively combine outputs at different resolutions, helping it distinguish between real and synthetic images more accurately. Key components include:
 
 - **Convolutional Blocks**: Consists of weighted sum convolutional layers and leaky ReLU activations, progressively processing the input images.
 

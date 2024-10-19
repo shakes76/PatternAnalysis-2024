@@ -356,10 +356,8 @@ class StyleGAN2Generator(nn.Module):
         num_mapping_layers (int): Num layers in mapping network.
         mapping_dropout (float): Dropout rate for mapping network.
         label_dim (int): Num classes for conditional generation. Defaults to 2 (AD, NC).
-        num_layers (int, optional): Num layers in synthesis network. Defaults to 7.
-        # channel_base (int, optional): Base num channels. Defaults to 8192.
-        # channel_max (int, optional): Max num channels. Defaults to 512.
-        ngf (int, optional): Num generator features. Defaults to 256.
+        num_layers (int, optional): Num layers in synthesis network. Defaults to 5.
+        ngf (int, optional): Num generator features. Defaults to 64.
     """
     def __init__(self, 
                  z_dim,
@@ -367,10 +365,8 @@ class StyleGAN2Generator(nn.Module):
                  num_mapping_layers,
                  mapping_dropout,
                  label_dim = 2, 
-                 num_layers=7,
-                #  channel_base=8192,
-                #  channel_max=512,
-                 ngf = 256
+                 num_layers=5,
+                 ngf = 64
                 ):
         super().__init__()
         self.z_dim = z_dim
@@ -378,8 +374,6 @@ class StyleGAN2Generator(nn.Module):
         self.num_mapping_layers = num_mapping_layers
         self.label_dim = label_dim
         self.num_layers = num_layers
-        # self.channel_base = channel_base
-        # self.channel_max = channel_max
         self.ngf = ngf
         self.mapping_dropout = mapping_dropout
         
@@ -392,31 +386,25 @@ class StyleGAN2Generator(nn.Module):
         
         # Init synthesis network
         self.synthesis_network = nn.ModuleList()
-        in_channels = w_dim
         
-        # Learnable constant input (4x4)
-        self.const = nn.Parameter(torch.randn(1, ngf * 8, 4, 4))
+        # Learnable constant input (8x8)
+        self.const = nn.Parameter(torch.randn(1, ngf * 8, 8, 8))
         
         # Create synthesis architecture
         # Use strided modulated convolutions for progressive growing
-        # With default values spatial dimensions upsample to desired image size (per batch sample):
-        #    2048x4x4 -> 2048x4x4 -> 1024x8x8 -> 512x16x16 -> 256x32x32 -> 128x64x64 -> 64x128x128 -> 32x256x256
-        # Create synthesis architecture
-        channel_multipliers = [8, 4, 2, 1, 1/2, 1/4, 1/8]
+        # Progression: 8x8 -> 16x16 -> 32x32 -> 64x64 -> 128x128 -> 256x240
+        channel_multipliers = [8, 4, 2, 1, 1/2]
         in_channels = self.ngf * 8  # Start with the number of channels in const
         for i in range(num_layers):
             out_channels = int(self.ngf * channel_multipliers[i])
-            up = 2 if i > 0 else 1  # First layer doesn't upsample
+            up = 2
             final_resolution = None
             if i == num_layers - 1:  # Last layer
-                final_resolution = (256, 240) # Use interpolation
+                final_resolution = (256, 240)  # Use interpolation for final size
             self.synthesis_network.append(
                 SynthesisBlock(in_channels, out_channels, w_dim, up=up, final_resolution=final_resolution)
             )
             in_channels = out_channels
-
-        # Add final conv layer - force greyscale output and 1 channel
-        self.to_rgb = nn.Conv2d(in_channels, 1, kernel_size=1)
 
     def forward(self, z, labels, return_latents=False):
         """
@@ -429,7 +417,7 @@ class StyleGAN2Generator(nn.Module):
 
         Returns:
             torch.Tensor: Generated grayscale image of size 256x240,
-                          and w latents if return_latents is True.
+                        and w latents if return_latents is True.
         """
         batch_size = z.shape[0]
         # Generate w from z
@@ -440,7 +428,6 @@ class StyleGAN2Generator(nn.Module):
         for block in self.synthesis_network:
             x = block(x, w)
             
-        x = self.to_rgb(x) # Force greyscale and 1 channel
         x = torch.tanh(x)  # Force output range [-1, 1]
         
         if return_latents:
@@ -550,54 +537,56 @@ class StyleGAN2Discriminator(nn.Module):
         image_size (tuple): Size of input image (H, W).
         num_channels (int): Num input channels.
         ndf (int): Num discriminator features.
-        num_layers (int): Num downsmapling layers.
+        num_layers (int): Num downsampling layers.
     """
     def __init__(self, image_size, num_channels, ndf, num_layers):
         super().__init__()
-        self.image_size = image_size # (256, 240)
-        self.num_channels = num_channels # 1
-        self.ndf = ndf # 256
-        self.num_layers = num_layers # 7
+        self.image_size = image_size  # (256, 240)
+        self.num_channels = num_channels  # 1
+        self.ndf = ndf  # 64
+        self.num_layers = num_layers  # 5
         
-        self.descrim_network = nn.ModuleList()
+        self.discrim_network = nn.ModuleList()
         
         # Initial conv layer
         # In: [batch_size, 1, 256, 240]
-        # Out: [batch_size, 256, 256, 240]
-        self.descrim_network.append(nn.Conv2d(in_channels=1, out_channels=self.ndf, kernel_size=3, padding=1))
+        # Out: [batch_size, 64, 256, 240]
+        self.discrim_network.append(nn.Conv2d(in_channels=num_channels, out_channels=ndf, kernel_size=3, padding=1))
+        
         # Residual blocks
         # Set up channel progression
-        in_channels = self.ndf
-        channel_multipliers = [1/8, 1/4, 1/2, 1, 2, 4, 8]  # Match generators progression
+        in_channels = ndf
+        channel_multipliers = [1, 2, 4, 8, 16]  # Reverse of generator's progression
         for i in range(num_layers):
             out_channels = int(ndf * channel_multipliers[i])
-            downsample = i != 0  # No downsample first block
             # In: [batch_size, in_channels, H, W]
-            # Out: [batch_size, out_channels, H/2, W/2] (if downsampled)
-            self.descrim_network.append(ResidualBlock(in_channels, out_channels, downsample=downsample))
+            # Out: [batch_size, out_channels, H/2, W/2]
+            self.discrim_network.append(ResidualBlock(in_channels, out_channels, downsample=True))
             in_channels = out_channels
             
         # Spatial dims after downsamples
-        # 6 downsamples: 256/(2^6) = 4, 240/(2^6) = 3.75 (rounds down)
-        final_height = image_size[0] // (2 ** (num_layers - 1))  # 4
-        final_width = image_size[1] // (2 ** (num_layers - 1))   # 3
+        # 5 downsamples: 256/(2^5) = 8, 240/(2^5) = 7.5 (rounds down to 7)
+        final_height = image_size[0] // (2 ** num_layers)  # 8
+        final_width = image_size[1] // (2 ** num_layers)   # 7
             
         # Add MiniBatchStdDev layer (adds 1 to channel dim)
-        # In: [batch_size, 2048 (256 * 8), 4, 3]
-        # Out: [batch_size, 2049, 4, 3]
+        # In: [batch_size, 1024 (64 * 16), 8, 7]
+        # Out: [batch_size, 1025, 8, 7]
         self.minibatch_stddev = MiniBatchStdDev()
+        
         # Final conv layer
         self.final_conv = nn.Conv2d(in_channels + 1, in_channels, kernel_size=3, padding=1)
+        
         # Flattening layer
-        # In: [batch_size, 2048, 4, 3]
-        # Out: [batch_size, 2048 * 4 * 3] = 24576
+        # In: [batch_size, 1024, 8, 7]
+        # Out: [batch_size, 1024 * 8 * 7] = 57344
         self.flatten = nn.Flatten()
+        
         # Dense layer - classifier
         out_features = in_channels * final_height * final_width
-        # In: [batch_size, 24576]
+        # In: [batch_size, 57344]
         # Out: [batch_size, 1]
         self.final_linear = nn.Linear(out_features, 1)
-
 
     def forward(self, x, feature_output=False):
         """
@@ -605,12 +594,13 @@ class StyleGAN2Discriminator(nn.Module):
 
         Args:
             x (torch.Tensor): Input tensor - shape [batch_size, num_channels, height, width].
+            feature_output (bool): If True, return features instead of final output.
 
         Returns:
-            torch.Tensor: Discriminator scores of shape (batch_size,).
+            torch.Tensor: Discriminator scores of shape (batch_size,) or features if feature_output is True.
         """
         features = []
-        for layer in self.descrim_network:
+        for layer in self.discrim_network:
             x = layer(x)
             features.append(x)
         

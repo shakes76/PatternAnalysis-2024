@@ -18,8 +18,6 @@ malig_aug = transforms.Compose([
     #normalise using ImageNet (pytorch defaults)
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225])
-    #could add randomRotation but leave it like this for now
-    #could add color jitter too but i think this will do more harm then good
 ])
 
 #augument dataset since theres only 584 malignant and 30000 non malig
@@ -47,9 +45,7 @@ class ISICDataset(Dataset):
         return len(self.image_ISIC)
 
     def apply_transform(self, img, label):
-        # we only need to look at malignant class and if its not in there
-        # then we carry on
-        #actually no need to make sure its exclusively benign all else consider malig
+        #need to make sure its exclusively benign all else consider malig
         if label == 0:
             if self.transform_benign:
                 img = self.transform_benign(img)

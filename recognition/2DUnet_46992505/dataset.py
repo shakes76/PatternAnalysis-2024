@@ -1,6 +1,8 @@
 import numpy as np
+import os
 import nibabel as nib
 from tqdm import tqdm
+import cv2
 
 def to_channels (arr: np.ndarray, dtype = np.uint8 ) -> np.ndarray:
     channels = np.unique(arr)
@@ -53,7 +55,8 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
             inImage = utils.to_channels(inImage , dtype = dtype)
             images[i,:,:,:] = inImage
         else :
-            images[i,:,:] = inImage
+            resizedImage = cv2.resize(inImage, (128, 256))
+            images[i,:,:] = resizedImage
 
         affines.append(affine)
         if i > 20 and early_stop:
@@ -63,3 +66,4 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
         return images, affines
     else :
         return images
+

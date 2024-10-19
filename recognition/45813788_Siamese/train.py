@@ -4,7 +4,7 @@ from torch.nn import BCELoss
 from torch.utils.data import DataLoader
 from dataset import ISICDataset, malig_aug, benign_aug 
 from modules import SiameseNN, Classifier
-from utils import visualise_embededding, plot_loss
+from utils import visualise_embededding, plot_loss, plot_accuracy
 from pytorch_metric_learning.losses import ContrastiveLoss
 from pytorch_metric_learning.reducers import AvgNonZeroReducer
 from pytorch_metric_learning.distances import LpDistance
@@ -14,7 +14,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 
-def siamese_train(current_dir, train_df, val_df, images, plots=False):
+def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False):
 
     print("Training Siamese Netowork")
 
@@ -75,7 +75,6 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, threshold=0.01)
 
     # Training parameters
-    epochs = 50
     best_loss = float('inf')
     train_losses = []
     val_losses = []
@@ -98,6 +97,7 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
             optimizer.step()
 
             epoch_loss += loss.item()
+            
 
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)
@@ -109,7 +109,7 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
         all_labels = []
         with torch.no_grad():
             for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
-                images, labels = images.to(device), labels.float().to(device)
+                images, labels = images.to(device), labels.to(device).float()
 
                 # Forward pass
                 embeddings = model(images)
@@ -158,10 +158,9 @@ def siamese_train(current_dir, train_df, val_df, images, plots=False):
         plot_loss(train_losses,val_losses)
 
 
-def classifier_train(current_dir, train_df, val_df, images, siamese, plots=False):
+def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, plots=False):
 
     print("Training classifier")
-
     #make a directory to save models if not there
     save_dir = os.path.join(current_dir,'models')
     os.makedirs(save_dir, exist_ok=True)
@@ -215,18 +214,21 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, plots=False
     criterion = BCELoss()
 
    # Training parameters
-    epochs = 50
     best_loss = float('inf')
     train_losses = []
     val_losses = []
+    train_accuracies = []
+    val_accuracies = []
 
     for epoch in range(epochs):
         # Training phase
         classifier.train()
         epoch_loss = 0.0
+        correct_train = 0
+        total_train = 0
 
         for images, labels  in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device), labels.to(device).float()
            
             #pass through siamese to get features then pass through classifer
             with torch.no_grad():
@@ -239,16 +241,25 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, plots=False
             optimizer.step()
 
             epoch_loss += loss.item()
+            
+            preds = (output >= 0.5).float()
+            correct_train += (preds == labels).sum().item()
+            total_train += labels.size(0)
 
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)
+        train_accuracy = correct_train / total_train
+        train_accuracies.append(train_accuracy)
 
         # Validation
         classifier.eval()
         val_loss = 0.0
+        correct_val = 0
+        total_val = 0
+
         with torch.no_grad():
             for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
-                images, labels = images.to(device), labels.to(device)
+                images, labels = images.to(device), labels.to(device).float()
 
                 #pass through siamese to get features then pass through classifer
                 with torch.no_grad():
@@ -259,8 +270,16 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, plots=False
                 loss = criterion(output, labels)
                 
                 val_loss += loss.item()
+
+                preds = (output >= 0.5).float()
+                correct_val += (preds == labels).sum().item()
+                total_val += labels.size(0)
+
         avg_val_loss = val_loss / len(val_loader)
         val_losses.append(avg_val_loss)
+        val_accuracy = correct_val / total_val
+        val_accuracies.append(val_accuracy)
+
         print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
 
         # Monitor learning rate
@@ -286,4 +305,6 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, plots=False
 
     if plots == True:
         plot_loss(train_losses,val_losses)
+        plot_accuracy(train_accuracies,val_accuracies)
+
 

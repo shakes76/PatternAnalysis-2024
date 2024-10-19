@@ -17,12 +17,12 @@ def main():
 
     df = load_data(excel)
     train_df,val_df,test_df = split_data(df)
-    #siamese_train(current_dir, train_df,val_df, images, plots=True)
+    #siamese_train(current_dir, train_df,val_df, images, epochs=50, plots=True)
 
     siamese_net = SiameseNN()
     siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
     siamese_net.load_state_dict(torch.load(siamese_dict))
-    classifier_train(current_dir, train_df, val_df, images, siamese_net, plots=True)
+    classifier_train(current_dir, train_df, val_df, images, siamese_net, epochs=50, plots=True)
 
 if __name__ == "__main__":
     main()

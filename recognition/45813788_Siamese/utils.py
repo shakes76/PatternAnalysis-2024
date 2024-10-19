@@ -68,3 +68,16 @@ def plot_loss(train_losses, val_losses):
     plt.legend()
     plt.show()
   
+def plot_accuracy(train_accuracies, val_accuracies):
+    import matplotlib.pyplot as plt
+
+    epochs = range(1, len(train_accuracies) + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_accuracies, label='Training Accuracy')
+    plt.plot(epochs, val_accuracies, label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracy over Epochs')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

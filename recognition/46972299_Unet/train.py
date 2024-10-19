@@ -4,7 +4,7 @@ Contains the code for training, validating, testing, and saving the Unet
 @author Carl Flottmann
 """
 from modules import Improved3DUnet
-from metrics import get_loss_function
+from metrics import DiceLoss
 from utils import cur_time
 from dataset import *
 from torch.utils.data import DataLoader
@@ -77,7 +77,7 @@ def main() -> None:
     scheduler = optim.lr_scheduler.LambdaLR(
         optimiser, lr_lambda=lambda epoch: DECAY_FACTOR ** epoch)
     # will use dice loss as per the task requirements
-    criterion = get_loss_function()
+    criterion = DiceLoss(NUM_CLASSES)
 
     model = model.to(device)
 
@@ -88,26 +88,23 @@ def main() -> None:
 
     model.train()
     print(f"[{cur_time(script_start_t)}] Training...")
-    model_start_t = time.time()
 
     for epoch in range(EPOCHS):
-        print(f"[{cur_time(script_start_t)}] beginning epoch {
-              epoch} at {cur_time(model_start_t)}")
+        print(f"[{cur_time(script_start_t)}] beginning epoch {epoch}")
         for step, (image, mask) in enumerate(data_loader):
             image = image.to(device)
             mask = mask.to(device)
 
             output = model(image)
 
-            # print(f"[TRAIN] input: {image.shape}, output: {output.shape}, mask: {mask.shape}")
-            loss = criterion(output, mask)
+            total_loss, class_loss = criterion(output, mask)
 
             optimiser.zero_grad()
-            loss.backward()
+            total_loss.backward()
             optimiser.step()
 
-            print(f"[{cur_time(script_start_t)}] iteration {
-                step} complete after {cur_time(model_start_t)} training, loss: {loss.item()}")
+            print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
+                  total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
 
         scheduler.step()
 
@@ -115,7 +112,7 @@ def main() -> None:
             torch.save(model.state_dict(), f".{sep}{output_dir}{
                 sep}model{epoch:0{num_digits}d}.pt")
 
-    print(f"Training took {cur_time(model_start_t)} in total")
+    print(f"[{cur_time(script_start_t)}] Training complete")
 
 
 if LOCAL:

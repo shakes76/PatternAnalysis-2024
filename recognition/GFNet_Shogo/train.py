@@ -49,9 +49,9 @@ def validate(model, val_loader, criterion, device):
 if __name__ == "__main__":
     # Hyperparameters
     learning_rate = 0.0001
-    weight_decay = 0.01
-    drop_rate = 0.4
-    drop_path_rate = 0.3 
+    weight_decay = 0.001
+    drop_rate = 0.2
+    drop_path_rate = 0.1
     batch_size = 16
 
     # Create folder based on hyperparameters
@@ -80,12 +80,12 @@ if __name__ == "__main__":
     model.to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimiser = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=100) 
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=50) 
     checkpoint_path = os.path.join(output_dir, 'best_model.pt') 
     early_stopping = EarlyStopping(patience=5, min_delta=0.0001, path=checkpoint_path)
 
     # Training loop
-    num_epochs = 150
+    num_epochs = 100
     train_losses = []
     val_losses = []
 

@@ -37,15 +37,27 @@ EMBED_DIMENSIONS = 8
 GEN_FEATURE_SIZE = 512
 
 # The amount of features used within the discriminator
-DISC_FEATURE_SIZE = 512
+DISC_FEATURE_SIZE = 64
 
 ################################## Progressive Growing ###########################
 
-# Different batch sizes required for different image resolutions
-BATCH_SIZES = [256, 128, 64, 32, 16, 8, 8]
+# The starting depth indicating the lowest resolution (8x8)
+START_DEPTH = 0
 
-# All image resolutions that the Progressive GAN Style will go through 
-RESOLUTIONS = [8, 16, 32, 64, 128, 256]
+# The max depth indicating the highest resolution (256x256)
+MAX_DEPTH = 5
+
+# Fade-In percentage used in blending old and new resolutions
+FADE_IN_PERCENTAGE = 0.5
+
+# The amount of steps per resolution
+STEPS_PER_RESOLUTION = 5000
+
+# The amount of epochs per image resolution
+EPOCHS_PER_RESOLUTION = [40, 10, 10, 10, 10, 10]
+
+# Different batch sizes required for different image resolutions
+BATCH_SIZES = [256, 256, 128, 128, 32, 32, 32]
 
 # The discriminator factors that influence the feature map sizes
 GEN_FACTORS = [LATENT_SIZE, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64]
@@ -62,18 +74,9 @@ MIXING_PROB = 0.5
 # Set a seed for randomness for reproducibility
 RANDOM_SEED = 999
 
-# The total number of images trained on the model at any given time
-BATCH_SIZE = 128
-
 # The learning rates used by Adam optimisers
 GEN_LEARNING_RATE = 0.001
 DISC_LEARNING_RATE = 0.001
-
-# Controls the T_Max variable of the Cosine Annealing Scheduler
-COSINE_ANNEALING_RATE = 0.1
-
-# The number of epochs used during training
-NUM_OF_EPOCHS = 3
 
 ################################## Helper Functions and Classes ##################
 

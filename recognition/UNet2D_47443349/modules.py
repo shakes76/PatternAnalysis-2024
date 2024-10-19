@@ -49,7 +49,7 @@ class UNet2D(nn.Module):
         # Output segmentation
         final_features = initial_features
         self.segmentation = nn.Conv2d(final_features, out_channels, kernel_size=1)
-        
+
     def forward(self, x):
         # Encoder
         skip_connections = []
@@ -72,3 +72,13 @@ class UNet2D(nn.Module):
 
         return self.segmentation(x)
 
+
+def test():
+    x = torch.randn(1, 1, 256, 144)
+    model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=5)
+    predictions = model(x)
+    print(x.shape)
+    print(predictions.shape)
+
+if __name__ == "__main__":
+    test()

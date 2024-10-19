@@ -142,6 +142,6 @@ class ProstateDataset3D(Dataset):
 
 	def __getitem__(self, idx):
 		image = self.images[idx].unsqueeze(0) # Add channel dimension
-		mask = self.masks[idx].unsqueeze(0)
+		mask = self.masks[idx]
 		affines = self.affines[idx]
 		return image, mask, affines

@@ -1,7 +1,7 @@
 # Stable Diffusion for ADNI (Alzheimer's Disease Neuroimaging Initiative)
 
 #### COMP3710 - Pattern Analysis 2024
-**Task 8** - Generative model of the ADNI brain dataset using Stable Diffusion.
+**Task 8** - Generative model of the ADNI brain dataset using Stable Diffusion.<br>
 **Author:** Liam O'Sullivan (46964173)
 
 ## Project Overview
@@ -21,10 +21,8 @@ These could potentially be used for data research or as a tool for studying Alzh
 7. [Training Process](#training-process)
 8. [Inference](#inference)
 9. [Visualisations](#visualisations)
-10. [Key Components](#key-components)
-11. [Performance Metrics](#performance-metrics)
-12. [Future Work](#future-work)
-13. [References](#references)
+10. [Performance Metrics](#performance-metrics)
+11. [References](#references)
 
 ## Project Structure
 
@@ -94,7 +92,7 @@ to match up with wandb.
 6. Once any other settings are updated in [train.py](train.py) you can run the file to start training
 
 ### Image Generation
-1. Download either the [AD](https://file.io/nP9xLiDerWfB) or [NC] checpoint file and add it to /checkpoints/Diffusion
+1. Download either the [AD](https://drive.google.com/file/d/1eVkB2aPTVc8dtPLJkcCfOaJs6yEOkYS9/view?usp=sharing) or [NC](https://drive.google.com/file/d/1rxdQhUixX2N9tbVXLW_jyyg-jt7HbYWh/view?usp=sharing) checkpoint file and add it to /checkpoints/Diffusion
 2. Update [the model path](predict.py#L22) to match the path of the downloaded checkpoint
 3. Set the number of image generations and image size and run [predict.py](predict.py)
 
@@ -124,7 +122,7 @@ The VAE uses residual blocks and attention mechanisms to improve performance.
 
 ### U-Net
 
-The U-Net is implemented in [`modules.py`](modules.py) and is responsible for predicting noise at each timestep. 
+The U-Net is implemented in [`modules.py`](modules.py) and is responsible for predicting the noise present in an image at a given timestep. 
 
 <a href="https://towardsdatascience.com/you-cant-spell-diffusion-without-u-60635f569579" target="_blank"><img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Ec3V_Ox2-CrLfhxKXOlOEQ.png" width=650></a>
 
@@ -157,7 +155,7 @@ The training process is divided into two main stages:
    - Encoding images to the latent space
    - Adding noise according to the noise schedule
    - Training the U-Net to predict this noise
-   - Periodically generating samples to monitor progress
+   - Periodically generating samples by gradually removing the predicted noise. 
 
    The model was trained with the below parameters.
     - batch size: 16
@@ -178,18 +176,22 @@ The training process is divided into two main stages:
     - SSIM is a method for predicting the perceived quality of digital television and cinematic pictures, as well as other kinds of digital images. At the end of training the model produced a value of 0.702 from a possible range of 0 to 1, with 1 meaning the reference and sample are identical. This is considered moderate to good for a generatedd image, considerring we do not want the generated sample to be identical to the reference image.
 
     ### Alzheimer's Disease (AD)
-    <img src="visualisations/diffusion_training.gif" width=1000>
+    <img src="visualisations/AD_diffusion_training.gif" width=1000>
 
     #### Metrics and Stats
-    <img src="visualisations/stable-diffusion-avg-train-loss.png" width=400>
-    <img src="visualisations/stable-diffusion-avg-val-loss.png" width=400>
-    <img src="visualisations/stable-diffusion-generated-psnr.png" width=400>
-    <img src="visualisations/stable-diffusion-generated-ssim.png" width=400>
-    <img src="visualisations/stable-diffusion-lr.png" width=400>
+    <img src="visualisations/ADNI_AD_avg_train_loss.png" width=500>
+    <img src="visualisations/ADNI_AD_avg_val_loss.png" width=500><br>
+    <img src="visualisations/ADNI_AD_generated_psnr.png" width=500>
+    <img src="visualisations/ADNI_AD_generated_ssim.png" width=500>
 
     ### Normal Control (NC)
+    <img src="visualisations/NC_diffusion_training.gif" width=1000>
 
     #### Metrics and Stats
+    <img src="visualisations/ADNI_NC_avg_train_loss.png" width=500>
+    <img src="visualisations/ADNI_NC_avg_val_loss.png" width=500><br>
+    <img src="visualisations/ADNI_NC_generated_psnr.png" width=500>
+    <img src="visualisations/ADNI_NC_generated_ssim.png" width=500>
 
 ### Optimisation Choices
 
@@ -206,7 +208,7 @@ The training process is divided into two main stages:
 ## Inference
 
 To generate new images using the trained model, use the [`predict.py`](predict.py) script. This script loads the trained model and generates a specified number of images.
-The pretrained Diffusion model checkpoint can be downloaded from [here](https://file.io/nP9xLiDerWfB).
+The pretrained Diffusion model checkpoint can be downloaded from [here](https://drive.google.com/drive/folders/1HLdgQLyyB5rquIyT4vmJ4iRNRL_JUafG?usp=sharing).
 
 There are two sampling methods which have been implemented. 
 
@@ -224,8 +226,10 @@ There are two sampling methods which have been implemented.
 
     <img src="visualisations/tsne_plot.png" width=500>
 
-    <p> This representation seems to show a large degree of overlap between the two classes and no clear separation or clustering. 
-    This would indicate that the VAE has not been able to learn significant distinguishing features between the Alzheimer's (AD) and Nomral Control (NC) classes.  
+    <p> This representation generated from 10,000 samples from each class seems to show a large degree of overlap between the two classes particularly in the centre. 
+    However, we can note that there are concentrated clusters of each class in different areas of the centre mass. We can also note that the NC samples are more sparsely 
+    spread around the edges of the plot, suggestings they could have an overall wider distribution. While there is no clear separation between the two classes, these differences
+    in the distribtuion do indicate some underlying differences in the representations of each class.  
 
 - **Denoising Process**: The [`visualise_denoising_process`](utils.py#L9) function allows for visualisation of the image generation process, showing intermediate steps.
 

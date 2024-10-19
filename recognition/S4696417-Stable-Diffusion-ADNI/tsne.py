@@ -5,68 +5,61 @@ This will help to visualise the separation between the ADNI class samples.
 Author: Liam O'Sullivan
 """
 
+import os
 import torch
 import numpy as np
 from sklearn.manifold import TSNE
-from torchvision import transforms
-from dataset import get_dataloader
-import os
 import matplotlib
 import matplotlib.pyplot as plt
 
 matplotlib.use('Agg')
 
 # Set up parameters
-IMAGE_SIZE = 128
-BATCH_SIZE = 32
+IMAGE_SIZE = 256
+SAMPLE_SIZE = 10000
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the trained VAE model
+# Load the trained AD/NC diffusion models
+print("Loading trained models...")
 os.chdir('recognition/S4696417-Stable-Diffusion-ADNI')
-vae_path = f'checkpoints/VAE/ADNI-vae_e80_b16_im{IMAGE_SIZE}.pt'
-vae = torch.load(vae_path, map_location=device)
-vae.eval()
+ad_path = 'checkpoints/Diffusion/ADNI_AD_diffusion_e500_im256.pt'
+nc_path = 'checkpoints/Diffusion/ADNI_NC_diffusion_e500_im256.pt'
 
-# Set up data loading
-image_transform = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,)),
-])
-
-ad_loader, _ = get_dataloader('data/train/AD', batch_size=BATCH_SIZE, transform=image_transform)
-nc_loader, _ = get_dataloader('data/train/NC', batch_size=BATCH_SIZE, transform=image_transform)
+ad_model = torch.load(ad_path).to(device)
+nc_model = torch.load(nc_path).to(device)
+ad_model.eval()
+nc_model.eval()
 
 
-def get_latent_representations(loader, label):
-    latents = []
-    labels = []
+def get_latent_representations(model, num_samples):
+    """
+    Sample new images from the diffusion model and get their latent representations
+
+    Args:
+        model: Trained diffusion model
+        num_samples: Number of samples to generate
+    """
     with torch.no_grad():
-        for images, _ in loader:
-            images = images.to(device)
-            mu, _ = vae.encode(images)
-            # Flatten the latent representations
-            mu_flat = mu.view(mu.size(0), -1).cpu().numpy()
-            latents.append(mu_flat)
-            labels.extend([label] * images.shape[0])
-    return np.concatenate(latents), np.array(labels)
+
+        # Generate samples using the diffusion model
+        latent_samples = model.sample(num_samples, device=device, log=False, latents=True)
+        return latent_samples.cpu().numpy().reshape(num_samples, -1)
 
 
-# Get latent representations for both classes
-ad_latents, ad_labels = get_latent_representations(ad_loader, 'AD')
-nc_latents, nc_labels = get_latent_representations(nc_loader, 'NC')
+# Get the latent representations for AD and NC samples
+print("Generating latent representations for AD samples...")
+ad_latents = get_latent_representations(ad_model, SAMPLE_SIZE)
+print("Generating latent representations for NC samples...")
+nc_latents = get_latent_representations(nc_model, SAMPLE_SIZE)
 
-# Combine latents and labels
 latents = np.concatenate([ad_latents, nc_latents])
-labels = np.concatenate([ad_labels, nc_labels])
+labels = np.array(['AD'] * SAMPLE_SIZE + ['NC'] * SAMPLE_SIZE)
 
 print(f"Total number of samples: {len(latents)}")
 print(f"Shape of latents: {latents.shape}")
-print(f"Unique labels: {np.unique(labels)}")
 
 # Apply t-SNE
-tsne = TSNE(n_components=2, random_state=42)
+tsne = TSNE(n_components=2, random_state=0)
 latents_2d = tsne.fit_transform(latents)
 
 print(f"Shape of t-SNE output: {latents_2d.shape}")

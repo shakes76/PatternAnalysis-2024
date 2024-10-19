@@ -61,13 +61,15 @@ class StableDiffusion(nn.Module):
         return pred_noise
 
     @torch.no_grad()
-    def sample(self, num_images, device='cuda'):
+    def sample(self, num_images, device='cuda', log=True, latents=False):
         """
         Generate new images from the diffusion model and logs to wandb
 
         Args:
             num_images: Number of images to generate
             device: Device to run the model on
+            log: Log the generated images to wandb
+            latents: Return the latent representations instead of images
 
         Returns:
             final_image: Generated images
@@ -84,8 +86,12 @@ class StableDiffusion(nn.Module):
             t = torch.full((shape[0],), i, device=device, dtype=torch.long)
             x = self.noise_scheduler.step(self.unet, x, t)
 
+        if latents:
+            return x
+
         final_image = self.vae.decode(x)
-        wandb.log({"sample": wandb.Image(final_image)})
+        if log:
+            wandb.log({"sample": wandb.Image(final_image)})
         end_time = time.time()
         print(f"Total time taken for sampling: {end_time - start_time:.2f} seconds")
         return final_image

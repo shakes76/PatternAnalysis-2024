@@ -122,12 +122,12 @@ class AlternativeLoss(BaseDice):
         loss = 1 - (1 / num_masks) * torch.sum(segment_coefs)
         return loss, segment_coefs, d_coef
     
-class PaperLossPlus(BaseDice):
+class DiceBCELoss(BaseDice):
     def __init__(self, epsilon=1e-7):
         super().__init__(epsilon)
 
     def __str__(self):
-        return 'PaperLossPlus'
+        return 'DiceBCELoss'
 
     def forward(self, y_pred, y_true):
 
@@ -216,7 +216,7 @@ model = ImprovedUnet()
 
 # Importing Dataloader breaks the implementation. Hence they are loaded below instead:
 
-loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss(), 4 : PaperLossPlus()}
+loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss(), 4 : DiceBCELoss()}
 
 loss = loss_map.get(LOSS_IDX)
 

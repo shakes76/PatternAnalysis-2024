@@ -12,3 +12,5 @@ semantic_MRs_anon
 *.png
 
 *.sh
+
+*.out

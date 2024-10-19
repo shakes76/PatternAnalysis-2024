@@ -204,7 +204,7 @@ Analysis:
 - False Negatives: 13, True Negatives: 4991
 - High sensitivity to malignant cases, with a tendency towards false positives
 - This approach aligns with clinical preference for minimizing missed malignancies
-- The high number of false positives for benign cases is done on purpose, this was done because it is safer to classify a false positive as malignant than a false negative as malignant if a medical practioner of patient were to use this model. Ultimately the final call is up to the dermatologist, and the model is only a tool to assist in the diagnosis. Needless to say the model does achieve 76% accuracy for benign cases, and 88% accuracy for malignant cases, which is above the 80% accuracy goal set.
+- The high number of false positives for benign cases is done on purpose, this was done because it is safer to classify a false positive as malignant than a false negative as malignant if a medical practioner or patient were to use this model. Ultimately the final call is up to the dermatologist, and the model is only a tool to assist in the diagnosis. Needless to say the model does achieve 76% accuracy for benign cases, and 88% accuracy for malignant cases, which is above the 80% accuracy goal set.
 ### ROC Curve
 *Figure 2: Receiver Operating Characteristic Curve of Siamese Network*
 ![alt text](graphs/roc_curve.png)

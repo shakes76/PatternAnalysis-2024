@@ -52,7 +52,6 @@ def save(predictions, affines, epoch):
     predictions = predictions.view(batch_size, 1, 128, 128, 128).cpu().numpy()
     prediction = predictions[0].squeeze() # Take first, remove batch dimension
     affine = affines.numpy()[0] # Take first
-    print(np.unique(prediction))
     nib.save(nib.Nifti1Image(prediction, affine, dtype=np.dtype('int64')), f"saves/prediction_{epoch}.nii.gz")
 
 # def dice_score_per_channel(preds, masks, smooth=1e-6):  
@@ -84,7 +83,6 @@ def validate(model, data_loader):
             softmax_logits, predictions, logits = model(inputs)
             
             for i in range(n_classes):
-                
                 dice_scores[i] += dice_score(logits[:, i, ...], one_hot_masks_3d[:, i, ...])
 
             # batch_dice_scores = dice_score_per_channel(softmax_logits, one_hot_masks_3d)

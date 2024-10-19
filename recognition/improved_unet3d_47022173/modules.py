@@ -24,58 +24,58 @@ def init_weights(m):
 # 	def forward(self, pred, masks):
 # 		return 1 - dice_coefficient(pred, masks)
 
-def dice_coefficient(pred, masks):
-	smooth = 1e-6 # Avoid divide by zero
+# def dice_coefficient(pred, masks):
+# 	smooth = 1e-6 # Avoid divide by zero
 
-	# Flatten
-	pred = pred.contiguous().view(-1)
-	masks = masks.contiguous().view(-1)
+# 	# Flatten
+# 	pred = pred.contiguous().view(-1)
+# 	masks = masks.contiguous().view(-1)
 
-	intersection = (pred * masks).sum()
-	dice = (2. * intersection) / (pred.sum() + masks.sum() + smooth)
-	return dice
+# 	intersection = (pred * masks).sum()
+# 	dice = (2. * intersection) / (pred.sum() + masks.sum() + smooth)
+# 	return dice
 
 
-class CustomDiceLoss(nn.Module):
-	def __init__(self, smooth=1e-6):
-		super(CustomDiceLoss, self).__init__()
-		self.smooth = smooth
+# class CustomDiceLoss(nn.Module):
+# 	def __init__(self, smooth=1e-6):
+# 		super(CustomDiceLoss, self).__init__()
+# 		self.smooth = smooth
 
-	def forward(self, logits, targets):
-		# # Flatten the tensors to shape (batch_size, num_classes, -1)
-		logits = logits.view(logits.size(0), logits.size(1), -1)
-		targets = targets.view(targets.size(0), targets.size(1), -1)
+# 	def forward(self, logits, targets):
+# 		# # Flatten the tensors to shape (batch_size, num_classes, -1)
+# 		logits = logits.view(logits.size(0), logits.size(1), -1)
+# 		targets = targets.view(targets.size(0), targets.size(1), -1)
 
-		print(logits.shape, targets.shape)
-		print(np.unique(logits.detach().cpu().numpy()))
-		print(np.unique(targets.detach().cpu().numpy()))
+# 		print(logits.shape, targets.shape)
+# 		print(np.unique(logits.detach().cpu().numpy()))
+# 		print(np.unique(targets.detach().cpu().numpy()))
 
-		# Compute Dice coefficient for each class
-		intersection = (logits * targets).sum(dim=2)
-		union = logits.sum(dim=2) + targets.sum(dim=2)
-		print(intersection.shape, union.shape)
+# 		# Compute Dice coefficient for each class
+# 		intersection = (logits * targets).sum(dim=2)
+# 		union = logits.sum(dim=2) + targets.sum(dim=2)
+# 		print(intersection.shape, union.shape)
 
-		dice_score = (2.0 * intersection + self.smooth) / (union + self.smooth)
-		print(dice_score.shape)
+# 		dice_score = (2.0 * intersection + self.smooth) / (union + self.smooth)
+# 		print(dice_score.shape)
 		
-		# Return Dice loss as 1 - mean Dice score over all classes
-		return 1.0 - dice_score.mean()
+# 		# Return Dice loss as 1 - mean Dice score over all classes
+# 		return 1.0 - dice_score.mean()
 
-class DiceCELoss(nn.Module):
-    def __init__(self, weight=None, size_average=True):
-        super(DiceCELoss, self).__init__()
+# class DiceCELoss(nn.Module):
+#     def __init__(self, weight=None, size_average=True):
+#         super(DiceCELoss, self).__init__()
 
-    def forward(self, inputs, targets, smooth=1):        
-        #flatten label and prediction tensors
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
+#     def forward(self, inputs, targets, smooth=1):        
+#         #flatten label and prediction tensors
+#         inputs = inputs.view(-1)
+#         targets = targets.view(-1)
         
-        intersection = (inputs * targets).sum()                            
-        dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
-        BCE = F.cross_entropy(inputs, targets, reduction='mean')
-        Dice_BCE = BCE + dice_loss
+#         intersection = (inputs * targets).sum()                            
+#         dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+#         BCE = F.cross_entropy(inputs, targets, reduction='mean')
+#         Dice_BCE = BCE + dice_loss
         
-        return Dice_BCE
+#         return Dice_BCE
 
 class Modified3DUNet(nn.Module):
 	def __init__(self, in_channels, n_classes, base_n_filter):

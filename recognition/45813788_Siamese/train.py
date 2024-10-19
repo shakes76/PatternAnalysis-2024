@@ -1,6 +1,6 @@
 import os
 import torch
-from torch.nn import BCELoss
+from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from dataset import ISICDataset, malig_aug, benign_aug 
 from modules import SiameseNN, Classifier
@@ -69,7 +69,7 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
     )
     
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-5)
 
     #scheduler
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
@@ -206,8 +206,19 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
     # optimizer
     optimizer = torch.optim.Adam(classifier.parameters(), lr=1e-3, weight_decay=1e-5)
 
+    # Total number of samples
+    total_samples = len(train_df)
+
+    # Count of each class
+    benign_count = (train_df['target'] == 0).sum()
+    malignant_count = (train_df['target'] == 1).sum()
+
+    # Compute pos_weight for the minority class
+    pos_weight = torch.tensor([benign_count / malignant_count], dtype=torch.float).to(device)
+
+
     #Criterion
-    criterion = BCELoss()
+    criterion = BCEWithLogitsLoss(pos_weight=pos_weight)
 
    # Training parameters
     best_loss = float('inf')
@@ -238,7 +249,9 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
 
             epoch_loss += loss.item()
             
-            preds = (output >= 0.5).float()
+            probs = torch.sigmoid(output)
+
+            preds = (probs >= 0.5).float()
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
 
@@ -267,7 +280,8 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
                 
                 val_loss += loss.item()
 
-                preds = (output >= 0.5).float()
+                probs = torch.sigmoid(output)
+                preds = (probs >= 0.5).float()
                 correct_val += (preds == labels).sum().item()
                 total_val += labels.size(0)
 

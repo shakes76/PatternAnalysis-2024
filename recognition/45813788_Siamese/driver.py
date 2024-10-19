@@ -17,7 +17,7 @@ def main():
 
     df = load_data(excel)
     train_df,val_df,test_df = split_data(df)
-    siamese_train(current_dir, train_df,val_df, images, epochs=50, plots=True)
+    siamese_train(current_dir, train_df,val_df, images, epochs=200, plots=True)
 
     #siamese_net = SiameseNN()
     #siamese_dict = os.path.join(current_dir, 'models', 'oldsiamese_resnet18_best.pth')

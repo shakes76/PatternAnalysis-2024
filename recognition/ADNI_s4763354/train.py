@@ -1,3 +1,7 @@
+'''
+Author: Lok Yee Joey Cheung
+This file contains the functions of GFNet training, validating and testing processes, with visualizations on train and val loss and accuracy.
+'''
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,75 +10,49 @@ import sys
 import os
 from tqdm import tqdm
 from torch.optim.lr_scheduler import CosineAnnealingLR
-#from GFNet.gfnet import GFNet, GFNetPyramid
+from functools import partial
 
-#sys.path.append(os.path.abspath('/home/Student/s4763354/comp3710/GFNet'))
+from modules import GFNet, GFNetPyramid, create_gfnet_pyramid, create_gfnet
+from dataset import get_data_loaders
 
-from modules_BEST import GFNet, GFNetPyramid
-from dataset_balance import get_data_loaders
-
-def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
-    # Set up device
+def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64, pretrained=False, model_name='gfnet_h_b',pretrained_model_path=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Load data
     train_loader, val_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
 
-    # Load the pretrained model gfnet-h-ti
-    #model = GFNetPyramid(img_size=224, patch_size=4, num_classes=1000)  # Original number of classes
-    # Load the state dict and extract the model weights
-    # state_dict = torch.load("gfnet-h-ti.pth")
-    # if "model" in state_dict:
-    #     state_dict = state_dict["model"]
+    # Define the model
+    model = create_gfnet_pyramid(model_name=model_name)
 
-    # Load the pretrained model gfnet-h-b
-    model = GFNetPyramid(
-        img_size=224, 
-        patch_size=4, 
-        num_classes=1000,
-        embed_dim=[96, 192, 384, 768],  # GFNet-H-B dimensions
-        depth=[2, 2, 10, 2],  # GFNet-H-B depths
-        mlp_ratio=[4, 4, 4, 4],
-        drop_path_rate=0.3,
-    )
-    # Load the state dict and extract the model weights
-    state_dict = torch.load("gfnet-h-b.pth")
-    if "model" in state_dict:
-        state_dict = state_dict["model"]
+    # If using approach 2, Load the state dict and extract the model weights of pre-trained model
+    if pretrained and pretrained_model_path is not None:
+        state_dict = torch.load(pretrained_model_path)
+        if "model" in state_dict:
+            state_dict = state_dict["model"]
+        model.load_state_dict(state_dict, strict=False)
     
-    # # Load the pretrained model gfnet-xs
-    # model = GFNet(img_size=224, patch_size=16, num_classes=1000, embed_dim=384)  # GFNet-XS configuration
-    # # # Load the state dict
-    # state_dict = torch.load("gfnet-xs.pth", map_location=torch.device('cpu'))
-    # # Remove the 'model.' prefix if it exists in the state dict keys
-    # state_dict = {k.replace('model.', ''): v for k, v in state_dict.items()}
-    
-    # Load the weights, ignoring mismatched keys
-    model.load_state_dict(state_dict, strict=False)
-    
-    # Modify the final layer for binary classification
-    num_features = model.head.in_features
+    #Modify the final layer for binary classification
+    num_features = model.head.in_features 
     model.head = nn.Sequential(
-        nn.Dropout(0.5),
+        nn.Dropout(0.7),
         nn.Linear(num_features, 512),
         nn.ReLU(),
-        nn.Dropout(0.5),
+        nn.Dropout(0.7),
         nn.Linear(512, 2)
     )
     
     model = model.to(device)
 
-    # Freeze all layers initially------------------
+    # Freeze all layers initially
     for param in model.parameters():
         param.requires_grad = False
     
     # Unfreeze the head (always trainable)
     for param in model.head.parameters():
         param.requires_grad = True
-    # Freeze all layers initially------------------
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-8)  
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)  
 
     # Initialize the learning rate scheduler
     #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=5, verbose=True,min_lr=1e-6)
@@ -90,7 +68,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     patience = 5
     no_improve = 0
 
-    # Define unfreezing stages----------
+    # Define unfreezing stages
     unfreezing_stages = [
         model.blocks[-1],  # Last block
         model.blocks[-2],  # Second to last block
@@ -99,11 +77,10 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     ]
     epochs_per_stage = epochs // (len(unfreezing_stages) + 1)  # +1 for initial training of just the head
     stage = 0
-    # Define unfreezing stages----------
 
     actual_epochs = 0
     for epoch in range(epochs):
-        # Unfreeze next stage if it's time-------
+        # Unfreeze next stage 
         if epoch % epochs_per_stage == 0 and stage < len(unfreezing_stages):
             print(f"Unfreezing stage {stage + 1}")
             for param in unfreezing_stages[stage].parameters():
@@ -113,7 +90,6 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
             optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=1e-4)
             #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
             scheduler_cosine = CosineAnnealingLR(optimizer, T_max=epochs - epoch, eta_min=1e-6)
-        # Unfreeze next stage if it's time-------
 
         model.train()
         running_loss = 0.0
@@ -163,7 +139,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
             best_val_acc = val_accuracy
             no_improve = 0
             # Save the best model
-            torch.save(model.state_dict(), 'new_mod_hb_adamw_cosine.pth')
+            torch.save(model.state_dict(), 'TEST.pth')
         else:
             no_improve += 1
 
@@ -187,9 +163,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
         print(f'Current Learning Rate: {current_lr}')
 
     # Load the best model for testing
-    model.load_state_dict(torch.load('new_mod_hb_adamw_cosine.pth', weights_only=True))
-
-    # Testing loop
+    model.load_state_dict(torch.load('TEST.pth', weights_only=True))
     model.eval()
     correct = 0
     total = 0
@@ -214,8 +188,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("loss_pretrain_hb_new_mod_adamw_cosine.png") 
-    #plt.show()  
+    plt.savefig("loss_TEST.png") 
 
     # Plotting training and validation accuracy
     plt.figure(figsize=(10, 5))
@@ -227,12 +200,31 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=5e-6, batch_size=64):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("acc_pretrain_hb_new_mod_adamw_cosine.png")  
-    #plt.show() 
+    plt.savefig("acc_TEST.png")  
 
     # torch.save(model.state_dict(), 'gfnet-h-b_50.pth')
 
 if __name__ == "__main__":
-    train_and_evaluate(train_dir='/home/groups/comp3710/ADNI/AD_NC/train', 
-                    test_dir='/home/groups/comp3710/ADNI/AD_NC/test', epochs=50)
 
+    # For using the gfnet-h-b architecture with a specific pretrained model
+    train_and_evaluate(
+        train_dir='/home/groups/comp3710/ADNI/AD_NC/train', 
+        test_dir='/home/groups/comp3710/ADNI/AD_NC/test',
+        epochs=50,
+        lr=5e-6,
+        batch_size=64,
+        pretrained=True,
+        model_name='gfnet_h_b',
+        pretrained_model_path='gfnet-h-b.pth'  
+    )
+
+    # For using another architecture without a pretrained model
+    # train_and_evaluate(
+    #     train_dir='/home/groups/comp3710/ADNI/AD_NC/train', 
+    #     test_dir='/home/groups/comp3710/ADNI/AD_NC/test',
+    #     epochs=50,
+    #     lr=5e-6,
+    #     batch_size=64,
+    #     pretrained=False,
+    #     model_name='gfnet-h-ti'
+    # )

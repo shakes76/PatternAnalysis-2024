@@ -27,9 +27,10 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cud
     model.train()
 
     dice_scores = []
-    for epoch in range(epochs):
+    for epoch in range(num_epochs):
         loss = 0.0
         epoch_dice = 0.0
+        total_samples = 0
 
         for inputs, labels in data:
             inputs = inputs.to(device)
@@ -45,10 +46,13 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cud
 
             loss += loss.item() * inputs.size(0)    
 
-        dice_score = dice_coefficient(outputs, labels)
-        epoch_dice += dice_score.item() * inputs.size(0)
+            dice_score = dice_coefficient(outputs, labels)
+            epoch_dice += dice_score.item() * inputs.size(0)
+            total_samples += inputs.size(0)
+
+        epoch_loss = running_loss / total_samples
+        avg_dice = epoch_dice / total_samples
         
         dice_scores.append(avg_dice)
-        epoch_loss = running_loss / len(dataloader.dataset)
         print(f'Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, Dice: {avg_dice:.4f}')
     return dice_scores

@@ -1,0 +1,7 @@
+# Ignore all dataset files
+*.nii
+*.nii.gz
+*.npy
+*.cpython
+# Ignore the dataset directory 
+C:/Users/lukey/OneDrive/Documents/Uni/Comp3710/Project/PatternAnalysis-2024/HipMRI_study_keras_slices_data/

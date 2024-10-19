@@ -41,7 +41,7 @@ This project implements a Siamese network-based classifier for the ISIC 2020 Cha
 
 ## Data Preparation
 
-The ISIC 2020 dataset is known for its significant class imbalance, which can pose challenges for model training. The mOur preprocessing script (`dataset.py`) addresses this issue and prepares the data for effective training. For starters in the csv file, we chose to focus on the 'target' column and 'isic_id' only, when consulting with dermatologists, it was said that the location of the lesion is not important at all, and hence splitting the data based on location of lesions was disregarded and instead only split by target variable. 
+The ISIC 2020 dataset is known for its significant class imbalance, which can pose challenges for model training. The preprocessing script (`dataset.py`) addresses this issue and prepares the data for effective training. For starters in the csv file, we chose to focus on the 'target' column and 'isic_id' only, when consulting with dermatologists, it was said that the location of the lesion is not important at all, and hence splitting the data based on location of lesions was disregarded and instead only split by target variable. 
 Firstly, download the scaled dataset from the link provided in the references (make sure to download the images and the csv file). The reason for this was the test dataset was unlabelled and therefore cannot be tested on, hence the training dataset was used for training and testing using a train-test split.
 
 Create a directory called 'data' and place the downloaded files in it. Then execute the preprocessing script:
@@ -164,6 +164,34 @@ To evaluate:
 ```
 python3 predict.py
 ```
+## Evaluation Metrics
+
+Three primary metrics were used to evaluate the model's performance, each chosen for its relevance to skin lesion classification:
+
+1. **AUC-ROC (Area Under the Receiver Operating Characteristic Curve)**:
+   - Primary metric for model evaluation
+   - Measures the model's ability to distinguish between classes across various threshold settings
+   - Advantages:
+     - Insensitive to class imbalance, crucial for the imbalanced dataset
+     - Provides an aggregate measure of performance across all possible classification thresholds
+   - Interpretation: Range from 0 to 1, with 1 indicating perfect classification
+   - Implemented using `roc_auc_score` from scikit-learn
+
+2. **Accuracy Score**:
+   - Measures the overall correctness of the model's predictions
+   - Calculated using scikit-learn's `accuracy_score` function
+   - While simple to interpret, it can be misleading for imbalanced datasets
+   - Used it in conjunction with AUC-ROC for a more comprehensive evaluation
+
+3. **Confusion Matrix**:
+   - Provides a detailed breakdown of model predictions
+   - Allows visualization of True Positives, True Negatives, False Positives, and False Negatives
+   - Crucial understanding the types of errors the model is making
+   - Particularly important in medical contexts to assess the balance between sensitivity and specificity
+   - Implemented using scikit-learn's `confusion_matrix` function
+
+AUC-ROC was prioritized as the primary metric due to its robustness to class imbalance and its ability to provide an overall measure of discriminative performance. The accuracy score offers a straightforward measure of overall correctness, while the confusion matrix allows for an understanding of the model's performance at a more granular level.
+
 
 ## Results and Analysis
 
@@ -195,6 +223,7 @@ Analysis:
 - Increasing accuracy and AUC-ROC over epochs
 - Good generalization to unseen data
 - Plateau towards end suggests optimal training duration
+- Since only the test auc-roc was plateauing and train auc-roc was still increasing, this suggets that the model was overfitting, and with longer epochs these effects would be more pronounced. However since the goal was to achieve 80% accuracy, this does not matter significantly as the model has already achieved the goal.
 
 ### t-SNE Visualization of Embeddings
 *Figure 4: t-SNE plot of embeddings from Siamese Network*

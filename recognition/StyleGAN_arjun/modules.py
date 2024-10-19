@@ -15,6 +15,8 @@ class EQLinearLayer(nn.Module):
         self.bias = nn.Parameter(torch.ones(out_dim) * bias)
 
     def forward(self, x):
+        self.weight = self.weight.to(x.device)
+        self.bias = self.bias.to(x.device)
         return F.linear(x, self.weight, self.bias)
 
 class FCBlock(nn.Module):
@@ -77,6 +79,7 @@ class NoiseInjection(nn.Module):
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
 
     def forward(self, x, noise=None):
+        self.weight = self.weight.to(x.device)
         if noise is None:
             batch, _, height, width = x.shape
             noise = torch.randn(batch, 1, height, width, device=x.device)
@@ -122,6 +125,10 @@ class GeneratorBlock(nn.Module):
         self.to_rgb_scale = 1 / math.sqrt(out_channels)
 
     def forward(self, x, w, noise):
+        # Move to device
+        self.to_rgb_weight = self.to_rgb_weight.to(x.device)
+        self.to_rgb_bias = self.to_rgb_bias.to(x.device)
+
         # Apply style blocks
         x = self.block1(x, w, noise[0])
         x = self.block2(x, w, noise[1])
@@ -175,13 +182,14 @@ class Generator(nn.Module):
         w = self.mapping(z)
         # Apply truncation trick
         if truncation_psi < 1:
-            w_avg = torch.zeros_like(w).mean(dim=0, keepdim=True)
+            w_avg = torch.zeros_like(w).mean(dim=0, keepdim=True).to(z.device)
             layer_indices = torch.arange(self.num_layers + 1)[None, :, None].to(z.device)
             cutoff = torch.ones_like(layer_indices, dtype=torch.float32) * truncation_cutoff
             mask = (layer_indices < cutoff).float()
             w = w_avg + (w - w_avg) * (mask * truncation_psi + (1 - mask))
 
         # Start with constant input
+        self.const_in = self.const_in.to(z.device)
         x = self.const_in.repeat(batch_size, 1, 1, 1)
 
         # Generate noise for each layer
@@ -242,6 +250,8 @@ class EQConv2d(nn.Module):
         self.padding = padding
 
     def forward(self, x):
+        self.weight = self.weight.to(x.device)
+        self.bias = self.bias.to(x.device)
         return F.conv2d(
             x, self.weight * self.scale, self.bias,
             stride=self.stride, padding=self.padding

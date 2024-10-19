@@ -224,6 +224,7 @@ Analysis:
 - Good generalization to unseen data
 - Plateau towards end suggests optimal training duration
 - Since only the test auc-roc was plateauing and train auc-roc was still increasing, this suggets that the model was overfitting, and with longer epochs these effects would be more pronounced. However since the goal was to achieve 80% accuracy, this does not matter significantly as the model has already achieved the goal.
+- The same can be said for the loss graph, although the loss is considered high in some contexts, the model still effectively classified the images into the correct classes with greater than 80% accuracy.
 
 ### t-SNE Visualization of Embeddings
 *Figure 4: t-SNE plot of embeddings from Siamese Network*

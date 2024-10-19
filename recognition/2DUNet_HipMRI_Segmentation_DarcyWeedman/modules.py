@@ -73,3 +73,56 @@ class Up(nn.Module):
         # Concatenate along the channels axis
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
+    
+class UNet(nn.Module):
+    """2D UNet architecture with configurable parameters."""
+    def __init__(self, 
+                 n_channels: int = 1, 
+                 n_classes: int = 1, 
+                 bilinear: bool = True,
+                 base_filters: int = 64,
+                 use_batchnorm: bool = True):
+        super(UNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear
+        
+        self.inc = DoubleConv(n_channels, base_filters, use_batchnorm=use_batchnorm)
+        self.down1 = Down(base_filters, base_filters * 2, use_batchnorm=use_batchnorm)
+        self.down2 = Down(base_filters * 2, base_filters * 4, use_batchnorm=use_batchnorm)
+        self.down3 = Down(base_filters * 4, base_filters * 8, use_batchnorm=use_batchnorm)
+        factor = 2 if bilinear else 1
+        self.down4 = Down(base_filters * 8, base_filters * 16 // factor, use_batchnorm=use_batchnorm)
+        self.up1 = Up(base_filters * 16, base_filters * 8 // factor, bilinear, use_batchnorm=use_batchnorm)
+        self.up2 = Up(base_filters * 8, base_filters * 4 // factor, bilinear, use_batchnorm=use_batchnorm)
+        self.up3 = Up(base_filters * 4, base_filters * 2 // factor, bilinear, use_batchnorm=use_batchnorm)
+        self.up4 = Up(base_filters * 2, base_filters, bilinear, use_batchnorm=use_batchnorm)
+        self.outc = nn.Conv2d(base_filters, n_classes, kernel_size=1)
+        
+        # Initialise weights
+        self._initialize_weights()
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x1 = self.inc(x)       # base_filters
+        x2 = self.down1(x1)    # base_filters * 2
+        x3 = self.down2(x2)    # base_filters * 4
+        x4 = self.down3(x3)    # base_filters * 8
+        x5 = self.down4(x4)    # base_filters * 16
+        
+        x = self.up1(x5, x4)   # base_filters * 8
+        x = self.up2(x, x3)    # base_filters * 4
+        x = self.up3(x, x2)    # base_filters * 2
+        x = self.up4(x, x1)    # base_filters
+        logits = self.outc(x)
+        return logits
+    
+    def _initialize_weights(self):
+        """Initialize weights using Xavier initialization."""
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+                nn.init.xavier_normal_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)

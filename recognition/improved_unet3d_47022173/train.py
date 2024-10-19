@@ -49,7 +49,8 @@ gamma = 0.1
 
 def save(predictions, affines, epoch): 
     predictions = torch.argmax(predictions, dim=1)
-    predictions = predictions.view(batch_size, 1, 128, 128, 128).cpu().numpy()
+    batch = int(predictions.shape[0] / 1 / 128 / 128 / 128)
+    predictions = predictions.view(batch, 1, 128, 128, 128).cpu().numpy()
     prediction = predictions[0].squeeze() # Take first, remove batch dimension
     affine = affines.numpy()[0] # Take first
     nib.save(nib.Nifti1Image(prediction, affine, dtype=np.dtype('int64')), f"saves/prediction_{epoch}.nii.gz")

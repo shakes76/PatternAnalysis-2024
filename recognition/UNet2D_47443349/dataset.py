@@ -48,11 +48,11 @@ def get_names(data_path):
     return names
 
 class ProstateDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, transforms):
+    def __init__(self, image_dir, mask_dir, transforms, early_stop=False):
         self.imageNames = get_names(image_dir)
         self.maskNames = get_names(mask_dir)
-        self.images = load_data_2D(self.imageNames, normImage=True) # Input images normalised
-        self.masks = load_data_2D(self.maskNames)
+        self.images = load_data_2D(self.imageNames, normImage=True, early_stop=early_stop) # Input images normalised
+        self.masks = load_data_2D(self.maskNames, early_stop=early_stop)
         self.transforms = transforms
 
     def __len__(self):

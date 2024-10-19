@@ -38,7 +38,7 @@ torch.manual_seed(hp.RANDOM_SEED)
 # torch.use_deterministic_algorithms(True) # Needed for reproducible results
 
 # Load the ADNI dataset images for training
-train_loader = load_ADNI_dataset()
+train_loader = load_ADNI_dataset(training_set=True)
 
 # Plot a sample of images from the ADNI dataset saved as 'adni_sample_images.png'
 real_batch = next(iter(train_loader))
@@ -52,6 +52,10 @@ plt.close()
 # Setup both the generator and discriminator models
 gen = Generator().to(device)
 disc = Discriminator().to(device)
+
+# Initialise all weights based on a randomly sampled normal distribution
+gen.apply(weights_init)
+disc.apply(weights_init)
 
 # Create the optimisers used by the genertator and discriminator during training 
 gen_opt = optim.Adam(gen.parameters(), lr=hp.GEN_LEARNING_RATE, betas=(0.0, 0.99))
@@ -103,7 +107,7 @@ for epoch in range(hp.NUM_OF_EPOCHS):
    for i, (real_images, class_labels) in enumerate(train_loader, 0):
         
         # Move real images and labels from the ADNI dataset onto the GPU
-        real_images = real_images.to(device)
+        real_images = real_images.to(device) 
         class_labels = class_labels.to(device)
         
         # Determine the batch size 
@@ -128,8 +132,13 @@ for epoch in range(hp.NUM_OF_EPOCHS):
         real_loss_disc = adversial_criterion(real_pred.view(-1), real_labels)
         real_class_loss_disc = class_criterion(class_real_pred, class_labels)
 
-        # Calculate average output value of discriminator
+        # Calculate average real prediction value of discriminator
         real_disc_avg = real_pred.mean().item()
+
+        # Calculate the accuracy of the discriminator in classifying classes for real images
+        predicted_classes = torch.argmax(class_real_pred, dim=1)
+        correct_predictions = (predicted_classes == class_labels).float()
+        real_class_disc_acc = correct_predictions.mean().item()
 
         # ---------------------------------------------------------------------------
         # (2) - Update the Discriminator by training with fake images (by generator)
@@ -154,7 +163,7 @@ for epoch in range(hp.NUM_OF_EPOCHS):
         fake_loss_disc = adversial_criterion(fake_pred.view(-1), fake_labels)
         fake_class_loss_disc = class_criterion(class_fake_pred, rand_class_labels)
 
-        # Calculate average output value of discriminator
+        # Calculate average fake prediction value of discriminator
         fake_disc_avg = fake_pred.mean().item()
 
         # Calculate the total error of the discriminator
@@ -194,9 +203,9 @@ for epoch in range(hp.NUM_OF_EPOCHS):
 
         # Output losses 
         if i % 15 == 0:
-            print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
+            print('[%d/%d][%d/%d]\tLoss_D: %.4f|Loss_G: %.4f|Real Pred: %.4f|Fake Pred: %.4f|Real Class Acc: %.4f'
                 % (epoch, hp.NUM_OF_EPOCHS, i, len(train_loader),
-                    tot_loss_disc.item(), tot_loss_gen.item(), real_disc_avg, fake_disc_avg, gen_avg))
+                    tot_loss_disc.item(), tot_loss_gen.item(), real_disc_avg, fake_disc_avg, real_class_disc_acc))
 
         # Save Losses for plotting later
         G_losses.append(tot_loss_gen.item())
@@ -265,5 +274,5 @@ plt.subplot(1,2,2)
 plt.axis("off")
 plt.title(f"Generated Images - {hp.NUM_OF_EPOCHS} Epochs")
 plt.imshow(np.transpose(img_list[-1],(1,2,0)))
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "real_versus_fake_images.png"), pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "real_versus_fake_images.png"), bbox_inches='tight', pad_inches=0)
 plt.close()

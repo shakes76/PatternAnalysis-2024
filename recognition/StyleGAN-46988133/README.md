@@ -6,14 +6,22 @@ Created by: **Matthew Lockett [46988133]**
 
 ```
 ADNI_DATASET/
-    |--- AD/
-    |    |--- img1.png
-    |    |--- img2.png
-    |    |--- img3.png
-    |           ...
-    |--- CN/
-    |    |--- img1.png
-    |    |--- img2.png
-    |    |--- img3.png
-    |           ...
+    |--- Training Set/ 
+    |          | --- AD/
+    |          |      |--- img1.png
+    |          |      |--- img2.png
+    |          |      |--- img3.png
+    |          | --- CN/
+    |                 |--- img1.png
+    |                 |--- img2.png
+    |                 |--- img3.png
+    |--- Validate Set/ 
+    |          | --- AD/
+    |          |      |--- img1.png
+    |          |      |--- img2.png
+    |          |      |--- img3.png
+    |          | --- CN/
+    |                 |--- img1.png
+    |                 |--- img2.png
+    |                 |--- img3.png
 ```

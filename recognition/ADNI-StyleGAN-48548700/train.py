@@ -8,7 +8,7 @@ from torch import optim
 import matplotlib.pyplot as plt
 
 # Define constants and hyperparameters
-DATASET                 = "./OASIS"  # Path to the dataset
+DATASET                 = "./ADNI_AD_NC_2D/"  # Path to the dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
 EPOCHS                  = 301 # Number of training epochs
 LEARNING_RATE           = 1e-3  # Learning rate for optimization

@@ -143,7 +143,7 @@ class DiceBCELoss(BaseDice):
             segment_coefs[i] = d_coef
 
         d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = (- 1 / num_masks) * torch.sum(segment_coefs) + bce(y_pred, y_true)
+        loss = (1 - (1 / num_masks) * torch.sum(segment_coefs)) + 0.2 * bce(y_pred, y_true) # Based on the FFANet Report
         return loss, segment_coefs, d_coef
 
 def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):

@@ -15,7 +15,7 @@ dataset = MRI3DDataset(image_folder, label_folder, normImage=True)
 dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
 # Initialize model, criterion, and optimizer
-model = modules.UNet3D(in_channels=3, out_channels=3)
+model = modules.UNet3D(in_channels=1, out_channels=3)
 criterion = modules.crossEntropyLoss(weight=torch.tensor([1.0, 1.0, 1.0]))
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 

@@ -42,6 +42,8 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
     for m in malignants:
         images[m] = load_image(m+IMG_FILE_TYPE)
     
+    print("Data Loaded\n")
+    
     return images, truths, malignants, benigns
 
 def read_truths(file_path_ground_truth):

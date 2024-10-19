@@ -32,8 +32,11 @@ def train(model, loader, criterion, optimizer, numEpochs):
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % 10 == 0:  # Print every 10 epochs
+        if ((epoch + 1) % 10 == 0) or (epoch == numEpochs - 1):
+            # Print status every 10 epochs or on the final
             print(f"Epoch [{epoch + 1}/{numEpochs}], Loss: {loss.item():.5f}")
+            # Save the model every 10 epochs or on the final
+            torch.save(model.state_dict(), f"model.pth")
 
     endTime = time.time()
     runTime = endTime - startTime
@@ -93,5 +96,8 @@ if __name__ == "__main__":
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=learningRate)
     train(model, loader, criterion, optimizer, numEpochs)
+
     #Test the Data
+    test_model = GCN(dataset)
+    test_model.load_state_dict(torch.load("model.pth"))
     test(model, loader) 

@@ -28,4 +28,20 @@ class GFNet(nn.Module):
         
 
 
+class FourierTransformLayer(nn.Module):
+    def __init__(self, embed_dim):
+        """
+        Layer that applies a Fourier Transform to each input patch embedding.
+        Args:
+            embed_dim (int): Dimension of the input embeddings.
+        """
+        super(FourierTransformLayer, self).__init__()
+        self.embed_dim = embed_dim
+
+    def forward(self, x):
+        # Apply 1D Fourier transform along the embedding dimension
+        x_fft = fft.fft(x, dim=-1).real
+        return x_fft
+
+
 

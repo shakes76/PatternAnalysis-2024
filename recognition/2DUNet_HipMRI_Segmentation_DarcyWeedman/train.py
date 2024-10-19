@@ -88,3 +88,19 @@ def initialize_loss_function() -> nn.Module:
             return self.alpha * self.bce(preds, targets) + (1 - self.alpha) * self.dice(preds, targets)
     
     return CombinedLoss(bce_loss, dice_loss, alpha=0.5)
+
+def initialize_optimizer(model: nn.Module, config: Dict) -> optim.Optimizer:
+    """Initialize the optimizer."""
+    optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+    return optimizer
+
+def initialize_scheduler(optimizer: optim.Optimizer, config: Dict) -> optim.lr_scheduler.ReduceLROnPlateau:
+    """Initialize the learning rate scheduler."""
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 
+        mode='min', 
+        factor=config['lr_factor'], 
+        patience=config['lr_patience'], 
+        verbose=True
+    )
+    return scheduler

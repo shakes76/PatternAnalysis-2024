@@ -60,6 +60,9 @@ def get_data_loaders():
         tio.ZNormalization(),
         tio.RescaleIntensity((0, 1)),
         tio.Resize((128,128,128)),
+        tio.RandomFlip(),
+        tio.RandomAffine(scales=(0.9, 1.1), degrees=10, translation=5),
+        tio.RandomElasticDeformation()
     ])
 
     # Data

@@ -137,66 +137,65 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
+# Staff linked this page regarding resizing images
+# https://stackoverflow.com/questions/64674612/how-to-resize-a-nifti-nii-gz-medical-image-file
+import skimage.transform as skTrans
+
+# Define the target shape
+target_shape = (256, 128)
+
+# Function to resize images using Scikit-Image
+def resize_images_skimage(images, target_shape):
+    # Create an empty array to store the resized images
+    #                         ((num images    ,      256       ,        128     )
+    resized_images = np.zeros((images.shape[0], target_shape[0], target_shape[1]), dtype=images.dtype)
+    
+    # Loop through each image in the dataset
+    for i, image in enumerate(images):
+        # Resize the image to the target shape using Scikit-Image's resize function
+        resized_image = skTrans.resize(image, target_shape, order=1, preserve_range=True, anti_aliasing=True)
+
+        # Store the resized image in the resized_images array
+        resized_images[i, :, :] = resized_image
+
+    return resized_images
+
 
 import os
-
-# online uq root
+# Define the root directory
 dataroot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/"
 
-testroot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+# Create paths for images and segmentation labels
+train_image_dir = os.path.join(dataroot, "keras_slices_train")
+train_label_dir = os.path.join(dataroot, "keras_slices_seg_train")
 
-# List all NIfTI files in the folder (ending with .nii.gz)
-nifti_files = [os.path.join(testroot, f) for f in os.listdir(testroot) if f.endswith('.nii.gz')]
+val_image_dir = os.path.join(dataroot, "keras_slices_validate")
+val_label_dir = os.path.join(dataroot, "keras_slices_seg_validate")
 
-images = load_data_2D(nifti_files, normImage=True, categorical=False, dtype=np.float32, getAffines=False, early_stop=True)
+test_image_dir = os.path.join(dataroot, "keras_slices_test")
+test_label_dir = os.path.join(dataroot, "keras_slices_seg_test")
 
-# After loading, `images` will contain the processed data ready for training your UNet
-print(f"Loaded {len(images)} images from {testroot}")
+# Get all image and label file paths
+train_image_paths = sorted([os.path.join(train_image_dir, f) for f in os.listdir(train_image_dir) if f.endswith('.nii.gz')])
+train_label_paths = sorted([os.path.join(train_label_dir, f) for f in os.listdir(train_label_dir) if f.endswith('.nii.gz')])
 
+val_image_paths = sorted([os.path.join(val_image_dir, f) for f in os.listdir(val_image_dir) if f.endswith('.nii.gz')])
+val_label_paths = sorted([os.path.join(val_label_dir, f) for f in os.listdir(val_label_dir) if f.endswith('.nii.gz')])
 
+test_image_paths = sorted([os.path.join(test_image_dir, f) for f in os.listdir(test_image_dir) if f.endswith('.nii.gz')])
+test_label_paths = sorted([os.path.join(test_label_dir, f) for f in os.listdir(test_label_dir) if f.endswith('.nii.gz')])
 
-#Test to download an image to ensure nifti files are being read correctly.
-import numpy as np
-import matplotlib
+# Load data
+# Images are not able to be resized because the error occurs before resizing. load_data_2D expects consistent sizing beforehand
+train_images = load_data_2D(train_image_paths, normImage=True, categorical=False)
+train_labels = load_data_2D(train_label_paths, normImage=False, categorical=True)
+train_images_resized = resize_images_skimage(train_images, target_shape)
 
-# Set MPLCONFIGDIR to a writable directory
-os.environ['MPLCONFIGDIR'] = '/home/Student/s4838078/matplotlib_cache'
+val_images = load_data_2D(val_image_paths, normImage=True, categorical=False)
+val_labels = load_data_2D(val_label_paths, normImage=False, categorical=True)
+val_images_resized = resize_images_skimage(val_images, target_shape)
 
-# Verify that MPLCONFIGDIR is set correctly
-print(f"MPLCONFIGDIR is set to: {os.environ.get('MPLCONFIGDIR')}")
+test_images = load_data_2D(test_image_paths, normImage=True, categorical=False)
+test_labels = load_data_2D(test_label_paths, normImage=False, categorical=True)
+test_images_resized = resize_images_skimage(test_images, target_shape)
 
-# Check if the directory exists and create it if needed
-if not os.path.exists(os.environ['MPLCONFIGDIR']):
-    os.makedirs(os.environ['MPLCONFIGDIR'])
-
-# Import matplotlib after setting MPLCONFIGDIR
-import matplotlib.pyplot as plt
-
-print(f"Matplotlib cache directory: {matplotlib.get_cachedir()}")
-
-# Assuming "images" is the array returned by load_data_2D
-# Example: images = load_data_2D(nifti_files, normImage=True, categorical=False, dtype=np.float32)
-
-# Select a random index from the images array
-random_idx = np.random.randint(0, images.shape[0])
-
-# Get the image at that index (assuming it's a 2D image, or a slice if it's 3D)
-random_image = images[random_idx]
-
-# If "random_image" has multiple channels (e.g., for segmentation masks), select the first channel
-if len(random_image.shape) > 2:
-    random_image = random_image[:, :, 0]  # Modify this depending on the actual image shape
-
-#output_filepath = "/home/Student/s4838078/testimages/random_image_test.png"
-# Ensure the directory exists (this will create the directory if it does not exist)
-output_dir = "/home/Student/s4838078/testimages"
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-
-# Full path to the output image
-output_filepath = os.path.join(output_dir, "random_image_test.png")
-
-# Save the selected image as a PNG file for download
-plt.imshow(random_image, cmap='gray')
-plt.axis('off')  # Hide axes for a cleaner image
-plt.savefig(output_filepath, bbox_inches='tight', pad_inches=0)

@@ -8,10 +8,10 @@ class Environment():
         self.weight_decay   = 0.001
         self.dropout        = 0.0
         self.drop_path      = 0.1       # Probability of dropping an entire network path from an iteration
-        self.batch_size     = 16
+        self.batch_size     = 32
         self.patch_size     = 16        # Size of the chunks to split up the image in pixels
         self.embed_dim      = 783 
-        self.depth          = 8         # Number of global filter layers to use in the network
+        self.depth          = 12         # Number of global filter layers to use in the network
         self.ff_ratio       = 3         # Ratio of input to hidden layer size in the classification feed forward network
         self.epochs         = 1
 

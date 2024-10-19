@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     if args.evaluation:
         # Load the evaluation batch
-        loader.load(args.path)
+        loader.load_validation(args.path)
         val = loader.val_loader
         meta = loader.get_meta()
 

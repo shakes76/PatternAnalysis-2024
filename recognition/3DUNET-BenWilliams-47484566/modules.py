@@ -84,7 +84,18 @@ class UNet3D(nn.Module):
         return out
 
 
+def dice_coefficient(pred, target, epsilon=1e-6):
+    pred = (pred > 0.5).float()
+    
+    pred = pred.contiguous().view(-1)
+    target = target.contiguous().view(-1)
+    
+    intersection = (pred * target).sum()
+    union = pred.sum() + target.sum()
 
+    dice = (2.0 * intersection + epsilon) / (union + epsilon)
+    
+    return dice
 
 
 

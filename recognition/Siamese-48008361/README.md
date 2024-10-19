@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project implements a Siamese network-based classifier for the ISIC 2020 Challenge dataset, aiming to distinguish between benign and malignant skin lesions with an accuracy of 80%. Leveraging deep learning techniques and insights from dermatologist consultations, we seek to assist in the early detection and diagnosis of skin cancer.
+This project implements a Siamese network-based classifier for the ISIC 2020 Challenge dataset, aiming to distinguish between benign and malignant skin lesions with an accuracy of 80%. Leveraging deep learning techniques and insights from dermatologist consultations, we seek to assist in the early detection and diagnosis of skin cancer. For this project there was a heavier focus on making sure the malignant class was classifed with an accuracy greater than 80%.
 
 ## Dataset
 
@@ -203,8 +203,8 @@ Analysis:
 - True Positives: 104, False Positives: 1518
 - False Negatives: 13, True Negatives: 4991
 - High sensitivity to malignant cases, with a tendency towards false positives
-- This conservative approach aligns with clinical preference for minimizing missed malignancies
-
+- This approach aligns with clinical preference for minimizing missed malignancies
+- The high number of false positives for benign cases is done on purpose, this was done because it is safer to classify a false positive as malignant than a false negative as malignant if a medical practioner of patient were to use this model. Ultimately the final call is up to the dermatologist, and the model is only a tool to assist in the diagnosis. Needless to say the model does achieve 76% accuracy for benign cases, and 88% accuracy for malignant cases, which is above the 80% accuracy goal set.
 ### ROC Curve
 *Figure 2: Receiver Operating Characteristic Curve of Siamese Network*
 ![alt text](graphs/roc_curve.png)

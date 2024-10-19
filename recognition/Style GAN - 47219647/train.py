@@ -35,3 +35,31 @@ for epoch in range(num_epochs):
         text_inputs = tokenizer(batch_labels, padding="max_length", return_tensors="pt", truncation=True).input_ids.to(device)
         
         text_embeddings = text_encoder(text_inputs).last_hidden_state
+
+
+        latents = vae.encode(batch_images).latent_dist.sample() * 0.18215  # Scale factor
+
+        # Generate random noise
+        noise = torch.randn_like(latents).to(device)
+
+        # Sample random timesteps
+        timesteps = torch.randint(0, noise_scheduler.num_train_timesteps, (batch_images.size(0),), device=device).long()
+
+        # Add noise to the latent representations based on timesteps
+        noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+
+        # Forward pass through the UNet (with mixed precision)
+        with autocast():
+            noise_pred = unet(noisy_latents, timesteps, text_embeddings).sample
+
+            # Compute the loss (MSE between predicted noise and actual noise)
+            loss = criterion(noise_pred, noise)
+
+        # Backpropagation with mixed precision
+        optimizer.zero_grad()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+torch.save(unet.state_dict(), "unet_trained.pth")
+torch.save(vae.state_dict(), "vae_trained.pth")

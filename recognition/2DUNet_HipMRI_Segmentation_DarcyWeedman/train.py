@@ -169,3 +169,52 @@ def train_model(model: nn.Module,
             print(f"Best model saved with Dice Coefficient: {best_dice:.4f}")
     
     print(f"Training complete. Best Dice Coefficient: {best_dice:.4f}")
+
+def main():
+    set_seed(42)
+    
+    # Configuration Dictionary
+    config = {
+        'data_dir': 'keras_slices_train',  
+        'seg_dir': 'keras_slices_seg_train',  
+        'val_data_dir': 'keras_slices_validate',  
+        'val_seg_dir': 'keras_slices_seg_validate',  
+        'batch_size': 16,
+        'num_epochs': 50,
+        'learning_rate': 1e-4,
+        'lr_factor': 0.5,
+        'lr_patience': 5,
+        'num_workers': 4,
+        'n_channels': 1,
+        'n_classes': 1,
+        'bilinear': True,
+        'base_filters': 64,
+        'use_batchnorm': True,
+        'save_path': 'checkpoints'
+    }
+    
+    os.makedirs(config['save_path'], exist_ok=True)
+    
+    # Device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device: {device}')
+    
+    # Initialise Components
+    try:
+        train_loader, val_loader = initialize_dataloaders(config)
+        model = initialize_model(config, device)
+        criterion = initialize_loss_function()
+        optimizer = initialize_optimizer(model, config)
+        scheduler = initialize_scheduler(optimizer, config)
+    except Exception as e:
+        print(f"Error during initialization: {e}")
+        return
+    
+    # Train
+    try:
+        train_model(model, device, train_loader, val_loader, criterion, optimizer, scheduler, config['num_epochs'], config['save_path'])
+    except Exception as e:
+        print(f"Error during training: {e}")
+
+if __name__ == '__main__':
+    main()

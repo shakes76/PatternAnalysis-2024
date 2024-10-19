@@ -447,8 +447,8 @@ class ResidualBlock(nn.Module):
     """
     def __init__(self, in_channels, out_channels, downsample=True):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, in_channels, 3, padding=1)
-        self.conv2 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
         self.skip = nn.Conv2d(in_channels, out_channels, 1, bias=False)
         self.downsample = downsample
         self.activation = nn.LeakyReLU(0.2)
@@ -556,7 +556,7 @@ class StyleGAN2Discriminator(nn.Module):
         # Residual blocks
         # Set up channel progression
         in_channels = ndf
-        channel_multipliers = [1, 2, 4, 8, 16]  # Reverse of generator's progression
+        channel_multipliers = [1, 2, 4, 8, 16]  # Progression of channel multiplication
         for i in range(num_layers):
             out_channels = int(ndf * channel_multipliers[i])
             # In: [batch_size, in_channels, H, W]

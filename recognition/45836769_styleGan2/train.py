@@ -62,7 +62,7 @@ for dir in ["results/AD", "results/NC", "results/UMAP", "checkpoints"]:
 
 # Init dataset and loader
 dataset = ADNIDataset(root_dir="/home/groups/comp3710/ADNI/AD_NC", split="train") # CHANGE DIR
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
 # Init generator and discriminator
 generator = StyleGAN2Generator(z_dim, w_dim, num_mapping_layers, mapping_dropout, label_dim, num_layers, ngf).to(device)

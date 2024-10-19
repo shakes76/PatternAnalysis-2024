@@ -22,7 +22,7 @@ def init_weights(m):
 # 		super(DiceLoss, self).init()
 
 # 	def forward(self, pred, masks):
-# 		return 1 - self.dice_coefficient(pred, masks)
+# 		return 1 - dice_coefficient(pred, masks)
 
 def dice_coefficient(pred, masks):
 	smooth = 1e-6 # Avoid divide by zero
@@ -218,7 +218,7 @@ class Modified3DUNet(nn.Module):
 		ds1_ds2_sum_upscale_ds3_sum_upscale = self.upsample(ds1_ds2_sum_upscale_ds3_sum)
 
 		out = out_pred + ds1_ds2_sum_upscale_ds3_sum_upscale
-		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes)
+		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes) # [B, C, H, W, D] -> [B*H*W*D, 6]
 		logits = out
 		softmax_logits = self.softmax(out)
 

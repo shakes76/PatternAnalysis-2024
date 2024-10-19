@@ -4,3 +4,4 @@ __pycache__/
 questions.txt
 debug.py
 *.pth
+*.nii*

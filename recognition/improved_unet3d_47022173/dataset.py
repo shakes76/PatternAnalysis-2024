@@ -106,7 +106,7 @@ class ProstateDataset3D(Dataset):
 
 		self.images = torch.empty(0, 128, 128, 128)
 		self.masks = torch.empty(0, 128, 128, 128)
-		# self.affine = torch.empty(0, 4, 4)
+		self.affines = torch.empty(0, 4, 4)
 
 		# TODO REMOVE THIS. Checks for matching image and mask names
 		for image, mask in zip(self.image_names, self.mask_names):
@@ -118,8 +118,7 @@ class ProstateDataset3D(Dataset):
 		loaded = 0
 		while len(self.images) < len(self.image_names):
 			raw_images = load_data_3D(self.image_names[loaded:loaded + LOAD_SIZE])
-			raw_masks = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE])
-			# raw_masks, affine = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE], getAffines=True)
+			raw_masks, affines = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE], getAffines=True)
 
 			subject = tio.Subject(
 				image=tio.ScalarImage(tensor=raw_images),
@@ -129,11 +128,14 @@ class ProstateDataset3D(Dataset):
 			transformed = transforms(subject)
 			self.images = torch.cat((self.images, transformed['image'].data), dim=0) # Batch, 128 ,128 ,128
 			self.masks = torch.cat((self.masks, transformed['mask'].data), dim=0)
-		# self.affine = torch.cat((self.affine, torch.tensor(affine)), dim=0)
+			self.affines = torch.cat((self.affines, torch.tensor(np.array(affines))), dim=0)
 	
 
 			loaded = len(self.images)
 			print(f"Loaded {len(self.images)} / {len(self.image_names)}")
+		
+		if self.masks.dtype != torch.long:
+			self.masks = self.masks.long()
     
 	def __len__(self):
 		return len(self.images)
@@ -141,5 +143,5 @@ class ProstateDataset3D(Dataset):
 	def __getitem__(self, idx):
 		image = self.images[idx].unsqueeze(0) # Add channel dimension
 		mask = self.masks[idx].unsqueeze(0)
-		# affine = self.affine[idx]
-		return image, mask#, affine
+		affines = self.affines[idx]
+		return image, mask, affines

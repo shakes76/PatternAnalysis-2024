@@ -6,6 +6,8 @@ from utils import *
 from modules import *
 from monai.losses.dice import DiceLoss
 import nibabel as nib
+from matplotlib import pyplot as plt
+import argparse
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
@@ -20,12 +22,15 @@ else:
     epochs = 10
     batch_size = 2
 
+# parser = argparse.ArgumentParser()
+# parser.add_argument('-c', '--count')
+
 # Data parameters
 batch_size = batch_size
 shuffle = True
 num_workers = 2
 epochs = epochs
-background = True
+background = False
 
 # Model parameters
 in_channels = 1 # greyscale
@@ -41,57 +46,40 @@ step_size = 10
 gamma = 0.1
 
 
-# def save(predictions): 
-#     print(predictions.shape, np.unique(predictions.detach().cpu().numpy())) # torch.Size([4194304, 6]) [0. 1.]
-#     predictions = torch.argmax(predictions, dim=1) # [4194304]
-#     print(predictions.shape, np.unique(predictions.detach().cpu().numpy()))
-#     predictions = predictions.view(batch_size, 128, 128, 128).cpu().numpy()
-#     print(predictions.shape, np.unique(predictions))
+def save(predictions, affines, epoch): 
+    predictions = torch.argmax(predictions, dim=1)
+    predictions = predictions.view(batch_size, 1, 128, 128, 128).cpu().numpy()
+    prediction = predictions[0].squeeze() # Take first, remove batch dimension
+    affine = affines.numpy()[0] # Take first
+    nib.save(nib.Nifti1Image(prediction, affine, dtype=np.dtype('int64')), f"saves/prediction_{epoch}.nii.gz")
 
 
-# Test loop
 def validate(model, data_loader):
     criterion = DiceLoss()
 
     model.eval()  
-    test_loss = 0.0
     dice_scores = [0] * n_classes 
 
     with torch.no_grad():
         for i, data in enumerate(data_loader):  
-            dice_score = DiceLoss()
-            # inputs, masks, affine = data
-            inputs, masks = data
+            dice_score = DiceLoss(include_background=False)
+            inputs, masks, affine = data
             inputs, masks = inputs.to(device), masks.to(device)
-            if masks.dtype != torch.long:
-                masks = masks.long()
+
 
             # Forward pass
             _, predictions, logits = model(inputs)
+
             masks = masks.view(-1)  # Flatten masks
             masks = F.one_hot(masks, num_classes=6) 
 
             # Group categories for masks and labels
             for i in range(n_classes):
-                mask = F.one_hot( masks[:, i].long(), num_classes=2)
-                prediction = F.one_hot(predictions[:, i].long(), num_classes=2)
-                dice_scores[i] += dice_score(prediction, mask)
-
-            # Calculate loss
-            loss = criterion(logits, masks)
-            test_loss += loss.item()
-
-            # predictions = torch.argmax(predictions, dim=1)
-            # prediction = predictions.view(128, 128, 128).cpu().numpy()
-            # affine = affine.cpu().numpy()[0]
-            # print(affine.shape, prediction.shape)
-            # nib.save(nib.Nifti1Image(prediction, affine), f"prediction_{i}.nii.gz")
+                mask = F.one_hot(masks[:, i].long(), num_classes=2)
+                prediction = F.one_hot(predictions[:, i].long(), num_classes=2) # [40000, 2] vs [40000, 2]
+                dice_scores[i] += 1 - dice_score(prediction, mask)
             
-    # Average loss and dice score
-    avg_test_loss = test_loss / len(data_loader)
-
-    print(f"Test Loss: {avg_test_loss}")
-    print(f"Average Dice Score: {list(map(lambda x: 1 - float(x / len(data_loader)), dice_scores))}")
+    print(f"Average Dice Score: {list(map(lambda x: float(x / len(data_loader)), dice_scores))}")
 
 
 if __name__ == '__main__':
@@ -130,34 +118,35 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
     # Loss function
-    criterion = DiceLoss(include_background=background)
+    criterion = DiceLoss(include_background=background, softmax=True)
 
     # Training loop
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
         for i, data in enumerate(train_dataloader):
-            # inputs, masks, affine = data
-            inputs, masks = data
+            inputs, masks, affines = data
             inputs, masks = inputs.to(device), masks.to(device)
 
-            if masks.dtype != torch.long:
-                masks = masks.long()
             masks = masks.view(-1)  # [batch * l * w * h]
             masks = F.one_hot(masks, num_classes=6) # [batch * l * w * h, 6]
             
             optimizer.zero_grad()
             _, predictions, logits = model(inputs) # All shapes: [batch * l * w * h, 6]
-            # save(predictions)
             loss = criterion(logits, masks)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        
+       
         scheduler.step()
+
+        if epoch % 5 == 0:
+            save(predictions, affines, epoch)
+
         if epoch % 3 == 0:
-            validate(model, valid_dataloader)
-        print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(valid_dataloader)}")
+            validate(model, train_dataloader)
+
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(train_dataloader)}")
 
     # save model
     torch.save(model.state_dict(), f'model_lr_{lr}_e_{epochs}_bg_{background}_bs{batch_size}.pth')

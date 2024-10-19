@@ -4,28 +4,31 @@ import glob
 import torchio as tio
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+import random
 
 
-'''
-Class for loading data from nii.gz files and prepocessing the data
-'''
+
 class load_data_3D(DataLoader) :
+    '''
+    Load medical image data from names.
+
+    '''
     def __init__(self, image_path, label_path):
-        self.inputs = []
+        self.images = []
         self.labels = []
         #retrieve path from dataset
         for f in sorted(glob.iglob(image_path)): 
-            self.inputs.append(f)
+            self.images.append(f)
         for f in sorted(glob.iglob(label_path)):
             self.labels.append(f)
         self.totensor = transforms.ToTensor()
 
     def __len__(self):
-        return len(self.inputs)
+        return len(self.images)
     
     #open files
     def __getitem__(self, idx): 
-        image_p = self.inputs[idx]
+        image_p = self.images[idx]
         label_p = self.labels[idx]
 
         image = nib.load(image_p)
@@ -45,28 +48,46 @@ class load_data_3D(DataLoader) :
         return image, label
     
 
-'''Class for data augmentation'''
 class augmentation:
     def __init__(self) :
-        self.shrink = tio.CropOrPad((16,32,32))
-        self.flip0 = tio.transforms.RandomFlip(0, flip_probability = 1) #flip the data randomly
-        self.flip1 = tio.transforms.RandomFlip(1, flip_probability = 1)
-        self.flip2 = tio.transforms.RandomFlip(2, flip_probability = 1)
 
-        nothing = tio.transforms.RandomFlip(0, flip_probability = 0)
+        self.crop = tio.CropOrPad((16,32,32))
+
+        #Flip/augment the data 
+        self.rand_flip_0 = tio.transforms.RandomFlip(0, flip_probability = 1) 
+        self.rand_flip_1 = tio.transforms.RandomFlip(1, flip_probability = 1)
+        self.rand_flip_2 = tio.transforms.RandomFlip(2, flip_probability = 1)
+
+        #Additional augmentation methods
         bias_field = tio.transforms.RandomBiasField()
         blur = tio.transforms.RandomBlur()
         spike = tio.transforms.RandomSpike()
-        prob = {}
-        prob[nothing] = 0.7
-        prob[bias_field] = 0.1
-        prob[blur] = 0.1
-        prob[spike] = 0.1
-        self.oneof = tio.transforms.OneOf(prob) #randomly choose one augment method from the three 
 
-    def crop_and_augment(self, image, label):
-        image = self.shrink(image)
-        label = self.shrink(label)
+        prob = {}
+        prob[bias_field] = 0.4
+        prob[blur] = 0.3
+        prob[spike] = 0.3
+
+        #Randomly choose an augmentation method  
+        self.oneof = tio.transforms.OneOf(prob) 
+
+    def augment(self, image, label):
+
+        generate = random.randint(0,3)
+
+        if generate == 0:
+            image = self.rand_flip_0(image)
+            label = self.rand_flip_0(label)
+        elif generate == 1:
+            image = self.rand_flip_1(image)
+            label = self.rand_flip_1(label)
+        elif generate == 2:
+            image = self.rand_flip_2(image)
+            label = self.rand_flip_2(label)
+        elif generate == 3:
+            image = self.crop(image)
+            label = self.crop(label)
+
         image = self.oneof(image)
         
         return image, label

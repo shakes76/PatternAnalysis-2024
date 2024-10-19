@@ -8,6 +8,13 @@ from modules import GCN
 import os
 import umap
 
+class_titles = {
+    0: "Politicians",
+    1: "Governmental Organizations",
+    2: "Television Shows", 
+    3: "Companies",
+}
+
 def tsne_embeddings(model, data):
     """
     Plot embeddings using t-SNE from the provided model and data.
@@ -31,11 +38,15 @@ def tsne_embeddings(model, data):
     reduced_embeddings = tsne.fit_transform(embeddings)
 
     plt.figure(figsize=(10, 10))
-    scatter = plt.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], c=labels, cmap='viridis', alpha=0.7)
-    plt.colorbar(scatter, label='Class')
+    # Scatter plot
+    for label in class_titles.keys():
+        plt.scatter(reduced_embeddings[labels == label, 0], 
+                    reduced_embeddings[labels == label, 1],
+                    label=class_titles[label], alpha=0.7)
     plt.title('t-SNE Visualization of Facebook Page Node Embeddings')
     plt.xlabel('t-SNE Component 1')
     plt.ylabel('t-SNE Component 2')
+    plt.legend(title="Classes", loc="upper right")
     # Ensure the output directory exists
     os.makedirs('outputs/', exist_ok=True)
     plt.savefig("outputs/tsne_visualization.png")
@@ -64,11 +75,16 @@ def pca_embeddings(model, data):
     reduced_embeddings = pca.fit_transform(embeddings)
 
     plt.figure(figsize=(10, 10))
-    scatter = plt.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], c=labels, cmap='viridis', alpha=0.7)
-    plt.colorbar(scatter, label='Class')
+    # Scatter plot
+    for label in class_titles.keys():
+        plt.scatter(reduced_embeddings[labels == label, 0], 
+                    reduced_embeddings[labels == label, 1],
+                    label=class_titles[label], alpha=0.7)
+
     plt.title('PCA Visualization of Facebook Page Node Embeddings')
     plt.xlabel('PCA Component 1')
     plt.ylabel('PCA Component 2')
+    plt.legend(title="Classes", loc="upper right")
     # Ensure the output directory exists
     os.makedirs('outputs/', exist_ok=True)
     plt.savefig("outputs/pca_visualization.png")
@@ -97,11 +113,16 @@ def umap_embeddings(model, data):
     reduced_embeddings = reducer.fit_transform(embeddings)
 
     plt.figure(figsize=(10, 10))
-    scatter = plt.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], c=labels, cmap='viridis', alpha=0.7)
-    plt.colorbar(scatter, label='Class')
+    # Scatter plot
+    for label in class_titles.keys():
+        plt.scatter(reduced_embeddings[labels == label, 0], 
+                    reduced_embeddings[labels == label, 1],
+                    label=class_titles[label], alpha=0.7)
+    
     plt.title('UMAP Visualization of Facebook Page Node Embeddings')
     plt.xlabel('UMAP Component 1')
     plt.ylabel('UMAP Component 2')
+    plt.legend(title="Classes", loc="upper right")
     # Ensure the output directory exists
     os.makedirs('outputs/', exist_ok=True)
     plt.savefig("outputs/umap_visualization.png")
@@ -112,4 +133,6 @@ if __name__ == "__main__":
     data = dataset.get_data()
     model = GCN(dataset)
     model.load_state_dict(torch.load("model.pth")) # Loads the model from the saved file
+    tsne_embeddings(model, data)
+    pca_embeddings(model, data)
     umap_embeddings(model, data)

@@ -4,6 +4,7 @@ import nibabel as nib
 import pathlib
 import tensorflow as tf
 from tqdm import tqdm
+from keras.preprocessing.image import ImageDataGenerator
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -96,6 +97,10 @@ def get_training_data(image_limit):
     # loading testing masks
     seg_test_data = load_data_2D(list(seg_test_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True).astype(np.uint8)[:image_limit,:,:]
 
+    # expand image data dims
+    train_data = np.expand_dims(np.array(train_data), 3)
+    test_data = np.expand_dims(np.array(test_data), 3)
+
     # convert masks to categorical
     n_classes = 6
 
@@ -111,3 +116,26 @@ def get_training_data(image_limit):
     X_train, X_test, y_train, y_test = train_data, test_data, train_labels, test_labels
 
     return (X_train, y_train), (X_test, y_test)
+
+def get_data_generators(train_data, test_data, seed, batch_size):
+    X_train, y_train = train_data
+    X_test, y_test = test_data
+
+    image_data_generator = ImageDataGenerator()
+    image_generator = image_data_generator.flow(X_train, seed=seed, batch_size=batch_size)
+    test_image_generator = image_data_generator.flow(X_test, seed=seed, batch_size=batch_size)
+
+    mask_data_generator = ImageDataGenerator()
+    mask_generator = mask_data_generator.flow(y_train, seed=seed, batch_size=batch_size)
+    test_mask_generator = mask_data_generator.flow(y_test, seed=seed, batch_size=batch_size)
+
+    def data_generator(image_generator, mask_generator):
+        data_generator = zip(image_generator, mask_generator)
+        for (img, mask) in data_generator:
+            yield (img, mask)
+
+    train_generator = data_generator(image_generator, mask_generator)
+
+    test_generator = data_generator(test_image_generator, test_mask_generator)
+
+    return (train_generator, test_generator)

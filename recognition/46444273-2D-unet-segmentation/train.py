@@ -1,5 +1,5 @@
 from keras.optimizers import Adam
-from dataset import get_training_data
+from dataset import get_training_data, get_data_generators
 from modules import unet_2d
 import matplotlib.pyplot as plt
 from util import plot_images_labels, plot_index
@@ -16,6 +16,11 @@ train_data, test_data = get_training_data(image_limit=100)
 X_train, y_train = train_data
 X_test, y_test = test_data
 
+BATCH_SIZE = 4
+
+train_generator, test_generator = get_data_generators(train_data, test_data,
+                                                      seed=42, batch_size=BATCH_SIZE)
+
 # check image mask pairs look correct
 plot_images_labels(X_train, y_train)
 plot_images_labels(X_test, y_test)
@@ -23,13 +28,14 @@ plot_images_labels(X_test, y_test)
 # check image-mask pair at index 0
 plot_index(0, X_train, y_train)
 
-BATCH_SIZE = 4
+steps_per_epoch = (len(X_train))//BATCH_SIZE
+val_steps_per_epoch = (len(X_test))//BATCH_SIZE
 
 # train the model
-# TODO: use data loader instead of preallocated tensors
-history = model.fit(X_train, y_train, validation_data=test_data,
-                    epochs=10, batch_size=BATCH_SIZE,
-                    validation_batch_size=BATCH_SIZE)
+history = model.fit(train_generator,
+                    validation_data=test_generator,
+                    epochs=10, steps_per_epoch=steps_per_epoch,
+                    validation_steps=val_steps_per_epoch)
 
 # plot training and validation loss
 loss = history.history['loss']

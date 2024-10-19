@@ -4,7 +4,6 @@ from torch.optim.lr_scheduler import StepLR  # Import scheduler
 import matplotlib.pyplot as plt
 from modules import GNNModel
 from dataset import load_data
-import time
 
 def train():
     # Load data and classes

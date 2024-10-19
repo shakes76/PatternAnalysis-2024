@@ -22,7 +22,7 @@ def predict():
 
     # Compute TSNE embeddings using the learned node representations
     embeddings = out.cpu().numpy()
-    tsne = TSNE(n_components=2, random_state=42)
+    tsne = TSNE(n_components=2, random_state=48300588)
     embeddings_2d = tsne.fit_transform(embeddings)
 
     # Plot TSNE embeddings with ground truth labels

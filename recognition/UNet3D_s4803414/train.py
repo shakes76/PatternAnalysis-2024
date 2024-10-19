@@ -1,4 +1,3 @@
-
 import os
 import torch
 import torch.nn as nn
@@ -15,13 +14,17 @@ torch.cuda.empty_cache()
 # Directories and parameters
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
-MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/saved_model.pth'
+MODEL_SAVE_PATH = '/home/Student/s4803414/miniconda3/model/new_model.pth'
 
 BATCH_SIZE = 2  # Reduced batch size
-EPOCHS = 8
-LEARNING_RATE = 1e-3
+EPOCHS = 16
+LEARNING_RATE = 1e-4
 SPLIT_RATIO = [0.8, 0.1, 0.1]  # Train, validation, and test split
 EARLY_STOPPING_THRESHOLD = 0.7
+NUM_CLASSES = 6  # Total number of classes
+
+# Class weights (assign higher weights to the last two classes)
+class_weights = torch.tensor([1.0, 1.0, 1.0, 1.0, 10.0, 15.0], dtype=torch.float32).to('cuda')  # Increase weights for last 2 classes
 
 # Create the dataset
 dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None, augment=True)
@@ -40,8 +43,8 @@ test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 # Initialize the model, loss function, and optimizer
-model = UNet3D(in_channels=1, out_channels=6)  # 6 classes in total
-criterion = nn.CrossEntropyLoss()
+model = UNet3D(in_channels=1, out_channels=NUM_CLASSES)  # 6 classes in total
+criterion = nn.CrossEntropyLoss(weight=class_weights)  # Apply class weights
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 # Initialize GradScaler for mixed precision
@@ -101,7 +104,7 @@ for epoch in range(EPOCHS):
     # Validation loop with Dice score evaluation
     model.eval()
     val_loss = 0.0
-    dice_scores = np.zeros(6)
+    dice_scores = np.zeros(NUM_CLASSES)
     with torch.no_grad():
         for images, masks in val_loader:
             images = images.to(device)
@@ -111,7 +114,7 @@ for epoch in range(EPOCHS):
                 loss = criterion(outputs, masks.squeeze(1))
             val_loss += loss.item()
             # Compute Dice scores for each class
-            dice_per_class = dice_score(outputs, masks.squeeze(1), num_classes=6)
+            dice_per_class = dice_score(outputs, masks.squeeze(1), num_classes=NUM_CLASSES)
             dice_scores += np.array(dice_per_class)
 
     # Average the dice scores
@@ -121,21 +124,24 @@ for epoch in range(EPOCHS):
     print(f'Class-specific Dice Scores: {avg_dice_scores}')
     print(f'Average Validation Dice Score: {avg_val_dice:.4f}')
 
-    # Check for early stopping
+    # Check for early stopping (all classes must be >= 0.7)
+    if all(score >= EARLY_STOPPING_THRESHOLD for score in avg_dice_scores):
+        print(f'Early stopping at epoch {epoch + 1}, all classes have Dice scores ≥ {EARLY_STOPPING_THRESHOLD:.1f}')
+        torch.save(model.state_dict(), MODEL_SAVE_PATH)
+        break
+
+    # Check if current model has the best Dice score so far
     if avg_val_dice > best_dice_score:
         best_dice_score = avg_val_dice
         # Save the best model
         torch.save(model.state_dict(), MODEL_SAVE_PATH)
         print(f'New best model saved with Dice score: {best_dice_score:.4f}')
 
-    if avg_val_dice >= EARLY_STOPPING_THRESHOLD:
-        print(f'Early stopping at epoch {epoch + 1}, Dice score: {avg_val_dice:.4f}')
-        break
 
 # Testing loop
 model.eval()  # Set model to evaluation mode for testing
 test_loss = 0.0
-dice_scores = np.zeros(6)  # Reset Dice scores
+dice_scores = np.zeros(NUM_CLASSES)  # Reset Dice scores
 
 with torch.no_grad():
     for images, masks in test_loader:
@@ -147,7 +153,7 @@ with torch.no_grad():
         test_loss += loss.item()
 
         # Compute Dice scores for each class
-        dice_per_class = dice_score(outputs, masks.squeeze(1), num_classes=6)
+        dice_per_class = dice_score(outputs, masks.squeeze(1), num_classes=NUM_CLASSES)
         dice_scores += np.array(dice_per_class)
 
 # Average the dice scores

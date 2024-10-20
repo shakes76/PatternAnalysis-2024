@@ -53,11 +53,12 @@ class GFNetFilter(nn.Module):
         self.h = h
 
     def forward(self, x):
-        B, C, H, W= x.shape
+        print (x.shape)
+        """B, C, H, W= x.shape
         x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
-        x = torch.fft.irfft2(x, s=(H, W), dim=(1,2), norm='ortho')
+        x = torch.fft.irfft2(x, s=(H, W), dim=(1,2), norm='ortho')"""
         return x
     
 class MLP(nn.Module):
@@ -169,7 +170,6 @@ class GFNet(nn.Module):
         x = self.final_dropout(x)
         x = self.head(x)
         return x
-
 
 
 

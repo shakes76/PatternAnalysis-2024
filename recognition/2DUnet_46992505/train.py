@@ -1,9 +1,14 @@
 import os
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 import matplotlib.pyplot as plt
 from modules import unet_model  
 from dataset import load_data_2D  
+
+#Set random seed for reproducability of results
+np.random.seed(42)
+tf.random.set_seed(42)
 
 #Define dataset paths
 data_dir = r'//home//groups//comp3710//HipMRI_Study_open//keras_slices_data'
@@ -82,18 +87,31 @@ model = unet_model(input_size=(256, 128, 1))
 history = model.fit(
     X_train, y_train,
     validation_data=(X_val, y_val),
-    epochs=1,
+    epochs=20,
     batch_size=8,
     verbose=1  
 )
 
+#Plot training and validation accuracy
+plt.figure()
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig('training_validation_accuracy.png')  # Save the accuracy plot
+plt.show()
+
 #Plot training and validation loss
+plt.figure()
 plt.plot(history.history['loss'], label='Training Loss')
 plt.plot(history.history['val_loss'], label='Validation Loss')
 plt.title('Training and Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
+plt.savefig('training_validation_loss.png')  # Save the loss plot
 plt.show()
 
 #Save final model

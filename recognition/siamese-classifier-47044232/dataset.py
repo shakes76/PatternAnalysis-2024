@@ -5,42 +5,30 @@ ISIC 2020 Kaggle Challenge data set.
 Made by Joshua Deadman
 """
 
-import matplotlib as plt
-import pandas as pd
+import matplotlib.pyplot as plt
+from PIL import Image
 import random
 import torch
 from torchvision.transforms import v2
 from torch.utils.data import Dataset
 
-from config import TRAINING, TESTING, VALIDATION
-
 # Code is inspired by that found in:
 #   https://github.com/andreasveit/triplet-network-pytorch/blob/master/triplet_mnist_loader.py
-class ISIC_Kaggle_Challenge_Set(Dataset):
+class ISICKaggleChallengeSet(Dataset):
     """ Object that stores all data used in training, testing and validation. """
-    def __init__(self, root, label_path, images, transforms=None) -> None:
+    def __init__(self, root, image_set, transforms=None) -> None:
         """ Initialises the dataset.
 
         Arguments:
             root (str): The absolute path to the image dataset.
-            label_path (str): The absolute path to the label's .csv file.
-            images (list): A list of images to be used in the data set.
+            image_set (list): A list from the utils.split_data() method.
             transforms (obj): A v2 instance of transformations.
+                    The transforms must include a .ToImage().
         """
         self._root = root
-        self._df = pd.read_csv(label_path)
-        self._images = images
-        random.shuffle(self._images)
-        # TODO confirm set_type selections work.
-        if len(self._images) == len(self._df.index) * TRAINING:
-            self._set_type = TRAINING
-        elif len(self._images) == len(self._df.index) * TESTING:
-            self._set_type = TESTING
-        else:
-            self._set_type = VALIDATION
+        self._image_set = image_set
         self._transforms = transforms
    
-    # TODO implement this to return a triplet with augmentations applied.
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int]:
         """ Returns a random triplet.
 
@@ -49,11 +37,36 @@ class ISIC_Kaggle_Challenge_Set(Dataset):
         Returns:
             A tuple with the anchor, positive, negative and label of the the anchor.
         """
-        pass
+        anchor = self._image_set[index]
+        positive = random.choice(self._image_set)
+        while positive["target"] != anchor["target"]:
+            positive = random.choice(self._image_set)
+        negative = random.choice(self._image_set)
+        while negative["target"] == anchor["target"]:
+            negative = random.choice(self._image_set)
+
+        anchor_img = Image.open(self._root + anchor["isic_id"] + ".jpg").convert("RGB")
+        positive_img = Image.open(self._root + positive["isic_id"] + ".jpg").convert("RGB")
+        negative_img = Image.open(self._root + negative["isic_id"] + ".jpg").convert("RGB")
+
+        if self._transforms is not None:
+            anchor_img = self._transforms(anchor_img)
+            positive_img = self._transforms(positive_img)
+            negative_img = self._transforms(negative_img)
+        else:
+            to_tensor = v2.Compose([
+                v2.ToImage(),
+                v2.ToDtype(torch.float32, scale=True)
+            ])
+            anchor_img = to_tensor(anchor_img)
+            positive_img = to_tensor(positive_img)
+            negative_img = to_tensor(negative_img)
+
+        return anchor_img, positive_img, negative_img, anchor["target"]
 
     def __len__(self) -> int:
         """ Returns the size of the dataset. """
-        return len(self._images)
+        return len(self._image_set)
 
     # TODO implement this method.
     def show_images(self) -> None:

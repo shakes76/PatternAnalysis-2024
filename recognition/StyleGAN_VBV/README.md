@@ -95,7 +95,7 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 </div>
 
 ### t-SNE Embedding
-- A t-SNE embedding visualization is generated to analyze the distribution of latent space representations. This helps in understanding how well the model captures the diversity of the training data.
+- This section of the code utilizes t-SNE (t-distributed Stochastic Neighbor Embedding) to visualize high-dimensional features extracted from brain images. Initially, PCA (Principal Component Analysis) is employed to reduce the dimensionality of the feature set while preserving variance. Subsequently, t-SNE projects these PCA-reduced features into a two-dimensional space, with the perplexity parameter set to balance local and global data structures. The resulting scatter plot displays clusters of similar images, effectively differentiating between classes, such as Alzheimer's disease and normal controls, based on their extracted features. This visualization aids in understanding the relationships and separability of the classes within the dataset.
 
 <div style="text-align: center;">
   <img src="images/tsne_visualization.png" alt="TSNE Embedding Plot for Generated Images" style="width:300px;"/>

@@ -1,6 +1,5 @@
 import torch
 import torchvision.transforms as transforms
-import torchvision.models as models
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,17 +11,12 @@ from PIL import Image
 ad_image_dir = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/saved_examples/step5/seperate_images/AD'  
 nc_image_dir = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/saved_examples/step5/seperate_images/NC' 
 
-# Load the pre-trained ResNet model
-model = models.resnet50(weights='IMAGENET1K_V1')  # Load ResNet50 model with ImageNet weights
-model.eval()  # Set to evaluation mode
-
 # Define the preprocessing transformations for the input images
 preprocess = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize imgs to 224x224
-    transforms.ToTensor(),  # Convert imgs to tensor format
+    transforms.Resize((224, 224)),  # Resize images to 224x224
+    transforms.ToTensor(),  # Convert images to tensor format
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize based on ImageNet stats
 ])
-
 
 def load_and_preprocess_images(image_dir, label):
     """ Load and preprocess images from a specified directory. """
@@ -36,10 +30,9 @@ def load_and_preprocess_images(image_dir, label):
         img_tensor = preprocess(img)  # Preprocess image
         img_tensor = img_tensor.unsqueeze(0)  # Add a batch dimension for model input
 
-        # Extract features using the pre-trained model
-        with torch.no_grad():  # Disable gradient computation for inference
-            feature = model(img_tensor)
-        features.append(feature.numpy().flatten())  # Flatten the feature tensor and append to the list
+        # Simple feature extraction: use pixel values as features
+        feature = img_tensor.numpy().flatten()  # Flatten the tensor and append to the list
+        features.append(feature)  # Append feature to the list
         labels.append(label)  # Append the label for this image
 
     return np.array(features), labels  # Return the features and labels as arrays

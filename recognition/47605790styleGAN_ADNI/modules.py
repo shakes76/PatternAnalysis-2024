@@ -52,6 +52,7 @@ class NoiseInjection(nn.Module):
     def __init__(self, channels):
         super(NoiseInjection, self).__init__()
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
+        self.noise_strength = nn.Parameter(torch.tensor(0.015))  # Learnable noise strength
     
     def forward(self, x, noise=None):
         """
@@ -64,7 +65,7 @@ class NoiseInjection(nn.Module):
         """
         if noise is None:
             noise = torch.randn(x.size(), device=x.device)
-        return x + self.weight * noise
+        return x + self.weight * noise * self.noise_strength
 
 # ModulatedConv2d: Modulated convolution with style-based scaling, controlling the convolution weights.
 class ModulatedConv2d(nn.Module):
@@ -107,10 +108,20 @@ class Generator(nn.Module):
                 nn.Upsample(scale_factor=2)
             ),
             nn.Sequential(
+                ModulatedConv2d(128, 128, 3, style_dim),  
+                NoiseInjection(128),
+                AdaIN(style_dim, 128)
+            ),
+            nn.Sequential(
                 ModulatedConv2d(128, 64, 3, style_dim),
                 NoiseInjection(64),
                 AdaIN(style_dim, 64),
                 nn.Upsample(scale_factor=2)
+            ),
+            nn.Sequential(
+                ModulatedConv2d(64, 64, 3, style_dim), 
+                NoiseInjection(64),
+                AdaIN(style_dim, 64)
             ),
             nn.Sequential(
                 ModulatedConv2d(64, 32, 3, style_dim),

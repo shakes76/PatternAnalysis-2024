@@ -77,7 +77,10 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
     
-
+    """
+    modify the following code to change the 'AD_NC/train' and 'AD_NC/test' 
+    to the actual folder that contain the AD and NC images if necessary
+    """
     train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= transform)
     test_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/test'), transform= transform)
 
@@ -106,7 +109,7 @@ if __name__ == "__main__":
         print(f"\nTesting {name} loader:")
         for images, labels in loader:
             print(f"Batch size: {len(images)}")
-            print(f"Image shape: {images[0].shape}") 
+            print(f"Image shape: {images.shape}") 
             print(f"Labels: {labels}")
             break 
 

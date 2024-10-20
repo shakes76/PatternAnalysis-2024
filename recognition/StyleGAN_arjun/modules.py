@@ -47,20 +47,19 @@ class FCBlock(nn.Module):
         self.net = nn.Sequential(
             EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
+            EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
+            EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
+            EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
+            EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
+            EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
+            EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
-            EQLinearLayer(w_dim, w_dim),
-            nn.ReLU(),
+            EQLinearLayer(z_dim, w_dim)
         )
 
     def forward(self, x):

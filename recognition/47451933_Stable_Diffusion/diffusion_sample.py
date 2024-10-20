@@ -76,16 +76,16 @@ class VAEDecoder(nn.Module):
     def __init__(self, latent_dim=256):
         super(VAEDecoder, self).__init__()
         self.decoder = nn.Sequential(
-            #nn.Linear(latent_dim, 512 * 4 * 4),  # Update for the new size
-            #nn.ReLU(),
-            #nn.Unflatten(1, (512, 4, 4)),  # Update for the new size
-            #nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1),  # 4x4 -> 8x8
-            #nn.BatchNorm2d(256),
-            #nn.ReLU(),
             nn.ConvTranspose2d(latent_dim, 128, kernel_size=4, stride=2, padding=1),  # 8x8 -> 16x16
             nn.BatchNorm2d(128),
             nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, kernel_size=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 16x16 -> 32x32
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 64, kernel_size=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1),  # 32x32 -> 64x64
@@ -101,17 +101,20 @@ class VAEEncoder(nn.Module):
         super(VAEEncoder, self).__init__()
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1),  # 64x64 -> 32x32
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 32x32 -> 16x16
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, latent_dim, kernel_size=4, stride=2, padding=1),  # 16x16 -> 8x8
             nn.BatchNorm2d(latent_dim),
             nn.ReLU(),
-            #nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # 8x8 -> 4x4
-            #nn.BatchNorm2d(512),
-            #nn.ReLU(),
-            #nn.Flatten()
         )
         self.conv_mu = nn.Conv2d(latent_dim, latent_dim, kernel_size=1)
         self.conv_logvar = nn.Conv2d(latent_dim, latent_dim, kernel_size=1)
@@ -189,22 +192,20 @@ class UNet(nn.Module):
             nn.Conv2d(128, 128, kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.Conv2d(128, latent_dim, kernel_size=3, padding=1)
+            nn.Conv2d(128, latent_dim, kernel_size=3, padding=1),
+            nn.BatchNorm2d(latent_dim),
+            nn.ReLU()
         )
 
         self.time_embedding_layer = torch.nn.Linear(32, latent_dim)
 
     def forward(self, x, labels, t):
-        # Get the label embeddings
-        #label_emb = self.label_embedding(labels).unsqueeze(-1).unsqueeze(-1)
-        # Concatenate the label embeddings with the input
-        #x = torch.cat((x, label_emb.repeat(1, 1, x.size(2), x.size(3))), dim=1)
-        t_embedding = get_timestep_embedding(t, 32).to(device)
+        t_embedding = get_timestep_embedding(t, 32).to(x.device)
         t_embedding = self.time_embedding_layer(t_embedding)
         t_embedding = t_embedding[:, :, None, None]
         
         # Pass through the encoder
-        enc1_out = self.enc1(x+ t_embedding)
+        enc1_out = self.enc1(x + t_embedding)
         enc2_out = self.enc2(enc1_out)
         enc3_out = self.enc3(enc2_out)
         
@@ -238,13 +239,13 @@ class UNet(nn.Module):
 def add_noise(x, t):
     noise = torch.randn_like(x).to(device)
     alpha_t = alphas_cumprod[t].to(x.device)
-    return x + torch.sqrt(1 - alpha_t) * noise, noise
+    return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise, noise
 
 # Reverse diffusion using the noise prediction
 def reverse_diffusion(noisy_latent, predicted_noise, t):
-    alpha_t = alphas_cumprod[t].view(-1, 1, 1, 1).to(noisy_latent.device)
-    beta_t = beta_scheduler.get_beta(t).view(-1, 1, 1, 1).to(noisy_latent.device)
-    alpha_prev = alphas_cumprod[t - 1].view(-1, 1, 1, 1).to(noisy_latent.device) if t > 0 else torch.tensor(1.0).view(-1, 1, 1, 1).to(noisy_latent.device)
+    alpha_t = alphas_cumprod[t].to(noisy_latent.device)
+    beta_t = beta_scheduler.get_beta(t).to(noisy_latent.device)
+    alpha_prev = alphas_cumprod[t - 1].to(noisy_latent.device) if t > 0 else torch.tensor(1.0).to(noisy_latent.device)
 
     # Predicted noise should be subtracted
     mean = (noisy_latent - beta_t * predicted_noise / torch.sqrt(1 - alpha_t)) / torch.sqrt(alpha_t)
@@ -265,12 +266,12 @@ unet = UNet(latent_dim=latent_dim, num_classes=num_classes).to(device)
 
 # Loss functions and optimizers
 vae_criterion = nn.MSELoss(reduction='sum')
-diffusion_criterion = nn.MSELoss(reduction='sum')
+diffusion_criterion = nn.MSELoss()
 vae_optimizer = optim.AdamW(list(vae_encoder.parameters()) + list(vae_decoder.parameters()), lr=1e-3)
 vae_scheduler = torch.optim.lr_scheduler.LinearLR(vae_optimizer, start_factor=1.0, end_factor=0.1, total_iters=50)
 
-unet_optimizer = optim.AdamW(unet.parameters(), lr=1e-5)
-unet_scheduler = torch.optim.lr_scheduler.LinearLR(vae_optimizer, start_factor=1.0, end_factor=0.1, total_iters=30)
+unet_optimizer = optim.AdamW(unet.parameters(), lr=1e-3)
+unet_scheduler = torch.optim.lr_scheduler.LinearLR(unet_optimizer, start_factor=1.0, end_factor=0.1, total_iters=50)
 
 def weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
@@ -282,7 +283,7 @@ vae_decoder.apply(weights_init)
 unet.apply(weights_init)
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 50
+num_epochs = 200
 '''for epoch in range(num_epochs):
     for images, labels in tqdm(data_loader):
         images = images.to(device)
@@ -306,7 +307,7 @@ num_epochs = 50
         vae_loss.backward()
         vae_optimizer.step()
 
-    vae_scheduler.step()
+    #vae_scheduler.step()
     print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}")
     if (epoch + 1) % 25 == 0:
         with torch.no_grad():
@@ -331,15 +332,13 @@ def generate_sample(label, model, vae_decoder, num_samples=1):
     with torch.no_grad():
         x = torch.randn(num_samples, latent_dim, 25, 25).to(device) # Ensure dimensions match the expected input size
         for t in reversed(range(num_timesteps)):
+            x, _ = add_noise(x,t)
             predicted_noise = model(x, label, t)
-            x = reverse_diffusion(x, predicted_noise, t).clamp(-1, 1)
+            x = reverse_diffusion(x, predicted_noise, t)#.clamp(-1, 1)
             output_image = vae_decoder(x)#.clamp(-1, 1)  # Clamp only the final images for proper display
-            if t in [0,1,2,3,4,5,7,8,9]:
+            if t in [0,1,2,3,4,5,7,8,9,10]:
                 output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)
 
-        
-            
-    
     return output_images
 
 
@@ -357,15 +356,15 @@ def display_sample_images(images):
 
 
 #'''
-
 # Visualize noisy images at different timesteps
-z = 0 * torch.randn(5, latent_dim, 25, 25).to(device)
-for t in [0, 2, 5, 9]:
+""" z = 0 * torch.randn(5, latent_dim, 25, 25).to(device)
+for t in [0, 20, 50, 90]:
     noisy_latent, _ = add_noise(z, t)
     generated_images = vae_decoder(noisy_latent).clamp(-1, 1)
-    display_images(generated_images, num_images=5)
+    display_images(generated_images, num_images=5) """
 
 for epoch in range(num_epochs):
+    losses = []
     for images, labels in tqdm(data_loader):
         images = images.to(device)
         labels = labels.to(device)
@@ -388,6 +387,7 @@ for epoch in range(num_epochs):
         
         # Compute diffusion loss
         diffusion_loss = diffusion_criterion(predicted_noise, noise)
+        losses.append(diffusion_loss.item())
         
         # Backpropagation for UNet
         unet_optimizer.zero_grad()
@@ -399,9 +399,9 @@ for epoch in range(num_epochs):
         #display_images(sample_images, num_images=5)
 
     unet_scheduler.step()
-    print(f"Epoch [{epoch+1}/{num_epochs}], Diffusion Loss: {diffusion_loss.item()}")
+    print(f"Epoch [{epoch+1}/{num_epochs}], Diffusion Loss: {np.mean(losses)}")
     
-    if (epoch + 1) % 10 == 0:
+    if (epoch+1) % 1 == 0:
         with torch.no_grad():
             # Reverse the diffusion process
             print(t)

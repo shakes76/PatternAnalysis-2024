@@ -3,4 +3,6 @@ data/
 preprocessed_data/
 __pycache__/
 best_model.pth
+ISIC_2020_Training_GroundTruth_v2.csv
+analysis.ipynb
 ````

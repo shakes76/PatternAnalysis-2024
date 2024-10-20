@@ -29,29 +29,30 @@ This project implements a Siamese network-based classifier for the ISIC 2020 Cha
 
 3. Environment Creation:
    ```
-   conda create -n siamese_skin python=3.9
-   conda activate siamese_skin
+   conda create -n envname python=3.8.19
+   conda activate envname
    ```
 
 4. Package Installation:
    ```
-   conda install pytorch=2.3.1 torchvision=0.18.1 torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-   conda install scikit-learn=1.5.1 matplotlib=3.9.2 seaborn=0.13.2 tqdm=4.66.5 pillow=10.4.0 pandas=2.2.2 numpy=1.26.4
+   conda install pytorch=2.1.1 torchvision=0.16.1 torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+   conda install scikit-learn=1.3.2 matplotlib=3.7.2 seaborn=0.13.2 tqdm=4.66.5 pillow=10.4.0 pandas=2.0.3 numpy=1.24.3
    ```
 
    This will install the following key dependencies:
 
-   Python: 3.9.20
-   PyTorch: 2.3.1 (with CUDA 11.8 support)
-   torchvision: 0.18.1
+   Python: 3.8.19
+   PyTorch: 2.1.1 (with CUDA 11.8 support)
+   torchvision: 0.16.1
    CUDA Toolkit: 11.8
-   scikit-learn: 1.5.1
-   matplotlib: 3.9.2
+   scikit-learn: 1.3.2
+   matplotlib: 3.7.2
    seaborn: 0.13.2
    tqdm: 4.66.5
    Pillow (PIL): 10.4.0
-   pandas: 2.2.2
-   numpy: 1.26.4
+   pandas: 2.0.3
+   numpy: 1.24.3
+   
 ## Data Preparation
 
 The ISIC 2020 dataset is known for its significant class imbalance, which can pose challenges for model training. The preprocessing script (`dataset.py`) addresses this issue and prepares the data for effective training. For starters in the csv file, we chose to focus on the 'target' column and 'isic_id' only, when consulting with dermatologists, it was said that the location of the lesion is not important at all, and hence splitting the data based on location of lesions was disregarded and instead only split by target variable. 

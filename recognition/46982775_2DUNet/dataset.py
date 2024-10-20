@@ -40,7 +40,7 @@ class ProstateDataset(Dataset):
     
         return img, mask
     
-    def img_show(self):
+    def img_show(self, start_idx: int = 0):
         """ Plots 6 of the image files, and their corresponding masks.
         
         Modified from Pytorch tutorial: 
@@ -51,16 +51,16 @@ class ProstateDataset(Dataset):
         fig = plt.figure(figsize=(8, 8))
         cols, rows = 4, 3
         count = 0
-        for idx in range(0, (cols * rows) // 2):
+        for idx in range(start_idx, start_idx + (cols * rows) // 2):
             img = self.imgs[idx]
             mask = self.masks[idx]
             count += 1
             fig.add_subplot(rows, cols, count)
-            plt.imshow(img.squeeze(), cmap="gray")
+            plt.imshow(img.squeeze())#, cmap='gray')
             plt.axis("off")
             count += 1
             fig.add_subplot(rows, cols, count)
-            plt.imshow(mask.squeeze(), cmap="gray")
+            plt.imshow(mask.squeeze()),# cmap='gray')
             plt.axis("off")
         plt.show()
 
@@ -81,6 +81,6 @@ if __name__ == "__main__":
 
     train_dataset = ProstateDataset(train_image_path, train_mask_path)
     print(len(train_dataset))
-    print(type(train_dataset))
+    print(type(train_dataset[1][0]))
     print(train_dataset[1])
-    train_dataset.img_show()
+    train_dataset.img_show(15)

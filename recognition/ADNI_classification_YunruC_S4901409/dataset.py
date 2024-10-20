@@ -73,15 +73,25 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
 
     transform = transforms.Compose([
         transforms.Resize((512, 512)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
+    
+    train_transformer = transforms.Compose([
+        transforms.Resize((512, 512)),
+        transforms.RandomRotation(5),
+        transforms.RandomHorizontalFlip(0.05),
+        transforms.RandomVerticalFlip(0.10),
+        transforms.RandomResizedCrop(size=(512, 512), scale=(1.05, 1.1)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
     
     """
     modify the following code to change the 'AD_NC/train' and 'AD_NC/test' 
     to the actual folder that contain the AD and NC images if necessary
     """
-    train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= transform)
+    train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= train_transformer)
     test_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/test'), transform= transform)
 
     train_size = int(train_split*len(train_dataset))

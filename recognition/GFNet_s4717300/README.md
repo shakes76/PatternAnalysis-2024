@@ -12,7 +12,7 @@ networks for image classification](https://arxiv.org/pdf/2107.00645)[^1] which
 is an extension of a classic vision transformer.
 
 The proposed model can correctly classify alzheimers disease with an
-accuracy of 78.2% on the test set of the ANDI dataset.
+accuracy of 78.01% on the test set of the ANDI dataset.
 
 ### ANDI Dataset background
 
@@ -166,20 +166,21 @@ All directory/file names and the number of classes are arbitrary **except** for 
 ### Hyperparameters
 After many iterations, these hyperparameters were found to be the most effective
 ```
-learning_rate  = 0.001      
-weight_decay   = 0.001
-dropout        = 0.0
-drop_path      = 0.1        # Probability of dropping an entire network path from an iteration
-batch_size     = 32
-patch_size     = 16         # Size of the chunks to split up the image in pixels
-embed_dim      = 783        # Number of dimensions in the patch embedding
-depth          = 12         # Number of global filter layers to use in the network
-ff_ratio       = 3          # Ratio of input to hidden layer size in the classification feed forward network
-epochs         = 400
+learning_rate  = 0.001         # The rate at which the model adjusts its weights with respect to the loss gradient
+weight_decay   = 0.001         # Regularization term to penalize large weights (L2 norm penalty)
+dropout        = 0.0           # Dropout probability for individual neurons during training to prevent overfitting
+drop_path      = 0.1           # Probability of dropping an entire network path (layer or branch) during training
+batch_size     = 32            # Number of samples processed before updating the model weights
+patch_size     = 16            # Size of image patches (in pixels) that will be input to the model
+embed_dim      = 783           # Number of dimensions in the embedding space for patch embeddings
+depth          = 12            # Number of layers or global filters used in the neural network
+ff_ratio       = 3             # Ratio of the hidden layer size to input layer size in the feedforward network
+epochs         = 400           # Total number of complete passes through the training dataset
 
-optimizer       = AdamW
-scheduler       = OneCycleLR
-loss_criterion  = CrossEntropyLoss
+optimizer      = AdamW          # Optimizer used to update model weights (AdamW with weight decay)
+scheduler      = OneCycleLR     # Learning rate scheduler to adjust the learning rate dynamically during training
+loss_criterion = CrossEntropyLoss  # Loss function to compute the error between predicted and target labels
+
 ```
 
 
@@ -328,11 +329,41 @@ Testing took 283.58 secs or 4.72 mins in total
 
 ## Results
 
-### Evaluation Metrics 
+### Accuracy
+![Accuracy of the model over the training period](./assets/acc.png)
+The accuracy graph seen above is the result of a large hyperparameters grid
+search and several days of training. The final model was extracted from the
+training period at epoch 320 where the accuracy peaked at 78.01%. The model was
+not trained any more past 600 epochs to ensure that training was not preventing
+others from using computation resources even though it is likely that to
+continue training would increase model accuracy.
+
+### Training Loss
+![Training loss over the training period](./assets/plot-loss.png)
+Over the 600 epoch training period, the validation loss seems quite steady and
+does not appear to show signs of divergence.
+
+### Confusion Matrix
+![Confusion Matrix](./assets/conf.png)
+The model appears to have a bias toward classifying the data as Normal Cognitive.
+
+### Global Filter visualisations
+!(Global Filter Visualisation)[./assets/global_filters.png]
+The global filters are visualised for each layer. The filters will extract
+features from each patch. Although the filters seem quite noisy, we can see
+patterns starting to emerge in the form of circular shapes.
 
 ### Model Limitations / Bottleneck
-
-### Future Improvement
+Although the model does appear to slow down after 200 epochs, I believe that
+the model can be more powerful with greater training. The model does not
+overfit at 200 epochs judging by the non-diverging loss function and the
+accuracy does seem to still trend upward despite slowing down considerably. If
+we compare our global filters to the ones published in the original GFNet
+paper, the learned filters in this model are much more noisy. Therefore I
+believe that this model can become much more performant and reach the goal of
+80% within 1000 epochs of training. Unfortunately, the resources required to
+reach this value are shared between the cohort and training the model any
+further would be inconsiderate to them.
 
 # References
 

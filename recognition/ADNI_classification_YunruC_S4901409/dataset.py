@@ -13,7 +13,6 @@ def extract_zip(zip_path, extract_to):
         print("Extraction complete.") 
 
 
-
 class ADNIDataset(Dataset):
     '''Custom dataset class inherited from pytorch dataset class.
         It is used to load and preprocess the dataset'''
@@ -59,7 +58,7 @@ class ADNIDataset(Dataset):
         count_1 = sum(1 for label in self.labels if label == 1)
         return len(self.labels), count_0, count_1
     
-def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
+def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.80):
     """ Loading the training, testing and validating dataset.
     The training and validating dataset are seperated from 
     the original train dataset"""
@@ -73,11 +72,11 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
 
     transform = transforms.Compose([
         transforms.Resize((512, 512)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
     
-    train_transformer = transforms.Compose([
+    train_transform = transforms.Compose([
         transforms.Resize((512, 512)),
         transforms.RandomRotation(5),
         transforms.RandomHorizontalFlip(0.05),
@@ -88,10 +87,10 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     ])
     
     """
-    modify the following code to change the 'AD_NC/train' and 'AD_NC/test' 
+    You can change the 'AD_NC/train' and 'AD_NC/test' 
     to the actual folder that contain the AD and NC images if necessary
     """
-    train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= train_transformer)
+    train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= train_transform)
     test_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/test'), transform= transform)
 
     train_size = int(train_split*len(train_dataset))
@@ -106,9 +105,28 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle = False, num_workers=4)
 
     return train_loader, val_loader, test_loader
+    
 
-#test whether the dataset work or not
+def count_images_in_folder(folder_path, extensions=('.jpeg', '.jpg', '.png')):
+    if not os.path.exists(folder_path):
+        print(f"Warning: Folder {folder_path} does not exist.")
+        return 0
+    
+    # Count the number of image files in the folder
+    image_count = sum(1 for file in os.listdir(folder_path) if file.lower().endswith(extensions))
+    return image_count
+
+
 if __name__ == "__main__":
+    '''
+    Testing whether the function works or not
+    You can adjust the following path to the path where the data is stored
+    '''
+    folder_path = ['data/AD_NC/train/NC', 'data/AD_NC/train/AD', 'data/AD_NC/test/NC', 'data/AD_NC/test/AD']
+    for path in folder_path:
+        num_images = count_images_in_folder(folder_path)
+        print(f"There are {num_images} images in the folder: {folder_path}")
+    
     zip_path = "ADNI_AD_NC_2D.zip"
     extract_to = "data"
 
@@ -123,8 +141,7 @@ if __name__ == "__main__":
             print(f"Image shape: {images.shape}") 
             print(f"Labels: {labels}")
             break 
-
-
+            
 
 
 

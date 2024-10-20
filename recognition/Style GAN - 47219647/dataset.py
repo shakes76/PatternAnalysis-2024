@@ -11,12 +11,14 @@ def one_hot_encode(labels, num_classes):
 
 def data_set_creator():
     augmentation_transforms = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((256, 256)),
         # No vertical flipping was applied
         transforms.RandomHorizontalFlip(),
         # To account for skewing
         transforms.RandomRotation(30),
         # Coloring was altered to stop overfitting
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor()
     ])
 

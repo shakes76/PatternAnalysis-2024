@@ -4,7 +4,12 @@ import torch.optim as optim
 from dataset import data_set_creator
 from modules import StyleGan
 
+
+
+
 def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
+    discriminator_losses = []
+    generator_losses = []
     
     # Move model to the correct device (GPU if available)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -60,8 +65,14 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
             g_loss.backward()
             optimizerG.step()
 
+            discriminator_losses.append(d_loss.item())
+            generator_losses.appen(g_loss.item())
+
         print(f"Epoch [{epoch + 1}/{epochs}], D Loss: {d_loss.item():.4f}, G Loss: {g_loss.item():.4f}")
         
         if (epoch + 1) % 5 == 0:
             model.save_checkpoint(epoch + 1, path=f"gan_checkpoint_epoch_{epoch + 1}.pth")
+        
+    return discriminator_losses, generator_losses
 
+train_gan(model = StyleGan(), dataloader= data_set_creator(), epochs= 1)

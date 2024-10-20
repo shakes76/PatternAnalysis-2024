@@ -8,9 +8,9 @@ from torch.utils.data import DataLoader
 
 class StyleGan():
 
-    def __init__(self,image_size, latent_dim, chanels, network_capacity) -> None:
+    def __init__(self, latent_dim = 512, chanels =1, network_capacity = 16) -> None:
         self.model = StyleGAN2(
-            image_size=image_size,
+            image_size=256,
             latent_dim=latent_dim,
             network_capacity= network_capacity
         )

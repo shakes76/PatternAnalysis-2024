@@ -1,0 +1,8 @@
+python==3.9
+torch==2.0
+matplotlib==3.5.1
+numpy==1.26
+nibabel==3.2.1
+scikit-image==0.19.3
+tqdm==4.65.0
+albumentations==1.2.1

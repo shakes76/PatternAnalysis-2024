@@ -1,3 +1,9 @@
+"""
+This file contains the code to train the 3D U-Net model on the training set and validate on the 
+validation set. The training loops contains validation and saving of the model every few epochs.
+A final trained version of the model is saved at the end of training.
+"""
+
 from dataset import *
 import torch
 from torch.utils.data import DataLoader
@@ -23,8 +29,7 @@ else:
     epochs = 10
     batch_size = 2
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('-c', '--count')
+
 
 # Data parameters
 batch_size = batch_size
@@ -84,10 +89,9 @@ def validate(model, data_loader):
             softmax_logits, predictions, logits = model(inputs)
             
             for i in range(n_classes):
-                dice_scores[i] += dice_score(logits[:, i, ...], one_hot_masks_3d[:, i, ...])
-
-            # batch_dice_scores = dice_score_per_channel(softmax_logits, one_hot_masks_3d)
-            # dice_scores = [dice_scores[c] + batch_dice_scores[c] for c in range(n_classes)]
+                logits = logits[:, i, ...]
+                masks = one_hot_masks_3d[:, i, ...]
+                dice_scores[i] += dice_score(logits, masks)
                 
     average_dice_scores = [score / len(data_loader) for score in dice_scores]
     print(f"Average Dice Score: {list(map(lambda x: float(x / len(data_loader)), average_dice_scores))}")
@@ -139,8 +143,6 @@ if __name__ == '__main__':
             inputs, masks, affines = data
             inputs, masks = inputs.to(device), masks.to(device)
 
-            # masks = masks.view(-1)  # [batch * l * w * h]
-            # masks = F.one_hot(masks, num_classes=6) # [batch * l * w * h, 6]
 
             one_hot_masks_3d = F.one_hot(masks, num_classes=6).permute(0, 4, 1, 2, 3)
 

@@ -5,3 +5,4 @@ questions.txt
 debug.py
 *.pth
 *.nii*
+*saves*/

@@ -1,3 +1,10 @@
+"""
+This file contains the dataset class for the 3D U-Net model. The dataset class loads the images 
+and masks from the specified path and applies the specified transforms.
+The dataset class is used in the predict.py and train.py files to load the data and create the 
+dataloaders.The train, validate, and test split is done manually per constants.
+"""
+
 import numpy as np
 import tqdm
 import nibabel as nib
@@ -78,8 +85,10 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 
 class ProstateDataset3D(Dataset):
 	def __init__(self, images_path, masks_path, mode, transforms):
-		image_names = [f.name for f in Path(images_path).iterdir() if f.is_file() and f.name.endswith(end)]
-		mask_names = [f.name for f in Path(masks_path).iterdir() if f.is_file() and f.name.endswith(end)]
+		image_names = [f.name for f in Path(images_path).iterdir() if f.is_file() and
+				  f.name.endswith(end)]
+		mask_names = [f.name for f in Path(masks_path).iterdir() if f.is_file() and
+				 f.name.endswith(end)]
 		
 		# Sort to ensure correct matching of image to mask
 		image_names.sort()
@@ -118,7 +127,8 @@ class ProstateDataset3D(Dataset):
 		loaded = 0
 		while len(self.images) < len(self.image_names):
 			raw_images = load_data_3D(self.image_names[loaded:loaded + LOAD_SIZE])
-			raw_masks, affines = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE], getAffines=True)
+			raw_masks, affines = load_data_3D(self.mask_names[loaded:loaded + LOAD_SIZE],
+									 getAffines=True)
 
 			subject = tio.Subject(
 				image=tio.ScalarImage(tensor=raw_images),

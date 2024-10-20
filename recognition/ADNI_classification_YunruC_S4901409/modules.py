@@ -7,7 +7,7 @@ https://tintn.github.io/Implementing-Vision-Transformer-from-Scratch/
 import torch
 import torch.nn as nn
 import torch.fft
-from timm.models.layers import to_2tuple
+from timm.models.layers import to_2tuple, trunc_normal_
 
 class PatchEmbed(nn.Module):
     """
@@ -136,6 +136,21 @@ class GFNet(nn.Module):
 
         #initialize the weights
         self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        """
+        m is a layer of the neural network.
+        For layer type of nn.Linear, the weights are initialized using the trunc_normal_
+        function.
+        """
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
 
     def forward_features(self, x):
         B = x.shape[0]

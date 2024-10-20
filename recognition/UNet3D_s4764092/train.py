@@ -123,5 +123,36 @@ for epoch in range(NUM_EPOCHS):
         for c in range(NUM_CLASSES):
             print(f"Epoch [{epoch + 1}/{NUM_EPOCHS}], Class {c} Validation Dice Score: {avg_dice[c].item():.4f}")
             class_val_dice_scores[c].append(avg_dice[c].item())  # Append class-specific Dice score here
+    # 每 5 个 epoch 或在最后一个 epoch 可视化一次
+    if epoch == NUM_EPOCHS - 1:
+        plt.figure(figsize=(12, 5))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, label='Training Loss')
+        plt.plot(range(1, len(val_losses) + 1), val_losses, label='Validation Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Loss on Validation set')
+        plt.legend()
+        plt.savefig(f'epoch_{epoch + 1}_training_validation_loss.png')  # 保存图像
+        plt.show()
 
+
+        plt.figure(figsize=(12, 5))
+        plt.plot(range(1, len(avg_dice_scores) + 1), avg_dice_scores, label='Average Dice Score')
+        plt.xlabel('Epoch')
+        plt.ylabel('Dice Score')
+        plt.title('Average Validation Dice Score Over Epochs')
+        plt.legend()
+        plt.savefig(f'epoch_{epoch + 1}_Validation_Dice_Score.png')
+        plt.show()
+
+        plt.figure(figsize=(6, 4))
+        for c in range(NUM_CLASSES):
+            plt.plot(range(1, len(class_val_dice_scores[c]) + 1), class_val_dice_scores[c],
+                     label=f'Class {c} Dice Score')
+        plt.xlabel('Epoch')
+        plt.ylabel('Dice Score')
+        plt.title('Class Specific Validation Dice Scores Over Epochs')
+        plt.legend()
+        plt.savefig(f'epoch_{epoch + 1}_class_specific_validation_dice_scores.png')  # 保存图像
+        plt.show()
 

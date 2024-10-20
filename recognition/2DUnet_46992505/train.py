@@ -6,7 +6,7 @@ from modules import unet_model
 from dataset import load_data_2D  
 
 #Define dataset paths
-data_dir = r'C:\\Users\\lukey\\OneDrive\\Documents\\Uni\\Comp3710\\Project\\PatternAnalysis-2024\\HipMRI_study_keras_slices_data'
+data_dir = r'//home//groups//comp3710//HipMRI_Study_open//keras_slices_data'
 train_images = os.path.join(data_dir, 'keras_slices_train')
 train_labels = os.path.join(data_dir, 'keras_slices_seg_train')
 
@@ -66,11 +66,17 @@ y_val = np.expand_dims(y_val, axis=-1)
 X_test = np.expand_dims(X_test, axis=-1)
 y_test = np.expand_dims(y_test, axis=-1)
 
+#Normalise data
+X_train = X_train / 255.0
+X_val = X_val / 255.0
+X_test = X_test / 255.0
+y_train = np.clip(y_train, 0, 1)
+y_val = np.clip(y_val, 0, 1)
+y_test = np.clip(y_test, 0, 1)
+
 #Initialise the U-Net model
 model = unet_model(input_size=(256, 128, 1))
 
-#Define a checkpoint to save the best model during training
-checkpoint = ModelCheckpoint('unet_best_model.h5', monitor='val_loss', save_best_only=True, mode='min')
 
 #Train the model and show progress during training
 history = model.fit(
@@ -78,7 +84,6 @@ history = model.fit(
     validation_data=(X_val, y_val),
     epochs=1,
     batch_size=8,
-    callbacks=[checkpoint],
     verbose=1  
 )
 
@@ -92,7 +97,7 @@ plt.legend()
 plt.show()
 
 #Save final model
-model.save('unet_final_model.h5')
+model.save('unet_final_model.keras')
 
 #Evaluate the model on test data
 test_loss, test_acc = model.evaluate(X_test, y_test)

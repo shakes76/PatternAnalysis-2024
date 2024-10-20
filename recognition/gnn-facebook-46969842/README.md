@@ -1,5 +1,21 @@
-Initial README.md File
+#  Multi-layer graph neural network (GNN) for semi supervised multi-class node classification using Facebook Large Page-Page Network Data
 
+**Table of Contents**
+- [Model and Problem Description](#model-and-problem-description)
+- [Model Architecture](#model-architecture)
+- [Model Usage](#model-usage)
+- [Results](#results)
+- [References](#references)
+
+## Model and Problem Description
+
+## Model Architecture
+
+## Model Usage
+
+## Results
+
+## References
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Training
 Epoch [10/400], Loss: 1.26323, Validation Loss: 1.23775

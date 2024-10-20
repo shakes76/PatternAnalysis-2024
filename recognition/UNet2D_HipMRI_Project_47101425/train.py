@@ -1,73 +1,52 @@
 from modules import UNet
 from dataset import MedicalImageDataset
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torch.optim.lr_scheduler import StepLR
+import tensorflow as tf
 
-# Define the device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    print(f"Num GPUs Available: {len(gpus)}")
+else:
+    print("No GPUs available, using CPU.")
 
-# Dice coefficient function
-def dice_coefficient(pred, target, epsilon=1e-6):
-    pred = pred.view(-1)
-    target = target.view(-1)
-    intersection = (pred * target).sum()
-    dice = (2. * intersection + epsilon) / (pred.sum() + target.sum() + epsilon)
+
+def dice_coefficient(y_true, y_pred, epsilon=1e-6):
+    intersection = tf.reduce_sum(y_true * y_pred)
+    dice = (2. * intersection + epsilon) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) + epsilon)
     return dice
 
-# Training loop
-def train_model(model, train_loader, criterion, optimizer, scheduler, num_epochs=50):
-    model.train()
+def train_model(model, train_loader, criterion, optimizer, num_epochs=50):
+    model.compile(optimizer=optimizer, loss=criterion, metrics=[dice_coefficient])
     print("> Training")
 
     for epoch in range(num_epochs):
+        print(f"Epoch {epoch + 1}/{num_epochs}")
+
+        # Reset the metrics at the start of the epoch
         running_loss = 0.0
         running_dice = 0.0
+
         for i, (images, labels) in enumerate(train_loader):
-            images = images.to(device)
-            labels = labels.to(device)
-
-            outputs = model(images)
-            outputs = torch.sigmoid(outputs)  # Sigmoid for BCELoss
-            loss = criterion(outputs, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-
-            dice_score = dice_coefficient(outputs, labels)
-            running_dice += dice_score.item()
+            # Perform a training step
+            loss, dice_score = model.train_on_batch(images, labels)
+            running_loss += loss
+            running_dice += dice_score
 
             if (i + 1) % 100 == 0:
-                print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.5f}, Dice: {dice_score:.5f}")
-
-        scheduler.step()
+                print(f"Step [{i+1}/{len(train_loader)}], Loss: {loss:.5f}, Dice: {dice_score:.5f}")
 
         avg_loss = running_loss / len(train_loader)
         avg_dice = running_dice / len(train_loader)
-        print(f'Epoch [{epoch+1}/{num_epochs}], Average Loss: {avg_loss:.5f}, Average Dice: {avg_dice:.5f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Average Loss: {avg_loss:.5f}, Average Dice: {avg_dice:.5f}')
 
+input_dims = (256, 144, 1) 
+model = UNet(input_dims=input_dims)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.001) 
+criterion = tf.keras.losses.BinaryCrossentropy()
 
-# Initialize model, criterion, optimizer, and scheduler
-model = UNet().to(device)
+image_dir = "C:/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/HipMRI_study_keras_slices_data/keras_slices_train"
+train_dataset = MedicalImageDataset(image_dir=image_dir, normImage=True, batch_size=8, shuffle=True)
+dataset = train_dataset.get_dataset()
 
-# Dataset
-image_dir = r'HipMRI_study_keras_slices_data/keras_slices_seg_train'
-train_dataset = MedicalImageDataset(image_dir=image_dir, normImage=True, load_type='2D')
-train_loader = DataLoader(dataset=train_dataset, batch_size=8, shuffle=True, num_workers=4)
-
-# Loss, optimizer, and learning rate scheduler
-criterion = nn.BCELoss()  # Or CrossEntropyLoss for multi-class segmentation
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
-
-# Train the model
-train_model(model, train_loader, criterion, optimizer, scheduler, num_epochs=50)
-
-# Save the trained model
-save_path = './model.pth'
-torch.save(model.state_dict(), save_path)
+train_model(model, dataset, criterion, optimizer, num_epochs=1)
+model.summary()
+model.save('unet_model', save_format='tf')

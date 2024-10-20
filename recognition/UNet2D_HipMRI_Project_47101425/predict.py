@@ -13,7 +13,7 @@ model.load_state_dict(torch.load('./model.pth'))  # Replace with your model's pa
 model.eval()  # Set the model to evaluation mode
 
 # Define test loader
-test_image_dir = 'path_to_your_test_image_dir'  # Replace with the directory containing your test images
+test_image_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/HipMRI_study_keras_slices_data/keras_slices_seg_test"  # Replace with the directory containing your test images
 test_dataset = MedicalImageDataset(image_dir=test_image_dir, normImage=True, load_type='2D')
 test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False, num_workers=4)
 

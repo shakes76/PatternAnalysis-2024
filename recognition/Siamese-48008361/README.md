@@ -35,10 +35,23 @@ This project implements a Siamese network-based classifier for the ISIC 2020 Cha
 
 4. Package Installation:
    ```
-   conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-   conda install scikit-learn matplotlib seaborn tqdm pillow pandas shutil
+   conda install pytorch=2.3.1 torchvision=0.18.1 torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+   conda install scikit-learn=1.5.1 matplotlib=3.9.2 seaborn=0.13.2 tqdm=4.66.5 pillow=10.4.0 pandas=2.2.2 numpy=1.26.4
    ```
 
+   This will install the following key dependencies:
+
+   Python: 3.9.20
+   PyTorch: 2.3.1 (with CUDA 11.8 support)
+   torchvision: 0.18.1
+   CUDA Toolkit: 11.8
+   scikit-learn: 1.5.1
+   matplotlib: 3.9.2
+   seaborn: 0.13.2
+   tqdm: 4.66.5
+   Pillow (PIL): 10.4.0
+   pandas: 2.2.2
+   numpy: 1.26.4
 ## Data Preparation
 
 The ISIC 2020 dataset is known for its significant class imbalance, which can pose challenges for model training. The preprocessing script (`dataset.py`) addresses this issue and prepares the data for effective training. For starters in the csv file, we chose to focus on the 'target' column and 'isic_id' only, when consulting with dermatologists, it was said that the location of the lesion is not important at all, and hence splitting the data based on location of lesions was disregarded and instead only split by target variable. 
@@ -110,7 +123,7 @@ Siamese network structure:
 
    *Image 1: ResNet50 Architecture (Rastogi, 2022)*
    ![alt text](graphs/resnet50.png)
-   - ResNet50 backbone (pre-trained on ImageNet) and layers are unfrozen
+   - ResNet50 backbone (pre-trained on ImageNet) and layers are unfrozen. Other networks such as Inception-v3 and efficientnet-b0 were also tested, but ResNet50 was chosen as it provided the best results.
    - Global Average Pooling layer (AveragePool2d with fixed 1x1 output dimension) at end, but 2x2 max pooling layer used between layers
    - Output: 2048-dimensional feature vector
 
@@ -213,7 +226,7 @@ Analysis:
 - False Negatives: 13, True Negatives: 4991
 - High sensitivity to malignant cases, with a tendency towards false positives
 - This approach aligns with clinical preference for minimizing missed malignancies
-- The high number of false positives for benign cases is done on purpose, this was done because it is safer to classify a false positive as malignant than a false negative as malignant if a medical practioner or patient were to use this model. Ultimately the final call is up to the dermatologist, and the model is only a tool to assist in the diagnosis. Needless to say the model does achieve 76% accuracy for benign cases, and 88% accuracy for malignant cases, which is above the 80% accuracy goal set.
+- The high number of false positives for benign cases is done on purpose, this was done because it is safer to classify a false positive as malignant than a false negative as malignant if a medical practioner or patient were to use this model. Ultimately the final call is up to the dermatologist, and the model is only a tool to assist in the diagnosis. Needless to say the model does achieve 76% accuracy for benign cases, and 88% accuracy for malignant cases. When averaging the accuracies (76 + 82 / 2) the average accuracy is 82.5, which is above the 80% accuracy goal set.
 ### ROC Curve
 *Figure 2: Receiver Operating Characteristic Curve of Siamese Network*
 ![alt text](graphs/roc_curve.png)
@@ -238,7 +251,7 @@ Analysis:
 ### t-SNE Visualization of Embeddings
 *Figure 4: t-SNE plot of embeddings from Siamese Network*
 ![alt text](graphs/tsne_plotv2.png)
-
+Red represents malignant cases, blue represents benign cases.
 Analysis:
 - Clear clustering of benign and malignant cases
 - Some overlap indicates areas of uncertainty or shared characteristics
@@ -262,15 +275,21 @@ Based on results and dermatologist consultations:
 
 1. **Temporal Analysis**: If this were to be deployed into the healthcare system, then implementing it would be necessary to modify the implementation of the Siamese architecture to compare lesion images over time, emphasizing size and appearance changes as key malignancy indicators. This is the single most important factor when diagnosing skin cancer, when talking to dermatologists they do not diagnose a lesion as malignant or benign based on a single image, they need to see the evolution of the lesion over time.
 
-2. Multi-modal data integration (patient metadata)
+2. Perhaps a more complex model could be used, such as a transformer model, which has been shown to be effective in image classification tasks. However since the model was overfitting the transformer model would have to be carefully implemented to prevent overfitting.
 
-3. Attention mechanisms for focusing on relevant image regions
+3. Experiment with albumenations, a more advanced augmentation library that can be used to augment the images in a more sophisticated way, this could potentially improve the model's performance and improve generalization.
 
-4. Interpretability methods (e.g., Grad-CAM) for decision visualization
+4. Attention mechanisms for focusing on relevant image regions, particularly for larger images where the lesion may not be centered. This would be useful for larger images where the lesion is not centered, and the model may not be able to focus on the lesion.
 
-5. Clinical validation through real-world trials
+5. Consider using segmentation models to identify the lesion in the image, and then use the lesion as the input to the model. This would allow the model to focus on the lesion and ignore the background, which could potentially improve the model's performance.This is particularly evident as lots of images had hair obstructing the lesion, and the model could potentially focus on the hair instead of the lesion.
 
-6. Using ensemble methods to combine multiple models for improved performance, or considering simpler models to reduce overfitting
+6. Interpretability methods (e.g., Grad-CAM) for decision visualization, providing insights into the model's classification rationale. This would be useful for the dermatologist to understand why the model classified the image as malignant or benign.
+
+7. Using ensemble methods to combine multiple models for improved performance, or considering simpler models to reduce overfitting. This can be done by using simpler ensembles such as a combination of resnet18 and efficientnet-b0.
+
+8. Although weighted loss functions such as Focal Loss were experimented with, it was not used in the final model, however this could be used to improve the model's performance in conjunction with albumenations.\
+
+9. Certain solutions combined both the 2019 and 2020 ISIC datasets, this could be done to improve the model's performance, however this was not done in this project as the goal was to achieve 80% accuracy on the 2020 dataset.
 
 ## References
 
@@ -285,6 +304,8 @@ Based on results and dermatologist consultations:
 9. PyTorch. (2023). PyTorch. Pytorch.org. https://pytorch.org/
 10. Sarıgöz, Y. (2022, March 25). Triplet Loss — Advanced Intro. Medium. https://towardsdatascience.com/triplet-loss-advanced-intro-49a07b7d8905
 11. Rastogi, A. (2022, March 14). ResNet50. Medium. https://blog.devgenius.io/resnet50-6b42934db431
+12. Dr. Nooralddin Al-Saffi, Director of Medicine in the Gold Coast University Hospital and Robina Hospital (2024, October 5th). Personal Communication.
+13. Dr. Samaher Al-Furaiji (2024, October 5th). Personal Communication.
 
 ‌
 

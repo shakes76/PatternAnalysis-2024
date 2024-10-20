@@ -235,7 +235,8 @@ def main():
     classifier_loss = nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate)
     scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, verbose=True)
-    scaler = GradScaler()  # For mixed precision training
+    # Gradient scaler for mixed precision training
+    scaler = GradScaler()
 
     # Lists to store metrics for each epoch
     train_losses, val_losses = [], []

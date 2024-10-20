@@ -99,10 +99,11 @@ class ISIC2020Dataset(Dataset):
         if mode == 'train':
             # Oversample malignant class in training set
             if oversample_factor is None:
-                # Calculate oversample_factor to achieve desired balance (e.g., 60% benign, 40% malignant)
+                # Calculate oversample_factor to achieve desired balance (e.g., 50% benign, 50% malignant)
                 benign_count = len([x for x in train_images if x[1] == 0])
                 malignant_count = len([x for x in train_images if x[1] == 1])
-                desired_malignant_count = int(benign_count * (50 / 50))  # Adjust the ratio as needed
+                # Ratio can be adjusted here, currently set to 50/50
+                desired_malignant_count = int(benign_count * (50 / 50))
                 oversample_factor = max(desired_malignant_count // malignant_count, 1)
             self.images = self.oversample_minority_class(train_images, oversample_factor)
         else:
@@ -208,7 +209,8 @@ class ISIC2020Dataset(Dataset):
             return image
         except Exception as e:
             logging.error(f"Error loading image {img_path}: {e}")
-            return Image.new('RGB', (224, 224), color='gray')  # Return a blank image in case of error
+            # Return a blank image in case of error
+            return Image.new('RGB', (224, 224), color='gray')
 
 class BalancedBatchSampler(Sampler):
     """
@@ -308,7 +310,7 @@ if __name__ == '__main__':
     img_dir = 'data/train-image/image'
     output_dir = 'preprocessed_data'
     
-    # Uncomment the following line if you need to preprocess the dataset (do it in the first run only)
+    # You can comment the following line after the first run, but will not be necessary
     preprocess_dataset(csv_file, img_dir, output_dir)
     
     data_dir = 'preprocessed_data'

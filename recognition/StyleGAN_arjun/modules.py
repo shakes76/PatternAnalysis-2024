@@ -250,74 +250,64 @@ class DiscriminatorBlock(nn.Module):
     """
     def __init__(self, in_channels, out_channels, downsample=True) -> None:
         super(DiscriminatorBlock, self).__init__()
-        self.conv1 = EQConv2d(in_channels,
-            in_channels, 3, padding=1)
-        self.conv2 = EQConv2d(in_channels,
-            out_channels, 3, padding=1)
+        self.residual = nn.Sequential(
+            nn.AvgPool2d(kernel_size=2, stride=2), # down sampling using avg pool
+            EQConv2d(in_channels, out_channels, kernel_size=1)
+        )
+
+        self.block = nn.Sequential(
+            EQConv2d(in_channels, in_channels, kernel_size=3, padding=1),
+            nn.LeakyReLU(0.2, True),
+            EQConv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.LeakyReLU(0.2, True),
+        )
+
+        self.down_sample = nn.AvgPool2d(
+            kernel_size=2, stride=2
+        )  # down sampling using avg pool
+
+        self.scale = 1 / math.sqrt(2)
         self.downsample = downsample
 
     def forward(self, x):
-        x = F.leaky_relu(self.conv1(x), 0.2)
-        x = F.leaky_relu(self.conv2(x), 0.2)
-        if self.downsample:
-            x = F.avg_pool2d(x, 2)
+        residual = self.residual(x)
 
-        return x
+        x = self.block(x)
+        x = self.down_sample(x)
 
-class MinibatchStdDev(nn.Module):
-    """
-    Minibatch Standard Deviation Layer
-    """
-    def __init__(self):
-        super(MinibatchStdDev, self).__init__()
-
-    def forward(self, x):
-        batch_size, _, height, width = x.shape
-        std = torch.std(x, dim=0, unbiased=False)
-        mean_std = torch.mean(std)
-        mean_std = mean_std.expand((batch_size, 1, height, width))
-        return torch.cat([x, mean_std], dim=1)
+        return (x + residual) * self.scale
 
 class Discriminator(nn.Module):
     """
     Discriminator Network - ProGAN
     """
-    def __init__(self, image_size, channels_base=32, max_channels=512) -> None:
+    def __init__(self, num_layers, channels_base=64, max_channels=256) -> None:
         super(Discriminator, self).__init__()
-        self.image_size = image_size
-        num_layers = int(math.log2(image_size)) - 1
+        features = [min(max_channels, channels_base * (2 ** i)) for i in range(num_layers - 1)]
 
-        # Layer to convert image from RGB
         self.from_rgb = nn.Sequential(
             EQConv2d(3, channels_base, 1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, True),
         )
+        n_blocks = len(features) - 1
+        blocks = [DiscriminatorBlock(features[i], features[i + 1]) for i in range(n_blocks)]
+        self.blocks = nn.Sequential(*blocks)
 
-        # Discriminator Blocks
-        self.blocks = nn.ModuleList()
-        in_channels = channels_base
-        for i in range(num_layers):
-            out_channels = min(in_channels * 2, max_channels)
-            self.blocks.append(DiscriminatorBlock(in_channels, out_channels))
-            in_channels = out_channels
+        final_features = features[-1] + 1
+        self.conv = EQConv2d(final_features, final_features, 3)
+        self.final = EQLinearLayer(2 * 2 * final_features, 1)
 
-        # Final layers
-        self.minibatch_stddev = MinibatchStdDev()
-        self.conv = EQConv2d(in_channels + 1, in_channels, 3, padding=1)
-        self.fc = EQLinearLayer(in_channels * 4 * 4, in_channels)
-        self.output = EQLinearLayer(in_channels, 1)
-
+    def minibatch_std(self, x):
+        batch_statistics = (
+            torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
+        )
+        return torch.cat([x, batch_statistics], dim=1)
 
     def forward(self, x):
         x = self.from_rgb(x)
+        x = self.blocks(x)
 
-        for block in self.blocks:
-            x = block(x)
-
-        x = self.minibatch_stddev(x)
-        x = F.leaky_relu(self.conv(x), 0.2)
-        x = x.view(x.shape[0], -1)
-        x = F.leaky_relu(self.fc(x), 0.2)
-        x = self.output(x)
-
-        return x
+        x = self.minibatch_std(x)
+        x = self.conv(x)
+        x = x.reshape(x.shape[0], -1)
+        return self.final(x)

@@ -55,11 +55,11 @@ class StyleGan():
         ).to(self.device)
         self.chanels = chanels
     
-    def get_generator(self, noise):
-        return self.model.G(noise)
+    def get_generator(self):
+        return self.model.G
 
-    def get_discriminator(self, image):
-        return self.model.D(image)
+    def get_discriminator(self):
+        return self.model.D
     
     def get_style_vector(self):
         return self.model.SE

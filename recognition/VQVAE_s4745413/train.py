@@ -59,6 +59,20 @@ def loss_fn(recon_loss, img, embed_loss):
     total_loss = bce + embed_loss
     return total_loss
 
+# Using Variance for normalisation
+mean = 0.0
+mean_sq = 0.0
+count = 0
+
+for idx, data in enumerate(training_set):
+    mean += data.sum()
+    mean_sq += (data ** 2).sum()
+    count += np.prod(data.shape)
+
+total_mean = mean / count
+total_var = (mean_sq / count) - (total_mean ** 2)
+data_var = float(total_var.item())
+
 # Training
 for epoch in range(num_epochs):
     model.train()
@@ -69,16 +83,33 @@ for epoch in range(num_epochs):
         scalar_loss, x_hat, scalar_metric = model(batch)
         # print(f"OUTPUT OF MODEL(BATCH): {x_hat}")
 
-        ssim_loss = 1 - ssim(batch, x_hat, data_range=1, size_average=True)
-        recon_loss = torch.nn.functional.mse_loss(batch, x_hat)
-        loss = 0.5 * recon_loss + 0.5 * ssim_loss
+        # ssim_loss = 1 - ssim(batch, x_hat, data_range=1, size_average=True)
+        recon_loss = torch.nn.functional.mse_loss(batch, x_hat) / data_var # normalise loss
+        loss = recon_loss + scalar_loss
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item()
 
-    train_loss /= len(training_set)
-    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}, SSIM: {ssim_loss: .4f}")
+    avg_train_loss = train_loss / len(training_set)
+
+    # Validation
+    model.eval()
+    val_loss = 0
+    val_ssim = []
+    with torch.no_grad():
+        for batch in validation_set:
+            batch = batch.to(device)
+            scalar_loss, x_hat, scalar_metric = model(batch)
+            recon_loss = torch.nn.functional.mse_loss(batch, x_hat) / data_var
+            loss = recon_loss + scalar_loss
+            val_loss += loss.item()
+
+            ssim_loss = ssim(batch, x_hat, data_range=1.0)
+            val_ssim.append(ssim_loss.item())
+    avg_validation_loss = val_loss / len(validation_set)
+    avg_ssim = np.mean(val_ssim)
+    print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_validation_loss: .4f},  SSIM: {avg_ssim: .4f}")
 # Function to save images
 def save_images(tensor_images, save_dir, prefix='recon', num_samples=10):
     # Make sure to clamp the images to the range [0, 1]

@@ -1,72 +1,63 @@
+import os
 import numpy as np
 import nibabel as nib
-from tqdm import tqdm
 import matplotlib.pyplot as plt
+import glob
 
-def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
-    channels = np.unique(arr)
-    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
-    for c in channels:
-        c = int(c)
-        res[..., c:c + 1][arr == c] = 1
+# Define the paths to your image and label directories
+image_dir = r'D:\final\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon'
+label_dir = r'D:\final\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon'
 
-    return res
 
-# load medical image functions
-def load_data_2D(
-    imageNames,
-    normImage=False,
-    categorical=False,
-    dtype=np.float32,
-    getAffines=False,
-    early_stop=False
-):
-    '''
-    Load medical image data from names, cases list provided into a list for each.
 
-    This function pre-allocates 4D arrays for conv2d to avoid excessive memory usage.
+# Get lists of image and label files
+image_files = sorted(glob.glob(os.path.join(image_dir, '*.nii.gz')))
+label_files = sorted(glob.glob(os.path.join(label_dir, '*.nii.gz')))
 
-    normImage : bool (normalize the image 0.0 -1.0)
-    early_stop : Stop loading prematurely, leaves arrays mostly empty, for quick loading and testing scripts.
-    '''
-    affines = []
+# Ensure correspondence
+assert len(image_files) == len(label_files), "Mismatch in number of images and labels."
 
-    # get fixed size
-    num = len(imageNames)
-    first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
-    if len(first_case.shape) == 3:
-        first_case = first_case[:, :, 0]  # sometimes extra dims, remove
-    if categorical:
-        first_case = to_channels(first_case, dtype=dtype)
-        rows, cols, channels = first_case.shape
-        images = np.zeros((num, rows, cols, channels), dtype=dtype)
-    else:
-        rows, cols = first_case.shape
-        images = np.zeros((num, rows, cols), dtype=dtype)
+# Select the first image and label
+image_file = image_files[0]
+label_file = label_files[0]
 
-    for i, inName in enumerate(tqdm(imageNames)):
-        niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged')  # read disk only
-        affine = niftiImage.affine
-        if len(inImage.shape) == 3:
-            inImage = inImage[:, :, 0]  # sometimes extra dims in HipMRI_study data
-        inImage = inImage.astype(dtype)
-        if normImage:
-            # inImage = inImage / np.linalg.norm(inImage)
-            # inImage = 255. * inImage / inImage.max()
-            inImage = (inImage - inImage.mean()) / inImage.std()
-        if categorical:
-            inImage = to_channels(inImage, dtype=dtype)
-            images[i, :, :, :] = inImage
-        else:
-            images[i, :, :] = inImage
+print(f"Selected Image File: {os.path.basename(image_file)}")
+print(f"Selected Label File: {os.path.basename(label_file)}")
 
-        affines.append(affine)
-        if i > 20 and early_stop:
-            break
+# Load the image
+image_nib = nib.load(image_file)
+image_data = image_nib.get_fdata()
 
-    if getAffines:
-        return images, affines
-    else:
-        return images
+# Load the label
+label_nib = nib.load(label_file)
+label_data = label_nib.get_fdata()
 
+# Check shapes
+print(f"Image shape: {image_data.shape}")
+print(f"Label shape: {label_data.shape}")
+
+
+# Choose a slice index (e.g., middle slice)
+slice_index = image_data.shape[2] // 2
+
+# Extract the slice
+image_slice = image_data[:, :, slice_index]
+label_slice = label_data[:, :, slice_index]
+
+# Plot the image and label
+plt.figure(figsize=(12, 6))
+
+# Image slice
+plt.subplot(1, 2, 1)
+plt.imshow(image_slice.T, cmap='gray', origin='lower')
+plt.title('MRI Image Slice')
+plt.axis('off')
+
+# Image with label overlay
+plt.subplot(1, 2, 2)
+plt.imshow(image_slice.T, cmap='gray', origin='lower')
+plt.imshow(label_slice.T, cmap='jet', alpha=0.5, origin='lower')
+plt.title('Image with Label Overlay')
+plt.axis('off')
+
+plt.show()

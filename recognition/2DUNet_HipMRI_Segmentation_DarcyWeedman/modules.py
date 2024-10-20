@@ -10,8 +10,18 @@ Semester 2, 2024
 import torch
 import torch.nn as nn
 
+
 class DoubleConv(nn.Module):
-    """(Conv2d => ReLU) * 2"""
+    """Performs two consecutive convolution operations followed by ReLU activations.
+
+    This module applies two consecutive 2D convolutions, each followed by batch normalization
+    and ReLU activation.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+    """
+
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
@@ -24,9 +34,30 @@ class DoubleConv(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Forward pass of the DoubleConv module.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output after double convolution.
+        """
         return self.double_conv(x)
 
 class UNet(nn.Module):
+    """
+    A 2D UNet implementation for image segmentation.
+
+    This UNet architecture consists of an encoder path with two downsampling steps,
+    followed by a decoder path with two upsampling steps. Skip connections are used
+    to concatenate features from the encoder to the decoder.
+
+    Args:
+        n_channels (int, optional): Number of input channels. Defaults to 1.
+        n_classes (int, optional): Number of output classes. Defaults to 1.
+    """
+
     def __init__(self, n_channels=1, n_classes=1):
         super(UNet, self).__init__()
         self.n_channels = n_channels
@@ -44,6 +75,15 @@ class UNet(nn.Module):
         self.outc = nn.Conv2d(64, n_classes, kernel_size=1)
 
     def forward(self, x):
+        """
+        Forward pass of the UNet model.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape [B, n_channels, H, W].
+
+        Returns:
+            torch.Tensor: Output logits of shape [B, n_classes, H, W].
+        """
         x1 = self.inc(x)          # [B, 64, H, W]
         x2 = self.down1(x1)       # [B, 64, H/2, W/2]
         x3 = self.conv1(x2)       # [B, 128, H/2, W/2]

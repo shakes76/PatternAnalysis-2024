@@ -6,7 +6,6 @@ from modules import StyleGan
 
 
 
-
 def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
     discriminator_losses = []
     generator_losses = []

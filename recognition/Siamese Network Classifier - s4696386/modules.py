@@ -8,10 +8,11 @@ class SiameseNetwork(torch.nn.Module):
         super(SiameseNetwork, self).__init__(*args, **kwargs)
         
         self.loss_criterion = torch.nn.BCELoss()
-        self._dropout = 0.1
+        self._dropout = 0.3
         
         # allowed under https://edstem.org/au/courses/18266/discussion/2269791
-        self.resnet = torchvision.models.resnet18(weights=None)
+        self.resnet = torchvision.models.resnet34(weights=torchvision.models.ResNet34_Weights.IMAGENET1K_V1)
+
 
         self.fc_in_features = self.resnet.fc.in_features
         
@@ -20,9 +21,11 @@ class SiameseNetwork(torch.nn.Module):
 
         # add linear layers to compare between the features of the two images
         self.fc = torch.nn.Sequential(
-            torch.nn.Linear(self.fc_in_features * 2, 512),
+            torch.nn.Linear(self.fc_in_features * 2, 1042),
             torch.nn.ReLU(inplace=True),
             torch.nn.Dropout(self._dropout),
+            torch.nn.Linear(1042, 512),
+            torch.nn.ReLU(inplace=True),
             torch.nn.Linear(512, 256),
             torch.nn.ReLU(inplace=True),
             torch.nn.Linear(256, 1),
@@ -31,7 +34,6 @@ class SiameseNetwork(torch.nn.Module):
         self.sigmoid = torch.nn.Sigmoid()
 
         # initialize the weights
-        self.resnet.apply(self.init_weights)
         self.fc.apply(self.init_weights)
         
     def init_weights(self, m):

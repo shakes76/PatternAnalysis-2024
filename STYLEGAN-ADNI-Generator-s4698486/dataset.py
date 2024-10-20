@@ -38,8 +38,13 @@ def get_data(data, batchSize):
             transforms.ToTensor(),
             transforms.RandomVerticalFlip(p=0.5), # Augments data by randomly flipping horizontally 50% of the time - minimises overfitting.
             transforms.Grayscale(), # Converts images to grayscale if they are considered RGB.
+            transforms.Resize((image_height, image_width), interpolation=transforms.InterpolationMode.BICUBIC), # BICUBIC is better than bilinear (usual interpolation method)
+                                                                                                                # for preserving fine details in images, and minimising 
+                                                                                                                # artifacts - at the cost of higher computation time. This is
+                                                                                                                # a worthwhile trade, as image quality with bilinear isn't good
+                                                                                                                # enough
             transforms.Normalize(mean=[0.5], std=[0.5])] # Normalises pixel data so that it is in the [0, 1] range instead of [0, 255]. Allows for tensor operations
-                                                         # to run more smoothly.
+                                                         # to run more smoothly.                                 
         )
 
     dataset = datasets.ImageFolder(root=data, transform=transform)

@@ -84,7 +84,7 @@ This script performs the following steps:
    - This balance is important for preventing bias in the model's predictions
 
 4. **Data Augmentation Pipeline**:
-   - Sets up on-the-fly data augmentation for the training set
+   - Sets up in place data augmentation for the training set
    - Augmentations include:
      - Random horizontal and vertical flips
      - Random rotations (up to 10 degrees)

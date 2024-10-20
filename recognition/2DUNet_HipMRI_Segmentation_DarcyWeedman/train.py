@@ -263,59 +263,45 @@ def train_model(model: nn.Module,
     print(f"Training complete. Best Dice Coefficient: {best_dice:.4f}")
 
 
-# Visualization Function
-def visualize_predictions(model: nn.Module, 
-                          dataset: HipMRIDataset, 
-                          device: torch.device, 
-                          num_samples: int = 5, 
-                          save_dir: str = 'visualizations') -> None:
+def visualize_predictions(model, loader, device, num_classes, save_dir='predictions'):
     """
-    Visualize model predictions alongside ground truth masks.
-    
-    Args:
-        model (nn.Module): Trained model.
-        dataset (HipMRIDataset): Dataset to sample from.
-        device (torch.device): Device to perform computations on.
-        num_samples (int): Number of samples to visualize.
-        save_dir (str): Directory to save visualization images.
+    Visualize model predictions alongside ground truth masks for multi-class segmentation.
     """
     os.makedirs(save_dir, exist_ok=True)
     model.eval()
-    
-    for i in range(num_samples):
-        image, mask = dataset[i]
-        image = image.unsqueeze(0).to(device)
-        mask = mask.unsqueeze(0).to(device)
-        
-        with torch.no_grad():
-            output = model(image)
-            preds = torch.sigmoid(output)
-            preds = (preds > 0.5).float()
-        
-        image_np = image.cpu().numpy().squeeze()
-        mask_np = mask.cpu().numpy().squeeze()
-        preds_np = preds.cpu().numpy().squeeze()
-        
-        plt.figure(figsize=(15, 5))
-        
-        plt.subplot(1, 3, 1)
-        plt.imshow(image_np, cmap='gray')
-        plt.title('Image')
-        plt.axis('off')
-        
-        plt.subplot(1, 3, 2)
-        plt.imshow(mask_np, cmap='gray')
-        plt.title('Ground Truth Mask')
-        plt.axis('off')
-        
-        plt.subplot(1, 3, 3)
-        plt.imshow(preds_np, cmap='gray')
-        plt.title('Predicted Mask')
-        plt.axis('off')
-        
-        plt.savefig(os.path.join(save_dir, f'sample_{i}.png'))
-        plt.close()
-        print(f"Saved visualization for sample {i} as 'sample_{i}.png'")
+    with torch.no_grad():
+        for idx, (images, masks) in enumerate(loader):
+            images = images.to(device)
+            masks = masks.to(device)
+            outputs = model(images)
+            preds = outputs.argmax(dim=1)
+
+            for i in range(images.size(0)):
+                img = images[i].cpu().squeeze().numpy()
+                mask = masks[i].cpu().squeeze().numpy()
+                pred = preds[i].cpu().numpy()
+
+                plt.figure(figsize=(12, 4))
+                plt.subplot(1, 3, 1)
+                plt.imshow(img, cmap='gray')
+                plt.title('Image')
+                plt.axis('off')
+
+                plt.subplot(1, 3, 2)
+                plt.imshow(mask, cmap='nipy_spectral', vmin=0, vmax=num_classes-1)
+                plt.title('Ground Truth')
+                plt.axis('off')
+
+                plt.subplot(1, 3, 3)
+                plt.imshow(pred, cmap='nipy_spectral', vmin=0, vmax=num_classes-1)
+                plt.title('Prediction')
+                plt.axis('off')
+
+                plt.savefig(os.path.join(save_dir, f'sample_{idx * loader.batch_size + i}.png'))
+                plt.close()
+
+                if idx * loader.batch_size + i >= 4:  # Save first 5 samples
+                    return
 
 def create_small_subset(dataset: HipMRIDataset, num_samples: int = 5) -> Subset:
     indices = list(range(num_samples))

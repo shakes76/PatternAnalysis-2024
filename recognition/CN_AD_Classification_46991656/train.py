@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from modules import get_model
 from dataset import get_dataloaders
+import matplotlib.pyplot as plt
 
 # Set device (use GPU if available)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -15,7 +16,7 @@ BATCH_SIZE = 32
 EPOCHS = 20
 LEARNING_RATE = 1e-4
 MODEL_SAVE_PATH = "model_checkpoint.pth"
-IMG_SIZE = 224  # Image size to resize images to
+IMG_SIZE = 224
 
 # Load Data
 train_loader, test_loader = get_dataloaders(
@@ -81,6 +82,7 @@ def evaluate(model, loader, criterion):
 
     epoch_loss = running_loss / len(loader.dataset)
     epoch_acc = correct / total
+    
     return epoch_loss, epoch_acc
 
 
@@ -105,6 +107,36 @@ def train_and_evaluate():
         # Save model checkpoint
         torch.save(model.state_dict(), MODEL_SAVE_PATH)
 
+        # Plot and save loss/accuracy graphs
+        plot_metrics(train_losses, test_losses, train_accuracies, test_accuracies)
+
+
+# Function to plot loss and accuracy curves
+def plot_metrics(train_losses, test_losses, train_accuracies, test_accuracies):
+    epochs = range(1, EPOCHS + 1)
+
+    # Plot loss
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, train_losses, label="Train Loss")
+    plt.plot(epochs, test_losses, label="Test Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.title("Loss Curve")
+
+    # Plot accuracy
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, train_accuracies, label="Train Accuracy")
+    plt.plot(epochs, test_accuracies, label="Test Accuracy")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.title("Accuracy Curve")
+
+    # Save the plot
+    plt.savefig("training_metrics.png")
+    plt.show()
 
 if __name__ == "__main__":
     train_and_evaluate()

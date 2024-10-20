@@ -1,7 +1,6 @@
 # simple_unet.py
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
     """(Conv2d => ReLU) * 2"""

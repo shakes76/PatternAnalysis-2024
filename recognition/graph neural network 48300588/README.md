@@ -15,6 +15,7 @@ Firstly, I used a **Custom Graph Convolution Layer**(`CustomGCNConv`) to impleme
 $$
 H^{(l+1)} = D^{-1/2} A D^{-1/2} H^{(l)} W^{(l)}
 $$
+
 where $A$ is the adjacency matrix with added self-loops,  $D$ is the degree matrix, and $W$ is a trainable weight matrix of size `in_channels x out_channels`.
 
 The second part is **GNN Model**(`GNNModel`), which is a complete Graph Neural Network model that stacks three `CustomGCNConv` layers to extract node features progressively through multiple graph convolutions.
@@ -54,4 +55,184 @@ Finally, we just need to evaluate the model on a **test set** and calculate the 
 
 In `predict.py`
 - I used my **student number** as the random state(`random_state=48300588`) to ensure the reproducibility of the results. Without setting a `random_state`, t-SNE may produce different embedding each time it's run due to its inherent randomness.
+
+## **Usage**
+
+1. Make sure your computer has a GPU.
+2. Download the dataset and change the path to load the data in `dataset.py`
+3. Run the `train.py` to train the model. This will save the best model as `best_model.pth` and generate loss and accuracy plots saved as `loss.png` and `accuracy.png`.
+4. Make sure the `random_state=48300588` is not modified, and run the `predict.py` to evaluate the model and visualise embedding. This will generate a t-SNE plot of node embedding saved as `tsne_embeddings.png`, and print sample predictions and test accuracy.
+
+
+## **Hyper-parameters Comparison**
+
+Learning Rate:
+
+$$\begin{array}{|c|c|c|}
+\hline
+\text{Learning Rate (lr)} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
+\hline
+0.7 & 154 & 0.9395 \\
+0.5 & 147 & 0.9487 \\
+0.3 & 160 & 0.9365 \\
+0.1 & 158 & 0.9293 \\
+0.05 & 163 & 0.9050 \\
+\hline
+\end{array}
+$$
+
+Weight Decay:
+
+$$
+\begin{array}{|c|c|c|}
+\hline
+\text{Weight Decay} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
+\hline
+7 \times 10^{-4} & 179 & 0.9318 \\
+5 \times 10^{-6} & 165 & 0.9353 \\
+5 \times 10^{-4} & 147 & 0.9487 \\
+5 \times 10^{-3} & 31 & 0.9101 \\
+3 \times 10^{-4} & 110 & 0.9350 \\
+1 \times 10^{-4} & 175 & 0.9344 \\
+\hline
+\end{array}
+$$
+
+Momentum:
+
+$$
+\begin{array}{|c|c|c|}
+\hline
+\text{Momentum} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
+\hline
+0.99 & 18 & 0.9023 \\
+0.95 & 147 & 0.9487 \\
+0.9 & 110 & 0.9341 \\
+0.85 & 111 & 0.9294 \\
+0.8 & 119 & 0.9297 \\
+\hline
+\end{array}
+$$
+
+Gamma:
+
+$$
+\begin{array}{|c|c|c|}
+\hline
+\text{Gamma} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
+\hline
+0.7 & 248 & 0.9306 \\
+0.5 & 147 & 0.9487 \\
+0.3 & 158 & 0.9244 \\
+0.1 & 178 & 0.9256 \\
+0.01 & 117 & 0.9267 \\
+\hline
+\end{array}
+$$
+
+Data Size:
+
+$$\begin{array}{|c|c|c|c|c|}
+\hline
+\text{Train Size} & \text{Val Size} & \text{Test Size} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
+\hline
+0.6 & 0.2 & 0.2 & 134 & 0.9326 \\
+0.7 & 0.15 & 0.15 & 147 & 0.9487 \\
+0.8 & 0.1 & 0.1 & 141 & 0.9395 \\
+\hline
+\end{array}
+$$
+
+
+My final hyper-parameter values:
+
+$$
+\begin{array}{|c|c|}
+\hline
+\text{Hyperparameter} & \text{Value} \\
+\hline
+\text{Learning Rate} & 0.5 \\
+\text{Weight Decay} & 5 \times 10^{-4} \\
+\text{Momentum} & 0.95 \\
+\text{Gamma} & 0.5 \\
+\text{Train Size} & 0.7 \\
+\text{Val Size} & 0.15 \\
+\text{Test Size} & 0.15 \\
+\hline
+\text{Early Stopping Epoch} & 147 \\
+\text{Test Accuracy} & 0.9487 \\
+\hline
+\end{array}
+$$
+
+
+## **Results and Visualisation**
+
+Results of the training set in the last 10 epochs:
+
+$$
+\begin{array}{|c|c|c|c|c|}
+\hline
+\text{Epoch} & \text{Loss} & \text{Val Loss} & \text{Train Acc} & \text{Val Acc} \\
+\hline
+138 & 0.1803 & 0.1961 & 0.9578 & 0.9421 \\
+139 & 0.1768 & 0.1968 & 0.9576 & 0.9398 \\
+140 & 0.1796 & 0.1971 & 0.9580 & 0.9398 \\
+141 & 0.1751 & 0.1985 & 0.9572 & 0.9383 \\
+142 & 0.1748 & 0.1986 & 0.9570 & 0.9392 \\
+143 & 0.1734 & 0.1967 & 0.9571 & 0.9407 \\
+144 & 0.1780 & 0.1951 & 0.9583 & 0.9407 \\
+145 & 0.1732 & 0.1955 & 0.9581 & 0.9404 \\
+146 & 0.1748 & 0.1957 & 0.9585 & 0.9407 \\
+147 & 0.1700 & 0.1961 & 0.9585 & 0.9409 \\
+\hline
+\end{array}
+$$
+
+$$
+\text{Early stopping at epoch 147}
+$$
+
+$$
+\text{Test Accuracy: } 0.9487
+$$
+
+Results of the test set:
+
+$$
+\begin{array}{|c|c|c|}
+\hline
+\text{Node} & \text{Predicted Label} & \text{True Label} \\
+\hline
+0 & 0 & 0 \\
+1 & 2 & 2 \\
+2 & 1 & 1 \\
+3 & 2 & 2 \\
+4 & 3 & 3 \\
+5 & 3 & 3 \\
+6 & 3 & 3 \\
+7 & 3 & 3 \\
+8 & 2 & 2 \\
+9 & 2 & 2 \\
+\hline
+\end{array}
+$$
+
+Figure 1 Training and Validation Accuracy:
+
+![[accuracy.png]]
+
+Figure 2 Training and Validation Loss:
+
+![[loss.png]]
+
+Figure 3 t-SNE Visualisation of Node Embedding:
+
+![[tsne_embeddings.png]]
+
+
+
+
+
+
 

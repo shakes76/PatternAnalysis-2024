@@ -132,90 +132,92 @@ def reparameterize(mu, logvar):
     return mu + eps * std
 
 # UNet for denoising, now accepts label embeddings
+
 class UNet(nn.Module):
     def __init__(self, latent_dim=256, num_classes=2):
         super(UNet, self).__init__()
-        #self.label_embedding = nn.Embedding(num_classes, latent_dim)
+        self.channel_size = 128
 
         # Encoder part (downsampling)
         self.enc1 = nn.Sequential(
-            nn.Conv2d(latent_dim, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(latent_dim, self.channel_size, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size),
             nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(self.channel_size, self.channel_size, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size),
             nn.ReLU()
         )
         self.enc2 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # Downsample
-            nn.BatchNorm2d(256),
+            nn.Conv2d(self.channel_size, self.channel_size * 2, kernel_size=3, padding=1, stride=2),  # Downsample
+            nn.BatchNorm2d(self.channel_size * 2),
             nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
+            nn.Conv2d(self.channel_size * 2, self.channel_size * 2, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size * 2),
             nn.ReLU()
         )
         self.enc3 = nn.Sequential(
-            nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # Downsample
-            nn.BatchNorm2d(512),
+            nn.Conv2d(self.channel_size * 2, self.channel_size * 4, kernel_size=3, padding=1, stride=2),  # Downsample
+            nn.BatchNorm2d(self.channel_size * 4),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
+            nn.Conv2d(self.channel_size * 4, self.channel_size * 4, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size * 4),
             nn.ReLU()
         )
 
         # Bottleneck
         self.bottleneck = nn.Sequential(
-            nn.Conv2d(512, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(self.channel_size * 4, self.channel_size * 8, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(1024, 512, kernel_size=3, padding=1),
+            nn.Conv2d(self.channel_size * 8, self.channel_size * 4, kernel_size=3, padding=1),
             nn.ReLU()
         )
 
         # Decoder part (upsampling)
         self.dec3 = nn.Sequential(
-            nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2, padding=1),  # Upsample
-            nn.BatchNorm2d(512),
+            nn.ConvTranspose2d(self.channel_size * 4, self.channel_size * 4, kernel_size=4, stride=2, padding=1),  # Upsample
+            nn.BatchNorm2d(self.channel_size * 4),
             nn.ReLU(),
-            nn.Conv2d(512, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
+            nn.Conv2d(self.channel_size * 4, self.channel_size * 2, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size * 2),
             nn.ReLU()
         )
         self.dec2 = nn.Sequential(
-            nn.ConvTranspose2d(256, 256, kernel_size=4, stride=2, padding=1),  # Upsample
-            nn.BatchNorm2d(256),
+            nn.ConvTranspose2d(self.channel_size * 2, self.channel_size * 2, kernel_size=4, stride=2, padding=1),  # Upsample
+            nn.BatchNorm2d(self.channel_size * 2),
             nn.ReLU(),
-            nn.Conv2d(256, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(self.channel_size * 2, self.channel_size, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size),
             nn.ReLU()
         )
         self.dec1 = nn.Sequential(
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(self.channel_size, self.channel_size, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.channel_size),
             nn.ReLU(),
-            nn.Conv2d(128, latent_dim, kernel_size=3, padding=1),
+            nn.Conv2d(self.channel_size, latent_dim, kernel_size=3, padding=1),
             nn.BatchNorm2d(latent_dim),
-            nn.ReLU()
+            nn.Sigmoid()  # Final activation to scale outputs to [0, 1]
         )
 
-        self.time_embedding_layer = torch.nn.Linear(32, latent_dim)
+        self.time_embedding_layer = nn.Linear(32, latent_dim)
 
-    def forward(self, x, labels, t):
-        t_embedding = get_timestep_embedding(t, 32).to(x.device)
-        t_embedding = self.time_embedding_layer(t_embedding)
-        t_embedding = t_embedding[:, :, None, None]
-        
-        # Pass through the encoder
-        enc1_out = self.enc1(x + t_embedding)
+    def forward(self, x, label, t):
+        # Time embedding
+        t_embedding = get_timestep_embedding(t, 32).to(x.device)  # Ensure tensor is on the same device
+        t_embedding = self.time_embedding_layer(t_embedding)  # Map time embedding to latent_dim
+        t_embedding = t_embedding.unsqueeze(-1).unsqueeze(-1)  # Shape: (batch_size, latent_dim, 1, 1)
+
+        # Pass through the encoder with added time embedding
+        enc1_out = self.enc1(x + t_embedding)  # Add time embedding to input
         enc2_out = self.enc2(enc1_out)
         enc3_out = self.enc3(enc2_out)
-        
+
         # Pass through the bottleneck
         bottleneck_out = self.bottleneck(enc3_out)
-        
+
         # Pass through the decoder with skip connections
         dec3 = self.crop_and_add(self.dec3(bottleneck_out), enc2_out)
         dec2 = self.crop_and_add(self.dec2(dec3), enc1_out)
-        dec1 = self.crop_and_add(self.dec1(dec2), x)
+        dec1 = self.crop_and_add(self.dec1(dec2), x)  # Skip connection with original input
 
         return dec1
 
@@ -224,7 +226,7 @@ class UNet(nn.Module):
         Crops the upsampled tensor to match the size of the skip connection tensor.
         """
         _, _, h, w = skip_connection.size()
-        upsampled = upsampled[:, :, :h, :w]
+        upsampled = upsampled[:, :, :h, :w]  # Crop the upsampled tensor
         return upsampled + skip_connection
     
     def crop(self, upsampled, skip_connection):
@@ -270,8 +272,8 @@ diffusion_criterion = nn.MSELoss()
 vae_optimizer = optim.AdamW(list(vae_encoder.parameters()) + list(vae_decoder.parameters()), lr=1e-3)
 vae_scheduler = torch.optim.lr_scheduler.LinearLR(vae_optimizer, start_factor=1.0, end_factor=0.1, total_iters=50)
 
-unet_optimizer = optim.AdamW(unet.parameters(), lr=1e-3)
-unet_scheduler = torch.optim.lr_scheduler.LinearLR(unet_optimizer, start_factor=1.0, end_factor=0.1, total_iters=50)
+unet_optimizer = optim.AdamW(unet.parameters(), lr=1e-6)
+unet_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(unet_optimizer, 200)
 
 def weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):

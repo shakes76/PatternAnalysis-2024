@@ -20,7 +20,7 @@ class Dataset():
     '''
     def __init__(self, 
                  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-                 batch_size = 32) -> None:
+                 batch_size = 128) -> None:
         self.device = device
 
         #paths to datasets

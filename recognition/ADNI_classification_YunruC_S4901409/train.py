@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # Initialize model, loss function, and optimizer
     model = GFNet(
             img_size=512, 
-            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_rate = 0.1
+            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_rate = 0.1, drop_path_rate=0.1
         )
     print(model)
     criterion = nn.CrossEntropyLoss()
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     # Training loop
     best_val_accuracy = 0.0
-    epochs = 20
+    epochs = 25
 
     for epoch in range(epochs):
         train_loss, train_accuracy = train(model, train_loader, criterion, optimizer, device)

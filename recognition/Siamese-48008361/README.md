@@ -74,11 +74,13 @@ This script performs the following steps:
 2. **Train-Test Split**:
    - Implements a 80-20 train-test split
    - The split is performed to prevent data leakage, ensuring that all images are either in the training or testing set, but not both
+   - Test set is not augmented, therefore there will be 6509 benign images and 117 malignant images in the test set
 
 3. **Dataset Balancing**:
    - Addresses the inherent class imbalance in the ISIC dataset
    - Implements oversampling of the minority class (malignant) in the training set
-   - The oversampling is achieved by duplicating minority class samples until the classes are perfectly balanced
+   - The oversampling is achieved by duplicating minority class samples until the classes are perfectly balanced (with varation and augmentation to reduce overfitting and increase generalization)
+   - This then results in a balanced training set of 26033 benign and 25685 malignant images
    - This balance is important for preventing bias in the model's predictions
 
 4. **Data Augmentation Pipeline**:
@@ -96,6 +98,7 @@ This script performs the following steps:
 6. **Balanced Batch Sampling**:
    - Utilizes a `BalancedBatchSampler` to ensure that each training batch contains an equal number of samples from each class
    - This further reinforces the balanced learning process, preventing any class bias during training
+   - For example in a batch size of 32, 16 benign and 16 malignant images will be present
 
 By implementing these preprocessing steps, the imbalance issue was effectively addressed in the ISIC 2020 dataset, creating a robust foundation for training the Siamese network.
 

@@ -8,6 +8,32 @@
 - [References](#references)
 
 ## Model and Problem Description
+### Graphs
+A graph is a data structure that containts nodes and edges. Nodes can represent any arbitrary object, and edges define the relationships between two nodes, and can be either directed or undirected. They are commonly used to model problems consisting of complex relationships and interactions, such as pattern recognition, social network analysis, and more. An example of a graph is shown below,
+
+![Graph Example](assets/graphexample.png)
+
+Due to the nature of graph data structures, they are hard to analyse. Reasons why include
+  1. Graphs exist in non-euclidean space, not 2D or 3D, making visualisation and interpretation difficult
+  2. Graphs are dyanmic - two very visually different graphs can have similar adjacency matrix representations
+  3. Large size and dimensionality increases graph complexity for human interpretation
+
+### Graph Neural Networks (GNNs)
+Graph Neural Networks are special types of neural networks that are designed to analysis graph data structures. An input graph is passed through a series of neural networks, converted into graph embedding which allows us to maintain information on nodes, edges, etc. There are many types of GNNs, inlcuding
+  1. Graph Convolutional Neural Networks (GCNs)
+  2. Graph Auto-Encoder Networks
+  3. Recurrent Graph Neural Networks (RGNNs)
+  4. Gated Graph Neural Networks (GGNNs)
+
+GNNs can carry out a variety of tasks, inluding
+  1. Graph Classification
+  2. Node Classification
+  3. Link Prediction
+  4. Community Detection
+  5. Graph Embedding
+  6. Graph Generation
+
+![GNN Uses](assets/GNNuses.png)
 
 ## Model Architecture
 
@@ -16,6 +42,7 @@
 ## Results
 
 ## References
+[1] A Comprehensive Introduction to Graph Neural Networks (GNNs). https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Training
 Epoch [10/400], Loss: 1.26323, Validation Loss: 1.23775

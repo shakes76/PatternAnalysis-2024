@@ -18,11 +18,19 @@ The goal is to achieve a minimum Dice similarity coefficient of 0.7 on the test 
 - `README.md`: This file, documenting the project.
 
 ## Dependencies
-- Python 3.11
-- PyTorch 2.0.1
-- Monai 1.2.0
-- Numpy 1.26.4
+- Python==3.11
+- torch==2.0.1
+- monai==1.3.2
+- numpy==1.26.4
+- matplotlib==3.9.2
+- nibabel==5.3.0
+- scikit-learn==1.5.1
 
+Use the following command to create the conda environment
 ```
-pip install -r Dependencies.txt
+conda env create -f environment.yml
+```
+activate environment
+```
+conda activate pytorch-2.0.1
 ```

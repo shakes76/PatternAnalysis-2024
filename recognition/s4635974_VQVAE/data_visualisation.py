@@ -14,7 +14,7 @@ with open(open_dir, 'rb') as f:
     data = pickle.load(f)
 
 # Access the lists
-training_reconstruction_loss = data["training_reconstruction_loss"]
+training_reconstruction_loss = data[" training_reconstruction_loss"]
 training_vq_loss = data["training_vq_loss"]
 validation_reconstruction_loss = data["validation_reconstruction_loss"]
 validation_vq_loss = data["validation_vq_loss"]

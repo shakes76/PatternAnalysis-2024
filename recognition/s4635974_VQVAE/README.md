@@ -100,18 +100,18 @@ Without further pre-processing I was able to achieve our goal of over 0.6 SSIM a
 ### Training
 The model was trained with the above parameters. I experimented with varying the learning rate and batch size and found the above hyperparameters to give the best accuracy in the least amount of training time (without the training becoming unstable). Early stopping was used [5] to stop the training when there was no further improvement in validation loss. This can help avoid overfitting and save on computational resources. Little improvement was achieved beyond 60 epochs (I tried training the model for a maximum of 200 epochs). 
 
-#### Training and Validation output losses (reconstruction loss)
+#### Training and Validation Reconstruction Losses
 ![Training and validation output loss](report_images/output_loss_per_epoch.png)
 
-*Figure 4. Training and Validation Output Loss (Reconstruction Loss) over epochs*
+*Figure 4. Training and Validation Reconstruction Losses Over Epochs*
 
-Figure 4 shows the training and validation output losses from the decoder (reconstruction loss) reduce over each epoch. This demonstrates that the model is learning well.
+Figure 4 shows the training and validation reconstruction losses from the decoder reduce over each epoch. This demonstrates that the model is learning well.
 
-![Training and validation output loss zoomed](report_images/training_output_loss_zoomed.png)
+![Training and validation Reconstruction Losses zoomed](report_images/training_output_loss_zoomed.png)
 
-*Figure 5. Training and Validation Output Loss (Reconstruction Loss) over epochs - zoomed in*
+*Figure 5. Training and Validation Reconstruction Losses Over Epochs - Zoomed in*
 
-Zooming in (Figure 5) we can see that the validation loss fits closely to the train loss, indicating that the model is not overfitting. 
+Zooming in (Figure 5) we can see that the validation reconstruction loss fits closely to the training reconstruction loss, indicating that the model is not overfitting. 
 
 #### Training and Validation VQ losses
 ![VQ loss](report_images/vq_loss_per_epoch.png)
@@ -173,7 +173,7 @@ All dependencies are listed below. To reproduce results, these dependencies must
   
 - The dataset will need to be split into files for training (~ 90%), validation (~ 5%), and testing (~ 5%).
   
-- Ensure the file paths for training, validation, and testing are stroed in `train_dir` , `validate_dir` , and `test_dir` variables respectively, found in `tain.py` and `predict.py`.
+- Ensure the file paths for training, validation, and testing are stored in `train_dir` , `validate_dir` , and `test_dir` variables respectively, found in `tain.py` and `predict.py`.
 
 ### Running the Model and Reproducing Results
 

@@ -305,7 +305,7 @@ def train_model(
 
     # After training, save the lists to a file
     data = {
-        " training_reconstruction_loss": epoch_training_reconstruction_loss,
+        "training_reconstruction_loss": epoch_training_reconstruction_loss,
         "training_vq_loss": epoch_training_vq_loss,
         "validation_reconstruction_loss": epoch_validation_reconstruction_loss,
         "validation_vq_loss": epoch_validation_vq_loss,
@@ -321,8 +321,8 @@ def train_model(
 
         # 1. Plot Training reconstruction Loss vs. Validation reconstruction Loss
         plt.figure(figsize=(12, 6))  # Width of normal page
-        plt.plot(epochs, epoch_training_reconstruction_loss, label='Training reconstruction Loss')
-        plt.plot(epochs, epoch_validation_reconstruction_loss, label='Validation reconstruction Loss')
+        plt.plot(epochs, epoch_training_reconstruction_loss, label='Training Reconstruction Loss')
+        plt.plot(epochs, epoch_validation_reconstruction_loss, label='Validation Reconstruction Loss')
         plt.xlabel('Epochs')
         plt.ylabel('reconstruction Loss')
         plt.title('Training and Validation Reconstruction Loss per Epoch')

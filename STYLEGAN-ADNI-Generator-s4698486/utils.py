@@ -1,5 +1,6 @@
 import torch
 from constants import w_dim, log_resolution
+import torch.nn as nn
 
 """
  This function samples a random latent space vector z and passes it through our mapping network
@@ -37,3 +38,21 @@ def get_noise(batch_size, device):
         resolution *= 2
 
     return noise
+
+
+# Initialize BCEWithLogitsLoss
+criterion = nn.BCEWithLogitsLoss()
+
+def discriminator_loss(real_output, fake_output):
+    # Calculate loss for real and fake outputs
+    real_loss = criterion(real_output, torch.ones_like(real_output)) # As discriminator is trying to identify real images as 1s
+    fake_loss = criterion(fake_output, torch.zeros_like(fake_output)) # As discriminator is trying to identify fake images as 0s
+    
+    # Total loss is sum of real and fake loss
+    total_loss = real_loss + fake_loss
+    return total_loss
+
+def generator_loss(fake_output):
+    # Compares discriminator's "evaluation" of the generated images to 1s. 
+    # This is because the generator wants the discriminator to think its images are 1s (real). 
+    return criterion(fake_output, torch.ones_like(fake_output))

@@ -11,7 +11,9 @@
 ### Graphs
 A graph is a data structure that containts nodes and edges. Nodes can represent any arbitrary object, and edges define the relationships between two nodes, and can be either directed or undirected. They are commonly used to model problems consisting of complex relationships and interactions, such as pattern recognition, social network analysis, and more. An example of a graph is shown below,
 
-![Graph Example](assets/graphexample.png)
+<div style="text-align: center;">
+    <img src="assets/graphexample.png" alt="Graph Example" style="width: 40%">
+</div>
 
 Due to the nature of graph data structures, they are hard to analyse. Reasons why include
   1. Graphs exist in non-euclidean space, not 2D or 3D, making visualisation and interpretation difficult
@@ -33,7 +35,9 @@ GNNs can carry out a variety of tasks, inluding
   5. Graph Embedding
   6. Graph Generation
 
-![GNN Uses](assets/GNNuses.png)
+<div style="text-align: center;">
+    <img src="assets/GNNuses.png" alt="GNN Uses" style="width: 60%">
+</div>
 
 ## Model Architecture
 

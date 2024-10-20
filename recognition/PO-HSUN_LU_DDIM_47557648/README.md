@@ -62,6 +62,8 @@ The sampling process of DDPM is defined as follows. This process allows us to re
 
 The default setting for the total number of iterations is 10,000, which requires around 5 hours of training on a P100 GPU. However, the graph shows that it converges quickly within just 10,000 iterations. Further adjustments to the number of iterations can be discussed.
 
+The training can be set up by modifying the 'data_dir' variable in the main function with an appropriate data path (in train.py). When you run train.py, the program will automatically train the model and save the result under './results' dir. 
+
 ## Requirements
 This program is run in the Kaggle environment (4/10/2024) with a P100 GPU. <br> The 'ema-pytorch' package is required to run the program.
 ## Model Archetecture

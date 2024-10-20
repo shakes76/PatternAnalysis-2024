@@ -25,14 +25,70 @@ Similar to codebook loss, however instead of moving the embedded vectors closer 
 - **Perplexity**: 
 Refers to the utilisation rate of the dictionary. A low value represents that the embedding space was referred at a low rate by the model, which is typical during the first few epochs when training. Ideally, a higher value is achieved as the model becomes better at generating images.
 
-## 4.0 Instructions for Deployment and Dependecies Required
+## 4.0 Instructions for Deployment and Dependencies Required
+The model needs to be trained first using the provided SLURM script. PyTorch libraries were used to build this model, and require the following dependencies 
+to train and run inference properly.
 
+All modules:
+- torch
+- torch.nn (for classes and objects such as the VQVAE, Encoder, Quantisation Layer and Decoder)
+
+"train.py":
+- torch.optim (for the optimiser, in this case the Adam optimiser is being used).
+- torch.utils.data (for dividing the dataset into batches).
+- matplotlib (for plotting loss values)
+
+"modules.py"
+- torch.nn.functional (for executing activation functions such as ReLU)
+
+"utils.py"
+- tqdm (for checking the progress on loading images from the training/testing dataset)
+- nibabel (for loading NIFTI scans)
+- numpy
+- matplotlib (for functions plotting the actual and reconstructed scans)
+
+"dataset.py"
+- os (for fetching files from the directory on UQ Rangpur which contains the MRI scans)
+
+"predict.py"
+- torchmetrics.image -> StructuralSimilarityIndexMeasure (for calculating the SSIM between actual vs reconstructed scans).
 ## 5.0 Training Plots
 
-## 6.0 Actual vs Reconstructed Scans (can also be found in the vqvae folder).
+## 6.0 Actual vs Reconstructed Scans (can also be found in the recognition folder).
+![image](https://github.com/user-attachments/assets/594d9475-aa4c-4208-b437-a8033d15d82d) 
+
+_Figure 2: Actual Scans from the "HipMRI study for Prostate Cancer Radiotherapy" Dataset_
+
+![image](https://github.com/user-attachments/assets/dd24be15-34fd-493a-b5d2-cafd69775159)
+
+_Figure 3: Reconstructed Scans. These scans achieved an SSIM score of 0.67._
 
 
-## 7.0 Bibliography
+## 7.0 Pre-Processing
+The function provided for retrieving 2D MRI scans stored as NIFTI files was modified after it was discovered that the files contained images of different dimensions. 
+The training dataset contained images that varied between 256x128 and 256x144 pixels, and lead to errors when fetching these files from the cluster. As a result, the code now contains a snippet which stores that maximum dimensions found when loading a dataset and adjusts the height/width of the input image accordingly before providing it to the model. All images are also converted to PyTorch tensors before being loaded into memory. 
+
+```
+max_rows, max_cols = 0,0
+    for inName in imageNames:
+        niftiImage = nib.load(inName)
+        inImage = niftiImage.get_fdata(caching='unchanged')
+        if len(inImage.shape) == 3:
+         inImage = inImage[: ,: ,0] # sometimes extra dims , remove
+        # print(f"{inImage.shape[0]}, {inImage.shape[1]}")
+        max_rows = max(max_rows, inImage.shape[0])
+        max_cols = max(max_cols, inImage.shape[1])
+```
+
+Although these images are grayscale, an extra dimension is added which indicates the channels. In this case, the number of channels is 1. This was achieved by 'unsqueezing' th tensor to add an extra dimension.
+
+``` images = images.unsqueeze(1)```
+## 8.0 Splitting the datasets
+
+
+## 9.0 Bibliography
+Chandra, S. (2024). Report: Pattern Recognition, Version 1.57. Retrieved 30th September 2024 from https://learn.uq.edu.au/bbcswebdav/pid-10273751-dt-content-rid-65346599_1/xid-65346599_1
+
 Kang. J. (2024). _Pytorch-VAE-tutorial_. https://github.com/Jackson-Kang/Pytorch-VAE-tutorial
 
 Malysheva, S. (2018). _Pytorch-VAE_. https://github.com/SashaMalysheva/Pytorch-VAE

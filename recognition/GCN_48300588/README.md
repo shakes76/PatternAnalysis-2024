@@ -220,15 +220,15 @@ $$
 
 Figure 1 Training and Validation Accuracy:
 
-![accuracy.png](recognition\GCN_48300588\accuracy.png)
+![accuracy.png](https://github.com/Astora-Solaire/PatternAnalysis-2024/blob/424b786df1b996195be2ab73e86c9d61986050da/recognition/plots/accuracy.png)
 
 Figure 2 Training and Validation Loss:
 
-![loss.png](loss.png)
+![loss.png](https://github.com/Astora-Solaire/PatternAnalysis-2024/blob/424b786df1b996195be2ab73e86c9d61986050da/recognition/plots/loss.png)
 
 Figure 3 t-SNE Visualisation of Node Embedding:
 
-![tsne_embeddings.png](.\plots\tsne_embeddings.png)
+![tsne_embeddings.png](https://github.com/Astora-Solaire/PatternAnalysis-2024/blob/424b786df1b996195be2ab73e86c9d61986050da/recognition/plots/tsne_embeddings.png)
 
 
 

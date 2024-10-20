@@ -47,30 +47,61 @@ model = modules.resnet50(weights=None, progress=False).to(device)
 tripletloss = TripletMarginLoss(margin=config.LOSS_MARGIN)
 optimiser = Adam(model.parameters(), lr=config.LEARNING_RATE, betas=config.BETAS)
 
-# TODO implement the training cycle with basic reporting for now.
-# Also save the trained model and generate some loss plots.
+# TODO generate some loss plots and use learned data to make a classifier.
 
 train_loss = []
-# val_loss = []
-# test_loss = []
+val_loss = []
+test_loss = []
 
+def processes_batch(anchor, positive, negative) -> torch.Tensor:
+    """ Takes a triplet and returns the calculated loss.
+
+    Arguments:
+        anchor (torch.Tensor): The anchor image.
+        positive (torch.Tensor): The positive image.
+        negative (torch.Tensor): The negative image.
+
+    Returns: A torch.Tensor storing the calculated loss using triplet loss.
+    """
+    # DataLoader works on cpu, so move received images to GPU
+    anchor = anchor.to(device)
+    positive = positive.to(device)
+    negative = negative.to(device)
+
+    # Evaluate images
+    anchor_result = model(anchor)
+    positive_result = model(positive)
+    negative_result = model(negative)
+
+    return tripletloss(anchor_result, positive_result, negative_result)
+
+# Training cycle
 for epoch in range(config.EPOCHS):
     model.train()
     for i, (anchor, positive, negative, label) in enumerate(train_loader):
         model.zero_grad()
-        anchor = anchor.to(device)
-        positive = positive.to(device)
-        negative = negative.to(device)
-
-        anchor_result = model(anchor)
-        positive_result = model(positive)
-        negative_result = model(negative)
-        loss = tripletloss(anchor_result, positive_result, negative_result)
+        loss = processes_batch(anchor, positive, negative)
         loss.backward()
         optimiser.step()
 
         train_loss.append(loss.item())
         if i % (len(train_loader)//4) == 0 and i != len(train_loader)-1:
             print(f"Epoch: {epoch}, Batch: {i}, Loss: {loss.item()}")
+    
+    # Validation
+    model.eval()
+    with torch.no_grad(): # Using this to reduce memory usage
+        for i, (anchor, positive, negative, label) in enumerate(val_loader):
+            loss = processes_batch(anchor, positive, negative)
+            val_loss.append(loss)
+            if i % (len(val_loader)//2) == 0 and i != len(val_loader)-1:
+                print(f"Validation: Batch: {i}, Loss: {loss.item()}")
 
-    # TODO implement validation
+# Testing model to verify functionality
+model.eval()
+with torch.no_grad(): # Reduces memory usage
+    for i, (anchor, positive, negative, label) in enumerate(test_loader):
+        loss = processes_batch(anchor, positive, label)
+        test_loss.append(loss)
+        if i % (len(test_loader)//2) == 0 and i != len(test_loader)-1:
+            print(f"Testing: Batch: {i}, Loss: {loss.item()}")

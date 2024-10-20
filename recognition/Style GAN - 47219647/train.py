@@ -75,4 +75,5 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
         
     return discriminator_losses, generator_losses
 
-train_gan(model = StyleGan(), dataloader= data_set_creator(), epochs= 1)
+discriminator_losses, generator_losses = train_gan(model = StyleGan(), dataloader= data_set_creator(), epochs= 1)
+

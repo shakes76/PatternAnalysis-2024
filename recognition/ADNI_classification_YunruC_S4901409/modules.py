@@ -1,14 +1,17 @@
-'''
-The idea of the code is from the paper: 
-Implementing Vision transformer from Scratch 
-https://tintn.github.io/Implementing-Vision-Transformer-from-Scratch/
-'''
-
 import torch
 import torch.nn as nn
 import torch.fft
 from timm.models.layers import to_2tuple, trunc_normal_
 import math
+
+'''
+The idea of the code is from the paper: 
+Implementing Vision transformer from Scratch 
+https://tintn.github.io/Implementing-Vision-Transformer-from-Scratch/
+
+Version 1: Replaced the ViT multilayer attention with global filters
+Version 2: Added dropout to prevent overfitting
+'''
 
 class PatchEmbed(nn.Module):
     """
@@ -98,16 +101,17 @@ class Block(nn.Module):
     mlp_ratio controls the expansion size of the hiden layer
     """
 
-    def __init__ (self, dim, mlp_ratio=4, drop = 0, h =14, w = 8):
+    def __init__ (self, dim, mlp_ratio=4, drop = 0., h =14, w = 8):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.filter = GFNetFilter(dim, h=h, w=w)
+        self.drop_path = nn.Dropout(drop)
         self.norm2 = nn.LayerNorm(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = MLP(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop)
 
     def forward(self, x):
-        x = x + self.mlp(self.norm2(self.filter(self.norm1(x))))
+        x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
 class GFNet(nn.Module):

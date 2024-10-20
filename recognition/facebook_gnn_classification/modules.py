@@ -22,5 +22,9 @@ class GNN(torch.nn.Module):
         x = self.conv3(x, edge_index)
         x = F.relu(x)
         x = F.dropout(x, p=0.7, training=self.training)
+
+        if return_embeddings:
+            return x  # Return embeddings before the final layer
+
         x = self.conv4(x, edge_index)
         return F.log_softmax(x, dim=1)

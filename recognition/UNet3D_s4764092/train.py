@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt  # 用于可视化
 from dataset import *
 from modules import UNet3D
 import numpy as np
+import torch.nn.functional as F
 
 # 设置分段分配以减少显存碎片化
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -14,6 +15,7 @@ NUM_EPOCHS = 100
 LEARNING_RATE = 0.0001
 ACCUMULATION_STEPS = 4
 NUM_CLASSES = 6
+
 
 
 # 定义设备
@@ -40,11 +42,15 @@ class_weights = torch.tensor(
     device=DEVICE
 )
 
+
+
 # 初始化模型
 model = UNet3D(in_channels=1, out_channels=NUM_CLASSES).to(DEVICE)
 
 # 设置损失函数和优化器
+
 criterion = nn.CrossEntropyLoss(weight=class_weights)
+
 optimizer = optim.Adam(model.parameters(),lr=LEARNING_RATE)
 scaler = GradScaler()
 
@@ -135,17 +141,17 @@ for epoch in range(NUM_EPOCHS):
         plt.savefig(f'epoch_{epoch + 1}_training_validation_loss.png')  # 保存图像
         plt.show()
 
-
+        # 绘制 Dice 系数曲线
         plt.figure(figsize=(12, 5))
         plt.plot(range(1, len(avg_dice_scores) + 1), avg_dice_scores, label='Average Dice Score')
         plt.xlabel('Epoch')
         plt.ylabel('Dice Score')
         plt.title('Average Validation Dice Score Over Epochs')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_Validation_Dice_Score.png')
+        plt.savefig(f'epoch_{epoch + 1}_Validation_Dice_Score.png')  # 保存图像
         plt.show()
 
-        plt.figure(figsize=(6, 4))
+        plt.figure(figsize=(12, 5))
         for c in range(NUM_CLASSES):
             plt.plot(range(1, len(class_val_dice_scores[c]) + 1), class_val_dice_scores[c],
                      label=f'Class {c} Dice Score')
@@ -154,5 +160,56 @@ for epoch in range(NUM_EPOCHS):
         plt.title('Class Specific Validation Dice Scores Over Epochs')
         plt.legend()
         plt.savefig(f'epoch_{epoch + 1}_class_specific_validation_dice_scores.png')  # 保存图像
+        plt.show()  # 显示图像
+
+    # 测试集评估 (用于计算 Dice 系数)
+    model.eval()
+    total_test_dice = {c: 0 for c in range(NUM_CLASSES)}
+    with torch.no_grad():
+        for mri_data, label_data in test_loader:
+            mri_data = torch.unsqueeze(mri_data, 1).to(DEVICE)
+            label_data = label_data.to(DEVICE)
+
+            with autocast():
+                outputs = model(mri_data)
+                preds = torch.argmax(outputs, dim=1)
+
+                for c in range(NUM_CLASSES):
+                    pred_c = (preds == c).float()
+                    label_c = (label_data == c).float()
+
+                    intersection = (pred_c * label_c).sum()
+                    union = pred_c.sum() + label_c.sum()
+                    total_test_dice[c] += (2. * intersection + 1e-6) / (union + 1e-6)
+
+    avg_dice = {c: total_test_dice[c] / len(test_loader) for c in total_test_dice}
+    epoch_dice_scores.append(avg_dice)  # 保存当前 epoch 的各类别 Dice 系数
+    avg_dice_score = np.mean([avg_dice[c].item() for c in avg_dice])
+    avg_dice_scores.append(avg_dice_score)
+    print(f"Epoch [{epoch + 1}/{NUM_EPOCHS}], Average Test Dice Score: {avg_dice_score:.4f}")
+
+    for c in range(NUM_CLASSES):
+        print(f"Epoch [{epoch + 1}/{NUM_EPOCHS}], Class {c} Test Dice Score: {avg_dice[c].item():.4f}")
+        class_test_dice_scores[c].append(avg_dice[c].item())  # Append class-specific Dice score here
+
+        # 每 5 个 epoch 或在最后一个 epoch 可视化一次
+    if epoch == NUM_EPOCHS - 1:
+        plt.figure(figsize=(12, 5))
+        plt.plot(range(1, len(avg_dice_scores) + 1), avg_dice_scores, label='Average Test Dice Score')
+        plt.xlabel('Epoch')
+        plt.ylabel('Dice Score')
+        plt.title('Average Test Dice Score Over Epochs')
+        plt.legend()
+        plt.savefig(f'epoch_{epoch + 1}_training_test_loss.png')  # 保存图像
         plt.show()
 
+        plt.figure(figsize=(12, 5))
+        for c in range(NUM_CLASSES):
+            plt.plot(range(1, len(class_test_dice_scores[c]) + 1), class_test_dice_scores[c],
+                     label=f'Class {c} Dice Score')
+        plt.xlabel('Epoch')
+        plt.ylabel('Dice Score')
+        plt.title('Class Specific Dice Scores Over Epochs')
+        plt.legend()
+        plt.savefig(f'epoch_{epoch + 1}_class_specific_dice_scores.png')  # 保存图像
+        plt.show()  # 显示图像

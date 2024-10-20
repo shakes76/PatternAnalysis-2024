@@ -10,6 +10,7 @@ label_dir = r'D:\final\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\da
 
 
 
+
 # Get lists of image and label files
 image_files = sorted(glob.glob(os.path.join(image_dir, '*.nii.gz')))
 label_files = sorted(glob.glob(os.path.join(label_dir, '*.nii.gz')))

@@ -73,12 +73,19 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 ## Visualizations
 ### Loss Metrics
 - Loss metrics for both the Generator and Discriminator are plotted during training to monitor convergence. These plots provide insights into the training dynamics and help assess model performance.
+![AD critic (discriminator) loss](images/AD_critic_loss_final.png)
+![AD generator loss](images/AD_generator_loss_final.png)
+![NC critic (discriminator) loss](images/NC_critic_loss_final.png)
+![NC generator loss](images/AD_generator_loss_final.png)
 
 ### t-SNE Embedding
 - A t-SNE embedding visualization is generated to analyze the distribution of latent space representations. This helps in understanding how well the model captures the diversity of the training data.
+![TSNE Embedding Plot for Generated Images](tsne_visualization.png)
 
 ### Generated Image Grids
 - A 9x9 grid of generated images is created for both Alzheimer's Disease (AD) and Normal Control (NC) classes. This provides a visual assessment of the quality and variety of the synthesized images, showcasing the model's ability to generate realistic brain scans.
+![Generated AD images](images/AD_images.png)
+![Generated NC images](images/NC_images.png)
 
 ## Conclusion
 This project demonstrates the capabilities of GANs in generating realistic brain images, providing a valuable tool for researchers in the field of neuroimaging. Future work may include fine-tuning the model and exploring additional image generation techniques.

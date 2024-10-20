@@ -2,15 +2,15 @@ import os
 import torch
 from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
-from dataset import ISICDataset, malig_aug, benign_aug 
 from modules import SiameseNN, Classifier
-from utils import visualise_embededding, plot_loss, plot_accuracy
+from utils import visualise_embededding, plot_loss, plot_accuracy, plot_auc
 from pytorch_metric_learning.losses import ContrastiveLoss
 from pytorch_metric_learning.reducers import AvgNonZeroReducer
 from pytorch_metric_learning.distances import LpDistance
 from tqdm import tqdm
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
+from sklearn.metrics import roc_auc_score, roc_curve
+import numpy as np
 
 
 
@@ -21,13 +21,13 @@ def siamese_train(current_dir, train_loader, val_loader, images, epochs=50, plot
     print("Training Siamese Netowork")
     # Initialize model and move to device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = SiameseNN(embedding_size=256).to(device)
+    model = SiameseNN().to(device)
 
     # Contrastive Loss from PyTorch Metric Learning
     criterion = ContrastiveLoss(
         pos_margin=0,
         neg_margin=1,
-        distance=LpDistance(normalize_embeddings=False, p=2, power=1),
+        distance=LpDistance(normalize_embeddings=True, p=2, power=1),
         reducer=AvgNonZeroReducer(),
     )
     
@@ -144,7 +144,7 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
     labels = [label for _, label in train_loader.dataset]
     benign_count = labels.count(0)
     malignant_count = labels.count(1)
-    
+
     # Compute pos_weight for the minority class
     pos_weight = torch.tensor([benign_count / malignant_count], dtype=torch.float).to(device)
 
@@ -158,6 +158,8 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
     val_losses = []
     train_accuracies = []
     val_accuracies = []
+    train_aurocs = []
+    val_aurocs = []
 
     for epoch in range(epochs):
         # Training phase
@@ -165,6 +167,8 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
         epoch_loss = 0.0
         correct_train = 0
         total_train = 0
+        train_labels = []
+        train_probs = []
 
         for images, labels  in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} Training"):
             images, labels = images.to(device), labels.to(device).float()
@@ -187,16 +191,29 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
 
+            train_labels.extend(labels.cpu().numpy())
+            train_probs.extend(probs.cpu().numpy())
+
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)
         train_accuracy = correct_train / total_train
         train_accuracies.append(train_accuracy)
+
+        # Compute AUROC for training
+        try:
+            train_auroc = roc_auc_score(train_labels, train_probs)
+        except ValueError:
+            train_auroc = np.nan  # Handle cases where AUROC is undefined
+        train_aurocs.append(train_auroc)
 
         # Validation
         classifier.eval()
         val_loss = 0.0
         correct_val = 0
         total_val = 0
+
+        val_labels = []
+        val_probs = []
 
         with torch.no_grad():
             for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
@@ -217,10 +234,23 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
                 correct_val += (preds == labels).sum().item()
                 total_val += labels.size(0)
 
+                # Store for AUROC
+                val_labels.extend(labels.cpu().numpy())
+                val_probs.extend(probs.cpu().numpy())
+
+
         avg_val_loss = val_loss / len(val_loader)
         val_losses.append(avg_val_loss)
         val_accuracy = correct_val / total_val
         val_accuracies.append(val_accuracy)
+
+        # Compute AUROC for validation
+        try:
+            val_auroc = roc_auc_score(val_labels, val_probs)
+        except ValueError:
+            val_auroc = np.nan  # Handle cases where AUROC is undefined
+        val_aurocs.append(val_auroc)
+
 
         print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
         # Step the scheduler
@@ -250,5 +280,6 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
     if plots == True:
         plot_loss(train_losses,val_losses)
         plot_accuracy(train_accuracies,val_accuracies)
+        plot_auc(train_aurocs, val_aurocs)
 
 

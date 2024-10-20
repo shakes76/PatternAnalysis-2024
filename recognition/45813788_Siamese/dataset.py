@@ -18,18 +18,7 @@ default_aug = transforms.Compose([
 
 
 #augument dataset since theres only 584 malignant and 30000 non malig
-malig_aug = transforms.Compose([
-    transforms.Resize((224,224)),
-    transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomVerticalFlip(p=0.5),
-    transforms.RandomRotation(30),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
-])
-
-#augument dataset since theres only 584 malignant and 30000 non malig
-benign_aug = transforms.Compose([
+train_aug = transforms.Compose([
     transforms.Resize((224,224)),
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
@@ -40,11 +29,10 @@ benign_aug = transforms.Compose([
 ])
 
 class ISICDataset(Dataset):
-    def __init__(self, df, images_dir, transform_benign=None, transform_malignant=None, augment_ratio=1.0):
+    def __init__(self, df, images_dir, transform=None, augment_ratio=1.0):
         self.df = df
         self.images_dir = images_dir
-        self.transform_benign = transform_benign
-        self.transform_malignant = transform_malignant
+        self.transform = transform
         self.augment_ratio = augment_ratio
 
         #list of image IDs
@@ -53,23 +41,6 @@ class ISICDataset(Dataset):
 
     def __len__(self):
         return len(self.image_ISIC)
-
-    def apply_transform(self, img, label):
-        transform = None
-        #need to make sure its exclusively benign all else consider malig
-        if label == 0:
-            if self.transform_benign:
-                transform = self.transform_benign
-        else:
-            if self.transform_malignant:
-                transform=self.transform_malignant
-
-        if transform is None:
-            transform = default_aug
-
-        img = transform(img)
-
-        return img
 
     def __getitem__(self, index):
         img_id = self.image_ISIC[index]    
@@ -83,7 +54,8 @@ class ISICDataset(Dataset):
 
 
         #transform the images
-        img = self.apply_transform(img, label)
+        if self.transform:
+            img = self.transform(img)
      
         
         return img, torch.tensor(label, dtype=torch.long)

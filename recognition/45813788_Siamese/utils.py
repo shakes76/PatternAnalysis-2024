@@ -81,3 +81,17 @@ def plot_accuracy(train_accuracies, val_accuracies):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+def plot_auc(train_aurocs, val_aurocs):
+    
+    plt.figure(figsize=(10, 5))
+    epochs = range(1, len(train_aurocs) + 1)
+    plt.plot(epochs, train_aurocs, label='Training AUROC')
+    plt.plot(epochs, val_aurocs, label='Validation AUROC')
+    plt.xlabel('Epochs')
+    plt.ylabel('AUROC')
+    plt.title('Training and Validation AUROC over Epochs')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()

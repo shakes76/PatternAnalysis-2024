@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from tqdm import tqdm
-from dataset import ISICDataset, benign_aug, malig_aug
+from dataset import ISICDataset
 
 def test(siamese, classifier, test_df, images):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -19,8 +19,6 @@ def test(siamese, classifier, test_df, images):
     test_dataset = ISICDataset(
     df=test_df,
     images_dir=images,
-    #transform_benign=benign_aug,
-    #transform_malignant=malig_aug,
     augment_ratio=0.0  
     )
 

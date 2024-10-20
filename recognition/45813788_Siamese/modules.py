@@ -3,25 +3,25 @@ from torchvision import models
 
 class FeatureExtraction(nn.Module):
     #CHANGE PRETRAINED TO TRUE IF IT SUCKS
-    def __init__(self, embedding_size = 256):
+    def __init__(self):
         "Init feature extractor using Resnet18 for our siamese networks"
 
         super(FeatureExtraction, self).__init__()
 
         #Load resnet
-        self.model = models.resnet50(weights=None)#ResNet18_Weights.IMAGENET1K_V1)
+        self.model = models.resnet50(weights=None)
 
         #remove fully connected
         self.model = nn.Sequential(*list(self.model.children())[:-1])
 
         self.embedding = nn.Sequential(
             nn.Flatten(),
+            #nn.Dropout(p=0.3),
             nn.Linear(2048, 1024),
             nn.ReLU(inplace=True),
             nn.Linear(1024, 512),
             nn.ReLU(inplace=True),
-            nn.Linear(512, embedding_size),
-            nn.ReLU(inplace=True)
+            nn.Linear(512, 256)
 
         )
  
@@ -39,10 +39,10 @@ class FeatureExtraction(nn.Module):
         return embeddings
     
 class SiameseNN(nn.Module):
-    def __init__(self, embedding_size=256):
+    def __init__(self):
         super(SiameseNN, self).__init__()
 
-        self.feature_extractor = FeatureExtraction(embedding_size)
+        self.feature_extractor = FeatureExtraction()
 
     def forward(self, x):
 
@@ -53,15 +53,16 @@ class SiameseNN(nn.Module):
 #classification network
 class Classifier(nn.Module):
     
-    def __init__(self, input_size=256, hidden_size=128):
+    def __init__(self):
         
         super(Classifier, self).__init__()
 
         self.classifier = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
+            nn.Linear(256, 128),
             nn.ReLU(),
+            nn.Linear(128, 64),
             #add dropout if needed
-            nn.Linear(hidden_size, 1),
+            nn.Linear(64, 1),
             #nn.Sigmoid()
         )
         

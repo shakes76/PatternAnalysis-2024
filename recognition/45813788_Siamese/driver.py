@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from predict import test
 from pytorch_metric_learning.samplers import MPerClassSampler
-from dataset import load_data, split_data, ISICDataset, benign_aug,malig_aug
+from dataset import load_data, split_data, ISICDataset, default_aug, train_aug
 
 # Run the training
 def main():
@@ -32,23 +32,21 @@ def main():
     train_dataset = ISICDataset(
         df = train_df,
         images_dir=images,
-        transform_benign=benign_aug,
-        transform_malignant=malig_aug,
+        transform = train_aug,
         augment_ratio=0.5
     )
 
     val_dataset = ISICDataset(
         df=val_df,
         images_dir=images,
-        transform_benign=benign_aug,
-        transform_malignant=malig_aug,
+        transform=train_aug,
         augment_ratio=0.0  
     )
 
 
     #balance samples
     labels = train_dataset.labels
-    batch_size = 32
+    batch_size = 64
     sampler = MPerClassSampler(labels, m=(batch_size/2), length_before_new_iter=len(labels))
 
 
@@ -70,12 +68,12 @@ def main():
     )
 
 
-    siamese_train(current_dir, train_loader,val_loader, images, epochs=200, plots=True)
+    siamese_train(current_dir, train_loader,val_loader, images, epochs=50, plots=True)
 
     siamese_net = SiameseNN()
     siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
     siamese_net.load_state_dict(torch.load(siamese_dict))
-    classifier_train(current_dir, train_loader, val_loader, images, siamese_net, epochs=100, plots=True)
+    classifier_train(current_dir, train_loader, val_loader, images, siamese_net, epochs=50, plots=True)
 
     #Testing part
     classifier_net = Classifier()

@@ -39,7 +39,7 @@ class ADNIDataset(Dataset):
                 img_path = os.path.join(folder_path, file)
                 self.data.append(img_path)
                 self.labels.append(label)
-    
+
     def __len__(self):
         return len(self.data)
 
@@ -52,6 +52,12 @@ class ADNIDataset(Dataset):
             image = self.transform(image)
         
         return image, label
+    
+    def __getinfo__(self):
+        # counting number of AD and NC cases in the ADNI dataset
+        count_0 = sum(1 for label in self.labels if label == 0)
+        count_1 = sum(1 for label in self.labels if label == 1)
+        return len(self.labels), count_0, count_1
     
 def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     """ Loading the training, testing and validating dataset.
@@ -66,10 +72,11 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
         data_dir = zip_path
 
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((512, 512)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
+    
 
     train_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/train'), transform= transform)
     test_dataset = ADNIDataset(os.path.join(data_dir, 'AD_NC/test'), transform= transform)
@@ -81,9 +88,9 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
             train_dataset, [train_size, val_size]
         )
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle = True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle = False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle = False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle = True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle = False, num_workers=4)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle = False, num_workers=4)
 
     return train_loader, val_loader, test_loader
     
@@ -101,7 +108,7 @@ if __name__ == "__main__":
             print(f"Batch size: {len(images)}")
             print(f"Image shape: {images[0].shape}") 
             print(f"Labels: {labels}")
-            break  
+            break 
 
 
 

@@ -7,7 +7,6 @@ from modules import Improved3DUnet
 from metrics import DiceLoss
 from utils import cur_time
 from dataset import *
-from torch.utils.data import DataLoader
 import torch
 import torch.optim as optim
 import time
@@ -46,16 +45,15 @@ def main() -> None:
 
     # setup data
     if LOCAL:
-        dataset = ProstateDataset(LOCAL_DATA_DIR + SEMANTIC_MRS + WINDOWS_SEP,
-                                  LOCAL_DATA_DIR + SEMANTIC_LABELS + WINDOWS_SEP, NUM_CLASSES, num_load=NUM_LOADED, start_t=script_start_t)
+        data_loader = ProstateLoader(LOCAL_DATA_DIR + SEMANTIC_MRS + WINDOWS_SEP,
+                                     LOCAL_DATA_DIR + SEMANTIC_LABELS + WINDOWS_SEP, NUM_CLASSES, num_load=NUM_LOADED, start_t=script_start_t, batch_size=BATCH_SIZE,
+                                     shuffle=SHUFFLE, num_workers=WORKERS)
         sep = WINDOWS_SEP
     else:  # on rangpur
-        dataset = ProstateDataset(RANGPUR_DATA_DIR + SEMANTIC_MRS + LINUX_SEP,
-                                  RANGPUR_DATA_DIR + SEMANTIC_LABELS + LINUX_SEP, NUM_CLASSES, num_load=NUM_LOADED, start_t=script_start_t)
+        data_loader = ProstateLoader(RANGPUR_DATA_DIR + SEMANTIC_MRS + LINUX_SEP,
+                                     RANGPUR_DATA_DIR + SEMANTIC_LABELS + LINUX_SEP, NUM_CLASSES, num_load=NUM_LOADED, start_t=script_start_t, batch_size=BATCH_SIZE,
+                                     shuffle=SHUFFLE, num_workers=WORKERS)
         sep = LINUX_SEP
-
-    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE,
-                             shuffle=SHUFFLE, num_workers=WORKERS)
 
     # create output directory
     output_dir = OUTPUT_DIR
@@ -91,7 +89,7 @@ def main() -> None:
 
     for epoch in range(EPOCHS):
         print(f"[{cur_time(script_start_t)}] beginning epoch {epoch}")
-        for step, (image, mask) in enumerate(data_loader):
+        for step, (image, mask) in enumerate(data_loader.train()):
             image = image.to(device)
             mask = mask.to(device)
 

@@ -14,48 +14,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 
-def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False):
+def siamese_train(current_dir, train_loader, val_loader, images, epochs=50, plots=False):
+    
+    save_dir = os.path.join(current_dir,'models')
 
     print("Training Siamese Netowork")
-
-    #make a directory to save models if not there
-    save_dir = os.path.join(current_dir,'models')
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Initialize training and validation datasets
-    train_dataset = ISICDataset(
-        df = train_df,
-        images_dir=images,
-        transform_benign=benign_aug,
-        transform_malignant=malig_aug,
-        augment_ratio=0.5
-    )
-
-    val_dataset = ISICDataset(
-        df=val_df,
-        images_dir=images,
-        transform_benign=benign_aug,
-        transform_malignant=malig_aug,
-        augment_ratio=0.0  
-    )
-
-    # Initialize DataLoaders
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=32,
-        shuffle=True, 
-        num_workers=4,
-        pin_memory=True
-    )
-    
-    val_loader = DataLoader(
-        val_dataset, 
-        batch_size=32,
-        shuffle=False, 
-        num_workers=4,
-        pin_memory=True
-    )
-
     # Initialize model and move to device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = SiameseNN(embedding_size=256).to(device)
@@ -64,7 +27,7 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
     criterion = ContrastiveLoss(
         pos_margin=0,
         neg_margin=1,
-        distance=LpDistance(normalize_embeddings=True, p=2, power=1),
+        distance=LpDistance(normalize_embeddings=False, p=2, power=1),
         reducer=AvgNonZeroReducer(),
     )
     
@@ -156,44 +119,11 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
         plot_loss(train_losses,val_losses)
 
 
-def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, plots=False):
+def classifier_train(current_dir, train_loader, val_loader, images, siamese, epochs=50, plots=False):
 
     print("Training classifier")
-    #make a directory to save models if not there
     save_dir = os.path.join(current_dir,'models')
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Initialize training and validation datasets
-    train_dataset = ISICDataset(
-        df = train_df,
-        images_dir=images,
-        transform_benign=benign_aug,
-        transform_malignant=malig_aug,
-        augment_ratio=0.5
-    )
-
-    val_dataset = ISICDataset(
-        df=val_df,
-        images_dir=images,
-        augment_ratio=0.0  
-    )
-
-    # Initialize DataLoaders
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=32,
-        shuffle=True, 
-        num_workers=4,
-        pin_memory=True
-    )
-    
-    val_loader = DataLoader(
-        val_dataset, 
-        batch_size=32,
-        shuffle=False, 
-        num_workers=4,
-        pin_memory=True
-    )
+  
 
     # Initialize model and move to device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -211,9 +141,10 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
 
     
     # Count of each class
-    benign_count = (train_df['target'] == 0).sum()
-    malignant_count = (train_df['target'] == 1).sum()
-
+    labels = [label for _, label in train_loader.dataset]
+    benign_count = labels.count(0)
+    malignant_count = labels.count(1)
+    
     # Compute pos_weight for the minority class
     pos_weight = torch.tensor([benign_count / malignant_count], dtype=torch.float).to(device)
 

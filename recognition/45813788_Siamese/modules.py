@@ -16,11 +16,11 @@ class FeatureExtraction(nn.Module):
 
         self.embedding = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(2048, 512),
+            nn.Linear(2048, 1024),
             nn.ReLU(inplace=True),
-            nn.Linear(512,256),
+            nn.Linear(1024, 512),
             nn.ReLU(inplace=True),
-            nn.Linear(256,embedding_size),
+            nn.Linear(512, embedding_size),
             nn.ReLU(inplace=True)
 
         )
@@ -32,7 +32,7 @@ class FeatureExtraction(nn.Module):
     def forward(self, x):
 
 
-        features = self.model(x) #[batch_Size, 512, 1 ,1]
+        features = self.model(x) #[batch_Size, 2048, 1 ,1]
         embeddings = self.embedding(features) #[batch_size, embedding_dim]
         
 

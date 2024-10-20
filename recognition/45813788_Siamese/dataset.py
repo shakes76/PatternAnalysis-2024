@@ -62,7 +62,7 @@ class ISICDataset(Dataset):
                 transform = self.transform_benign
         else:
             if self.transform_malignant:
-                transform=self.transform_benign
+                transform=self.transform_malignant
 
         if transform is None:
             transform = default_aug

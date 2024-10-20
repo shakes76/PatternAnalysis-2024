@@ -39,6 +39,17 @@ GNNs can carry out a variety of tasks, inluding
     <img src="assets/GNNuses.png" alt="GNN Uses" style="width: 60%">
 </div>
 
+### The Problem
+The problem is to create a suitable multi-layer graph neural network (GNN) model to carry out a semi supervised multi-class node classification using the Facebook Large Page-Page Network dataset. 
+
+This graph is a page-page graph of verified Facebook sites, where nodes represent pages and the links are mutual likes between sites. Node features are extracted from the site descriptions that the page owners created to summarize the purpose of the site. The categories are restricted to the 4 categories defined by Facebook: 
+    - Politicians
+    - Governmental Organizations
+    - Television Shows
+    - Companies
+
+The task related to this dataset is multi-class node classification for the 4 site categories.
+
 ## Model Architecture
 
 ## Model Usage
@@ -47,6 +58,7 @@ GNNs can carry out a variety of tasks, inluding
 
 ## References
 [1] A Comprehensive Introduction to Graph Neural Networks (GNNs). https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial
+[2] Facebook Large Page-Page Network https://snap.stanford.edu/data/facebook-large-page-page-network.html
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Training
 Epoch [10/400], Loss: 1.26323, Validation Loss: 1.23775

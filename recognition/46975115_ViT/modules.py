@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 
-#https://www.learnpytorch.io/08_pytorch_paper_replicating/#44-flattening-the-patch-embedding-with-torchnnflatten
 class PatchEmbedding(nn.Module):
     """
     Converts input images into patch embeddings using a convolutional projection.

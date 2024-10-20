@@ -24,7 +24,7 @@ The following sections provide an overview of the deep learning pipeline used fo
 &nbsp;&nbsp;&nbsp;&nbsp; 1. Data Loading & Preprocessing  
 &nbsp;&nbsp;&nbsp;&nbsp; 2. Model Architecture  
 &nbsp;&nbsp;&nbsp;&nbsp; 3. Training Procedure  
-&nbsp;&nbsp;&nbsp;&nbsp; 4. Testing procedure  
+&nbsp;&nbsp;&nbsp;&nbsp; 4. Testing Procedure  
 
 ## 1. Data Loading & Preprocessing  
 The dataset used for this project was the Prostate 2D HipMRI dataset which can be found and downloaded [[here]](#here). The images consists of grayscale MRI scans of prostate tissue which was loaded and preprocessed using the custom data loader found in the [dataset.py](dataset.py) file.    
@@ -242,8 +242,40 @@ The worst reconstructed test image (based on the lowest SSIM score of 0.7071):
 The best reconstructed test image (based on the highest SSIM score of 0.8553):  
 ![Best reconstructed test image](resources/best_image.png)  
   
+MAYBE HERE I CAN PLOT A BATCH OF RECONSTRUCTED TESTING IMAGES  
+  
 In conclusion, the images and results above showcase that the trained VQ-VAE model is effective at generating quality-image reconstructions from the prostate MRI dataset.  
 
+  
+## Project Setup  
+### Dependencies  
+The project was coded on Python using the PyTorch deep learning framework. It requires the following dependencies and version numbers:  
+  
+| Dependency    | Version |
+|---------------|---------|
+| Python        | 3.9     |
+| PyTorch       | 2.0.1   |
+| Torchvision   | 0.15.2  |
+| NumPy         | 1.25.0  |
+| Matplotlib    | 3.8.4   |
+| scikit-image  | 0.23.2  |
+| Pillow        | 10.3.0  |
+  
+The required dependencies can be installed using the following command if needed:  
+`conda install pytorch torchvision numpy matplotlib scikit-image pillow -c pytorch`  
+  
+### Reproducing Results  
+To train the model in the [train.py](train.py) script from the root directory of the project (`PaternAnalysis-2024`), run the following command:  
+  
+`python recognition/vqvae-s4743500/train.py`  
+  
+Running the above command will train the model for 20 epochs and save the best model with the lowest loss value. This model will be saved as a  `.pth` file in the directory `/saved_models/best_vqvae_model.pth`. In addition, running the command will produce the reconstructed training and validation images by the VQ-VAE model for each of the 20 epochs. The reconstructed training and validation images, along with their original input image for comparison, will be saved in `/reconstructions/train/` and `/reconstructions/val/` respectively. A graph showing the relationship between SSIM scores and epochs for both training and validation sets will also be saved as `ssim_scores`. Similarly, another graph of the training reconstruction losses for each epoch will also be created and saved as `batch_losses.png`.  
+  
+To evaluate the models performance on unseen data, you can run the [predict.py](predict.py) script by executing the command:  
+  
+`python recognition/vqvae-s4743500/predict.py`  
+  
+Running the command above will load the saved model weights from the `best_vqvae_model.pth` file, which contains the trained model at the epoch where the validation loss was the lowest. It will also produce a graph which plots the SSIM scores for every reconstructed image in the test set (saved as `ssim_scores_test_set`), along with creating a folder called `/results` where the best (`/results/best_image.png`) and worst (`/results/worst_image.png`) reconstructions are saved. It is assumed that you have access to the same paths configured to access the same train, test, and validation Prostate MRI slices dataset.  
   
 ## Reference List  
 <a name="1">[1]</a> What is VQ-VAE (Vector Quantized Variational Autoencoder): [https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.](https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.)  

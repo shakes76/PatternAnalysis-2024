@@ -21,7 +21,7 @@ reconstruction loss, VQ loss, and SSIM over epochs.
 
 import torch
 from torchmetrics.functional.image \
-    import structural_similarity_index_measure as ssim
+import structural_similarity_index_measure as ssim
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -29,7 +29,6 @@ import pickle
 
 from dataset import HipMRILoader
 import modules
-
 
 # Model path for loading model
 model_path = 'saved_model/VQ-VAE.pth'
@@ -176,7 +175,7 @@ def predict(
     training_vq_loss = data["training_vq_loss"]
     validation_reconstruction_loss = data["validation_reconstruction_loss"]
     validation_vq_loss = data["validation_vq_loss"]
-    ssim = data["ssim"]
+    ssim_data = data["ssim"]
 
     epochs = 150
 
@@ -219,7 +218,7 @@ def predict(
 
     # Plot SSIM over epochs
     plt.figure(figsize=(12, 6))
-    plt.plot(epochs, ssim, label="SSIM")
+    plt.plot(epochs, ssim_data, label="SSIM")
     plt.xlabel('Epoch')
     plt.ylabel('SSIM')
     plt.title('SSIM over Epochs')

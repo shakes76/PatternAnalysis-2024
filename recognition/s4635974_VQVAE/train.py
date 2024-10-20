@@ -243,7 +243,7 @@ def train_model(
                 decoded_image = validation_output_images.view(-1, 1, 256, 128).detach().to(device)
                 
                 # Calculate SSIM and store it
-                similarity = ssim(decoded_image, real_image).item() #, data_range=1.0
+                similarity = ssim(decoded_image, real_image).item()
                 validation_ssim.append(similarity)
 
                 # Calculate reconstruction loss for validation

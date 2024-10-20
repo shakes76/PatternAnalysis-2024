@@ -19,7 +19,7 @@ from tqdm import tqdm
 import numpy as np
 import random
 import torch.nn.functional as F
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 import albumentations as A
 import matplotlib.pyplot as plt
 import logging
@@ -27,7 +27,13 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
-def set_seed(seed=42):
+def set_seed(seed: int = 42) -> None:
+    """
+    Set random seeds for reproducibility.
+
+    Args:
+        seed (int): The seed value to use. Default is 42.
+    """
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
@@ -35,25 +41,59 @@ def set_seed(seed=42):
     random.seed(seed)
     np.random.seed(seed)
 
-# Dice Loss Definition
 class DiceLoss(nn.Module):
-    def __init__(self, smooth: float = 1.):
-        super(DiceLoss, self).__init__()
-        self.smooth = smooth
-    
-    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        preds = torch.sigmoid(preds)
-        preds = preds.view(-1)
-        targets = targets.view(-1)
-        intersection = (preds * targets).sum()
-        dice = (2. * intersection + self.smooth) / (preds.sum() + targets.sum() + self.smooth)
-        return 1 - dice
+    """
+    Implements the Dice Loss function for image segmentation tasks.
 
-def dice_coeff_multiclass(pred, target, num_classes, epsilon=1e-6):
+    The Dice coefficient is a measure of overlap between two samples.
+    This loss function is ideal for tasks like image segmentation where we need to compute how much two masks overlap.
+
+    Attributes:
+        smooth (float): A small constant added to the numerator and denominator to avoid division by zero.
+    """
+
+    def __init__(self, num_classes: int, epsilon: float = 1e-6):
+        """
+        Initialize the DiceLoss module.
+
+        Args:
+            num_classes (int): Number of classes in the segmentation task.
+            epsilon (float): Small constant to avoid division by zero. Default is 1e-6.
+        """
+        super(DiceLoss, self).__init__()
+        self.num_classes = num_classes
+        self.epsilon = epsilon
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the Dice Loss.
+
+        Args:
+            pred (torch.Tensor): The model's predictions.
+            target (torch.Tensor): The ground truth labels.
+
+        Returns:
+            torch.Tensor: The computed Dice Loss.
+        """
+        pred = F.softmax(pred, dim=1)
+        target_onehot = F.one_hot(target, self.num_classes).permute(0, 3, 1, 2).float()
+        intersection = (pred * target_onehot).sum(dim=(2,3))
+        union = pred.sum(dim=(2,3)) + target_onehot.sum(dim=(2,3))
+        dice = (2. * intersection + self.epsilon) / (union + self.epsilon)
+        return 1 - dice.mean()
+
+def dice_coeff_multiclass(pred: torch.Tensor, target: torch.Tensor, num_classes: int, epsilon: float = 1e-6) -> List[float]:
     """
     Compute Dice Coefficient for multi-class segmentation.
-    pred: model output tensor of shape (B, C, H, W) or argmax'd prediction of shape (B, H, W)
-    target: ground truth tensor of shape (B, H, W) with class indices
+
+    Args:
+        pred (torch.Tensor): Model output tensor of shape (B, C, H, W) or argmax'd prediction of shape (B, H, W)
+        target (torch.Tensor): Ground truth tensor of shape (B, H, W) with class indices
+        num_classes (int): Number of classes in the segmentation task
+        epsilon (float): Small constant to avoid division by zero
+
+    Returns:
+        List[float]: List of Dice coefficients for each class
     """
     dice_scores = []
     
@@ -70,21 +110,13 @@ def dice_coeff_multiclass(pred, target, num_classes, epsilon=1e-6):
         dice_scores.append(dice.mean().item())
     return dice_scores
 
-class DiceLoss(nn.Module):
-    def __init__(self, num_classes, epsilon=1e-6):
-        super(DiceLoss, self).__init__()
-        self.num_classes = num_classes
-        self.epsilon = epsilon
+def debug_tensors(tensor_dict: Dict[str, torch.Tensor]) -> None:
+    """
+    Debug tensors by checking for NaN/Inf values and printing statistics.
 
-    def forward(self, pred, target):
-        pred = F.softmax(pred, dim=1)
-        target_onehot = F.one_hot(target, self.num_classes).permute(0, 3, 1, 2).float()
-        intersection = (pred * target_onehot).sum(dim=(2,3))
-        union = pred.sum(dim=(2,3)) + target_onehot.sum(dim=(2,3))
-        dice = (2. * intersection + self.epsilon) / (union + self.epsilon)
-        return 1 - dice.mean()
-    
-def debug_tensors(tensor_dict):
+    Args:
+        tensor_dict (Dict[str, torch.Tensor]): Dictionary of tensors to debug
+    """
     for name, tensor in tensor_dict.items():
         if torch.isnan(tensor).any() or torch.isinf(tensor).any():
             logging.error(f"{name} contains NaN or Inf values")
@@ -94,9 +126,16 @@ def debug_tensors(tensor_dict):
         else:
             logging.debug(f"{name} - min: {tensor.min().item()}, max: {tensor.max().item()}, unique values: {torch.unique(tensor).tolist()}")
 
-def visualize_predictions(model, loader, device, num_classes, save_dir='predictions'):
+def visualize_predictions(model: nn.Module, loader: DataLoader, device: torch.device, num_classes: int, save_dir: str = 'predictions') -> None:
     """
     Visualize model predictions alongside ground truth masks for multi-class segmentation.
+
+    Args:
+        model (nn.Module): The trained model
+        loader (DataLoader): DataLoader for the dataset
+        device (torch.device): The device to run the model on
+        num_classes (int): Number of classes in the segmentation task
+        save_dir (str): Directory to save the visualizations. Default is 'predictions'
     """
     os.makedirs(save_dir, exist_ok=True)
     model.eval()
@@ -134,7 +173,14 @@ def visualize_predictions(model, loader, device, num_classes, save_dir='predicti
                 if idx * loader.batch_size + i >= 4:  # Save first 5 samples
                     return
 
-def main():
+def main() -> None:
+    """
+    Main function to run the training pipeline.
+
+    This function sets up the dataset, model, loss functions, and optimizer.
+    It then runs the training loop, including validation and model checkpointing.
+    Finally, it plots training metrics and visualizes predictions.
+    """
     set_seed(42)
 
     # Configuration
@@ -237,7 +283,6 @@ def main():
                 batch_dice = dice_coeff_multiclass(outputs, masks, num_classes)
                 for i in range(num_classes):
                     val_dice[i] += batch_dice[i]
-
 
         avg_val_loss = val_loss / len(val_loader)
         avg_val_dice = [d / len(val_loader) for d in val_dice]

@@ -5,12 +5,13 @@ from timm.models.layers import to_2tuple, trunc_normal_
 import math
 
 '''
-The idea of the code is from the paper: 
+The code is from the paper: 
 Implementing Vision transformer from Scratch 
 https://tintn.github.io/Implementing-Vision-Transformer-from-Scratch/
-
-Version 1: Replaced the ViT multilayer attention with global filters
-Version 2: Added dropout to prevent overfitting
+and 
+the paper:
+Global Filter Networks for Image Classification
+https://github.com/raoyongming/GFNet/blob/master/gfnet.py
 '''
 
 class PatchEmbed(nn.Module):
@@ -65,10 +66,10 @@ class GFNetFilter(nn.Module):
         
         x = x.view(B,a,b,C)
         x = x.to(torch.float32)
-        x = torch.cuda.fft.rfft2(x, dim=(1, 2), norm='ortho')
+        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
-        x = torch.cuda.fft.irfft2(x, s=(a, b), dim=(1,2), norm='ortho')
+        x = torch.fft.irfft2(x, s=(a, b), dim=(1,2), norm='ortho')
 
         x = x.reshape(B, N, C)
         return x

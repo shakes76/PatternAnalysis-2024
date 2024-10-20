@@ -1,6 +1,7 @@
 # 2D UNet for Prostate Cancer Segmentation in HipMRI
 
-Author: Darcy Weedman, Student ID: 45816985
+Author: Darcy Weedman\
+Student ID: 45816985
 
 ## Task
 The objective of this project is to accurately segment the prostate region in the HipMRI Study on Prostate Cancer using a 2D UNet architecture. Utilizing processed 2D slices available in NIfTI format, the model aims to achieve a minimum Dice similarity coefficient of **0.75** on the test set specifically for the prostate label. This segmentation task is crucial for enhancing diagnostic accuracy and aiding in treatment planning for prostate cancer patients.

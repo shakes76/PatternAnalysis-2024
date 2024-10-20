@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import json
 
+import torch.optim.lr_scheduler as lr_scheduler
+
 # Function to create the plots
 def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots", exp_name="experiment"):
     """
@@ -32,7 +34,7 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label='Training Loss')
     plt.plot(val_losses, label='Validation Loss')
-    plt.title('Loss over Epochs')
+    plt.title(f'Loss over Epochs for {exp_name}')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
@@ -44,7 +46,7 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
     plt.figure(figsize=(10, 6))
     plt.plot(train_accuracies, label='Training Accuracy')
     plt.plot(val_accuracies, label='Validation Accuracy')
-    plt.title('Accuracy over Epochs')
+    plt.title(f'Accuracy over Epochs for {exp_name}')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy (%)')
     plt.legend()
@@ -219,7 +221,7 @@ def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="models/be
 
 
 # Function for full training loop
-def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, exp_name):
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs, device, exp_name):
     """
     Trains the model over multiple epochs and tracks the best validation performance.
 
@@ -267,6 +269,9 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         val_losses.append(val_loss)
         val_accuracies.append(val_accuracy)
         print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.2f}%")
+
+        # Step the scheduler based on validation loss
+        scheduler.step(val_loss)
 
         # Save the model if it has the best validation loss
         if val_loss < best_val_loss:
@@ -326,9 +331,12 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    # Initialize the ReduceLROnPlateau scheduler
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+
 
     ## Train the model
-    train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, num_epochs = num_epochs, device=device, exp_name = exp_name)
+    train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses  = train_model(model, train_dataloader, val_dataloader, criterion, optimizer, scheduler=scheduler, num_epochs = num_epochs, device=device, exp_name = exp_name)
 
     print("stuff", train_losses, train_accuracies, val_losses, val_accuracies, all_batch_losses)
     # Save the losses and accuracies as JSON after training

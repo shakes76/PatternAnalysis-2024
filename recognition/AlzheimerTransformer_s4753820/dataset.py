@@ -90,17 +90,22 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
 
     ### Optional parameter, where you can turn advanced transforms like normalisation off (NOT RECOMMENDED!!). This was only to see the difference in performance between two models.
     if use_transforms:
+        print("Doing super aggressive transforms.  This should only be in v6 and not v5!! If it's in v5, that means that the sbatch ran this too.... ah...")
         data_transforms = transforms.Compose([
             transforms.Resize((image_size, image_size)),
-            transforms.RandomHorizontalFlip(), # For augmentation and better generalisation
-            transforms.RandomRotation(degrees=10),  # Random rotation between -10 and +10 degrees
+            transforms.CenterCrop(image_size // 1.2),  # Center crop
+            transforms.RandomHorizontalFlip(),  # Horizontal flip for augmentation
+            transforms.RandomRotation(degrees=10),  # Slight random rotation
+            transforms.RandomResizedCrop(image_size, scale=(0.8, 1.0)),  # Randomly crop and resize
             transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std) # Mean and std from previous cell
+            transforms.Normalize(mean=[0.1156, 0.1156, 0.1156], std=[0.2229, 0.2229, 0.2229])  # Assuming these are your normalization values
         ])
     else:
+        print("Simple basic transform (only normalisation) being used!!")
         data_transforms = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
+            transforms.Normalize(mean=[0.1156, 0.1156, 0.1156], std=[0.2229, 0.2229, 0.2229])  # Assuming these are your normalization values
         ])
 
 
@@ -112,7 +117,8 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
     # Split the train_data into training and validation datasets
     train_size = int(train_fraction * len(train_data))  
     val_size = len(train_data) - train_size  
-    train_dataset, val_dataset = random_split(train_data, [train_size, val_size])
+    gen1 = torch.Generator().manual_seed(42) # Generator for reproducible results 
+    train_dataset, val_dataset = random_split(train_data, [train_size, val_size], generator=gen1)
 
 
     # Create DataLoaders for the training, validation, and test datasets
@@ -130,3 +136,4 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
     # Shuffle not needed for test because we aren't training on it. Shuffle is mainly used because, imagine if you had all your 0 classifications in the beginning and the dataloader ate this. You're feeding the NN hundreds of entire "0s" that it's going to backprop in this direction, instead of an 'unbiased sample'. This can affect how well it learns. Shuffling helps better convergence, and generalisation.
 
     return train_loader, val_loader, test_loader
+

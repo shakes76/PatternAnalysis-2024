@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.fft
 from timm.models.layers import to_2tuple, trunc_normal_
+import math
 
 class PatchEmbed(nn.Module):
     """
@@ -52,13 +53,21 @@ class GFNetFilter(nn.Module):
         self.w = w
         self.h = h
 
-    def forward(self, x):
-        print (x.shape)
-        """B, C, H, W= x.shape
+    def forward(self, x, spatial_size =None):
+        B, N, C= x.shape
+        if spatial_size is None:
+            a = b= int(math.sqrt(N))
+        else:
+            a = b= spatial_size
+        
+        x = x.view(B,a,b,C)
+        x = x.to(torch.float32)
         x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
-        x = torch.fft.irfft2(x, s=(H, W), dim=(1,2), norm='ortho')"""
+        x = torch.fft.irfft2(x, s=(a, b), dim=(1,2), norm='ortho')
+
+        x = x.reshape(B, N, C)
         return x
     
 class MLP(nn.Module):

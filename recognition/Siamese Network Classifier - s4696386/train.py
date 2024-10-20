@@ -64,12 +64,12 @@ def test(model: SiameseNetwork, device, test_loader, epoch: int, threshold = 0.5
         # print(f"Predictions: {all_preds}")
         print(f'Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}')
         print(f"Predicted {benign_count} benigns")
-        print(f"Epoch: {epoch}\n")
+        print(f"Epoch: {epoch}, Threshold: {threshold}\n")
     
 
     return accuracy
 
-def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: PROCESSED_DATA):
+def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: PROCESSED_DATA, threshold: float = 0.5):
     print("="*200)
     print(f"Training with: batch_size {batch_size}, epochs {epochs}, learning_rate {learning_rate}")
     torch_seed = 10
@@ -103,38 +103,40 @@ def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: 
     for epoch in range(1, epochs+1):
         test_verbose = epoch == epochs
         train(model, device, train_loader, optimizer, epoch, log_interval, dry_run, verbose=False)
-        accuracy = test(model, device, test_loader, epoch, verbose=test_verbose)
-        save_model = accuracy > 0.8
+        accuracy = test(model, device, test_loader, epoch, verbose=test_verbose, threshold=threshold)
+        save_model = accuracy >= 0.95
+        if save_model:
+            save_loc = f"{DEFAULT_SAVE_LOCATION}siamese_network_{batch_size}_({epoch}.{epochs})_{learning_rate}_{threshold}.pt"
+            torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
+            print(f"Saved to {save_loc} with {accuracy}")
         scheduler.step()
 
-    if save_model:
-        save_loc = f"{DEFAULT_SAVE_LOCATION}siamese_network_{batch_size}_{epochs}_{learning_rate}.pt"
-        torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
-        print(f"Saved to {save_loc}")
 
-    return accuracy, batch_size, epochs, learning_rate
+    return accuracy, batch_size, epochs, learning_rate, threshold
         
 
 def main():
 
     processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
 
-    batch_sizes = [8, 16, 32]
-    epochs = [10, 30, 40]
-    learning_rates = [i/10000 for i in range(2, 7)]
+    batch_sizes = [16]
+    epochs = [40]
+    learning_rates = [i/10000 for i in range(2, 6)]
+    thresholds = [0.3, 0.4, 0.6, 0.7]
 
     accuracies = []
 
     os.chdir(DEFAULT_SAVE_LOCATION)
     print(os.getcwd())
 
-    for bs in batch_sizes:
-        for e in epochs:
-            for lr in learning_rates:
-                accuracy = run_model(bs, e, lr, processed_data)
-                accuracies.append(accuracy)
-                with open("results.txt", "a") as results:
-                    results.write(str(accuracy) + "\n")
+    for th in thresholds:
+        for bs in batch_sizes:
+            for e in epochs:
+                for lr in learning_rates:
+                    accuracy = run_model(bs, e, lr, processed_data, threshold=th)
+                    accuracies.append(accuracy)
+                    with open("results.txt", "a") as results:
+                        results.write(str(accuracy) + "\n")
 
     print(max(accuracies, key=lambda x: x[0]))
 

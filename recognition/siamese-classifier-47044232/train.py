@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import v2
 
 import config
-import modules
+from modules import SiameseNetwork
 from dataset import ISICKaggleChallengeSet
 from utils import split_data
 
@@ -43,7 +43,7 @@ train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, num_workers=c
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 val_loader = DataLoader(val_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 
-model = modules.resnet50(weights=None, progress=False).to(device)
+model = SiameseNetwork().to(device)
 tripletloss = TripletMarginLoss(margin=config.LOSS_MARGIN)
 optimiser = Adam(model.parameters(), lr=config.LEARNING_RATE, betas=config.BETAS)
 
@@ -69,9 +69,8 @@ def processes_batch(anchor, positive, negative) -> torch.Tensor:
     negative = negative.to(device)
 
     # Evaluate images
-    anchor_result = model(anchor)
-    positive_result = model(positive)
-    negative_result = model(negative)
+    anchor_result, positive_result = model(anchor, positive)
+    _, negative_result = model(anchor, negative)
 
     return tripletloss(anchor_result, positive_result, negative_result)
 

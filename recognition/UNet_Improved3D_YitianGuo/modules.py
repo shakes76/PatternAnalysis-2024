@@ -12,24 +12,61 @@ in_chanel = 1 # grey
 out_chanel = 6 # background, body outline, bone, bladder, rectum, prostate
 
 class DoubleConv(nn.Module):
-    """两个连续的卷积层，每个卷积后跟随 BatchNorm 和 LeakyReLU 激活函数"""
+    """包含残差连接的两个连续卷积层"""
 
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
-        self.double_conv = nn.Sequential(
+        self.conv = nn.Sequential(
             nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm3d(out_channels),
+            nn.GroupNorm(8, out_channels),
             nn.LeakyReLU(inplace=True),
-            # 可选：移除 Dropout3d
             nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm3d(out_channels),
-            nn.LeakyReLU(inplace=True),
-            # 可选：移除 Dropout3d
+            nn.GroupNorm(8, out_channels),
         )
+        self.relu = nn.LeakyReLU(inplace=True)
+
+        if in_channels != out_channels:
+            self.residual_conv = nn.Conv3d(in_channels, out_channels, kernel_size=1, bias=False)
+        else:
+            self.residual_conv = nn.Identity()
 
     def forward(self, x):
-        return self.double_conv(x)
+        residual = self.residual_conv(x)
+        out = self.conv(x)
+        out += residual
+        out = self.relu(out)
+        return out
 
+class AttentionBlock(nn.Module):
+    """注意力门"""
+
+    def __init__(self, F_g, F_l, F_int):
+        super(AttentionBlock, self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv3d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.GroupNorm(8, F_int)
+        )
+
+        self.W_x = nn.Sequential(
+            nn.Conv3d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.GroupNorm(8, F_int)
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv3d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.GroupNorm(1, 1),
+            nn.Sigmoid()
+        )
+
+        self.relu = nn.LeakyReLU(inplace=True)
+
+    def forward(self, g, x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1 + x1)
+        psi = self.psi(psi)
+        out = x * psi
+        return out
 
 class DownSample(nn.Module):
     """下采样层，通过 MaxPool3d 减少空间尺寸"""
@@ -43,25 +80,27 @@ class DownSample(nn.Module):
 
 
 class UpSample(nn.Module):
-    """上采样层，通过 ConvTranspose3d 增加空间尺寸，并与跳跃连接拼接"""
+    """上采样层，包含注意力机制"""
 
-    def __init__(self, in_channels, out_channels, kernel_size=2, stride=2):
+    def __init__(self, in_channels, out_channels, attention_channels, kernel_size=2, stride=2):
         super(UpSample, self).__init__()
         self.up = nn.ConvTranspose3d(in_channels, out_channels, kernel_size=kernel_size, stride=stride)
+        self.attention = AttentionBlock(F_g=out_channels, F_l=attention_channels, F_int=out_channels // 2)
 
     def forward(self, x, skip):
         x = self.up(x)
-        # 确保上采样后的特征图与跳跃连接的特征图尺寸匹配
         if x.shape != skip.shape:
             x = F.interpolate(x, size=skip.shape[2:], mode='trilinear', align_corners=True)
-        x = torch.cat((x, skip), dim=1)  # 在通道维度拼接
+        # 应用注意力机制
+        skip = self.attention(g=x, x=skip)
+        x = torch.cat((x, skip), dim=1)
         return x
 
 
 class UNet3D(nn.Module):
     """3D UNet 模型"""
 
-    def __init__(self, in_channels=in_chanel, out_channels=out_chanel, features=[16, 32, 64, 128]):
+    def __init__(self, in_channels=in_chanel, out_channels=out_chanel, features=[32, 64, 128, 256]):
         super(UNet3D, self).__init__()
         # 编码器部分
         self.encoder1 = DoubleConv(in_channels, features[0])
@@ -79,20 +118,20 @@ class UNet3D(nn.Module):
         # 瓶颈部分
         self.bottleneck = DoubleConv(features[3], features[3] * 2)
 
-        # 解码器部分
-        self.upconv4 = UpSample(features[3] * 2, features[3])
+        # 解码器部分，添加 attention_channels 参数
+        self.upconv4 = UpSample(features[3] * 2, features[3], attention_channels=features[3])
         self.decoder4 = DoubleConv(features[3] * 2, features[3])
 
-        self.upconv3 = UpSample(features[3], features[2])
+        self.upconv3 = UpSample(features[3], features[2], attention_channels=features[2])
         self.decoder3 = DoubleConv(features[2] * 2, features[2])
 
-        self.upconv2 = UpSample(features[2], features[1])
+        self.upconv2 = UpSample(features[2], features[1], attention_channels=features[1])
         self.decoder2 = DoubleConv(features[1] * 2, features[1])
 
-        self.upconv1 = UpSample(features[1], features[0])
+        self.upconv1 = UpSample(features[1], features[0], attention_channels=features[0])
         self.decoder1 = DoubleConv(features[0] * 2, features[0])
 
-        # 最终输出层
+        # 最终输出层保持不变
         self.final_conv = nn.Conv3d(features[0], out_channels, kernel_size=1)
         # 移除 Softmax
         # self.softmax = nn.Softmax(dim=1)

@@ -331,6 +331,7 @@ Testing took 283.58 secs or 4.72 mins in total
 
 ### Accuracy
 ![Accuracy of the model over the training period](./assets/acc.png)
+
 The accuracy graph seen above is the result of a large hyperparameters grid
 search and several days of training. The final model was extracted from the
 training period at epoch 320 where the accuracy peaked at 78.01%. The model was
@@ -340,11 +341,13 @@ continue training would increase model accuracy.
 
 ### Training Loss
 ![Training loss over the training period](./assets/plot-loss.png)
+
 Over the 600 epoch training period, the validation loss seems quite steady and
 does not appear to show signs of divergence.
 
 ### Confusion Matrix
 ![Confusion Matrix](./assets/conf.png)
+
 The model appears to have a bias toward classifying the data as Normal Cognitive.
 
 ### Global Filter visualisations
@@ -366,5 +369,4 @@ reach this value are shared between the cohort and training the model any
 further would be inconsiderate to them.
 
 # References
-
 [^1]: Rao, Yongming, et al. "Global filter networks for image classification." Advances in neural information processing systems 34 (2021): 980-993.

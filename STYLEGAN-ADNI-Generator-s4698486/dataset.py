@@ -8,7 +8,7 @@ from torchvision import datasets, transforms
 from torchvision.utils import save_image
 import matplotlib.pyplot as plt
 
-from config import image_height, image_width
+from constants import image_height, image_width
 
 '''
  Saves 5 images after the data transformation/augmentation and loading is complete and wrapped using dataloader.
@@ -36,6 +36,7 @@ def get_data(data, batchSize):
 
     transform = transforms.Compose([
             transforms.ToTensor(),
+            transforms.RandomVerticalFlip(p=0.5), # Augments data by randomly flipping horizontally 50% of the time - minimises overfitting.
             transforms.Grayscale(), # Converts images to grayscale if they are considered RGB.
             transforms.Normalize(mean=[0.5], std=[0.5])] # Normalises pixel data so that it is in the [0, 1] range instead of [0, 255]. Allows for tensor operations
                                                          # to run more smoothly.

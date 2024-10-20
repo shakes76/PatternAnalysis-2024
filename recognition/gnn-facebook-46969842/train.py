@@ -83,42 +83,6 @@ def train(model, loader, criterion, optimizer, numEpochs):
     plt.savefig("outputs/epoch_losses.png")
     plt.close()
 
-
-
-def test(model, loader):
-    """
-    Testing loop for the GCN model.
-
-    Parameters:
-        model (torch.nn.Module): The GCN model to be tested.
-        loader (DataLoader): DataLoader for the test dataset.
-    """
-    startTime = time.time()
-    print("> Testing")
-    model.eval()  # Set model to evaluation mode
-    
-    correct = 0
-    total = 0
-    
-    with torch.no_grad():
-        for batch in loader:
-            data = batch[0] #Get the data from the batch
-            
-            outputs, _ = model(data)  # Forward pass
-            _, predicted = torch.max(outputs[data.test_mask], 1)  # Get predicted classes
-            
-            total += data.y[data.test_mask].size(0)  # Total number of test examples
-            correct += (predicted == data.y[data.test_mask]).sum().item()  # Count correct predictions
-
-    accuracy = 100 * correct / total
-    print("Test Accuracy: {:.2f}%".format(accuracy))
-
-    endTime = time.time()
-    runTime = endTime - startTime
-    print("Testing Time: {:.2f} seconds".format(runTime))
-
-
-
 if __name__ == "__main__":
     # Define Parameters
     learningRate = 0.01
@@ -138,8 +102,3 @@ if __name__ == "__main__":
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=learningRate)
     train(model, loader, criterion, optimizer, numEpochs)
-
-    #Test the Data
-    test_model = GCN(dataset)
-    test_model.load_state_dict(torch.load("model.pth"))
-    test(model, loader) 

@@ -4,33 +4,42 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+import torch.nn as nn
+import torch.optim as optim
 import numpy as np
-import tensorflow as tf
 from torchvision import  datasets, transforms
 import matplotlib.pyplot as plt
-
 
 class StyleGan():
 
     def __init__(self, latent_dim = 512, chanels =1, network_capacity = 16) -> None:
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         self.model = StyleGAN2(
             image_size=256,
             latent_dim=latent_dim,
-            network_capacity= network_capacity
-        )
+            network_capacity=network_capacity
+        ).to(self.device)
         self.chanels = chanels
     
-    def get_generator(self):
-        return self.model.G
+    def get_generator(self, noise):
+        return self.model.G(noise)
 
-    def get_discriminator(self):
-        return self.model.D
+    def get_discriminator(self, image):
+        return self.model.D(image)
     
     def get_style_vector(self):
         return self.model.SE
     
+    def get_G_optim(self):
+        return self.model.G_opt
+    
+    def get_D_optim(self):
+        return self.model.D_opt
+    
     def initialise_weight(self):
         self.model._init_weights()
+
 
     def move_to_device(self):
         self.model.G.to(self.device)
@@ -65,3 +74,4 @@ class StyleGan():
             'optimizerG_state_dict': self.optimizerG.state_dict(),
             'optimizerD_state_dict': self.optimizerD.state_dict(),
         }, path)
+

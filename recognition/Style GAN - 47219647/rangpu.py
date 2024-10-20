@@ -28,10 +28,10 @@ def data_set_creator():
     ])
 
     # Change the directory to what is needed
-    data_dir = 'recognition/Style GAN - 47219647/AD_NC/test'
+    data_dir = '/home/groups/comp3710/ADNI/AD_NC/train'
     
     dataset = datasets.ImageFolder(root=data_dir, transform=augmentation_transforms)
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=True, num_workers=6)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True, num_workers=6)
 
     num_classes = len(dataset.classes)  
 
@@ -43,29 +43,36 @@ def data_set_creator():
     return get_one_hot_encoded_loader()
 
 
-
-
 class StyleGan():
 
     def __init__(self, latent_dim = 512, chanels =1, network_capacity = 16) -> None:
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         self.model = StyleGAN2(
             image_size=256,
             latent_dim=latent_dim,
-            network_capacity= network_capacity
-        )
+            network_capacity=network_capacity
+        ).to(self.device)
         self.chanels = chanels
     
-    def get_generator(self):
-        return self.model.G 
+    def get_generator(self, noise):
+        return self.model.G(noise)
 
-    def get_discriminator(self):
-        return self.model.D
+    def get_discriminator(self, image):
+        return self.model.D(image)
     
     def get_style_vector(self):
         return self.model.SE
     
+    def get_G_optim(self):
+        return self.model.G_opt
+    
+    def get_D_optim(self):
+        return self.model.D_opt
+    
     def initialise_weight(self):
         self.model._init_weights()
+
 
     def move_to_device(self):
         self.model.G.to(self.device)
@@ -103,46 +110,42 @@ class StyleGan():
 
 
 
-def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
+def train_gan(model: StyleGan, dataloader, epochs=10, latent_dim=512, lr=1e-4):
     discriminator_losses = []
     generator_losses = []
     
-    # Move model to the correct device (GPU if available)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.move_to_device()
-
     # Initialize weights of the model
     model.initialise_weight()
 
     # Optimizers for generator and discriminator
-    optimizerG = optim.Adam(model.get_generator().parameters(), lr=lr, betas=(0.5, 0.9))
-    optimizerD = optim.Adam(model.get_discriminator().parameters(), lr=lr * 2, betas=(0.5, 0.9))
+    optimizerG = model.get_G_optim()
+    optimizerD = model.get_D_optim()
+
+    # Store optimizers in the model for saving checkpoints
+    model.optimizerG = optimizerG
+    model.optimizerD = optimizerD
 
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss for real vs fake classification
 
-    num_classes = 2 
+    num_classes = 2
+
 
     for epoch in range(epochs):
         for real_images, one_hot_labels in dataloader:
             batch_size = real_images.size(0)
 
-            # Move real images and labels to the device
-            real_images = real_images.to(device)
-            one_hot_labels = one_hot_labels.to(device)
-
             # Label tensors for real and fake images
-            real_labels = torch.ones(batch_size, 1).to(device)  # Real labels = 1
-            fake_labels = torch.zeros(batch_size, 1).to(device)  # Fake labels = 0
+            real_labels = torch.ones(batch_size, 1).to(model.device)  # Real labels = 1
+            fake_labels = torch.zeros(batch_size, 1).to(model.device)  # Fake labels = 0
 
-            
             noise = model.sample_noise(batch_size, latent_dim)
 
             optimizerD.zero_grad()
 
-            fake_images = model.get_generator()(noise)
+            fake_images = model.get_generator(noise)
             
-            real_scores, _ = model.get_discriminator()(real_images)
-            fake_scores, _ = model.get_discriminator()(fake_images.detach()) 
+            real_scores, _ = model.get_discriminator(real_images)
+            fake_scores, _ = model.get_discriminator(fake_images.detach())
 
             d_real_loss = criterion(real_scores, real_labels)
             d_fake_loss = criterion(fake_scores, fake_labels)
@@ -153,8 +156,7 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
 
             optimizerG.zero_grad()
 
-            # Discriminator forward pass on fake images (using updated generator)
-            fake_scores, _ = model.get_discriminator()(fake_images)
+            fake_scores, _ = model.get_discriminator(fake_images)
 
             g_loss = criterion(fake_scores, real_labels)
 
@@ -162,7 +164,7 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
             optimizerG.step()
 
             discriminator_losses.append(d_loss.item())
-            generator_losses.appen(g_loss.item())
+            generator_losses.append(g_loss.item())  # Fixed typo
 
         print(f"Epoch [{epoch + 1}/{epochs}], D Loss: {d_loss.item():.4f}, G Loss: {g_loss.item():.4f}")
         
@@ -170,6 +172,7 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
             model.save_checkpoint(epoch + 1, path=f"gan_checkpoint_epoch_{epoch + 1}.pth")
         
     return discriminator_losses, generator_losses
+
 
 discriminator_losses, generator_losses = train_gan(model = StyleGan(), dataloader= data_set_creator(), epochs= 1)
 

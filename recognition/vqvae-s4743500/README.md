@@ -221,8 +221,30 @@ Looking at the plot above, the low final loss value indicates that the model has
 The image below shows the input validation image vs. codebook embedding representation vs. reconstructed validation image:  
 ![Codebook Representation for Comparison](resources/epoch_19_comparison_val.png)
 
-## 4. VQ-VAE Testing Process
+## 4. VQ-VAE Testing Process  
+  
+The testing process can be found in the [predict.py](predict.py) script where it loads the trained VQ-VAE model which was previously saved in [train.py](train.py). The main purpose for testing is to evaluate the model's ability to reconstruct unseen images and measure how well it performed for the SSIM score. A DataLoader was used to load the test dataset that represented the 'unseen images'.  
+  
+The plot of the SSIM scores for all 540 test images:  
+![SSIM scores for 540 test images](resources/ssim_scores_test_set.png)  
+  
+`Highest SSIM score: 0.8553`  
+`Lowest SSIM score: 0.7071`  
+`Average SSIM score: 0.7917`  
+  
+As you can see from the plot and printed results above, it shows a generally high level of reconstruction quality, with the average SSIM score being 0.7917. All 540 test images achieved an SSIM score greater than the 0.6 score threshold where even the lowest score still had a value of 0.7071. This indicates that the model is consistently performing well across the entire test set.  
+  
+One notable observation about the results is that the SSIM scores seem to have a scattered distribution. This suggests some sort of variance in how well certain images are reconstructed, however, it is still clear that the model overall generalises well to data it has not seen. 
 
+The worst reconstructed test image (based on the lowest SSIM score of 0.7071):  
+![Worst reconstructed test image](resources/worst_image.png)  
+  
+The best reconstructed test image (based on the highest SSIM score of 0.8553):  
+![Best reconstructed test image](resources/best_image.png)  
+  
+In conclusion, the images and results above showcase that the trained VQ-VAE model is effective at generating quality-image reconstructions from the prostate MRI dataset.  
+
+  
 ## Reference List  
 <a name="1">[1]</a> What is VQ-VAE (Vector Quantized Variational Autoencoder): [https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.](https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.)  
 <a name="2">[2]</a> Neural Discrete Representation Learning, Aaron van den Oord, Oriol Vinyals, Koray Kavukcuoglu, 2017: [https://arxiv.org/abs/1711.00937](https://arxiv.org/abs/1711.00937)  

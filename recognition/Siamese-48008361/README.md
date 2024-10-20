@@ -123,6 +123,8 @@ The architecture processes image pairs through identical branches with shared we
 ## Loss Functions
 
 1. **Triplet Loss**:
+   *Image 1: Triplet Loss Visualisation (Sarıgöz, 2022)*
+   ![alt text](graphs/tripletloss.png)
    - Purpose: Learn a discriminative embedding space for skin lesions
    - Formula: L = max(0, D(A,P) - D(A,N) + margin)
      Where A = Anchor, P = Positive, N = Negative, D = Euclidean distance
@@ -277,6 +279,9 @@ Based on results and dermatologist consultations:
 7. khornlund. (2019). GitHub - khornlund/pytorch-balanced-sampler: PyTorch implementations of `BatchSampler` that under/over sample according to a chosen parameter alpha, in order to create a balanced training distribution. GitHub. https://github.com/khornlund/pytorch-balanced-sampler
 8. ISIC-Research. (2020). GitHub - ISIC-Research/ADAE: SIIM/ISIC 2020 Challenge Winning Algorithm (All Data Are Ext). GitHub. https://github.com/ISIC-Research/ADAE
 9. PyTorch. (2023). PyTorch. Pytorch.org. https://pytorch.org/
+10. Sarıgöz, Y. (2022, March 25). Triplet Loss — Advanced Intro. Medium. https://towardsdatascience.com/triplet-loss-advanced-intro-49a07b7d8905
+
+‌
 
 ‌
 

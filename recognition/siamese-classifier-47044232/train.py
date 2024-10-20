@@ -75,6 +75,8 @@ def processes_batch(anchor, positive, negative) -> torch.Tensor:
 
     return tripletloss(anchor_result, positive_result, negative_result)
 
+print("Starting training now...")
+start = time.time()
 # Training cycle
 for epoch in range(config.EPOCHS):
     model.train()
@@ -96,6 +98,9 @@ for epoch in range(config.EPOCHS):
             val_loss.append(loss)
             if i % (len(val_loader)//2) == 0 and i != len(val_loader)-1:
                 print(f"Validation: Batch: {i}, Loss: {loss.item()}")
+
+stop = time.time()
+print(f"Training complete! It took {(start-stop)/60} minutes")
 
 # Testing model to verify functionality
 model.eval()

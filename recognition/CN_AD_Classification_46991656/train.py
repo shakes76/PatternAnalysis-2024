@@ -84,4 +84,31 @@ def evaluate(model, loader, criterion):
     return epoch_loss, epoch_acc
 
 
+# Training loop with validation
+def train_and_evaluate():
+    train_losses, train_accuracies = [], []
+    test_losses, test_accuracies = [], []
+
+    for epoch in range(EPOCHS):
+        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer)
+        test_loss, test_acc = evaluate(model, test_loader, criterion)
+
+        train_losses.append(train_loss)
+        train_accuracies.append(train_acc)
+        test_losses.append(test_loss)
+        test_accuracies.append(test_acc)
+
+        print(f"Epoch [{epoch + 1}/{EPOCHS}], "
+              f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
+              f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}")
+
+        # Save model checkpoint
+        torch.save(model.state_dict(), MODEL_SAVE_PATH)
+
+
+if __name__ == "__main__":
+    train_and_evaluate()
+
+
+
 

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 
-class Gan():
+class StyleGan():
 
     def __init__(self,image_size, latent_dim, chanels, network_capacity) -> None:
         self.model = StyleGAN2(

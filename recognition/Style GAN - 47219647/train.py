@@ -1,65 +1,70 @@
 import torch
 import torch.nn as nn
-from torch.optim import AdamW
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-from torch.cuda.amp import autocast, GradScaler
+import torch.optim as optim
 from dataset import data_set_creator
-from diffusers import DDPMScheduler
-from modules import vae, unet, text_encoder, tokenizer
+from modules import StyleGan
 
-data_loader, label_map = data_set_creator()
+def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
+    
+    # Move model to the correct device (GPU if available)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.move_to_device()
 
+    # Initialize weights of the model
+    model.initialise_weight()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Optimizers for generator and discriminator
+    optimizerG = optim.Adam(model.get_generator().parameters(), lr=lr, betas=(0.5, 0.9))
+    optimizerD = optim.Adam(model.get_discriminator().parameters(), lr=lr * 2, betas=(0.5, 0.9))
 
-unet.to(device)
-vae.to(device)
-text_encoder.to(device)
+    criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss for real vs fake classification
 
-num_epochs = 10
+    num_classes = 2 
 
-criterion = nn.MSELoss()
-optimizer = AdamW(unet.parameters(), lr=1e-4)
-scaler = GradScaler()
-noise_scheduler = DDPMScheduler(num_train_timesteps=1000)
+    for epoch in range(epochs):
+        for real_images, one_hot_labels in dataloader:
+            batch_size = real_images.size(0)
 
-for epoch in range(num_epochs):
-    unet.train()
-    for batch_images, batch_labels in data_loader:
-        batch_images = batch_images.to(device)
+            # Move real images and labels to the device
+            real_images = real_images.to(device)
+            one_hot_labels = one_hot_labels.to(device)
 
-        #Changes the lable to the desired text encoding
-        text_labels = [label_map[label.item()] for label in batch_labels]
+            # Label tensors for real and fake images
+            real_labels = torch.ones(batch_size, 1).to(device)  # Real labels = 1
+            fake_labels = torch.zeros(batch_size, 1).to(device)  # Fake labels = 0
 
-        text_inputs = tokenizer(batch_labels, padding="max_length", return_tensors="pt", truncation=True).input_ids.to(device)
+            
+            noise = model.sample_noise(batch_size, latent_dim)
+
+            optimizerD.zero_grad()
+
+            fake_images = model.get_generator()(noise)
+
+            # Discriminator forward pass on real and fake images
+            real_scores, _ = model.get_discriminator()(real_images)
+            fake_scores, _ = model.get_discriminator()(fake_images.detach()) 
+
+            # Calculate discriminator loss (real and fake images)
+            d_real_loss = criterion(real_scores, real_labels)
+            d_fake_loss = criterion(fake_scores, fake_labels)
+            d_loss = d_real_loss + d_fake_loss
+
+            d_loss.backward()
+            optimizerD.step()
+
+            # --------- Train Generator ---------
+            optimizerG.zero_grad()
+
+            # Discriminator forward pass on fake images (using updated generator)
+            fake_scores, _ = model.get_discriminator()(fake_images)
+
+            g_loss = criterion(fake_scores, real_labels)
+
+            g_loss.backward()
+            optimizerG.step()
+
+        print(f"Epoch [{epoch + 1}/{epochs}], D Loss: {d_loss.item():.4f}, G Loss: {g_loss.item():.4f}")
         
-        text_embeddings = text_encoder(text_inputs).last_hidden_state
+        if (epoch + 1) % 5 == 0:
+            model.save_checkpoint(epoch + 1, path=f"gan_checkpoint_epoch_{epoch + 1}.pth")
 
-
-        latents = vae.encode(batch_images).latent_dist.sample() * 0.18215  # Scale factor
-
-        # Generate random noise
-        noise = torch.randn_like(latents).to(device)
-
-        # Sample random timesteps
-        timesteps = torch.randint(0, noise_scheduler.num_train_timesteps, (batch_images.size(0),), device=device).long()
-
-        # Add noise to the latent representations based on timesteps
-        noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-
-        # Forward pass through the UNet (with mixed precision)
-        with autocast():
-            noise_pred = unet(noisy_latents, timesteps, text_embeddings).sample
-
-            # Compute the loss (MSE between predicted noise and actual noise)
-            loss = criterion(noise_pred, noise)
-
-        # Backpropagation with mixed precision
-        optimizer.zero_grad()
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
-
-torch.save(unet.state_dict(), "unet_trained.pth")
-torch.save(vae.state_dict(), "vae_trained.pth")

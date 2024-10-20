@@ -51,7 +51,6 @@ class SiameseNetwork(nn.Module):
             nn.Dropout(0.5),
             
             nn.Linear(512, embedding_dim),
-            nn.ReLU(inplace=True),
             nn.Dropout(0.5)
         )
         
@@ -71,6 +70,7 @@ class SiameseNetwork(nn.Module):
         out = self.feature_extractor(x)
         out = out.view(out.size(0), -1)
         out = self.fc_layers(out)
+        #out = F.normalize(out, p=2, dim=1)
         return out
 
     def forward(self, x1, x2, x3):

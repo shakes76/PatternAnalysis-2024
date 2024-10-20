@@ -111,7 +111,7 @@ Siamese network structure:
    *Image 1: ResNet50 Architecture (Rastogi, 2022)*
    ![alt text](graphs/resnet50.png)
    - ResNet50 backbone (pre-trained on ImageNet) and layers are unfrozen
-   - Global Average Pooling layer
+   - Global Average Pooling layer (AveragePool2d with fixed 1x1 output dimension) at end, but 2x2 max pooling layer used between layers
    - Output: 2048-dimensional feature vector
 
 2. **Custom Fully Connected Layers**:

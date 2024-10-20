@@ -111,11 +111,11 @@ if __name__ == "__main__":
     # Initialize model, loss function, and optimizer
     model = GFNet(
             img_size=512, 
-            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4
+            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_rate = 0.1
         )
     print(model)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-3)
     model.to(device)
 
     # Load data
@@ -125,11 +125,11 @@ if __name__ == "__main__":
     """
     zip_path = "ADNI_AD_NC_2D.zip"
     extract_to = "data"
-    train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85)
+    train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.80)
 
     # Training loop
     best_val_accuracy = 0.0
-    epochs = 30
+    epochs = 20
 
     for epoch in range(epochs):
         train_loss, train_accuracy = train(model, train_loader, criterion, optimizer, device)
@@ -139,24 +139,19 @@ if __name__ == "__main__":
         val_losses.append(val_loss)
         val_accuracies.append(val_accuracy)
 
+
         print(f"Epoch [{epoch+1}/{epochs}]")
         print(f"Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}")
         print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.4f}")
-        
+        test_loss, test_accuracy = validate(model, test_loader, criterion, device)
+        print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
         # Save the model if validation accuracy improves
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(model.state_dict(), 'best_gfnet_model.pth')
+            torch.save(model.state_dict(), 'model.pth')
 
     print("Training complete.")
 
-    # Load the best model for testing
-    model.load_state_dict(torch.load('best_gfnet_model.pth'))
-    test_loss, test_accuracy = validate(model, test_loader, criterion, device)
-    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
-
-    #plot the curves
+    # plot the curves
     plot_metrics(train_losses, train_accuracies, val_losses, val_accuracies)
-
-

@@ -55,30 +55,36 @@ The sampling process of DDPM is defined as follows. This process allows us to re
 
 ## Training
 
-#### Requirements
+<p align="center">
+  <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/training_loss.jpg" alt="Backward" />
+</p>
 
-#### Model Archetecture
+The default setting for the total number of iterations is 10,000, which requires around 5 hours of training on a P100 GPU. However, the graph shows that it converges quickly within just 10,000 iterations. Further adjustments to the number of iterations can be discussed.
 
-#### Hyperparameter
+## Requirements
+This program is run in the Kaggle environment (4/10/2024) with a P100 GPU. <br> The 'ema-pytorch' package is required to run the program.
+## Model Archetecture
 
-#### loss
+<p align="center">
+  <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/u-net_arc.png" alt="Backward" />
+</p>
+
+The model architecture is a standard U-Net model. To generate noise at each corresponding timestep, we usually combine the additional condition t into the U-Net model. Since I am working on a conditional image generation task (label 0: NC, label 1: AD), I will include a second condition, c, to control the model.
+
+## Hyperparameter
+- BATCH_SIZE = 8
+- LR = 7e-5
+- IMG_SIZE = 128
+- FILTER_SIZE = 64
+- TOTAL_ITERATION = 100000
+- SAVE_N_ITERATION = 10000
+    
+## Loss
+<p align="center">
+  <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/loss_fn.png" alt="Backward" />
+</p>
+
+As the forward and backward diffution process can be written as the joint probability of x from 1 to T, denoted as q(x1:T | x0) and p_θ(x0:T | xT), the objective of the loss function is to make these two distributions as close as possible. To achieve this, we can apply the variational lower bound (VLB) to optimize the negative log-likelihood, -log(p_θ(x)). The objective then becomes minimizing the KL divergence between p and q, which can be simply computed using MSE.
 
 
-
-
-
-
-
-
-
-
-
-
-![training_loss](https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/training_loss.jpg)
-
-
-
--   Image Compression
--   Denoising
--   Image Generation
 

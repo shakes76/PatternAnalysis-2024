@@ -96,7 +96,8 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle = False, num_workers=4)
 
     return train_loader, val_loader, test_loader
-    
+
+#test whether the dataset work or not
 if __name__ == "__main__":
     zip_path = "ADNI_AD_NC_2D.zip"
     extract_to = "data"
@@ -112,7 +113,6 @@ if __name__ == "__main__":
             print(f"Image shape: {images.shape}") 
             print(f"Labels: {labels}")
             break 
-
 
 
 

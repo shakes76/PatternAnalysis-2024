@@ -21,7 +21,11 @@ class FeatureExtraction(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(1024, 512),
             nn.ReLU(inplace=True),
-            nn.Linear(512, 256)
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Linear(256, 128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 64)
 
         )
  
@@ -58,11 +62,10 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
 
         self.classifier = nn.Sequential(
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
             #add dropout if needed
-            nn.Linear(64, 1),
+            nn.Linear(64, 32),
+            nn.ReLU(inplace=True),
+            nn.Linear(32, 1),
             #nn.Sigmoid()
         )
         

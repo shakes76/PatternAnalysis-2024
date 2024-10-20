@@ -32,7 +32,7 @@ def siamese_train(current_dir, train_loader, val_loader, images, epochs=50, plot
     )
     
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 
     #scheduler
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)

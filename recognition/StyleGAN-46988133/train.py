@@ -18,6 +18,7 @@ import matplotlib.animation as animation
 import hyperparameters as hp
 from dataset import load_ADNI_dataset
 from modules import *
+from utils import *
 
 # Used to remove the Qt backend of matplotlib causing issues
 matplotlib.use("Agg")
@@ -275,6 +276,9 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
         # Epoch training time
         epoch_duration = ((time.time() - epoch_start_time) / 60) # In minutes
         print(f"Epoch [{epoch + 1}/{hp.EPOCHS_PER_RESOLUTION[current_depth]}] completed in {epoch_duration:.2f} minutes")
+
+    # End of a resolution stage so save the images and models
+    save_resolution(disc, gen, current_resolution, current_depth, device)
 
 
 # Total training time 

@@ -3,34 +3,38 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import datasets
-from modules import ViT  # Make sure to adjust the import based on where your ViT class is defined
+from modules import ViT 
 from pathlib import Path
 import argparse
+import torch.nn.functional as F  # Import this for applying softmax
+
 
 # Function to display images and predictions
-def imshow(img, label=None, prediction=None):
+def imshow(img, label=None, prediction=None, font_size=8):
     """
     Unnormalizes the image and displays it.
     Args:
         img (torch.Tensor): The image tensor to display.
         label (str, optional): True label for the image.
-        prediction (str, optional): Predicted label for the image.
+        prediction (tuple, optional): A tuple with predicted label and its probability, e.g., (1, 0.75).
+        font_size (int, optional): Font size for the text. Default is 8.
     """
     img = img.permute(1, 2, 0).numpy()  # Convert from [C, H, W] to [H, W, C]
     img = img * 0.2229 + 0.1156  # Undo normalization (using mean=0.1156, std=0.2229)
     img = img.clip(0, 1)  # Clip to valid range [0, 1]
     
     plt.imshow(img)
-    title = f"Label: {label}" if label is not None else ""
+    
+    # Construct the title with proper formatting
+    title = f"True: {label}" if label is not None else ""
     if prediction is not None:
-        title += f", Pred: {prediction}"
-    plt.title(title)
+        pred_label, prob = prediction
+        title += f", Pred: {pred_label} (Prob: {prob:.2f})"
+        
+    plt.title(title, fontsize=font_size)
     plt.axis('off')
 
-
-import torch.nn.functional as F  # Import this for applying softmax
-
-def predict_batch(model, dataloader, device, num_images=32):
+def predict_batch(model, dataloader, device, num_images=32, font_size=8):
     """
     Load a batch of images, make predictions, and display the images with predictions.
     
@@ -39,6 +43,7 @@ def predict_batch(model, dataloader, device, num_images=32):
         dataloader (torch.utils.data.DataLoader): Dataloader with the images.
         device (torch.device): Device to run the model on (e.g., 'cpu' or 'cuda').
         num_images (int, optional): Number of images to display. Default is 32.
+        font_size (int, optional): Font size for the text. Default is 8.
     """
     model.eval()  # Set the model to evaluation mode
     with torch.no_grad():  # Disable gradient computation
@@ -46,22 +51,22 @@ def predict_batch(model, dataloader, device, num_images=32):
         images, labels = images[:num_images].to(device), labels[:num_images].to(device)  # Limit to num_images
         
         outputs = model(images)  # Get model predictions (logits)
-
+        
         # Apply softmax to get probabilities
         probabilities = F.softmax(outputs, dim=1)
-
+        
         # Get the predicted class index (and its corresponding probability)
         _, preds = torch.max(probabilities, 1)
-
+        
         # Convert probabilities to CPU for display
         probabilities = probabilities.cpu().numpy()
 
         # Create a grid of images with predictions and their probabilities
-        plt.figure(figsize=(20, 10))
+        plt.figure(figsize=(16, 8))  # Adjust the figure size to be smaller (width x height)
         for i in range(num_images):
-            plt.subplot(4, 8, i+1)  # 4 rows, 8 columns grid
+            plt.subplot(4, 8, i + 1)  # Adjust grid layout (4 rows, 8 columns)
             prob = probabilities[i][preds[i].item()]  # Get probability of the predicted class
-            imshow(images[i].cpu(), label=f"True: {labels[i].item()}", prediction=f"Pred: {preds[i].item()} (Prob: {prob:.2f})")
+            imshow(images[i].cpu(), label=labels[i].item(), prediction=(preds[i].item(), prob), font_size=font_size)
         plt.tight_layout()
         plt.show()
 

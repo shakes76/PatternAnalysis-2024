@@ -62,8 +62,6 @@ discrete Fourier transform of the patches. This operation maintains the
 features required from the patches but reduces the dimensionality to log(n)
 resulting in an overall complexity of O(long).
 
-DEFINE IMAGE
-
 The global filter code is similar to the one defined below:
 ```python
 class GlobalFilter(nn.Module):
@@ -90,6 +88,10 @@ class GlobalFilter(nn.Module):
 
         return x
 ```
+
+
+The final layer, the feed forward notwork, will then classify the image based
+on the features extracted from the image patches.
 
 ### Project Structure
 
@@ -160,6 +162,26 @@ data_directory
 ```
 
 All directory/file names and the number of classes are arbitrary **except** for the `train` and `test` directories.
+
+### Hyperparameters
+After many iterations, these hyperparameters were found to be the most effective
+```
+learning_rate  = 0.001      
+weight_decay   = 0.001
+dropout        = 0.0
+drop_path      = 0.1        # Probability of dropping an entire network path from an iteration
+batch_size     = 32
+patch_size     = 16         # Size of the chunks to split up the image in pixels
+embed_dim      = 783        # Number of dimensions in the patch embedding
+depth          = 12         # Number of global filter layers to use in the network
+ff_ratio       = 3          # Ratio of input to hidden layer size in the classification feed forward network
+epochs         = 400
+
+optimizer       = AdamW
+scheduler       = OneCycleLR
+loss_criterion  = CrossEntropyLoss
+```
+
 
 ## Dependencies
 These packages are required to train the GFNet
@@ -252,9 +274,19 @@ python train.py ./ANDI/AD_NC
 ```
 Output:
 ```
->>...
->>...
->>[REMEMBER TO FILL THIS IN]
+...
+>> Epoch [300/300], Step [651/673] Loss: 0.21193
+>> Epoch [300/300], Step [661/673] Loss: 0.21176
+>> Epoch [300/300], Step [671/673] Loss: 0.20530
+>> ==Finished training====================
+>> Testing took 64436.29395890236 secs or 1073.9382326483726 mins in total
+>> ==Testing====================
+>> Confusion Matrix:
+>>  [[2683 1777]
+>>  [ 285 4255]]
+>> Test Accuracy: 77.09 % | Average Loss: 0.7223
+>> Testing took 28.60266423225403 secs or 0.4767110705375671 mins in total
+>> =============================
 ```
 Directory Structure:
 ```

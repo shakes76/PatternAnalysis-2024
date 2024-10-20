@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 import torch.nn.functional as F
 
 
-def evaluate_model(model, test_set, criterion, env, device, estimate=True):
+def evaluate_model(model, test_set, criterion, env: Environment, device, estimate=True):
     """
     Perform Evaluation of the model based on some test set. Prints out accuracy
     and convolution matrix.

@@ -1,0 +1,8 @@
+cuda:0
+==Testing====================
+Confusion Matrix:
+ [[2912 1548]
+ [ 451 4089]]
+Test Accuracy: 77.79 % | Average Loss: 0.6818
+Testing took 261.43413043022156 secs or 4.357235507170359 mins in total
+=============================

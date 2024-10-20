@@ -67,7 +67,19 @@ In each forward iteration, the model:
 5. Passes through the third convolutional layer, applying ReLU to generate the final set of node embeddings.
 6. Passes through to the classifier layer.
 
+This model uses the standard Cross Entropy Loss and Adam Optimizer.
 ## Model Usage
+
+1. Download the .npz data from [here](https://graphmining.ai/datasets/ptg/facebook.npz) and store it in your local directory where you have the code. This is a partially processed dataset where the features are in the form of 128 dimesion vectors
+2. Train the model using
+    ```python
+    python train.py
+    ```
+    Which will saved the model to an output .pth file ```model.pth```
+3. Test the model and predict, visualising using t-SNE and UMAP by running
+   ```python
+   python predict.py
+   ```
 
 ## Results
 

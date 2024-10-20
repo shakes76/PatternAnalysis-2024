@@ -159,17 +159,17 @@ class StyleBlock(nn.Module):
     """
     Single Style Block For Synthesis Network
     """
-    def __init__(self, in_channels, out_channels, w_dim, upsample=False) -> None:
+    def __init__(self, w_dim, in_channels, out_channels, upsample=False) -> None:
         super(StyleBlock, self).__init__()
         self.upsample = upsample
-        self.to_style = EQLinearLayer(in_channels, out_channels, bias=1.0)
+        self.to_style = EQLinearLayer(w_dim, in_channels, bias=1.0)
         self.conv = Conv2dWeightModulate(in_channels, out_channels, kernel_size=3)
         self.scale_noise = nn.Parameter(torch.zeros(1))
         self.bias = nn.Parameter(torch.zeros(out_channels))
 
         self.activation = nn.LeakyReLU(0.2, True)
 
-    def forward(self, x, w, noise=None):
+    def forward(self, x, w, noise):
         s = self.to_style(w)
         x = self.conv(x, s)
         if noise is not None:
@@ -180,12 +180,12 @@ class GeneratorBlock(nn.Module):
     """
     Generator Block - Comprised of Multiple Style Blocks
     """
-    def __init__(self, in_channels, out_channels, w_dim, upsample=True) -> None:
+    def __init__(self, w_dim, in_channels, out_channels, upsample=True) -> None:
         super(GeneratorBlock, self).__init__()
 
         # Style blocks
-        self.style_block1 = StyleBlock(in_channels, out_channels, w_dim)
-        self.style_block2 = StyleBlock(out_channels, out_channels, w_dim)
+        self.style_block1 = StyleBlock(w_dim, in_channels, out_channels)
+        self.style_block2 = StyleBlock(w_dim, out_channels, out_channels)
 
         self.to_rgb = ToRGB(w_dim, out_channels)
 

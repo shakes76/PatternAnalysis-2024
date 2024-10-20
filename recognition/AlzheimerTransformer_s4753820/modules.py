@@ -113,6 +113,14 @@ class PatchEmbeddingLayer(nn.Module):
 
 
 class MultiHeadSelfAttentionBlock(nn.Module):
+    """
+    Implements a multi-head self-attention block with layer normalization.
+    
+    Args:
+    - embedding_dims (int): Dimensionality of the input embeddings.
+    - num_heads (int): Number of attention heads.
+    - attn_dropout (float): Dropout rate for attention block.
+    """
     def __init__(
         self,
         embedding_dims=768,  # Hidden Size D in the ViT Paper Table 1
@@ -141,6 +149,14 @@ class MultiHeadSelfAttentionBlock(nn.Module):
 
 
 class MachineLearningPerceptronBlock(nn.Module):
+    """
+    Implements a two-layer MLP block with layer normalization and dropout.
+    
+    Args:
+    - embedding_dims (int): Dimensionality of the input embeddings.
+    - mlp_size (int): Number of units in the hidden layer of the MLP.
+    - mlp_dropout (float): Dropout rate for the MLP layers.
+    """
     def __init__(self, embedding_dims, mlp_size, mlp_dropout):
         super().__init__()
         self.embedding_dims = embedding_dims
@@ -162,6 +178,16 @@ class MachineLearningPerceptronBlock(nn.Module):
 
 # https://aws.amazon.com/what-is/transformers-in-artificial-intelligence/#:~:text=Each%20transformer%20block%20has%20two,the%20input%20when%20making%20predictions.
 class TransformerBlock(nn.Module):
+    """
+    Defines a transformer block that consists of a multi-head self-attention block and a feed-forward MLP block.
+    
+    Args:
+    - embedding_dims (int): Dimensionality of the input embeddings.
+    - mlp_dropout (float): Dropout rate for the MLP block.
+    - attn_dropout (float): Dropout rate for the attention block.
+    - mlp_size (int): Number of units in the hidden layer of the MLP.
+    - num_heads (int): Number of attention heads.
+    """
     def __init__(
         self,
         embedding_dims=768,
@@ -192,6 +218,24 @@ class TransformerBlock(nn.Module):
 
 
 class ViT(nn.Module):
+    """
+    Vision Transformer (ViT) model that splits images into patches, processes them with a transformer, 
+    and performs classification.
+    Constructed from https://www.akshaymakes.com/blogs/vision-transformer and https://arxiv.org/pdf/2010.11929.
+    
+    Args:
+    - img_size (int): The size of the input image.
+    - in_channels (int): Number of input channels (e.g., 3 for RGB images).
+    - patch_size (int): Size of each image patch.
+    - embedding_dims (int): Dimensionality of the patch embeddings.
+    - num_transformer_layers (int): Number of transformer layers.
+    - mlp_dropout (float): Dropout rate for the MLP block.
+    - attn_dropout (float): Dropout rate for the attention block.
+    - embedding_dropout (float): Dropout rate for the patch embeddings.
+    - mlp_size (int): Number of units in the hidden layer of the MLP.
+    - num_heads (int): Number of attention heads.
+    - num_classes (int): Number of output classes for classification.
+    """
     def __init__(
         self,
         img_size=224,

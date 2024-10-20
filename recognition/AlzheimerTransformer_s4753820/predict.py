@@ -3,10 +3,11 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import datasets
-from modules import ViT 
+from modules import ViT
 from pathlib import Path
 import argparse
 import torch.nn.functional as F  # Import this for applying softmax
+from sklearn.metrics import classification_report  # For generating classification report
 
 
 # Function to display images and predictions
@@ -33,6 +34,7 @@ def imshow(img, label=None, prediction=None, font_size=8):
         
     plt.title(title, fontsize=font_size)
     plt.axis('off')
+
 
 def predict_batch(model, dataloader, device, num_images=32, font_size=8):
     """
@@ -69,6 +71,36 @@ def predict_batch(model, dataloader, device, num_images=32, font_size=8):
             imshow(images[i].cpu(), label=labels[i].item(), prediction=(preds[i].item(), prob), font_size=font_size)
         plt.tight_layout()
         plt.show()
+
+
+def evaluate_model(model, dataloader, device):
+    """
+    Evaluates the model on the test set and generates a classification report.
+    
+    Args:
+        model (torch.nn.Module): The trained model for evaluation.
+        dataloader (torch.utils.data.DataLoader): Dataloader with the test data.
+        device (torch.device): Device to run the model on (e.g., 'cpu' or 'cuda').
+    
+    Returns:
+        str: Classification report as a string.
+    """
+    model.eval()
+    all_preds = []
+    all_labels = []
+    
+    with torch.no_grad():
+        for images, labels in dataloader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, preds = torch.max(outputs, 1)  # Get the predicted class index
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    # Generate classification report
+    class_report = classification_report(all_labels, all_preds, target_names=['Class 0', 'Class 1'], digits=4)
+    
+    return class_report
 
 
 def main():
@@ -113,6 +145,11 @@ def main():
 
     # Make predictions and visualize results
     predict_batch(model, val_loader, device, num_images=args.batch_size)
+    
+    # Generate and print the classification report
+    class_report = evaluate_model(model, val_loader, device)
+    print("Classification Report:")
+    print(class_report)
 
 
 if __name__ == "__main__":

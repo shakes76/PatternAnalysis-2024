@@ -45,25 +45,32 @@ def main():
         augment_ratio=0.0  
     )
 
+
+    #balance samples
+    labels = train_dataset.labels
+    batch_size = 32
+    sampler = MPerClassSampler(labels, m=(batch_size/2), length_before_new_iter=len(labels))
+
+
     # Initialize DataLoaders
     train_loader = DataLoader(
         train_dataset, 
-        batch_size=32,
-        shuffle=True, 
+        batch_size=batch_size,
+        sampler=sampler, 
         num_workers=4,
         pin_memory=True
     )
     
     val_loader = DataLoader(
         val_dataset, 
-        batch_size=32,
+        batch_size=batch_size,
         shuffle=False, 
         num_workers=4,
         pin_memory=True
     )
 
 
-    siamese_train(current_dir, train_loader,val_loader, images, epochs=200, plots=False)
+    siamese_train(current_dir, train_loader,val_loader, images, epochs=200, plots=True)
 
     siamese_net = SiameseNN()
     siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')

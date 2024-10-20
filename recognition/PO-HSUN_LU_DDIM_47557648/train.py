@@ -173,7 +173,7 @@ class Trainer():
         plt.show()
     
     @torch.inference_mode()
-    def ddim_sample(self, epoch, cond = 'NC'):
+    def ddim_sample(self, cond = 'NC'):
         batch, device, total_timesteps, sampling_timesteps, eta = 32, self.device, 1000, 200, 0
         times = torch.linspace(-1, total_timesteps - 1, steps = sampling_timesteps + 1)  
         times = list(reversed(times.int().tolist()))

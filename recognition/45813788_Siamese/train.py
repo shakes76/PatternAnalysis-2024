@@ -1,6 +1,6 @@
 import os
 import torch
-from torch.nn import BCEWithLogitsLoss
+from torch.nn import BCEWithLogitsLoss, BCELoss
 from torch.utils.data import DataLoader
 from modules import SiameseNN, Classifier
 from utils import visualise_embededding, plot_loss, plot_accuracy, plot_auc
@@ -150,9 +150,10 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
 
 
     #Criterion
-    criterion = BCEWithLogitsLoss(pos_weight=pos_weight)
+    #criterion = BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion = BCELoss()
 
-   # Training parameters
+    #Training parameters
     best_loss = float('inf')
     train_losses = []
     val_losses = []
@@ -192,7 +193,7 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
             total_train += labels.size(0)
 
             train_labels.extend(labels.cpu().numpy())
-            train_probs.extend(probs.cpu().numpy())
+            train_probs.extend(probs.cpu().detach().numpy()) 
 
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)

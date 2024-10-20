@@ -7,7 +7,7 @@ import random
 from tqdm import tqdm
 from dataset import ISICDataset
 
-def test(siamese, classifier, test_df, images):
+def test(siamese, classifier, test_loader, images):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     siamese.to(device)
@@ -15,21 +15,6 @@ def test(siamese, classifier, test_df, images):
     
     classifier.to(device)
     classifier.eval()
-
-    test_dataset = ISICDataset(
-    df=test_df,
-    images_dir=images,
-    augment_ratio=0.0  
-    )
-
-    
-    test_loader = DataLoader(
-        test_dataset, 
-        batch_size=32,
-        shuffle=False, 
-        num_workers=4,
-        pin_memory=True
-    )
 
     all_preds = []
     all_labels = []

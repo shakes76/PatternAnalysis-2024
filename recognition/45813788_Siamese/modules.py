@@ -63,10 +63,11 @@ class Classifier(nn.Module):
 
         self.classifier = nn.Sequential(
             #add dropout if needed
+            nn.Dropout(p=0.3),
             nn.Linear(64, 32),
             nn.ReLU(inplace=True),
             nn.Linear(32, 1),
-            #nn.Sigmoid()
+            nn.Sigmoid()
         )
         
 

@@ -43,6 +43,12 @@ def main():
         augment_ratio=0.0  
     )
 
+    test_dataset = ISICDataset(
+    df=test_df,
+    images_dir=images,
+    augment_ratio=0.0  
+    )
+
 
     #balance samples
     labels = train_dataset.labels
@@ -66,20 +72,29 @@ def main():
         num_workers=4,
         pin_memory=True
     )
+    
+    test_loader = DataLoader(
+        test_dataset, 
+        batch_size=32,
+        shuffle=False, 
+        num_workers=4,
+        pin_memory=True
+    )
 
 
-    siamese_train(current_dir, train_loader,val_loader, images, epochs=50, plots=True)
+
+    #siamese_train(current_dir, train_loader,val_loader, images, epochs=50, plots=True)
 
     siamese_net = SiameseNN()
     siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
     siamese_net.load_state_dict(torch.load(siamese_dict))
-    classifier_train(current_dir, train_loader, val_loader, images, siamese_net, epochs=50, plots=True)
+    #classifier_train(current_dir, train_loader, val_loader, images, siamese_net, epochs=15, plots=True)
 
     #Testing part
     classifier_net = Classifier()
     classifier_dict = os.path.join(current_dir,'models','classifier_best.pth')
     classifier_net.load_state_dict(torch.load(classifier_dict)) 
-    test(siamese_net,classifier_net,test_df,images)
+    test(siamese_net,classifier_net,test_loader,images)
 
     #we can improve this alot, lot of repeating code in training loops we can handle creating the DataLoaders here
 

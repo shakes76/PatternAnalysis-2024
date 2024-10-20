@@ -56,6 +56,8 @@ class ISICDataset(Dataset):
         #transform the images
         if self.transform:
             img = self.transform(img)
+        else:
+            img = transforms.ToTensor(img)
      
         
         return img, torch.tensor(label, dtype=torch.long)

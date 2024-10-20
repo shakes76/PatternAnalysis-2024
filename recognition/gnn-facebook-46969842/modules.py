@@ -2,6 +2,7 @@
 import torch
 from torch.nn import Linear
 from torch_geometric.nn import GCNConv
+import torch.nn.functional as F
 from dataset import FacebookDataset
 
 class GCN(torch.nn.Module):
@@ -23,14 +24,17 @@ class GCN(torch.nn.Module):
     
     def __init__(self, dataset):
         super(GCN, self).__init__()
+        torch.manual_seed(1234567)
 
         # Define the graph convolutional layers
-        self.conv1 = GCNConv(dataset.num_features, 4) # First layer: input features to 4 output features
-        self.conv2 = GCNConv(4, 4) # Second layer: 4 input features to 4 output features
-        self.conv3 = GCNConv(4, 2) # Third layer: 4 input features to 2 output features
+        self.conv1 = GCNConv(dataset.num_features, 8) # First layer: input features to 8 output features
+        self.conv2 = GCNConv(8, 8) # Second layer: 8 input features to 8 output features
+        self.conv3 = GCNConv(8, 4) # Third layer: 8 input features to 4 output features
         
         # Define the final classifier layer
-        self.classifier = Linear(2, dataset.num_classes)  # From 2 features to num_classes
+        self.classifier = Linear(4, dataset.num_classes)  # From 4 features to num_classes
+
+        self.dropout = torch.nn.Dropout(p=0.5)
 
     def forward(self, data):
         """
@@ -46,15 +50,17 @@ class GCN(torch.nn.Module):
         
         # Pass through the first graph convolutional layer
         h = self.conv1(x, edge)
-        h = h.tanh()  # Apply activation function
+        h = F.relu(h)  # Apply activation function
+        h = self.dropout(h)  # Apply dropout
         
         # Pass through the second graph convolutional layer
         h = self.conv2(h, edge)
-        h = h.tanh()  # Apply activation function
+        h = F.relu(h)  # Apply activation function
+        h = self.dropout(h)  # Apply dropout
         
         # Pass through the third graph convolutional layer
         h = self.conv3(h, edge)
-        h = h.tanh()  # Apply activation function for final embedding
+        h = F.relu(h)  # Apply activation function for final embedding
         
         # Apply the final classifier to obtain class scores
         out = self.classifier(h)

@@ -114,7 +114,7 @@ class GFNet(nn.Module):
         norm_layer = nn.LayerNorm
 
         self.patch_embed = PatchEmbed(
-                img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+                img_size=img_size, patch_size=patch_size, input_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))

@@ -62,3 +62,14 @@ def unet_2d(output_classes, input_shape):
   model = Model(ins, outs, name='UNET')
 
   return model
+
+from keras import backend as K
+
+def dice_similarity(y_true, y_pred):
+    y_true_f = K.flatten(y_pred)
+    y_pred_f = K.flatten(y_true)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2.0 * intersection + 1) / (K.sum(y_true_f) + K.sum(y_pred_f) + 1)
+
+def dice_loss(y_true, y_pred):
+    return 1 - dice_similarity(y_true, y_pred)

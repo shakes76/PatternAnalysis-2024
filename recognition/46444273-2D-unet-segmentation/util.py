@@ -2,6 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
+def create_mask(pred_mask):
+    pred_mask = tf.argmax(pred_mask, axis=-1)
+    pred_mask = pred_mask[..., tf.newaxis]
+    return pred_mask[0]
+
 def plot_images_labels(images, masks):
     plt.figure(figsize=(10, 10))
     for i in range(16):

@@ -1,8 +1,30 @@
+"""
+Contains custom PyTorch modules for StyleGAN2.
+
+Acknowledgements:
+Resources used to make the following modules:
+    https://github.com/aburo8/PatternAnalysis-2023/tree/topic-recognition/recognition/46990480_StyleGAN2
+    https://blog.paperspace.com/implementation-stylegan2-from-scratch/#models-implementation
+    https://arxiv.org/abs/1812.04948
+    https://arxiv.org/abs/1912.04958
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
+
+class EQWeight(nn.Module):
+    """
+    Equalised weight layer - normalises variance of initialised weights.
+    """
+    def __init__(self, shape):
+        super(EQWeight, self).__init__()
+        self.scale = 1 / math.sqrt(np.prod(shape[1:]))
+        self.weight = nn.Parameter(torch.randn(shape))
+
+    def forward(self):
+        return self.weight * self.scale
 
 class EQLinearLayer(nn.Module):
     """
@@ -10,14 +32,11 @@ class EQLinearLayer(nn.Module):
     """
     def __init__(self, in_dim, out_dim, bias=0.) -> None:
         super(EQLinearLayer, self).__init__()
-        self.scale = 1 / math.sqrt(np.prod(in_dim))
-        self.weight = nn.Parameter(torch.randn([out_dim, in_dim])) * self.scale
+        self.weight = EQWeight([out_dim, in_dim])
         self.bias = nn.Parameter(torch.ones(out_dim) * bias)
 
-    def forward(self, x):
-        self.weight = self.weight.to(x.device)
-        self.bias = self.bias.to(x.device)
-        return F.linear(x, self.weight, self.bias)
+    def forward(self, x: torch.Tensor):
+        return F.linear(x, self.weight().to(x.device), bias=self.bias.to(x.device))
 
 class FCBlock(nn.Module):
     """

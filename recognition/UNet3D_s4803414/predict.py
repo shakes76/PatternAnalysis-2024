@@ -10,7 +10,12 @@ from torch.amp import autocast
 MODEL_PATH = '/home/Student/s4803414/miniconda3/model/new_model.pth'
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
+# MODEL_PATH = '/Users/shwaa/Desktop/model/new_model.pth'
+# IMAGE_DIR = '/Users/shwaa/Downloads/HipMRI_study_complete_release_v1/semantic_MRs_anon'
+# MASK_DIR = '/Users/shwaa/Downloads/HipMRI_study_complete_release_v1/semantic_labels_anon'
+
 VISUALS_DIR = '/home/Student/s4803414/miniconda3/visuals'
+# VISUALS_DIR = '/Users/shwaa/Desktop/visuals'
 BATCH_SIZE = 2
 NUM_CLASSES = 6
 
@@ -25,31 +30,50 @@ data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = UNet3D(in_channels=1, out_channels=NUM_CLASSES)
 model.load_state_dict(torch.load(MODEL_PATH))
+# model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
+
 model.to(device)
 model.eval()
 
 
-# Function to overlay predictions on images and save the visualizations
 def save_visualization(image, mask, pred, save_path):
-    plt.figure(figsize=(12, 4))
+    import matplotlib.pyplot as plt
+    import os
 
-    # Original image
-    plt.subplot(1, 3, 1)
-    plt.imshow(image.squeeze(0).cpu().numpy(), cmap='gray')
-    plt.title('Original Image')
+    # Determine the number of slices to visualize
+    num_slices = 64  # Change this based on how many slices you want to visualize
+    slice_indices = range(min(num_slices, image.shape[2]))  # Ensure we don't go out of bounds
 
-    # Ground truth mask
-    plt.subplot(1, 3, 2)
-    plt.imshow(mask.squeeze(0).cpu().numpy(), cmap='nipy_spectral')
-    plt.title('Ground Truth')
+    for slice_idx in slice_indices:
+        # Convert tensors to numpy arrays and select the slice
+        image_slice = image[:, :, slice_idx].cpu().numpy().squeeze()  # Remove singleton dimensions
+        mask_slice = mask[:, :, slice_idx].cpu().numpy().squeeze()    # Remove singleton dimensions
+        pred_slice = pred[:, :, slice_idx].cpu().numpy().squeeze()    # Remove singleton dimensions
 
-    # Predicted mask
-    plt.subplot(1, 3, 3)
-    plt.imshow(pred.squeeze(0).cpu().numpy(), cmap='nipy_spectral')
-    plt.title('Prediction')
+        # Create the figure for each slice
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    plt.savefig(save_path)
-    plt.close()
+        # Plot original image slice
+        axes[0].imshow(image_slice, cmap='gray')
+        axes[0].set_title(f'Image Slice {slice_idx}')
+        axes[0].axis('off')  # Turn off axis for better visualization
+
+        # Plot mask slice
+        axes[1].imshow(mask_slice, cmap='viridis')
+        axes[1].set_title(f'Mask Slice {slice_idx}')
+        axes[1].axis('off')  # Turn off axis for better visualization
+
+        # Plot predicted slice
+        axes[2].imshow(pred_slice, cmap='viridis')
+        axes[2].set_title(f'Prediction Slice {slice_idx}')
+        axes[2].axis('off')  # Turn off axis for better visualization
+
+        # Save the figure
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        plt.savefig(os.path.join(save_path, f'visualization_slice_{slice_idx}.png'))
+        plt.close()
+
 
 
 # Prediction loop and saving visualizations

@@ -8,6 +8,7 @@ from modules import UNet
 from tqdm import tqdm
 import numpy as np
 import random
+import torch.nn.functional as F
 from typing import Tuple, Dict
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -39,55 +40,51 @@ class DiceLoss(nn.Module):
         dice = (2. * intersection + self.smooth) / (preds.sum() + targets.sum() + self.smooth)
         return 1 - dice
 
-# Dice Coefficient Metric
-def dice_coefficient(preds: torch.Tensor, targets: torch.Tensor, smooth: float = 1.) -> float:
-    preds = torch.sigmoid(preds)
-    preds = (preds > 0.5).float()
-    targets = targets.float()
-    intersection = (preds * targets).sum(dim=(1,2,3))
-    dice = (2. * intersection + smooth) / (preds.sum(dim=(1,2,3)) + targets.sum(dim=(1,2,3)) + smooth)
-    return dice.mean().item()
-
-# Combined BCE + Dice Loss
-class CombinedLoss(nn.Module):
-    def __init__(self, alpha: float = 0.5, weight=None):
-        super(CombinedLoss, self).__init__()
-        self.bce = nn.BCEWithLogitsLoss(weight=weight)
-        self.dice = DiceLoss()
-        self.alpha = alpha
+def dice_coeff_multiclass(pred, target, num_classes, epsilon=1e-6):
+    """
+    Compute Dice Coefficient for multi-class segmentation.
+    pred: model output tensor of shape (B, C, H, W) or argmax'd prediction of shape (B, H, W)
+    target: ground truth tensor of shape (B, H, W) with class indices
+    """
+    dice_scores = []
     
-    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        return self.alpha * self.bce(preds, targets) + (1 - self.alpha) * self.dice(preds, targets)
-
-
-# Early Stopping Class
-class EarlyStopping:
-    def __init__(self, patience=10, verbose=False, delta=0):
-        self.patience = patience
-        self.verbose = verbose
-        self.counter = 0
-        self.best_score = None
-        self.early_stop = False
-        self.delta = delta
+    # If pred is not argmax'd yet, we do it here
+    if pred.dim() == 4:
+        pred = pred.argmax(dim=1)
     
-    def __call__(self, score, model, save_path):
-        if self.best_score is None:
-            self.best_score = score
-            self.save_checkpoint(model, save_path)
-        elif score < self.best_score + self.delta:
-            self.counter += 1
-            if self.verbose:
-                print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
-            if self.counter >= self.patience:
-                self.early_stop = True
+    for class_id in range(num_classes):
+        class_pred = (pred == class_id).float()
+        class_target = (target == class_id).float()
+        intersection = (class_pred * class_target).sum(dim=(1,2))
+        union = class_pred.sum(dim=(1,2)) + class_target.sum(dim=(1,2))
+        dice = (2. * intersection + epsilon) / (union + epsilon)
+        dice_scores.append(dice.mean().item())
+    return dice_scores
+
+class DiceLoss(nn.Module):
+    def __init__(self, num_classes, epsilon=1e-6):
+        super(DiceLoss, self).__init__()
+        self.num_classes = num_classes
+        self.epsilon = epsilon
+
+    def forward(self, pred, target):
+        pred = F.softmax(pred, dim=1)
+        target_onehot = F.one_hot(target, self.num_classes).permute(0, 3, 1, 2).float()
+        intersection = (pred * target_onehot).sum(dim=(2,3))
+        union = pred.sum(dim=(2,3)) + target_onehot.sum(dim=(2,3))
+        dice = (2. * intersection + self.epsilon) / (union + self.epsilon)
+        return 1 - dice.mean()
+    
+def debug_tensors(tensor_dict):
+    for name, tensor in tensor_dict.items():
+        if torch.isnan(tensor).any() or torch.isinf(tensor).any():
+            logging.error(f"{name} contains NaN or Inf values")
+        
+        if tensor.dtype in [torch.float32, torch.float64]:
+            logging.debug(f"{name} - min: {tensor.min().item():.4f}, max: {tensor.max().item():.4f}, mean: {tensor.mean().item():.4f}")
         else:
-            self.best_score = score
-            self.counter = 0
-    
-    def save_checkpoint(self, model, save_path):
-        torch.save(model.state_dict(), os.path.join(save_path, 'best_model.pth'))
-        if self.verbose:
-            print('Validation score improved. Saving model.')
+            logging.debug(f"{name} - min: {tensor.min().item()}, max: {tensor.max().item()}, unique values: {torch.unique(tensor).tolist()}")
+
 
 # Initialize DataLoaders
 def initialize_dataloaders(config: Dict) -> Tuple[DataLoader, DataLoader]:

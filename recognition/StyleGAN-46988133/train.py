@@ -185,7 +185,7 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             fake_disc_avg = fake_pred.mean().item()
 
             # Calculate gradient penalty
-            grad_penalty = compute_gradient_penalty(disc, real_images, fake_images, device)
+            grad_penalty = compute_gradient_penalty(disc, real_images, fake_images, current_depth, device)
 
             # Calculate the total error of the discriminator
             tot_loss_disc = real_loss_disc + real_class_loss_disc + fake_loss_disc + fake_class_loss_disc + grad_penalty
@@ -198,41 +198,39 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             # (3) - Update the Generator with new fake images/labels
             # ---------------------------------------------------------------------------
 
-            # Train the generator multiple times compared to the discriminator
-            for _ in range(2):
 
-                # Reset gradients of the generator
-                gen.zero_grad()
+            # Reset gradients of the generator
+            gen.zero_grad()
 
-                # Generate a batch of latent vectors to input into the generator
-                latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
+            # # Generate a batch of latent vectors to input into the generator
+            # latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
 
-                # Create a second latent space batch randomly, for mixing regularisation
-                if random.random() < hp.MIXING_PROB:
-                    latent2 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
-                else:
-                    latent2 = None
+            # # Create a second latent space batch randomly, for mixing regularisation
+            # if random.random() < hp.MIXING_PROB:
+            #     latent2 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
+            # else:
+            #     latent2 = None
 
-                # Generate fake images and labels
-                fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
-                rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
+            # # Generate fake images and labels
+            # fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
+            # rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
 
-                # Forward pass fake images through discriminator (with updated discriminator)
-                fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels, depth=current_depth, alpha=alpha)
+            # Forward pass fake images through discriminator (with updated discriminator)
+            fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
-                # Calculate the losses of the generator
-                loss_gen = adversial_criterion(fake_pred.view(-1), real_labels)
-                loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
+            # Calculate the losses of the generator
+            loss_gen = adversial_criterion(fake_pred.view(-1), real_labels)
+            loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
 
-                # Calculate the total loss of the generator
-                tot_loss_gen = loss_gen + loss_class_gen
+            # Calculate the total loss of the generator
+            tot_loss_gen = loss_gen + loss_class_gen
 
-                # Calculate average output value of discriminator due to generator "real" images
-                gen_avg = fake_pred.mean().item()
+            # Calculate average output value of discriminator due to generator "real" images
+            gen_avg = fake_pred.mean().item()
 
-                # Update the generator based on gradients
-                tot_loss_gen.backward()
-                gen_opt.step()
+            # Update the generator based on gradients
+            tot_loss_gen.backward()
+            gen_opt.step()
 
             # ---------------------------------------------------------------------------
             # (4) - Logging and Statistics Output 

@@ -32,7 +32,7 @@ def visualise_slice(image, mask, prediction, slice_index):
 def main(image_path, mask_path, model_path):
     # Load the trained model
     model = UNet3D(1, 6)  # Initialize your model architecture
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()  # Set the model to evaluation mode
 
     # Load the MRI image
@@ -64,7 +64,7 @@ def main(image_path, mask_path, model_path):
                     slice_index)
 
 if __name__ == "__main__":
-    image_path = "path_to_your_mri_image.nii.gz"
-    mask_path = "path_to_your_mri_image.nii.gz"
-    model_path = "model.pth"
+    image_path = "/Users/shwaa/Downloads/HipMRI_study_complete_release_v1/semantic_MRs_anon/Case_004_Week0_LFOV.nii.gz"
+    mask_path = "/Users/shwaa/Downloads/HipMRI_study_complete_release_v1/semantic_labels_anon/Case_004_Week0_SEMANTIC_LFOV.nii.gz"
+    model_path = "/Users/shwaa/Desktop/model/new_model.pth"
     main(image_path, mask_path, model_path)

@@ -90,7 +90,7 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 </div>
 
 <div style="text-align: center;">
-  <img src="images/NC_generator_final.pn" alt="NC generator loss" style="width:300px;"/>
+  <img src="images/NC_generator_final.png" alt="NC generator loss" style="width:300px;"/>
   <p>Figure 4: NC generator loss.</p>
 </div>
 

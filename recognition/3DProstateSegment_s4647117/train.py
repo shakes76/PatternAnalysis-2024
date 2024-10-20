@@ -11,6 +11,7 @@ Key Components:
 - **Model Architecture**: Employs the `UNet3D` model defined in the `modules` module.
 - **Loss Function**: Implements Dice Loss to measure the overlap between predicted and true segmentations.
 - **Evaluation**: Computes validation and test losses, and saves the first batch of predictions for inspection.
+- **Dice Score**: Accumulates and calculates average per-class Dice score
 
 @author Joseph Savage  
 """
@@ -271,8 +272,6 @@ def train_loop():
             # Extract predicted and actual labels for visual comparison
             if is_first:
 
-                print(f"Image shape: {outputs.shape}")
-                print(f"Label shape: {batch_labels.shape}")
                 pred_class = torch.argmax(outputs, dim=1)[0]
                 # pred_class = pred_class.squeeze(0)
                 pred_class = pred_class.detach().cpu().numpy().astype(np.int16)
@@ -283,16 +282,15 @@ def train_loop():
                 actual = actual.detach().cpu().numpy().astype(np.int16)
                 actual = nib.Nifti1Image(actual, np.eye(4))
                 nib.save(actual, "actual_seg.nii.gz")
-                print(f"Predicted shape: {pred_class.shape}")
-                print(f"Actual shape: {actual.shape}")
 
                 is_first = False
 
             loss = weighted_dice_loss(outputs, batch_labels)
             test_loss += loss.item() * batch_images.size(0)
 
-            # Compute per-class Dice loss and accumulate
+            # Compute per-class Dice loss and accumulate, note that the Dice Score = 1 - Dice Loss
             per_class_scores = per_class_dice_loss(outputs, batch_labels).cpu().numpy()  # Shape: (num_classes,)
+            # Get Dice scores from Dice loss
             dice_score += np.ones(6) - per_class_scores
 
     # Calculate average loss

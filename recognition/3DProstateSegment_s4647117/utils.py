@@ -1,9 +1,18 @@
+"""
+This module implements per-class Dice loss and 
+weighted Dice loss for multi-class segmentation tasks in PyTorch.
+
+Functions:
+- **per_class_dice_loss**: Computes the Dice loss for each class independently.
+- **weighted_dice_loss**: Computes the weighted sum of per-class Dice losses using class-specific weights.
+
+@author Joseph Savage
+"""
+
 import torch
 import torch.nn.functional as F
 
-# Pre-computed class weights
-# Class weights = 1 / count in that class then normalised
-# CLASS_WEIGHTS = torch.tensor([0.2769, 0.4681, 4.9273, 28.8276, 117.5489, 161.1025])
+# Hyperparameter to prioritise classes that are less common to ensure they are not neglected
 CLASS_WEIGHTS = torch.tensor([1, 2, 3, 4, 5, 6])
 
 def per_class_dice_loss(pred, target, num_classes=6, epsilon=1e-6):

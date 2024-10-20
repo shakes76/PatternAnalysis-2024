@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.fft
-from timm.models.layers import to_2tuple, trunc_normal_
+from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import math
 
 '''
@@ -102,11 +102,11 @@ class Block(nn.Module):
     mlp_ratio controls the expansion size of the hiden layer
     """
 
-    def __init__ (self, dim, mlp_ratio=4, drop = 0., h =14, w = 8):
+    def __init__ (self, dim, mlp_ratio=4, drop = 0., drop_path = 0., h =14, w = 8):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.filter = GFNetFilter(dim, h=h, w=w)
-        self.drop_path = nn.Dropout(drop)
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = nn.LayerNorm(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = MLP(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop)

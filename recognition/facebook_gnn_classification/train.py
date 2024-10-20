@@ -4,21 +4,23 @@
 import torch
 from torch.optim import AdamW
 from torch_geometric.data import Data
+from torch.cuda.amp import GradScaler, autocast
 from modules import GNN
-from dataset import load_data, edges_path, features_path, labels_path
-import matplotlib.pyplot as plt
-import umap
+from dataset import load_data, npz_path
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Load the dataset
-features, edge_index, labels, page_type_mapping = load_data(edges_path, features_path, labels_path)
-data = Data(x=features, edge_index=edge_index, y=labels).to(device)
+# Define paths
+npz_path = "/content/drive/My Drive/COMP3710/Project/facebook.npz"
 
+# Load the dataset
+features, edge_index, labels, page_type_mapping = load_data(npz_path)
+data = Data(x=features, edge_index=edge_index, y=labels).to(device)
 
 # Define the GNN model with updated architecture
 input_dim = features.shape[1]
-hidden_dim = 1024
+hidden_dim = 512
 output_dim = len(page_type_mapping)
 model = GNN(input_dim, hidden_dim, output_dim).to(device)
 
@@ -31,17 +33,22 @@ data.train_mask[train_idx] = True
 data.val_mask[val_idx] = True
 
 # Define optimizer and loss function
-optimizer = AdamW(model.parameters(), lr=0.0005, weight_decay=2e-4)
+optimizer = AdamW(model.parameters(), lr=0.0005, weight_decay=5e-4)
 criterion = torch.nn.CrossEntropyLoss()
 
-# Training function
+# Initialize GradScaler for mixed precision training
+scaler = GradScaler()
+
+# Training function with mixed precision
 def train():
     model.train()
     optimizer.zero_grad()
-    out = model(data)
-    loss = criterion(out[data.train_mask], data.y[data.train_mask])
-    loss.backward()
-    optimizer.step()
+    with autocast():
+        out = model(data)
+        loss = criterion(out[data.train_mask], data.y[data.train_mask])
+    scaler.scale(loss).backward()
+    scaler.step(optimizer)
+    scaler.update()
     return loss.item()
 
 # Validation function
@@ -53,7 +60,7 @@ def validate():
     return val_loss.item()
 
 # Train the model
-num_epochs = 2000
+num_epochs = 300
 losses = []
 val_losses = []
 
@@ -84,6 +91,7 @@ plt.savefig("/content/drive/My Drive/COMP3710/Project/graphs/training_validation
 plt.show()
 
 # UMAP Visualization of Embeddings
+
 model.eval()
 with torch.no_grad():
     embeddings = model(data, return_embeddings=True).cpu().numpy()
@@ -96,7 +104,7 @@ embeddings_2d = umap_reducer.fit_transform(embeddings)
 plt.figure(figsize=(10, 8))
 for label in range(len(page_type_mapping)):
     idx = (labels.cpu().numpy() == label)
-    plt.scatter(embeddings_2d[idx, 0], embeddings_2d[idx, 1], label=list(page_type_mapping.keys())[label], alpha=0.6)
+    plt.scatter(embeddings_2d[idx, 0], embeddings_2d[idx, 1], label=str(label), alpha=0.6)
 
 plt.xlabel("UMAP Component 1")
 plt.ylabel("UMAP Component 2")

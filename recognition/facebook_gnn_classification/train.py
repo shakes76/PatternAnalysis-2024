@@ -31,7 +31,7 @@ data.train_mask[train_idx] = True
 data.val_mask[val_idx] = True
 
 # Define optimizer and loss function
-optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=2e-4)
+optimizer = AdamW(model.parameters(), lr=0.0005, weight_decay=2e-4)
 criterion = torch.nn.CrossEntropyLoss()
 
 # Training function

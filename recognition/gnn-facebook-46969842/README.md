@@ -51,6 +51,21 @@ This graph is a page-page graph of verified Facebook sites, where nodes represen
 The task related to this dataset is multi-class node classification for the 4 site categories.
 
 ## Model Architecture
+The model used to solve this problem is a Graph Convolutional Neural Network (GCN). These are similar to traditional CNNs, learning features by inspecting neighboring nodes. GNNs aggregate node vectors, pass the result to the dense layer, and apply non-linearity using the activation function.
+
+This model consists of three graph convolutional layers followed by a linear classifier. It takes as input a dataset containing node features and edge information:
+- **1st Layer:** Takes input features and maps to 8 output features.
+- **2nd Layer:** Takes 8 input features and maps to 8 output features.
+- **3rd Layer:** Takes 8 input features and maps to 4 output features.
+- **4th Layer (Classifier):** Maps 4 input features to the number of classes.
+
+In each forward iteration, the model:
+1. Extracts node features and edge information.
+2. Passes through the first convolutional layer, applying the ReLU activation function.
+3. Applies dropout with a probability of 0.5 to help prevent overfitting.
+4. Passes through the second convolutional layer, applying ReLU and dropout again.
+5. Passes through the third convolutional layer, applying ReLU to generate the final set of node embeddings.
+6. Passes through to the classifier layer.
 
 ## Model Usage
 

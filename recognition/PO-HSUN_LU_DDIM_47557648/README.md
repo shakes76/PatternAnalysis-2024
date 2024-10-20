@@ -4,8 +4,7 @@
 
 **Chosen project:** Task 8 - Create a generative model of one of the ADNI brain data set (Diffusion Model)
 
-## Back Gournd of the Diffusion Model
-
+## Background of the Diffusion Model
 AI image generation is a technology that has been hotly discussed in the art and Deep Learning (DL) field. You must have heard of the AI Art Generator such as Dall-E 2 or NovelAI, a DL model that generates realistic-looking images from a given text sequence. To explore this technology deeper, we need to introduce a new class in the generative model called ‘diffusion’, first proposed by Sohl-Dickstein et al. (2015), which aimed to generate images from noise using a backward denoising process.
 
 So far, several generative models exist, including GAN, VAE and Flow-based models. Most of them could generate a high-quality image, such as StyleGAN-1, 2, the State-of-the-Art image generation model before diffusion model appears. However, each has some limitations of its own.
@@ -26,7 +25,7 @@ The diffusion model mainly consists of two phases: Forward Noising and Backward 
 
 ## Forward Diffusion Process
 <p align="center">
-  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/forward.png" alt="Backward" />
+  <img width="600px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/forward.png" alt="Backward" />
 </p>
 
 During the Forward Diffusion phase, a Markov chain is defined, where each timestep where each timestep t only depends on the previous timestep t−1. We use a variance schedule β to control the mean and variance, with β₀ < β₁< … < βt. We begin at X0, which is sampled from the real data distribution q(x), and iteratively adjust the mean and variance to generate X1, and so on, until reaching the final state XT, which is Gaussian noise. This process can be thought of as gradually pushing the image away from the real data distribution until it becomes indistinguishable from noise.
@@ -35,22 +34,22 @@ During the Forward Diffusion phase, a Markov chain is defined, where each timest
 ## Backward Denoising Process
 
 <p align="center">
-  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/backward_1.png" alt="Backward" />
+  <img width="400px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/backward_1.png" alt="Backward" />
 </p>
 
 <p align="center">
-  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/backward_2.png" alt="Backward" />
+  <img width="350px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/backward_2.png" alt="Backward" />
 </p>
 
 To remove noise from the noisy image distribution, we need to find an estimated reverse distribution p(x_t-1 | x_t), which is defined as a normal distribution with parameters μ and σ. In the DDPM paper, assuming σ is close to βt, the reverse distribution p(x_t−1|x_t) could be written as:  (the below equation require the number of time step to be large enough e.g. 1000, 2000)
 
 <p align="center">
-  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/p(x-1|x).png" alt="Backward" />
+  <img width="400px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/p(x-1|x).png" alt="Backward" />
 </p>
 
 The sampling process of DDPM is defined as follows. This process allows us to remove the noise from the noisy image Xt through an iterative denoising procedure. The only unknown parameter required for the p(x_t−1∣x_t) distribution is Є_θ, which can be estimated by the U-Net model. (In this report I also inplement DDIM, a variation of DDPM which has a faster smapling process)
 <p align="center">
-  <img src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/DDPM_process.png" alt="Backward" />
+  <img width="450px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/DDPM_process.png" alt="Backward" />
 </p>
 
 ## Training
@@ -81,10 +80,37 @@ The model architecture is a standard U-Net model. To generate noise at each corr
     
 ## Loss
 <p align="center">
-  <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/loss_fn.png" alt="Backward" />
+  <img width="600px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/vlb_loss.png" alt="Backward" />
 </p>
 
 As the forward and backward diffution process can be written as the joint probability of x from 1 to T, denoted as q(x1:T | x0) and p_θ(x0:T | xT), the objective of the loss function is to make these two distributions as close as possible. To achieve this, we can apply the variational lower bound (VLB) to optimize the negative log-likelihood, -log(p_θ(x)). The objective then becomes minimizing the KL divergence between p and q, which can be simply computed using MSE.
+<p align="center">
+  <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/loss_fn.png" alt="Backward" />
+</p>
+
+## Result
+### NC Image Generation
+<p align="center">
+  <img width="900px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/NC_result_img.jpg" alt="Backward" />
+</p>
+
+### AD Image Generation
+<p align="center">
+  <img width="900px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/AD_result_img.jpg" alt="Backward" />
+</p>
+
+### Mix Image Generation
+<p align="center">
+  <img width="900px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/results/result_img10.jpg" alt="Backward" />
+</p>
+
+## References
+1. ***Denoising Diffusion Probabilistic Models*** [[link](https://arxiv.org/abs/2006.11239)]
+2. ***Denoising Diffusion Implicit Models*** [[link](https://arxiv.org/abs/2010.02502)]
+3. ***Understanding the Diffusion Model and the theory behind it*** [[link (my article)](https://medium.com/@s125349666/understanding-the-diffusion-model-and-the-theory-tensorflow-cafcd5752b98)]
+4. ***Lil' Log - What are Diffusion Models?*** [[link](https://lilianweng.github.io/posts/2021-07-11-diffusion-models/)]
+
+
 
 
 

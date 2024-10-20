@@ -105,27 +105,12 @@ def get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.80):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle = False, num_workers=4)
 
     return train_loader, val_loader, test_loader
-    
-
-def count_images_in_folder(folder_path, extensions=('.jpeg', '.jpg', '.png')):
-    if not os.path.exists(folder_path):
-        print(f"Warning: Folder {folder_path} does not exist.")
-        return 0
-    
-    # Count the number of image files in the folder
-    image_count = sum(1 for file in os.listdir(folder_path) if file.lower().endswith(extensions))
-    return image_count
-
 
 if __name__ == "__main__":
     '''
     Testing whether the function works or not
     You can adjust the following path to the path where the data is stored
     '''
-    folder_path = ['data/AD_NC/train/NC', 'data/AD_NC/train/AD', 'data/AD_NC/test/NC', 'data/AD_NC/test/AD']
-    for path in folder_path:
-        num_images = count_images_in_folder(folder_path)
-        print(f"There are {num_images} images in the folder: {folder_path}")
     
     zip_path = "ADNI_AD_NC_2D.zip"
     extract_to = "data"
@@ -141,7 +126,5 @@ if __name__ == "__main__":
             print(f"Image shape: {images.shape}") 
             print(f"Labels: {labels}")
             break 
-            
-
 
 

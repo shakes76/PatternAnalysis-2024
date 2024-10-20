@@ -27,7 +27,7 @@ def main():
     #Testing part
     classifier_net = Classifier()
     classifier_dict = os.path.join(current_dir,'models','classifier_best.pth')
-    classifier_net.load_state_dict(torch.load(classifier_dict))
+    classifier_net.load_state_dict(torch.load(classifier_dict)) 
     test(siamese_net,classifier_net,test_df,images)
 
     #we can improve this alot, lot of repeating code in training loops we can handle creating the DataLoaders here

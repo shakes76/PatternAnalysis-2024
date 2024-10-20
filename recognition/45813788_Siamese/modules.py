@@ -1,7 +1,5 @@
-import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import ResNet18_Weights
 
 class FeatureExtraction(nn.Module):
     #CHANGE PRETRAINED TO TRUE IF IT SUCKS
@@ -11,15 +9,20 @@ class FeatureExtraction(nn.Module):
         super(FeatureExtraction, self).__init__()
 
         #Load resnet
-        self.model = models.resnet18(weights=None)#ResNet18_Weights.IMAGENET1K_V1)
+        self.model = models.resnet50(weights=None)#ResNet18_Weights.IMAGENET1K_V1)
 
         #remove fully connected
         self.model = nn.Sequential(*list(self.model.children())[:-1])
 
         self.embedding = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(512, embedding_size),
-            nn.ReLU(),
+            nn.Linear(2048, 512),
+            nn.ReLU(inplace=True),
+            nn.Linear(512,256),
+            nn.ReLU(inplace=True),
+            nn.Linear(256,embedding_size),
+            nn.ReLU(inplace=True)
+
         )
  
         #true to train all layers false if not

@@ -1,4 +1,14 @@
-"""Utilities File for Plotting"""
+"""
+utils.py
+
+Utilities file for plotting. Contains functions
+    - plot_loss() for plotting training/validation loss
+    - tsne_embeddings() for plotting embeddings using t-SNE
+    - pca_embeddings() for plotting embeddings using PCA
+    - umap_embeddings() for plotting embeddings using UMAP
+
+Author: Tristan Hayes - 46969842
+"""
 import torch
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
@@ -12,6 +22,25 @@ class_titles = {
     2: "Television Shows", 
     3: "Companies",
 }
+
+def loss_plot(training_loss, val_losses):
+    """
+    Plot training and validation loss for the model over the epochs.
+
+    Parameters:
+        training_loss (List): A list of training losses at each epoch.
+        val_losses (List): A list of validation losses at each epoch.
+    """
+    # Store loss per epoch graph
+    plt.plot(training_loss, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss Over Epochs')
+    plt.legend()
+    os.makedirs('outputs/', exist_ok=True)
+    plt.savefig("outputs/epoch_losses.png")
+    plt.close()
 
 def tsne_embeddings(model, data):
     """

@@ -1,4 +1,11 @@
-"""File for training, validating, testing"""
+"""
+train.py
+
+File for training and validating the model. 
+Consists of a single function train().
+
+Author: Tristan Hayes - 46969842
+"""
 import time
 import torch
 from torch_geometric.loader import DataLoader
@@ -7,6 +14,7 @@ from dataset import FacebookDataset
 from modules import GCN
 import matplotlib.pyplot as plt
 import os
+from utils import loss_plot
 
 def train(model, loader, criterion, optimizer, numEpochs):
     """
@@ -23,7 +31,7 @@ def train(model, loader, criterion, optimizer, numEpochs):
     model.train()  # Set model to training mode
     print("> Training")
 
-    epoch_losses = []  # List to store the loss for each epoch
+    training_losses = []  # List to store the loss for each epoch
     val_losses = []  # List to store the validation loss for each epoch
     
     for epoch in range(numEpochs):
@@ -44,7 +52,7 @@ def train(model, loader, criterion, optimizer, numEpochs):
         
         # Average the loss for the epoch
         epoch_loss /= len(loader)
-        epoch_losses.append(epoch_loss)  # Store average training loss
+        training_losses.append(epoch_loss)  # Store average training loss
 
         # Validation
         model.eval()  # Set model to evaluation mode
@@ -71,17 +79,7 @@ def train(model, loader, criterion, optimizer, numEpochs):
     endTime = time.time()
     runTime = endTime - startTime
     print("Training Time: " + str(runTime) + " seconds")
-
-    # Store loss per epoch graph
-    plt.plot(epoch_losses, label='Training Loss')
-    plt.plot(val_losses, label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss Over Epochs')
-    plt.legend()
-    os.makedirs('outputs/', exist_ok=True)
-    plt.savefig("outputs/epoch_losses.png")
-    plt.close()
+    loss_plot(training_losses, val_losses)
 
 if __name__ == "__main__":
     # Define Parameters

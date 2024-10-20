@@ -1,4 +1,11 @@
-"""Example usage of trained model File"""
+"""
+predict.py
+
+A file for predicting results from a give model. Consists
+of a function test() to test the saved model.
+
+Author: Tristan Hayes - 46969842
+"""
 import torch
 import time
 from torch_geometric.loader import DataLoader

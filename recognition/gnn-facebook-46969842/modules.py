@@ -1,4 +1,11 @@
-"""Modules File"""
+"""
+modules.py
+
+Modules File. Consists of the GCN model used for the
+problem.
+
+Author: Tristan Hayes - 46969842
+"""
 import torch
 from torch.nn import Linear
 from torch_geometric.nn import GCNConv

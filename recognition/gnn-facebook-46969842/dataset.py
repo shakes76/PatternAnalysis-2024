@@ -1,4 +1,11 @@
-"""Data Loader File"""
+"""
+dataset.py
+
+Data Loader File. Consists of a single class FacebookDataset which 
+loads the dataset from the given .npz file
+
+Author: Tristan Hayes - 46969842
+"""
 import numpy as np
 import torch
 from torch_geometric.data import Data

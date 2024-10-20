@@ -1,5 +1,6 @@
 # train.py
 
+
 import torch
 from torch.optim import AdamW
 from torch_geometric.data import Data
@@ -17,7 +18,7 @@ data = Data(x=features, edge_index=edge_index, y=labels).to(device)
 
 # Define the GNN model with updated architecture
 input_dim = features.shape[1]
-hidden_dim = 512
+hidden_dim = 1024
 output_dim = len(page_type_mapping)
 model = GNN(input_dim, hidden_dim, output_dim).to(device)
 
@@ -30,7 +31,7 @@ data.train_mask[train_idx] = True
 data.val_mask[val_idx] = True
 
 # Define optimizer and loss function
-optimizer = AdamW(model.parameters(), lr=0.0005, weight_decay=5e-4)
+optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=2e-4)
 criterion = torch.nn.CrossEntropyLoss()
 
 # Training function
@@ -52,7 +53,7 @@ def validate():
     return val_loss.item()
 
 # Train the model
-num_epochs = 4000
+num_epochs = 2000
 losses = []
 val_losses = []
 

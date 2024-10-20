@@ -1,78 +1,76 @@
-import torch
-import nibabel as nib
-import numpy as np
 import os
+import torch
 import matplotlib.pyplot as plt
-from torchvision import transforms
-from dataset import MRIDataset
-from modules import UNet3D
+from dataset import MRIDataset  # Assuming your dataset class is in dataset.py
+from modules import UNet3D  # Assuming your model class is in modules.py
+from torch.utils.data import DataLoader
+from torch.amp import autocast
+
+# Directories and parameters
+MODEL_PATH = '/home/Student/s4803414/miniconda3/model/saved_model.pth'
+IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
+MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
+VISUALS_DIR = '/home/Student/s4803414/miniconda3/visuals'
+BATCH_SIZE = 2
+NUM_CLASSES = 6
+
+# Ensure the visuals directory exists
+os.makedirs(VISUALS_DIR, exist_ok=True)
+
+# Load dataset (you can use the same MRIDataset class here)
+dataset = MRIDataset(image_dir=IMAGE_DIR, mask_dir=MASK_DIR, transform=None, augment=False)
+data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+# Load the trained model
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = UNet3D(in_channels=1, out_channels=NUM_CLASSES)  # Adjust based on your model definition
+model.load_state_dict(torch.load(MODEL_PATH))
+model.to(device)
+model.eval()
 
 
-def visualise_slice(image, mask, prediction, slice_index):
+# Function to overlay predictions on images and save the visualizations
+def save_visualization(image, mask, pred, save_path):
     plt.figure(figsize=(12, 4))
 
+    # Original image
     plt.subplot(1, 3, 1)
-    plt.title("Image Slice")
-    plt.imshow(image[:, :, slice_index], cmap='gray')
-    plt.axis('off')
+    plt.imshow(image.squeeze(0).cpu().numpy(), cmap='gray')
+    plt.title('Original Image')
 
+    # Ground truth mask
     plt.subplot(1, 3, 2)
-    plt.title("Mask Slice")
-    plt.imshow(mask[:, :, slice_index], cmap='gray')
-    plt.axis('off')
+    plt.imshow(mask.squeeze(0).cpu().numpy(), cmap='nipy_spectral')
+    plt.title('Ground Truth')
 
+    # Predicted mask
     plt.subplot(1, 3, 3)
-    plt.title("Prediction Slice")
-    plt.imshow(prediction[:, :, slice_index], cmap='gray')
-    plt.axis('off')
+    plt.imshow(pred.squeeze(0).cpu().numpy(), cmap='nipy_spectral')
+    plt.title('Prediction')
 
-    plt.tight_layout()
-    plt.show()
-
-
-def process_slice(model, image_slice):
-    # Convert the image slice to a PyTorch tensor
-    image_tensor = torch.from_numpy(image_slice.astype(np.float32)).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
-
-    # Make prediction for the slice
-    with torch.no_grad():
-        prediction = model(image_tensor)
-        prediction = torch.argmax(prediction, dim=1).squeeze().cpu().numpy()  # Shape: (H, W)
-
-    return prediction
+    plt.savefig(save_path)
+    plt.close()
 
 
-def main(image_path, mask_path, model_path):
-    # Load the trained model
-    model = UNet3D(1, 6)  # Initialize your model architecture
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
-    model.eval()  # Set the model to evaluation mode
+# Prediction loop and saving visualizations
+with torch.no_grad():
+    for batch_idx, (images, masks) in enumerate(data_loader):
+        images = images.to(device)
+        masks = masks.to(device)
 
-    # Load the MRI image
-    image_data = nib.load(image_path).get_fdata()
-    num_slices = min(64, image_data.shape[2])  # Only process up to 64 slices to reduce memory usage
+        with autocast(device_type='cuda'):
+            outputs = model(images)
+            predictions = torch.argmax(outputs, dim=1)  # Get the predicted class for each pixel
 
-    # Normalize the image
-    image_min, image_max = image_data.min(), image_data.max()
-    image_data = (image_data - image_min) / (image_max - image_min) if image_max != image_min else image_data
+        # Iterate over the batch and save visualizations
+        for i in range(images.size(0)):
+            image = images[i]
+            mask = masks[i]
+            pred = predictions[i]
 
-    # Load the Mask image
-    mask_data = nib.load(mask_path).get_fdata()[:, :, :num_slices]
+            save_path = os.path.join(VISUALS_DIR, f'visualization_{batch_idx * BATCH_SIZE + i}.png')
+            save_visualization(image, mask, pred, save_path)
 
-    # Process and visualize slice by slice
-    for slice_index in range(num_slices):
-        print(f"Processing slice {slice_index + 1}/{num_slices}")
-        image_slice = image_data[:, :, slice_index]
+        print(f'Saved visualizations for batch {batch_idx + 1}/{len(data_loader)}')
 
-        # Make prediction for the current slice
-        prediction_slice = process_slice(model, image_slice)
-
-        # Visualise the current slice
-        visualise_slice(image_data, mask_data, prediction_slice, slice_index)
-
-
-if __name__ == "__main__":
-    image_path = "/Users/shwaa/Downloads/HipMRI_study_complete_release_v1/semantic_MRs_anon/Case_004_Week0_LFOV.nii.gz"
-    mask_path = "/Users/shwaa/Downloads/HipMRI_study_complete_release_v1/semantic_labels_anon/Case_004_Week0_SEMANTIC_LFOV.nii.gz"
-    model_path = "/Users/shwaa/Desktop/model/new_model.pth"
-    main(image_path, mask_path, model_path)
+print(f"Visualizations saved to: {VISUALS_DIR}")

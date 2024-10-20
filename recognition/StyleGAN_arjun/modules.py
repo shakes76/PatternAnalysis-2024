@@ -201,99 +201,35 @@ class Generator(nn.Module):
     """
     Generator Network - StyleGAN1.
     """
-    def __init__(self, z_dim, w_dim, in_channels, num_layers) -> None:
+    def __init__(self, num_layers, w_dim, n_features=32, max_features=256) -> None:
         super(Generator, self).__init__()
-        self.z_dim = z_dim
         self.w_dim = w_dim
-        self.in_channels = in_channels
         self.num_layers = num_layers
 
-        # Mapping network
-        self.mapping = FCBlock(z_dim, w_dim)
+        features = [min(max_features, n_features * (2 ** i)) for i in range(num_layers - 2, -1, -1)]
+        self.n_blocks = len(features)
 
-        # Initial constant input
-        self.const_in = nn.Parameter(
-            torch.randn(1, in_channels, 4, 4)
-        )
+        self.initial_constant = nn.Parameter(torch.randn((1, features[0], 4, 4)))
 
-        # Generator block for constant input
-        self.const_noise_inj = NoiseInjection(in_channels)
-        self.const_activation = nn.LeakyReLU(0.2)
-        self.const_ada_in = AdaIN(in_channels, w_dim)
-        self.const_style_block = StyleBlock(in_channels, in_channels, w_dim)
+        self.style_block = StyleBlock(w_dim, features[0], features[0])
+        self.to_rgb = ToRGB(w_dim, features[0])
 
-        # Generator blocks
-        self.gen_blocks = nn.ModuleList()
-        current_channels = in_channels
-        for i in range(num_layers - 1):  # One less generator block
-            out_channels = max(
-                in_channels // (2 ** (i + 1)), 16 # Minimum 16 channels
-            )
-            self.gen_blocks.append(
-                GeneratorBlock(current_channels, out_channels, w_dim)
-            )
-            current_channels = out_channels
+        blocks = [GeneratorBlock(w_dim, features[i - 1], features[i]) for i in range(1, self.n_blocks)]
+        self.blocks = nn.ModuleList(blocks)
 
-    def forward(self, z, truncation_psi=0.7, truncation_cutoff=8):
-        batch_size = z.shape[0]
+    def forward(self, w, input_noise):
+        batch_size = w.shape[1]
 
-        # Map z to intermediate space W
-        w = self.mapping(z)
-        # Apply truncation trick
-        if truncation_psi < 1:
-            w_avg = torch.zeros_like(w).mean(dim=0, keepdim=True).to(z.device)
-            layer_indices = torch.arange(self.num_layers + 1)[None, :, None].to(z.device)
-            cutoff = torch.ones_like(layer_indices, dtype=torch.float32) * truncation_cutoff
-            mask = (layer_indices < cutoff).float()
-            w = w_avg + (w - w_avg) * (mask * truncation_psi + (1 - mask))
+        x = self.initial_constant.expand(batch_size, -1, -1, -1)
+        x = self.style_block(x, w[0], input_noise[0][1])
+        rgb = self.to_rgb(x, w[0])
 
-        # Start with constant input
-        self.const_in = self.const_in.to(z.device)
-        x = self.const_in.repeat(batch_size, 1, 1, 1)
+        for i in range(1, self.n_blocks):
+            x = F.interpolate(x, scale_factor=2, mode="bilinear")
+            x, rgb_new = self.blocks[i - 1](x, w[i], input_noise[i])
+            rgb = F.interpolate(rgb, scale_factor=2, mode="bilinear") + rgb_new
 
-        # Generate noise for each layer
-        noise = [
-            torch.randn(
-                batch_size, 1, 4 * 2**i, 4 * 2**i, device=z.device
-            ) for i in range(self.num_layers)
-        ] * 2
-
-        # Apply initial transformations
-        x = self.const_noise_inj(x, noise[0])
-        x = self.const_activation(x)
-        x = self.const_ada_in(x, w[:, 0])
-        x = self.const_style_block(x, w[:, 1], noise[1])
-
-        # Apply generator blocks
-        rgb_outs = []
-        for i, block in enumerate(self.gen_blocks):
-            x, rgb = block(x, w[:, i+2], [noise[2*i+2], noise[2*i+3]])
-            rgb_outs.append(rgb)
-
-        # Combine RGB outputs
-        image = rgb_outs[-1]
-        for rgb in reversed(rgb_outs[:-1]):
-            image = F.interpolate(image, scale_factor=2, mode='bilinear', align_corners=False)
-            image = image + rgb
-
-        return image
-
-    def generate_truncated(self, num_samples,
-        truncation_psi=0.7, truncation_cutoff=8):
-            latent_z = torch.randn(
-                num_samples, self.z_dim, device=self.const_in.device
-            )
-            return self.forward(latent_z, truncation_psi, truncation_cutoff)
-
-    def get_latent(self, z):
-        return self.mapping(z)
-
-    def mean_latent(self, n_latent):
-        latent_in = torch.randn(
-            n_latent, self.z_dim, device=self.const_in.device
-        )
-        latent = self.get_latent(latent_in).mean(0, keepdim=True)
-        return latent
+        return torch.tanh(rgb)
 
 class EQConv2d(nn.Module):
     """

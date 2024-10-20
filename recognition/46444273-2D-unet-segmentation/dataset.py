@@ -4,7 +4,6 @@ import nibabel as nib
 import pathlib
 import tensorflow as tf
 from tqdm import tqdm
-from keras.preprocessing.image import ImageDataGenerator
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -17,7 +16,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
 # load medical image functions
 def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32,
-    getAffines = False, early_stop = False):
+    getAffines = False, early_stop = False, image_limit = None):
     '''
     Load medical image data from names , cases list provided into a list for each .
 
@@ -38,10 +37,10 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     if categorical:
         first_case = to_channels(first_case, dtype=dtype)
         rows, cols, channels = first_case.shape
-        images = np.zeros((num, rows, cols, channels), dtype=dtype)
+        images = np.zeros((num, 256, 128, channels), dtype=dtype)
     else:
         rows, cols = first_case.shape
-        images = np.zeros((num, rows, cols), dtype=dtype)
+        images = np.zeros((num, 256, 128), dtype=dtype)
 
     for i, inName in enumerate(tqdm(imageNames)):
         niftiImage = nib.load(inName)
@@ -58,10 +57,12 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
             inImage = to_channels(inImage, dtype=dtype)
             images[i,:,:,:] = inImage
         else:
+            if inImage.shape[1] == 144:
+                inImage = inImage[:,:128]
             images[i,:,:] = inImage
 
         affines.append(affine)
-        if i > 100 and early_stop:
+        if i > image_limit and early_stop:
             break
 
     if getAffines:
@@ -70,7 +71,9 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
         return images
 
 # load 2D Nifti data
-def get_training_data(image_limit):
+def get_training_data(image_limit=None):
+    early_stop = False
+
     # training images
     train_data_dir = pathlib.Path('dataset/keras_slices_train').with_suffix('')
     train_image_count = len(list(train_data_dir.glob('*.nii')))
@@ -88,14 +91,30 @@ def get_training_data(image_limit):
     seg_test_image_count = len(list(seg_test_data_dir.glob('*.nii')))
     print(f"seg test image count: {seg_test_image_count}")
 
+    if image_limit is None:
+        image_limit = 11460
+        early_stop = False
+    else:
+        early_stop = True
+  
     # loading train images
-    train_data = load_data_2D(list(train_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True)[:image_limit,:,:]
+    train_data = load_data_2D(list(train_data_dir.glob('*.nii')), normImage=False,
+                              categorical=False, early_stop=early_stop,
+                                image_limit=image_limit)[:image_limit,:,:]
     # loading train masks
-    seg_train_data = load_data_2D(list(seg_train_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True).astype(np.uint8)[:image_limit,:,:]
+    seg_train_data = load_data_2D(list(seg_train_data_dir.glob('*.nii')),
+                                   normImage=False, categorical=False,
+                                   early_stop=early_stop,
+                                     image_limit=image_limit).astype(np.uint8)[:image_limit,:,:]
     # loading testing images
-    test_data = load_data_2D(list(test_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True)[:image_limit,:,:]
+    test_data = load_data_2D(list(test_data_dir.glob('*.nii')), normImage=False,
+                              categorical=False, early_stop=early_stop,
+                                image_limit=image_limit)[:image_limit,:,:]
     # loading testing masks
-    seg_test_data = load_data_2D(list(seg_test_data_dir.glob('*.nii')), normImage=False, categorical=False, early_stop=True).astype(np.uint8)[:image_limit,:,:]
+    seg_test_data = load_data_2D(list(seg_test_data_dir.glob('*.nii')),
+                                  normImage=False, categorical=False,
+                                    early_stop=early_stop,
+                                      image_limit=image_limit).astype(np.uint8)[:image_limit,:,:]
 
     # expand image data dims
     train_data = np.expand_dims(np.array(train_data), 3)
@@ -105,10 +124,10 @@ def get_training_data(image_limit):
     n_classes = 6
 
     from keras.utils import to_categorical
-    train_labels = to_categorical(seg_train_data, num_classes=n_classes)
+    train_labels = to_categorical(seg_train_data, num_classes=n_classes, dtype=np.uint8)
     train_labels = train_labels.reshape((seg_train_data.shape[0], seg_train_data.shape[1], seg_train_data.shape[2], n_classes))
 
-    test_labels = to_categorical(seg_test_data, num_classes=n_classes)
+    test_labels = to_categorical(seg_test_data, num_classes=n_classes, dtype=np.uint8)
     test_labels = test_labels.reshape((seg_test_data.shape[0], seg_test_data.shape[1], seg_test_data.shape[2], n_classes))
 
     #TODO: Normalize input data
@@ -117,25 +136,32 @@ def get_training_data(image_limit):
 
     return (X_train, y_train), (X_test, y_test)
 
-def get_data_generators(train_data, test_data, seed, batch_size):
-    X_train, y_train = train_data
-    X_test, y_test = test_data
+def batch_loader(data, batch_size):
 
-    image_data_generator = ImageDataGenerator()
-    image_generator = image_data_generator.flow(X_train, seed=seed, batch_size=batch_size)
-    test_image_generator = image_data_generator.flow(X_test, seed=seed, batch_size=batch_size)
+    L = len(data[0])
 
-    mask_data_generator = ImageDataGenerator()
-    mask_generator = mask_data_generator.flow(y_train, seed=seed, batch_size=batch_size)
-    test_mask_generator = mask_data_generator.flow(y_test, seed=seed, batch_size=batch_size)
+    # keras requires infinite generator
+    while True:
 
-    def data_generator(image_generator, mask_generator):
-        data_generator = zip(image_generator, mask_generator)
-        for (img, mask) in data_generator:
-            yield (img, mask)
+        batch_start = 0
+        batch_end = batch_size
 
-    train_generator = data_generator(image_generator, mask_generator)
+        while batch_start < L:
+            limit = min(batch_end, L)
 
-    test_generator = data_generator(test_image_generator, test_mask_generator)
+            X_data, y_data = data
 
-    return (train_generator, test_generator)
+            X = X_data[batch_start:limit]
+            Y = y_data[batch_start:limit]
+            Y = Y.astype(np.float32)
+
+            yield (X, Y)
+
+            batch_start += batch_size
+            batch_end += batch_size
+
+def data_loader(train_data, test_data, batch_size):
+    train_img_datagen = batch_loader(train_data, batch_size)
+    test_img_datagen = batch_loader(test_data, batch_size)
+    
+    return (train_img_datagen, test_img_datagen)

@@ -127,7 +127,39 @@ def train(model, data, epochs=100, patience=5, clip=1.0):
     test_acc = test_accuracy(model, data['test_mask'], data)
     print(f"Test Accuracy: {test_acc:.4f}, Best Validation Accuracy: {best_validation_acc:.4f}")
 
+    # Plot training and validation accuracy, loss
+    plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validation_loss_list)
+
     # Return training and validation accuracy, loss, and test accuracy
     return train_acc_list, validation_acc_list, train_loss_list, validation_loss_list, test_acc
 
 
+def plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validation_loss_list):
+    # Accuracy plot
+    plt.figure(figsize=(12, 6))
+    plt.plot(np.arange(1, len(train_acc_list) + 1), train_acc_list, label="Train Accuracy")
+    plt.plot(np.arange(1, len(validation_acc_list) + 1), validation_acc_list, label="Validation Accuracy")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.title("Training and Validation Accuracy")
+    plt.legend(loc="lower right")
+    plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/gcn_accuracy.png")
+    plt.show()
+
+    # Loss plot
+    plt.figure(figsize=(12, 6))
+    plt.plot(np.arange(1, len(train_loss_list) + 1), train_loss_list, label="Train Loss")
+    plt.plot(np.arange(1, len(validation_loss_list) + 1), validation_loss_list, label="Validation Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title("Training and Validation Loss")
+    plt.legend(loc="upper right")
+    plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/gcn_loss.png")
+    plt.show()
+
+
+# Train the model and plot metrics
+train(model, data, epochs=100, patience=10)
+
+# Save the trained model
+torch.save(model.state_dict(), "GCN_Model.pt")

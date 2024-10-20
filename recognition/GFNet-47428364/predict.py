@@ -11,15 +11,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def main():
     # Load the saved model
     model = GFNet()
-    model.load_state_dict(torch.load("GFNet-Model.pth"))
+    model.load_state_dict(torch.load("GFNet-Model.pth", weights_only=True))
     model.to(device)
 
+    # Get the dataloaders from dataset.py
     _, test_dataloader = get_dataloaders()
 
-    # Evaluate trained model on the test data
+    # Evaluate loaded model on the test data
     test_loss, test_accuracy = evaluate(model, test_dataloader, nn.CrossEntropyLoss())
-
-    # Print the results of the evaluation
     print(f"Test - Loss: {test_loss:.4f}, Accuracy: {100*test_accuracy:.2f}%")
 
 if __name__ == "__main__":

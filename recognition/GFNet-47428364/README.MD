@@ -12,7 +12,7 @@ The following dependencies are required: m
 * torchvision
 * matplotlib
 
-*Note:* To use the required `rffnt` and `irfftn` function from PyTorch, verion 1.8.0 or greater is required.
+*Note:* To use the required `rffn2` and `irfft2` function from PyTorch, verion 1.8.0 or greater is required.
 
 *Note:* The results generated from this model may differ between runs as the filters are set randomly. With the same hyperparamters, similar results could be achieved.
 
@@ -21,7 +21,7 @@ The following dependencies are required: m
 ### Inputs
 These are the parameters specified for the model:
 ```
-GFNet(embed_dim=384, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth=4, num_classes=1000)
+GFNet(embed_dim=768, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth=12, drop_rate=0., num_classes=1000)
 ```
 *Note:* These parameters are the defaults for the GFNet.
 
@@ -42,7 +42,7 @@ model.load_state_dict(torch.load("GFNet-Model.pth"))
 
 ### Outputs
 ```
-Test - Loss: 6.4041, Accuracy: 50.53%
+Test - Loss: 2.3159, Accuracy: 63.27%
 ```
 
 ## Pre-Processing
@@ -53,4 +53,4 @@ The images were resized to 224x224 to match the standard for GFNet.
 ## References
 [1] “An overview of the split-frequency filter network.” ResearchGate, 2023. https://www.researchgate.net/figure/An-overview-of-the-split-frequency-filter-network-Our-network-structure-based-on-GFNet_fig1_372975394
 
-‌[2] “External-Attention-pytorch/gfnet.py” bianxs, 2024. http://111.229.202.238:1118/bianxs/External-Attention-pytorch/src/commit/789e3a17dd393007369525d308fb056293078d09/model/attention/gfnet.py
+[2] raoyongming, “Global Filter Networks for Image Classification,” GitHub, 2021. https://github.com/raoyongming/GFNet

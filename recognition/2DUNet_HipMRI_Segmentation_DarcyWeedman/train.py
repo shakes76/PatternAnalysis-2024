@@ -1,8 +1,17 @@
+"""
+train.py
+
+Author: Darcy Weedman
+Student ID: 45816985
+COMP3710 HipMRI 2D UNet project
+Semester 2, 2024
+"""
+
 import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Subset, random_split
+from torch.utils.data import DataLoader, random_split
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import HipMRIDataset
 from modules import UNet
@@ -12,7 +21,6 @@ import random
 import torch.nn.functional as F
 from typing import Tuple, Dict
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 import logging
 
@@ -238,10 +246,10 @@ def main():
         logging.info(f"Validation: Loss={avg_val_loss:.4f}, Dice={avg_val_dice}")
 
         # Learning rate scheduling
-        scheduler.step(avg_val_dice[1])  # Assuming prostate is class 1, adjust if needed
+        scheduler.step(avg_val_dice[1])  # Assuming prostate is class 1
 
         # Save Best Model
-        if avg_val_dice[1] > best_dice:  # Assuming prostate is class 1, adjust if needed
+        if avg_val_dice[1] > best_dice:  # Assuming prostate is class 1
             best_dice = avg_val_dice[1]
             torch.save(model.state_dict(), save_path)
             logging.info(f"Best model saved with Prostate Dice={best_dice:.4f}")

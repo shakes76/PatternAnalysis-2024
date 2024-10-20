@@ -1,4 +1,12 @@
-# simple_unet.py
+"""
+modules.py
+
+Author: Darcy Weedman
+Student ID: 45816985
+COMP3710 HipMRI 2D UNet project
+Semester 2, 2024
+"""
+
 import torch
 import torch.nn as nn
 

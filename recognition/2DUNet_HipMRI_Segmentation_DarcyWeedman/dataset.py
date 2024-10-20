@@ -1,3 +1,12 @@
+"""
+dataset.py
+
+Author: Darcy Weedman
+Student ID: 45816985
+COMP3710 HipMRI 2D UNet project
+Semester 2, 2024
+"""
+
 import os
 import numpy as np
 import nibabel as nib
@@ -5,8 +14,6 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 import logging
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 

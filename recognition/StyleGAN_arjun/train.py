@@ -8,6 +8,38 @@ from tqdm import tqdm
 from modules import Generator, Discriminator
 from dataset import process_adni, process_cifar
 
+def get_w(w_dim, batch_size, num_layers, latent_net, device):
+    """
+    Get intermediate latent vector (W).
+    """
+    # Random noise z latent vector
+    z = torch.randn(batch_size, w_dim).to(device)
+
+    # Forward pass z through the mapping network to generate w latent vector
+    w = latent_net(z)
+
+    return w[None, :, :].expand(num_layers, -1, -1)
+
+def get_noise(num_layers, batch_size, device):
+    """
+    Generates a random noise vector for a batch of images.
+    """
+    noise = []
+    resolution = 4
+
+    for i in range(num_layers):
+        if i == 0:
+            n1 = None
+        else:
+            n1 = torch.randn(batch_size, 1, resolution, resolution, device=device)
+        n2 = torch.randn(batch_size, 1, resolution, resolution, device=device)
+
+        noise.append((n1, n2))
+
+        resolution *= 2
+
+    return noise
+
 def train(model_G, model_D, n_epochs, dataloader, lr,
     z_dim, w_dim, in_channels, num_layers, image_size, device):
     """

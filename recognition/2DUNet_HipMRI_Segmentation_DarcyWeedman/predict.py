@@ -21,7 +21,33 @@ from dataset import load_data_2D
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 class PredictDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, norm=True, target_size=(256, 256)):
+    """
+    A PyTorch Dataset for loading and preprocessing images and masks for prediction.
+
+    This dataset is designed to load NIfTI (.nii or .nii.gz) image and mask files,
+    preprocess them, and provide them as tensors for model prediction.
+
+    Attributes:
+        image_dir (str): Directory containing the image files.
+        mask_dir (str): Directory containing the mask files.
+        norm (bool): Whether to normalize the images.
+        target_size (tuple): The target size for resizing images and masks.
+        image_files (list): List of image file names.
+        mask_files (list): List of mask file names.
+        images (numpy.ndarray): Preprocessed images.
+        masks (numpy.ndarray): Preprocessed masks.
+    """
+
+    def __init__(self, image_dir: str, mask_dir: str, norm: bool = True, target_size: tuple = (256, 256)):
+        """
+        Initialize the PredictDataset.
+
+        Args:
+            image_dir (str): Directory containing the image files.
+            mask_dir (str): Directory containing the mask files.
+            norm (bool, optional): Whether to normalize the images. Defaults to True.
+            target_size (tuple, optional): The target size for resizing images and masks. Defaults to (256, 256).
+        """
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.norm = norm
@@ -37,10 +63,25 @@ class PredictDataset(Dataset):
         self.masks = load_data_2D(mask_paths, normImage=False, categorical=False, target_size=self.target_size)
         logging.info("All images and masks loaded and preprocessed.")
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """
+        Get the number of items in the dataset.
+
+        Returns:
+            int: The number of items in the dataset.
+        """
         return len(self.image_files)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> tuple:
+        """
+        Get an item from the dataset.
+
+        Args:
+            idx (int): The index of the item to retrieve.
+
+        Returns:
+            tuple: A tuple containing the image tensor, mask tensor, and image file name.
+        """
         image = self.images[idx]
         mask = self.masks[idx]
         image = np.expand_dims(image, axis=0)
@@ -48,13 +89,61 @@ class PredictDataset(Dataset):
         mask_tensor = torch.tensor(mask, dtype=torch.long)
         return image_tensor, mask_tensor, self.image_files[idx]
 
-def dice_coefficient(pred, target, epsilon=1e-6):
+def dice_coefficient(pred: torch.Tensor, target: torch.Tensor, epsilon: float = 1e-6) -> torch.Tensor:
+    """
+    Calculate the Dice coefficient between predicted and target segmentation masks.
+
+    Args:
+        pred (torch.Tensor): The predicted segmentation mask.
+        target (torch.Tensor): The target (ground truth) segmentation mask.
+        epsilon (float, optional): A small constant to avoid division by zero. Defaults to 1e-6.
+
+    Returns:
+        torch.Tensor: The calculated Dice coefficient.
+    """
     pred = pred.float()
     target = target.float()
     intersection = (pred * target).sum()
     return (2. * intersection + epsilon) / (pred.sum() + target.sum() + epsilon)
 
+def visualize_sample(image: torch.Tensor, true_mask: torch.Tensor, pred_mask: torch.Tensor, dice_score: float, save_path: str):
+    """
+    Visualize a sample prediction alongside the input image and ground truth.
+
+    Args:
+        image (torch.Tensor): The input image.
+        true_mask (torch.Tensor): The ground truth segmentation mask.
+        pred_mask (torch.Tensor): The predicted segmentation mask.
+        dice_score (float): The Dice score for the prediction.
+        save_path (str): The path to save the visualization.
+    """
+    plt.figure(figsize=(15, 5))
+    plt.subplot(131)
+    plt.imshow(image.squeeze(), cmap='gray')
+    plt.title('Input Image')
+    plt.axis('off')
+    
+    plt.subplot(132)
+    plt.imshow(true_mask.squeeze(), cmap='nipy_spectral')
+    plt.title('Ground Truth')
+    plt.axis('off')
+    
+    plt.subplot(133)
+    plt.imshow(pred_mask.squeeze(), cmap='nipy_spectral')
+    plt.title(f'Prediction (Dice: {dice_score:.4f})')
+    plt.axis('off')
+    
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+
 def main():
+    """
+    Main function to run the prediction pipeline.
+
+    This function loads a trained model, predicts on a test dataset,
+    calculates Dice scores, and visualizes results.
+    """
     model_path = 'best_model_simple_unet.pth'
     image_dir = 'keras_slices_test'
     mask_dir = 'keras_slices_seg_test'
@@ -140,28 +229,6 @@ def main():
     plt.ylim(0, 1)
     plt.savefig('dice_score_scatter.png')
     plt.close()
-
-def visualize_sample(image, true_mask, pred_mask, dice_score, save_path):
-    plt.figure(figsize=(15, 5))
-    plt.subplot(131)
-    plt.imshow(image.squeeze(), cmap='gray')
-    plt.title('Input Image')
-    plt.axis('off')
-    
-    plt.subplot(132)
-    plt.imshow(true_mask.squeeze(), cmap='nipy_spectral')
-    plt.title('Ground Truth')
-    plt.axis('off')
-    
-    plt.subplot(133)
-    plt.imshow(pred_mask.squeeze(), cmap='nipy_spectral')
-    plt.title(f'Prediction (Dice: {dice_score:.4f})')
-    plt.axis('off')
-    
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-
 
 if __name__ == "__main__":
     main()

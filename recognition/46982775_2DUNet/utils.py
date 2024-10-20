@@ -7,15 +7,20 @@ Modified: Joseph Reid
 Dependencies: numpy nibabel tqdm scikit-image
 """
 
+import os
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 from skimage.transform import resize
 
+IMG_LABELS = 6 # To transform segments to correct size (6, 256, 128) instead of (256, 128)
+
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
-    channels = np.unique(arr)
-    res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
-    for c in channels:
+    # channels = np.unique(arr)
+    channels = IMG_LABELS
+    # res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
+    res = np.zeros(arr.shape + (channels,), dtype = dtype)
+    for c in range(channels):
         c = int(c)
         res[..., c:c+1][arr == c] = 1
     return res
@@ -38,7 +43,7 @@ def load_data_2D (imageNames, normImage=False, categorical=False, dtype = np.flo
     first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
     if len(first_case.shape) == 3:
         first_case = first_case[:, :, 0] # sometimes extra dims , remove
-    if categorical:
+    if categorical: # To make segments/masks have the correct size
         first_case = to_channels(first_case, dtype = dtype)
         rows, cols, channels = first_case.shape
         images = np.zeros((num, rows, cols, channels), dtype = dtype)
@@ -73,3 +78,10 @@ def load_data_2D (imageNames, normImage=False, categorical=False, dtype = np.flo
         return images, affines
     else :
         return images
+    
+def load_data_2D_from_directory(image_folder_path: str, normImage=False, categorical=False, dtype = np.float32, getAffines = False, early_stop = False) -> np.ndarray:
+    """ Returns np array of all Nifti images in the specified image folder."""
+    image_names = []
+    for file in os.listdir(image_folder_path):
+        image_names.append(os.path.join(image_folder_path, file))
+    return load_data_2D(image_names, normImage, categorical, dtype, getAffines, early_stop)

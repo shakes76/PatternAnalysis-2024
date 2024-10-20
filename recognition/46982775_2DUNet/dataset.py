@@ -5,7 +5,6 @@
 import os
 import numpy as np
 import utils
-import torch
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 
@@ -18,11 +17,13 @@ class ProstateDataset(Dataset):
     
     """
 
-    def __init__(self, img_dir: str, mask_dir: str, transform = None, target_transform = None):
+    def __init__(self, img_dir: str, mask_dir: str, transform = None, target_transform = None, early_stop = True, plotting = False):
         self.img_dir = img_dir
         self.mask_dir = mask_dir
-        self.imgs = load_data_2D_from_directory(self.img_dir, early_stop=True)
-        self.masks = load_data_2D_from_directory(self.mask_dir, early_stop=True)
+        self.imgs = utils.load_data_2D_from_directory(self.img_dir, early_stop=early_stop)
+        self.masks = utils.load_data_2D_from_directory(self.mask_dir, early_stop=early_stop, categorical=True)
+        if plotting:
+            self.masks_for_plotting = utils.load_data_2D_from_directory(self.mask_dir, early_stop=early_stop, categorical=False)
         self.transform = transform
         self.target_transform = target_transform
 
@@ -38,7 +39,7 @@ class ProstateDataset(Dataset):
         if self.target_transform:
             mask = self.target_transform(mask)
     
-        return img, mask
+        return (img, mask)
     
     def img_show(self, start_idx: int = 0):
         """ Plots 6 of the image files, and their corresponding masks.
@@ -53,23 +54,16 @@ class ProstateDataset(Dataset):
         count = 0
         for idx in range(start_idx, start_idx + (cols * rows) // 2):
             img = self.imgs[idx]
-            mask = self.masks[idx]
+            mask = self.masks_for_plotting[idx]
             count += 1
             fig.add_subplot(rows, cols, count)
-            plt.imshow(img.squeeze())#, cmap='gray')
+            plt.imshow(img.squeeze(), cmap='gray')
             plt.axis("off")
             count += 1
             fig.add_subplot(rows, cols, count)
-            plt.imshow(mask.squeeze()),# cmap='gray')
+            plt.imshow(mask.squeeze(), cmap='gray')
             plt.axis("off")
         plt.show()
-
-def load_data_2D_from_directory(image_folder_path: str, normImage=False, categorical=False, dtype = np.float32, getAffines = False, early_stop = False) -> np.ndarray:
-    """ Returns np array of all Nifti images in the specified image folder."""
-    image_names = []
-    for file in os.listdir(image_folder_path):
-        image_names.append(os.path.join(image_folder_path, file))
-    return utils.load_data_2D(image_names, normImage, categorical, dtype, getAffines, early_stop)
 
 # For testing purposes
 if __name__ == "__main__":
@@ -77,10 +71,12 @@ if __name__ == "__main__":
     train_image_path = os.path.join(main_dir, 'keras_slices_train')
     train_mask_path = os.path.join(main_dir, 'keras_slices_seg_train')
     test_image_path = os.path.join(main_dir, 'keras_slices_test')
-    test_masks_path = os.path.join(main_dir, 'keras_slices_seg_test')
+    test_mask_path = os.path.join(main_dir, 'keras_slices_seg_test')
 
-    train_dataset = ProstateDataset(train_image_path, train_mask_path)
+    train_dataset = ProstateDataset(train_image_path, train_mask_path, plotting=True)
     print(len(train_dataset))
     print(type(train_dataset[1][0]))
+    print(train_dataset[1][0].shape)
+    print(train_dataset[1][1].shape)
     print(train_dataset[1])
     train_dataset.img_show(15)

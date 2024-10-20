@@ -20,13 +20,19 @@ GCN works by first initializing its feature representation for each node. Throug
 
 After feature aggregation, the model uses ReLU activation function for introducing nonlinearity, Dropout for preventing overfitting, and batch normalization to optimize the training process. And the probability of each category is assigned to the nodes in the last layer of the GCN.
 
-During the training process, the model learns the optimal parameters by minimizing the cross-entropy loss, and also uses forward propagation and the Adam optimizer, among others, to update the parameters step by step.
+During the training process, the model learns the optimal parameters by minimizing the cross-entropy loss, and also uses forward propagation and the Adam optimizer, among others, to update the parameters step by step. Finally use early stop to prevent model overfitting.
 
 ## Data Pre-Processing
 
 The data is loaded from an .npz file containing node features, edge relations, and node labels and these three NumPy arrays are generated. The three NumPy arrays are converted to PyTorch tensor in the load_data() method. A self-loop is added to the edge tensor, which allows nodes to retain their features during message passing.
 The dataset was divided into a training set, a validation set, and a test set using random sampling. The training set constitutes 70% of the data, validation set 15% and test set 15%. Where training set is used to train the model and update the model parameters. The validation set is used to adjust the hyperparameters to avoid overfitting. Test set is used to finally ensure the performance of the model on unknown data.
 
+## Files and Usage
+Make sure the computer has a GPU, so using a GPU can greatly increase the speed of computation.
+- `dataset.py`  This file handles loading and processing the Facebook Large Page-Page Network dataset for a Graph Neural Network (GNN). It includes functions to split the dataset into training(70%), validation(15%), and test sets(15%). As well as functions and classes prepared for subsequent training and testing.
+- `modules.py` This file uses PyTorch to define a multi-layer graph convolutional network (GCN) for semi-supervised multi-class node classification. I have created a GCN with 4 convolutional layers here.
+- `train.py` This file is used to handle the training of multi-layer graph neural networks (GNN). It includes stopping training early based on validation loss, saving the best performing models, and plotting loss and accuracy plots over the training calendar.
+- `predict.py` This file is used to evaluate the trained GNN, computing the accuracy on the validation and test sets. Finally, t-SNE visualized node embedding is used to compress the classification results of the model into a two-dimensional space.
 ## Dependencies
 
 Python
@@ -38,7 +44,7 @@ scikit-learn
 ## Visualisation and Results
 After training the model 99 times on the training set and early stop, we obtained an accuracy of 94.87% on the test set, at which point the accuracy growth leveled off.
 
-![accuracy](accuracy_over_epochs.png)
+![accuracy](plot/accuracy_over_epochs.png)
 The graph above shows the change in accuracy of the GCN model over the course of 99 training sessions. We can see that the accuracy of both the training and validation sets rises rapidly at the beginning and starts to rise slowly at about the 20th epoch. The accuracy of the validation set is very close to the training set, which means that the model is not overfitting the training set.
 
 ![loss](loss_over_epochs.png)

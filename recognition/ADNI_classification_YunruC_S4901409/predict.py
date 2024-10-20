@@ -1,4 +1,4 @@
-mport torch
+import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score
@@ -17,7 +17,6 @@ model = GFNet(
         )
 print(model)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
 model.to(device)
 
 
@@ -27,6 +26,6 @@ train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to, b
 
 
 # Load the best model for testing
-model.load_state_dict(torch.load('best_model.pth'))
-test_loss, test_accuracy = validate(model, test_loader, criterion, device, is_draw=True)
+model.load_state_dict(torch.load('model.pth'))
+test_loss, test_accuracy = validate(model, test_loader, criterion, device)
 print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")

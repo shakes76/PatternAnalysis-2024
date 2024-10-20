@@ -7,17 +7,37 @@ from keras.src.utils import to_categorical
 from dataset import load_data_2D, load_dir
 from modules import unet_model
 import numpy as np
+from keras.src import ops, backend
+import pathlib
+
+def dice_loss(y_true, y_pred, axis=None):
+    # this is the Dice() code
+    y_pred = ops.convert_to_tensor(y_pred)
+    y_true = ops.cast(y_true, y_pred.dtype)
+
+    inputs = y_true
+    targets = y_pred
+
+    intersection = ops.sum(inputs * targets, axis=axis)
+    dice = ops.divide(
+        2.0 * intersection,
+        ops.sum(y_true, axis=axis)
+        + ops.sum(y_pred, axis=axis)
+        + backend.epsilon(),
+    )
+
+    return dice
+
+# path = "C:\\Users\\jjedm\\PatternAnalysis-2024\\HipMRI_study_keras_slices_data\\"
+path = f"{pathlib.Path(__file__).parent.resolve()}/data/"
+
+train_images = load_dir(f"{path}keras_slices_train/")
+train_masks = load_dir(f"{path}keras_slices_seg_train/")
+
+test_images = load_dir(f"{path}keras_slices_test/")
+test_masks = load_dir(f"{path}keras_slices_seg_test/")
 
 
-path = "C:\\Users\\jjedm\\PatternAnalysis-2024\\HipMRI_study_keras_slices_data\\"
-
-train_images = load_dir(f"{path}keras_slices_train\\")
-train_masks = load_dir(f"{path}keras_slices_seg_train\\")
-
-test_images = load_dir(f"{path}keras_slices_test\\")
-test_masks = load_dir(f"{path}keras_slices_seg_test\\")
-# train_images = test_images
-# train_masks = test_masks
 
 
 model_name = "full_depth_softmax_nodice_2epoc_train2"
@@ -27,7 +47,6 @@ if os.path.isfile(f'models/{model_name}.keras') is False:
     # https://fdnieuwveldt.medium.com/building-advanced-custom-feature-transformation-pipelines-in-keras-using-easyflow-4c5fce545dc2
 
     print('Training Model')
-
 
     batch_size = 32
     train_images = np.expand_dims(train_images, axis=-1)  # Add a channel dimension, making the shape (batch_size, 256, 128, 1)
@@ -61,8 +80,9 @@ test_masks = to_categorical(test_masks, num_classes=6)  # Otherwise it has (None
 print("Testing Model")
 
 model = load_model(f'models/{model_name}.keras')
-model.compile(optimizer=Adam(), loss=Dice(), metrics=["accuracy"])
+# Change the loss function. Note that this is
+model.compile(optimizer=Adam(), loss=dice_loss, metrics=["accuracy"])
 loss, accuracy = model.evaluate(test_images, test_masks)
 
-print(f"Dice Coefficient: {1 - loss}")
+print(f"Dice Coefficient: {loss}") # 1 -
 print(f"Accuracy: {accuracy}")

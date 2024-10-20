@@ -1,0 +1,7 @@
+keras==3.4.1
+nibabel==5.3.1
+numpy==2.1.2
+setuptools==72.1.0
+skimage==0.0
+tensorflow==2.17.0
+tqdm==4.66.4

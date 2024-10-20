@@ -60,7 +60,6 @@ def dice_score(predictions, masks, smooth=1e-6):
     # Dice score for each class
     dice_score = (2.0 * intersection + smooth) / (total + smooth)
     return dice_score
-    
 
 class DiceLoss(nn.Module):
     def __init__(self, smooth=1e-6):
@@ -83,3 +82,22 @@ class DiceLoss(nn.Module):
 
         return dice_loss.mean()
     
+class CombinedLoss(nn.Module):
+    def __init__(self, label_weights=None, dice_weight=0.75, smooth=1e-6):
+        super(CombinedLoss, self).__init__()
+        self.dice_weight = dice_weight
+        self.smooth = smooth
+        self.cross_entropy_loss = nn.CrossEntropyLoss(weight=label_weights)
+        self.dice_loss = DiceLoss(smooth=smooth)
+    
+    def forward(self, predictions, masks):
+        # Compute CrossEntropyLoss
+        cross_entropy = self.cross_entropy_loss(predictions, masks.squeeze(1).long())
+
+        # Compute DiceLoss
+        dice_loss = self.dice_loss(predictions, masks)
+
+        # Weighted sum of CrossEntropyLoss and DiceLoss
+        combined_loss = self.dice_weight * dice_loss + (1 - self.dice_weight) * cross_entropy
+
+        return combined_loss

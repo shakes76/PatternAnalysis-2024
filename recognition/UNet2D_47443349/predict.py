@@ -21,7 +21,7 @@ test_set = ProstateDataset(image_dir=TEST_IMG_DIR, mask_dir=TEST_MASK_DIR, trans
 test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
 # Model initialisation
-model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=5).to(DEVICE)
+model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=4).to(DEVICE)
 model.load_state_dict(torch.load("UNet2D_Model.pth"))
 
 # Initialisations for Dice score tracking

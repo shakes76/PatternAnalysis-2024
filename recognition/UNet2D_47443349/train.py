@@ -8,6 +8,7 @@ import torch.nn as nn
 from utils import TRAIN_IMG_DIR, TRAIN_MASK_DIR, VAL_IMG_DIR, VAL_MASK_DIR
 import matplotlib.pyplot as plt
 from utils import SEED, set_seed
+from utils import CombinedLoss
 
 # Set seed for reproducibility
 set_seed(SEED)
@@ -15,9 +16,9 @@ set_seed(SEED)
 # Hyperparameters
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 16
-NUM_EPOCHS = 30
+NUM_EPOCHS = 8
 LEARNING_RATE = 1e-4
-LABEL_WEIGHTS = torch.tensor([0.60, 0.60, 1.40, 1.40, 2.20, 2.20]).to(DEVICE)
+LABEL_WEIGHTS = torch.tensor([0.40, 0.50, 2.00, 2.00, 3.00, 3.00]).to(DEVICE)
 
 # Data loading
 transform = transforms.Compose([
@@ -31,8 +32,8 @@ train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
 validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=False)
 
 # Initialisations
-model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=5).to(DEVICE)
-criterion = nn.CrossEntropyLoss(weight=LABEL_WEIGHTS) # For multi-class segmentation with pixel-wise classification
+model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=4).to(DEVICE)
+criterion = CombinedLoss(label_weights=LABEL_WEIGHTS, dice_weight=0.75)
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 # Lists to store epoch losses for plotting
@@ -50,7 +51,7 @@ def train_function(loader, model, optimizer, criterion, device):
         
         # Forward pass
         predictions = model(images)
-        loss = criterion(predictions, masks.squeeze(1).long())
+        loss = criterion(predictions, masks)
         
         # Backward pass and optimization
         optimizer.zero_grad()
@@ -76,7 +77,7 @@ def validate_function(loader, model, criterion, device):
 
             # Forward pass
             predictions = model(images)
-            loss = criterion(predictions, masks.squeeze(1).long())
+            loss = criterion(predictions, masks)
 
             # Loss tracking
             running_loss += loss.item()

@@ -63,7 +63,7 @@ class UNet3D(nn.Module):
         bridge = self.bridge(F.max_pool3d(enc4, 2))
 
         #Upsampling step, with concatenations between each upsample, downsample pair
-        dec4 = self.upconv4(bottleneck)
+        dec4 = self.upconv4(bridge)
         dec4 = torch.cat((dec4, enc4), dim=1)
         dec4 = self.decoder4(dec4)
 

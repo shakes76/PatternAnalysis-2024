@@ -39,12 +39,10 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
             optimizerD.zero_grad()
 
             fake_images = model.get_generator()(noise)
-
-            # Discriminator forward pass on real and fake images
+            
             real_scores, _ = model.get_discriminator()(real_images)
             fake_scores, _ = model.get_discriminator()(fake_images.detach()) 
 
-            # Calculate discriminator loss (real and fake images)
             d_real_loss = criterion(real_scores, real_labels)
             d_fake_loss = criterion(fake_scores, fake_labels)
             d_loss = d_real_loss + d_fake_loss
@@ -52,7 +50,6 @@ def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
             d_loss.backward()
             optimizerD.step()
 
-            # --------- Train Generator ---------
             optimizerG.zero_grad()
 
             # Discriminator forward pass on fake images (using updated generator)

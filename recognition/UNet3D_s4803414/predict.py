@@ -1,13 +1,13 @@
 import os
 import torch
 import matplotlib.pyplot as plt
-from dataset import MRIDataset  # Assuming your dataset class is in dataset.py
-from modules import UNet3D  # Assuming your model class is in modules.py
+from dataset import MRIDataset
+from modules import UNet3D
 from torch.utils.data import DataLoader
 from torch.amp import autocast
 
 # Directories and parameters
-MODEL_PATH = '/home/Student/s4803414/miniconda3/model/saved_model.pth'
+MODEL_PATH = '/home/Student/s4803414/miniconda3/model/new_model.pth'
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
 MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
 VISUALS_DIR = '/home/Student/s4803414/miniconda3/visuals'
@@ -23,7 +23,7 @@ data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 # Load the trained model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = UNet3D(in_channels=1, out_channels=NUM_CLASSES)  # Adjust based on your model definition
+model = UNet3D(in_channels=1, out_channels=NUM_CLASSES)
 model.load_state_dict(torch.load(MODEL_PATH))
 model.to(device)
 model.eval()

@@ -106,7 +106,10 @@ By implementing these preprocessing steps, the imbalance issue was effectively a
 
 Siamese network structure:
 
-1. **Feature Extractor**: 
+1. **Feature Extractor**:
+
+   *Image 1: ResNet50 Architecture (Rastogi, 2022)*
+   ![alt text](graphs/resnet50.png)
    - ResNet50 backbone (pre-trained on ImageNet) and layers are unfrozen
    - Global Average Pooling layer
    - Output: 2048-dimensional feature vector
@@ -124,7 +127,7 @@ The architecture processes image pairs through identical branches with shared we
 
 1. **Triplet Loss**:
    
-   *Image 1: Triplet Loss Visualisation (Sarıgöz, 2022)*
+   *Image 2: Triplet Loss Visualisation (Sarıgöz, 2022)*
    ![alt text](graphs/tripletloss.png)
    - Purpose: Learn a discriminative embedding space for skin lesions
    - Formula: L = max(0, D(A,P) - D(A,N) + margin)
@@ -281,6 +284,9 @@ Based on results and dermatologist consultations:
 8. ISIC-Research. (2020). GitHub - ISIC-Research/ADAE: SIIM/ISIC 2020 Challenge Winning Algorithm (All Data Are Ext). GitHub. https://github.com/ISIC-Research/ADAE
 9. PyTorch. (2023). PyTorch. Pytorch.org. https://pytorch.org/
 10. Sarıgöz, Y. (2022, March 25). Triplet Loss — Advanced Intro. Medium. https://towardsdatascience.com/triplet-loss-advanced-intro-49a07b7d8905
+11. Rastogi, A. (2022, March 14). ResNet50. Medium. https://blog.devgenius.io/resnet50-6b42934db431
+
+‌
 
 ‌
 

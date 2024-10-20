@@ -1,10 +1,12 @@
 # train.py
 
 import torch
-from torch.optim import Adam
+from torch.optim import AdamW
 from torch_geometric.data import Data
 from modules import GNN
 from dataset import load_data, edges_path, features_path, labels_path
+import matplotlib.pyplot as plt
+import umap
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -28,7 +30,7 @@ data.train_mask[train_idx] = True
 data.val_mask[val_idx] = True
 
 # Define optimizer and loss function
-optimizer = Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
+optimizer = AdamW(model.parameters(), lr=0.0005, weight_decay=5e-4)
 criterion = torch.nn.CrossEntropyLoss()
 
 # Training function
@@ -77,4 +79,27 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.title('Training and Validation Loss Over Epochs')
 plt.legend()
+plt.savefig("/content/drive/My Drive/COMP3710/Project/graphs/training_validation_loss.png")
+plt.show()
+
+# UMAP Visualization of Embeddings
+model.eval()
+with torch.no_grad():
+    embeddings = model(data, return_embeddings=True).cpu().numpy()
+
+# Apply UMAP to reduce embeddings to 2D for visualization
+umap_reducer = umap.UMAP(n_components=2, random_state=42)
+embeddings_2d = umap_reducer.fit_transform(embeddings)
+
+# Plot UMAP embeddings
+plt.figure(figsize=(10, 8))
+for label in range(len(page_type_mapping)):
+    idx = (labels.cpu().numpy() == label)
+    plt.scatter(embeddings_2d[idx, 0], embeddings_2d[idx, 1], label=list(page_type_mapping.keys())[label], alpha=0.6)
+
+plt.xlabel("UMAP Component 1")
+plt.ylabel("UMAP Component 2")
+plt.title("UMAP Plot of Node Embeddings with Ground Truth Labels")
+plt.legend()
+plt.savefig("/content/drive/My Drive/COMP3710/Project/graphs/umap_embeddings.png")
 plt.show()

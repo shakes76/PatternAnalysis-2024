@@ -30,20 +30,20 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not torch.cuda.is_available():
     print("Warning CUDA not Found. Using CPU.")
 
-## Set random seed for reproducibility
-# print("Random Seed Used: ", hp.RANDOM_SEED)
-# random.seed(hp.RANDOM_SEED)
-# torch.manual_seed(hp.RANDOM_SEED)
-# os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-# torch.use_deterministic_algorithms(True) # Needed for reproducible results
+# Set random seed for reproducibility
+print("Random Seed Used: ", hp.RANDOM_SEED)
+random.seed(hp.RANDOM_SEED)
+torch.manual_seed(hp.RANDOM_SEED)
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+torch.use_deterministic_algorithms(True) # Needed for reproducible results
 
 # Setup both the generator and discriminator models
 gen = Generator().to(device)
 disc = Discriminator().to(device)
 
 # Create the optimisers used by the genertator and discriminator during training 
-gen_opt = optim.Adam(gen.parameters(), lr=hp.GEN_LEARNING_RATE, betas=(0.0, 0.999))
-disc_opt = optim.Adam(disc.parameters(), lr=hp.DISC_LEARNING_RATE, betas=(0.0, 0.999))
+gen_opt = optim.Adam(gen.parameters(), lr=hp.GEN_LEARNING_RATE, betas=(0.5, 0.999))
+disc_opt = optim.Adam(disc.parameters(), lr=hp.DISC_LEARNING_RATE, betas=(0.5, 0.999))
 
 # Initialise Loss Functions
 adversial_criterion = nn.BCELoss()
@@ -192,28 +192,29 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
 
             # Update the discriminator based on gradients and losses
             tot_loss_disc.backward()
+            torch.nn.utils.clip_grad_norm_(disc.parameters(), max_norm=hp.DISC_GRAD_CLIP) # Gradient clipping used to decrease strength of discriminator
+            grad_norm_disc = torch.nn.utils.clip_grad_norm_(disc.parameters(), max_norm=hp.DISC_GRAD_CLIP)
             disc_opt.step()
 
             # ---------------------------------------------------------------------------
             # (3) - Update the Generator with new fake images/labels
             # ---------------------------------------------------------------------------
 
-
             # Reset gradients of the generator
             gen.zero_grad()
 
-            # # Generate a batch of latent vectors to input into the generator
-            # latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
+            # Generate a batch of latent vectors to input into the generator
+            latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
 
-            # # Create a second latent space batch randomly, for mixing regularisation
-            # if random.random() < hp.MIXING_PROB:
-            #     latent2 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
-            # else:
-            #     latent2 = None
+            # Create a second latent space batch randomly, for mixing regularisation
+            if random.random() < hp.MIXING_PROB:
+                latent2 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
+            else:
+                latent2 = None
 
-            # # Generate fake images and labels
-            # fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
-            # rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
+            # Generate fake images and labels
+            rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
+            fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
             # Forward pass fake images through discriminator (with updated discriminator)
             fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels, depth=current_depth, alpha=alpha)
@@ -223,13 +224,15 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
 
             # Calculate the total loss of the generator
-            tot_loss_gen = loss_gen + loss_class_gen
+            tot_loss_gen = loss_gen + loss_class_gen + l2_regularisation(gen)
 
             # Calculate average output value of discriminator due to generator "real" images
             gen_avg = fake_pred.mean().item()
 
-            # Update the generator based on gradients
+            # Update the generator based on gradients and losses
             tot_loss_gen.backward()
+            torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP) # Gradient clipping
+            grad_norm_gen = torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP)
             gen_opt.step()
 
             # ---------------------------------------------------------------------------
@@ -239,7 +242,8 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             # Print statistics every 100 steps
             if total_steps % 100 == 0:
                 print(f"[Resolution: {current_resolution}x{current_resolution}][Epoch: {epoch + 1}/{hp.EPOCHS_PER_RESOLUTION[current_depth]}][Step: {total_steps}/{total_steps_per_resolution}]\t"
-                      f"Loss_D: {tot_loss_disc.item():.4f} | Loss_G: {tot_loss_gen.item():.4f} | Real Pred: {real_disc_avg:.4f} | Real Class Acc: {real_class_disc_acc:.4f}")
+                      f"Loss_D: {tot_loss_disc.item():.4f} | Loss_G: {tot_loss_gen.item():.4f} | Real Pred: {real_disc_avg:.4f} | Real Class Acc: {real_class_disc_acc:.4f} | Alpha: {alpha:.4f} "
+                      f"| Disc Gradient: {grad_norm_disc:.4f} | Gen Gradient: {grad_norm_gen:.4f}")
 
             # Save Losses for plotting later
             G_losses.append(tot_loss_gen.item())

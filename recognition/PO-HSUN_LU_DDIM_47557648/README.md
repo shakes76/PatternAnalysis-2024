@@ -4,6 +4,8 @@
 
 **Chosen project:** Task 8 - Create a generative model of one of the ADNI brain data set (Diffusion Model)
 
+**Objective:**  Generate a reasonably clear image from the ADNI brain dataset using a diffusion model (The model will be trained conditionally) 
+
 ## Background of the Diffusion Model
 AI image generation is a technology that has been hotly discussed in the art and Deep Learning (DL) field. You must have heard of the AI Art Generator such as Dall-E 2 or NovelAI, a DL model that generates realistic-looking images from a given text sequence. To explore this technology deeper, we need to introduce a new class in the generative model called ‘diffusion’, first proposed by Sohl-Dickstein et al. (2015), which aimed to generate images from noise using a backward denoising process.
 

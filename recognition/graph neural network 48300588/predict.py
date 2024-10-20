@@ -47,7 +47,7 @@ def predict():
     test_mask = data.test_mask
     test_correct = pred[test_mask] == data.y[test_mask]
     test_acc = int(test_correct.sum()) / int(test_mask.sum())
-    print(f'Test Accuracy: {test_acc:.4f}')
+    print(f'Accuracy: {test_acc:.4f}')
 
 if __name__ == '__main__':
     predict()

@@ -1,6 +1,6 @@
 import torch
-from torch.optim import SGD  # Changed import
-from torch.optim.lr_scheduler import StepLR  # Import scheduler
+from torch.optim import SGD
+from torch.optim.lr_scheduler import StepLR
 import matplotlib.pyplot as plt
 from modules import GNNModel
 from dataset import load_data
@@ -13,12 +13,12 @@ def train():
 
     # Initialize model, optimizer, and loss function
     model = GNNModel(in_channels=data.num_features, hidden_channels=64, out_channels=len(classes)).to(device)
-    optimizer = SGD(model.parameters(), lr=0.1, weight_decay=5e-4, momentum=0.95)  # Changed to SGD with adjusted lr and momentum
-    scheduler = StepLR(optimizer, step_size=50, gamma=0.1)  # Initialize scheduler
+    optimizer = SGD(model.parameters(), lr=0.7, weight_decay=5e-4, momentum=0.95)
+    scheduler = StepLR(optimizer, step_size=50, gamma=0.9)  # Initialize scheduler
     criterion = torch.nn.CrossEntropyLoss()
 
     # Initialize variables for tracking training progress
-    epochs = 200
+    epochs = 300
     patience = 10  # For early stopping
     best_val_loss = float('inf')
     best_model_state = None

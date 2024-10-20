@@ -36,6 +36,7 @@ import gc
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.nn.utils import clip_grad_norm_
+import torch.nn.functional as F
 
 # Hyperparams - mostly following StyleGAN2 paper, adjusted for smaller network
 z_dim = 128 # Latent dims (z: input, w: intermediate)
@@ -46,14 +47,16 @@ label_dim = 2  # AD and NC
 num_layers = 5
 ngf = 64 # Num generator features
 ndf = 64 # Num discriminator features
-batch_size = 16
+batch_size = 8
 num_epochs = 100
-lr = 0.0002
+lr_g = 0.0003
+lr_d = 0.00005
 beta1 = 0.5
 beta2 = 0.999  # Adam betas
-r1_gamma = 10.0  # R1 regularisation weight
+r1_gamma = 20.0  # R1 regularisation weight
 d_reg_interval = 16  # Discrim regularisation interval
-max_grad_norm = 1.0  # Maximum norm for gradient clipping
+max_grad_norm_d = 1.0  # Maximum norm for gradient clipping
+max_grad_norm_g = 10.0
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Create results dir
@@ -69,14 +72,14 @@ generator = StyleGAN2Generator(z_dim, w_dim, num_mapping_layers, mapping_dropout
 discriminator = StyleGAN2Discriminator(image_size=(256, 240), num_channels=1, ndf=ndf, num_layers=num_layers).to(device)
 
 # Init optimisers
-g_optim = optim.Adam(generator.parameters(), lr=lr, betas=(beta1, beta2))
-d_optim = optim.Adam(discriminator.parameters(), lr=lr, betas=(beta1, beta2))
+g_optim = optim.Adam(generator.parameters(), lr=lr_g, betas=(beta1, beta2))
+d_optim = optim.Adam(discriminator.parameters(), lr=lr_d, betas=(beta1, beta2))
 
 # Loss function
-criterion = nn.BCEWithLogitsLoss()
+# criterion = nn.BCEWithLogitsLoss()
 
 # Init GradScaler
-scaler = amp.GradScaler()
+scaler = amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5, growth_interval=2000)
 
 # Helper funcs
 def requires_grad(model, flag=True):
@@ -112,6 +115,14 @@ def plot_losses(d_losses, g_losses):
 def clear_cache():
     torch.cuda.empty_cache()
     gc.collect()
+    
+def d_loss_fn(real_pred, fake_pred):
+    real_loss = F.softplus(-real_pred).mean()
+    fake_loss = F.softplus(fake_pred).mean()
+    return real_loss + fake_loss
+
+def g_loss_fn(fake_pred):
+    return F.softplus(-fake_pred).mean()
 
 # Training loop
 total_batches = len(dataloader)
@@ -136,13 +147,14 @@ for epoch in range(num_epochs):
             fake_images = generator(z, labels)
             fake_output = discriminator(fake_images.detach())
             real_output = discriminator(real_images)
-            d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
+            # d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
+            d_loss = d_loss_fn(real_output, fake_output) # non-saturated GAN loss with R1 regularisation
             d_losses.append(d_loss.item())
             
         d_optim.zero_grad()
         scaler.scale(d_loss).backward()
         scaler.unscale_(d_optim)
-        clip_grad_norm_(discriminator.parameters(), max_grad_norm)
+        clip_grad_norm_(discriminator.parameters(), max_grad_norm_d)
         scaler.step(d_optim)
         scaler.update()
         
@@ -155,9 +167,10 @@ for epoch in range(num_epochs):
             d_optim.zero_grad()
             scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward()
             scaler.unscale_(d_optim)
-            clip_grad_norm_(discriminator.parameters(), max_grad_norm)
+            clip_grad_norm_(discriminator.parameters(), max_grad_norm_d)
             scaler.step(d_optim)
             scaler.update()
+            real_images.requires_grad = False  # Reset requires_grad
         
         ### Train Generator ###
         requires_grad(generator, True)
@@ -167,13 +180,14 @@ for epoch in range(num_epochs):
             z = torch.randn(real_images.size(0), z_dim).to(device)
             fake_images = generator(z, labels)
             fake_pred = discriminator(fake_images)
-            g_loss = criterion(fake_pred, torch.ones_like(fake_pred))
+            # g_loss = criterion(fake_pred, torch.ones_like(fake_pred)) # For BCELogitsLoss
+            g_loss = g_loss_fn(fake_pred) # Non-saturating GAN loss
             g_losses.append(g_loss.item())
         
         g_optim.zero_grad()
         scaler.scale(g_loss).backward()
         scaler.unscale_(g_optim)
-        clip_grad_norm_(generator.parameters(), max_grad_norm)
+        clip_grad_norm_(generator.parameters(), max_grad_norm_g)
         scaler.step(g_optim)
         scaler.update()
 

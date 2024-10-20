@@ -12,7 +12,7 @@ from modules import Generator, Discriminator, MappingNetwork, adversarial_loss
 from dataset import load_data
 
 # Training function
-def train(generator, discriminator, mapping_network, train_loader, epochs, device, lr=0.0001):
+def train(generator, discriminator, mapping_network, train_loader, epochs, device, lr=0.0001, gen_updates_per_disc=4):
     """
     Trains the generator and discriminator over multiple epochs.
     
@@ -24,13 +24,18 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
         epochs: Number of training epochs.
         device: The device (GPU) to train on.
         lr: Learning rate for the optimizers.
-
+        gen_updates_per_disc: Number of times to update the generator for each discriminator update.
+        
     Returns:
         None: Trains and prints progress during training.
     """
     # Optimizers
     optimizer_G = optim.Adam(generator.parameters(), lr=lr, betas=(0.5, 0.999))
     optimizer_D = optim.Adam(discriminator.parameters(), lr=lr, betas=(0.5, 0.999))
+    
+    # Schedulers to reduce learning rates over time
+    scheduler_G = torch.optim.lr_scheduler.StepLR(optimizer_G, step_size=20, gamma=0.5)
+    scheduler_D = torch.optim.lr_scheduler.StepLR(optimizer_D, step_size=20, gamma=0.5)
     
     # Fixed latent vector for evaluation
     fixed_z = torch.randn(8, 512, device=device)
@@ -44,24 +49,25 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
             valid = torch.ones(batch_size, 1, device=device)
             fake = torch.zeros(batch_size, 1, device=device)
 
-            #  Train Generator
-            optimizer_G.zero_grad()
-            
-            # Sample noise as generator input
-            z = torch.randn(batch_size, 512, device=device)
-            
-            # Map latent vector to intermediate space
-            w = mapping_network(z)
+            # Train Generator More Frequently 
+            for _ in range(gen_updates_per_disc):
+                optimizer_G.zero_grad()
+                
+                # Sample noise as generator input
+                z = torch.randn(batch_size, 512, device=device)
+                
+                # Map latent vector to intermediate space
+                w = mapping_network(z)
 
-            # Generate images
-            gen_imgs = generator(z, w)
+                # Generate images
+                gen_imgs = generator(z, w)
 
-            # Loss for the generator
-            g_loss = adversarial_loss(discriminator(gen_imgs), valid)
-            g_loss.backward()
-            optimizer_G.step()
+                # Loss for the generator
+                g_loss = adversarial_loss(discriminator(gen_imgs), valid)
+                g_loss.backward()
+                optimizer_G.step()
 
-            #  Train Discriminator
+            # Train Discriminator
             optimizer_D.zero_grad()
 
             # Loss for real images
@@ -79,6 +85,10 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
             if i % 100 == 0:
                 print(f"[Epoch {epoch}/{epochs}] [Batch {i}/{len(train_loader)}] "
                       f"[D loss: {d_loss.item()}] [G loss: {g_loss.item()}]")
+
+        # Step the schedulers to reduce the learning rate after each epoch
+        scheduler_G.step()
+        scheduler_D.step()
 
         # Save images at the end of each epoch
         save_generated_images(generator, mapping_network, fixed_z, epoch, device)
@@ -128,4 +138,4 @@ if __name__ == "__main__":
     mapping_network = MappingNetwork().to(device)
 
     # Train the models
-    train(generator, discriminator, mapping_network, train_loader, epochs=100, device=device)
+    train(generator, discriminator, mapping_network, train_loader, epochs=100, device=device, gen_updates_per_disc=4)

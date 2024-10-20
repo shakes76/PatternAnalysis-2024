@@ -235,22 +235,14 @@ class EQConv2d(nn.Module):
     """
     Conv2d with Equalised Learning Rate
     """
-    def __init__(self, in_channels, out_channels, kernel_size,
-        stride=1, padding=0) -> None:
+    def __init__(self, in_channels, out_channels, kernel_size, padding=0) -> None:
         super(EQConv2d, self).__init__()
-        self.scale = 1 / math.sqrt(in_channels * kernel_size ** 2)
-        self.weight = nn.Parameter(torch.randn(out_channels, in_channels, kernel_size, kernel_size))
-        self.bias = nn.Parameter(torch.zeros(out_channels))
-        self.stride = stride
         self.padding = padding
+        self.weight = EQWeight([out_channels, in_channels, kernel_size, kernel_size])
+        self.bias = nn.Parameter(torch.ones(out_channels))
 
     def forward(self, x):
-        self.weight = self.weight.to(x.device)
-        self.bias = self.bias.to(x.device)
-        return F.conv2d(
-            x, self.weight * self.scale, self.bias,
-            stride=self.stride, padding=self.padding
-        )
+        return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
 
 class DiscriminatorBlock(nn.Module):
     """

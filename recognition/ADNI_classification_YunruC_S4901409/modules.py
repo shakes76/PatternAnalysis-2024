@@ -62,10 +62,10 @@ class GFNetFilter(nn.Module):
         
         x = x.view(B,a,b,C)
         x = x.to(torch.float32)
-        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
+        x = torch.cuda.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
-        x = torch.fft.irfft2(x, s=(a, b), dim=(1,2), norm='ortho')
+        x = torch.cuda.fft.irfft2(x, s=(a, b), dim=(1,2), norm='ortho')
 
         x = x.reshape(B, N, C)
         return x
@@ -176,7 +176,6 @@ class GFNet(nn.Module):
 
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.final_dropout(x)
         x = self.head(x)
         return x
 

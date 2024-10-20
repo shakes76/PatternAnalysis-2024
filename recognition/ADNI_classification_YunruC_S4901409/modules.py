@@ -121,7 +121,7 @@ class GFNet(nn.Module):
     """
 
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
-                mlp_ratio=4., drop_rate=0.):
+                mlp_ratio=4., drop_rate=0., drop_path_rate=0., uniform_drop=False, dropcls=0):
         super().__init__()
         self.num_classes = num_classes
         # num_features for consistency with other models
@@ -132,16 +132,25 @@ class GFNet(nn.Module):
                 img_size=img_size, patch_size=patch_size, input_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
+        #position embedding added to patch embedding
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
+        # dropout is applied to position embedding for regularization
         self.pos_drop = nn.Dropout(p=drop_rate)
 
         h = img_size // patch_size
         w = h // 2 + 1
 
+        if uniform_drop:
+            print('using uniform droppath with expect rate', drop_path_rate)
+            dpr = [drop_path_rate for _ in range(depth)]
+        else:
+            print('using linear droppath with expect rate', drop_path_rate * 0.5)
+            dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)] 
+
         self.blocks = nn.ModuleList([
             Block(
                 dim=embed_dim, mlp_ratio=mlp_ratio,
-                drop=drop_rate, h=h, w=w)
+                drop=drop_rate, drop_path=dpr[i], h=h, w=w)
             for i in range(depth)])
 
         self.norm = norm_layer(embed_dim)
@@ -149,6 +158,15 @@ class GFNet(nn.Module):
         #classifier head
         self.head = nn.Linear(self.num_features, num_classes)
 
+        if dropcls > 0:
+            print('dropout %.2f before classifier' % dropcls)
+            self.final_dropout = nn.Dropout(p=dropcls)
+        else:
+            self.final_dropout = nn.Identity()
+
+        #initialize the position embedding with a truncated normal distribution
+        #ensuring a resonable starting values
+        trunc_normal_(self.pos_embed, std=.02)
         #initialize the weights
         self.apply(self._init_weights)
 

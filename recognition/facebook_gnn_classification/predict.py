@@ -1,13 +1,14 @@
 # predict.py
+
 import torch
 from torch_geometric.data import Data
 from modules import GNN
-from dataset import load_data, edges_path, features_path, labels_path
+from dataset import load_data, npz_path
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Load the dataset
-features, edge_index, labels, page_type_mapping = load_data(edges_path, features_path, labels_path)
+# Load the dataset from the .npz file
+features, edge_index, labels, page_type_mapping = load_data(npz_path)
 data = Data(x=features, edge_index=edge_index, y=labels).to(device)
 
 # Define the GNN model with matching dimensions
@@ -19,13 +20,13 @@ model = GNN(input_dim, hidden_dim, output_dim).to(device)
 # Load the trained model weights
 model_path = "/content/drive/My Drive/COMP3710/Project/gnn_model_weights.pth"
 model.load_state_dict(torch.load(model_path, map_location=device))
-model.eval()
+model.eval()  # Set the model to evaluation mode
 print(f"Model loaded successfully from {model_path}")
 
 # Make predictions
-with torch.no_grad():
-    out = model(data)
-    predictions = out.argmax(dim=1)
+with torch.no_grad():  # No need to track gradients during inference
+    out = model(data)  # Get the model's output
+    predictions = out.argmax(dim=1)  # Get the class with the highest probability
 
 # Evaluate accuracy
 correct = (predictions == data.y).sum().item()

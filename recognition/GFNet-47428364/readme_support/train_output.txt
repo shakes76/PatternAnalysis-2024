@@ -1,21 +1,21 @@
 Epoch 1/10
-Train - Loss: 0.7215, Accuracy: 52.18%
+Train - Loss: 0.7399, Accuracy: 57.40%
 Epoch 2/10
-Train - Loss: 0.6058, Accuracy: 66.34%
+Train - Loss: 0.6640, Accuracy: 60.72%
 Epoch 3/10
-Train - Loss: 0.3964, Accuracy: 81.96%
+Train - Loss: 0.6054, Accuracy: 67.46%
 Epoch 4/10
-Train - Loss: 0.1628, Accuracy: 93.54%
+Train - Loss: 0.5705, Accuracy: 70.70%
 Epoch 5/10
-Train - Loss: 0.0658, Accuracy: 97.57%
+Train - Loss: 0.5482, Accuracy: 72.30%
 Epoch 6/10
-Train - Loss: 0.0436, Accuracy: 98.48%
+Train - Loss: 0.5328, Accuracy: 73.52%
 Epoch 7/10
-Train - Loss: 0.0298, Accuracy: 99.02%
+Train - Loss: 0.5159, Accuracy: 74.36%
 Epoch 8/10
-Train - Loss: 0.0236, Accuracy: 99.18%
+Train - Loss: 0.5100, Accuracy: 74.86%
 Epoch 9/10
-Train - Loss: 0.0188, Accuracy: 99.36%
+Train - Loss: 0.4926, Accuracy: 76.24%
 Epoch 10/10
-Train - Loss: 0.0199, Accuracy: 99.34%
-Test - Loss: 2.3159, Accuracy: 63.27%
+Train - Loss: 0.4779, Accuracy: 77.11%
+Test - Loss: 0.6463, Accuracy: 67.30%

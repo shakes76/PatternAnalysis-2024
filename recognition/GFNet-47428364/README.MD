@@ -42,11 +42,13 @@ model.load_state_dict(torch.load("GFNet-Model.pth"))
 
 ### Outputs
 ```
-Test - Loss: 2.3159, Accuracy: 63.27%
+Test - Loss: 0.6506, Accuracy: 67.28%
 ```
 
 ## Pre-Processing
 The data was already split into a test and train set so no splitting of the data was required.
+
+The training data was augmented using random rotations and random resized cropping as not all of the images were alligned.
 
 The images were resized to 224x224 to match the standard for GFNet.
 

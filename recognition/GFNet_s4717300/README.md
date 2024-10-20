@@ -351,7 +351,7 @@ does not appear to show signs of divergence.
 The model appears to have a bias toward classifying the data as Normal Cognitive.
 
 ### Global Filter visualisations
-!(Global Filter Visualisation)[./assets/global_filters.png]
+![Global Filter Visualisation](./assets/global_filters.png)
 The global filters are visualised for each layer. The filters will extract
 features from each patch. Although the filters seem quite noisy, we can see
 patterns starting to emerge in the form of circular shapes.
@@ -367,6 +367,11 @@ believe that this model can become much more performant and reach the goal of
 80% within 1000 epochs of training. Unfortunately, the resources required to
 reach this value are shared between the cohort and training the model any
 further would be inconsiderate to them.
+
+Further more, according to the correlation matrix, the model has a bias toward
+classifying cases as Normal Cognitive. In the context of the ANDI dataset,
+false negative diagnosis is a major health concern. In the future, the model
+have an increased loss if it incorrectly diagnoses an AD case as NC.
 
 # References
 [^1]: Rao, Yongming, et al. "Global filter networks for image classification." Advances in neural information processing systems 34 (2021): 980-993.

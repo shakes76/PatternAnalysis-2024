@@ -82,7 +82,7 @@ def main():
     # Create the components nessesary for training
     model = GFNet().to(device)
     criterion = nn.CrossEntropyLoss()
-    optimiser = optim.Adam(model.parameters(), lr=0.0001)
+    optimiser = optim.Adam(model.parameters(), lr=0.00001, weight_decay=0.003)
 
     epochs = 10
     train_accuracies = []

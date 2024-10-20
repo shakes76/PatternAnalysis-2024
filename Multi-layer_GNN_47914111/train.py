@@ -78,3 +78,56 @@ def test_accuracy(model, mask, data):
     return accuracy
 
 
+def train(model, data, epochs=100, patience=5, clip=1.0):
+    # Initialize optimizer and loss function
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
+    criterion = torch.nn.CrossEntropyLoss()
+
+    train_acc_list, validation_acc_list = [], []
+    train_loss_list = []  # Initialize training loss list
+    validation_loss_list = []  # Initialize validation loss list
+
+    best_validation_acc = 0.0
+    patience_counter = 0
+
+    for epoch in range(1, epochs + 1):
+        #Training
+        train_loss, validation_loss = train_epoch(model, optimizer, criterion, data, clip=clip)
+
+        #Validation
+        validation_acc = test_accuracy(model, data['validation_mask'], data)
+        train_acc = test_accuracy(model, data['train_mask'], data)
+
+        # Save losses and accuracies
+        train_acc_list.append(train_acc)
+        validation_acc_list.append(validation_acc)
+        train_loss_list.append(train_loss.item())
+        validation_loss_list.append(validation_loss.item())
+
+        # Get the current learning rate and print
+        current_lr = scheduler.get_last_lr()[0]
+        print(f"Epoch {epoch:03d}, LR: {current_lr:.6f}, Train Loss: {train_loss:.4f}, Validation Loss: {validation_loss:.4f}, Validation Acc: {validation_acc:.4f}")
+
+        # Learning rate scheduler: Adjust learning rate based on validation accuracy
+        scheduler.step(validation_acc)
+
+        # Early stopping mechanism
+        if validation_acc > best_validation_acc:
+            best_validation_acc = validation_acc
+            patience_counter = 0
+        else:
+            patience_counter += 1
+
+        if patience_counter >= patience:
+            print(f"Early stopping at epoch {epoch}, best validation accuracy: {best_validation_acc:.4f}")
+            break
+
+    # Evaluate the final test accuracy
+    test_acc = test_accuracy(model, data['test_mask'], data)
+    print(f"Test Accuracy: {test_acc:.4f}, Best Validation Accuracy: {best_validation_acc:.4f}")
+
+    # Return training and validation accuracy, loss, and test accuracy
+    return train_acc_list, validation_acc_list, train_loss_list, validation_loss_list, test_acc
+
+

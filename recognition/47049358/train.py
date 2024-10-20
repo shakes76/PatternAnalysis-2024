@@ -14,7 +14,7 @@ BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
-LOSS_IDX = 4
+LOSS_IDX = 3
 
 class BaseDice(nn.Module):
     def __init__(self, epsilon = 1e-7):
@@ -42,7 +42,7 @@ class ExponentialWeightedLoss(BaseDice):
             d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
             segment_coefs[i] = d_coef
 
-        weighted, _ = torch.sort(segment_coefs)
+        weighted, _ = torch.sort(segment_coefs, descending=True)
 
         for i in range(num_masks):
             weighted[i] = segment_coefs[i] * (math.e ** i)
@@ -119,7 +119,7 @@ class AlternativeLoss(BaseDice):
             segment_coefs[i] = d_coef
 
         d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = 1 - (1 / num_masks) * torch.sum(segment_coefs)
+        loss = 1 - d_coef
         return loss, segment_coefs, d_coef
     
 class DiceBCELoss(BaseDice):
@@ -143,7 +143,7 @@ class DiceBCELoss(BaseDice):
             segment_coefs[i] = d_coef
 
         d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = (1 - (1 / num_masks) * torch.sum(segment_coefs)) + 0.2 * bce(y_pred, y_true) # Based on the FFANet Report
+        loss = (1 - d_coef) + 0.2 * bce(y_pred, y_true) # Based on the FFANet Report
         return loss, segment_coefs, d_coef
 
 def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
@@ -240,7 +240,7 @@ plt.plot(seg2, label='Segment 2 Dice Coefficient')
 plt.plot(seg3, label='Segment 3 Dice Coefficient')
 plt.plot(seg4, label='Segment 4 Dice Coefficient')
 plt.plot(seg5, label='Segment 5 Dice Coefficient')
-plt.title('Dice Coefficient Over Epochs')
+plt.title(f'Dice Coefficient Over Epochs for {str(loss)}')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()

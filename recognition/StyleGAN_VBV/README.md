@@ -90,7 +90,7 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 </div>
 
 <div style="text-align: center;">
-  <img src="images/NC_generator_final.png" alt="NC generator loss" style="width:300px;"/>
+  <img src="images/NC_generator_loss_final.png" alt="NC generator loss" style="width:300px;"/>
   <p>Figure 4: NC generator loss.</p>
 </div>
 
@@ -107,7 +107,7 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 - A 9x9 grid of generated images is created for both Alzheimer's Disease (AD) and Normal Control (NC) classes. This provides a visual assessment of the quality and variety of the synthesized images, showcasing the model's ability to generate realistic brain scans.
 
 <div style="text-align: center;">
-  <img src="iimages/AD_images.png" alt="Generated AD images" style="width:300px;"/>
+  <img src="images/AD_images.png" alt="Generated AD images" style="width:300px;"/>
   <p>Figure 6: Generated AD images.</p>
 </div>
 

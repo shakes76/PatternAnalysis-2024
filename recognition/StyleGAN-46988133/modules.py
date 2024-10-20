@@ -46,7 +46,7 @@ class MappingNetwork(nn.Module):
         Return: The intermediate latent space vector w.
         """
         return self.mapping(z)
-    
+
 
 class Generator(nn.Module):
     """
@@ -92,7 +92,7 @@ class Generator(nn.Module):
             if i == 0:
                 in_channels = int(hp.GEN_FACTORS[i])
                 self.gen_layers.append(GenLayer(in_channels, in_channels, first_layer=True))
-                self.from_gray.append(nn.Conv2d(in_channels, hp.NUM_CHANNELS, kernel_size=1))
+                self.from_gray.append(Conv2dLayer(in_channels, hp.NUM_CHANNELS, kernel_size=1, stride=1, padding=0))
 
             # All other layers
             else:
@@ -102,7 +102,7 @@ class Generator(nn.Module):
 
             # Generate GenLayers and from_gray layers based on input and output sizes
             self.gen_layers.append(GenLayer(in_channels, out_channels))
-            self.from_gray.append(nn.Conv2d(out_channels, hp.NUM_CHANNELS, kernel_size=1))
+            self.from_gray.append(Conv2dLayer(out_channels, hp.NUM_CHANNELS, kernel_size=1, stride=1, padding=0))
 
         # Used to embed the AD and CN labels into the style vector
         self.label_embedding = torch.nn.Embedding(num_embeddings=hp.LABEL_DIMENSIONS, embedding_dim=hp.EMBED_DIMENSIONS)
@@ -217,8 +217,8 @@ class GenLayer(nn.Module):
         self.first_layer = first_layer
 
         # Model both convolutions needed with a 3x3 kernel
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.conv1 = Conv2dLayer(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.conv2 = Conv2dLayer(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
 
         # Model the noise injection into each layer, after each convolution
         self.noise1 = Noise(out_channels)
@@ -303,14 +303,14 @@ class Discriminator(nn.Module):
             self.disc_layers.append(DiscLayer(in_channels, out_channels))
 
             # Create feature map extraction layers for grayscale images
-            self.from_gray.append(nn.Conv2d(hp.NUM_CHANNELS, in_channels, kernel_size=1))
+            self.from_gray.append(Conv2dLayer(hp.NUM_CHANNELS, in_channels, kernel_size=1, stride=1, padding=0))
 
         # The last feature map size output of the DiscLayers
         last_feature_size = int(hp.DISC_FEATURE_SIZE * hp.DISC_FACTORS[-1])
 
         # Final convolutional layer of the feature map processing
-        self.final_conv = nn.Conv2d(last_feature_size, last_feature_size, kernel_size=3, padding=1)
-        self.leaky = nn.LeakyReLU(negative_slope=hp.LRELU_SLOPE_ANGLE, inplace=True)
+        self.final_conv = Conv2dLayer(last_feature_size, last_feature_size, kernel_size=3, padding=1)
+        self.leaky = nn.LeakyReLU(hp.LRELU_SLOPE_ANGLE)
 
         # The amount of features present after flattening the feature map and embedding labels for a 4x4 resolution
         self.feature_size = last_feature_size * 4 * 4
@@ -319,10 +319,10 @@ class Discriminator(nn.Module):
         self.label_embedding = torch.nn.Embedding(num_embeddings=hp.LABEL_DIMENSIONS, embedding_dim=self.feature_size)
 
         # Output layer for real/fake image classification
-        self.real_fake_layer = nn.Linear(self.feature_size, 1)
+        self.real_fake_layer = LinearLayer(self.feature_size, 1)
 
         # Output layer for class label classificaton
-        self.class_layer = nn.Linear(self.feature_size, hp.LABEL_DIMENSIONS)
+        self.class_layer = LinearLayer(self.feature_size, hp.LABEL_DIMENSIONS)
 
         # Used to normalise the output to a value representative of a real or fake image 
         self.sigmoid = nn.Sigmoid()
@@ -418,11 +418,11 @@ class DiscLayer(nn.Module):
         super(DiscLayer, self).__init__()
 
         # Model both convolutions needed with a 3x3 kernel
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        #self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.conv1 = Conv2dLayer(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = Conv2dLayer(out_channels, out_channels, kernel_size=3, padding=1)
 
         # Need to perform a non-linear activation after each convolution
-        self.lrelu = nn.LeakyReLU(hp.LRELU_SLOPE_ANGLE, inplace=True)
+        self.lrelu = nn.LeakyReLU(hp.LRELU_SLOPE_ANGLE)
 
         # Downscale the feature map by a factor of 2
         self.downscale = nn.AvgPool2d(kernel_size=2, stride=2)
@@ -439,7 +439,7 @@ class DiscLayer(nn.Module):
         """
         # Apply feature extractions
         x = self.lrelu(self.conv1(x))
-        #x = self.lrelu(self.conv2(x))
+        x = self.lrelu(self.conv2(x))
 
         # Downscale the feature map
         x = self.downscale(x)
@@ -461,31 +461,6 @@ def fully_connected(in_channels, out_channels):
         LinearLayer(in_channels, out_channels),
         nn.ReLU()
     )
-
-
-def weights_init(model):
-    """
-    Takes an initialised model and reinitialises it by randomly sampling a normal
-    distribution with mean=0 and stdev=0.02. 
-
-    Param: model: A model that was just initialised.
-    REF: This code was inspired by code generated by ChatGPT-o1-preview via the following prompt.
-    REF: Prompt: Should I add a weight initialization for the creation of my model to intialise all 
-    REF: convolution weights to a normal distribution? 
-    """
-    classname = model.__class__.__name__
-    
-    # Initialise all convolution layer weights
-    if classname.find('Conv') != -1:
-        nn.init.normal_(model.weight.data, 0.0, 0.02)
-        if model.bias is not None:
-            nn.init.constant_(model.bias.data, 0)
-
-    # # Initialise all linear layer weights
-    # elif classname.find('Linear') != -1:
-    #     nn.init.normal_(model.weight.data, 0.0, 0.02)
-    #     if model.bias is not None:
-    #         nn.init.constant_(model.bias.data, 0)
 
 
 def compute_gradient_penalty(disc, real_images, fake_images, device):
@@ -579,7 +554,7 @@ class LinearLayer(nn.Module):
         """
         super(LinearLayer, self).__init__()
 
-        # Create the linear layer and required scale
+        # Create the linear layer and required scailing factor
         self.linear = nn.Linear(in_channels, out_channels)
         self.scale = (2 / in_channels)**0.5
 
@@ -600,6 +575,47 @@ class LinearLayer(nn.Module):
         Returns: The input after it has been past through a linear layer, with scailing and bias.
         """
         return self.linear(x * self.scale) + self.bias
+
+
+class Conv2dLayer(nn.Module):
+    """
+    A modified convolutional layer that performs scailing and bias adjustments manually. 
+    The scailing factor is used to normalise the input to avoid gradient explosions 
+    or vanshing from occuring, by scaling down the input based on the number of 
+    input features and desired kernel size.
+
+    REF: This class was inspired by the code outlined within the following website.
+    REF: https://blog.paperspace.com/implementation-stylegan-from-scratch/.
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
+        """
+        An instance of the Conv2dLayer class, with a convolutional layer created with manual
+        scale derived, and bias extracted from the convolutional layer.
+        """
+        super(Conv2dLayer, self).__init__()
+
+        # Create the convolutional layer and required scailing factor
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.scale = (2 / (in_channels * (kernel_size ** 2))) ** 0.5
+
+        # Save the bias and reset the convolutional bias to not be scaled
+        self.bias = self.conv.bias
+        self.conv.bias = None
+
+        # Initialise the weights of the convolutional layer
+        nn.init.normal_(self.conv.weight) # Set to normal distribution
+        nn.init.zeros_(self.bias) # Set bias to zero
+
+    def forward(self, x):
+        """
+        A forward pass of a Conv2dLayer, which scales down the input based on the number 
+        of input features and kernel size and also applies a manual bias term.
+
+        Param: x: An input vector. 
+        Returns: The input after it has been past through a linear layer, with scailing and bias.
+        """
+        return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)
 
 
 class AdaIN(nn.Module):

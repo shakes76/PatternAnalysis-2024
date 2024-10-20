@@ -41,10 +41,6 @@ if not torch.cuda.is_available():
 gen = Generator().to(device)
 disc = Discriminator().to(device)
 
-# Initialise all weights based on a randomly sampled normal distribution
-gen.apply(weights_init)
-disc.apply(weights_init)
-
 # Create the optimisers used by the genertator and discriminator during training 
 gen_opt = optim.Adam(gen.parameters(), lr=hp.GEN_LEARNING_RATE, betas=(0.0, 0.999))
 disc_opt = optim.Adam(disc.parameters(), lr=hp.DISC_LEARNING_RATE, betas=(0.0, 0.999))

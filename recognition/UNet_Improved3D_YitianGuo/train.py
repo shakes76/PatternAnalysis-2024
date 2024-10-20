@@ -31,17 +31,32 @@ parser.add_argument('--device', type=str, default='cuda')
 parser.add_argument('--loss', type=str, default='combined', choices=['dice', 'ce', 'combined'])
 parser.add_argument('--dataset_root', type=str, default='/home/groups/comp3710/HipMRI_Study_open')
 args = parser.parse_args()
-# 获取图像和标签路径
-image_paths = sorted(glob.glob(os.path.join(args.dataset_root, 'semantic_MRs', '*.nii.gz')))
-label_paths = sorted(glob.glob(os.path.join(args.dataset_root, 'semantic_labels_only', '*.nii.gz')))
 
-# 确保图像和标签数量一致
-assert len(image_paths) == len(label_paths), "图像和标签数量不一致"
+def split_data(dataset_root, seed=42, train_size=0.6, val_size=0.2, test_size=0.2):
+    image_paths = sorted(glob.glob(os.path.join(dataset_root, 'semantic_MRs', '*.nii.gz')))
+    label_paths = sorted(glob.glob(os.path.join(dataset_root, 'semantic_labels_only', '*.nii.gz')))
 
-# 将数据集划分为训练集和验证集
-train_image_paths, val_image_paths, train_label_paths, val_label_paths = train_test_split(
-    image_paths, label_paths, test_size=0.3, random_state=42
-)
+    assert len(image_paths) == len(label_paths)
+
+    # 划分训练集和临时集
+    train_image_paths, temp_image_paths, train_label_paths, temp_label_paths = train_test_split(
+        image_paths, label_paths, test_size=(1 - train_size), random_state=seed
+    )
+
+    # 划分验证集和测试集
+    val_image_paths, test_image_paths, val_label_paths, test_label_paths = train_test_split(
+        temp_image_paths, temp_label_paths, test_size=(test_size / (test_size + val_size)), random_state=seed
+    )
+
+    return {
+        'train': (train_image_paths, train_label_paths),
+        'val': (val_image_paths, val_label_paths),
+        'test': (test_image_paths, test_label_paths)
+    }
+
+splits = split_data(args.dataset_root, seed=seed, train_size=0.6, val_size=0.2, test_size=0.2)
+train_image_paths, train_label_paths = splits['train']
+val_image_paths, val_label_paths = splits['val']
 
 # 初始化训练和验证数据集
 train_dataset = MRIDataset(
@@ -61,8 +76,9 @@ val_dataset = MRIDataset(
 )
 
 # 使用 DataLoader 进行数据加载
-train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
+train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+
 
 def save_best_dice(best_class_dice, file_path='best_class_dice.csv'):
     with open(file_path, mode='w', newline='') as csv_file:
@@ -73,6 +89,7 @@ def save_best_dice(best_class_dice, file_path='best_class_dice.csv'):
         for class_name, dice_score in best_class_dice.items():
             writer.writerow({'Class': class_name, 'Best_Dice_Score': dice_score})
 
+
 def compute_class_weights(label_paths, num_classes):
     class_counts = np.zeros(num_classes)
     for path in label_paths:
@@ -82,6 +99,7 @@ def compute_class_weights(label_paths, num_classes):
             class_counts[u] += c
     class_weights = class_counts.max() / class_counts
     return torch.tensor(class_weights, dtype=torch.float32).to(args.device)
+
 
 # 定义DiceLoss
 class DiceLoss(nn.Module):
@@ -96,8 +114,8 @@ class DiceLoss(nn.Module):
         # 将targets转换为one-hot编码
         targets_one_hot = F.one_hot(targets, num_classes).permute(0, 4, 1, 2, 3).float()
         # 计算每个类别的Dice损失
-        intersection = (inputs * targets_one_hot).sum(dim=(2,3,4))
-        union = inputs.sum(dim=(2,3,4)) + targets_one_hot.sum(dim=(2,3,4))
+        intersection = (inputs * targets_one_hot).sum(dim=(2, 3, 4))
+        union = inputs.sum(dim=(2, 3, 4)) + targets_one_hot.sum(dim=(2, 3, 4))
         dice = (2. * intersection + self.smooth) / (union + self.smooth)
         # 排除背景类别（索引为0）
         dice = dice[:, 1:]
@@ -119,6 +137,7 @@ class CombinedLoss(nn.Module):
         loss_ce = self.ce(inputs, targets.squeeze(1))
         loss_dice = self.dice(inputs, targets)
         return self.weight_ce * loss_ce + self.weight_dice * loss_dice
+
 
 # 初始化模型并移动到设备
 model = UNet3D().to(args.device)
@@ -144,14 +163,16 @@ scaler = torch.cuda.amp.GradScaler()
 # 初始化损失和指标记录列表
 train_losses = []
 valid_losses = []
-valid_dice_scores = []
+
 # 新增的初始化列表
 val_losses = []
 val_dices = []
 
 train_dice_scores = {f'Class_{i}': [] for i in range(num_classes)}
 val_dice_scores = {f'Class_{i}': [] for i in range(num_classes)}
-def plot_metrics(train_losses, val_losses, train_dices, val_dices, save_path='metrics.png'):
+
+
+def plot_metrics(train_losses, val_losses, train_dice_scores, val_dice_scores, num_classes, save_path='metrics.png'):
     """绘制训练和验证损失以及每个类别的Dice系数"""
     epochs = range(1, len(train_losses) + 1)
 
@@ -180,7 +201,8 @@ def plot_metrics(train_losses, val_losses, train_dices, val_dices, save_path='me
     plt.savefig(save_path)
     plt.show()
 
-def evaluate(model, val_loader, criterion, device):
+
+def evaluate(model, val_loader, criterion, device, num_classes):
     model.eval()
     val_loss = 0
     class_dice = np.zeros(num_classes)
@@ -224,6 +246,7 @@ def evaluate(model, val_loader, criterion, device):
     avg_class_dice = class_dice / np.maximum(class_counts, 1)
     avg_loss = val_loss / len(val_loader)
     return avg_loss, avg_class_dice
+
 
 def main():
     start_time = time.time()

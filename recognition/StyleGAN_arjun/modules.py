@@ -137,6 +137,24 @@ class Conv2dWeightModulate(nn.Module):
 
         return x.reshape(-1, self.out_features, h, w)
 
+class ToRGB(nn.Module):
+    '''
+    Generates an RGB image from a feature map using a 1x1 convolution
+    '''
+
+    def __init__(self, W_DIM, features):
+        super().__init__()
+        self.to_style = EQLinearLayer(W_DIM, features, bias=1.0)
+
+        self.conv = Conv2dWeightModulate(features, 3, kernel_size=1, demodulate=False)
+        self.bias = nn.Parameter(torch.zeros(3))
+        self.activation = nn.LeakyReLU(0.2, True)
+
+    def forward(self, x, w):
+        style = self.to_style(w)
+        x = self.conv(x, style)
+        return self.activation(x + self.bias[None, :, None, None])
+
 class StyleBlock(nn.Module):
     """
     Single Style Block For Synthesis Network
@@ -144,21 +162,19 @@ class StyleBlock(nn.Module):
     def __init__(self, in_channels, out_channels, w_dim, upsample=False) -> None:
         super(StyleBlock, self).__init__()
         self.upsample = upsample
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        self.noise_inj = NoiseInjection(out_channels)
-        self.activation = nn.LeakyReLU(0.2)
-        self.ada_in = AdaIN(out_channels, w_dim)
+        self.to_style = EQLinearLayer(in_channels, out_channels, bias=1.0)
+        self.conv = Conv2dWeightModulate(in_channels, out_channels, kernel_size=3)
+        self.scale_noise = nn.Parameter(torch.zeros(1))
+        self.bias = nn.Parameter(torch.zeros(out_channels))
+
+        self.activation = nn.LeakyReLU(0.2, True)
 
     def forward(self, x, w, noise=None):
-        if self.upsample:
-            # Up-sample image
-            x = F.interpolate(x, scale_factor=2,
-                mode='bilinear', align_corners=False)
-        x = self.conv(x)
-        x = self.noise_inj(x, noise)
-        x = self.activation(x)
-        x = self.ada_in(x, w)
-        return x
+        s = self.to_style(w)
+        x = self.conv(x, s)
+        if noise is not None:
+            x = x + self.scale_noise[None, :, None, None] * noise
+        return self.activation(x + self.bias[None, :, None, None])
 
 class GeneratorBlock(nn.Module):
     """
@@ -168,25 +184,16 @@ class GeneratorBlock(nn.Module):
         super(GeneratorBlock, self).__init__()
 
         # Style blocks
-        self.block1 = StyleBlock(in_channels, out_channels, w_dim, upsample)
-        self.block2 = StyleBlock(out_channels, out_channels, w_dim, upsample=False)
+        self.style_block1 = StyleBlock(in_channels, out_channels, w_dim)
+        self.style_block2 = StyleBlock(out_channels, out_channels, w_dim)
 
-        # Output of last layer is converted to RGB
-        self.to_rgb_weight = nn.Parameter(torch.randn(3, out_channels, 1, 1))
-        self.to_rgb_bias = nn.Parameter(torch.zeros(3))
-        self.to_rgb_scale = 1 / math.sqrt(out_channels)
+        self.to_rgb = ToRGB(w_dim, out_channels)
 
     def forward(self, x, w, noise):
-        # Move to device
-        self.to_rgb_weight = self.to_rgb_weight.to(x.device)
-        self.to_rgb_bias = self.to_rgb_bias.to(x.device)
+        x = self.style_block1(x, w, noise[0])
+        x = self.style_block2(x, w, noise[1])
 
-        # Apply style blocks
-        x = self.block1(x, w, noise[0])
-        x = self.block2(x, w, noise[1])
-
-        # Convert to RGB using F.conv2d
-        rgb = F.conv2d(x, self.to_rgb_weight * self.to_rgb_scale, self.to_rgb_bias)
+        rgb = self.to_rgb(x, w)
 
         return x, rgb
 

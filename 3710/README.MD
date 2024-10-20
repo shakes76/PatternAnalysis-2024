@@ -33,6 +33,14 @@ Make sure the computer has a GPU, so using a GPU can greatly increase the speed 
 - `modules.py` This file uses PyTorch to define a multi-layer graph convolutional network (GCN) for semi-supervised multi-class node classification. I have created a GCN with 4 convolutional layers here.
 - `train.py` This file is used to handle the training of multi-layer graph neural networks (GNN). It includes stopping training early based on validation loss, saving the best performing models, and plotting loss and accuracy plots over the training calendar.
 - `predict.py` This file is used to evaluate the trained GNN, computing the accuracy on the validation and test sets. Finally, t-SNE visualized node embedding is used to compress the classification results of the model into a two-dimensional space.
+
+
+1. Download the file facebook.npz and change the dataset path to your own storage path in the dataset.py file.
+2. Run train.py to train the model. The final model parameters and various information will be stored locally in model.pth, and generate loss and accuracy images for each epoch.
+3. Run predict.py, which will calculate the accuracy of the trained model on the validation and test sets, and generate a t-SNE visualization of the node embeddings.
+
+
+
 ## Dependencies
 
 Python

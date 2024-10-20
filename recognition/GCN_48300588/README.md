@@ -220,7 +220,7 @@ $$
 
 Figure 1 Training and Validation Accuracy:
 
-![accuracy.png](PatternAnalysis-2024/recognition/GCN_48300588/accuracy.png)
+![accuracy.png](recognition\GCN_48300588\accuracy.png)
 
 Figure 2 Training and Validation Loss:
 
@@ -228,7 +228,7 @@ Figure 2 Training and Validation Loss:
 
 Figure 3 t-SNE Visualisation of Node Embedding:
 
-![tsne_embeddings.png](./plots/tsne_embeddings.png)
+![tsne_embeddings.png](.\plots\tsne_embeddings.png)
 
 
 

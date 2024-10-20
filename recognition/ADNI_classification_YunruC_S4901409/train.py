@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score
 from modules import *
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from dataset import get_data_loaders
+
 
 def plot_metrics(train_losses, train_accuracies, val_losses, val_accuracies):
     """
@@ -41,14 +43,14 @@ def plot_metrics(train_losses, train_accuracies, val_losses, val_accuracies):
     plt.show()
 
 
-
-
 def train(model, loader, criterion, optimizer, device):
     model.train()
     total_loss= 0
     all_preds, all_labels = [], []
 
-    for images, labels in loader:
+    pbar = tqdm(loader, desc="Training", unit="batch")
+
+    for images, labels in pbar:
 
         images = images.to(device)
         labels = labels.to(device)
@@ -77,7 +79,8 @@ def validate (model, loader, criterion, device):
     all_preds, all_labels = [], []
 
     with torch.no_grad():
-        for images, labels in loader:
+        pbar = tqdm(loader, desc="Validating", unit="batch")
+        for images, labels in pbar:
             
             images = images.to(device)
             labels = labels.to(device)
@@ -93,32 +96,53 @@ def validate (model, loader, criterion, device):
 
     avg_loss = total_loss / len(loader)
     accuracy = accuracy_score(all_labels, all_preds)
+
     return avg_loss, accuracy
 
 if __name__ == "__main__":
+
+    train_losses = []
+    train_accuracies = []
+    val_losses = []
+    val_accuracies = []
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Load data
-    zip_path = "ADNI_AD_NC_2D.zip"
-    extract_to = "data"
-    train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to)
-
+    
     # Initialize model, loss function, and optimizer
-    model = GFNetClassifier(input_channels=3,  num_classes=2).to(device)  # Assuming RGB input with 3 channels
+    model = GFNet(
+            img_size=512, 
+            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4
+        )
+    print(model)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    model.to(device)
+
+    # Load data
+    """
+    change the zip_path to the path you want and don't forget to modify the directory
+    in datset.py
+    """
+    zip_path = "ADNI_AD_NC_2D.zip"
+    extract_to = "data"
+    train_loader, val_loader, test_loader = get_data_loaders(zip_path, extract_to, batch_size=32, train_split = 0.85)
 
     # Training loop
     best_val_accuracy = 0.0
-    epochs = 20
+    epochs = 30
 
     for epoch in range(epochs):
         train_loss, train_accuracy = train(model, train_loader, criterion, optimizer, device)
         val_loss, val_accuracy = validate(model, val_loader, criterion, device)
+        train_losses.append(train_loss)
+        train_accuracies.append(train_accuracy)
+        val_losses.append(val_loss)
+        val_accuracies.append(val_accuracy)
 
         print(f"Epoch [{epoch+1}/{epochs}]")
         print(f"Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}")
         print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.4f}")
+        
 
         # Save the model if validation accuracy improves
         if val_accuracy > best_val_accuracy:
@@ -131,5 +155,8 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load('best_gfnet_model.pth'))
     test_loss, test_accuracy = validate(model, test_loader, criterion, device)
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
+
+    #plot the curves
+    plot_metrics(train_losses, train_accuracies, val_losses, val_accuracies)
 
 

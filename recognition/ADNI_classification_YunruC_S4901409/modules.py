@@ -7,9 +7,9 @@ https://tintn.github.io/Implementing-Vision-Transformer-from-Scratch/
 import torch
 import torch.nn as nn
 import torch.fft
-from timm.models.layers import to_2tuple
+from timm.models.layers import DropPath, to_2tuple
 
-class PatchEmbedding(nn.Module):
+class PatchEmbed(nn.Module):
     """
     Patch the input image and flatten into a 1D sequence.
     embed_dim = embedding dimensionality, it means that each patch is represented 
@@ -80,6 +80,25 @@ class MLP(nn.Module):
         x = self.fc2(x)
         x = self.drop(x)
         return x
-    
+
+class Block(nn.Module):
+    """
+    A single GFNet block
+    dim = number of channels
+    mlp_ratio controls the expansion size of the hiden layer
+    """
+
+    def __init__ (self, dim, mlp_ratio, drop = 0, h =14, w = 8):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(dim)
+        self.filter = GFNetFilter(dim, h=h, w=w)
+        self.norm2 = nn.LayerNorm(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = MLP(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop)
+
+    def forward(self, x):
+        x = x + self.mlp(self.norm2(self.filter(self.norm1(x))))
+        return x
+
 
 

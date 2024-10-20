@@ -76,9 +76,12 @@ RANDOM_SEED = 999
 
 # The learning rates used by Adam optimisers
 GEN_LEARNING_RATE = 0.001
-DISC_LEARNING_RATE = 0.001
+DISC_LEARNING_RATE = 0.0001
 
 ################################## Helper Functions and Classes ##################
 
 # Represents a small constant used to avoid division by zero
 EPSILON = 1e-8
+
+# Gradient pentaly constant for scalailing the discriminator's loss
+LAMBDA = 10

@@ -188,8 +188,11 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             # Calculate average fake prediction value of discriminator
             fake_disc_avg = fake_pred.mean().item()
 
+            # Calculate gradient penalty
+            grad_penalty = compute_gradient_penalty(disc, real_images, fake_images, device)
+
             # Calculate the total error of the discriminator
-            tot_loss_disc = real_loss_disc + real_class_loss_disc + fake_loss_disc + fake_class_loss_disc
+            tot_loss_disc = real_loss_disc + real_class_loss_disc + fake_loss_disc + fake_class_loss_disc + grad_penalty
 
             # Update the discriminator based on gradients and losses
             tot_loss_disc.backward()

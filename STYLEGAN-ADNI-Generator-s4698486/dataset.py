@@ -1,46 +1,50 @@
-# dataset.py
-import numpy as np
-from PIL import Image
-import tensorflow as tf
-import glob
+'''
+The module reads and loads data.
+The data is augmented and transformed during import for faster training.
+'''
 
-# Load and resize images
-def load_and_resize_images(filelist, target_size=(256, 256)):
-    images = []
-    for filename in filelist:
-        # Load image
-        img = Image.open(filename)
-        # Convert to numpy array
-        img_array = np.array(img, dtype="float32")
-        # Add channel dimension (assume grayscale images)
-        if len(img_array.shape) == 2:  # Check if the image is 2D (grayscale)
-            img_array = np.expand_dims(img_array, axis=-1)  # Convert to (height, width, 1)
-        # Resize image using tf.image.resize
-        img_resized = tf.image.resize(img_array, target_size)
-        images.append(img_resized.numpy())
-    return np.array(images)
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+from torchvision.utils import save_image
+import matplotlib.pyplot as plt
 
-# Data loading function
-def load_data():
-    # Define file paths
-    filelist_ad_train = glob.glob('/home/groups/comp3710/ADNI/AD_NC/train/AD/*.jpeg')
-    filelist_cn_train = glob.glob('/home/groups/comp3710/ADNI/AD_NC/train/NC/*.jpeg')
-    filelist_ad_test = glob.glob('/home/groups/comp3710/ADNI/AD_NC/test/AD/*.jpeg')
-    filelist_cn_test = glob.glob('/home/groups/comp3710/ADNI/AD_NC/test/NC/*.jpeg')
+from config import image_height, image_width
+
+'''
+ Saves 5 images after the data transformation/augmentation and loading is complete and wrapped using dataloader.
+
+ This is just a test to ensure that the images are being loaded as expected.
+'''
+def show_imgs(loader):    
     
-    # Load and resize images
-    images_train_AD = load_and_resize_images(filelist_ad_train, target_size=(256, 256))
-    images_train_CN = load_and_resize_images(filelist_cn_train, target_size=(256, 256))
-    images_test_AD = load_and_resize_images(filelist_ad_test, target_size=(256, 256))
-    images_test_CN = load_and_resize_images(filelist_cn_test, target_size=(256, 256))
-    
-    # Concatenate all images into one array
-    images = np.concatenate((images_train_AD, images_train_CN, images_test_AD, images_test_CN), axis=0)
-    
-    # Normalize pixel values from [0, 255] to [-1, 1]
-    images = (images - 127.5) / 127.5
-    
-    # Add an extra channel dimension
-    images = images[:, :, :, np.newaxis]
-    
-    return images
+    for i in range(5):
+        features, _ = next(iter(loader))
+        print(f"Feature batch shape: {features.size()}")
+        img = features[0].squeeze()
+        plt.imshow(img, cmap="gray")
+        save_image(img*0.5+0.5, f"aug_img_{i}.png")
+
+'''
+ Data Loader
+
+ Data is the filepath for the data, provided in constants.py. This is the path to the folder containing both
+ cognitive normal and alzheimer's disease brain scans for both the test and train scan.
+
+ batchSize specifies the batches that we will 
+'''
+def get_data(data, batchSize):
+
+    transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Grayscale(), # Converts images to grayscale if they are considered RGB.
+            transforms.Normalize(mean=[0.5], std=[0.5])] # Normalises pixel data so that it is in the [0, 1] range instead of [0, 255]. Allows for tensor operations
+                                                         # to run more smoothly.
+        )
+
+    dataset = datasets.ImageFolder(root=data, transform=transform)
+
+    loader = DataLoader(dataset, batchSize, shuffle=True) # shuffle to minimise overfitting to certain patterns in data order.
+
+    show_imgs(loader) 
+        
+    return loader

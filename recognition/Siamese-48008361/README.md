@@ -123,6 +123,7 @@ The architecture processes image pairs through identical branches with shared we
 ## Loss Functions
 
 1. **Triplet Loss**:
+   
    *Image 1: Triplet Loss Visualisation (Sarıgöz, 2022)*
    ![alt text](graphs/tripletloss.png)
    - Purpose: Learn a discriminative embedding space for skin lesions

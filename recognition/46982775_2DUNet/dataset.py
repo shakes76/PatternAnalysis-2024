@@ -5,6 +5,7 @@
 import os
 import numpy as np
 import utils
+import torch
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 
@@ -17,15 +18,13 @@ class ProstateDataset(Dataset):
     
     """
 
-    def __init__(self, img_dir: str, mask_dir: str, transform = None, target_transform = None, early_stop = True, plotting = False):
+    def __init__(self, img_dir: str, mask_dir: str, early_stop = True, plotting = False):
         self.img_dir = img_dir
         self.mask_dir = mask_dir
         self.imgs = utils.load_data_2D_from_directory(self.img_dir, early_stop=early_stop)
         self.masks = utils.load_data_2D_from_directory(self.mask_dir, early_stop=early_stop, categorical=True)
         if plotting:
             self.masks_for_plotting = utils.load_data_2D_from_directory(self.mask_dir, early_stop=early_stop, categorical=False)
-        self.transform = transform
-        self.target_transform = target_transform
 
     def __len__(self):
         return len(self.imgs)
@@ -34,10 +33,10 @@ class ProstateDataset(Dataset):
         img = self.imgs[idx]
         mask = self.masks[idx]
 
-        if self.transform:
-            img = self.transform(img)
-        if self.target_transform:
-            mask = self.target_transform(mask)
+        # Move channels to 0th index and convert np to tensor
+        mask = np.moveaxis(mask, 2, 0)
+        img = torch.from_numpy(img)
+        mask = torch.from_numpy(mask)
     
         return (img, mask)
     
@@ -75,8 +74,7 @@ if __name__ == "__main__":
 
     train_dataset = ProstateDataset(train_image_path, train_mask_path, plotting=True)
     print(len(train_dataset))
-    print(type(train_dataset[1][0]))
+    print(type(train_dataset[1][1]))
     print(train_dataset[1][0].shape)
     print(train_dataset[1][1].shape)
-    print(train_dataset[1])
     train_dataset.img_show(15)

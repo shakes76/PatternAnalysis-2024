@@ -1,10 +1,11 @@
 import zipfile
 import os
-
+import torch
+import numpy as np
+import nibabel as nib
 from pathlib import Path
-from torch.utils.data import Dataset
 from torch.utils.data import Dataset, DataLoader
-
+from torchvision.transforms import Resize
 
 # Setup path to data folder
 data_path = Path("data/")
@@ -12,18 +13,15 @@ image_path = data_path / "HipMRI_study_keras_slices_data"
 
 # If the image folder doesn't exist, download it and prepare it...
 if image_path.is_dir():
-  print(f"{image_path} directory exists.")
+    print(f"{image_path} directory exists.")
 else:
-  print(f"Did not find {image_path} directory, creating one...")
-  image_path.mkdir(parents=True, exist_ok=True)
+    print(f"Did not find {image_path} directory, creating one...")
+    image_path.mkdir(parents=True, exist_ok=True)
 
-  # Unzip file
-  with zipfile.ZipFile("/content/HipMRI_study_keras_slices_data.zip", "r") as zip_ref:
-    print("Unzipping keras_png_slices_data...")
-    zip_ref.extractall(image_path)
-
-import numpy as np
-import nibabel as nib
+    # Unzip file
+    with zipfile.ZipFile("/content/HipMRI_study_keras_slices_data.zip", "r") as zip_ref:
+        print("Unzipping keras_png_slices_data...")
+        zip_ref.extractall(image_path)
 
 # Function to convert array to one-hot encoded channels (useful for segmentation tasks)
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -36,7 +34,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
 # Load medical image data and prepare it for deep learning models
 class HipMRIDataset(Dataset):
-    def __init__(self, root_dir, subset='train', normImage=False, categorical=False, dtype=np.float32, early_stop=False):
+    def __init__(self, root_dir, subset='train', normImage=False, categorical=False, dtype=np.float32, target_size=(256, 256)):
         '''
         Load medical image data from the given directory.
 
@@ -46,14 +44,15 @@ class HipMRIDataset(Dataset):
         - normImage (bool): Whether to normalize images (mean=0, std=1).
         - categorical (bool): Whether to convert images to categorical (one-hot).
         - dtype (type): Data type for the output images.
-        - early_stop (bool): If true, stop loading early (useful for debugging).
+        - target_size (tuple): The size to which all images will be resized (height, width).
         '''
         self.root_dir = root_dir
         self.subset = subset
         self.normImage = normImage
         self.categorical = categorical
         self.dtype = dtype
-        self.early_stop = early_stop
+        self.target_size = target_size
+        self.resize = Resize(target_size)
 
         # Construct the full path based on the subset
         self.data_dir = os.path.join(root_dir, f'keras_slices_{subset}')
@@ -95,11 +94,18 @@ class HipMRIDataset(Dataset):
         # Convert image to torch tensor
         inImage = torch.tensor(inImage, dtype=torch.float32)
 
+        # Add channel dimension if it's missing
+        if inImage.dim() == 2:
+            inImage = inImage.unsqueeze(0)
+
+        # Resize the image to the target size
+        inImage = self.resize(inImage)
+
         return inImage
 
 # DataLoader function to handle batching
-def get_data_loader(root_dir, subset='train', batch_size=16, shuffle=True, normImage=False, categorical=False, dtype=np.float32, early_stop=False):
-    dataset = HipMRIDataset(root_dir, subset=subset, normImage=normImage, categorical=categorical, dtype=dtype, early_stop=early_stop)
+def get_data_loader(root_dir, subset='train', batch_size=16, shuffle=True, normImage=False, categorical=False, dtype=np.float32, target_size=(256, 256)):
+    dataset = HipMRIDataset(root_dir, subset=subset, normImage=normImage, categorical=categorical, dtype=dtype, target_size=target_size)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return data_loader
 

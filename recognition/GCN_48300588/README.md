@@ -220,15 +220,15 @@ $$
 
 Figure 1 Training and Validation Accuracy:
 
-![accuracy.png](./plots/accuracy.png)
+![accuracy.png](PatternAnalysis-2024/recognition/accuracy.png)
 
 Figure 2 Training and Validation Loss:
 
-![loss.png](./plots/loss.png)
+![loss.png](PatternAnalysis-2024/recognition/loss.png)
 
 Figure 3 t-SNE Visualisation of Node Embedding:
 
-![tsne_embeddings.png](./plots/tsne_embeddings.png)
+![tsne_embeddings.png](PatternAnalysis-2024/recognition/tsne_embeddings.png)
 
 
 

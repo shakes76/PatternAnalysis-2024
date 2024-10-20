@@ -23,7 +23,7 @@ malig_aug = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomRotation(30),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2),
+    #transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     #normalise using ImageNet (pytorch defaults)
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -36,7 +36,7 @@ benign_aug = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomRotation(30),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2),
+    #transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     #normalise using ImageNet (pytorch defaults)
     transforms.Normalize(mean=[0.485, 0.456, 0.406],

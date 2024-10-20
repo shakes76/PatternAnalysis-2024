@@ -1,4 +1,11 @@
-/datataset/
-/images/
-/models/
-/__pycache__/
+#Ignore all
+*
+
+#Track only these
+!dataset.py
+!driver.py
+!modules.py
+!predict.py
+!train.py
+!utils.py
+!.gitignore

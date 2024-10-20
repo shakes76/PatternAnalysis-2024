@@ -59,7 +59,7 @@ class Classifier(nn.Module):
             nn.ReLU(),
             #add dropout if needed
             nn.Linear(hidden_size, 1),
-            nn.Sigmoid()
+            #nn.Sigmoid()
         )
         
 

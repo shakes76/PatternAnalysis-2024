@@ -19,16 +19,16 @@ def main():
     train_df,val_df,test_df = split_data(df)
     siamese_train(current_dir, train_df,val_df, images, epochs=200, plots=True)
 
-    #siamese_net = SiameseNN()
-    #siamese_dict = os.path.join(current_dir, 'models', 'oldsiamese_resnet18_best.pth')
-    #siamese_net.load_state_dict(torch.load(siamese_dict))
-    #classifier_train(current_dir, train_df, val_df, images, siamese_net, epochs=50, plots=True)
+    siamese_net = SiameseNN()
+    siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
+    siamese_net.load_state_dict(torch.load(siamese_dict))
+    classifier_train(current_dir, train_df, val_df, images, siamese_net, epochs=100, plots=True)
 
     #Testing part
-    #classifier_net = Classifier()
-    #classifier_dict = os.path.join(current_dir,'models','oldclassifier_best.pth')
-    #classifier_net.load_state_dict(torch.load(classifier_dict))
-    #test(siamese_net,classifier_net,test_df,images)
+    classifier_net = Classifier()
+    classifier_dict = os.path.join(current_dir,'models','classifier_best.pth')
+    classifier_net.load_state_dict(torch.load(classifier_dict))
+    test(siamese_net,classifier_net,test_df,images)
 
     #we can improve this alot, lot of repeating code in training loops we can handle creating the DataLoaders here
 

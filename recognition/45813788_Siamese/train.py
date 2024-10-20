@@ -69,7 +69,7 @@ def siamese_train(current_dir, train_df, val_df, images, epochs=50, plots=False)
     )
     
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 
     #scheduler
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
@@ -204,11 +204,12 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
     classifier.train()
 
     # optimizer
-    optimizer = torch.optim.Adam(classifier.parameters(), lr=1e-3, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(classifier.parameters(), lr=1e-4, weight_decay=1e-5)
 
-    # Total number of samples
-    total_samples = len(train_df)
+    #scheduler
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
 
+    
     # Count of each class
     benign_count = (train_df['target'] == 0).sum()
     malignant_count = (train_df['target'] == 1).sum()
@@ -291,6 +292,8 @@ def classifier_train(current_dir, train_df, val_df, images, siamese, epochs=50, 
         val_accuracies.append(val_accuracy)
 
         print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+        # Step the scheduler
+        scheduler.step(avg_val_loss)
 
         # Monitor learning rate
         for idx, param_group in enumerate(optimizer.param_groups):

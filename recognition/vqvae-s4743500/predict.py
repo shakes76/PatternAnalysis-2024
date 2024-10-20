@@ -9,40 +9,11 @@ from skimage.metrics import structural_similarity as ssim
 from torchvision import transforms # type: ignore
 import numpy as np
 
-# Load the model
+# Load the trained model
 def load_model(model, model_path):
     model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
     model.eval()
     return model
-
-# Function to visualize and save original and reconstructed images side by side
-def visualize_reconstruction(original_images, reconstructed_images, save_dir='./results', img_name="prediction.png"):
-    # Ensure the directory exists
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Convert images to CPU for processing
-    original_images = original_images.cpu().data
-    reconstructed_images = reconstructed_images.cpu().data
-
-    # Denormalize the images from [-1, 1] to [0, 1]
-    original_images = (original_images + 1) / 2
-    reconstructed_images = (reconstructed_images + 1) / 2
-
-    # Create a plot to visualize original and reconstructed images
-    num_images = min(8, original_images.size(0))  # Show at most 8 images
-    fig, axes = plt.subplots(2, num_images, figsize=(num_images * 2, 4))
-
-    for i in range(num_images):
-        # Original images
-        axes[0, i].imshow(original_images[i][0], cmap='gray')  # Assuming grayscale
-        axes[0, i].axis('off')
-        # Reconstructed images
-        axes[1, i].imshow(reconstructed_images[i][0], cmap='gray')  # Assuming grayscale
-        axes[1, i].axis('off')
-
-    # Save the comparison plot
-    plt.savefig(os.path.join(save_dir, img_name))
-    plt.close()
 
 # Function to calculate SSIM score between original and reconstructed images
 def calculate_ssim(original_images, reconstructed_images):
@@ -68,6 +39,62 @@ def plot_ssim_scores(ssim_scores):
     plt.legend()
     plt.savefig("ssim_scores_test_set.png")
     plt.show()
+
+# Function to visualize and save the best image (highest SSIM)
+def visualise_best_image(original_image, reconstructed_image, save_dir='./results', img_name="best_image.png"):
+    os.makedirs(save_dir, exist_ok=True)
+
+    original_image = original_image.cpu().data
+    reconstructed_image = reconstructed_image.cpu().data
+
+    # Denormalize the images from [-1, 1] to [0, 1]
+    original_image = (original_image + 1) / 2
+    reconstructed_image = (reconstructed_image + 1) / 2
+
+    # Plot original and reconstructed images side by side
+    fig, axes = plt.subplots(1, 2, figsize=(6, 4))
+
+    # Original image
+    axes[0].imshow(original_image[0], cmap='gray')
+    axes[0].set_title("Original Image")
+    axes[0].axis('off')
+
+    # Reconstructed image
+    axes[1].imshow(reconstructed_image[0], cmap='gray')
+    axes[1].set_title("Reconstructed Best Image")
+    axes[1].axis('off')
+
+    # Save the plot
+    plt.savefig(os.path.join(save_dir, img_name))
+    plt.close()
+
+# Function to visualize and save the worst image (lowest SSIM)
+def visualise_worst_image(original_image, reconstructed_image, save_dir='./results', img_name="worst_image.png"):
+    os.makedirs(save_dir, exist_ok=True)
+
+    original_image = original_image.cpu().data
+    reconstructed_image = reconstructed_image.cpu().data
+
+    # Denormalize the images from [-1, 1] to [0, 1]
+    original_image = (original_image + 1) / 2
+    reconstructed_image = (reconstructed_image + 1) / 2
+
+    # Plot original and reconstructed images side by side
+    fig, axes = plt.subplots(1, 2, figsize=(6, 4))
+
+    # Original image
+    axes[0].imshow(original_image[0], cmap='gray')
+    axes[0].set_title("Original Image")
+    axes[0].axis('off')
+
+    # Reconstructed image
+    axes[1].imshow(reconstructed_image[0], cmap='gray')
+    axes[1].set_title("Reconstructed Worst Image")
+    axes[1].axis('off')
+
+    # Save the plot
+    plt.savefig(os.path.join(save_dir, img_name))
+    plt.close()
 
 def main():
     # Load test dataset
@@ -101,15 +128,18 @@ def main():
         epsilon=1e-5
     ).to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
-    # Load the saved model
+    # Load the saved model 
     model_save_path = './saved_models/best_vqvae_model.pth'
     model = load_model(model, model_save_path)
 
     # Initialize lists to track SSIM scores and image indices
     all_ssim_scores = []
     best_ssim = -1
+    worst_ssim = 1
     best_original_image = None
     best_reconstructed_image = None
+    worst_original_image = None
+    worst_reconstructed_image = None
 
     # Loop through the test dataset
     for test_images in test_loader:
@@ -123,12 +153,39 @@ def main():
         # Calculate SSIM for this batch of images
         batch_ssim_scores = calculate_ssim(test_images, reconstructed_images)
         all_ssim_scores.extend(batch_ssim_scores)
+
+        # Track the best and worst SSIM with their corresponding images
+        batch_max_ssim = max(batch_ssim_scores)
+        batch_min_ssim = min(batch_ssim_scores)
+
+        if batch_max_ssim > best_ssim:
+            best_ssim = batch_max_ssim
+            best_idx = batch_ssim_scores.index(batch_max_ssim)
+            best_original_image = test_images[best_idx]
+            best_reconstructed_image = reconstructed_images[best_idx]
+
+        if batch_min_ssim < worst_ssim:
+            worst_ssim = batch_min_ssim
+            worst_idx = batch_ssim_scores.index(batch_min_ssim)
+            worst_original_image = test_images[worst_idx]
+            worst_reconstructed_image = reconstructed_images[worst_idx]
         
     # Plot SSIM scores for each test image
     plot_ssim_scores(all_ssim_scores)
 
-    # Print the best SSIM score
+    # Print the best and lowest SSIM scores
     print(f"Highest SSIM score: {best_ssim:.4f}")
+    print(f"Lowest SSIM score: {worst_ssim:.4f}")
+
+    # Print the average SSIM score
+    average_ssim = sum(all_ssim_scores) / len(all_ssim_scores)
+    print(f"Average SSIM score: {average_ssim:.4f}")
+
+    # Visualize the best original and reconstructed image
+    visualise_best_image(best_original_image, best_reconstructed_image)
+
+    # Visualize the best original and reconstructed image
+    visualise_worst_image(worst_original_image, worst_reconstructed_image)
 
 if __name__ == "__main__":
     main()

@@ -8,7 +8,6 @@ from torch import nn, optim
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision.utils import save_image
 from math import log2, sqrt
 import numpy as np
 import os
@@ -18,6 +17,7 @@ from modules import *
 from dataset import *
 import json
 from constants import *
+from predict import generate_umap_plot, load_model, generate_examples
 
 if os.path.exists("params/data.json"):
     with open("params/data.json", 'r') as f:
@@ -34,36 +34,6 @@ else:
     json_data = {"epochs": 0,
                  "G_loss": [],
                  "D_loss": []}
-
-
-def generate_examples(gen, mapping_net, epoch, n=10, display=False):
-    gen.eval()
-    # alpha = 1.0
-    if display:
-        fig = plt.figure(figsize=(10, 7))
-        plt.title(f"Epoch {epoch}")
-        plt.axis('off')
-        rows, columns = 2, 2
-        for i in range(4):
-            with torch.no_grad():
-                w = get_w(1, W_DIM, DEVICE, mapping_net, LOG_RESOLUTION)
-                noise = get_noise(1, LOG_RESOLUTION, DEVICE)
-                img = gen(w, noise)
-                img = img[0]
-                fig.add_subplot(rows, columns, i+1)
-                plt.imshow(img.permute(1, 2, 0))
-                plt.axis('off')
-        plt.show()
-    else:
-        for i in range(n):
-            with torch.no_grad():  # turn off gradient calculation to speed up generation
-                w = get_w(1, W_DIM, DEVICE, mapping_net, LOG_RESOLUTION)
-                noise = get_noise(1, LOG_RESOLUTION, DEVICE)
-                img = gen(w, noise)
-                if not os.path.exists(f'saved_examples/epoch{epoch}'):
-                    os.makedirs(f'saved_examples/epoch{epoch}')
-                save_image(img * 0.5 + 0.5, f"saved_examples/epoch{epoch}/img_{i}.png")
-    gen.train()
 
 def train_fn(
         critic,
@@ -133,42 +103,6 @@ def plot_loss(g_loss, d_loss):
         os.mkdir("training")
     plt.savefig("training/training_loss.png")
 
-def load_model(path="model"):
-    generator = Generator(LOG_RESOLUTION, W_DIM)
-    discriminator = Discriminator(LOG_RESOLUTION)
-    mapping_net = MappingNetwork(Z_DIM, W_DIM)
-    plp = PathLengthPenalty(0.99)
-    optim_gen = optim.Adam(generator.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
-    optim_critic = optim.Adam(discriminator.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
-    optim_map = optim.Adam(mapping_net.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
-    if path is None:
-        return generator, discriminator, mapping_net, plp, optim_gen, optim_critic, optim_map
-    if not os.path.exists(path):
-        os.mkdir(path)
-    else:
-        try:
-            if DEVICE == 'cpu':
-                generator.load_state_dict(torch.load(f"{path}/generator.pth", map_location=DEVICE))
-                discriminator.load_state_dict(torch.load(f"{path}/discriminator.pth", map_location=DEVICE))
-                mapping_net.load_state_dict(torch.load(f"{path}/mapping.pth", map_location=DEVICE))
-                plp.load_state_dict(torch.load(f"{path}/PLP.pth", map_location=DEVICE))
-                optim_gen.load_state_dict(torch.load(f"{path}/generator_opt.pth", map_location=DEVICE))
-                optim_critic.load_state_dict(torch.load(f"{path}/discriminator_opt.pth", map_location=DEVICE))
-                optim_map.load_state_dict(torch.load(f"{path}/mapping_opt.pth", map_location=DEVICE))
-            else:
-                generator.load_state_dict(torch.load(f"{path}/generator.pth"))
-                discriminator.load_state_dict(torch.load(f"{path}/discriminator.pth"))
-                mapping_net.load_state_dict(torch.load(f"{path}/mapping.pth"))
-                plp.load_state_dict(torch.load(f"{path}/PLP.pth"))
-                optim_gen.load_state_dict(torch.load(f"{path}/generator_opt.pth"))
-                optim_critic.load_state_dict(torch.load(f"{path}/discriminator_opt.pth"))
-                optim_map.load_state_dict(torch.load(f"{path}/mapping_opt.pth"))
-        except Exception as err:
-            print("Failed to load model. Training on new model instead.")
-            raise(err)
-
-    return generator, discriminator, mapping_net, plp, optim_gen, optim_critic, optim_map
-
 def save_model(generator: Generator,
                discriminator: Discriminator,
                mapping_net: MappingNetwork,
@@ -177,6 +111,8 @@ def save_model(generator: Generator,
                optim_critic,
                optim_map,
                directory: str = "model"):
+    if not os.path.exists(directory):
+        os.mkdir(directory)
     torch.save(generator.state_dict(), f"{directory}/generator.pth")
     torch.save(discriminator.state_dict(), f"{directory}/discriminator.pth")
     torch.save(mapping_net.state_dict(), f"{directory}/mapping.pth")
@@ -193,7 +129,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="COMP3506/7505 Assignment Two: Data Structure Tests")
     parser.add_argument("--dataset_dir", type=str, help="Directory for the dataset")
     parser.add_argument("--model_dir", type=str, help="Directory of the saved model, if any")
-    parser.set_defaults(dataset_dir="AD_NC", model_dir="model")
+    parser.set_defaults(dataset_dir="AD_NC/train", model_dir="model")
     args = parser.parse_args()
 
     loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.dataset_dir)
@@ -232,8 +168,12 @@ if __name__ == "__main__":
                    args.model_dir
                    )
 
-        if total_epochs % 10 == 0:
+        if total_epochs % 10 == 0 or total_epochs == 1 or total_epochs == 5:
             generate_examples(gen, mapping_network, total_epochs, 12)
+            generate_umap_plot(critic, loader, total_epochs)
+            save_model(gen, critic, mapping_network, path_length_penalty, opt_gen, critic, opt_mapping_network,
+                       f"model_epoch_{epoch}")
+
         total_epochs += 1
         json_data["epochs"] += 1
         json_data["G_loss"] = generator_loss

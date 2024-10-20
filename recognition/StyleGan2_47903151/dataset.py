@@ -10,7 +10,7 @@ from torchvision.datasets import ImageFolder
 from torch.utils.data import *
 
 
-def get_loader(log_resolution, batch_size, directory = "AD_NC"):
+def get_loader(log_resolution, batch_size, directory = "AD_NC/train"):
     transform = transforms.Compose(
         [
             transforms.Resize((2 ** log_resolution, 2 ** log_resolution)),

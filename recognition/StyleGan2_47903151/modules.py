@@ -238,6 +238,7 @@ class Discriminator(nn.Module):
 
         x = self.minibatch_std(x)
         x = self.conv(x)
+        data = x
         x = x.reshape(x.shape[0], -1)
         return self.final(x)
 

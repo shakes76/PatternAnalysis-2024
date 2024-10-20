@@ -87,7 +87,7 @@ The model architecture is a standard U-Net model. To generate noise at each corr
   <img width="600px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/vlb_loss.png" alt="Backward" />
 </p>
 
-As the forward and backward diffution process can be written as the joint probability of x from 1 to T, denoted as q(x1:T | x0) and p_θ(x0:T | xT), the objective of the loss function is to make these two distributions as close as possible. To achieve this, we can apply the variational lower bound (VLB) to optimize the negative log-likelihood, -log(p_θ(x)). The objective then becomes minimizing the KL divergence between p and q, which can be simply computed using MSE.
+As the forward and backward diffution process can be written as the joint probability of x from 1 to T, denoted as q(x1:T | x0) and p_θ(x0:T | xT), the objective of the loss function is to make these two distributions as close as possible. To achieve this, we can apply the variational lower bound (VLB) to optimize the negative log-likelihood, -log(p_θ(x)). The objective then becomes minimizing the KL divergence between p and q, which can be simply computed using MSE. (between Є_θ and Є_t)
 <p align="center">
   <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/loss_fn.png" alt="Backward" />
 </p>

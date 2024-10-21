@@ -24,7 +24,14 @@ WINDOWS_SEP = "\\"
 
 
 class ProstateDataset(Dataset):
-    def __init__(self, images: list[str], masks: list[str], start: int, end: int, start_t: float = None) -> None:
+    TRAIN_TRANSFORM = transforms.Compose([
+        transforms.RandomVerticalFlip(),
+        transforms.RandomHorizontalFlip(),
+        transforms.ElasticTransform(),
+        transforms.RandomAffine(0)
+    ])
+
+    def __init__(self, images: list[str], masks: list[str], start: int, end: int, start_t: float = None, train: bool = False) -> None:
 
         print(f"[{cur_time(start_t) if start_t is not None else "i"}] Loading {
               end - start} images")
@@ -32,6 +39,7 @@ class ProstateDataset(Dataset):
         print(f"[{cur_time(start_t) if start_t is not None else "i"}] Loading {
               end - start} masks")
         self.mask_3D_data = load_data_3D(masks[start:end])
+        self.train = train
 
     def __len__(self) -> int:
         return len(self.image_3D_data)
@@ -41,11 +49,16 @@ class ProstateDataset(Dataset):
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
         # Rescale intensity to (0, 1)
         image = (image - image.min()) / (image.max() - image.min())
-        # Normalisation
-        image = (image - image.mean()) / image.std()
 
         mask = self.mask_3D_data[idx]
         mask = torch.tensor(mask, dtype=torch.int64).unsqueeze(0)
+
+        if self.train:
+            image = self.TRAIN_TRANSFORM(image)
+            mask = self.TRAIN_TRANSFORM(mask)
+
+        # Normalisation
+        image = (image - image.mean()) / image.std()
 
         return image, mask
 
@@ -94,13 +107,16 @@ class ProstateLoader(DataLoader):
 
     def train(self) -> DataLoader:
         dataset = ProstateDataset(
-            self.images, self.masks, 0, self.num_train_images, self.start_t)
+            self.images, self.masks, 0, self.num_train_images, self.start_t, True)
         return DataLoader(dataset, **self.kwargs)
 
     def validate(self) -> DataLoader:
         dataset = ProstateDataset(
             self.images, self.masks, self.num_train_images, self.num_train_images + self.num_validate_images, self.start_t)
         return DataLoader(dataset, **self.kwargs)
+
+    def validate_size(self) -> int:
+        return self.num_validate_images
 
     def test(self) -> DataLoader:
         dataset = ProstateDataset(

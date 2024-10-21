@@ -25,6 +25,7 @@ INPUT_CHANNELS = 1  # greyscale
 NUM_LOADED = 7  # set to None to load all
 SHUFFLE = False
 WORKERS = 0
+CLASS_WEIGHTS = [1, 1, 1, 1, 1, 1]
 
 # taken from the paper on the improved unet
 INITIAL_LR = 5e-4
@@ -77,7 +78,8 @@ def main() -> None:
     scheduler = optim.lr_scheduler.LambdaLR(
         optimiser, lr_lambda=lambda epoch: DECAY_FACTOR ** epoch)
     # will use dice loss as per the task requirements
-    criterion = DiceLoss(NUM_CLASSES, device)
+    weights = torch.tensor(CLASS_WEIGHTS)
+    criterion = DiceLoss(NUM_CLASSES, device, weights=weights)
 
     model = model.to(device)
 
@@ -98,7 +100,8 @@ def main() -> None:
 
             output = model(image)
 
-            total_loss, class_loss = criterion(output, mask)
+            total_loss, class_loss = criterion(
+                output, mask, enable_weights=True)
 
             optimiser.zero_grad()
             total_loss.backward()
@@ -142,9 +145,8 @@ def main() -> None:
     # output about every 10% increment
     print(f"[{cur_time(script_start_t)}] Validating...")
     # output about every 25% increment
-    validate_size = len(data_loader.validate()) * BATCH_SIZE
-    output_steps = int(math.ceil(0.25 * validate_size))
-    num_digits = len(str(validate_size))
+    output_steps = int(math.ceil(0.25 * data_loader.validate_size()))
+    num_digits = len(str(data_loader.validate_size()))
 
     criterion.reset()
     model.eval()

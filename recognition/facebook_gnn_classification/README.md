@@ -1,13 +1,13 @@
 # Facebook Page-Page Network Node Classification
 
-## Overview
+### Overview
 
 This project involves training a Graph Neural Network (GNN) for semi-supervised multi-class node classification using the Facebook Large Page-Page Network dataset. The dataset represents various categories of Facebook pages (e.g., government, politician, tvshow, company) connected based on mutual likes. The task is to classify each node (Facebook page) into one of the provided categories using Graph Attention Networks (GAT) layers.
 
 The model uses the Graph Attention Network (GAT) architecture and includes visualization of learned embeddings using UMAP.
 
 
-## Dataset
+### Dataset
 
 The dataset is provided in the form of an partially processed .npz file containing:
 
@@ -17,7 +17,7 @@ Features: 128-dimensional feature vectors extracted from page descriptions.
 
 Target Labels: Page types (e.g., government, company, tvshow, politician).
 
-## Model Architecture
+### Model Architecture
 
 The GNN model uses four layers of Graph Attention Networks (GATConv) with multi-head attention, combined with ReLU activations and dropout to prevent overfitting. The model architecture is as follows:
 
@@ -33,7 +33,7 @@ GATConv Layers:
 
 Mixed precision training with automatic mixed precision (AMP) was utilized to speed up training and reduce GPU memory usage, enabling the use of larger hidden dimensions.
 
-## Training Details
+### Training Details
 
 Hidden Dimension: 512.
 
@@ -55,7 +55,7 @@ From the training and validation loss plot, we can observe that the model's loss
 
 However, we can also notice that slight fluctuations towards the end of the training process, suggesting that the learning rate may need to be fine-tuned to prevent oscillations. Despite these minor fluctuations, the model overall performs well with low final loss values for both training and validation sets.
 
-## UMAP Embeddings Visualization
+### UMAP Embeddings Visualization
 To visualize how well the GNN captures the structure of the graph, **UMAP** was used to reduce the node embeddings to 2 dimensions. The following plot shows the reduced embeddings colored according to their ground truth labels:
 
 ![UMAP Embeddings](graphs/umap_embeddings.png)
@@ -67,7 +67,7 @@ Tvshows (Blue) and Companies (Green): These categories show some overlap, sugges
 Politicians (Orange): This group is relatively distinct but has some overlap with the government cluster, which is expected due to similarities in content between politicians and government pages.
 Overall, the UMAP visualization indicates that the embeddings learned by the GNN are effective in capturing the latent structure of the dataset, helping to group nodes of similar types together.
 
-## Prediction Accuracy
+### Prediction Accuracy
 The model achieved a prediction accuracy of 98.24% on the entire dataset, which shows that it was able to effectively classify nodes into their respective categories.
 
 
@@ -78,4 +78,17 @@ Below are some sample predictions from the model:
 - Node 2: Predicted = `1` (True = `1`)
 - Node 3: Predicted = `2` (True = `2`)
 - Node 4: Predicted = `3` (True = `3`)
+
+### Conclusion
+The GNN model using GATConv layers was successfully trained on the Facebook Page-Page Network dataset to classify nodes based on their types. The key findings are as follows:
+
+High Accuracy: The model achieved an impressive prediction accuracy of 98.24%, which suggests strong discriminative ability.
+Training Convergence: The training and validation losses converged smoothly, indicating effective training. Only slight fluctuations in the losses towards the end of training suggest potential room for further learning rate optimization.
+Embeddings Visualization: The UMAP visualization of node embeddings highlights well-separated clusters, demonstrating that the GNN effectively captures the underlying relationships between nodes, particularly between different page categories. This clustering indicates the robustness of the learned features in differentiating between node classes.
+The combination of GAT layers, mixed precision training, and effective regularization techniques contributed to this successful result. The insights provided by UMAP confirm that the learned embeddings provide meaningful structure that is aligned with the graph's underlying properties.
+
+### Future Improvements
+Hyperparameter Tuning: Perform a grid search for optimal hyperparameters such as learning rate, dropout rate, and hidden dimension size.
+Regularization: Add L2 regularization to further reduce overfitting.
+Further Visualization: Visualize attention coefficients learned by GAT layers to gain insights into important node relationships.
 

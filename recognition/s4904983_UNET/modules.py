@@ -43,49 +43,45 @@ class UNet2D(nn.Module):
                                             stride=2)
         self.up_conv_4 = double_conv2d(128, 64)
         self.out = nn.Conv2d(in_channels=64,
-                            out_channels=2,
+                            out_channels=1,
                             kernel_size=1)
-    
     
     def forward(self, image):
         # Encoding
         x1 = self.down_conv_1(image)
-        print(x1.size())
         x2 = self.max_pool_2x2(x1)
         x3 = self.down_conv_2(x2)
         x4 = self.max_pool_2x2(x3)
         x5 = self.down_conv_3(x4)
         x6 = self.max_pool_2x2(x5)
         x7 = self.down_conv_4(x6)
-        x8 = self.max_pool_2x2(x7)
-        x9 = self.down_conv_5(x8)
-        print(x9.size())
+        # x8 = self.max_pool_2x2(x7)
+        # print(x8.size())
+        # x9 = self.down_conv_5(x8)
+        # print(x9.size())
 
-        # Decoding
-        x = self.up_trans_1(x9)
-        # Interpolate to match the size of the skip connection
-        x = F.interpolate(x, size=x7.size()[2:], mode='bilinear', align_corners=True)
-        x = self.up_conv_1(torch.cat([x, x7], 1))
-        print(x.size())
+        ### Decoding
 
-        x = self.up_trans_2(x)
+        # x = self.up_trans_1(x9)
+        # print(x.size())
+        # # Interpolate to match the size of the skip connection
+        # x = F.interpolate(x, size=x7.size()[2:], mode='bilinear', align_corners=True)
+        # x = self.up_conv_1(torch.cat([x, x7], 1))
+        # print('9',x.size())
+        x = self.up_trans_2(x7)
         x = F.interpolate(x, size=x5.size()[2:], mode='bilinear', align_corners=True)
         x = self.up_conv_2(torch.cat([x, x5], 1))
-        print(x.size())
 
         x = self.up_trans_3(x)
         x = F.interpolate(x, size=x3.size()[2:], mode='bilinear', align_corners=True)
         x = self.up_conv_3(torch.cat([x, x3], 1))
-        print(x.size())
 
         x = self.up_trans_4(x)
         x = F.interpolate(x, size=x1.size()[2:], mode='bilinear', align_corners=True)
         x = self.up_conv_4(torch.cat([x, x1], 1))
-        print(x.size())
 
         x = self.out(x)
         x = F.interpolate(x, size=image.size()[2:], mode='bilinear', align_corners=True)
-        print(x.size())
         return x
 
 

@@ -221,6 +221,29 @@ def save_model_checkpoint(model, optimizer, epoch, val_accuracy, path="models/be
     
     print(f"Best model saved at epoch {epoch+1} with validation accuracy {val_accuracy:.2f}% at {save_path}")
 
+# Function to load model and optimizer states from a checkpoint
+def load_checkpoint(model, optimizer, checkpoint_path="models/best_model.pth"):
+    """
+    Loads the model and optimizer states from a checkpoint and returns the starting epoch and validation accuracy.
+
+    Args:
+        model (torch.nn.Module): The model to load weights into.
+        optimizer (torch.optim.Optimizer): The optimizer to load state into.
+        checkpoint_path (str): Path to the saved checkpoint.
+
+    Returns:
+        start_epoch (int): The epoch to resume from.
+        val_accuracy (float): The validation accuracy at the time of the saved checkpoint.
+    """
+    checkpoint = torch.load(checkpoint_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    start_epoch = checkpoint['epoch']
+    val_accuracy = checkpoint['val_accuracy']
+    
+    print(f"Loaded checkpoint from {checkpoint_path}. Resuming from epoch {start_epoch + 1} with val accuracy {val_accuracy:.2f}%")
+    
+    return start_epoch, val_accuracy
 
 
 # Function for full training loop
@@ -288,6 +311,11 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
 def main():
     parser = argparse.ArgumentParser()
 
+        # Add argument for resuming training from checkpoint
+    parser.add_argument('--resume', default=False, action='store_true', help="Resume training from the latest checkpoint")
+    parser.add_argument('--checkpoint_path', type=str, default="models/best_model.pth", help="Path to the checkpoint file")
+    
+
     # add arguments for hyperparameters
     parser.add_argument('--lr', type=float, default=3e-4, help='Learning rate')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
@@ -341,8 +369,18 @@ def main():
     model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers, embedding_dims = args.embedding_dims, mlp_size=args.mlp_size, num_heads = num_heads
                 ).to(device)
 
-    criterion = nn.CrossEntropyLoss()
+
+    # Initialize or load model from checkpoint
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    if args.resume:
+        start_epoch, val_accuracy = load_checkpoint(model, optimizer, args.checkpoint_path)
+    else:
+        start_epoch = 0  # Start from scratch if not resuming
+
+    # Get dataloaders
+    train_dataloader, val_dataloader, test_dataloader = get_dataloaders(batch_size=args.batch_size, image_size=args.image_size, path=args.path)
+
+    criterion = nn.CrossEntropyLoss()
     # Initialize the ReduceLROnPlateau scheduler
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
 

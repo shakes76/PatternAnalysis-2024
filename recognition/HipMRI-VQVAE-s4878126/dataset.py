@@ -7,7 +7,13 @@ The files are stored in .NII format.
 
 trainPath = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 testPath = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
+valPath = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
 
+
+"""
+Get the training set from Rangpur.
+The training set contains over 11,000 MRI Scans.
+"""
 def GetTrainSet():
     tempTrain = []
 
@@ -22,6 +28,10 @@ def GetTrainSet():
 
     return trainSet
 
+"""
+Get the testing set from Rangpur. 
+The testing set contains 540 MRI Scans.
+"""
 def GetTestSet():
     tempTest = []
 
@@ -35,6 +45,23 @@ def GetTestSet():
     print("Finished fetching testing data.")
 
     return testSet
+
+"""
+Get the validation set from Rangpur.
+"""
+def GetValSet():
+    tempVal = []
+
+    for file in os.listdir(valPath):
+        tempVal.append(os.path.join(valPath, file))
+
+    print("Getting testing data...")
+    valSet = load_data_2D(tempVal, normImage=True)
+    print(valSet[0].shape)
+
+    print("Finished fetching testing data.")
+
+    return valSet
 
     
 

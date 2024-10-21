@@ -42,7 +42,7 @@ def get_args_parser():
 
     parser.add_argument('--drop', type=float, default=0.05, metavar='PCT',
                         help='Dropout rate (default: 0.)')
-    parser.add_argument('--drop-path', type=float, default=0.1, metavar='PCT',
+    parser.add_argument('--drop-path', type=float, default=0.3, metavar='PCT',
                         help='Drop path rate (default: 0.1)')
 
     parser.add_argument('--model-ema', action='store_true')

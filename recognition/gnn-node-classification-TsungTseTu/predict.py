@@ -52,7 +52,7 @@ def predict():
         # Mixed GNN with GCN, GAT, and GraphSAGE layers (as modified earlier)
         model = MixedGNN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, 
                          num_gcn_layers=2, num_gat_layers=2, num_sage_layers=2, 
-                         heads=4, dropout=0.2)
+                         heads=4, dropout=0.3)
 
         # Load model
         model.load_state_dict(torch.load('gnn_model.pth', weights_only=True))
@@ -95,7 +95,7 @@ def predict():
         if not os.path.exists(images_dir):
             os.makedirs(images_dir)
         
-        save_path = os.path.join(images_dir, 'SNE visualization (reality).png')
+        save_path = os.path.join(images_dir, 'SNE visualization.png')
         plt.savefig(save_path)
         print(f"t-SNE plot saved to {save_path}")
 

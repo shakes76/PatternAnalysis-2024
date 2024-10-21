@@ -79,17 +79,17 @@ def train():
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train))  # Get number of unique classes
 
-        # Mixed GNN model with 2 GCN layers, 2 GAT layers, and 2 GraphSAGE layers
+        # Mixed GNN model with GCN layers, GAT layers, and GraphSAGE layers
         model = MixedGNN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, 
                          num_gcn_layers=2, num_gat_layers=2, num_sage_layers=2, 
-                         heads=4, dropout=0.2)
+                         heads=4, dropout=0.3)
 
         optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=5)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10)
 
-        early_stop_patience = 20
+        early_stop_patience = 50
         early_stop_counter = 0
         best_loss = float("inf")
 

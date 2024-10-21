@@ -1,5 +1,6 @@
 from torch.utils.data import DataLoader
 import torch
+from sklearn.manifold import TSNE
 from modules import *
 
 class LoadModel:
@@ -95,4 +96,27 @@ class LoadModel:
             plt.imshow(generated_images[i].permute(1, 2, 0).squeeze(), cmap='gray')
             plt.axis('off')
         plt.show()
+
+    
+    def plot_tsne_style_space(self, num_samples):
+        # Generate random latent vectors (Z space)
+        latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)
+        
+        # Pass latent vectors through the generator's mapping network to get style codes (W space)
+        with torch.no_grad():
+            style_codes = self.gen.map(latent_vectors)
+
+        # Apply t-SNE to the style codes (W space)
+        tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+        style_codes_2d = tsne.fit_transform(style_codes.cpu().numpy())
+
+        # Plot the t-SNE embedding of the style codes (W space)
+        plt.figure(figsize=(10, 8))
+        plt.scatter(style_codes_2d[:, 0], style_codes_2d[:, 1], s=5, cmap='Spectral')
+        plt.title('t-SNE embedding of StyleGAN Latent Space (W space)')
+        plt.xlabel('t-SNE Component 1')
+        plt.ylabel('t-SNE Component 2')
+        plt.colorbar()
+        plt.show()
+
 

@@ -41,17 +41,17 @@ This project implements a Siamese network-based classifier for the ISIC 2020 Cha
 
    This will install the following key dependencies:
 
-   Python: 3.8.19
-   PyTorch: 2.1.1 (with CUDA 11.8 support)
-   torchvision: 0.16.1
-   CUDA Toolkit: 11.8
-   scikit-learn: 1.3.2
-   matplotlib: 3.7.2
-   seaborn: 0.13.2
-   tqdm: 4.66.5
-   Pillow (PIL): 10.4.0
-   pandas: 2.0.3
-   numpy: 1.24.3
+   - Python: 3.8.19
+   - PyTorch: 2.1.1 (with CUDA 11.8 support)
+   - torchvision: 0.16.1
+   - CUDA Toolkit: 11.8
+   - scikit-learn: 1.3.2
+   - matplotlib: 3.7.2
+   - seaborn: 0.13.2
+   - tqdm: 4.66.5
+   - Pillow (PIL): 10.4.0
+   - pandas: 2.0.3
+   - numpy: 1.24.3
    
 ## Data Preparation
 

@@ -11,13 +11,15 @@ from dataset import get_dataloaders
 from tqdm import tqdm
 from modules import GFNet
 import os
-
+from torch.optim.lr_scheduler import ExponentialLR
 class AlzheimerClassifier:
     def __init__(self, model, device):
         self.model = model.to(device)
         self.device = device
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        self.scheduler = ExponentialLR(self.optimizer, gamma=0.9)  # Exponential LR scheduler
+
     def train(self, train_loader, epochs=10):
         self._bar = tqdm(range(epochs*len(train_loader)))
         self.model.train()
@@ -33,6 +35,7 @@ class AlzheimerClassifier:
                 self.optimizer.step()
                 running_loss += loss.item()
                 self._bar.update(1)
+            self.scheduler.step()  # Update the learning rate
             print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
 
     def evaluate(self, test_loader):
@@ -59,7 +62,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GFNet(num_classes=2)  # Assuming GFNet is designed for binary classification
     classifier = AlzheimerClassifier(model, device)
-    train_loader, test_loader = get_dataloaders(data_dir,16)
+    train_loader, test_loader = get_dataloaders(data_dir)
     classifier.train(train_loader, epochs=10)
     accuracy = classifier.evaluate(test_loader)
     torch.save(model.state_dict(), "alzheimer_classifier.pth")

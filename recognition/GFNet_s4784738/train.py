@@ -6,7 +6,6 @@ Benjamin Thatcher
 s4784738    
 """
 
-
 import datetime
 from typing import Optional
 import numpy as np
@@ -29,7 +28,6 @@ import utils
 
 #import wandb_config
 
-
 def train_one_epoch(model: torch.nn.Module, criterion,
                     data_loader, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
@@ -39,7 +37,7 @@ def train_one_epoch(model: torch.nn.Module, criterion,
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    print_freq = 10
+    print_freq = 100
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device, non_blocking=True)
@@ -111,9 +109,9 @@ def evaluate(data_loader, model, device):
 
 def train_GFNet(dataloaders, num_epochs):
     # Model architecture and hyperparameters
-    nb_classes = 2  # Number of output classes (AD/Normal)
+    num_classes = 2  # (AD/Normal)
     mixup = 0.0
-    smoothing = 0.1 
+    smoothing = 0.0 
 
     start_time = time.time()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -128,8 +126,8 @@ def train_GFNet(dataloaders, num_epochs):
     # Create model with hard-coded parameters
     print(f"Creating GFNet model with img_size: 224x224")
     model = GFNet(
-        img_size=224, patch_size=16, embed_dim=512, depth=19,
-        mlp_ratio=4, drop_path_rate=0.25,
+        img_size=224, patch_size=16, num_classes=num_classes, embed_dim=512, depth=19,
+        mlp_ratio=4, drop_path_rate=0.0,
         norm_layer=partial(nn.LayerNorm, eps=1e-6)
     ).to(device)
 
@@ -138,8 +136,6 @@ def train_GFNet(dataloaders, num_epochs):
         print(f"Memory Allocated: {torch.cuda.memory_allocated(0) / 1024 ** 3:.1f} GB")
         print(f"Memory Reserved: {torch.cuda.memory_reserved(0) / 1024 ** 3:.1f} GB")
 
-    #model_ema = ModelEma(model, decay=args.model_ema_decay) if args.model_ema else None
-    model_ema = None
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of parameters: {n_parameters}")
 
@@ -154,7 +150,6 @@ def train_GFNet(dataloaders, num_epochs):
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
 
-
     # Loss criterion
     if mixup > 0:
         criterion = SoftTargetCrossEntropy()
@@ -163,35 +158,29 @@ def train_GFNet(dataloaders, num_epochs):
     else:
         criterion = torch.nn.CrossEntropyLoss()
 
-    max_accuracy = 0.0
+    # Track the training and validation accuracy and loss at each epoch
+    train_acc, train_loss = [], []
+    val_acc, val_loss = [], []
+
     print(f"Start training for {num_epochs} epochs")
     for epoch in range(num_epochs):
-        train_stats = train_one_epoch(
-            model, criterion, data_loader_train,
-            optimizer, device, epoch, loss_scaler,
-            max_norm=0, model_ema=model_ema
-        )
-
-        #lr_scheduler.step(epoch)
-        lr_scheduler.step()
-
-        # Save checkpoint
-        #if args.output_dir:
-        #    checkpoint_path = output_dir / f'checkpoint_epoch{epoch}.pth'
-        #    utils.save_on_master({
-        #        'model': model.state_dict(),
-        #        'optimizer': optimizer.state_dict(),
-        #        'lr_scheduler': lr_scheduler.state_dict(),
-        #        'epoch': epoch,
-        #        'scaler': loss_scaler.state_dict(),
-        #        'args': args,
-        #    }, checkpoint_path)
-
+        # Train model
+        train_stats = train_one_epoch(model, criterion, data_loader_train, optimizer, device, epoch, loss_scaler, max_norm=0, model_ema=None)
         # Validate model
         test_stats = evaluate(data_loader_val, model, device)
-        print(f"Accuracy on validation set: {test_stats['acc1']:.1f}%")
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
-        print(f'Max accuracy: {max_accuracy:.2f}%')
+
+        # Track training and validation metrics
+        train_acc.append(train_stats['acc1'])
+        train_loss.append(train_stats['loss'])
+        val_acc.append(test_stats['acc1'])
+        val_loss.append(test_stats['loss'])
+
+        lr_scheduler.step()
+        print(f'Accuracy of training set (epoch {epoch}): {train_stats["acc1"]:.1f}%, and loss {train_stats['loss']:.1f}')
+        print(f"Accuracy on validation set (epoch {epoch}): {test_stats['acc1']:.1f}%, and loss {test_stats['loss']:.1f}") 
+
+    print('Saving model:')
+    torch.save(model.state_dict(), 'best_model.pth')
 
     total_time = time.time() - start_time
     print(f'Training time: {str(datetime.timedelta(seconds=int(total_time)))}')
@@ -200,9 +189,11 @@ def train_GFNet(dataloaders, num_epochs):
 if __name__ == "__main__":
     # Paths to the training and validation datasets
     dataloaders = {
-        'train': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/train", batch_size = 32, shuffle = True),
-        'val': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/test", batch_size = 32, shuffle = False)
+        'train': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/train", 'train', batch_size = 32, shuffle = True),
+        'val': get_data_loader("/home/groups/comp3710/ADNI/AD_NC/test", 'validate', batch_size = 32, shuffle = False)
     }
 
     num_epochs=10
+    print('Training for {num_epochs} epochs')
     train_GFNet(dataloaders, num_epochs=num_epochs)
+    print('Finished training')

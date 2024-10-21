@@ -6,29 +6,26 @@ To be completed.
 """
 import wandb
 
-def setup_wandb():
-    #logging info
-    #Set an experiment name to group training and evaluation
+import wandb
+
+def setup_wandb(architecture: str, epochs: int):
+    """
+    Initialises a wandb run with respective model information.
+    """
     experiment_id = wandb.util.generate_id()
 
     # Start a run, tracking hyperparameters
     wandb.init(
         project="Facebook-Large-Page-Page-Network",
         group="GNN",
-        # track hyperparameters and run metadata
         config={
-        #     "id": experiment_id,
-        #     "machine": "A100",
-        #     "architecture": "GCN",
-        #     "model": "GNN",
-        #     "dataset": "ImageNet",
-        #     "epochs": 300,
-        #     "optimizer": "adam",
-        #     "loss": "crossentropy",
-        #     "metric": "accuracy",
-        #     #~ "dim": 64,
-        #     "depth": 12,
-        #     "embed_dim": 384,
-        #     "batch_size": 128
+            "id": experiment_id,
+            "architecture": architecture,
+            "model": "GNN",
+            "dataset": "Facebook",
+            "epochs": epochs,
+            "optimizer": "adam",
+            "loss": "crossentropy",
+            "metric": "accuracy",
         })
-    # config = wandb.config
+    config = wandb.config

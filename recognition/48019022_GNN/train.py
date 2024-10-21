@@ -8,10 +8,13 @@ from dataset import GNNDataLoader
 from modules import GCNModel
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+import wandb_config
+import time
+import datetime
 
 """
 Potential Improvements:
-    
+    Change hyperparameters after tests
 """
 
 def _train_model(model, data, train):
@@ -57,7 +60,7 @@ def training_loop(num_epochs, model, data, train, valid, test):
     best_val_loss = float('inf')
     patience_count = 0
     patience_lim = 10 #stop training if loss doesn't improve for 10 epochs
-
+    
     for epoch in range(num_epochs):
         loss = _train_model(model=model, data=data, train=train)
 
@@ -71,6 +74,15 @@ def training_loop(num_epochs, model, data, train, valid, test):
         
         # Step the scheduler
         scheduler.step()
+
+        # Logging multiple metrics to wandb at once
+        wandb_config.wandb.log({
+            "epoch": epoch,
+            "training_loss": loss,
+            "validation_loss": valid_loss,
+            "test_accuracy": test_accuracy,
+            "learning_rate": scheduler.get_last_lr()[0]  # Log the current learning rate
+        })
 
         if valid_loss < best_val_loss:
             # early stoppage
@@ -86,7 +98,7 @@ def training_loop(num_epochs, model, data, train, valid, test):
         # printing loss information each epoch
         if epoch % 10 == 0:
             print(f'Epoch: {epoch}, Loss: {loss:.4f}, Val Loss: {valid_loss:.4f}, Test Accuracy: {test_accuracy:.4f}')
-
+        
     # After training loop, generate loss plot.
     plt.figure(figsize=(10, 6))
     plt.plot(losses, label='Training Loss')
@@ -110,6 +122,9 @@ if __name__ == '__main__':
     decay = 0.01 # default
     epochs = 300 # default, perhaps try 200,400,500 etc
 
+    # Change this to change the model
+    architecture = "GCN"
+
     # loading data
     data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='facebook.npz')
 
@@ -117,9 +132,20 @@ if __name__ == '__main__':
     # now we can define the model
     # note here that the output dimensions is defined to be 4 classes:
     # politicians, governmental organizations, television shows and companies
-    model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1) # +1 as labels start from 0
+    if architecture == "GCN":
+        # Select GCN
+        model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1) # +1 as labels start from 0
+    elif architecture == "GAT":
+        # Update when GAT is implemented
+        pass
+
     model = model.to(device)
     model.train()
+
+    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    # Setup WANDB configurations
+    wandb_config.setup_wandb(architecture=architecture)
 
     # Setting up Adam Optimiser and Cross Entropy Loss function
     optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser
@@ -133,4 +159,16 @@ if __name__ == '__main__':
     valid_losses = []
     accuracies = []
 
+    start_time = time.time()
     training_loop(epochs, model=model, data=data, train=train_idx, valid=valid_idx, test=test_idx)
+    end_time = time.time()
+
+    total_time = end_time - start_time
+
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
+
+    #logging on wandb
+    wandb_config.wandb.run.summary["training_time"] = total_time_str
+    wandb_config.wandb.run.summary["Parameters"] = n_parameters
+    wandb_config.wandb.run.finish()

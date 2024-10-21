@@ -2,7 +2,7 @@ from modules import UNet
 from dataset import MedicalImageDataset
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import datetime 
+import datetime
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -11,8 +11,9 @@ if gpus:
     print(f"Num GPUs Available: {len(gpus)}")
 else:
     print("No GPUs available, using CPU.")
-    
+
 loss_values = []
+
 
 def dice_coefficient(y_true, y_pred, epsilon=1e-6):
     y_true = tf.cast(y_true, tf.float32)
@@ -21,14 +22,17 @@ def dice_coefficient(y_true, y_pred, epsilon=1e-6):
     dice = (2. * intersection + epsilon) / (tf.reduce_sum(y_true, axis=[1, 2, 3]) + tf.reduce_sum(y_pred, axis=[1, 2, 3]) + epsilon)
     return tf.reduce_mean(dice)
 
+
 def dice_loss(y_true, y_pred):
     return 1 - dice_coefficient(y_true, y_pred)
+
 
 def combined_loss(y_true, y_pred):
     bce = tf.keras.losses.binary_crossentropy(y_true, y_pred)
     d_loss = dice_loss(y_true, y_pred)
     total_loss = bce + d_loss
     return total_loss
+
 
 input_dims = (256, 144, 1) 
 model = UNet(input_dims=input_dims)
@@ -42,10 +46,13 @@ dataset = train_dataset.get_dataset()
 
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-model.fit(dataset, 
-          epochs=1, 
-          steps_per_epoch=len(dataset),
-          callbacks=[tensorboard_callback])
+model.fit(
+    dataset, 
+    epochs=5, 
+    steps_per_epoch=len(dataset),
+    callbacks=[tensorboard_callback],
+    verbose=1
+)
 
 
 model.summary()

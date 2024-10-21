@@ -96,7 +96,7 @@ for epoch in range(config.EPOCHS):
                 print(f"Validation: Batch: {i}, Loss: {loss.item()}")
 
 stop = time.time()
-print(f"Training complete! It took {(start-stop)/60} minutes")
+print(f"Training complete! It took {(stop-start)/60} minutes")
 
 # TODO generate some loss plots
 

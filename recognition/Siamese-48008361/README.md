@@ -168,6 +168,7 @@ Implemented in `train.py`:
 - Early stopping based on validation metrics
 - Balanced batch sampling
 - Mixed precision training
+- Gradient clipping (max norm = 1.0) to prevent exploding gradients
 
 To train:
 ```

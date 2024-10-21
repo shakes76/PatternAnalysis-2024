@@ -1,3 +1,8 @@
+"""
+Defines assorted functions used to load and preprocess data, and defines two Dataset classes intended for the Neural Networks defined in modules.py
+
+@author Kai Graz
+"""
 from tkinter import filedialog
 import os, torch, random, torchvision
 

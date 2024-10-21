@@ -1,3 +1,8 @@
+"""
+Provides an entry point to create, train, test, and evaluate the Neural Networks defined in modules.py
+
+@author Kai Graz
+"""
 import matplotlib.pyplot as plt
 import torch
 from train import run_model, MALIGNANT, BENIGN

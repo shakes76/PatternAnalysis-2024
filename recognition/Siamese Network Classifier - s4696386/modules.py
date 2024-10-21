@@ -1,3 +1,8 @@
+"""
+Defines two Neural Networks using pytorch, a Siamese discriminator and a Classifier intended to be initiallized with pretrained weights from the Siamese network
+
+@author Kai Graz
+"""
 import torch, torchvision
 
 """

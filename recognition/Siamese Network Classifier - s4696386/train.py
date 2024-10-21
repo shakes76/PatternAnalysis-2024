@@ -1,5 +1,9 @@
-import torch, os
+"""
+Defines assorted functions used to train and test the Neural Networks defined in modules.py
 
+@author Kai Graz
+"""
+import torch
 from modules import SiameseNetwork, Classifier
 from dataset import Siamese_DataSet, Classifier_DataSet, read_data, DEFAULT_LOCATION, PROCESSED_DATA, BENIGN, MALIGNANT
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score

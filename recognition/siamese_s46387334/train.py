@@ -14,8 +14,8 @@ import numpy as np
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from dataset import get_isic2020_data, get_isic2020_data_loaders
-from modules import TripletLoss, SiameseNet
+#from dataset import get_isic2020_data, get_isic2020_data_loaders
+#from modules import TripletLoss, SiameseNet
 
 
 
@@ -26,7 +26,7 @@ def predict_siamese_net(
     model: SiameseNet,
     data_loader: DataLoader,
     device
-) -> list, list, list:
+) -> (list, list, list):
     """
     """
     all_y_pred = []
@@ -133,11 +133,11 @@ def train_siamese_net(
             avg_val_loss = np.mean(val_running_loss)
     
             # Calculate
-            test_y_pred, test_y_probs, test_y_true, _ = predict_siamese_net(model, val_loader)
+            test_y_pred, test_y_probs, test_y_true = predict_siamese_net(model, val_loader, device)
             val_accuracy = accuracy_score(test_y_true, test_y_pred)
             val_aucroc = roc_auc_score(test_y_true, test_y_probs)
         
-            train_y_pred, train_y_probs, train_y_true, _ = predict_siamese_net(model, train_loader)
+            train_y_pred, train_y_probs, train_y_true = predict_siamese_net(model, train_loader, device)
             train_accuracy = accuracy_score(train_y_true, train_y_pred)
             train_aucroc = roc_auc_score(train_y_true, train_y_probs)
         

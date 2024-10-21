@@ -280,10 +280,26 @@ def validate(model, test_loader, criterion, device):
     return epoch_loss, epoch_acc
 
 
+def load_model(model, optimizer, filepath):
+    checkpoint = torch.load(filepath)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    print(f"Loaded model and optimizer from {filepath}")
+
+
 num_epochs = 50
+
+if os.path.exists('gfnet_model_latest.pth'):
+    load_model(model, optimizer, 'gfnet_model_latest.pth')
+
 for epoch in range(num_epochs):
     train_loss, train_acc = train(model, train_loader, criterion, optimizer, device)
     test_loss, test_acc = validate(model, test_loader, criterion, device)
 
     print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. test Loss: {test_loss:.4f}, test Acc: {test_acc:.4f}")
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, 'gfnet_model_latest.pth')
+
 

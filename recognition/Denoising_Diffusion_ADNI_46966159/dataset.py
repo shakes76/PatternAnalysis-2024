@@ -9,7 +9,7 @@ from tqdm import tqdm
 dataroot = "/home/lgmoak/Nextcloud/University/Courses/COMP3710/Assessment/PatternAnalysis-2024/recognition/Denoising_Diffusion_ADNI_46966159/ADNI"
 
 # chosen hyperparameters
-batch_size = 128
+batch_size = 64
 image_size = 64
 
 # normalise, resize images and randomly flip

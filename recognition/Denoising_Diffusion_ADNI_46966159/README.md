@@ -134,6 +134,8 @@ found. Finally, the images were normalised and then converted to a tensor.
 An example batch of training images is displayed below.
 ![training_img.png](figures/training_img.png)
 
+![forward_process.png](figures/forward_process.png)
+
 $`t`$-distributed stochastic neighbor embeddings is a non-linear dimensionality reduction technique
 used to visualise high-dimensional data[^4]. $`t`$-SNE measures similarity between data points by joint
 probabilities and then attempts to minimise the KL-divergence between the joint probabilities

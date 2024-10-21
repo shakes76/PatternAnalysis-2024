@@ -54,9 +54,29 @@ This should ideally be run with a NVIDIA A100 GPU with 128GB of DRAM. Testing on
 
 ## Code Structure
 
+The following files are included in this repository:
+
+```
+dataset.py
+modules.py
+predict.py
+train.py
+utils.py
+```
+
+To use pre-trained models instead of training new models, please set the `load_models` hyperparameter in `utils.py` to `True`.
+That is: `load_models = True`.
+Also set the `model_path` hyperparameter to the file path of these pretrained models. The pretrained model files 
+should be `.pth` files.
+
+Optionally, a seed for training the model can be set by changing the `seed` hyperparameter in `utils.py`. The `seed` should be an integer. Otherwise, a random `seed` will be chosen.
+
 ## Results
 
-The graphs below show the loss of the generator and discriminator during their training cycles.
+## Regular Training
+
+### Extended Training
+The graphs below show the loss of the generator and discriminator during their training cycles for 50 epochs (35500 iterations). The training time for this model was approximately 8hrs and 24mins on NVIDIA A100 GPU. 
 ![Disc_loss](assets/Disc_loss.png)
 
 ![Gen_loss](assets/Gen_loss.png)

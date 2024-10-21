@@ -3,7 +3,6 @@ The data loader for the GNN node classification model
 @author Anthony Ngo: s4801902
 @date 21/10/2024
 """
-
 import numpy as np
 import torch
 from torch_geometric.data import Data
@@ -32,9 +31,3 @@ def GNNDataLoader(filepath='facebook.npz'):
     data = Data(x=features, edge_index=edges, y=targets)
 
     return data
-
-
-
-
-
-

@@ -1,9 +1,9 @@
-# COMP3710 StyleGAN2 MRI Image Generator
+# COMP3710 StyleGAN2 Brain Image Generator
 A StyleGAN2 model trained on the OASIS dataset.
 
 ## Objective
-The objective is to create a generative model of one of the ADNI brain data set using a StyleGAN2
-that has a reasonaly clear image. Furthermore, a UMAP embeddings plot with ground truth in colours 
+The objective is to create a generative model of the ADNI brain data set using a StyleGAN2
+that has a reasonably clear image. Furthermore, a UMAP embeddings plot with ground truth in colours 
 is included.
 
 ## StyleGAN2 - Algorithm Description
@@ -25,13 +25,48 @@ The StyleGAN allows for style mixing, since the styles are separated across diff
 using different data sources. This allowing for better control over high-level and low-level features independently, making it possible to blend, interpolate, or adjust specific aspects of the generated image. 
 
 ### StyleGAN2
-StyleGAN2 builds upon the original StyleGAN architecture by addressing several limitations, such as visible blob-like artifacts on the images and the progressive growing problem. StyleGAN2 removes the artifacts by replacing the AdaIN layer with weight modulation. Instead of manipulating the feature maps using AdaIN, the convolution kernel weights are scaled
+StyleGAN2 builds upon the original StyleGAN architecture by addressing several limitations, such as visible blob-like artifacts on the images and the progressive growing problem. StyleGAN2 removes the blob-like artifacts by replacing the AdaIN layer with weight modulation. Instead of manipulating the feature maps using AdaIN, the convolution kernel weights are scaled
 with a style vector in weight modulation and then the kernel is normalised in weight demodulation. This removes the progressive growing problem which introduces the blob-like artifacts. The resulting architecture produces higher quality images than the StyleGAN.
-
 
 ## The Problem
 stuff
 
+## Data
+The dataset that this model is trained on is the publicly available OASIS brain dataset. This dataset contains 2D MRI image slices of brains. The directory structure of this dataset is the following:
 
+This model trains on images taken from all the folders, i.e. it does not discriminate between images in the train, test, or validate directories. This is so that this model can train on more diverse images. 
+
+## Requirements
+
+This program has been tested to run on Windows. 64-bit Python3.11 or later is recommended. Anaconda3 or later is recommeded. The required libraries are: 
+
+pytorch
+torchvision
+pytorch-cuda
+cudatoolkit
+numpy
+matplotlib
+tqdm
+
+Libraries may use newer versions.
+
+This should ideally be run with a NVIDIA A100 GPU with 128GB of DRAM. Testing on other GPUs has not been performed.
+
+## Code Structure
+
+## Results
+
+The graphs below show the loss of the generator and discriminator during their training cycles.
+![Disc_loss](assets/Disc_loss.png)
+
+![Gen_loss](assets/Gen_loss.png)
+
+![Comb_loss](assets/Combined_loss.png)
+
+
+
+## Conclusion
+
+## References
 
 

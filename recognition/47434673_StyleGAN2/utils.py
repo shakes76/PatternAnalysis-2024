@@ -50,17 +50,17 @@ ngpu = 1
 
 
 # Hyper Parameters
-epochs = 300           
-learning_rate = 0.001   
-channels = 1            
-batch_size = 32         
-image_size = 64         
-log_resolution = 7      
-image_height = 2**log_resolution    
-image_width = 2**log_resolution     
-z_dim = 256             
-w_dim = 256             
-lambda_gp = 10          
+epochs = 300
+learning_rate = 0.001
+channels = 1
+batch_size = 32
+image_size = 64
+log_resolution = 7
+image_height = 2**log_resolution
+image_width = 2**log_resolution
+z_dim = 256
+w_dim = 256
+lambda_gp = 10
 interpolation = "bilinear" 
 save = "save"
 

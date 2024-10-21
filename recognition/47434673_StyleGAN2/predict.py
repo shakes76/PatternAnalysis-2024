@@ -14,13 +14,11 @@ import utils
 import dataset
 import train
 
-
-
 ###################################################
 # Loss visualisation and Generated images plotting
 
-
 def plot_loss(G_Loss, D_Loss):
+    """Plots Graphs of Discriminator and Generator Loss over iterations"""
     plt.figure(figsize=(10,5))
     plt.title("Generator Loss During Training")
     plt.plot(G_Loss, label="G", color="blue")
@@ -39,6 +37,7 @@ def plot_loss(G_Loss, D_Loss):
 
 
 def generate_examples(gen, mapping_network, epoch, device):
+    """Generates images of brains using trained StyleGAN2 model"""
     n = 10
     for i in range(n):
         with torch.no_grad():

@@ -13,8 +13,6 @@ from tqdm import tqdm
 import utils
 
 
-
-
 ##################################################
 # Modules
 

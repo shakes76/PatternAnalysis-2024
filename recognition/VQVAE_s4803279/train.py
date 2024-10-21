@@ -14,16 +14,17 @@ from dataset import create_nifti_data_loaders
 from modules import VQVAE2
 
 
-def train_epoch(model, data_loader, optimizer, device):
+def train_epoch(model, data_loader, optimiser, device):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.train()
     total_loss = 0
     for batch in data_loader:
         batch = batch.to(device)
 
-        optimizer.zero_grad()
+        optimiser.zero_grad()
         loss, _ = model(batch)
         loss.backward()
-        optimizer.step()
+        optimiser.step()
 
         total_loss += loss.item()
 
@@ -32,6 +33,7 @@ def train_epoch(model, data_loader, optimizer, device):
 
 
 def validate_epoch(model, data_loader, device):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     total_loss = 0
     with torch.no_grad():
@@ -68,9 +70,9 @@ def main(
         batch_size = 64,
         num_epochs = 1,
         lr = 1e-3,
-        hidden_dims = [128, 256],
-        num_embeddings = [512, 1024],
-        embedding_dims = [64, 64],
+        hidden_dims = [256, 128],
+        num_embeddings = [512, 256],
+        embedding_dims = [64, 32],
         commitment_cost = 0.25,
         num_workers = 4):
     # Check if output directory exists
@@ -88,11 +90,11 @@ def main(
     print("Done loading data.\n")
 
     # Initialize the model
-    in_channels = 1  # Assuming single-channel (grayscale) images
+    in_channels = 1
     model = VQVAE2(in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost).to(device)
 
     # Optimiser
-    optimiser = optim.Adam(model.parameters(), lr=lr)
+    optimiser = optim.Adam(model.parameters(), lr = lr)
 
     # Lists to store losses
     train_losses = []
@@ -125,6 +127,7 @@ def main(
 
 
 if __name__ == "__main__":
-    data_dir = 'HipMRI_study_keras_slices_data'
+    current_location = os.getcwd()
+    data_dir = os.path.join(current_location, 'recognition', 'VQVAE_s4803279', 'HipMRI_study_keras_slices_data')
     output_dir = 'trained_vqvae2_model'
     main(data_dir, output_dir)

@@ -33,6 +33,9 @@ class VectorQuantizer(nn.Module):
 
 
     def forward(self, inputs):
+        # Ensure the embeddings are on the same device as inputs
+        self.embedding = self.embedding.to(inputs.device)
+        
         # Convert inputs from BCHW -> BHWC
         inputs = inputs.permute(0, 2, 3, 1).contiguous()
         input_shape = inputs.shape
@@ -41,7 +44,9 @@ class VectorQuantizer(nn.Module):
         flat_input = inputs.view(-1, self.embedding_dim)
 
         # Calculate distances
-        distances = (torch.sum(flat_input ** 2, dim = 1, keepdim = True) + torch.sum(self.embedding.weight ** 2, dim = 1) - 2 * torch.matmul(flat_input, self.embedding.weight.t()))
+        distances = (torch.sum(flat_input ** 2, dim = 1, keepdim = True)
+                    + torch.sum(self.embedding.weight ** 2, dim = 1)
+                    - 2 * torch.matmul(flat_input, self.embedding.weight.t()))
 
         # Encoding
         encoding_indices = torch.argmin(distances, dim = 1).unsqueeze(1)

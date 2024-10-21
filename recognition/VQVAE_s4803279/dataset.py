@@ -21,7 +21,7 @@ import skimage.transform
 
 
 transform = transforms.Compose([
-    transforms.Resize((128, 128)),
+    transforms.Resize((256, 128)),
     transforms.RandomCrop(64),
     transforms.RandomHorizontalFlip(),
 ])
@@ -147,7 +147,7 @@ class VQVAENIfTIDataset(Dataset):
         return image_tensor
 
 
-def create_nifti_data_loaders(data_dir, batch_size, num_workers = 4, normImage = True, categorical = False, target_shape = (128, 128)):
+def create_nifti_data_loaders(data_dir, batch_size, num_workers = 4, normImage = True, categorical = False, target_shape = (256, 128)):
     dataset = VQVAENIfTIDataset(data_dir, normImage = normImage, categorical = categorical, target_shape = target_shape)
     data_loader = DataLoader(dataset, batch_size = batch_size, shuffle = True, num_workers = num_workers)
     return data_loader

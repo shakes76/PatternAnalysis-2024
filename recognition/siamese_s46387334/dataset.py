@@ -6,7 +6,6 @@ Contains the data loader for loading and preprocessing the ISIC 2020 Data
 ### Imports
 import os
 import random
-
 import numpy as np
 import pandas as pd
 import torch

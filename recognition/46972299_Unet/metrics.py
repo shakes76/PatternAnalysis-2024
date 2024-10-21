@@ -9,10 +9,24 @@ from torch.nn.modules.loss import _Loss
 import torch.nn.functional as functional
 
 
+class Accuracy():
+    def __init__(self) -> None:
+        self.correct = 0
+        self.total = 0
+
+    def forward(self, prediction: torch.Tensor, truth: torch.Tensor) -> None:
+        prediction_mask = torch.argmax(prediction, dim=1)
+        self.correct += (prediction_mask == truth).sum().item()
+        self.total += truth.numel()
+
+    def accuracy(self) -> float:
+        return 100 * self.correct / self.total
+
+
 class DiceLoss(_Loss):
     SMOOTH_FACTOR = 1e-7
 
-    def __init__(self, num_classes: int, device: torch.device, smooth_factor: int = SMOOTH_FACTOR) -> None:
+    def __init__(self, num_classes: int, device: torch.device, smooth_factor: float = SMOOTH_FACTOR) -> None:
         super(DiceLoss, self).__init__()
         self.num_classes = num_classes
         self.smooth_factor = smooth_factor
@@ -23,6 +37,13 @@ class DiceLoss(_Loss):
         # stores the loss for each iteration for each class, including the total loss
         self.iteration_loss_tracking = torch.zeros(
             0, self.num_classes + 1, device=self.device)
+
+    def get_smooth(self) -> float:
+        return self.smooth_factor
+
+    def reset(self) -> None:
+        self.epoch_loss_tracking = None
+        self.reset_epoch()
 
     def reset_epoch(self) -> None:
         self.iteration_loss_tracking = torch.zeros(

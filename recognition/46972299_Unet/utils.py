@@ -9,11 +9,71 @@ import nibabel as nib
 from tqdm import tqdm
 import time
 from enum import Enum
+import matplotlib.pyplot as plt
+from metrics import DiceLoss
 
 
 class ModelState(Enum):
+    TRAINING = 0
+    VALIDATING = 1
+    DONE = 2
+
+
+class ModelFile(Enum):
     MODEL = "model"
     CRITERION = "criterion"
+    INPUT_CHANNELS = "input_channels"
+    NUM_CLASSES = "num_classes"
+    DATA_LOADER = "data_loader"
+    TRAINED_LOCALLY = "trained_locally"
+    STATE = "state"
+
+
+def save_loss_figures(criterion: DiceLoss, output_path: str, mode: str, file_names: tuple[str, str, str] = ("complete_dice", "average_dice", "end_dice")) -> None:
+    # first do complete dice loss
+    losses = criterion.get_all_losses()
+    x_axis = list(range(len(losses[0])))
+    plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
+    for i, class_loss in enumerate(losses[1:]):
+        plt.plot(x_axis, class_loss, label=f"Class {
+            i + 1} Loss", marker='o')
+    plt.xlabel("Total iterations (including epochs)")
+    plt.ylabel("DICE loss")
+    plt.title(f"Complete DICE Loss over {mode}")
+    plt.legend()
+    plt.grid()
+    plt.savefig(f"{output_path}{file_names[0]}_{mode}.png")
+    plt.close()
+
+    # second do average dice loss
+    losses = criterion.get_average_losses()
+    x_axis = list(range(len(losses[0])))
+    plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
+    for i, class_loss in enumerate(losses[1:]):
+        plt.plot(x_axis, class_loss, label=f"Class {
+            i + 1} Loss", marker='o')
+    plt.xlabel("Total epochs")
+    plt.ylabel("DICE loss")
+    plt.title(f"Average DICE Loss over {mode}")
+    plt.legend()
+    plt.grid()
+    plt.savefig(f"{output_path}{file_names[1]}_{mode}.png")
+    plt.close()
+
+    # last do end dice loss
+    losses = criterion.get_end_losses()
+    x_axis = list(range(len(losses[0])))
+    plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
+    for i, class_loss in enumerate(losses[1:]):
+        plt.plot(x_axis, class_loss, label=f"Class {
+            i + 1} Loss", marker='o')
+    plt.xlabel("Total epochs")
+    plt.ylabel("DICE loss")
+    plt.title(f"DICE Loss at the end of each epoch ever {mode}")
+    plt.legend()
+    plt.grid()
+    plt.savefig(f"{output_path}{file_names[2]}_{mode}.png")
+    plt.close()
 
 
 def cur_time(start: float) -> float:

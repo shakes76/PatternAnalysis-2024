@@ -4,15 +4,20 @@ The test driver script, runs the Unet and saves the output
 @author Carl Flottmann
 """
 import torch
-from utils import cur_time, ModelState
-from metrics import DiceLoss
+from utils import cur_time, ModelFile, save_loss_figures, ModelState
+from modules import Improved3DUnet
+from metrics import DiceLoss, Accuracy
+from dataset import *
 import time
 import matplotlib.pyplot as plt
 
-# rangpur or local machine
 LOCAL = True
-LOAD_FILE_PATH = ".\\model\\final_model.pt"
+LOAD_FILE_PATH = ".\\model\\validated_model.pt"
+# make sure to include the directory separator as a suffix here
 OUTPUT_PATH = ".\\model\\"
+BATCH_SIZE = 1
+SHUFFLE = False
+WORKERS = 0
 
 
 def main() -> None:
@@ -26,63 +31,88 @@ def main() -> None:
         print(f"[{cur_time(script_start_t)}] Running on device {device}")
     torch.autograd.set_detect_anomaly(True)  # help detect problems
 
-    output = torch.load(LOAD_FILE_PATH, weights_only=True)
-    model = output[ModelState.MODEL.value]
-    criterion = DiceLoss.load_state_dict(output[ModelState.CRITERION.value])
+    torch.serialization.add_safe_globals([ModelState])
+    file_dict = torch.load(LOAD_FILE_PATH, weights_only=True)
 
-    # first do complete dice loss
-    losses = criterion.get_all_losses()
+    old_criterion = DiceLoss.load_state_dict(
+        file_dict[ModelFile.CRITERION.value])
+    if file_dict[ModelFile.TRAINED_LOCALLY.value]:
+        print(f"[{cur_time(script_start_t)}] This model was trained locally")
+    else:
+        print(f"[{cur_time(script_start_t)}] This model was trained on rangpur")
 
-    x_axis = list(range(len(losses[0])))
+    if file_dict[ModelFile.TRAINED_LOCALLY.value] != LOCAL:
+        print(f"[{cur_time(script_start_t)
+                  }] Warning! Not running on the same computer this model was trained on")
 
-    plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
-    for i, class_loss in enumerate(losses[1:]):
-        plt.plot(x_axis, class_loss, label=f"Class {
-            i + 1} Loss", marker='o')
+    # check if the model was stopped prematurely and plot the loss if it was
+    if file_dict[ModelFile.STATE.value] == ModelState.TRAINING:
+        print(
+            f"[{cur_time(script_start_t)}] Warning! This model did not finish training")
+        try:
+            save_loss_figures(old_criterion, OUTPUT_PATH, "training")
+        except AttributeError:
+            print(
+                f"[{cur_time(script_start_t)}] Warning! model had no data in criterion")
 
-    plt.xlabel("Total iterations (including epochs)")
-    plt.ylabel("DICE loss")
-    plt.title("Complete DICE Loss Over Training")
-    plt.legend()
-    plt.grid()
-    plt.savefig(f"{OUTPUT_PATH}complete_dice_loss.png")
-    plt.close()
+    elif file_dict[ModelFile.STATE.value] == ModelState.VALIDATING:
+        print(
+            f"[{cur_time(script_start_t)}] Warning! This model did not finish validating")
+        try:
+            save_loss_figures(old_criterion, OUTPUT_PATH, "validation")
+        except AttributeError:
+            print(
+                f"[{cur_time(script_start_t)}] Warning! model had no data in criterion")
 
-    # second do average dice loss
-    losses = criterion.get_average_losses()
+    else:  # state is DONE
+        print(
+            f"[{cur_time(script_start_t)}] This model completed training and validation")
 
-    x_axis = list(range(len(losses[0])))
+     # get the model with the parameters back
+    num_classes = file_dict[ModelFile.NUM_CLASSES.value]
+    input_channels = file_dict[ModelFile.INPUT_CHANNELS.value]
+    model = Improved3DUnet(input_channels, num_classes)
+    model.load_state_dict(file_dict[ModelFile.MODEL.value])
+    model.to(device)
 
-    plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
-    for i, class_loss in enumerate(losses[1:]):
-        plt.plot(x_axis, class_loss, label=f"Class {
-            i + 1} Loss", marker='o')
+    # get the data loader with the parameters back
+    old_data_loader = ProstateLoader.load_state_dict(
+        file_dict[ModelFile.DATA_LOADER.value])
+    # setup data
+    if LOCAL:
+        data_loader = ProstateLoader(LOCAL_DATA_DIR + SEMANTIC_MRS + WINDOWS_SEP,
+                                     LOCAL_DATA_DIR + SEMANTIC_LABELS + WINDOWS_SEP, num_load=old_data_loader.get_num_load(), start_t=script_start_t, batch_size=BATCH_SIZE,
+                                     shuffle=SHUFFLE, num_workers=WORKERS)
+    else:  # on rangpur
+        data_loader = ProstateLoader(RANGPUR_DATA_DIR + SEMANTIC_MRS + LINUX_SEP,
+                                     RANGPUR_DATA_DIR + SEMANTIC_LABELS + LINUX_SEP, num_load=old_data_loader.get_num_load(), start_t=script_start_t, batch_size=BATCH_SIZE,
+                                     shuffle=SHUFFLE, num_workers=WORKERS)
 
-    plt.xlabel("Total epochs")
-    plt.ylabel("DICE loss")
-    plt.title("Average DICE Loss Over Training")
-    plt.legend()
-    plt.grid()
-    plt.savefig(f"{OUTPUT_PATH}average_dice_loss.png")
-    plt.close()
+    # reinitialise criterion with new device but old smooth factor for accuracy
+    criterion = DiceLoss(num_classes, device, old_criterion.get_smooth())
 
-    # last do end dice loss
-    losses = criterion.get_end_losses()
+    print(f"[{cur_time(script_start_t)}] Testing...")
+    model.eval()
+    accuracy = Accuracy()
 
-    x_axis = list(range(len(losses[0])))
+    with torch.no_grad():
+        for step, (image, mask) in enumerate(data_loader.test()):
+            image = image.to(device)
+            mask = mask.to(device)
 
-    plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
-    for i, class_loss in enumerate(losses[1:]):
-        plt.plot(x_axis, class_loss, label=f"Class {
-            i + 1} Loss", marker='o')
+            output = model(image)
 
-    plt.xlabel("Total epochs")
-    plt.ylabel("DICE loss")
-    plt.title("DICE Loss at the End of Each Epoch Over Training")
-    plt.legend()
-    plt.grid()
-    plt.savefig(f"{OUTPUT_PATH}end_dice_loss.png")
-    plt.close()
+            accuracy.forward(output, mask)
+            total_loss, class_loss = criterion(output, mask)
+
+            print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
+                  total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
+
+        print(f"[{cur_time(script_start_t)}] Test accuracy: {
+              accuracy.accuracy()}%")
+
+    print(f"[{cur_time(script_start_t)}] Testing complete")
+    save_loss_figures(criterion, OUTPUT_PATH, "testing")
 
 
 if LOCAL:

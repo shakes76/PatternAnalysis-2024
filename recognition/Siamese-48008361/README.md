@@ -288,7 +288,7 @@ Based on results and dermatologist consultations:
 
 7. Using ensemble methods to combine multiple models for improved performance, or considering simpler models to reduce overfitting. This can be done by using simpler ensembles such as a combination of resnet18 and efficientnet-b0.
 
-8. Although weighted loss functions such as Focal Loss were experimented with, it was not used in the final model, however this could be used to improve the model's performance in conjunction with albumenations.\
+8. Although weighted loss functions such as Focal Loss were experimented with, it was not used in the final model, however this could be used to improve the model's performance in conjunction with albumenations.
 
 9. Certain solutions combined both the 2019 and 2020 ISIC datasets, this could be done to improve the model's performance, however this was not done in this project as the goal was to achieve 80% accuracy on the 2020 dataset.
 

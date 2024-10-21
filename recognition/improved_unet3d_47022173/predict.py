@@ -32,7 +32,7 @@ def predict(
     """
     test_transforms = tio.Compose([
         tio.RescaleIntensity((0, 1)),
-        tio.Resize((128,128,128)),
+        tio.Resize((WIDTH,HEIGHT,DEPTH)),
         tio.ZNormalization(),
     ])
 
@@ -65,14 +65,12 @@ def predict(
 
             # Save predictions
             save(predictions, affines, i, save_path)
-
+    
             for class_idx in range(N_CLASSES):
                 class_logits = logits[:, class_idx, ...]
                 class_masks = one_hot_masks_3d[:, class_idx, ...]
-                dice_scores[class_idx] += dice_score(class_logits, class_masks)
+                dice_scores[class_idx] += 1 - dice_score(class_logits, class_masks)
     
-
-    # Print Dice scores for each class
-    avg_test_loss = test_loss / len(test_dataloader)
-    print(f"Average Dice Score: {list(map(lambda x: float(x / len(test_dataloader)),
-                                          dice_scores))}")
+    # Compute the average Dice score per class
+    average_dice_scores = [score / len(test_dataloader) for score in dice_scores]
+    print(f"Average Dice Scores per class: {[float(score) for score in average_dice_scores]}")

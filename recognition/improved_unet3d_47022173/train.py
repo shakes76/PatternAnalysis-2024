@@ -38,8 +38,8 @@ def save(
     predictions = torch.argmax(predictions, dim=1)
 
     # Reshape predictions to the correct 3D format [batch, 1, depth, height, width]
-    batch_size = int(predictions.shape[0] / (1 * 128 * 128 * 128))  # Compute batch size if needed
-    predictions = predictions.view(batch_size, 1, 128, 128, 128).cpu().numpy()
+    batch_size = int(predictions.shape[0] / (1 * WIDTH * HEIGHT * DEPTH)) 
+    predictions = predictions.view(batch_size, 1, WIDTH, HEIGHT, DEPTH).cpu().numpy()
 
     # Extract the first prediction and remove the batch dimension
     prediction = predictions[0].squeeze()
@@ -92,14 +92,11 @@ def validate(
             for class_idx in range(N_CLASSES):
                 class_logits = logits[:, class_idx, ...]
                 class_masks = one_hot_masks_3d[:, class_idx, ...]
-                dice_scores[class_idx] += dice_score(class_logits, class_masks)
+                dice_scores[class_idx] += 1 - dice_score(class_logits, class_masks)
     
     # Compute the average Dice score per class
     average_dice_scores = [score / len(valid_dataloader) for score in dice_scores]
-    
-    # Print the results as a list of floats
     print(f"Average Dice Scores per class: {[float(score) for score in average_dice_scores]}")
-    
     return average_dice_scores
 
 
@@ -134,15 +131,15 @@ def train(
     train_transforms = tio.Compose([
         tio.RescaleIntensity((0, 1)),
         tio.RandomFlip(),
-        tio.Resize((128,128,128)),
-        tio.RandomAffine(degrees=10),
+        tio.Resize((WIDTH,HEIGHT,DEPTH)),
+        tio.RandomAffine(degrees=0),
         tio.RandomElasticDeformation(),
         tio.ZNormalization(),
     ])
 
     valid_transforms = tio.Compose([
         tio.RescaleIntensity((0, 1)),
-        tio.Resize((128,128,128)),
+        tio.Resize((WIDTH,HEIGHT,DEPTH)),
         tio.ZNormalization(),
     ])
 

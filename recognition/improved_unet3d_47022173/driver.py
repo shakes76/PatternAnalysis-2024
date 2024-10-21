@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', type=str, required=True, help="Train, debug or predict.")
     parser.add_argument('-s', '--system', type=str, required=True, help="Local or rangpur.")
-    parser.add_argument('-sp', '--save-path', type=str, required=True, help="Path to save preds.")
+    parser.add_argument('-sp', '--save-path', type=str, help="Path to save preds.")
     parser.add_argument('-p', '--model-path', type=str, help="Path to the model file for predict.")
     parser.add_argument('-lr', '--learning-rate', type=float, help="Learning rate for optimizer.")
     parser.add_argument('-bs', '--batch-size', type=int, help="Batch size for loader.")
@@ -33,8 +33,10 @@ if __name__ == "__main__":
     else:
         images_path = "./data/semantic_MRs_anon/"
         masks_path = "./data/semantic_labels_anon/"
-        epochs = 10
+        epochs = 50
         batch_size = 2
+        
+    save_path = args.save_path if args.save_path else "saves"
 
     if args.mode == "train" or args.mode == "debug":
         # Training parameters    
@@ -55,13 +57,13 @@ if __name__ == "__main__":
             gamma,
             epochs,
             batch_size,
-            args.save_path)
+            save_path)
         
     elif args.mode == "predict" and args.model_path:
         predict(
             args.model_path,
             images_path, 
             masks_path,
-            args.save_path)
+            save_path)
     else:
         print("Invalid mode. Please select train or predict with model path.")

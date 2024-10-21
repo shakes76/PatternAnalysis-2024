@@ -104,8 +104,8 @@ class ProstateDataset3D(Dataset):
 			case _:
 				raise ValueError(f"Invalid mode: {mode}")
 
-		self.images = torch.empty(0, 128, 128, 128)
-		self.masks = torch.empty(0, 128, 128, 128)
+		self.images = torch.empty(0, WIDTH, HEIGHT, DEPTH)
+		self.masks = torch.empty(0, WIDTH, HEIGHT, DEPTH)
 		self.affines = torch.empty(0, 4, 4)
 
 		# Load and transform LOAD_SIZE (50) images at a time due to memory constraints
@@ -121,7 +121,8 @@ class ProstateDataset3D(Dataset):
 			)
 			
 			transformed = transforms(subject)
-			self.images = torch.cat((self.images, transformed['image'].data), dim=0) # Batch, 128 ,128 ,128
+			# Batch, 128, 128, 128
+			self.images = torch.cat((self.images, transformed['image'].data), dim=0) 
 			self.masks = torch.cat((self.masks, transformed['mask'].data), dim=0)
 			self.affines = torch.cat((self.affines, torch.tensor(np.array(affines))), dim=0)
 	

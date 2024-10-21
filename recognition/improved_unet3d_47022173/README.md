@@ -33,13 +33,15 @@ The 3d improved UNet3D uses both skip connections across the 'U' and residual co
 ## Usage
 
 ```
-usage: driver.py [-h] -m MODE -s SYSTEM [-p MODEL_PATH] [-lr LEARNING_RATE] [-bs BATCH_SIZE] [-e EPOCHS] [-wd WEIGHT_DECAY] [-ss STEP_SIZE] [-g GAMMA]
+usage: driver.py [-h] -m MODE -s SYSTEM [-sp SAVE_PATH] [-p MODEL_PATH] [-lr LEARNING_RATE] [-bs BATCH_SIZE] [-e EPOCHS] [-wd WEIGHT_DECAY] [-ss STEP_SIZE] [-g GAMMA]
 
 options:
   -h, --help            show this help message and exit
   -m MODE, --mode MODE  Train, debug or predict.
   -s SYSTEM, --system SYSTEM
                         Local or rangpur.
+  -sp SAVE_PATH, --save-path SAVE_PATH
+                        Path to save preds.
   -p MODEL_PATH, --model-path MODEL_PATH
                         Path to the model file for predict.
   -lr LEARNING_RATE, --learning-rate LEARNING_RATE
@@ -66,6 +68,8 @@ and uses a batch size of 4.
 ## Results
 
 ### Hyperparameter search
+
+### Comparing predictions to masks
 
 ## Discussion
 

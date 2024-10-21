@@ -8,7 +8,7 @@ import torchio as tio
 # Data split parameters
 VALID_START = 195
 TEST_START = 203
-DEBUG = 6
+DEBUG = 18
 LOAD_SIZE = 50
 
 # Data loading parameters
@@ -24,3 +24,8 @@ LR_D = 1e-3
 WD_D = 1e-2
 SS_D = 10
 G_D = 0.1
+
+# Output dimensions
+WIDTH = 128
+HEIGHT = 128
+DEPTH = 64

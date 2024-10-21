@@ -116,13 +116,11 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64, p
         actual_epochs += 1
 
         # Check for early stopping
-        # if val_accuracy > best_val_acc:
-        #     best_val_acc = val_accuracy
-        if average_val_loss < best_val_loss:  # Monitor validation loss
-            best_val_loss = average_val_loss
+        if val_accuracy > best_val_acc:
+            best_val_acc = val_accuracy
             no_improve = 0
             # Save the best model
-            torch.save(model.state_dict(), 'scratch_b_1e4_nofreeze.pth')
+            torch.save(model.state_dict(), 'best_model.pth')
         else:
             no_improve += 1
 
@@ -147,7 +145,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64, p
         print(f'Current Learning Rate: {current_lr}')
     
     # Load the best model for testing
-    model.load_state_dict(torch.load('scratch_b_1e4_nofreeze.pth', weights_only=True))
+    model.load_state_dict(torch.load('best_model.pth', weights_only=True))
     model.eval()
     correct = 0
     total = 0
@@ -172,7 +170,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64, p
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("loss_scratch_b_1e4_nofreeze.png")  
+    plt.savefig("loss.png")  
 
     # Plotting training and validation accuracy
     plt.figure(figsize=(10, 5))
@@ -184,7 +182,7 @@ def train_and_evaluate(train_dir, test_dir, epochs=50, lr=1e-5, batch_size=64, p
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("acc_scratch_b_1e4_nofreeze.png")  
+    plt.savefig("acc.png")  
 
 if __name__ == "__main__":
     #Run training and evaluate

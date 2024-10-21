@@ -61,7 +61,7 @@ def show_example_images(model, test_loader, num_examples=5, class_names=['NC', '
         axes[i].axis('off')
     # Plot and save the figure
     plt.tight_layout()
-    plt.savefig('predict/example_classifications_scratch_b_1e4_2.png')
+    plt.savefig('predict/example_classifications.png')
     plt.close()
 
 def plot_confusion_matrix(all_labels, all_preds, class_names=['NC', 'AD']):
@@ -72,7 +72,7 @@ def plot_confusion_matrix(all_labels, all_preds, class_names=['NC', 'AD']):
     plt.title('Confusion Matrix')
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.savefig('predict/confusion_matrix_scratch_b_1e4_2.png')
+    plt.savefig('predict/confusion_matrix.png')
     plt.close()
 
 def main(model_path, test_dir, num_samples=5,model_name='gfnet_h_b'):

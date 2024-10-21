@@ -5,42 +5,39 @@ Created by: Shogo Terashima
 '''
 import numpy as np
 import torch
+import torch.nn as nn
+
 
 class EarlyStopping:
     def __init__(self, path='checkpoint.pt', min_delta=0.0, patience=5):
         '''
         Initialize the early stopping class.
         Args:
-            min_deleta: Minimum change considered as improvement
+            min_delta: Minimum change considered as improvement
             patience (int): specify how many consecutive times the condition is met before stopping.
         '''
         self.min_delta = min_delta
         self.patience = patience
         self.counter = 0
         self.path = path
-        self.best_score = None
+        self.best_loss = None
         self.early_stop = False
         self.best_model_state = None
 
     def __call__(self, validation_loss, model):
-        score = -validation_loss
-
-        if self.best_score is None:
-            self.best_score = score
+        if self.best_loss is None:
+            self.best_loss = validation_loss
             self.save_checkpoint(model)
-        elif score < self.best_score + self.min_delta:
+        elif validation_loss > self.best_loss - self.min_delta:
             self.counter += 1
             if self.counter >= self.patience:
-                print(f"Early stopping triggered after {self.counter} consecutive epochs.")
+                print("Early stopping triggered!")
                 self.early_stop = True
-                self.stop_training = True
         else:
-            self.best_score = score
+            self.best_loss = validation_loss
             self.save_checkpoint(model)
             self.counter = 0
+
     def save_checkpoint(self, model):
-        '''
-        Save model
-        '''
         torch.save(model.state_dict(), self.path)
         self.best_model_state = model.state_dict()

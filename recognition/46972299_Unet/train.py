@@ -25,7 +25,6 @@ INPUT_CHANNELS = 1  # greyscale
 NUM_LOADED = 7  # set to None to load all
 SHUFFLE = False
 WORKERS = 0
-CLASS_WEIGHTS = [1, 1, 1, 1, 1, 1]
 
 # taken from the paper on the improved unet
 INITIAL_LR = 5e-4
@@ -78,12 +77,12 @@ def main() -> None:
     scheduler = optim.lr_scheduler.LambdaLR(
         optimiser, lr_lambda=lambda epoch: DECAY_FACTOR ** epoch)
     # will use dice loss as per the task requirements
-    weights = torch.tensor(CLASS_WEIGHTS)
-    criterion = DiceLoss(NUM_CLASSES, device, weights=weights)
+    criterion = DiceLoss(NUM_CLASSES, device)
 
     model = model.to(device)
 
     # ================== training procedure
+    output_steps = int(math.ceil(0.25 * data_loader.validate_size()))
     # output about every 10% increment
     output_epochs = int(math.ceil(0.1 * EPOCHS))
     num_digits = len(str(EPOCHS))
@@ -100,15 +99,15 @@ def main() -> None:
 
             output = model(image)
 
-            total_loss, class_loss = criterion(
-                output, mask, enable_weights=True)
+            total_loss, class_loss = criterion(output, mask)
 
             optimiser.zero_grad()
             total_loss.backward()
             optimiser.step()
 
-            print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
-                  total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
+            if step % output_steps == 0:
+                print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
+                    total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
 
         scheduler.step()
         criterion.save_epoch()
@@ -162,10 +161,10 @@ def main() -> None:
             accuracy.forward(output, mask)
             total_loss, class_loss = criterion(output, mask)
 
-            print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
-                  total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
-
             if step % output_steps == 0:
+                print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
+                    total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
+
                 checkpoint = {
                     ModelFile.MODEL.value: model.state_dict(),
                     ModelFile.CRITERION.value: criterion.state_dict(),

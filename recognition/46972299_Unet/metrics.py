@@ -26,15 +26,11 @@ class Accuracy():
 class DiceLoss(_Loss):
     SMOOTH_FACTOR = 1e-7
 
-    def __init__(self, num_classes: int, device: torch.device, smooth_factor: float = SMOOTH_FACTOR, weights: list[float] = None) -> None:
+    def __init__(self, num_classes: int, device: torch.device, smooth_factor: float = SMOOTH_FACTOR) -> None:
         super(DiceLoss, self).__init__()
         self.num_classes = num_classes
         self.smooth_factor = smooth_factor
         self.device = device
-        if len(weights) != num_classes:
-            raise ValueError(
-                "Number of weights should be the same as the number of classes")
-        self.weights = weights
 
         # will be a tensor on first use, stores each iteration of loss tracking
         self.epoch_loss_tracking = None
@@ -59,7 +55,7 @@ class DiceLoss(_Loss):
     def iterations_run(self) -> int:
         return len(self.iteration_loss_tracking[0])
 
-    def forward(self, prediction: torch.Tensor, truth: torch.Tensor, enable_weights: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, prediction: torch.Tensor, truth: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         prediction = prediction.to(self.device)
         truth = truth.to(self.device)
 
@@ -87,11 +83,7 @@ class DiceLoss(_Loss):
             )
 
             # Dice coefficient is dice.mean(), so loss is 1 - dice.mean()
-            class_loss = 1 - dice.mean()
-            if self.weights is not None and enable_weights:
-                class_loss *= self.weights[i]
-
-            class_losses.append(class_loss)
+            class_losses.append(1 - dice.mean())
 
         total_loss = torch.mean(torch.stack(class_losses))
 
@@ -210,13 +202,12 @@ class DiceLoss(_Loss):
             'num_classes': self.num_classes,
             'smooth_factor': self.smooth_factor,
             'device': self.device,
-            'weights': self.weights
         }
 
     @staticmethod
     def load_state_dict(state_dict: dict[str: list[list[torch.Tensor]]]) -> DiceLoss:
         obj = DiceLoss(state_dict['num_classes'], state_dict['device'],
-                       smooth_factor=state_dict['smooth_factor'], weights=state_dict['weights'])
+                       smooth_factor=state_dict['smooth_factor'])
         obj.epoch_loss_tracking = state_dict['epoch_loss_tracking']
         obj.iteration_loss_tracking = state_dict['iteration_loss_tracking']
         return obj

@@ -288,6 +288,7 @@ def dice_coefficient(y_true, y_pred, smooth=1e-6):
     return (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
 
 
+
 dice_scores = []
 
 for i in range(len(test_gen)):

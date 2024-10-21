@@ -46,13 +46,13 @@ Optimizer: AdamW with learning rate 0.0005 and weight decay 5e-4.
 
 Loss Function: CrossEntropyLoss.
 
-Epochs: 200.
+Epochs: 300.
 
 Mixed Precision Training: Enabled using PyTorch AMP for increased training efficiency.
 
 Training and Validation Loss
 
-The following plot shows the training and validation loss over 200 epochs:
+The following plot shows the training and validation loss over 300 epochs:
 
 ![Training and Validation Loss](graphs/training_validation_loss.png)
 

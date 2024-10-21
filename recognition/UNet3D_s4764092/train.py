@@ -11,11 +11,11 @@ import torch.nn.functional as F
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 LEARNING_RATE = 0.0001
 ACCUMULATION_STEPS = 4
 NUM_CLASSES = 6
-Combineloss = True
+Combineloss = False
 
 
 # 定义设备
@@ -185,14 +185,14 @@ for epoch in range(NUM_EPOCHS):
         plt.savefig(f'epoch_{epoch + 1}_1Validation_Dice_Score.png')  # 保存图像
         plt.show()
 
-        plt.figure(figsize=(6, 4))
+        plt.figure(figsize=(12, 12))
         for c in range(NUM_CLASSES):
             plt.plot(range(1, len(class_val_dice_scores[c]) + 1), class_val_dice_scores[c],
                      label=f'Class {c} Dice Score')
         plt.xlabel('Epoch')
         plt.ylabel('Dice Score')
         plt.title('Class Specific Validation Dice Scores Over Epochs')
-        plt.legend()
+        plt.legend(plt.legend(loc='lower right'))
         plt.savefig(f'epoch_{epoch + 1}_1class_specific_validation_dice_scores.png')  # 保存图像
         plt.show()  # 显示图像
 
@@ -234,16 +234,16 @@ for epoch in range(NUM_EPOCHS):
         plt.ylabel('Dice Score')
         plt.title('Average Test Dice Score Over Epochs')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_1training_test_loss.png')  # 保存图像
+        plt.savefig(f'epoch_{epoch + 1}_1testing_Dice_Score.png')  # 保存图像
         plt.show()
 
-        plt.figure(figsize=(6, 4))
+        plt.figure(figsize=(12, 12))
         for c in range(NUM_CLASSES):
             plt.plot(range(1, len(class_test_dice_scores[c]) + 1), class_test_dice_scores[c],
                      label=f'Class {c} Dice Score')
         plt.xlabel('Epoch')
         plt.ylabel('Dice Score')
         plt.title('Class Specific Dice Scores Over Epochs')
-        plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_1class_specific_dice_scores.png')  # 保存图像
+        plt.legend(plt.legend(loc='lower right'))
+        plt.savefig(f'epoch_{epoch + 1}_1class_specific_test_dice_scores.png')  # 保存图像
         plt.show()  # 显示图像

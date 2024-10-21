@@ -36,4 +36,4 @@ def generate(epoch, model, test_loader):
         axes[i + batch_size].axis("off")
 
     plt.tight_layout()
-    plt.savefig(f'checking2{epoch}.png')
+    plt.savefig(f'./Project/Images/imgs_epoch_{epoch}.png')

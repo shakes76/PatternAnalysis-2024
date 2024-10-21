@@ -74,46 +74,53 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 ### Loss Metrics
 - Loss metrics for both the Generator and Discriminator are plotted during training to monitor convergence. These plots provide insights into the training dynamics and help assess model performance.
 
+- The loss graphs presented in Figures 1 through 4 illustrate the training dynamics of both the Generator and Discriminator across the Alzheimer's Disease (AD) and Normal Control (NC) classes. Initially, both the Discriminator and Generator losses exhibit sharp decreases, indicating rapid improvements as the model begins to learn the fundamental characteristics of the data. This early phase reflects effective learning, as the Discriminator becomes adept at distinguishing between real and generated images, while the Generator quickly adapts to produce more convincing outputs. From around the 3000 to 30000 batch mark, both loss values stabilize and remain steady, suggesting that the model has reached a proficiency in image generation. After this period, slight fluctuations emerge, particularly in the Generator loss, though these variations are minimal and indicate that the model is still maintaining a consistent performance level. This subtle oscillation underscores the dynamic nature of adversarial training, where the Generator and Discriminator continue to refine their capabilities in a competitive environment, resulting in high-quality synthesized images.
+
 <div style="text-align: center;">
   <img src="images/AD_critic_loss_final.png" alt="AD critic loss" style="width:300px;"/>
-  <p>Figure 1: AD critic (discriminator) loss.</p>
+  <p style="font-style: italic;">Figure 1: AD critic (discriminator) loss.</p>
 </div>
 
 <div style="text-align: center;">
   <img src="images/AD_generator_loss_final.png" alt="AD generator loss" style="width:300px;"/>
-  <p>Figure 2: AD generator loss.</p>
+  <p style="font-style: italic;">Figure 2: AD generator loss.</p>
 </div>
 
 <div style="text-align: center;">
   <img src="images/NC_critic_loss_final.png" alt="NC critic loss" style="width:300px;"/>
-  <p>Figure 3: NC critic (discriminator) loss.</p>
+  <p style="font-style: italic;">Figure 3: NC critic (discriminator) loss.</p>
 </div>
 
 <div style="text-align: center;">
   <img src="images/NC_generator_loss_final.png" alt="NC generator loss" style="width:300px;"/>
-  <p>Figure 4: NC generator loss.</p>
+  <p style="font-style: italic;">Figure 4: NC generator loss.</p>
 </div>
 
 ### t-SNE Embedding
-- This section of the code utilizes t-SNE (t-distributed Stochastic Neighbor Embedding) to visualize high-dimensional features extracted from brain images. Initially, PCA (Principal Component Analysis) is employed to reduce the dimensionality of the feature set while preserving variance. Subsequently, t-SNE projects these PCA-reduced features into a two-dimensional space, with the perplexity parameter set to balance local and global data structures. The resulting scatter plot displays clusters of similar images, effectively differentiating between classes, such as Alzheimer's disease and normal controls, based on their extracted features. This visualization aids in understanding the relationships and separability of the classes within the dataset.
+- T-SNE (t-distributed Stochastic Neighbor Embedding) visualization is employed to represent high-dimensional features extracted from brain images in a two-dimensional space. Initially, PCA (Principal Component Analysis) is used to reduce the dimensionality of the feature set while preserving variance, allowing t-SNE to effectively project these PCA-reduced features. The resulting scatter plot aims to illustrate potential clusters of similar images, differentiating between classes such as Alzheimer's Disease (AD) and Normal Control (NC) based on their extracted features.
+
+As shown in Figure 5, the t-SNE embedding visualization reveals only nine points for each class, appearing scattered and without distinct clustering patterns. This randomness may stem from the limited number of samples selected for visualization, which restricts the ability to observe meaningful relationships. Furthermore, the inherent complexity of the features extracted from brain images can obscure clear separability between the two classes.
+
+To improve the clarity of the embedding, various dimensionality reduction techniques were explored, including PCA before applying t-SNE. While this approach aimed to preserve more variance, the limited sample size continued to hinder the formation of meaningful clusters. Additionally, tuning the perplexity parameter in t-SNE could enhance the balance between local and global structures, potentially leading to a more cohesive representation.
+
+In future, increasing the number of samples used in the t-SNE visualization would likely yield a more representative embedding, allowing for clearer analysis of the relationships between AD and NC classes. Moreover, incorporating different feature extraction methods or experimenting with alternative neural network architectures could improve the quality of the embeddings. Exploring other dimensionality reduction techniques, such as UMAP (Uniform Manifold Approximation and Projection), might also provide new insights and enhance the discernibility of underlying patterns within the data.
 
 <div style="text-align: center;">
   <img src="images/tsne_visualization.png" alt="TSNE Embedding Plot for Generated Images" style="width:300px;"/>
-  <p>Figure 5: TSNE Embedding Plot for Generated Images.</p>
+  <p style="font-style: italic;">Figure 5: TSNE Embedding Plot for Generated Images.</p>
 </div>
-
 
 ### Generated Image Grids
 - A 9x9 grid of generated images is created for both Alzheimer's Disease (AD) and Normal Control (NC) classes. This provides a visual assessment of the quality and variety of the synthesized images, showcasing the model's ability to generate realistic brain scans.
 
 <div style="text-align: center;">
   <img src="images/AD_images.png" alt="Generated AD images" style="width:300px;"/>
-  <p>Figure 6: Generated AD images.</p>
+  <p style="font-style: italic;">Figure 6: Generated AD images.</p>
 </div>
 
 <div style="text-align: center;">
   <img src="images/NC_images.png" alt="Generated NC images" style="width:300px;"/>
-  <p>Figure 7: Generated NC images.</p>
+  <p style="font-style: italic;">Figure 7: Generated NC images.</p>
 </div>
 
 ## Conclusion

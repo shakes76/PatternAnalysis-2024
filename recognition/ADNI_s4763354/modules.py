@@ -431,3 +431,66 @@ def checkpoint_filter_fn(state_dict, model):
         out_dict[k] = v
     return out_dict
 
+def create_gfnet(model_name='gfnet_extra_small', **kwargs):
+    if model_name == 'gfnet-xs':
+        model = GFNet(
+            img_size=224, 
+            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+
+    elif model_name == 'gfnet-n':
+        model = GFNet(
+            img_size=224, 
+            patch_size=16, embed_dim=768, depth=12, mlp_ratio=3,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    elif model_name == 'gfnet-ti':
+        model = GFNet(
+            img_size=224, 
+            patch_size=16, embed_dim=256, depth=12, mlp_ratio=4,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    elif model_name == 'gfnet-s':
+        model = GFNet(
+            img_size=224, 
+            patch_size=16, embed_dim=384, depth=19, mlp_ratio=4, drop_path_rate=0.15,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    elif model_name == 'gfnet-b':
+        model = GFNet(
+            img_size=224, 
+            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=0.25,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")
+    
+    return model
+
+def create_gfnet_pyramid(model_name='gfnet_pyramid_tiny', **kwargs):
+    if model_name == 'gfnet-h-ti':
+        model = GFNetPyramid(
+            img_size=224, 
+            patch_size=4, embed_dim=[64, 128, 256, 512], depth=[3, 3, 10, 3],
+            mlp_ratio=[4, 4, 4, 4],
+            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.1,
+        )
+    elif model_name == 'gfnet-h-s':
+        model = GFNetPyramid(
+            img_size=224, 
+            patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 10, 3],
+            mlp_ratio=[4, 4, 4, 4],
+            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.2, init_values=1e-5
+        )
+    elif model_name == 'gfnet-h-b':
+        model = GFNetPyramid(
+            img_size=224, 
+            patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 27, 3],
+            mlp_ratio=[4, 4, 4, 4],
+            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.4, init_values=1e-6
+        )
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")
+    
+    return model

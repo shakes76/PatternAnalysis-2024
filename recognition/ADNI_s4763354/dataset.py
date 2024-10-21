@@ -11,6 +11,7 @@ import torch
 import numpy as np
 
 def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_seed=42):
+    # Define data augmentation and transformation for training set
     train_transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(),
@@ -20,7 +21,7 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225]),
     ])
-    
+    # Define data transformation for validation and testing
     val_test_transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -64,6 +65,7 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     train_subset = Subset(full_dataset, train_indices)
     val_subset = Subset(full_dataset, val_indices)
 
+    # Assign transformations to the subsets
     train_subset.dataset.transform = train_transform
     val_subset.dataset.transform = val_test_transform
     
@@ -74,6 +76,7 @@ def get_data_loaders(train_dir, test_dir, batch_size=32, val_ratio=0.2, random_s
     sample_weights = [class_weights[t] for t in train_labels]
     sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
 
+    # Create data loader
     train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=sampler, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     test_dataset = datasets.ImageFolder(root=test_dir, transform=val_test_transform)

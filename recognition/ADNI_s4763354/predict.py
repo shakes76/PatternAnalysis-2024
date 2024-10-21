@@ -13,10 +13,11 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import os
 import random
-from modules import GFNetPyramid, GFNet
+from modules import GFNetPyramid, GFNet, create_gfnet_pyramid, create_gfnet
 import torch.nn as nn
 
 def show_example_images(model, test_loader, num_examples=5, class_names=['NC', 'AD']):
+    # Inferencing of the model 
     model.eval()
     all_examples = []
     
@@ -33,7 +34,7 @@ def show_example_images(model, test_loader, num_examples=5, class_names=['NC', '
     # Randomly select num_examples from all_examples
     selected_examples = random.sample(all_examples, min(num_examples, len(all_examples)))
     
-    # Plot examples
+    # Plot prediction examples
     fig, axes = plt.subplots(1, len(selected_examples), figsize=(20, 4))
     fig.suptitle('Example Classifications', fontsize=16)
     
@@ -43,47 +44,45 @@ def show_example_images(model, test_loader, num_examples=5, class_names=['NC', '
         std = torch.tensor([0.229]).view(1, 1, 1).to(device)
         img = img * std + mean
         
+        # Convert to numpy array for plotting
         img = img[0].cpu().numpy()
         
+        # Show images
         axes[i].imshow(img, cmap='gray')
         
+        # Get predicted outcomes
         predicted_class = class_names[pred.item()]
         true_class = class_names[label.item()]
         confidence = prob[pred.item()].item()
         
+        # Set titles
         title = f'Pred: {predicted_class}\nTrue: {true_class}\nConf: {confidence:.2f}'
         axes[i].set_title(title, color='green' if pred == label else 'red')
         axes[i].axis('off')
-    
+    # Plot and save the figure
     plt.tight_layout()
-    plt.savefig('predict/example_classifications.png')
+    plt.savefig('predict/example_classifications_scratch_b_1e4_2.png')
     plt.close()
 
 def plot_confusion_matrix(all_labels, all_preds, class_names=['NC', 'AD']):
+     # Define the model 
     cm = confusion_matrix(all_labels, all_preds)
     plt.figure(figsize=(10, 8))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
     plt.title('Confusion Matrix')
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.savefig('predict/confusion_matrix.png')
+    plt.savefig('predict/confusion_matrix_scratch_b_1e4_2.png')
     plt.close()
 
-def main(model_path, test_dir, num_samples=5):
+def main(model_path, test_dir, num_samples=5,model_name='gfnet_h_b'):
     global device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # Create the model
-    model = GFNetPyramid(
-        img_size=224, 
-        patch_size=4, 
-        num_classes=2,
-        embed_dim=[96, 192, 384, 768],
-        depth=[2, 2, 10, 2],
-        mlp_ratio=[4, 4, 4, 4],
-        drop_path_rate=0.3,
-    )
+    # Define the model 
+    model = create_gfnet(model_name=model_name)
     
+    #Modify the final layer
     num_features = model.head.in_features
     model.head = nn.Sequential(
         nn.Dropout(0.5),
@@ -92,8 +91,9 @@ def main(model_path, test_dir, num_samples=5):
         nn.Dropout(0.5),
         nn.Linear(512, 2)
     )
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device),strict=False)
     model = model.to(device)
+    model.eval()
 
     # Define the transformations
     transform = transforms.Compose([
@@ -102,13 +102,13 @@ def main(model_path, test_dir, num_samples=5):
         transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.shape[0] == 1 else x),  # Ensure 3 channels
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
+
     # Create the dataset and data loader
     test_dataset = datasets.ImageFolder(root=test_dir, transform=transform)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, pin_memory=True)
 
     all_preds = []
     all_labels = []
-    model.eval()
 
     # Run predictions on all test images
     for images, labels in test_loader:
@@ -129,5 +129,6 @@ def main(model_path, test_dir, num_samples=5):
     accuracy = sum(p == l for p, l in zip(all_preds, all_labels)) / len(all_preds)
     print(f"Overall Accuracy: {accuracy:.2%}")
 
+
 if __name__ == "__main__":
-    main(model_path='best_newmod_pretrain/new_mod_hb_adamw_cosine.pth', test_dir='/home/groups/comp3710/ADNI/AD_NC/test')
+    main(model_path='scratch_b_1e4_66%.pth', test_dir='/home/groups/comp3710/ADNI/AD_NC/test',model_name='gfnet-b')

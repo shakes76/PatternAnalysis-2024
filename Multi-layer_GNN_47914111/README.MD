@@ -8,15 +8,15 @@ This section describes the preprocessing of the Facebook large-scale Page-Page n
 
 ### Data loading
 The dataset is stored in a compressed .npz file and loaded via numpy. The dataset contains:
-**edges**: An array representing the connection relationship between nodes in the graph (i.e., edges).
-**features**: The feature matrix of all nodes, each row represents the feature vector of a node.
-**target**: The category label of each node, used for multi-category classification tasks.
+- **edges**: An array representing the connection relationship between nodes in the graph (i.e., edges).
+- **features**: The feature matrix of all nodes, each row represents the feature vector of a node.
+- **target**: The category label of each node, used for multi-category classification tasks.
 
 ### Data spliting
 The nodes are randomly divided into training set, validation set and test set, and the division ratio is as follows:
-**Training Set:** 70% of the nodes, a total of 15,728 nodes.
-**Validation Set:** 15% of the nodes, a total of 3,370 nodes.
-**Test Set:** 15% of the nodes, a total of 3,372 nodes.
+- **Training Set:** 70% of the nodes, a total of 15,728 nodes.
+- **Validation Set:** 15% of the nodes, a total of 3,370 nodes.
+- **Test Set:** 15% of the nodes, a total of 3,372 nodes.
 
 The nodes are randomly indexed to ensure good distribution among the datasets. Masks are generated for each dataset to identify the nodes belonging to each set during training and evaluation.
 

@@ -606,18 +606,24 @@ class StyleGAN2Discriminator(nn.Module):
         Returns:
             torch.Tensor: Discriminator scores of shape (batch_size,) or features if feature_output is True.
         """
+        print(f"Input shape: {x.shape}")
         features = []
-        for layer in self.discrim_network:
+        for i, layer in enumerate(self.discrim_network):
             x = layer(x)
+            print(f"After layer {i}: {x.shape}")
             features.append(x)
         
         x = self.minibatch_stddev(x)
+        print(f"After MiniBatchStdDev: {x.shape}")
         x = self.final_conv(x)
+        print(f"After final conv: {x.shape}")
         features.append(x)
         
         x = self.flatten(x)
+        print(f"After flatten: {x.shape}")
         final_features = x  # Store the flattened features
         x = self.final_linear(x)
+        print(f"After final linear: {x.shape}")
 
         # Get single value per sample
         x = x.squeeze(1)

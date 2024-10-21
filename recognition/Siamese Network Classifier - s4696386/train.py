@@ -1,4 +1,4 @@
-import torch
+import torch, os
 
 from modules import SiameseNetwork, Classifier
 from dataset import Siamese_DataSet, Classifier_DataSet, read_data, DEFAULT_LOCATION, PROCESSED_DATA, BENIGN, MALIGNANT
@@ -6,9 +6,17 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 DEFAULT_SAVE_LOCATION = "E:/COMP3710 Project/PatternAnalysis-2024/"
 
+"""
+AI and MT tools used to
+ - Explain how to best train a Siamese network (with multiple inputs)
+ - Suggest starting points for hyperparameter tuning
+ - Explain squeeze and unsqueeze (and to act as therapist when I yelled about it)
+ - Explain WHY SQUEEZE STEALS INPUTS WHEN BATCH LEFTOVERS ARE OF SIZE 1 (AGGGGGGHHHHHHHHHHH)
+ - Explaining and interpreting errors (and suggesting possible fixes) (such as the squeeze incident -_-)
+"""
+
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
-
 def train_siamese(model: SiameseNetwork, device, train_loader, optimizer, epoch, log_interval, dry_run = False, verbose = False):
     model.train()
     
@@ -23,7 +31,7 @@ def train_siamese(model: SiameseNetwork, device, train_loader, optimizer, epoch,
         optimizer.step()
         if verbose:
             if batch_idx % log_interval == 0:
-                print(f"Train Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
+                print(f"Train Siamese Epoch: {epoch} [{batch_idx*len(images_1)}/{len(train_loader.dataset)} ({(100. * batch_idx / len(train_loader)):.2f}%)]")
                 print(f"Loss: {loss.item()}")
         if dry_run:
             break
@@ -42,7 +50,7 @@ def train_classifier(model: Classifier, device, train_loader, optimizer, epoch, 
         optimizer.step()
         if verbose:
             if batch_idx % log_interval == 0:
-                print(f"Train Epoch: {epoch} [{batch_idx*len(inputs)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader)}%)]")
+                print(f"Train Classifier Epoch: {epoch} [{batch_idx*len(inputs)}/{len(train_loader.dataset)} ({(100. * batch_idx / len(train_loader)):.2f}%)]")
                 print(f"Loss: {loss.item()}")
         if dry_run:
             break
@@ -101,7 +109,7 @@ def test_classifier(model: Classifier, device, test_loader, epoch: int, threshol
         for (images, targets) in test_loader:
             images, targets = images.to(device), targets.to(device).float()
             outputs = model(images).squeeze()  # Single input for classification
-            test_loss += criterion(outputs, targets).sum().item()  # Sum up batch loss
+            test_loss += criterion(outputs, targets).sum().item()
 
             # Store true and predicted values
             all_targets.extend(targets.cpu().numpy())
@@ -126,29 +134,31 @@ def test_classifier(model: Classifier, device, test_loader, epoch: int, threshol
 
     return accuracy
 
-def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: PROCESSED_DATA, threshold: float = 0.5):
+def run_model(batch_size: int, epochs: int, learning_rate: int, threshold: float = 0.5, save_model: bool = False, test_verbose: bool = True, train_verbose: bool = False):
     print("="*200)
     print(f"Training with: batch_size {batch_size}, epochs {epochs}, learning_rate {learning_rate}")
+    # Define assorted training and testing parameters (That remained unchanged during hyperparameter tuning)
     torch_seed = 10
     shuffle = True
     gamma = 0.7
     log_interval = 10
     dry_run = False
     
-
+    # Increase reproduceability from randomness
     torch.manual_seed(torch_seed)
 
     # Use cuda device if available
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    
+    # Load data
+    processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
 
-    # Create Datasets and place them into DataLoaders
+    # Create Datasets...
     train_dataset_siamese = Siamese_DataSet(processed_data, train=True)
     test_dataset_siamese = Siamese_DataSet(processed_data, train=False)
     train_loader_siamese = torch.utils.data.DataLoader(train_dataset_siamese, batch_size, shuffle)
     test_loader_siamese = torch.utils.data.DataLoader(test_dataset_siamese, batch_size, shuffle)
-
+    #                   ...and place them into DataLoaders
     train_dataset_classifier = Classifier_DataSet(processed_data, train=True)
     test_dataset_classifier = Classifier_DataSet(processed_data, train=False)
     train_loader_classifier = torch.utils.data.DataLoader(train_dataset_classifier, batch_size, shuffle)
@@ -163,15 +173,16 @@ def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: 
     
     # Run epochs for Siamese Network
     for epoch in range(1, epochs+1):
-        test_verbose = epoch == epochs
-        train_siamese(model, device, train_loader_siamese, optimizer, epoch, log_interval, dry_run, verbose=False)
-        accuracy = test_siamese(model, device, test_loader_siamese, epoch, verbose=test_verbose, threshold=threshold)
-        save_model = accuracy >= 0.99
-        if save_model:
-            save_loc = f"{DEFAULT_SAVE_LOCATION}siamese_network_{batch_size}_({epoch}.{epochs})_{learning_rate}_{threshold}.pt"
-            torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
-            print(f"Saved Siamese to {save_loc} with {accuracy}")
+        train_siamese(model, device, train_loader_siamese, optimizer, epoch, log_interval, dry_run, verbose=train_verbose)
+        if train_verbose:
+            print("")
         scheduler.step()
+    # Test and save the model
+    accuracy = test_siamese(model, device, test_loader_siamese, epoch, verbose=test_verbose, threshold=threshold)
+    if save_model:
+        save_loc = f"{DEFAULT_SAVE_LOCATION}siamese_network_{accuracy:.4f}_{batch_size}_({epoch}.{epochs})_{learning_rate}_{threshold}.pt"
+        torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
+        print(f"Saved Siamese to {save_loc} with {accuracy}")
     
 
 
@@ -184,46 +195,15 @@ def run_model(batch_size: int, epochs: int, learning_rate: int, processed_data: 
 
     # Run epochs for Classifier
     for epoch in range(1, epochs+1):
-        test_verbose = epoch == epochs
-        train_classifier(model, device, train_loader_classifier, optimizer, epoch, log_interval, dry_run, verbose=False)
-        accuracy = test_classifier(model, device, test_loader_classifier, epoch, verbose=test_verbose)
-        save_model = accuracy >= 0.99
-        if save_model:
-            save_loc = f"{DEFAULT_SAVE_LOCATION}classifier_network_{batch_size}_({epoch}.{epochs})_{learning_rate}.pt"
-            torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
-            print(f"Saved Classifier to {save_loc} with {accuracy}")
+        train_classifier(model, device, train_loader_classifier, optimizer, epoch, log_interval, dry_run, verbose=train_verbose)
+        if train_verbose:
+            print("")
         scheduler.step()
+    # Test and save the model
+    accuracy = test_classifier(model, device, test_loader_classifier, epoch, verbose=test_verbose)
+    if save_model:
+        save_loc = f"{DEFAULT_SAVE_LOCATION}classifier_network_{accuracy:.4f}_{batch_size}_({epoch}.{epochs})_{learning_rate}.pt"
+        torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
+        print(f"Saved Classifier to {save_loc} with {accuracy}")
 
-
-    return accuracy, batch_size, epochs, learning_rate, threshold
-        
-
-def main():
-
-    processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
-
-    batch_sizes = [16]
-    epochs = [30, 40, 100]
-    # learning_rates = [i/10000 for i in range(2, 6)]
-    learning_rates = [0.0002]
-    thresholds = [0.5]
-
-    accuracies = []
-
-    os.chdir(DEFAULT_SAVE_LOCATION)
-    print(os.getcwd())
-
-    for th in thresholds:
-        for bs in batch_sizes:
-            for e in epochs:
-                for lr in learning_rates:
-                    accuracy = run_model(bs, e, lr, processed_data, threshold=th)
-                    accuracies.append(accuracy)
-                    with open("results.txt", "a") as results:
-                        results.write(str(accuracy) + "\n")
-
-    print(max(accuracies, key=lambda x: x[0]))
-
-# Only run main when running file directly (not during imports)
-if __name__ == "__main__":
-    main()
+    return model, device, test_loader_classifier

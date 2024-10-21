@@ -1,5 +1,9 @@
 # Facebook Page-Page Network Node Classification
 
+Name: Chen Yang
+ID: 47867637
+
+
 ### Overview
 
 This project involves training a Graph Neural Network (GNN) for semi-supervised multi-class node classification using the Facebook Large Page-Page Network dataset. The dataset represents various categories of Facebook pages (e.g., government, politician, tvshow, company) connected based on mutual likes. The task is to classify each node (Facebook page) into one of the provided categories using Graph Attention Networks (GAT) layers.

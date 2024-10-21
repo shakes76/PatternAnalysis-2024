@@ -134,6 +134,7 @@ Siamese network structure:
 
 3. **Classifier**:
    - Final layer: 320 -> 2 (binary classification)
+   - Embedding dimension of 320 was chosen after experimentation, as it provided the best AUC-ROC score
 
 The architecture processes image pairs through identical branches with shared weights.
 
@@ -164,6 +165,7 @@ Implemented in `train.py`:
 - Epochs: 30 (early stopping kicks in at 15)
 - Batch size: 32
 - Optimizer: Adam (initial lr = 1e-3)
+- Embedding dimension: 320
 - Learning rate scheduler: ReduceLROnPlateau
 - Early stopping based on validation metrics
 - Balanced batch sampling

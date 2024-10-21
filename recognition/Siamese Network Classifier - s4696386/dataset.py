@@ -93,13 +93,13 @@ def load_image(file_name):
         return image1, image2
 
 
-class APP_MATCHER(torch.utils.data.Dataset):
+class Siamese_DataSet(torch.utils.data.Dataset):
     
     RANDOM_SEED = 69420
 
     def __init__(self, processed_data: PROCESSED_DATA,
             train: bool, train_ratio: float = 0.8):
-        super(APP_MATCHER, self).__init__()
+        super(Siamese_DataSet, self).__init__()
         
         # Store splitting data
         self._train = train
@@ -186,6 +186,37 @@ class APP_MATCHER(torch.utils.data.Dataset):
         Retrieves the ratio of the dataset designated for testing.
         """
         return self.test_ratio
+    
+class Classifier_DataSet(Siamese_DataSet):
+
+    def __init__(self, processed_data: tuple[dict, list[str], list[str]], train: bool, train_ratio: float = 0.8):
+        super().__init__(processed_data, train, train_ratio)
+
+        self.malignants = self.data_set.get(MALIGNANT, None)
+        self.benigns = self.data_set.get(BENIGN, None)
+
+        if self.malignants == None or self.benigns == None:
+            print("FAILED to migrate dataset correctly") # Just in case :(
+        
+        # Combine malignants and benigns into 1 list with shape (image_name, malignance)
+        self.data_set = [(i, MALIGNANT) for i in self.malignants] + [(i, BENIGN) for i in self.benigns]
+        self.length = len(self.data_set)
+
+    def __len__(self) -> int:
+        """
+        Number of available images
+        """
+        return self.length
+    
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Returns a positive or negative pair of images with corresponding label (1 for positive,
+            0 for negative).
+        """
+        # To avoid going out of bounds (just in case) (although it shouldn't happen?)
+        index = index % self.length
+        image_name, target = self.data_set[index]
+        return self.images.get(image_name), target
 
 
 # Main function for profiling & debugging

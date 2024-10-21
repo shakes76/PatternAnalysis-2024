@@ -51,7 +51,9 @@ The following plot shows the training and validation loss over 200 epochs:
 
 ![Training and Validation Loss](graphs/training_validation_loss.png)
 
-The training and validation loss decreased steadily, indicating that the model learned effectively without overfitting.
+From the training and validation loss plot, we can observe that the model's loss decreases rapidly in the initial few epochs, indicating that it is learning efficiently. Both training and validation losses converge to near zero as training proceeds, demonstrating effective learning with little overfitting. This steady decrease suggests that the model generalizes well to unseen data, which is an important indicator of good training performance.
+
+However, we can also notice that slight fluctuations towards the end of the training process, suggesting that the learning rate may need to be fine-tuned to prevent oscillations. Despite these minor fluctuations, the model overall performs well with low final loss values for both training and validation sets.
 
 ## UMAP Embeddings Visualization
 To visualize how well the GNN captures the structure of the graph, **UMAP** was used to reduce the node embeddings to 2 dimensions. The following plot shows the reduced embeddings colored according to their ground truth labels:

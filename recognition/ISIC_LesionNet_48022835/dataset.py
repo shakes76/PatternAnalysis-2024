@@ -48,6 +48,18 @@ class ISICDataset(Dataset):
 
         return image, mask  # Return both the image and the mask
 
+    def get_image_path(self, idx):
+        """Retrieve the path of the image for the given index."""
+        img_path = os.path.join(self.img_dir, self.img_filenames[idx])
+        return img_path
+
+    def get_mask_path(self, idx):
+        """Retrieve the path of the mask for the given index."""
+        img_name = os.path.splitext(self.img_filenames[idx])[0]  # Base filename
+        mask_filename = f"{img_name}_segmentation.png"  # Assuming mask format
+        mask_path = os.path.join(self.mask_dir, mask_filename)
+        return mask_path
+
 
 class SegmentationTransform:
     def __init__(self, resize=(640, 640), normalize=True):

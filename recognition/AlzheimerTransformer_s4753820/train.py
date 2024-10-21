@@ -13,7 +13,7 @@ import json
 import torch.optim.lr_scheduler as lr_scheduler
 
 # Function to create the plots
-def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots", exp_name="experiment"):
+def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, test_loss, test_acc, save_dir="plots", exp_name="experiment"):
     """
     Saves the training and validation loss and accuracy plots to the specified directory.
 
@@ -22,6 +22,8 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
         val_losses (list): List of validation losses for each epoch.
         train_accuracies (list): List of training accuracies for each epoch.
         val_accuracies (list): List of validation accuracies for each epoch.
+        test_loss (float): Final test loss.
+        test_acc (float): Final test accuracy.
         save_dir (str): Directory where the plots will be saved.
         exp_name (str): Name of the experiment to be used for naming the plot files.
 
@@ -34,7 +36,7 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label='Training Loss')
     plt.plot(val_losses, label='Validation Loss')
-    plt.title(f"Loss over Epochs for {exp_name}")
+    plt.title(f"Loss over Epochs for {exp_name}\nTest Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.2f}%")
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
@@ -46,13 +48,14 @@ def save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_
     plt.figure(figsize=(10, 6))
     plt.plot(train_accuracies, label='Training Accuracy')
     plt.plot(val_accuracies, label='Validation Accuracy')
-    plt.title(f"Accuracy over Epochs for {exp_name}")
+    plt.title(f"Accuracy over Epochs for {exp_name}\nTest Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.2f}%")
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy (%)')
     plt.legend()
     plt.grid(True)
     plt.savefig(f"{save_dir}/{exp_name}_accuracy_plot.png")  # Save the plot
     plt.close()
+
 
 # Function to train for one epoch
 def train_one_epoch(model, dataloader, optimizer, criterion, device):
@@ -111,14 +114,14 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
     accuracy = 100 * correct / total
     return avg_loss, accuracy, batch_losses
 
-# Function to evaluate on validation data
+# Function to evaluate on some data loader (either validation or test)
 def evaluate(model, dataloader, criterion, device):
     """
-    Evaluates the model on the validation dataset and computes loss and accuracy.
+    Evaluates the model on the  dataset and computes loss and accuracy.
 
     Args:
         model (torch.nn.Module): The model to evaluate.
-        dataloader (torch.utils.data.DataLoader): Dataloader for the validation data.
+        dataloader (torch.utils.data.DataLoader): Dataloader for the data.
         criterion (torch.nn.Module): Loss function.
         device (torch.device): Device to perform computations (GPU or CPU).
 
@@ -148,7 +151,7 @@ def evaluate(model, dataloader, criterion, device):
 
             ## Should we print batch loss data hmm
             if (i + 1) % 100 == 0:  # Print every 10 batches
-                print(f"Validation Batch {i+1}, Avg Loss: {loss.item():.4f}, Correct Predictions: {total_correct} / {total}")
+                print(f" Batch {i+1}, Avg Loss: {loss.item():.4f}, Correct Predictions: {total_correct} / {total}")
 
     # Return average loss and accuracy
     avg_loss = running_loss / len(dataloader) # Divide by length of dataloder, since running loss is for each batch. Avg loss is AVERAGE BATCH LOSS (over one epoch)!!
@@ -292,8 +295,12 @@ def main():
     parser.add_argument('--patch_size', type=int, default=16, help='Number of pixels a patch height/width has. E.g 16 gives 16x16 patch sizes.')
     parser.add_argument('--image_size', type=int, default=224, help='Height/Width size to set images to.')
     parser.add_argument('--path', type=str, default="/home/groups/comp3710/ADNI/AD_NC", help='Path to the dataset')
-
     parser.add_argument('--transformer_layers', type=int, default=12, help='Number of transformer layers you want the model to have. Default 12.')
+    # Add new arguments to the argument parser
+    parser.add_argument('--embedding_dims', type=int, default=768, help='Dimensionality of the patch embeddings (default 768)')
+    parser.add_argument('--mlp_size', type=int, default=3072, help='Size of the MLP hidden layer (default 3072)')
+    parser.add_argument('--num_heads', type=int, default=12, help='Number of heads (make sure embedding dims is divisible by this)')
+    
     # Plotting + Non-model  stuff flag (default True)
     parser.add_argument('--plot', dest='plot', action='store_true', default=True, help='Enable plotting (default is True)')
     parser.add_argument('--no-plot', dest='plot', action='store_false', help='Disable plotting')
@@ -322,12 +329,17 @@ def main():
     num_transformer_layers = args.transformer_layers
     exp_name = args.exp_name
     use_transforms: bool = args.use_transforms
+    num_heads = args.num_heads
 
     # Get all the loaders 
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(batch_size=batch_size, image_size=image_size, path = dataset_path, use_transforms = use_transforms)
     
+    # Ensure embedding_dims is divisible by num_heads
+    if args.embedding_dims % num_heads != 0:
+        raise ValueError(f"embedding_dims ({args.embedding_dims}) must be divisible by num_heads ({num_heads})")
     # Create the model and optimisers 
-    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers).to(device)
+    model = ViT(img_size=image_size, patch_size=patch_size, num_classes=2, num_transformer_layers=num_transformer_layers, embedding_dims = args.embedding_dims, mlp_size=args.mlp_size, num_heads = num_heads
+                ).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -351,7 +363,8 @@ def main():
         # Save plots if required
     if args.plot:
         print("Plotting!")
-        save_plots(train_losses, val_losses, train_accuracies, val_accuracies, save_dir="plots", exp_name=exp_name)
+        save_plots(train_losses, val_losses, train_accuracies, val_accuracies, test_loss, test_acc, save_dir="plots", exp_name=exp_name)
+
 
 
 if __name__ == "__main__":

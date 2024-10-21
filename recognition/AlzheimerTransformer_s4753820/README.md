@@ -41,8 +41,11 @@ Run all files from the directory.
 ... `terminal command to train stuff etc`, data path, plots, etc...
 
 #### Testing
-terminal command to test
+terminal command to test 
+--run `predict`, get test acc/loss on a model or `graph-viz`, visualise model images with prediction and probabilities (default)
 
+Examples:
+`python predict.py --model_path models/v10best_model.pth --run predict --num_transformer_layers 16` # Gets test loss/acc of v10 (v10 used 16 layers so we have to make it the same architecture)
 
 ## References
 

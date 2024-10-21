@@ -71,11 +71,11 @@ class PatchEmbeddingLayer(nn.Module):
         self.flatten_layer = nn.Flatten(start_dim=1, end_dim=2)
 
         self.class_token_embeddings = nn.Parameter(
-            torch.rand((BATCH_SIZE, 1, EMBEDDING_DIMS), requires_grad=True)
+            torch.rand((BATCH_SIZE, 1, self.embedding_dim), requires_grad=True)
         )
 
         self.position_embeddings = nn.Parameter(
-            torch.rand((1, NUM_OF_PATCHES + 1, EMBEDDING_DIMS), requires_grad=True)
+            torch.rand((1, NUM_OF_PATCHES + 1, self.embedding_dim), requires_grad=True)
         )  # [batch_size, num_patches+1, embeddings_dims]
 
     def forward(self, x):

@@ -3,11 +3,16 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import datasets
-from modules import ViT
 from pathlib import Path
 import argparse
 import torch.nn.functional as F  # Import this for applying softmax
 from sklearn.metrics import classification_report  # For generating classification report
+from torch.nn import CrossEntropyLoss
+
+## Custom py files
+from modules import ViT
+from train import evaluate
+from dataset import get_dataloaders 
 
 
 # Function to display images and predictions
@@ -113,6 +118,7 @@ def main():
     parser.add_argument('--patch_size', type=int, default=16, help="Patch size used in ViT")
     parser.add_argument('--num_transformer_layers', type=int, default=12, help="Number of transformer layers in ViT")
     parser.add_argument('--data_path', type=str, default="/home/groups/comp3710/ADNI/AD_NC", help="Path to the dataset")
+    parser.add_argument('--run', type=str, default="brain-viz", help="Path to the dataset")
     
     args = parser.parse_args()
 
@@ -139,17 +145,21 @@ def main():
         ])
 
     # Load the dataset for prediction (using the test set)
-    val_dir = f"{args.data_path}/test"
-    val_data = datasets.ImageFolder(root=val_dir, transform=transform)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
+        # Get all the loaders 
+    _, _, test_loader = get_dataloaders(batch_size=args.batch_size, image_size=args.image_size, path = args.data_path)
 
-    # Make predictions and visualize results
-    predict_batch(model, val_loader, device, num_images=args.batch_size)
+    if args.run == "predict":
+        print("YO")
+        test_loss, test_acc = evaluate(model, test_loader, CrossEntropyLoss(), device)
+        print(f"Test Accuracy: {test_acc:.2f}%, and {test_loss=}")
+    elif args.run == "brain-viz":
+        # Make predictions and visualize results
+        predict_batch(model, test_loader, device, num_images=args.batch_size)
     
-    # Generate and print the classification report
-    class_report = evaluate_model(model, val_loader, device)
-    print("Classification Report:")
-    print(class_report)
+    # # Generate and print the classification report
+    # class_report = evaluate_model(model, test_loader, device)
+    # print("Classification Report:")
+    # print(class_report)
 
 
 if __name__ == "__main__":

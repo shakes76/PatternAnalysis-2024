@@ -13,11 +13,11 @@ Hyperparamters
 learning_rate = 1e-3
 weight_decay = 1e-2
 T_max = 6
-depth=12
-embed_dim=260
-drop_rate=0.1
-drop_path_rate=0.1
-patch_size=(8, 8)
+depth = 12
+embed_dim = 260
+drop_rate = 0.1
+drop_path_rate = 0.1
+patch_size = (8, 8)
 
 
 def train(
@@ -291,16 +291,25 @@ def parse_args():
     parser.add_argument(
         "data", type=str, help="Path to train and test data directories"
     )
-    parser.add_argument("--plot", action="store_true", help="Display plot of metrics after training")
     parser.add_argument(
-        "--save-to", type=str, help="Path to save the trained model", default="model.pth"
+        "--plot", action="store_true", help="Display plot of metrics after training"
+    )
+    parser.add_argument(
+        "--save-to",
+        type=str,
+        help="Path to save the trained model",
+        default="model.pth",
     )
     parser.add_argument(
         "--epochs", type=int, help="Number of epochs to train the model", default=2
     )
-    parser.add_argument("--test", action="store_true", help="Evaluate the model on the test dataset")
     parser.add_argument(
-        "--save-error", action="store_true", help="Save the model if an error occurs during training"
+        "--test", action="store_true", help="Evaluate the model on the test dataset"
+    )
+    parser.add_argument(
+        "--save-error",
+        action="store_true",
+        help="Save the model if an error occurs during training",
     )
     parser.add_argument(
         "--batch-size", type=int, help="Batch size for training and testing", default=32
@@ -308,9 +317,8 @@ def parse_args():
     return parser.parse_args()
 
 
-
 if __name__ == "__main__":
-    args = parse_args();
+    args = parse_args()
     height, width = ADNI_IMAGE_DIMENSIONS
     model = GFNet(
         img_size=(height, width),

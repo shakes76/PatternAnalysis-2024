@@ -24,7 +24,7 @@ NUM_CLASSES = 6  # as per powerpoint slides
 INPUT_CHANNELS = 1  # greyscale
 NUM_LOADED = 5  # set to None to load all
 SHUFFLE = False
-WORKERS = 1
+WORKERS = 0
 
 # taken from the paper on the improved unet
 INITIAL_LR = 5e-4
@@ -75,7 +75,7 @@ def main() -> None:
     scheduler = optim.lr_scheduler.LambdaLR(
         optimiser, lr_lambda=lambda epoch: DECAY_FACTOR ** epoch)
     # will use dice loss as per the task requirements
-    criterion = DiceLoss(NUM_CLASSES)
+    criterion = DiceLoss(NUM_CLASSES, device)
 
     model = model.to(device)
 
@@ -105,12 +105,15 @@ def main() -> None:
                   total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
 
         scheduler.step()
+        criterion.save_epoch()
 
         if epoch % output_epochs == 0:
             torch.save(model.state_dict(), f".{sep}{output_dir}{
                 sep}model{epoch:0{num_digits}d}.pt")
 
     print(f"[{cur_time(script_start_t)}] Training complete")
+
+    criterion.save_loss_figures(f".{sep}{output_dir}{sep}")
 
 
 if LOCAL:

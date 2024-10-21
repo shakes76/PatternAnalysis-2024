@@ -41,3 +41,37 @@ def get_data_loaders(data_dir, batch_size=32, img_size=224, val_split=0.2, num_w
                              std=[0.229, 0.224, 0.225])
     ])
 
+    # Paths to dataset splits
+    train_dir = os.path.join(data_dir, 'train')
+    test_dir = os.path.join(data_dir, 'test')
+
+    # Create datasets
+    train_dataset = datasets.ImageFolder(root=train_dir, transform=train_transforms)
+    test_dataset = datasets.ImageFolder(root=test_dir, transform=test_val_transforms)
+
+    # Split train_dataset into train and validation
+    num_train = len(train_dataset)
+    num_val = int(val_split * num_train)
+    num_train = num_train - num_val
+    train_subset, val_subset = random_split(train_dataset, [num_train, num_val])
+
+    # Create data loaders
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+
+    # Class names
+    class_names = train_dataset.classes
+
+    # Compute class weights for handling class imbalance
+    labels = [label for _, label in train_subset]
+    class_weights = class_weight.compute_class_weight('balanced',
+                                                     classes=np.unique(labels),
+                                                     y=labels)
+    class_weights = torch.tensor(class_weights, dtype=torch.float)
+
+    return {
+        'train': train_loader,
+        'val': val_loader,
+        'test': test_loader
+    }, class_names, class_weights

@@ -67,7 +67,7 @@ class ADNI_DataLoader():
             if (not self.__gotTest):
                 transform = v2.Compose(
                     [v2.CenterCrop(self.imageSize),
-                    v2.Grayscale(),
+                    #v2.Grayscale(),
                     v2.ToTensor(),
                     #v2.Normalize([0.0385], [0.0741]),
                     ])

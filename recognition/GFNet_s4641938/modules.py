@@ -278,7 +278,7 @@ class GFNetPyramid(nn.Module):
         self.patch_embed = nn.ModuleList()
         
         patch_embed = PatchEmbed(
-                img_size=img_size, patch_size=patch_size, in_chans=3, embed_dim=embed_dim[0])
+                img_size=img_size, patch_size=patch_size, in_chans=1, embed_dim=embed_dim[0])
         num_patches = patch_embed.num_patches
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim[0]))
 

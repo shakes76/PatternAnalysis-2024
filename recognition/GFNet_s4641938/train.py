@@ -40,6 +40,12 @@ def main(args):
     # Create model
     print("Creating GFNet model")
     model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.1, dropcls=0.25)
+    #model = GFNetPyramid(
+    #        img_size=IMAGESIZE,
+    #        patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 18, 3],
+    #        mlp_ratio=[4, 4, 4, 4],
+    #        norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.4, init_values=1e-6
+    #    )
     model.to(device)
 
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
@@ -51,6 +57,7 @@ def main(args):
     accuracy = []
     max_accuracy = 0
     times_taken = []
+    prev_time = 0
     N_BATCHES = len(train_dataloader)
     N_IMAGES = len(train_dataloader.dataset)
     for epoch in range(EPOCHS):
@@ -76,6 +83,7 @@ def main(args):
                 print(f"loss: {loss:>7f}  [{current:>5d}/{N_IMAGES:>5d}]")
 
         times_taken.append(time.time() - time_s)
+        prev_time = times_taken[-1]
         print(f"{int(times_taken[-1] // 3600)}h {int((times_taken[-1] % 3600) // 60)}m {int(times_taken[-1] % 60)}s taken for epoch {epoch}")
         acc = getAccuracy(test_dataloader, model, device, -1).item()
         if acc > max_accuracy:

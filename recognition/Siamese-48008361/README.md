@@ -252,7 +252,7 @@ Analysis:
 - Plateau towards end suggests optimal training duration
 - Since only the test auc-roc was plateauing and train auc-roc was still increasing, this suggets that the model was overfitting, and with longer epochs these effects would be more pronounced. However since the goal was to achieve 80% accuracy, this does not matter significantly as the model has already achieved the goal.
 - The same can be said for the loss graph, although the loss is considered high in some contexts, the model still effectively classified the images into the correct classes with greater than 80% accuracy.
-
+- To further explain this point, the model was trained for 30 epochs, however experiment results showed plateauing around epoch 15 onwards, and the code loads the model with the best AUC-ROC (loaded model from epoch 15), therefore it was pointless to train the model for any longer.
 ### t-SNE Visualization of Embeddings
 *Figure 4: t-SNE plot of embeddings from Siamese Network*
 ![alt text](graphs/tsne_plotv2.png)

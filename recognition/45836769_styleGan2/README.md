@@ -10,7 +10,7 @@ StyleGAN2 on the ADNI dataset can contribute to important problems:
 
 ## StyleGAN2 Architecture and Algorithm
 
-The first StyleGAN introduced the concept of disentangled latent spaces for fine-grain control over image features like style and structure. This was done by separating a mapping network which takes a latent vector z from a standard Gaussian distribution and transforms it into an intermediate latent space w. This makes it easier to control individual attributes (e.g. colour, texture, or shape) without changing others. From w the synthesis network increases the resolution while applying style via Adaptive Instance Normalisation (AdaIN). AdaIN normalises the convolution layer activations using the mean and variance of the feature maps and then scales and shifts them based on learned parameters from the latent vector w.
+The first StyleGAN introduced the concept of disentangled latent spaces for better control over image features like style and structure. This was done by separating a mapping network which takes a latent vector z from a Gaussian distribution and transforms it into an intermediate latent space w. This makes it easier to control individual attributes (e.g. colour, texture, or shape) without changing others. From w the synthesis network increases the resolution while applying style via Adaptive Instance Normalisation (AdaIN). AdaIN normalises the convolution layer activations using the mean and variance of the feature maps and then scales and shifts them based on learned parameters from the latent vector w.
 
 StyleGAN had some issues with atrifacts in its images. StyleGAN2 extends on StyleGAN by replacing the AdaIN with modulated convolution. Where w is scaled by a learned transform which is then used to scale the kernel weights - this changes layer behavour based on the style vector similarly to AdaIN.
 
@@ -25,9 +25,11 @@ StyleGAN had some issues with atrifacts in its images. StyleGAN2 extends on Styl
 
 5. **Modulated Convolution**: Used in the synthesis network to apply style information at each layer. Controls the generated images across all resolutions.
 
+6. **Residual Network**: Used in the discriminator to downsample images before classification. Blocks are made up of two convolution layers (with activations) added to the input through a skip connection.
+
 The training process involves alternating between generator and discriminator updates. The generator aims to produce increasingly realistic brain images, while the discriminator classifies real and generated images. This aims to remain balanced between the two models so both continue to learn until the generated images are satisfactory.
 
-Below are graphs of the generator and discriminator architectures (IDK if this works):
+Below are graphs of the generator and discriminator architectures:
 
 ### Generator Architecture
 
@@ -74,7 +76,7 @@ subgraph "Residual Block"
     C2 --> A2["Activation"]
     A2 --> DS["Downsample"]
     SC --> DS
-    DS --> Add["+ (Add)"]
+    DS --> Add["Add"]
 end
 
 subgraph "Discriminator"
@@ -93,7 +95,6 @@ subgraph "Discriminator"
 end
 ```
 
-These graphs are the flow of data through the generator and discriminator networks.
 
 ## Requirements
 | Package     | Version  |

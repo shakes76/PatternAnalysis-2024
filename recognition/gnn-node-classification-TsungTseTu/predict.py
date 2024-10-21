@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from train import set_seed
 import os
+from umap import UMAP
+import matplotlib.colors as mcolors
 
 
 
@@ -82,25 +84,32 @@ def predict():
 
         # t-SNE visualization of node embeddings
         print("Generating t-SNE visualization...")
-        tsne = TSNE(n_components=2)
-        embeddings = tsne.fit_transform(out.cpu().numpy())
+        umap_model = UMAP(n_components=2, random_state=42)
+        embeddings = umap_model.fit_transform(out.cpu().numpy())
 
         plt.figure(figsize=(8, 6))
+
+        # Keeping the original colormap and format
         scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=y_test.cpu().numpy(), cmap='viridis', s=10)
-        plt.colorbar(scatter)
-        plt.title('t-SNE visualization of GAT embeddings')
+
+        # Change color bar to distinct categories
+        cbar = plt.colorbar(scatter, ticks=[0, 1, 2, 3])
+        cbar.set_label('Node Classes')
+
+        plt.title('UMAP Plot of Node Embeddings with Ground Truth Labels')
 
         # Save the plot using a relative path
         images_dir = os.path.join(os.getcwd(), 'images')
         if not os.path.exists(images_dir):
             os.makedirs(images_dir)
         
-        save_path = os.path.join(images_dir, 'SNE visualization.png')
+        save_path = os.path.join(images_dir, 'UMAP visualization.png')
         plt.savefig(save_path)
-        print(f"t-SNE plot saved to {save_path}")
+        print(f"UMAP plot saved to {save_path}")
 
         plt.show()
 
+        
     except Exception as e:
         print(f"An error occurred during prediction: {e}")
 

@@ -548,7 +548,7 @@ class StyleGAN2Discriminator(nn.Module):
     """
     def __init__(self, image_size, num_channels, ndf, num_layers):
         super().__init__()
-        self.image_size = image_size  # (256, 240)
+        self.image_size = image_size  # (256, 256)
         self.num_channels = num_channels  # 1
         self.ndf = ndf  # 64
         self.num_layers = num_layers  # 5
@@ -573,7 +573,8 @@ class StyleGAN2Discriminator(nn.Module):
             
         # Spatial dims after downsamples
         # 5 downsamples: 256/(2^5) = 8
-        final_size = image_size[0] // (2 ** num_layers)  # 8
+        final_height = image_size[0] // (2 ** num_layers)  # 8
+        final_width = image_size[1] // (2 ** num_layers)   # 8
             
         # Add MiniBatchStdDev layer (adds 1 to channel dim)
         # In: [batch_size, 1024 (64 * 16), 8, 8]
@@ -589,7 +590,7 @@ class StyleGAN2Discriminator(nn.Module):
         self.flatten = nn.Flatten()
         
         # Dense layer - classifier
-        out_features = in_channels * final_size * final_size
+        out_features = in_channels * final_height * final_width
         # In: [batch_size, 65536]
         # Out: [batch_size, 1]
         self.final_linear = nn.Linear(out_features, 1)

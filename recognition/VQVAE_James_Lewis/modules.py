@@ -111,9 +111,45 @@ class VectorQuantizer(nn.Module):
         z_q = self.embed(min_encoding_indices).view(z.shape)
 
         #compute the commitment loss
-        z_e = z_flattened.view(z.shape)  # Flattened input for loss computation
+        z_e = z_flattened.view(z.shape)  #flattened input for loss computation
         commitment_loss = self.commitment_cost * F.mse_loss(z_e, z_q.detach())
 
         return z_q, min_encoding_indices, commitment_loss
 
+class VQVAE(nn.Module):
+    """
+    VQ-VAE module
+
+    Combines the encoder, decoder and vector quantizer modules
+
+    @param input_dim: int, number of input channels
+    @param dim: int, number of output channels
+    @param n_res_block: int, number of residual blocks
+    @param n_res_channel: int, number of channels in residual blocks
+    @param stride: int, stride of the convolutional layers
+    @param n_embed: int, number of embeddings
+    @param commitment_cost: float, commitment cost for loss calculation
+
+    """
+
+    def __init__(self, input_dim, dim, n_res_block, n_res_channel, stride, n_embed, commitment_cost):
+        super(VQVAE, self).__init__()
+        self.input_dim = input_dim
+        self.dim = dim
+        self.n_res_block = n_res_block
+        self.n_res_channel = n_res_channel
+        self.stride = stride
+        self.n_embed = n_embed
+        self.commitment_cost = commitment_cost
+
+        self.encoder = Encoder(input_dim, dim, n_res_block, n_res_channel, stride)
+        self.decoder = Decoder(dim, input_dim, n_res_block, n_res_channel, stride)
+        self.vector_quantizer = VectorQuantizer(dim, n_embed, commitment_cost)
+
+    def forward(self, x):
+        z = self.encoder(x)
+        z_q, min_encoding_indices, commitment_loss = self.vector_quantizer(z)
+        x_recon = self.decoder(z_q)
+
+        return x_recon, commitment_loss
 

@@ -12,9 +12,76 @@ from monai.losses import DiceLoss
 
 # import from local files  
 from train import trained_model, CRITERION, compute_dice_segments
-from dataset import X_test, y_test, Prostate3dDataset, visualise_ground_truths, visualise_predictions
+from dataset import X_test, y_test, Prostate3dDataset
 
 BATCH_SIZE = 1
+
+def visualise_ground_truths(images, ground_truths, criterion):
+
+    # Create a 3x3 grid of subplots
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+
+    # Plot the images
+    for i in range(3):
+        for j in range(3):
+
+            idx = i * 3 + j
+
+            # Original image
+
+            image = images[idx]
+
+            axes[i, j].imshow(image, cmap='gray')
+            axes[i, j].axis('off')
+            axes[i, j].set_title(f'Image {idx+1}')
+
+            # Ground truth mask
+
+            ground_truth = ground_truths[idx]
+            num_masks = ground_truth.shape[0]
+
+            mask_gt = np.zeros((ground_truth.shape[1], ground_truth.shape[2]), dtype = np.uint8)
+
+            for k in range(num_masks):
+                mask_gt += (k + 1) * ground_truth[k, : , : ]
+            axes[i, j].imshow(mask_gt, cmap='jet', alpha=0.3)
+
+    # Show the plot
+    plt.tight_layout()
+    plt.savefig(f'ground_truths_{criterion}.png')
+    plt.close()
+    
+    return fig, axes
+
+def visualise_predictions(images, predictions, criterion):
+
+    # Create a 3x3 grid of subplots
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+
+    # Plot the images
+    for i in range(3):
+        for j in range(3):
+
+            idx = i * 3 + j
+
+            # Original image
+
+            image = images[idx]
+
+            axes[i, j].imshow(image, cmap='gray')
+            axes[i, j].axis('off')
+            axes[i, j].set_title(f'Image {idx+1}')
+
+            mask_pred = predictions[idx]
+
+            axes[i, j].imshow(mask_pred, cmap='jet', alpha=0.3)
+
+    # Show the plot
+    plt.tight_layout()
+    plt.savefig(f'predictions_{criterion}.png')
+    plt.close()
+    
+    return fig, axes
 
 def test(model, test_loader, device):
     model.eval()  # Set the model to evaluation mode

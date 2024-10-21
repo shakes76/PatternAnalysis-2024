@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 300
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5

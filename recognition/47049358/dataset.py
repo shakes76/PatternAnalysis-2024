@@ -11,9 +11,6 @@ import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
 import random
 import torch
-import matplotlib.pyplot as plt
-
-from modules import *
 
 # ==========================
 # Constants
@@ -295,73 +292,6 @@ def augment_training_set(X_train, y_train):
         y_train[i, : , : , : , :] = transformed_masks_3d
 
     return X_train, y_train
-
-def visualise_ground_truths(images, ground_truths, criterion):
-
-    # Create a 3x3 grid of subplots
-    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
-
-    # Plot the images
-    for i in range(3):
-        for j in range(3):
-
-            idx = i * 3 + j
-
-            # Original image
-
-            image = images[idx]
-
-            axes[i, j].imshow(image, cmap='gray')
-            axes[i, j].axis('off')
-            axes[i, j].set_title(f'Image {idx+1}')
-
-            # Ground truth mask
-
-            ground_truth = ground_truths[idx]
-            num_masks = ground_truth.shape[0]
-
-            mask_gt = np.zeros((ground_truth.shape[1], y_train.shape[2]), dtype = np.uint8)
-
-            for k in range(num_masks):
-                mask_gt += (k + 1) * ground_truth[k, : , : ]
-            axes[i, j].imshow(mask_gt, cmap='jet', alpha=0.3)
-
-    # Show the plot
-    plt.tight_layout()
-    plt.savefig(f'ground_truths_{criterion}.png')
-    plt.show()
-    
-    return fig, axes
-
-def visualise_predictions(images, predictions, criterion):
-
-    # Create a 3x3 grid of subplots
-    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
-
-    # Plot the images
-    for i in range(3):
-        for j in range(3):
-
-            idx = i * 3 + j
-
-            # Original image
-
-            image = images[idx]
-
-            axes[i, j].imshow(image, cmap='gray')
-            axes[i, j].axis('off')
-            axes[i, j].set_title(f'Image {idx+1}')
-
-            mask_pred = predictions[idx]
-
-            axes[i, j].imshow(mask_pred, cmap='jet', alpha=0.3)
-
-    # Show the plot
-    plt.tight_layout()
-    plt.savefig(f'predictions_{criterion}.png')
-    plt.show()
-    
-    return fig, axes
 
 print('> Loading Dataset')
 

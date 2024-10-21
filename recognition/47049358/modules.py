@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy as np
 
 NEGATIVE_SLOPE = 10 ** -2
 DROP_PROB = 0.3

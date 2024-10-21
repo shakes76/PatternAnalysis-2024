@@ -13,6 +13,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 #from dataset import get_isic2020_data, get_isic2020_data_loaders
 #from modules import TripletLoss, SiameseNet
@@ -33,7 +34,7 @@ def predict_siamese_net(
     all_y_prob = []
     all_y_true = []
 
-    for _, (imgs, _, _, labels) in enumerate(data_loader):
+    for batch_idx, (imgs, _, _, labels) in enumerate(data_loader):
         imgs = imgs.to(device).float()
         outputs = model.classify(imgs)   
 
@@ -76,7 +77,7 @@ def train_siamese_net(
         model.train()  # Set model to training mode
         running_loss = []
         
-        for _, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(train_loader):
+        for step, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(train_loader):
             # Move the data to the device (GPU or CPU)
             anchor_img = anchor_img.to(device).float()
             positive_img = positive_img.to(device).float()
@@ -158,6 +159,59 @@ def train_siamese_net(
             best_val_aurroc = val_aucroc
             print(f"New model saved with Validation AUR ROC of: {best_val_aurroc:.4f}")
 
+    # After Training is completed plot the progress
+    plot_training_graphs(
+        train_loss_per_epoch,
+        val_loss_per_epoch,
+        train_acc_per_epoch,
+        val_acc_per_epoch,
+        train_aucroc_per_epoch,
+        val_aucroc_per_epoch,
+    )
+
+def plot_training_graphs(
+    train_loss_per_epoch,
+    val_loss_per_epoch,
+    train_acc_per_epoch,
+    val_acc_per_epoch,
+    train_aucroc_per_epoch,
+    val_aucroc_per_epoch,
+):    
+    """
+    """
+    # Plot Loss
+    plt.figure(figsize=(15, 5))
+    
+    plt.subplot(1, 3, 1)
+    plt.plot(range(EPOCHS), train_loss_per_epoch, label='Train Loss', color='darkseagreen')
+    plt.plot(range(EPOCHS), val_loss_per_epoch, label='Validation Loss', color='lightcoral')
+    plt.title('Loss over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    
+    # Plot Accuracy
+    plt.subplot(1, 3, 2)
+    plt.plot(range(EPOCHS), train_acc_per_epoch, label='Train Accuracy', color='darkseagreen')
+    plt.plot(range(EPOCHS), val_acc_per_epoch, label='Validation Accuracy', color='lightcoral')
+    plt.title('Accuracy over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    
+    # Plot AURROC
+    plt.subplot(1, 3, 3)
+    plt.plot(range(EPOCHS), train_aucroc_per_epoch, label='Train AURROC', color='darkseagreen')
+    plt.plot(range(EPOCHS), val_aucroc_per_epoch, label='Validation AURROC', color='lightcoral')
+    plt.title('AURROC over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('AURROC')
+    plt.legend()
+    
+    # Show the plots
+    plt.tight_layout()
+    plt.show()
+
 def set_seed(seed: int=42):
     """
     """
@@ -174,35 +228,25 @@ def set_seed(seed: int=42):
 ### Main Function
 def main():
     """
-    """
-    # Set config for the current training run
-    config = {
-        'data_subset': 100,
-        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
-        'embedding_dims': 128,
-        'learning_rate': 0.0001,
-        'epochs': 20,
-    }
-    
+    """   
     # Determine device that we are training on
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Extract the data from the given locations
     images, labels = get_isic2020_data(
-        metadata_path=config['metadata_path'],
-        image_dir=config['image_dir'],
-        data_subset=config['data_subset']
+        metadata_path=CONFIG['metadata_path'],
+        image_dir=CONFIG['image_dir'],
+        data_subset=CONFIG['data_subset']
     )
 
     # Get the data loaders
     train_loader, val_loader, test_loader = get_isic2020_data_loaders(images, labels)
 
     # Initalise Model
-    model = SiameseNet(config['embedding_dims']).to(device)
+    model = SiameseNet(CONFIG['embedding_dims']).to(device)
 
     # Initialise loss fucnctions and optimiser
-    optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
     triplet_loss = TripletLoss().to(device)
     classifier_loss = nn.CrossEntropyLoss().to(device)
 
@@ -214,9 +258,12 @@ def main():
         optimizer,
         triplet_loss,
         classifier_loss,
-        config['epochs'],
+        CONFIG['epochs'],
         device
     )
+
+    # Predict results on testing
+    results_siamese_net
 
     # Predict Results from test set
 

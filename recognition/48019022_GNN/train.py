@@ -17,7 +17,7 @@ Potential Improvements:
     Change hyperparameters after tests
 """
 
-def _train_model(model, data, train):
+def _train_model(model, data, train, optimiser, criterion, device):
     """
     The function for training the model using the pre-defined parameters and loss functions
     Although we pass the entire dataset through the forward pass, only the training indexes are updating the parameters
@@ -33,7 +33,7 @@ def _train_model(model, data, train):
 
     return loss.item() # return loss to monitor
 
-def _evaluate_model(model, data, valid, test):
+def _evaluate_model(model, data, valid, test, criterion):
     """
     Function for testing the model accuracy against the validation and test data set
     """
@@ -51,7 +51,7 @@ def _evaluate_model(model, data, valid, test):
 
     return valid_loss, accuracy
 
-def training_loop(num_epochs, model, data, train, valid, test):
+def training_loop(num_epochs, model, data, train, valid, test, optimiser, criterion, device, losses, valid_losses, accuracies, scheduler):
     """
     Code for the main training loop.
     Data is passed through the network to train, and loss plots will be generated
@@ -59,19 +59,19 @@ def training_loop(num_epochs, model, data, train, valid, test):
     # implementing early stopping to reduce change of overfitting model
     best_val_loss = float('inf')
     patience_count = 0
-    patience_lim = 10 #stop training if loss doesn't improve for 10 epochs
-    
+    patience_lim = 70 #stop training if loss doesn't improve for 10 epochs
+
     for epoch in range(num_epochs):
-        loss = _train_model(model=model, data=data, train=train)
+        loss = _train_model(model=model, data=data, train=train, optimiser=optimiser, criterion=criterion, device=device)
 
         # Validation and testing step
-        valid_loss, test_accuracy = _evaluate_model(model=model, data=data, valid=valid, test=test)
+        valid_loss, test_accuracy = _evaluate_model(model=model, data=data, valid=valid, test=test, criterion=criterion)
 
         # Update stats
         losses.append(loss)
         valid_losses.append(valid_loss)
         accuracies.append(test_accuracy)
-        
+
         # Step the scheduler
         scheduler.step()
 
@@ -98,7 +98,7 @@ def training_loop(num_epochs, model, data, train, valid, test):
         # printing loss information each epoch
         if epoch % 10 == 0:
             print(f'Epoch: {epoch}, Loss: {loss:.4f}, Val Loss: {valid_loss:.4f}, Test Accuracy: {test_accuracy:.4f}')
-        
+
     # After training loop, generate loss plot.
     plt.figure(figsize=(10, 6))
     plt.plot(losses, label='Training Loss')
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     architecture = "GCN"
 
     # loading data
-    data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='facebook.npz')
+    data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='/Users/anthonyngo/Documents/UQ/24sem2/COMP3710/project/PatternAnalysis-2024/facebook.npz')
 
     data = data.to(device)
     # now we can define the model
@@ -140,12 +140,11 @@ if __name__ == '__main__':
         pass
 
     model = model.to(device)
-    model.train()
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     # Setup WANDB configurations
-    wandb_config.setup_wandb(architecture=architecture)
+    wandb_config.setup_wandb(architecture=architecture, epochs=epochs)
 
     # Setting up Adam Optimiser and Cross Entropy Loss function
     optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser
@@ -160,7 +159,19 @@ if __name__ == '__main__':
     accuracies = []
 
     start_time = time.time()
-    training_loop(epochs, model=model, data=data, train=train_idx, valid=valid_idx, test=test_idx)
+    training_loop(epochs, 
+                  model=model, 
+                  data=data, 
+                  train=train_idx, 
+                  valid=valid_idx, 
+                  test=test_idx, 
+                  optimiser=optimiser, 
+                  criterion=criterion, 
+                  device=device, 
+                  losses=losses, 
+                  valid_losses=valid_losses, 
+                  accuracies=accuracies, 
+                  scheduler=scheduler)
     end_time = time.time()
 
     total_time = end_time - start_time

@@ -86,6 +86,6 @@ def visulize():
     output = process_and_forward_pass(model, feature_matrix, adjacency_matrix, device)
 
     # Plot and save the t-SNE visualization
-    plot_tsne("TSNE_post_train", output, labels, num_classes, device)
+    plot_tsne("TSNE_train_plot", output, labels, num_classes, device)
 
 visulize()

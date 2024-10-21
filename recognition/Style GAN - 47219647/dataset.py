@@ -1,32 +1,41 @@
-import numpy as np
-import torch
-import tensorflow as tf
-from torchvision import  datasets, transforms
-import torch.nn.functional as F
-import matplotlib.pyplot as plt
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, Dataset
+from PIL import Image
+import os
 
+class CustomImageDataset(Dataset):
+    def __init__(self, image_dir, transform=None):
+        self.image_dir = image_dir
+        self.transform = transform
+        self.image_files = [f for f in os.listdir(image_dir) if f.endswith(('png', 'jpg', 'jpeg'))]
 
-def one_hot_encode(labels, num_classes):
-    return F.one_hot(labels, num_classes=num_classes)
+    def __len__(self):
+        return len(self.image_files)
 
-def data_set_creator(batch_size):
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.image_dir, self.image_files[idx])
+        image = Image.open(img_path).convert("RGB")  # Load image as RGB
+        
+        if self.transform:
+            image = self.transform(image)
+
+        return image, 0  # Return image and dummy label (0)
+
+def data_set_creator(image_size, batch_size):
     augmentation_transforms = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
-        transforms.Resize((256, 256)),  # Can dynamically resize based on step
+        transforms.Grayscale(num_output_channels=1),  
+        transforms.Resize((image_size, image_size)),  
         transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(30),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor()
     ])
 
-    # Update the directory as needed
-    data_dir = 'recognition/Style GAN - 47219647/AD_NC/'
+    # Update the directory to point to your dataset (folder containing images)
+    data_dir = 'recognition/Style GAN - 47219647/AD_NC/'  # Ensure this path points to your folder of images
     
-    dataset = datasets.ImageFolder(root=data_dir, transform=augmentation_transforms)
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=6)
+    # Use the custom dataset class to load all images from the folder
+    dataset = CustomImageDataset(image_dir=data_dir, transform=augmentation_transforms)
+
+    # Create a data loader with the given batch size
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=6)
 
     return data_loader, dataset
-
-
-
-

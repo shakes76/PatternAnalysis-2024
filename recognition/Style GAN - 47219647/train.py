@@ -16,7 +16,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 IMAGE_SIZES = [4, 8, 16, 32, 64, 128, 256]
 BATCH_SIZES = {4: 256, 8: 128, 16: 64, 32: 32, 64: 16, 128: 8, 256: 4}
 LEARNING_SIZES = {4: 1e-3, 8: 1.2e-3, 16: 1.5e-3, 32: 1.8e-3, 64: 2e-3, 128: 2.5e-3, 256: 3e-3}
-CHANNELS_IMG = 1  # Grayscale for medical images (adjust if necessary)
+CHANNELS_IMG = 1  
 Z_DIM = 256
 W_DIM = 256
 IN_CHANNELS = 256
@@ -24,7 +24,7 @@ LAMBDA_GP = 10
 PROGRESSIVE_EPOCHS = {4: 50, 8: 50, 16: 40, 32: 30, 64: 20, 128: 15, 256: 10}  # Adjusted epochs
 
 # Function to generate examples at each step
-def generate_examples(gen, steps, n=100):
+def generate_examples(gen, steps, n=3):
     gen.eval()
     alpha = 1.0
     for i in range(n):
@@ -57,8 +57,7 @@ def gradient_penalty(disc, real, fake, alpha, train_step, device="cpu"):
 
     return gradient_penalty
 
-# Training function for each step of progressive GAN training
-def train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen):
+def train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen, disc_losses, gen_losses):
     loop = tqdm(loader, leave=True)
 
     for batch_idx, (real, _) in enumerate(loop):
@@ -98,13 +97,20 @@ def train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen):
         )
         alpha = min(alpha, 1)
 
+        # Append losses to lists
+        disc_losses.append(loss_disc.item())
+        gen_losses.append(loss_gen.item())
+
         # Display loss in tqdm loop
         loop.set_postfix(gp=gp.item(), loss_disc=loss_disc.item())
 
     return alpha
 
-# Main training loop across image sizes
 if __name__ == "__main__":
+    disc_losses = []
+    gen_losses = []
+
+    # Main training loop over image sizes
     for step, current_image_size in enumerate(IMAGE_SIZES):
         current_batch_size = BATCH_SIZES[current_image_size]
         current_learning_rate = LEARNING_SIZES[current_image_size]
@@ -115,7 +121,7 @@ if __name__ == "__main__":
         gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
         disc = Discriminator(IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
 
-        # Optimizers
+        # Initialize optimizers
         opt_gen = optim.Adam([
             {"params": [param for name, param in gen.named_parameters() if "map" not in name]},
             {"params": gen.map.parameters(), "lr": 1e-5}
@@ -132,7 +138,13 @@ if __name__ == "__main__":
         alpha = 1e-5  # Start with very low alpha for progressive blending
         for epoch in range(PROGRESSIVE_EPOCHS[current_image_size]):
             print(f"Epoch [{epoch + 1}/{PROGRESSIVE_EPOCHS[current_image_size]}] at image size {current_image_size}x{current_image_size}")
-            alpha = train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen)
 
-        # Generate and save examples at the current step (image size)
+            # Train for one epoch and track the alpha value
+            alpha = train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen, disc_losses, gen_losses)
+
+        # After training for the current image size, generate examples
         generate_examples(gen, step)
+        # Save model, optimizer states, and losses after each epoch
+        save_model(gen, disc, opt_gen, opt_disc, epoch, step, disc_losses, gen_losses, file_path=f"model_checkpoint_step{step}_epoch{epoch}.pth")
+
+

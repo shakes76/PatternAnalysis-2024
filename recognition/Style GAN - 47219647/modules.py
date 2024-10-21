@@ -300,17 +300,20 @@ class Generator(nn.Module):
         return self.fade_in(alpha, final_upscaled, final_out)
 
 
-def save_model(gen, disc, opt_gen, opt_disc, epoch, step, file_path="model_checkpoint.pth"):
+def save_model(gen, disc, opt_gen, opt_disc, epoch, step, disc_losses, gen_losses, file_path="model_checkpoint.pth"):
     checkpoint = {
         "generator_state_dict": gen.state_dict(),
         "discriminator_state_dict": disc.state_dict(),
         "opt_gen_state_dict": opt_gen.state_dict(),
         "opt_disc_state_dict": opt_disc.state_dict(),
         "epoch": epoch,
-        "step": step
+        "step": step,
+        "disc_losses": disc_losses,
+        "gen_losses": gen_losses
     }
     torch.save(checkpoint, file_path)
-    print(f"Model saved to {file_path}")
+    print(f"Model and losses saved to {file_path}")
+
 
 
 def load_model(gen, disc, opt_gen, opt_disc, file_path="model_checkpoint.pth"):
@@ -322,5 +325,10 @@ def load_model(gen, disc, opt_gen, opt_disc, file_path="model_checkpoint.pth"):
     epoch = checkpoint["epoch"]
     step = checkpoint["step"]
     
-    print(f"Model loaded from {file_path}, starting from epoch {epoch}, step {step}")
-    return epoch, step
+    # Retrieve the loss lists
+    disc_losses = checkpoint.get("disc_losses", [])
+    gen_losses = checkpoint.get("gen_losses", [])
+    
+    print(f"Model and losses loaded from {file_path}, starting from epoch {epoch}, step {step}")
+    return epoch, step, disc_losses, gen_losses
+

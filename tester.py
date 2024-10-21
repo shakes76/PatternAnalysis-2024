@@ -7,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from scipy.ndimage import zoom
 
 # Function to convert labels to one-hot encoded channels
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -36,10 +35,10 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
         # Convert to categorical (one-hot) encoding with channels as the first dimension
         first_case = to_channels(first_case, dtype=dtype)
         channels, depth, height, width = first_case.shape
-        images = np.zeros((num, channels, depth, height, width), dtype=dtype)  # [batch_size, channels, depth, height, width]
+        images = np.zeros((num, channels, depth, height, width), dtype=dtype)
     else:
         depth, height, width = first_case.shape
-        images = np.zeros((num, 4, depth, height, width), dtype=dtype)  # Non-categorical, assuming 4 channels
+        images = np.zeros((num, 4, depth, height, width), dtype=dtype)  # Assuming 4 channels
 
     for i, image_name in enumerate(tqdm(image_names)):
         try:
@@ -55,10 +54,8 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
             
             if categorical:
                 in_image = to_channels(in_image, dtype=dtype)
-                # Store in correct order: [batch_size, channels, depth, height, width]
                 images[i, :, :in_image.shape[1], :in_image.shape[2], :in_image.shape[3]] = in_image
             else:
-                # For non-categorical, format is now [batch_size, 4, depth, height, width]
                 images[i, :, :in_image.shape[0], :in_image.shape[1], :in_image.shape[2]] = in_image
 
             if early_stop and i > 20:
@@ -67,35 +64,6 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
             print(f"Error loading image: {image_name}. {e}")
 
     return images
-
-# Transformation to resize 3D volumes (depth, height, width)
-class Resize3D:
-    def __init__(self, size):
-        self.size = size
-
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        
-        # Resize each dimension of the 3D input
-        depth, height, width = self.size
-        image = np.resize(image, (image.shape[0], depth, height, width))
-        label = np.resize(label, (label.shape[0], depth, height, width))
-        
-        return {'image': image, 'label': label}
-
-# Normalize the image (assuming image is already resized)
-class Normalize3D:
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-
-        # Normalize the image
-        mean = np.mean(image)
-        std = np.std(image)
-        image = (image - mean) / std
-
-        return {'image': image, 'label': label}
-
-
 # Custom dataset class for PyTorch with transformations for 3D data
 class CustomDataset(Dataset):
     def __init__(self, image_filenames, img_dir, labels_dir, transform=None):
@@ -115,26 +83,35 @@ class CustomDataset(Dataset):
         label_filename = self.image_filenames[idx].replace("LFOV", "SEMANTIC_LFOV")  # replacement
         label_path = os.path.join(self.labels_dir, label_filename)
         label = load_data_3D([label_path], categorical=True)[0]
-        label = torch.tensor(label, dtype=torch.float32)
+        label = torch.tensor(label, dtype=torch.long)  # Use long for class indices
         # Apply transformations if any
         if self.transform:
-            sample = {'image': image, 'label': label}
-            sample = self.transform(sample)
-            image = sample['image']
-            label = sample['label']
-        # Ensure the image and label are in the correct shape: (channels, depth, height, width)
-        # The model expects input in [batch_size, channels, depth, height, width]
-        # and labels in [batch_size, num_classes, depth, height, width]
+            image = self.transform(image)
         return image, label
 
-# Custom transformations for 3D data
+# Define custom transformations for 3D data
+class Compose3D:
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, sample):
+        for transform in self.transforms:
+            sample = transform(sample)
+        return sample
+
+class Resize3D:
+    def __init__(self, new_shape):
+        self.new_shape = new_shape
+
+    def __call__(self, volume):
+        return np.resize(volume, self.new_shape)
+
+# UNet3D model definition
 class UNet3D(nn.Module):
     def __init__(self, in_channels=1, out_channels=1, init_features=32):
         super(UNet3D, self).__init__()
-        
+
         features = init_features
-        
-        # Adjust the encoder to handle 5D input: [batch_size, channels, depth, height, width]
         self.encoder1 = UNet3D._block(in_channels, features)
         self.pool1 = nn.MaxPool3d(kernel_size=2, stride=2)
         
@@ -147,10 +124,8 @@ class UNet3D(nn.Module):
         self.encoder4 = UNet3D._block(features * 4, features * 8)
         self.pool4 = nn.MaxPool3d(kernel_size=2, stride=2)
 
-        # Bottleneck
         self.bottleneck = UNet3D._block(features * 8, features * 16)
 
-        # Decoder
         self.upconv4 = nn.ConvTranspose3d(features * 16, features * 8, kernel_size=2, stride=2)
         self.decoder4 = UNet3D._block(features * 16, features * 8)
         
@@ -166,17 +141,13 @@ class UNet3D(nn.Module):
         self.conv = nn.Conv3d(in_channels=features, out_channels=out_channels, kernel_size=1)
 
     def forward(self, x):
-        # Make sure input is 5D: [batch_size, channels, depth, height, width]
-        # Encoder
         enc1 = self.encoder1(x)
         enc2 = self.encoder2(self.pool1(enc1))
         enc3 = self.encoder3(self.pool2(enc2))
         enc4 = self.encoder4(self.pool3(enc3))
 
-        # Bottleneck
         bottleneck = self.bottleneck(self.pool4(enc4))
 
-        # Decoder
         dec4 = self.upconv4(bottleneck)
         dec4 = torch.cat((dec4, enc4), dim=1)
         dec4 = self.decoder4(dec4)
@@ -198,85 +169,46 @@ class UNet3D(nn.Module):
     @staticmethod
     def _block(in_channels, features):
         return nn.Sequential(
-            nn.Conv3d(in_channels=in_channels, out_channels=features, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm3d(features),
+            nn.Conv3d(in_channels, features, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv3d(in_channels=features, out_channels=features, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm3d(features),
-            nn.ReLU(inplace=True),
+            nn.Conv3d(features, features, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
         )
 
-# Main function
-def main():
-    # Construct file paths correctly
-    img_dir = os.path.join("Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-", "data", 
+# Main training loop
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+img_dir = os.path.join("Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-", "data", 
                         "HipMRI_study_complete_release_v1", "semantic_MRs_anon")
-    labels_dir = os.path.join("Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-", "data", 
-                            "HipMRI_study_complete_release_v1", "semantic_labels_anon")
+labels_dir = os.path.join("Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-", "data", 
+                        "HipMRI_study_complete_release_v1", "semantic_labels_anon")
 
-    # Check if the directories exist
-    if not os.path.exists(img_dir):
-        print(f"Image directory {img_dir} does not exist.")
-    if not os.path.exists(labels_dir):
-        print(f"Labels directory {labels_dir} does not exist.")
-    
-    # Proceed with data loading if paths are correct
-    image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii.gz')]
-    
-    # Define transformations
-    transform = transforms.Compose([
-        Resize3D((64, 64, 32)),  # Resize to (depth, height, width)
-        Normalize3D()  # Normalize the images
-    ])
+# Check if the directories exist
+if not os.path.exists(img_dir):
+    print(f"Image directory {img_dir} does not exist.")
+if not os.path.exists(labels_dir):
+    print(f"Labels directory {labels_dir} does not exist.")
 
+# Proceed with data loading if paths are correct
+image_filenames = [f for f in os.listdir(img_dir) if f.endswith('.nii.gz')]
 
-    # Create dataset
-    dataset= CustomDataset(image_filenames, img_dir, labels_dir, transform = transform) #!transform=transform
-    
-    # Split into training and test sets
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+dataset = CustomDataset(image_filenames, img_dir, labels_dir)
+dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
-    # DataLoader for batching
-    batch_size = 1
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2) 
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+model = UNet3D(in_channels=4, out_channels=6)  # Change out_channels to the number of classes
+model.to(device)
 
-    # Initialize the 3D U-Net model
-    model = UNet3D(in_channels=4, out_channels=6, init_features=32) 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
+# Define the loss function and optimizer
+criterion = nn.CrossEntropyLoss()  # For multi-class segmentation
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-    # Define optimizer and loss function
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-    
-    # Training loop
-    n_epochs = 1
-    # Training loop
-    for epoch in range(n_epochs):
-        print(f"Epoch {epoch + 1}")
-        model.train()
-        running_loss = 0.0        
-        for images, labels in train_loader:  # Unpack the tuple
-            images = images.to(device)
-            labels = labels.to(device)
-
-            outputs = model(images)
-            # Compute the loss (using labels as targets instead of images)
-            labels_class_indices = torch.argmax(labels, dim=1)
-            loss = criterion(outputs, labels_class_indices)  
-            # Zero the gradients
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-
-        print(f"Epoch [{epoch+1}/{n_epochs}], Loss: {running_loss/len(train_loader):.4f}")
-
-    # Save predictions to disk after each epoch
-    
-if __name__ == "__main__":
-    main()
+# Training loop
+for epoch in range(10):
+    model.train()
+    for images, labels in dataloader:
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        print(f"Epoch [{epoch + 1}/10], Loss: {loss.item():.4f}")

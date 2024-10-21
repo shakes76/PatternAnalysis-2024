@@ -10,19 +10,9 @@ import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-DATASET                 = "ADNI"
-START_TRAIN_AT_IMG_SIZE = 128
-DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"
-LEARNING_RATE           = 1e-3
-BATCH_SIZES             = [256, 128, 64, 32, 16, 8]
-CHANNELS_IMG            = 3
-Z_DIM                   = 256
-W_DIM                   = 256
-IN_CHANNELS             = 256
-LAMBDA_GP               = 10
-PROGRESSIVE_EPOCHS      = [30] * len(BATCH_SIZES)
 
-factors = [1, 1, 1, 1, 1 / 2, 1 / 4, 1 / 8, 1 / 16, 1 / 32]
+#Compressing the chanels from 4,8,16,32,128,256
+factors = [1, 1, 1, 1, 1 / 2, 1 / 4, 1 / 8]
 
 class PixelNorm(nn.Module):
     def __init__(self):
@@ -117,6 +107,9 @@ class InjectNoise(nn.Module):
     
 
 class WSConv2d(nn.Module):
+    """
+    Weight Scales 2d Convolutional Layer
+    """
     def __init__(
         self, in_channels, out_channels, kernel_size=3, stride=1, padding=1
     ):
@@ -135,6 +128,9 @@ class WSConv2d(nn.Module):
     
 
 class ConvBlock(nn.Module):
+    """
+    Normal Conventional Block with 2 convolutional layers and one leaky rely activation layer
+    """
     def __init__(self, in_channels, out_channels):
         super(ConvBlock, self).__init__()
         self.conv1 = WSConv2d(in_channels, out_channels)
@@ -148,6 +144,7 @@ class ConvBlock(nn.Module):
     
 
 class Discriminator(nn.Module):
+    
     def __init__(self, in_channels, img_channels=3):
         super(Discriminator, self).__init__()
         self.prog_blocks, self.rgb_layers = nn.ModuleList([]), nn.ModuleList([])
@@ -302,37 +299,28 @@ class Generator(nn.Module):
         final_out = self.rgb_layers[steps](out)
         return self.fade_in(alpha, final_upscaled, final_out)
 
-def generate_examples(gen, steps, n=100):
 
-    gen.eval()
-    alpha = 1.0
-    for i in range(n):
-        with torch.no_grad():
-            noise = torch.randn(1, Z_DIM).to(DEVICE)
-            img = gen(noise, alpha, steps)
-            if not os.path.exists(f'saved_examples/step{steps}'):
-                os.makedirs(f'saved_examples/step{steps}')
-            save_image(img*0.5+0.5, f"saved_examples/step{steps}/img_{i}.png")
-    gen.train()
+def save_model(gen, disc, opt_gen, opt_disc, epoch, step, file_path="model_checkpoint.pth"):
+    checkpoint = {
+        "generator_state_dict": gen.state_dict(),
+        "discriminator_state_dict": disc.state_dict(),
+        "opt_gen_state_dict": opt_gen.state_dict(),
+        "opt_disc_state_dict": opt_disc.state_dict(),
+        "epoch": epoch,
+        "step": step
+    }
+    torch.save(checkpoint, file_path)
+    print(f"Model saved to {file_path}")
 
-def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
-    BATCH_SIZE, C, H, W = real.shape
-    beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
-    interpolated_images = real * beta + fake.detach() * (1 - beta)
-    interpolated_images.requires_grad_(True)
 
-    # Calculate critic scores
-    mixed_scores = critic(interpolated_images, alpha, train_step)
- 
-    # Take the gradient of the scores with respect to the images
-    gradient = torch.autograd.grad(
-        inputs=interpolated_images,
-        outputs=mixed_scores,
-        grad_outputs=torch.ones_like(mixed_scores),
-        create_graph=True,
-        retain_graph=True,
-    )[0]
-    gradient = gradient.view(gradient.shape[0], -1)
-    gradient_norm = gradient.norm(2, dim=1)
-    gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
-    return gradient_penalty
+def load_model(gen, disc, opt_gen, opt_disc, file_path="model_checkpoint.pth"):
+    checkpoint = torch.load(file_path)
+    gen.load_state_dict(checkpoint["generator_state_dict"])
+    disc.load_state_dict(checkpoint["discriminator_state_dict"])
+    opt_gen.load_state_dict(checkpoint["opt_gen_state_dict"])
+    opt_disc.load_state_dict(checkpoint["opt_disc_state_dict"])
+    epoch = checkpoint["epoch"]
+    step = checkpoint["step"]
+    
+    print(f"Model loaded from {file_path}, starting from epoch {epoch}, step {step}")
+    return epoch, step

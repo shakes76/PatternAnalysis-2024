@@ -2,77 +2,137 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from dataset import data_set_creator
-from modules import StyleGan
+import numpy as np
+import os
+from torchvision.utils import save_image
+from tqdm import tqdm
 
+from modules import *
+from dataset import data_set_creator
 
+# Configuration
+DATASET = "ADNI"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+IMAGE_SIZES = [4, 8, 16, 32, 64, 128, 256]
+BATCH_SIZES = {4: 256, 8: 128, 16: 64, 32: 32, 64: 16, 128: 8, 256: 4}
+LEARNING_SIZES = {4: 1e-3, 8: 1.2e-3, 16: 1.5e-3, 32: 1.8e-3, 64: 2e-3, 128: 2.5e-3, 256: 3e-3}
+CHANNELS_IMG = 1  # Grayscale for medical images (adjust if necessary)
+Z_DIM = 256
+W_DIM = 256
+IN_CHANNELS = 256
+LAMBDA_GP = 10
+PROGRESSIVE_EPOCHS = {4: 50, 8: 50, 16: 40, 32: 30, 64: 20, 128: 15, 256: 10}  # Adjusted epochs
 
-def train_gan(model, dataloader, epochs=10, latent_dim=512, lr=1e-4):
-    discriminator_losses = []
-    generator_losses = []
-    
-    # Move model to the correct device (GPU if available)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.move_to_device()
+# Function to generate examples at each step
+def generate_examples(gen, steps, n=100):
+    gen.eval()
+    alpha = 1.0
+    for i in range(n):
+        with torch.no_grad():
+            img = gen(torch.randn(1, Z_DIM).to(DEVICE), alpha, steps)
+            if not os.path.exists(f'saved_examples/step{steps}'):
+                os.makedirs(f'saved_examples/step{steps}')
+            save_image(img * 0.5 + 0.5, f"saved_examples/step{steps}/img_{i}.png")
+    gen.train()
 
-    # Initialize weights of the model
-    model.initialise_weight()
+# Function to compute gradient penalty for WGAN-GP
+def gradient_penalty(disc, real, fake, alpha, train_step, device="cpu"):
+    BATCH_SIZE, C, H, W = real.shape
+    beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
+    interpolated_images = real * beta + fake.detach() * (1 - beta)
+    interpolated_images.requires_grad_(True)
 
-    # Optimizers for generator and discriminator
-    optimizerG = optim.Adam(model.get_generator().parameters(), lr=lr, betas=(0.5, 0.9))
-    optimizerD = optim.Adam(model.get_discriminator().parameters(), lr=lr * 2, betas=(0.5, 0.9))
+    mixed_scores = disc(interpolated_images, alpha, train_step)
+    gradient = torch.autograd.grad(
+        inputs=interpolated_images,
+        outputs=mixed_scores,
+        grad_outputs=torch.ones_like(mixed_scores),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
 
-    criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss for real vs fake classification
+    gradient = gradient.view(gradient.shape[0], -1)
+    gradient_norm = gradient.norm(2, dim=1)
+    gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
 
-    num_classes = 2 
+    return gradient_penalty
 
-    for epoch in range(epochs):
-        for real_images, one_hot_labels in dataloader:
-            batch_size = real_images.size(0)
+# Training function for each step of progressive GAN training
+def train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen):
+    loop = tqdm(loader, leave=True)
 
-            # Move real images and labels to the device
-            real_images = real_images.to(device)
-            one_hot_labels = one_hot_labels.to(device)
+    for batch_idx, (real, _) in enumerate(loop):
+        real = real.to(DEVICE)
+        cur_batch_size = real.shape[0]
 
-            # Label tensors for real and fake images
-            real_labels = torch.ones(batch_size, 1).to(device)  # Real labels = 1
-            fake_labels = torch.zeros(batch_size, 1).to(device)  # Fake labels = 0
+        noise = torch.randn(cur_batch_size, Z_DIM).to(DEVICE)
 
-            
-            noise = model.sample_noise(batch_size, latent_dim)
+        # Forward passes
+        fake = gen(noise, alpha, step)
+        disc_real = disc(real, alpha, step)
+        disc_fake = disc(fake.detach(), alpha, step)
 
-            optimizerD.zero_grad()
+        # Gradient penalty and discriminator loss
+        gp = gradient_penalty(disc, real, fake, alpha, step, device=DEVICE)
+        loss_disc = (- (torch.mean(disc_real) - torch.mean(disc_fake))
+                     + LAMBDA_GP * gp
+                     + (0.001 * torch.mean(disc_real ** 2)))
 
-            fake_images = model.get_generator()(noise)
-            
-            real_scores, _ = model.get_discriminator()(real_images)
-            fake_scores, _ = model.get_discriminator()(fake_images.detach()) 
+        # Update discriminator
+        disc.zero_grad()
+        loss_disc.backward()
+        opt_disc.step()
 
-            d_real_loss = criterion(real_scores, real_labels)
-            d_fake_loss = criterion(fake_scores, fake_labels)
-            d_loss = d_real_loss + d_fake_loss
+        # Generator loss
+        gen_fake = disc(fake, alpha, step)
+        loss_gen = -torch.mean(gen_fake)
 
-            d_loss.backward()
-            optimizerD.step()
+        # Update generator
+        gen.zero_grad()
+        loss_gen.backward()
+        opt_gen.step()
 
-            optimizerG.zero_grad()
+        # Update alpha (progressive growing blending factor)
+        alpha += cur_batch_size / (
+            (PROGRESSIVE_EPOCHS[current_image_size] * 0.5) * len(dataset)
+        )
+        alpha = min(alpha, 1)
 
-            # Discriminator forward pass on fake images (using updated generator)
-            fake_scores, _ = model.get_discriminator()(fake_images)
+        # Display loss in tqdm loop
+        loop.set_postfix(gp=gp.item(), loss_disc=loss_disc.item())
 
-            g_loss = criterion(fake_scores, real_labels)
+    return alpha
 
-            g_loss.backward()
-            optimizerG.step()
+# Main training loop across image sizes
+if __name__ == "__main__":
+    for step, current_image_size in enumerate(IMAGE_SIZES):
+        current_batch_size = BATCH_SIZES[current_image_size]
+        current_learning_rate = LEARNING_SIZES[current_image_size]
 
-            discriminator_losses.append(d_loss.item())
-            generator_losses.appen(g_loss.item())
+        print(f"Training at image size {current_image_size}x{current_image_size} with batch size {current_batch_size} and learning rate {current_learning_rate}")
 
-        print(f"Epoch [{epoch + 1}/{epochs}], D Loss: {d_loss.item():.4f}, G Loss: {g_loss.item():.4f}")
-        
-        if (epoch + 1) % 5 == 0:
-            model.save_checkpoint(epoch + 1, path=f"gan_checkpoint_epoch_{epoch + 1}.pth")
-        
-    return discriminator_losses, generator_losses
+        # Initialize generator and discriminator
+        gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
+        disc = Discriminator(IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
 
-discriminator_losses, generator_losses = train_gan(model = StyleGan(), dataloader= data_set_creator(), epochs= 1)
+        # Optimizers
+        opt_gen = optim.Adam([
+            {"params": [param for name, param in gen.named_parameters() if "map" not in name]},
+            {"params": gen.map.parameters(), "lr": 1e-5}
+        ], lr=current_learning_rate, betas=(0.0, 0.99))
 
+        opt_disc = optim.Adam(disc.parameters(), lr=current_learning_rate, betas=(0.0, 0.99))
+
+        gen.train()
+        disc.train()
+
+        # Get data loader for the current image size
+        loader, dataset = data_set_creator(image_size=current_image_size, batch_size=current_batch_size)
+
+        alpha = 1e-5  # Start with very low alpha for progressive blending
+        for epoch in range(PROGRESSIVE_EPOCHS[current_image_size]):
+            print(f"Epoch [{epoch + 1}/{PROGRESSIVE_EPOCHS[current_image_size]}] at image size {current_image_size}x{current_image_size}")
+            alpha = train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen)
+
+        # Generate and save examples at the current step (image size)
+        generate_examples(gen, step)

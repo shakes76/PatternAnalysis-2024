@@ -88,7 +88,22 @@ def train_fn(
         gen_loss.append(loss_gen.item())
         critic_loss.append(loss_critic.item())
 
-    return alpha
+    return alpha, gen_loss, critic_loss
+
+
+def plot_losses(gen_loss, critic_loss, step):
+    """
+    TODO: fix
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(gen_loss, label="Generator Loss", color="orange")
+    plt.plot(critic_loss, label="Critic Loss", color="blue")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    if not os.path.exists(f"{SRC}/loss_plots"):
+        os.makedirs(f"{SRC}/loss_plots")
+    plt.savefig(f"{SRC}/loss_plots/loss_{step}.png")
 
 
 def train():
@@ -107,6 +122,10 @@ def train():
     gen.train()
     critic.train()
 
+    # Initialize storage for losses
+    cum_gen_loss = []
+    cum_critic_loss = []
+
     # start at step that corresponds to img size that we set in config
     step = int(log2(START_TRAIN_AT_IMG_SIZE / 4))
     for num_epochs in PROGRESSIVE_EPOCHS[step:]:
@@ -116,7 +135,7 @@ def train():
 
         for epoch in range(num_epochs):
             print(f"Epoch [{epoch+1}/{num_epochs}]")
-            alpha = train_fn(
+            alpha, gen_loss, critic_loss = train_fn(
                 critic,
                 gen,
                 loader,
@@ -127,14 +146,21 @@ def train():
                 opt_gen
             )
 
+            # Extend cumulative loss lists
+            cum_gen_loss.extend(gen_loss)
+            cum_critic_loss.extend(critic_loss)
+
         generate_examples(gen, step)
         step += 1  # progress to the next img size
 
     # Save models
-    if not os.path.exists("saved_models"):
-        os.makedirs("saved_models")
-    torch.save(gen.state_dict(), f"saved_models/gen_{MODEL_LABEL}.pt")
-    torch.save(critic.state_dict(), f"saved_models/critic_{MODEL_LABEL}.pt")
+    if not os.path.exists(f"{SRC}/saved_models"):
+        os.makedirs(f"{SRC}/saved_models")
+    torch.save(gen.state_dict(), f"{SRC}/saved_models/gen_{MODEL_LABEL}.pt")
+    torch.save(critic.state_dict(), f"{SRC}/saved_models/critic_{MODEL_LABEL}.pt")
+
+    # Plot losses
+    plot_losses(gen_loss, critic_loss, step)
 
 
 if __name__ == "__main__":
@@ -143,4 +169,4 @@ if __name__ == "__main__":
     train()
     t2 = time.time()  # end time
     print(f"Training complete. Time taken: {t2-t1:.2f} seconds.")
-    print("The models have been saved and can be found at 'saved_models/<MODEL_LABEL>'")
+    print("The models have been saved and can be found at '<SRC>/saved_models/<MODEL_LABEL>'")

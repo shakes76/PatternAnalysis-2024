@@ -29,7 +29,8 @@ This repository consists of the following five major files:
 
 
 ## Model Architecture 
-![Model Architecture](recognition/Readme_images/image.png)
+<img src="recognition/Readme_images/image.png" alt="Model Architecture" width="500"/>
+
 
 The StyleGAN model architecture is similar to the GAN with a few changes. The GAN model relied an adversarial network which trained a Generator and a Discriminator to progressively improve the image generation outputs. However, a major issue with the GAN model is that it was prone to overfitting, model collapes and offered little diversity in the output images.
 
@@ -41,10 +42,10 @@ This network maps the Latent space **$z$** with another latent space $w$. This a
 
 **Adaptive Instance Normalisation:** 
 
-$$
+$
 \text{AdaIN}(x_i, y) = y_{s,i} \cdot \frac{x_i - \mu(x_i)}{\sigma(x_i)} + y_{b,i}
+$
 
-$$
 Adaptive Instance Normalization (AdaIN) adjusts the **mean** ( $\mu(x_i)$ ) and **variance**( $\sigma(x_i)$ ) of the input features (like an image) based on the style you want to apply.
 
 **Mixing Regularisation:**

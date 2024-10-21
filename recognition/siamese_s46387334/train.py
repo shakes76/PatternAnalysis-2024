@@ -11,6 +11,31 @@ from dataset import get_isic2020_data, get_isic2020_data_loaders
 
 
 ###############################################################################
+### Functions
+def predict_siamese_net(model, data_loader):
+    """
+    """
+    all_y_pred = []
+    all_y_prob = []
+    all_y_true = []
+    
+    for batch_idx, (imgs, _, _, labels) in enumerate(data_loader):
+        imgs = imgs.to(device).float()
+        outputs = model.classify(imgs)   
+        
+        # Determine positive class probability
+        y_prob = torch.softmax(outputs, dim=1)[:, 1] 
+
+        # Determine the predicted class
+        _, y_pred = outputs.max(1)
+        
+        all_y_pred.extend(y_pred.cpu().numpy())
+        all_y_prob.extend(y_prob.cpu().numpy())
+        all_y_true.extend(labels.cpu().numpy())
+    
+    return np.array(all_y_pred), np.array(all_y_prob), np.array(all_y_true)
+
+###############################################################################
 ### Main Function
 def main():
     """

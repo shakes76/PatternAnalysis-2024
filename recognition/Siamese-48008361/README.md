@@ -197,7 +197,7 @@ Three primary metrics were used to evaluate the model's performance, each chosen
 
 1. **AUC-ROC (Area Under the Receiver Operating Characteristic Curve)**:
    - Primary metric for model evaluation
-   - Measures the model's ability to differenciate between classes across various threshold settings (which is different to accuracy where the threshold is fixed at 50%)
+   - Measures the model's ability to differenciate between classes across various threshold settings, which is different to accuracy where the threshold is fixed at 50% (evidentlyai.com, 2024)
    - Advantages:
      - Insensitive to class imbalance, crucial for the imbalanced dataset
      - Provides a measuree of performance across all classification thresholds which can test extreme cases
@@ -313,7 +313,9 @@ Based on results and dermatologist consultations:
 11. Rastogi, A. (2022, March 14). ResNet50. Medium. https://blog.devgenius.io/resnet50-6b42934db431
 12. Dr. Nooralddin Al-Saffi, Director of Medicine in the Gold Coast University Hospital and Robina Hospital (2024, October 5th). Personal Communication.
 13. Dr. Samaher Al-Furaiji (2024, October 5th). Personal Communication.
+14. Evidently AI Team. (n.d.). How to explain the ROC AUC score and ROC curve? Www.evidentlyai.com. https://www.evidentlyai.com/classification-metrics/explain-roc-curve
 
+‌
 ‌
 
 ‌

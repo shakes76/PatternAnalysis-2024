@@ -59,31 +59,13 @@ def show_first_batch(loader):
         show_images(batch[0], "Images in the first batch")
         break
 
-def show_forward(ddpm, loader):
-    """
-    Visual forward process step
-    :param ddpm: diffusion model
-    :param loader: dataloader
-    :return:
-    """
-    for batch in loader:
-        imgs = batch[0]
-
-        show_images(imgs, "Original images")
-
-        for percent in [0.25, 0.5, 0.75, 1]:
-            show_images(
-                ddpm(imgs.cpu(),
-                     [int(percent * 1000) - 1 for _ in range(len(imgs))]),
-                f"DDPM Noisy images {int(percent * 100)}%"
-            )
-        break
-
 def calculate_mean_std():
     """
     Run once to calculate the mean and std of ADNI dataset
+    Used to normalise images
     :return: mean, std
     """
+    # unnormalised dataset for calculation
     dataset = torchvision.datasets.ImageFolder(root=dataroot,
                                                transform=transforms.Compose([
                                                    transforms.Resize((image_size, image_size)),
@@ -93,6 +75,8 @@ def calculate_mean_std():
     # Create the dataloader
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                          shuffle=True, num_workers=2)
+
+
 
     # Calculate mean and std
     mean = 0.0

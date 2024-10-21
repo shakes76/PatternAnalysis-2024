@@ -74,6 +74,7 @@ class UnetLayer(nn.Module):
     """
     def __init__(self, upscale, has_attention, num_groups, dropout_prob, num_heads, channels):
         super().__init__()
+        # residual blocks used
         self.ResBlock1 = ResBlock(channels=channels, groups=num_groups, dropout_prob=dropout_prob)
         self.ResBlock2 = ResBlock(channels=channels, groups=num_groups, dropout_prob=dropout_prob)
         if upscale:
@@ -127,6 +128,9 @@ class UNET(nn.Module):
             setattr(self, f'Layer{i+1}', layer)
 
     def forward(self, x, t):
+        """
+        forward step
+        """
         x = self.shallow_conv(x)
         residuals = []
         for i in range(self.num_layers//2):

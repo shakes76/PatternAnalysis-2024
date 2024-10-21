@@ -49,6 +49,12 @@ def plot_forward_process(data_loader,  timesteps=5):
     plt.show()
 
 def tsne():
+    """
+    t-sne plot for visudalisation.
+    Load the model and perform dimension reduction
+    :return: t-SNE plot
+    """
+    # load model parameters
     dataloader = dataset.dataloader
     checkpoint = torch.load("ddpm_checkpoint")
     model = modules.UNET()
@@ -56,6 +62,7 @@ def tsne():
     ema = ModelEmaV3(model, decay=0.9999)
     ema.load_state_dict(checkpoint['ema'])
 
+    # store features and ground truth labels
     features = []
     labels = []
 
@@ -69,9 +76,11 @@ def tsne():
     labels = torch.cat(labels).numpy()  # Convert to NumPy
 
 
+    # dimension reduction to 2 dims
     tsne = TSNE(n_components=2, random_state=42)
     tsne_results = tsne.fit_transform(features)
 
+    # plot tsne
     plt.figure(figsize=(10, 8))
     scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=labels)
     plt.colorbar(scatter, ticks=[0, 1], label='Class')

@@ -120,8 +120,7 @@ class VectorQuantizer(nn.Module):
             Input:
                 z : the tensor to be passed through the Vector Quantizer, starts at shape (B, C, H, W)
             Output:
-                commitment_loss: the commitment loss for the embedding, modified original formula for more stability:
-                    ‖ z(x)− no_grad[quantised_z] ‖^2 -  β‖ quantised_z(x)− no_grad[z] ‖^2
+                embedding_loss: the combination of the quantiser and commitment loss
                 z_q : the quantised input tensor
         """
         z = z.permute(0, 2, 3, 1).contiguous()  # Shaped to (B, H, W, C)
@@ -140,8 +139,9 @@ class VectorQuantizer(nn.Module):
         quantised_z = torch.matmul(min_encodings, self.codebook.weight).view(z.shape)
 
         # Compute the commitment loss based on the formula
-        commitment_loss = (torch.mean((quantised_z.detach()-z)**2) +
-                           self.beta * torch.mean((quantised_z - z.detach()) ** 2))
+        commitment_loss = self.beta * torch.mean((quantised_z - z.detach()) ** 2)
+        vq_loss = (torch.mean((quantised_z.detach()-z)**2))
+        embedding_loss = commitment_loss + vq_loss
 
         # Preserve the gradient before returning
         quantised_z = z + (quantised_z - z).detach()
@@ -149,7 +149,7 @@ class VectorQuantizer(nn.Module):
         # reshape back to match original input shape
         quantised_z = quantised_z.permute(0, 3, 1, 2).contiguous()  # Reshape back to (B, C, H, W)
 
-        return commitment_loss, quantised_z
+        return embedding_loss, quantised_z
 
 
 class VQVAE(nn.Module):
@@ -158,7 +158,7 @@ class VQVAE(nn.Module):
         select discrete embeddings, and then decode the embeddings back to the original input. The final model will
         allow the generation of new images based on the learned embeddings and the image(s) input to the model.
     """
-    def __init__(self, h_dim, res_h_dim, n_res_layers, n_embeddings, embedding_dim):
+    def __init__(self, h_dim, res_h_dim, n_res_layers, n_embeddings, embedding_dim, beta):
         """
             Initialise the VQVAE model.
 
@@ -190,7 +190,7 @@ class VQVAE(nn.Module):
         # Pre-Quantisation Convolution Layer to match embedding dimensions
         self.pre_quant_conv = nn.Conv2d(h_dim, embedding_dim, kernel_size=1, stride=1)
         # Vector quantisation layer
-        self.codebook = VectorQuantizer(n_embeddings, embedding_dim)
+        self.codebook = VectorQuantizer(n_embeddings, embedding_dim, beta=beta)
         # Post-Quantisation Convolution Layer to match input dimensions and allow for decoding
         self.post_quant_conv = nn.ConvTranspose2d(embedding_dim, h_dim, kernel_size=1, stride=1)
 
@@ -219,8 +219,8 @@ class VQVAE(nn.Module):
         """
         encoded_output = self.encoder(x)
         encoded_output = self.pre_quant_conv(encoded_output)
-        commitment_loss, quantised_output = self.codebook(encoded_output)
+        embedding_loss, quantised_output = self.codebook(encoded_output)
         quantised_output = self.post_quant_conv(quantised_output)
         decoded_output = self.decoder(quantised_output)
         
-        return decoded_output, commitment_loss, encoded_output, quantised_output
+        return decoded_output, embedding_loss, encoded_output, quantised_output

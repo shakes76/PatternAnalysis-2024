@@ -6,7 +6,7 @@ from itertools import cycle
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
 
-def generate_samples(data_loader, model, epoch=-1):
+def generate_samples(data_loader, model, output_loc, image_loc, epoch=-1):
     """
         Generates a 4x8 grid of images from a VQVAE where the top 2 rows are the original images and the bottom 2 rows
         the reconstructed images. This function is either called for a specific epoch or the final model, as such the
@@ -21,7 +21,7 @@ def generate_samples(data_loader, model, epoch=-1):
     print("Generating")
     # If epoch is not specified, then the final model is loaded in
     if epoch == -1:
-        model.load_state_dict(torch.load(f'outputs/final_vqvae.pt'))
+        model.load_state_dict(torch.load(output_loc + 'final_vqvae.pt'))
     model.eval()  # Set model to evaluation model so it does not train while we generate
     data_loader_iter = cycle(data_loader)  # Allows infiite cycling if not enough data is passed through
     ims = next(data_loader_iter)  # Get a batch of samples from the cycle iterator
@@ -58,7 +58,7 @@ def generate_samples(data_loader, model, epoch=-1):
 
     # Determine where to save the image based on what purpose it was called for
     if epoch == -1:
-        plt.savefig(f'./outputs/final_reconstruction.png')
+        plt.savefig(output_loc + f'final_reconstruction.png')
     else:
-        plt.savefig(f'./epoch_reconstructions/epoch{epoch}.png')
+        plt.savefig(image_loc + f'epoch{epoch}.png')
     plt.close()

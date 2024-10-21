@@ -120,21 +120,24 @@ def clear_folder(folder_path):
             os.remove(file_path)
 
 
-def folder_check():
+def folder_check(output_loc, model_loc, image_loc):
     """
         This function checks if the folders for the models and epoch reconstructions exist and if they do not, creates
     """
-    if not os.path.exists('models'):
-        os.makedirs('models')
-    else:
-        clear_folder('models')
+    if not os.path.exists(output_loc):
+        os.makedirs(output_loc)
         
-    if not os.path.exists('epoch_reconstructions'):
-        os.makedirs('epoch_reconstructions')
+    if not os.path.exists(model_loc):
+        os.makedirs(model_loc)
+    else:
+        clear_folder(model_loc)
+        
+    if not os.path.exists(image_loc):
+        os.makedirs(image_loc)
     else:
         clear_folder('epoch_reconstructions')
 
-def plot_results(train_losses, ssim_scores, n_epochs):
+def plot_results(train_losses, ssim_scores, n_epochs, output_loc):
     """
         Plots the metrics for the model and saves the plots in the outputs folder. The metrics are the SSIM scores and
         the training loss over the epochs.
@@ -146,7 +149,7 @@ def plot_results(train_losses, ssim_scores, n_epochs):
     plt.title('Training Loss over Epochs')
     plt.legend()
     plt.grid()
-    plt.savefig('./outputs/training_loss.png')
+    plt.savefig(output_loc + 'training_loss.png')
     plt.close()
 
     plt.figure(figsize=(10, 5))
@@ -156,5 +159,5 @@ def plot_results(train_losses, ssim_scores, n_epochs):
     plt.title('SSIM Scores over Epochs')
     plt.legend()
     plt.grid()
-    plt.savefig('./outputs/ssim_scores.png')
+    plt.savefig(output_loc + 'ssim_scores.png')
     plt.close()

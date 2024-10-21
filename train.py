@@ -8,15 +8,21 @@ from modules import VQVAE
 from predict import generate_samples
 
 # Hyperparameters
-IS_TRAINING = True
+IS_TRAINING = False
 HIDDEN_DIM = 128
 RES_HIDDEN_DIM = 32
 N_RES_LAYERS = 5
 N_EMBEDDINGS = 512
 EMBEDDING_DIM = 64
 LEARNING_RATE = 2e-4
-N_EPOCHS = 10 if IS_TRAINING else 100
-BATCH_SIZE = 8
+N_EPOCHS = 10 if IS_TRAINING else 200
+BATCH_SIZE = 16
+BETA = 0.25
+
+# Folder Locations
+MODEL_LOCATION = "./models/"
+IMAGE_LOCATION = "./epoch_reconstructions/"
+OUTPUT_LOCATION = "./outputs/"
 
 # Metrics
 ssim_scores = []
@@ -24,23 +30,20 @@ train_losses = []
 best_epoch = 0
 
 # Initialize model and optimisers
+utils.folder_check(OUTPUT_LOCATION, MODEL_LOCATION, IMAGE_LOCATION) # Ensure the output directories exist and are empty from prior runs
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")  # Initialise the device
 train_loader, test_loader, val_loader = load_data(testing=IS_TRAINING, batch_size=BATCH_SIZE) # Initialise the data loader
 model = VQVAE(HIDDEN_DIM,
               RES_HIDDEN_DIM,
               N_RES_LAYERS,
               N_EMBEDDINGS,
-              EMBEDDING_DIM).to(device)  # Initialise the model
+              EMBEDDING_DIM,
+              BETA).to(device)  # Initialise the model
 
 # We opt for the Adam optimiser in this model
 opt = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=True)
-# We allow a learning rate decay of 0.9 every 10 epochs
-scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.9)
 # MSE as require for two of the components of our loss functions
 criterion = torch.nn.MSELoss()
-
-# Ensure the output directories exist and are empty from prior runs
-utils.folder_check()
 
 
 def train_model():
@@ -71,7 +74,6 @@ def train_model():
             loss = recon_loss + embedding_loss  # combines all the loss for a single metric
             loss.backward()  # backpropagate the loss
             opt.step()  # step the optimiser
-            scheduler.step()  # step the scheduler
 
             epoch_loss += loss.item()  # increase the total epoch loss
 
@@ -96,9 +98,9 @@ def train_model():
         # Generate samples every 2 epochs
         if (epoch_idx + 1) % 2 == 0:
             print("Generating Epoch Image")
-            generate_samples(test_loader, model, epoch_idx + 1)
+            generate_samples(test_loader, model, MODEL_LOCATION, IMAGE_LOCATION, epoch_idx + 1)
         
-        utils.plot_results(train_losses, ssim_scores, epoch_idx + 1)
+        utils.plot_results(train_losses, ssim_scores, epoch_idx + 1, OUTPUT_LOCATION)
 
     print('Done Training...')
 
@@ -126,7 +128,7 @@ def validate_model(epoch):
 
     # Save the model if it is the best model based on the SSIM score
     if epoch_ssim_score == max(ssim_scores):
-        torch.save(model.state_dict(), f'models/checkpoint_epoch{epoch}_vqvae.pt')
+        torch.save(model.state_dict(), MODEL_LOCATION + f'checkpoint_epoch{epoch}_vqvae.pt')
         best_epoch = epoch
         print(f"Achieved an SSIM score of {epoch_ssim_score}, NEW BEST! saving model")
     else:
@@ -142,8 +144,8 @@ def test():
             test_ssim: The average SSIM score of the test set over the batches of the test dataset
     """
     print("Testing")
-    model.load_state_dict(torch.load(f'models/checkpoint_epoch{best_epoch}_vqvae.pt'))
-    torch.save(model.state_dict(), f'outputs/final_vqvae.pt')
+    model.load_state_dict(torch.load(MODEL_LOCATION + f'checkpoint_epoch{best_epoch}_vqvae.pt'))
+    torch.save(model.state_dict(), OUTPUT_LOCATION + f'final_vqvae.pt')
     model.eval()
     total_ssim = 0
 
@@ -165,5 +167,5 @@ if __name__ == "__main__":
     print(f"Took {(time.time() - start) / 60} minutes to train")
     test_ssim = test()
     print(f"Test SSIM achieved as {test_ssim}")
-    utils.plot_results(train_losses, ssim_scores, N_EPOCHS)
-    generate_samples(test_loader, model)
+    utils.plot_results(train_losses, ssim_scores, N_EPOCHS, OUTPUT_LOCATION)
+    generate_samples(test_loader, model, OUTPUT_LOCATION, IMAGE_LOCATION)

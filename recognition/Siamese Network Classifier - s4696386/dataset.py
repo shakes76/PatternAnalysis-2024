@@ -218,21 +218,3 @@ class Classifier_DataSet(Siamese_DataSet):
         image_name, target = self.data_set[index]
         return self.images.get(image_name), target
 
-
-# Main function for profiling & debugging
-def main():
-    import cProfile, pstats
-
-    current_directory = os.getcwd()
-    with cProfile.Profile() as pr:
-        files, truths, malignants, benigns = read_data(DEFAULT_LOCATION)
-        print(len(files))
-        print(len(malignants))
-    stats = pstats.Stats(pr)
-    stats.sort_stats(pstats.SortKey.TIME)
-    os.chdir(current_directory)
-    stats.dump_stats(filename="profile.prof")
-
-# Only run main when running file directly (not during imports)
-if __name__ == "__main__":
-    main()

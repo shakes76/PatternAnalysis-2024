@@ -226,12 +226,4 @@ def main():
 
 # Only run main when running file directly (not during imports)
 if __name__ == "__main__":
-    import cProfile, pstats, os
-
-    current_directory = os.getcwd()
-    with cProfile.Profile() as pr:
-        main()
-    stats = pstats.Stats(pr)
-    stats.sort_stats(pstats.SortKey.TIME)
-    os.chdir(current_directory)
-    stats.dump_stats(filename="profile.prof")
+    main()

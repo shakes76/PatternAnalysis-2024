@@ -13,25 +13,28 @@ import matplotlib.pyplot as plt
 # hyperparams
 lr = 0.01 # default
 decay = 0.01 # default
+epochs = 300
 
 # loading data
 data = GNNDataLoader(filepath='facebook.npz')
 
 # data splits
+# precaclulate permutation for consistent splits and no data leakages
+perm = torch.randperm(data.num_nodes)
 # we do a 80/10/10 split between training, validation and testing sets
-train_label = torch.randperm(data.num_nodes)[:int(0.8*data.num_nodes)]
-valid_label = torch.randperm(data.num_nodes)[int(0.8 * data.num_nodes):int(0.9 * data.num_nodes)]
-test_label = torch.randperm(data.num_nodes)[int(0.9 * data.num_nodes):]
+train_label = perm[:int(0.8*data.num_nodes)] # 0 -> 80
+valid_label = perm[int(0.8 * data.num_nodes):int(0.9 * data.num_nodes)] # 80 -> 90
+test_label = perm(data.num_nodes)[int(0.9 * data.num_nodes):] # 90 -> 100
 
 # now we can define the model
 # note here that the output dimensions is defined to be 4 classes:
-# politicians, governmental organizations, television shows and companies
+    # politicians, governmental organizations, television shows and companies
 model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1) # +1 as labels start from 0
 
 optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser
 criterion = torch.nn.CrossEntropyLoss() 
 
-# Improvements:
+# Potential Improvements
 # LR scheduler
 # early stopping
 
@@ -40,7 +43,7 @@ losses = []
 valid_losses = []
 accuracies = []
 
-def train_model():
+def _train_model():
     """
     The function for training the model using the pre-defined parameters and loss functions
     """
@@ -55,7 +58,7 @@ def train_model():
 
     return loss.item() # return loss to monitor
 
-def test_model():
+def _test_model():
     """
     Function for testing the model accuracy against the validation and test data set
     """
@@ -63,7 +66,7 @@ def test_model():
 
     with torch.no_grad():
         out = model(data)
-        valid_loss = criterion(out[valid_label], data.y[valid_label].item()) # we calculate validation loss
+        valid_loss = criterion(out[valid_label], data.y[valid_label]).item() # we calculate validation loss
 
         # get highest probability predictions for testing data
         predictions = out[test_label].argmax(dim=1)
@@ -73,4 +76,27 @@ def test_model():
 
     return valid_loss, accuracy
 
+def training_loop():
+    for epoch in range(epochs):
+        loss = _train_model()
 
+        valid_loss, test_accuracy = _test_model()
+
+        losses.append(loss)
+        valid_losses.append(valid_loss)
+        accuracies.append(test_accuracy)
+        
+        # printing loss information each epoch
+        if epoch % 10 == 0:
+            print(f'Epoch: {epoch}, Loss: {loss:.4f}, Val Loss: {valid_loss:.4f}, Test Accuracy: {test_accuracy:.4f}')
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(losses, label='Training Loss')
+    plt.plot(valid_losses, label='Validation Loss')
+    plt.legend()
+    plt.xlabel('Num Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.show()
+
+    torch.save(model.state_dict(), 'GCN_model.pth')

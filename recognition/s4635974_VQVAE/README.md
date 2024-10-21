@@ -79,7 +79,7 @@ The parameters below yielded the best performance I was able to achieve (in both
 
 - Number of Epochs = 150 (Max - Early Stopping Used)
 - Batch Size = 16
-- Learning Rate = 0.002 (Using Adam Optimiser)
+- Learning Rate = 0.0008 (Using Adam Optimiser)
 - Number of Hidden Layers = 128
 - Number of Residual Hidden Layers = 32
 - Number of channels = 1
@@ -101,7 +101,7 @@ Without further pre-processing I was able to achieve our goal of over 0.6 SSIM a
 The model was trained with the above parameters. I experimented with varying the learning rate and batch size and found the above hyperparameters to give the best accuracy in the least amount of training time (without the training becoming unstable). Early stopping was used [5] to stop the training when there was no further improvement in validation loss. This can help avoid overfitting and save on computational resources. Little improvement was achieved beyond 60 epochs (I tried training the model for a maximum of 200 epochs). 
 
 #### Training and Validation Reconstruction Losses
-![Training and validation output loss](report_images/output_loss_per_epoch.png)
+![Training and validation reconstruction loss](report_images/output_loss_per_epoch.png)
 
 *Figure 4. Training and Validation Reconstruction Losses Over Epochs*
 

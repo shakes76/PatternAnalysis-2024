@@ -203,7 +203,6 @@ def predict(
     plt.figure(figsize=(12, 6))
     plt.plot(epochs, training_vq_loss, label="Training VQ Loss")
     plt.plot(epochs, validation_vq_loss, label="Validation VQ Loss")
-    plt.ylim(0, 50000) 
     plt.xlabel('Epoch')
     plt.ylabel('VQ Loss')
     plt.title('VQ Loss over Epochs')

@@ -1,20 +1,22 @@
+import math
 from dataset import load_data
 import torch
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 import time
 import utils
 from modules import VQVAE
 from predict import generate_samples
 
 # Hyperparameters
+IS_TRAINING = True
 HIDDEN_DIM = 128
 RES_HIDDEN_DIM = 32
 N_RES_LAYERS = 5
 N_EMBEDDINGS = 512
 EMBEDDING_DIM = 64
 LEARNING_RATE = 2e-4
-N_EPOCHS = 200
+N_EPOCHS = 10 if IS_TRAINING else 100
+BATCH_SIZE = 8
 
 # Metrics
 ssim_scores = []
@@ -23,7 +25,7 @@ best_epoch = 0
 
 # Initialize model and optimisers
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")  # Initialise the device
-train_loader, test_loader, val_loader = load_data()
+train_loader, test_loader, val_loader = load_data(testing=IS_TRAINING, batch_size=BATCH_SIZE) # Initialise the data loader
 model = VQVAE(HIDDEN_DIM,
               RES_HIDDEN_DIM,
               N_RES_LAYERS,
@@ -34,7 +36,7 @@ model = VQVAE(HIDDEN_DIM,
 opt = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=True)
 # We allow a learning rate decay of 0.9 every 10 epochs
 scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.9)
-# MSE will allow feasible loss calculations
+# MSE as require for two of the components of our loss functions
 criterion = torch.nn.MSELoss()
 
 # Ensure the output directories exist and are empty from prior runs
@@ -82,47 +84,23 @@ def train_model():
                     time.time() - start_time
                 ))
 
-        # Generate samples every 10 epochs
-        if (epoch_idx + 1) % 10 == 0:
-            print("Generating Epoch Image")
-            generate_samples(test_loader, model, epoch_idx + 1)
-
         # Calculate the average loss for the epoch, print and store
         avg_epoch_loss = epoch_loss / len(train_loader)
-        train_losses.append(avg_epoch_loss)
+        train_losses.append(math.log(avg_epoch_loss))
         print('Finished epoch {} in time: {} with loss:'.format(
-            epoch_idx + 1, epoch_start - time.time(), avg_epoch_loss))
+            epoch_idx + 1, time.time() - epoch_start, avg_epoch_loss))
 
         # Validate the model after each epoch
         validate_model(epoch_idx + 1)
+        
+        # Generate samples every 2 epochs
+        if (epoch_idx + 1) % 2 == 0:
+            print("Generating Epoch Image")
+            generate_samples(test_loader, model, epoch_idx + 1)
+        
+        utils.plot_results(train_losses, ssim_scores, epoch_idx + 1)
 
     print('Done Training...')
-
-
-def plot_results():
-    """
-        Plots the metrics for the model and saves the plots in the outputs folder. The metrics are the SSIM scores and
-        the training loss over the epochs.
-    """
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(1, N_EPOCHS + 1), train_losses, label='Training Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training Loss over Epochs')
-    plt.legend()
-    plt.grid()
-    plt.savefig('./outputs/training_loss.png')
-    plt.close()
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(1, N_EPOCHS + 1), ssim_scores, label='SSIM Scores')
-    plt.xlabel('Epoch')
-    plt.ylabel('SSIM Score')
-    plt.title('SSIM Scores over Epochs')
-    plt.legend()
-    plt.grid()
-    plt.savefig('./outputs/ssim_scores.png')
-    plt.close()
 
 
 def validate_model(epoch):
@@ -187,4 +165,5 @@ if __name__ == "__main__":
     print(f"Took {(time.time() - start) / 60} minutes to train")
     test_ssim = test()
     print(f"Test SSIM achieved as {test_ssim}")
+    utils.plot_results(train_losses, ssim_scores, N_EPOCHS)
     generate_samples(test_loader, model)

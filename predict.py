@@ -21,10 +21,16 @@ def generate_samples(data_loader, model, epoch=-1):
     print("Generating")
     # If epoch is not specified, then the final model is loaded in
     if epoch == -1:
-        model.load_state_dict(torch.load(f'final_vqvae.pt'))
+        model.load_state_dict(torch.load(f'outputs/final_vqvae.pt'))
     model.eval()  # Set model to evaluation model so it does not train while we generate
     data_loader_iter = cycle(data_loader)  # Allows infiite cycling if not enough data is passed through
     ims = next(data_loader_iter)  # Get a batch of samples from the cycle iterator
+    
+    # Ensure there are 16 images if the batch size is less than 16
+    while ims.shape[0] < 16:
+        next_ims = next(data_loader_iter)
+        ims = torch.cat((ims, next_ims), dim=0)
+        
     ims = ims[:16].float().unsqueeze(1).to(device)  # Ensures correct number of images are correct shape for model
 
     generated_ims, _, _, _ = model(ims)  # We only want the image

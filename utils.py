@@ -5,6 +5,7 @@ import os
 import torch.nn as nn
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
+import matplotlib.pyplot as plt
 
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -132,3 +133,28 @@ def folder_check():
         os.makedirs('epoch_reconstructions')
     else:
         clear_folder('epoch_reconstructions')
+
+def plot_results(train_losses, ssim_scores, n_epochs):
+    """
+        Plots the metrics for the model and saves the plots in the outputs folder. The metrics are the SSIM scores and
+        the training loss over the epochs.
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, n_epochs + 1), train_losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Log Loss')
+    plt.title('Training Loss over Epochs')
+    plt.legend()
+    plt.grid()
+    plt.savefig('./outputs/training_loss.png')
+    plt.close()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, n_epochs + 1), ssim_scores, label='SSIM Scores')
+    plt.xlabel('Epoch')
+    plt.ylabel('SSIM Score')
+    plt.title('SSIM Scores over Epochs')
+    plt.legend()
+    plt.grid()
+    plt.savefig('./outputs/ssim_scores.png')
+    plt.close()

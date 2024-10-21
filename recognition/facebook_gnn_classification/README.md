@@ -49,6 +49,25 @@ Training and Validation Loss
 
 The following plot shows the training and validation loss over 200 epochs:
 
-
+![Training and Validation Loss](graphs/training_validation_loss.png)
 
 The training and validation loss decreased steadily, indicating that the model learned effectively without overfitting.
+
+## UMAP Embeddings Visualization
+To visualize how well the GNN captures the structure of the graph, **UMAP** was used to reduce the node embeddings to 2 dimensions. The following plot shows the reduced embeddings colored according to their ground truth labels:
+
+![UMAP Embeddings](graphs/umap_embeddings.png)
+
+The UMAP plot indicates that the model has successfully learned to separate the nodes based on their categories. Different colors represent different page types, and the clustering seen in the visualization suggests that nodes of similar types are grouped together, demonstrating good discriminative power of the learned embeddings.
+
+## Prediction Accuracy
+The model achieved a prediction accuracy of 98.24% on the entire dataset, which shows that it was able to effectively classify nodes into their respective categories.
+
+
+### Sample Predictions
+Below are some sample predictions from the model:
+- Node 0: Predicted = `0` (True = `0`)
+- Node 1: Predicted = `2` (True = `2`)
+- Node 2: Predicted = `1` (True = `1`)
+- Node 3: Predicted = `2` (True = `2`)
+- Node 4: Predicted = `3` (True = `3`)

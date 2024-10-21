@@ -239,9 +239,9 @@ def main():
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
     # DataLoader for batching
-    batch_size = 1
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2) 
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+    batch_size = 4
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4) 
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     # Initialize the 3D U-Net model
     model = UNet3D(in_channels=4, out_channels=6, init_features=32) 
@@ -262,7 +262,6 @@ def main():
         for images, labels in train_loader:  # Unpack the tuple
             images = images.to(device)
             labels = labels.to(device)
-
             outputs = model(images)
             # Compute the loss (using labels as targets instead of images)
             labels_class_indices = torch.argmax(labels, dim=1)

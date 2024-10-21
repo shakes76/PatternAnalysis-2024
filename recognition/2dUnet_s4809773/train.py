@@ -38,10 +38,10 @@ def init_weights(m):
         if m.bias is not None:
             nn.init.constant_(m.bias, 0)
 
-# Apply the weights initialization
+# Apply the weights initialization (this reduces risk of vanishing gradient)
 net.apply(init_weights)
 
-optimizer = optim.AdamW(net.parameters(), lr=learning_rate, weight_decay=1e-2) # Using AdamW instead of regular Adam
+optimizer = optim.AdamW(net.parameters(), lr=learning_rate, weight_decay=1e-2) # Using AdamW instead of regular Adam for hopefully better generalisation
 
 # Dice Loss Function for multi-class segmentation
 def dice_loss(pred, target, smooth=1):
@@ -95,7 +95,7 @@ def train_model():
             loss.backward()
 
 
-            # Optionally add gradient clipping
+            # gradient clipping to prevent exploding gradient
             torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
 
             optimizer.step()

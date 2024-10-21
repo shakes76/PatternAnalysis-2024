@@ -36,7 +36,12 @@ criterion = torch.nn.CrossEntropyLoss()
 
 # Potential Improvements
 # LR scheduler
-# early stopping
+
+# implementing early stopping to reduce change of overfitting model
+best_val_loss = float('inf')
+patience_count = 0
+patience_lim = 10 #stop training if loss doesn't improve for 10 epochs
+
 
 # To plot
 losses = []
@@ -86,10 +91,22 @@ def training_loop():
         valid_losses.append(valid_loss)
         accuracies.append(test_accuracy)
         
+        if valid_loss < best_val_loss:
+            # early stoppage
+            best_val_loss = valid_loss
+            patience_count = 0
+            torch.save(model.state_dict(), 'early_stop_model.pth')
+        else:
+            patience_count += 1
+
+        if patience_count >= patience_lim:
+            print(f'Stopping early at epoch {epoch}, patience reached')
+            break
         # printing loss information each epoch
         if epoch % 10 == 0:
             print(f'Epoch: {epoch}, Loss: {loss:.4f}, Val Loss: {valid_loss:.4f}, Test Accuracy: {test_accuracy:.4f}')
 
+    # After training loop, generate loss plot.
     plt.figure(figsize=(10, 6))
     plt.plot(losses, label='Training Loss')
     plt.plot(valid_losses, label='Validation Loss')

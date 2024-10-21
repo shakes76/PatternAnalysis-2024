@@ -101,9 +101,9 @@ def plot_losses(gen_loss, critic_loss, step):
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()
-    if not os.path.exists(f"{SRC}/loss_plots"):
-        os.makedirs(f"{SRC}/loss_plots")
-    plt.savefig(f"{SRC}/loss_plots/loss_{step}.png")
+    if not os.path.exists(f"{SRC}/loss_plots/{MODEL_LABEL}"):
+        os.makedirs(f"{SRC}/loss_plots/{MODEL_LABEL}")
+    plt.savefig(f"{SRC}/loss_plots/{MODEL_LABEL}/loss_plot_step{step}.png")
 
 
 def train():
@@ -133,6 +133,9 @@ def train():
         loader, dataset = get_dataloader(4 * 2 ** step)  
         print(f"Current image size: {4 * 2 ** step}")
 
+        step_gen_loss = []
+        step_critic_loss = []
+
         for epoch in range(num_epochs):
             print(f"Epoch [{epoch+1}/{num_epochs}]")
             alpha, gen_loss, critic_loss = train_fn(
@@ -147,10 +150,13 @@ def train():
             )
 
             # Extend cumulative loss lists
+            step_gen_loss.extend(gen_loss)
+            step_critic_loss.extend(critic_loss)
             cum_gen_loss.extend(gen_loss)
             cum_critic_loss.extend(critic_loss)
 
         generate_examples(gen, step)
+        plot_losses(step_gen_loss, step_critic_loss, step)
         step += 1  # progress to the next img size
 
     # Save models
@@ -158,9 +164,6 @@ def train():
         os.makedirs(f"{SRC}/saved_models")
     torch.save(gen.state_dict(), f"{SRC}/saved_models/gen_{MODEL_LABEL}.pt")
     torch.save(critic.state_dict(), f"{SRC}/saved_models/critic_{MODEL_LABEL}.pt")
-
-    # Plot losses
-    plot_losses(gen_loss, critic_loss, step)
 
 
 if __name__ == "__main__":

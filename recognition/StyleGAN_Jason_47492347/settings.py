@@ -2,7 +2,7 @@
 Configuration file: set hyperparameters and labels here.
 """
 # relative path to dataset
-DATASET = "../ADNI_AD_NC_2D/AD_NC/test"
+DATASET = "../ADNI_AD_NC_2D_Combined/AD"
 
 # relative path to model directory
 SRC = "recognition/StyleGAN_Jason_47492347"
@@ -18,5 +18,4 @@ IN_CHANNELS             = 256
 LAMBDA_GP               = 10
 PROGRESSIVE_EPOCHS      = [20] * len(BATCH_SIZES)
 IMG_SIZE                = 128
-MODEL_LABEL             = "5 Epoch Trial ADNI"
-GENERATE_LABEL          = "5ep NC test"
+MODEL_LABEL             = "20 Epoch Trial AD"

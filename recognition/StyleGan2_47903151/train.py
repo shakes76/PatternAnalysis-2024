@@ -100,7 +100,7 @@ def plot_loss(g_loss, d_loss):
     plots the generator lost and discriminator loss graph, and the generator vs. discriminator loss graph before saving
     them.
     """
-    plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")
     plt.plot(g_loss, label="G")
     plt.plot(d_loss, label="D")
@@ -110,7 +110,8 @@ def plot_loss(g_loss, d_loss):
     if not os.path.exists("training"):
         os.mkdir("training")
     plt.savefig("training/training_loss.png")
-    plt.figure(figsize=(10, 5))
+    plt.close(fig)
+    fig = plt.figure(figsize=(10, 5))
     plt.title("Generator loss vs Discriminator Loss During Training")
     g_d_loss = [g_loss[i]/d_loss[i] for i in range(len(g_loss))]
     plt.plot(g_d_loss)
@@ -118,6 +119,7 @@ def plot_loss(g_loss, d_loss):
     plt.ylabel("Generator Loss / Discriminator Loss")
     plt.legend()
     plt.savefig("training/training_loss_proportion.png")
+    plt.close(fig)
 
 def save_model(generator: Generator,
                discriminator: Discriminator,
@@ -196,7 +198,7 @@ if __name__ == "__main__":
             generate_examples(gen, mapping_network, total_epochs, 12)
             # generate_umap_plot(critic, loader, total_epochs)
             save_model(gen, critic, mapping_network, path_length_penalty, opt_gen, opt_critic, opt_mapping_network,
-                       f"model_epoch_{epoch}")
+                       f"model_epoch_{total_epochs}")
 
         total_epochs += 1
         json_data["epochs"] += 1

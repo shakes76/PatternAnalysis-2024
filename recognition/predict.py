@@ -1,49 +1,26 @@
 import train
 import matplotlib.pyplot as plt
-from train import trainingLoss, trainingAccuracy, trainingValLoss, trainingValAccuracy, trainingDiceScore, trainingValDiceScore, testLoss, testAccuracy, testDiceScore, trainPredictedSeg
+from train import unetModel, trainingLoss, trainingAccuracy, trainingValLoss, trainingValAccuracy, testLoss, testAccuracy, trainPredictedSeg
 from dataset import testImages, trainImages, validateImages, testSegImages, trainSegImages, validateSegImages
 
-# Printing the test stats 
-print(testLoss)
-print(testAccuracy)
-print(testDiceScore)
+trainPredictedSeg = unetModel.predict(testImages)
 
-epochs = 50
-# Plotting each of the model training results 
-plt.figure(figsize=(10, 5))
-plt.plot(epochs, trainingLoss, label='Training Loss', color='blue')
-plt.plot(epochs, trainingValLoss, label='Validation Loss', color='red')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-plt.grid()
+fig, pos = plt.subplots(5, 3, figsize=(15, 25))
+for i in range(5):
+    # Display original image
+    pos[i, 0].imshow(testImages[i].squeeze(), cmap='gray')
+    pos[i, 0].set_title(f'Original image {i+1}')
+    pos[i, 0].axis('off')
+
+    # Display actual segmentation 
+    pos[i, 1].imshow(testSegImages[i].squeeze(), cmap='gray')
+    pos[i, 1].set_title(f'Actual segmentation {i+1}')
+    pos[i, 1].axis('off')
+
+    # Display predicted segmentation 
+    pos[i, 2].imshow(trainPredictedSeg[i].squeeze(), cmap='gray')
+    pos[i, 2].set_title(f'Predicted segmentation {i+1}')
+    pos[i, 2].axis('off')
+
+plt.tight_layout()
 plt.show()
-
-plt.figure(figsize=(10, 5))
-plt.plot(epochs, trainingAccuracy, label='Training Accuracy', color='blue')
-plt.plot(epochs, trainingValAccuracy, label='Validation Accuracy', color='red')
-plt.title('Training and Validation Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.grid()
-plt.show()
-
-plt.figure(figsize=(10, 5))
-plt.plot(epochs, trainingDiceScore, label='Training Dice Score', color='blue')
-plt.plot(epochs, trainingValDiceScore, label='Validation Dice Score', color='red')
-plt.title('Training and Validation Dice Score')
-plt.xlabel('Epochs')
-plt.ylabel('Dice Score')
-plt.legend()
-plt.grid()
-plt.show()
-
-
-# Need to display a segmented image and the predicted segmented image 
-# for a good dice value and a bad one
-
-# printing the first training segmented data 
-plt.imshow(trainSegImages[0], cmap='gray')
-plt.imshow(trainPredictedSeg[0], cmap='gray')

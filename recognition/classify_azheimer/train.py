@@ -51,13 +51,14 @@ class AlzheimerClassifier:
 
 
 def main():
-    data_dir = "recognition/classify_azheimer/AD_NC"
+    data_dir = " /home/groups/comp3710/ADNI"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GFNet(num_classes=2)  # Assuming GFNet is designed for binary classification
     classifier = AlzheimerClassifier(model, device)
     train_loader, test_loader = get_dataloaders(data_dir)
     classifier.train(train_loader, epochs=10)
     accuracy = classifier.evaluate(test_loader)
+    torch.save(model.state_dict(), "alzheimer_classifier.pth")
     print(f"Accuracy: {accuracy}")
 
 if __name__ == "__main__":

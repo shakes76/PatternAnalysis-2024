@@ -16,3 +16,16 @@ class PatchEmbedding(nn.Module):
         x = x.flatten(2)  # (batch_size, emb_size, num_patches)
         x = x.transpose(1, 2)  # (batch_size, num_patches, emb_size)
         return x
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, emb_size=768, num_heads=12, dropout=0.):
+        super(MultiHeadSelfAttention, self).__init__()
+        assert emb_size % num_heads == 0, "Embedding dimension must be divisible by number of heads."
+
+        self.emb_size = emb_size
+        self.num_heads = num_heads
+        self.head_dim = emb_size // num_heads
+
+        self.qkv = nn.Linear(emb_size, emb_size * 3)
+        self.fc_out = nn.Linear(emb_size, emb_size)
+        self.dropout = nn.Dropout(dropout)

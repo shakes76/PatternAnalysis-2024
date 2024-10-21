@@ -10,6 +10,8 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from modules import Generator, Discriminator, MappingNetwork, adversarial_loss
 from dataset import load_data
+import os
+import numpy as np
 
 # Training function
 def train(generator, discriminator, mapping_network, train_loader, epochs, device, lr=0.0001, gen_updates_per_disc=4):
@@ -39,6 +41,11 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
     
     # Fixed latent vector for evaluation
     fixed_z = torch.randn(8, 512, device=device)
+
+    # Ensure the models directory exists
+    model_save_dir = "C:\\Users\\Admin\\Downloads\\models"
+    if not os.path.exists(model_save_dir):
+        os.makedirs(model_save_dir)
 
     for epoch in range(epochs):
         for i, (real_imgs, _) in enumerate(train_loader):
@@ -82,7 +89,7 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
             optimizer_D.step()
 
             # Print progress
-            if i % 100 == 0:
+            if i % 220 == 0:
                 print(f"[Epoch {epoch}/{epochs}] [Batch {i}/{len(train_loader)}] "
                       f"[D loss: {d_loss.item()}] [G loss: {g_loss.item()}]")
 
@@ -92,6 +99,11 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
 
         # Save images at the end of each epoch
         save_generated_images(generator, mapping_network, fixed_z, epoch, device)
+        
+        # Save model checkpoints in the new directory
+        if epoch == 119:  # Saving models only at the 120th epoch
+            torch.save(generator.state_dict(), f"{model_save_dir}/generator_120.pth")
+            torch.save(mapping_network.state_dict(), f"{model_save_dir}/mapping_network_120.pth")
 
 def save_generated_images(generator, mapping_network, fixed_z, epoch, device):
     """
@@ -119,6 +131,38 @@ def save_generated_images(generator, mapping_network, fixed_z, epoch, device):
             Image.fromarray(img).save(img_path)
     generator.train()
 
+# Testing function to generate exactly images and save them for evaluation
+def test(generator, mapping_network, test_loader, device, save_dir="C:\\Users\\Admin\\Downloads\\test_images", num_images=10):
+    generator.eval()
+    all_gen_images = []
+    
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    with torch.no_grad():
+        image_count = 0  # Counter to limit the number of images saved
+        for i, (real_imgs, _) in enumerate(test_loader):
+            batch_size = real_imgs.size(0)
+            z = torch.randn(batch_size, 512, device=device)  # Random latent vector
+            w = mapping_network(z)  # Map latent vector to intermediate space
+            gen_imgs = generator(z, w)  # Generate images
+            all_gen_images.append(gen_imgs.cpu().numpy())  # Store generated images
+
+            for idx, img in enumerate(gen_imgs):
+                if image_count >= num_images:
+                    break 
+                
+                img = img.permute(1, 2, 0).cpu().numpy()  # Rearrange to [H, W, C]
+                img = (img * 127.5 + 127.5).astype("uint8")  # Denormalize
+                img_path = os.path.join(save_dir, f"generated_img_{image_count}.png")
+                Image.fromarray(img).save(img_path)
+                image_count += 1
+
+            if image_count >= num_images:
+                break  
+    
+    return np.concatenate(all_gen_images, axis=0)  # Return all generated images as a NumPy array
+
 # Main entry point for training
 if __name__ == "__main__":
     """
@@ -129,7 +173,7 @@ if __name__ == "__main__":
     test_dir = r'C:/Users/Admin/Downloads/ADNI_AD_NC_2D/AD_NC/test'
     
     # Load data
-    train_loader, _ = load_data(train_dir, test_dir, batch_size=32)
+    train_loader, test_loader = load_data(train_dir, test_dir, batch_size=32)
 
     # Initialize models
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -138,4 +182,5 @@ if __name__ == "__main__":
     mapping_network = MappingNetwork().to(device)
 
     # Train the models
-    train(generator, discriminator, mapping_network, train_loader, epochs=100, device=device, gen_updates_per_disc=4)
+    train(generator, discriminator, mapping_network, train_loader, epochs=120, device=device, gen_updates_per_disc=4)
+        

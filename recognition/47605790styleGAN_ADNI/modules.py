@@ -52,7 +52,7 @@ class NoiseInjection(nn.Module):
     def __init__(self, channels):
         super(NoiseInjection, self).__init__()
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
-        self.noise_strength = nn.Parameter(torch.tensor(0.015))  # Learnable noise strength
+        self.noise_strength = nn.Parameter(torch.tensor(0.01))  # Learnable noise strength
     
     def forward(self, x, noise=None):
         """

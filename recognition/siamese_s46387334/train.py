@@ -12,7 +12,7 @@ from dataset import get_isic2020_data, get_isic2020_data_loaders
 
 ###############################################################################
 ### Functions
-def predict_siamese_net(model, data_loader):
+def predict_siamese_net(model, data_loader, device):
     """
     """
     all_y_pred = []

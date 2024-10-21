@@ -86,7 +86,7 @@ This script performs the following steps:
    - This organization facilitates easier data handling and model training
 
 2. **Train-Test Split**:
-   - Implements a 80-20 train-test split
+   - Implements a 80-20 train-test split (validation split was not used as not enough data)
    - The split is performed to prevent data leakage, ensuring that all images are either in the training or testing set, but not both
    - Test set is not augmented, therefore there will be 6509 benign images and 117 malignant images in the test set
 
@@ -297,7 +297,7 @@ Based on results and dermatologist consultations:
 
 8. Although weighted loss functions such as Focal Loss were experimented with, it was not used in the final model, however this could be used to improve the model's performance in conjunction with albumenations.
 
-9. Certain solutions combined both the 2019 and 2020 ISIC datasets, this could be done to improve the model's performance, however this was not done in this project as the goal was to achieve 80% accuracy on the 2020 dataset.
+9. Certain solutions combined both the 2019 and 2020 ISIC datasets, this could be done to improve the model's performance as there would be enough data for a train-val-test split, however this was not done in this project as the goal was to achieve 80% accuracy on the 2020 dataset.
 
 ## References
 

@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 
-NUM_EPOCHS = 300
+NUM_EPOCHS = 1
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
@@ -54,7 +54,7 @@ def train(model, X_train, y_train, criterion, num_epochs=NUM_EPOCHS, device="cud
 
     for epoch in range(num_epochs):
         running_dice = 0.0
-        total_segment_coefs = torch.zeros(y_train.shape[-1], device=device)
+        total_segment_coefs = torch.zeros(y_train.shape[1], device=device)
         for inputs, masks in train_loader:
             masks = masks.float()
             inputs, masks = inputs.to(device), masks.to(device)

@@ -21,16 +21,13 @@ import skimage.transform
 
 
 transform = transforms.Compose([
+    transforms.Resize((128, 128)),
     transforms.RandomCrop(64),
     transforms.RandomHorizontalFlip(),
-    # transforms.ToTensor()
 ])
 
 
 def resize_image(image, target_shape):
-    ''' 
-    Resize an image to a target shape using interpolation 
-    '''
     return skimage.transform.resize(image, target_shape, mode = 'reflect', anti_aliasing = True)
 
 
@@ -106,25 +103,46 @@ class VQVAENIfTIDataset(Dataset):
         self.categorical = categorical
         self.target_shape = target_shape
         self.file_list = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.nii.gz')]
-        self.images = load_data_2D(self.file_list, normImage = self.normImage, categorical = self.categorical)
+        # self.images = load_data_2D(self.file_list, normImage = self.normImage, categorical = self.categorical)
 
 
     def __len__(self):
-        return len(self.images)
+        return len(self.file_list)
 
 
     def __getitem__(self, idx):
-        image = self.images[idx]
+        # image = self.images[idx]
+
+        # Lazy loading: load the NIfTI file when accessing this index
+        inName = self.file_list[idx]
+        niftiImage = nib.load(inName)
+        inImage = niftiImage.get_fdata(caching='unchanged').astype(np.float32)
+
+        # Handle 3D to 2D slice extraction
+        if len(inImage.shape) == 3:
+            inImage = inImage[:, :, 0]
+
+        if self.normImage:
+            inImage = (inImage - inImage.mean()) / inImage.std()
+
+        # Resize image to target shape (256, 128)
+        if inImage.shape != self.target_shape:
+            inImage = resize_image(inImage, self.target_shape)
+
+        # Convert to categorical if needed
+        if self.categorical:
+            inImage = to_channels(inImage, dtype=np.float32)
 
         # Convert to PyTorch tensor
-        image_tensor = torch.from_numpy(image).float()
+        image_tensor = torch.from_numpy(inImage).float()
 
         # Add channel dimension if it's a 2D image
         if image_tensor.dim() == 2:
             image_tensor = image_tensor.unsqueeze(0)
 
         if self.transform:
-            image_tensor = self.transform(image_tensor)
+            image_tensor = self.transform(image_tensor.permute(1, 2, 0))  # (H, W, C) for transform
+            image_tensor = image_tensor.permute(2, 0, 1)
 
         return image_tensor
 

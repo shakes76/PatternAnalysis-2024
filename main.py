@@ -47,6 +47,7 @@ class DataGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.on_epoch_end()
 
+
     def __len__(self):
         return int(np.ceil(len(self.image_files) / self.batch_size))
 
@@ -191,11 +192,13 @@ def calculate_class_weights(labels):
     all_labels = np.concatenate([np.ravel(nib.load(f).get_fdata()) for f in labels])
     class_weights = {}
     classes = np.unique(all_labels)
-    total = len(all_labels)
+    total = float(len(all_labels))  # Convert to float to prevent overflow
+    num_classes = len(classes)
     for c in classes:
         count = np.sum(all_labels == c)
-        class_weights[c] = total / (len(classes) * count)
+        class_weights[c] = total / (num_classes * count)
     return class_weights
+
 
 
 # Get class weights
@@ -218,12 +221,21 @@ def weighted_categorical_crossentropy(y_true, y_pred):
 def weighted_combined_loss(y_true, y_pred):
     return weighted_categorical_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
 
+# Remove class weights and use standard loss
+def combined_loss(y_true, y_pred):
+    ce_loss = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
+    dl = dice_loss(y_true, y_pred)
+    return ce_loss + dl
+
+
+
 
 # Build and compile the model
 input_shape = (*input_dim, 1)  # Add channel dimension
 model = unet_3d(input_shape, num_classes)
+# Compile the model without class weights
 model.compile(optimizer=keras.optimizers.Adam(learning_rate=1e-4),
-              loss=weighted_combined_loss,
+              loss=combined_loss,
               metrics=['accuracy'])
 
 # Print model summary

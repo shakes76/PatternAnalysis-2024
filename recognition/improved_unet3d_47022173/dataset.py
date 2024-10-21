@@ -14,15 +14,6 @@ from pathlib import Path
 import torchio as tio
 import torch
 
-if IS_RANGPUR:
-	end = 'nii.gz'
-	split = 6
-	length = 9
-else:
-	end = 'nii'
-	split = 3
-	length = 14
-
 
 def load_data_3D(imageNames, normImage=False, dtype=np.float32, 
 				getAffines=False, early_stop=False):
@@ -86,9 +77,9 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 class ProstateDataset3D(Dataset):
 	def __init__(self, images_path, masks_path, mode, transforms):
 		image_names = [f.name for f in Path(images_path).iterdir() if f.is_file() and
-				  f.name.endswith(end)]
+				  'nii' in f.name]
 		mask_names = [f.name for f in Path(masks_path).iterdir() if f.is_file() and
-				 f.name.endswith(end)]
+				 'nii' in f.name]
 		
 		# Sort to ensure correct matching of image to mask
 		image_names.sort()
@@ -116,12 +107,6 @@ class ProstateDataset3D(Dataset):
 		self.images = torch.empty(0, 128, 128, 128)
 		self.masks = torch.empty(0, 128, 128, 128)
 		self.affines = torch.empty(0, 4, 4)
-
-		# TODO REMOVE THIS. Checks for matching image and mask names
-		for image, mask in zip(self.image_names, self.mask_names):
-			if image.split('/')[split][:length] != mask.split('/')[split][:length]:
-				print(image, mask)
-				raise ValueError("Image and mask do not match")
 
 		# Load and transform LOAD_SIZE (50) images at a time due to memory constraints
 		loaded = 0

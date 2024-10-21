@@ -11,6 +11,16 @@ import numpy as np
 from torch.nn import functional as F
 
 def init_weights(m):
+	"""
+	Initialize the weights of 3D convolutional and instance normalization layers.
+
+	This function applies He initialization for Conv3d layers and sets weights of
+	InstanceNorm3d layers to one,
+	while biases are initialized to zero.
+
+	Parameters:
+	- m (torch.nn.Module): The layer to initialize.
+	"""	
 	if isinstance(m, nn.Conv3d):
 		nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
 		if hasattr(m, 'bias') and m.bias is not None:
@@ -22,68 +32,20 @@ def init_weights(m):
 		if hasattr(m, 'bias') and m.bias is not None:
 			nn.init.constant_(m.bias, 0)
 
-# class DiceLoss(torch.nn.Module):
-# 	def init(self):
-# 		super(DiceLoss, self).init()
-
-# 	def forward(self, pred, masks):
-# 		return 1 - dice_coefficient(pred, masks)
-
-# def dice_coefficient(pred, masks):
-# 	smooth = 1e-6 # Avoid divide by zero
-
-# 	# Flatten
-# 	pred = pred.contiguous().view(-1)
-# 	masks = masks.contiguous().view(-1)
-
-# 	intersection = (pred * masks).sum()
-# 	dice = (2. * intersection) / (pred.sum() + masks.sum() + smooth)
-# 	return dice
-
-
-# class CustomDiceLoss(nn.Module):
-# 	def __init__(self, smooth=1e-6):
-# 		super(CustomDiceLoss, self).__init__()
-# 		self.smooth = smooth
-
-# 	def forward(self, logits, targets):
-# 		# # Flatten the tensors to shape (batch_size, num_classes, -1)
-# 		logits = logits.view(logits.size(0), logits.size(1), -1)
-# 		targets = targets.view(targets.size(0), targets.size(1), -1)
-
-# 		print(logits.shape, targets.shape)
-# 		print(np.unique(logits.detach().cpu().numpy()))
-# 		print(np.unique(targets.detach().cpu().numpy()))
-
-# 		# Compute Dice coefficient for each class
-# 		intersection = (logits * targets).sum(dim=2)
-# 		union = logits.sum(dim=2) + targets.sum(dim=2)
-# 		print(intersection.shape, union.shape)
-
-# 		dice_score = (2.0 * intersection + self.smooth) / (union + self.smooth)
-# 		print(dice_score.shape)
-		
-# 		# Return Dice loss as 1 - mean Dice score over all classes
-# 		return 1.0 - dice_score.mean()
-
-# class DiceCELoss(nn.Module):
-#     def __init__(self, weight=None, size_average=True):
-#         super(DiceCELoss, self).__init__()
-
-#     def forward(self, inputs, targets, smooth=1):        
-#         #flatten label and prediction tensors
-#         inputs = inputs.view(-1)
-#         targets = targets.view(-1)
-        
-#         intersection = (inputs * targets).sum()                            
-#         dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
-#         BCE = F.cross_entropy(inputs, targets, reduction='mean')
-#         Dice_BCE = BCE + dice_loss
-        
-#         return Dice_BCE
-
 class Modified3DUNet(nn.Module):
+	"""
+	A modified 3D U-Net for MRI segmentation, see README for reference
+	and architecture.
+	"""
 	def __init__(self, in_channels, n_classes, base_n_filter):
+		"""
+		Initialize the 3D U-Net model.
+
+		Parameters:
+		- in_channels (int): Number of input channels (e.g., 1 for grayscale images).
+		- n_classes (int): Number of output segmentation classes.
+		- base_n_filter (int): Base number of filters in the first convolutional layer.
+		"""
 		super(Modified3DUNet, self).__init__()
 		self.in_channels = in_channels
 		self.n_classes = n_classes

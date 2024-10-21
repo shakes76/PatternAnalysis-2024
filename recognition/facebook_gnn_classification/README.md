@@ -74,14 +74,33 @@ Overall, the UMAP visualization indicates that the embeddings learned by the GNN
 ### Prediction Accuracy
 The model achieved a prediction accuracy of 98.24% on the entire dataset, which shows that it was able to effectively classify nodes into their respective categories.
 
-
 ### Sample Predictions
 Below are some sample predictions from the model:
+
 - Node 0: Predicted = `0` (True = `0`)
 - Node 1: Predicted = `2` (True = `2`)
 - Node 2: Predicted = `1` (True = `1`)
 - Node 3: Predicted = `2` (True = `2`)
 - Node 4: Predicted = `3` (True = `3`)
+
+
+### Project File Descriptions
+This project contains the following files:
+
+- train.py: The script used to train the GNN model. It defines the GNN model, sets up the training process, and saves the trained model weights. It also includes mixed precision training for efficiency.
+
+- predict.py: This script is used to load the trained GNN model and make predictions on the dataset. It evaluates the accuracy of the model and provides sample predictions.
+
+- modules.py: Defines the architecture of the GNN model. The model uses multiple GATConv layers with ReLU activation and dropout to effectively learn node representations.
+
+- dataset.py: Contains the code to load the dataset from an .npz file, which includes node features, edge connections, and labels. It transforms the raw data into tensors suitable for training the GNN.
+
+- README.md: This file provides an overview of the project, the dataset, training details, discussions and the results obtained.
+
+- graphs (directory): This folder contains the images generated during training and visualization, including:
+
+  -training_validation_loss.png: The plot showing training and validation loss over epochs.
+  -umap_embeddings.png: The UMAP plot showing the 2D representation of node embeddings learned by the model.
 
 ### Conclusion
 The GNN model using GATConv layers was successfully trained on the Facebook Page-Page Network dataset to classify nodes based on their types. The key findings are as follows:

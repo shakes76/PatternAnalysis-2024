@@ -20,6 +20,7 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
 from train import set_seed
+import os
 
 
 
@@ -88,6 +89,16 @@ def predict():
         scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=y_test.cpu().numpy(), cmap='viridis', s=10)
         plt.colorbar(scatter)
         plt.title('t-SNE visualization of GAT embeddings')
+
+        # Save the plot using a relative path
+        images_dir = os.path.join(os.getcwd(), 'images')
+        if not os.path.exists(images_dir):
+            os.makedirs(images_dir)
+        
+        save_path = os.path.join(images_dir, 'SNE visualization (reality).png')
+        plt.savefig(save_path)
+        print(f"t-SNE plot saved to {save_path}")
+
         plt.show()
 
     except Exception as e:

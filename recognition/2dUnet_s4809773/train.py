@@ -1,5 +1,6 @@
 import torch
 import torch.optim as optim
+import torch.nn as nn
 import torch.nn.functional as F
 from dataset import create_dataloaders  # Import dataset and loader
 from modules import UNet  # Import the UNet model
@@ -11,23 +12,36 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
 learning_rate = 0.001
-num_epochs = 4
+num_epochs = 20
 batch_size = 64
 num_classes = 6  # As there are 6 segmentation classes
 
-# Paths to your data (set these paths based on your project structure)
-train_images_folder = 0 #abscent for now
-train_masks_folder = 0 #abscent for now
-test_images_folder = 0 #abscent for now
-test_masks_folder = 0 #abscent for now
+# Paths to the dataset data
+train_images_folder = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+train_masks_folder = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
+test_images_folder = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
+test_masks_folder = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
 
 # Load the datasets
 train_loader = create_dataloaders(train_images_folder, train_masks_folder, batch_size, normImage=True)
 val_loader = create_dataloaders(test_images_folder, test_masks_folder, batch_size, normImage=True)
 
+
+
+
 # Initialize the model, loss function, and optimizer
 net = UNet(num_classes=num_classes).to(device)  # Move the model to the device
-optimizer = optim.Adam(net.parameters(), lr=learning_rate)
+
+def init_weights(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+        nn.init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
+
+# Apply the weights initialization
+net.apply(init_weights)
+
+optimizer = optim.AdamW(net.parameters(), lr=learning_rate, weight_decay=1e-2) # Using AdamW instead of regular Adam
 
 # Dice Loss Function for multi-class segmentation
 def dice_loss(pred, target, smooth=1):
@@ -61,6 +75,8 @@ def train_model():
     for epoch in range(num_epochs):
         net.train()  # Set the model to training mode
         running_loss = 0.0
+        epoch_loss_sum = 0.0
+        total_batches = 0
 
         # Iterate over the batches
         for i, (images, masks) in enumerate(train_loader):
@@ -77,23 +93,31 @@ def train_model():
             
             # Backward pass and optimization
             loss.backward()
+
+
+            # Optionally add gradient clipping
+            torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
+
             optimizer.step()
 
             # Accumulate loss
             running_loss += loss.item()
+            epoch_loss_sum += loss.item()
+            total_batches += 1
 
-            # Print statistics every 2 batches
-            if (i + 1) % 2 == 0:
-                print(f'Epoch [{epoch + 1}/{num_epochs}], Batch [{i + 1}/{len(train_loader)}], Loss: {running_loss / 2:.3f}')
+            # Print statistics every 32 batches
+            if (i + 1) % 32 == 0:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Batch [{i + 1}/{len(train_loader)}], Loss: {running_loss / 32:.3f}')
                 running_loss = 0.0  # Reset running loss after every print
 
         # Store average training loss for this epoch
-        avg_train_loss = running_loss / len(train_loader)
+        avg_train_loss = epoch_loss_sum / total_batches
         train_losses.append(avg_train_loss)
+        print(f'Epoch {epoch+1}, Average Training Loss: {avg_train_loss:.4f}')
 
         # Validation step
-        val_loss = validate_model()
-        val_losses.append(val_loss)
+        avg_val_loss = validate_model()
+        val_losses.append(avg_val_loss)
 
     end_time = time.time()
     print('\nFinished Training')
@@ -118,7 +142,6 @@ def validate_model():
             outputs = net(images)
 
             # Calculate loss
-            print(f'Outputs shape: {outputs.shape}, Masks shape: {masks.shape}')
             loss = dice_loss(outputs, masks)
             val_loss += loss.item()
 
@@ -128,7 +151,7 @@ def validate_model():
 
 # Function to plot the training and validation losses
 def plot_losses(train_losses, val_losses):
-    epochs = range(1, num_epochs + 1)
+    epochs = range(1, len(train_losses) + 1)
     plt.figure(figsize=(10, 6))
     plt.plot(epochs, train_losses, 'b', label='Training Loss')
     plt.plot(epochs, val_losses, 'r', label='Validation Loss')
@@ -137,7 +160,8 @@ def plot_losses(train_losses, val_losses):
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig('loss_graph.png')  # Save the plot as an image file
+    plt.close()
 
 # Start training
 if __name__ == "__main__":

@@ -274,7 +274,7 @@ The high sensitivity to malignant cases (87%) aligns with clinical priorities. T
 
 Based on results and dermatologist consultations:
 
-1. **Temporal Analysis**: If this were to be deployed into the healthcare system, then implementing it would be necessary to modify the implementation of the Siamese architecture to compare lesion images over time, emphasizing size and appearance changes as key malignancy indicators. This is the single most important factor when diagnosing skin cancer, when talking to dermatologists they do not diagnose a lesion as malignant or benign based on a single image, they need to see the evolution of the lesion over time.
+1. **Temporal Analysis**: If this were to be deployed into the healthcare system, then implementing it would be necessary to modify the implementation of the Siamese architecture to compare lesion images over time, emphasizing size and appearance changes as key malignancy indicators. This is the single most important factor when diagnosing skin cancer, when talking to dermatologists they do not diagnose a lesion as malignant or benign based on a single image, they need to see the evolution of the lesion over time (that is if a biopsy was not considered, they are commonly a last resort due to scarring, however this tool can aid in that decision if temporal analysis were to be deployed)
 
 2. Perhaps a more complex model could be used, such as a transformer model, which has been shown to be effective in image classification tasks. However since the model was overfitting the transformer model would have to be carefully implemented to prevent overfitting.
 

@@ -29,3 +29,25 @@ class MultiHeadSelfAttention(nn.Module):
         self.qkv = nn.Linear(emb_size, emb_size * 3)
         self.fc_out = nn.Linear(emb_size, emb_size)
         self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        batch_size, num_tokens, emb_size = x.size()
+
+        qkv = self.qkv(x)  # (batch_size, num_tokens, 3 * emb_size)
+        qkv = qkv.reshape(batch_size, num_tokens, 3, self.num_heads, self.head_dim)
+        qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, batch_size, num_heads, num_tokens, head_dim)
+        queries, keys, values = qkv[0], qkv[1], qkv[2]  # Each: (batch_size, num_heads, num_tokens, head_dim)
+
+        # Scaled Dot-Product Attention
+        energy = torch.matmul(queries, keys.transpose(-2, -1))  # (batch_size, num_heads, num_tokens, num_tokens)
+        scaling = float(self.head_dim) ** -0.5
+        energy = energy * scaling
+        attention = torch.softmax(energy, dim=-1)  # (batch_size, num_heads, num_tokens, num_tokens)
+        attention = self.dropout(attention)
+
+        out = torch.matmul(attention, values)  # (batch_size, num_heads, num_tokens, head_dim)
+        out = out.transpose(1, 2).reshape(batch_size, num_tokens, emb_size)  # (batch_size, num_tokens, emb_size)
+
+        out = self.fc_out(out)  # (batch_size, num_tokens, emb_size)
+        out = self.dropout(out)
+        return out

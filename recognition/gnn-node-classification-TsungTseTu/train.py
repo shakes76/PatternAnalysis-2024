@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from dataset import load_facebook_data
 from torch.nn import functional as F
 
+
 # Set seed for reproducibility
 def set_seed(seed=42):
     random.seed(seed)

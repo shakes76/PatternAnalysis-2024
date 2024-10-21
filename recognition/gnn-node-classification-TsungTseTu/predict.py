@@ -21,10 +21,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from train import set_seed
 import os
-from umap import UMAP
 import matplotlib.colors as mcolors
-
-
 
 def predict():
     try:
@@ -63,7 +60,6 @@ def predict():
         # Create a mapping of original node indices to reindexed node indices for X_test
         node_map = {old_idx: new_idx for new_idx, old_idx in enumerate(np.unique(edges.flatten())) if old_idx < X_test.size(0)}
 
-
         # Re-index the edges for the testing set based on the node_map
         new_edges = []
         for edge in edges:
@@ -71,7 +67,6 @@ def predict():
                 new_edges.append([node_map[edge[0]], node_map[edge[1]]])
 
         edge_reindex = torch.tensor(new_edges, dtype=torch.long).t()
-
 
         # Predicting
         print("Making predictions on test data...")
@@ -84,8 +79,8 @@ def predict():
 
         # t-SNE visualization of node embeddings
         print("Generating t-SNE visualization...")
-        umap_model = UMAP(n_components=2, random_state=42)
-        embeddings = umap_model.fit_transform(out.cpu().numpy())
+        tsne_model = TSNE(n_components=2, random_state=42)
+        embeddings = tsne_model.fit_transform(out.cpu().numpy())
 
         plt.figure(figsize=(8, 6))
 
@@ -96,20 +91,19 @@ def predict():
         cbar = plt.colorbar(scatter, ticks=[0, 1, 2, 3])
         cbar.set_label('Node Classes')
 
-        plt.title('UMAP Plot of Node Embeddings with Ground Truth Labels')
+        plt.title('t-SNE Plot of Node Embeddings with Ground Truth Labels')
 
         # Save the plot using a relative path
         images_dir = os.path.join(os.getcwd(), 'images')
         if not os.path.exists(images_dir):
             os.makedirs(images_dir)
         
-        save_path = os.path.join(images_dir, 'UMAP visualization.png')
+        save_path = os.path.join(images_dir, 'SNE visualization.png')
         plt.savefig(save_path)
-        print(f"UMAP plot saved to {save_path}")
+        print(f"t-SNE plot saved to {save_path}")
 
         plt.show()
 
-        
     except Exception as e:
         print(f"An error occurred during prediction: {e}")
 

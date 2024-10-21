@@ -11,7 +11,7 @@ import torch.nn.functional as F
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 100
 LEARNING_RATE = 0.0001
 ACCUMULATION_STEPS = 4
 NUM_CLASSES = 6
@@ -192,7 +192,7 @@ for epoch in range(NUM_EPOCHS):
         plt.xlabel('Epoch')
         plt.ylabel('Dice Score')
         plt.title('Class Specific Validation Dice Scores Over Epochs')
-        plt.legend(plt.legend(loc='lower right'))
+        plt.legend(loc='lower right')
         plt.savefig(f'epoch_{epoch + 1}_1class_specific_validation_dice_scores.png')  # 保存图像
         plt.show()  # 显示图像
 
@@ -244,6 +244,6 @@ for epoch in range(NUM_EPOCHS):
         plt.xlabel('Epoch')
         plt.ylabel('Dice Score')
         plt.title('Class Specific Dice Scores Over Epochs')
-        plt.legend(plt.legend(loc='lower right'))
+        plt.legend(loc='lower right')
         plt.savefig(f'epoch_{epoch + 1}_1class_specific_test_dice_scores.png')  # 保存图像
         plt.show()  # 显示图像

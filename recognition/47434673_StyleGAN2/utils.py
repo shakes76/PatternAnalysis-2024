@@ -24,65 +24,47 @@ from torchvision.utils import save_image
 import torch.nn.functional as F
 from math import sqrt #math sqrt is about 7 times faster than numpy sqrt
 from tqdm import tqdm
-
 import train
 import predict
 import modules
 import dataset
 
-# Number of workers for dataloader
-workers = 2
 
-# Size of z latent vector (i.e. size of generator input)
-nz = 100
-
-# Size of feature maps in generator
-ngf = 64
-
-# Size of feature maps in discriminator
-ndf = 64
-
-# Beta1 hyperparameter for Adam optimizers
-beta1 = 0.5
-
-# Number of GPUs available. Use 0 for CPU mode.
-ngpu = 1
-
-
-# Hyper Parameters
-epochs = 300
-learning_rate = 0.001
-channels = 1
-batch_size = 32
-image_size = 64
-log_resolution = 7
-image_height = 2**log_resolution
-image_width = 2**log_resolution
-z_dim = 256
-w_dim = 256
-lambda_gp = 10
-interpolation = "bilinear" 
-save = "save"
-
-
-
+workers = 2 # Number of workers for dataloader
+nz = 100 # Size of z latent vector (i.e. size of generator input)
+ngf = 64 # Size of feature maps in generator
+ndf = 64 # Size of feature maps in discriminator
+beta1 = 0.5 # Beta1 hyperparameter for Adam optimizers
+ngpu = 1 # Number of GPUs available. Use 0 for CPU mode.
+epochs = 300 # Number of epochs
+learning_rate = 0.001 # Learning rate
+channels = 1 # 1 Channel for greyscale images, 3 for RGB.
+batch_size = 32 # Number of images per training batch
+image_size = 64 # Image size is 64 x 64 pixels
+log_resolution = 7 # Log of resolution
+image_height = 2**log_resolution # asdf
+image_width = 2**log_resolution # asdf
+z_dim = 256 # asdf
+w_dim = 256 # asdf
+lambda_gp = 10 # asdf
+interpolation = "bilinear" # asdf
+save = "save" # asdf
 
 
 ##################################################
 # Data augmentation and optimisation
 
-# Samples z (noise) on random and fetches w (latent vectors) from mapping network
-def get_w(batch_size, mapping_network, device):
 
+def get_w(batch_size, mapping_network, device):
+    """Gets a random noise sample (z) and gets latent vectors (w) from the mapping network"""
     z = torch.randn(batch_size, w_dim).to(device)
     w = mapping_network(z)
     # Expand w from the generator blocks
     return w[None, :, :].expand(log_resolution, -1, -1)
 
 
-# Generates random noise for the generator block
 def get_noise(batch_size, device):
-    
+    """Generates the random noise used in the generator blocks"""
     noise = []
     #noise res starts from 4x4
     resolution = 4
@@ -104,11 +86,9 @@ def get_noise(batch_size, device):
 
     return noise
 
-'''
-This is an regularization penalty 
-:We try to reduce the L2 norm of gradients of the discriminator with respect to images.
-'''
+
 def gradient_penalty(critic, real, fake,device="cpu"):
+    """Attempts to reduce the l^2 norm of the gradients of the discriminator with respect to the images. Regularisation penalty"""
     BATCH_SIZE, C, H, W = real.shape
     beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
     interpolated_images = real * beta + fake.detach() * (1 - beta)
@@ -116,7 +96,7 @@ def gradient_penalty(critic, real, fake,device="cpu"):
 
     # Calculate critic scores
     mixed_scores = critic(interpolated_images)
- 
+
     # Calculates the gradient of scores with respect to the images
     # and we need to create and retain graph since we have to compute gradients
     # with respect to weight on this loss.

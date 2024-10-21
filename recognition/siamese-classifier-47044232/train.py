@@ -69,8 +69,7 @@ def processes_batch(anchor, positive, negative) -> torch.Tensor:
     negative = negative.to(device)
 
     # Evaluate images
-    anchor_result, positive_result = model(anchor, positive)
-    _, negative_result = model(anchor, negative)
+    anchor_result, positive_result, negative_result = model(anchor, positive, negative)
 
     return tripletloss(anchor_result, positive_result, negative_result)
 
@@ -101,11 +100,11 @@ for epoch in range(config.EPOCHS):
 stop = time.time()
 print(f"Training complete! It took {(start-stop)/60} minutes")
 
-# Testing model to verify functionality
+# Evaluating the Siamese Network with test data
 model.eval()
 with torch.no_grad(): # Reduces memory usage
     for i, (anchor, positive, negative, label) in enumerate(test_loader):
-        loss = processes_batch(anchor, positive, label)
+        loss = processes_batch(anchor, positive, negative)
         test_loss.append(loss)
         if i % (len(test_loader)//2) == 0 and i != len(test_loader)-1:
             print(f"Testing: Batch: {i}, Loss: {loss.item()}")

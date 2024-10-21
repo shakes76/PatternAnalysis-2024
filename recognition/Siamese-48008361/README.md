@@ -146,8 +146,9 @@ The architecture processes image pairs through identical branches with shared we
    ![alt text](graphs/tripletloss.png)
    - Purpose: Learn a discriminative embedding space for skin lesions
    - Formula: L = max(0, D(A,P) - D(A,N) + margin)
-     Where A = Anchor, P = Positive, N = Negative, D = Euclidean distance
+     Where A = Anchor, P = Positive, N = Negative, D = Euclidean distance (v7labs.com, 2024)
    - Function: Minimizes distance between same-class images (A,P) while maximizing distance between different-class images (A,N)
+   - Basically the euclidean distance between the anchor and positive image, anchord and negative image are calculated, the difference between distannces in addition to the margin is then the loss, this ensures that there is a seperable buffer between the two pairs
    - Margin (set to 1.0): Enforces a minimum separation between classes
    - Importance: Crucial for distinguishing subtle differences between benign and malignant lesions, as emphasized by consulted dermatologists
 
@@ -196,10 +197,10 @@ Three primary metrics were used to evaluate the model's performance, each chosen
 
 1. **AUC-ROC (Area Under the Receiver Operating Characteristic Curve)**:
    - Primary metric for model evaluation
-   - Measures the model's ability to distinguish between classes across various threshold settings
+   - Measures the model's ability to differenciate between classes across various threshold settings (which is different to accuracy where the threshold is fixed at 50%)
    - Advantages:
      - Insensitive to class imbalance, crucial for the imbalanced dataset
-     - Provides an aggregate measure of performance across all possible classification thresholds
+     - Provides a measuree of performance across all classification thresholds which can test extreme cases
    - Interpretation: Range from 0 to 1, with 1 indicating perfect classification
    - Implemented using `roc_auc_score` from scikit-learn
 
@@ -211,9 +212,9 @@ Three primary metrics were used to evaluate the model's performance, each chosen
    - Used it in conjunction with AUC-ROC for a more comprehensive evaluation
 
 3. **Confusion Matrix**:
-   - Provides a detailed breakdown of model predictions
-   - Allows visualization of True Positives, True Negatives, False Positives, and False Negatives
-   - Crucial understanding the types of errors the model is making
+   - Provides a breakdown of model predictions by class
+   - Visualization of true positives (image as malignant), true negatives (image as benign), false positives (image is benign but classified as malignant), and false negatives (image is malignant but classified as benign)
+   - This is important as it helps with understanding the types of errors the model is making
    - Particularly important in medical contexts to assess the balance between sensitivity and specificity
    - Implemented using scikit-learn's `confusion_matrix` function
 

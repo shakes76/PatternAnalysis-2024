@@ -143,7 +143,7 @@ def plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validatio
     plt.ylabel("Accuracy")
     plt.title("Training and Validation Accuracy")
     plt.legend(loc="lower right")
-    plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/gcn_accuracy.png")
+    plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/GCN_accuracy.png")
     plt.show()
 
     # Loss plot
@@ -154,7 +154,7 @@ def plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validatio
     plt.ylabel("Loss")
     plt.title("Training and Validation Loss")
     plt.legend(loc="upper right")
-    plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/gcn_loss.png")
+    plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/GCN_loss.png")
     plt.show()
 
 

@@ -17,7 +17,17 @@ Matplotlib created a temporary cache directory at /scratch/215216/matplotlib-rq_
 Matplotlib created a temporary cache directory at /scratch/215216/matplotlib-mkzpz2u4 because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
 GPU not available, modules are switching to CPU.
 Getting testing data...
-  0%|          | 0/540 [00:00<?, ?it/s] 12%|█▏        | 65/540 [00:00<00:00, 645.69it/s] 24%|██▍       | 131/540 [00:00<00:00, 648.61it/s] 36%|███▋      | 197/540 [00:00<00:00, 649.54it/s] 49%|████▊     | 263/540 [00:00<00:00, 650.52it/s] 61%|██████    | 329/540 [00:00<00:00, 650.79it/s] 73%|███████▎  | 395/540 [00:00<00:00, 648.80it/s] 85%|████████▌ | 460/540 [00:00<00:00, 648.96it/s] 97%|█████████▋| 525/540 [00:00<00:00, 544.88it/s]100%|██████████| 540/540 [00:00<00:00, 604.99it/s]
+
+  0%|          | 0/540 [00:00<?, ?it/s]
+ 12%|█▏        | 65/540 [00:00<00:00, 645.69it/s]
+ 24%|██▍       | 131/540 [00:00<00:00, 648.61it/s]
+ 36%|███▋      | 197/540 [00:00<00:00, 649.54it/s]
+ 49%|████▊     | 263/540 [00:00<00:00, 650.52it/s]
+ 61%|██████    | 329/540 [00:00<00:00, 650.79it/s]
+ 73%|███████▎  | 395/540 [00:00<00:00, 648.80it/s]
+ 85%|████████▌ | 460/540 [00:00<00:00, 648.96it/s]
+ 97%|█████████▋| 525/540 [00:00<00:00, 544.88it/s]
+100%|██████████| 540/540 [00:00<00:00, 604.99it/s]
 torch.Size([1, 256, 128])
 Finished fetching testing data.
 cuda not available

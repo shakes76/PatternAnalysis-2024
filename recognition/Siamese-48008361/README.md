@@ -133,7 +133,8 @@ Siamese network structure:
    - Each layer followed by ReLU activation and Dropout (0.5)
 
 3. **Classifier**:
-   - Final layer: 320 -> 2 (binary classification)
+   - The embeddings from the ResNet are fed a final fully connected layer which is then fed into the classifier
+   - Final layer: 320 -> 2 (binary classification layer)
    - Embedding dimension of 320 was chosen after experimentation, as it provided the best AUC-ROC score
 
 The architecture processes image pairs through identical branches with shared weights.

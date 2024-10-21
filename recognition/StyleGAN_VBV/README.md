@@ -76,24 +76,24 @@ The Discriminator evaluates the authenticity of both real and generated images. 
 
 - The loss graphs presented in Figures 1 through 4 illustrate the training dynamics of both the Generator and Discriminator across the Alzheimer's Disease (AD) and Normal Control (NC) classes. Initially, both the Discriminator and Generator losses exhibit sharp decreases, indicating rapid improvements as the model begins to learn the fundamental characteristics of the data. This early phase reflects effective learning, as the Discriminator becomes adept at distinguishing between real and generated images, while the Generator quickly adapts to produce more convincing outputs. From around the 3000 to 30000 batch mark, both loss values stabilize and remain steady, suggesting that the model has reached a proficiency in image generation. After this period, slight fluctuations emerge, particularly in the Generator loss, though these variations are minimal and indicate that the model is still maintaining a consistent performance level. This subtle oscillation underscores the dynamic nature of adversarial training, where the Generator and Discriminator continue to refine their capabilities in a competitive environment, resulting in high-quality synthesized images.
 
-<div align="center">
-  ![AD critic loss](images/AD_critic_loss_final.png)
-  *Figure 1: AD critic (discriminator) loss.*
+<div style="text-align: center;">
+  <img src="images/AD_critic_loss_final.png" alt="AD critic loss" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 1: AD critic (discriminator) loss.</p>
 </div>
 
-<div align="center">
-  ![AD generator loss](images/AD_generator_loss_final.png)
-  *Figure 2: AD generator loss.*
+<div style="text-align: center;">
+  <img src="images/AD_generator_loss_final.png" alt="AD generator loss" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 2: AD generator loss.</p>
 </div>
 
-<div align="center">
-  ![NC critic loss](images/NC_critic_loss_final.png)
-  *Figure 3: NC critic (discriminator) loss.*
+<div style="text-align: center;">
+  <img src="images/NC_critic_loss_final.png" alt="NC critic loss" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 3: NC critic (discriminator) loss.</p>
 </div>
 
-<div align="center">
-  ![NC generator loss](images/NC_generator_loss_final.png)
-  *Figure 4: NC generator loss.*
+<div style="text-align: center;">
+  <img src="images/NC_generator_loss_final.png" alt="NC generator loss" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 4: NC generator loss.</p>
 </div>
 
 ### t-SNE Embedding
@@ -105,23 +105,22 @@ To improve the clarity of the embedding, various dimensionality reduction techni
 
 In future, increasing the number of samples used in the t-SNE visualization would likely yield a more representative embedding, allowing for clearer analysis of the relationships between AD and NC classes. Moreover, incorporating different feature extraction methods or experimenting with alternative neural network architectures could improve the quality of the embeddings. Exploring other dimensionality reduction techniques, such as UMAP (Uniform Manifold Approximation and Projection), might also provide new insights and enhance the discernibility of underlying patterns within the data.
 
-<div align="center">
-  ![TSNE Embedding Plot for Generated Images](images/tsne_visualization.png)
-  *Figure 5: TSNE Embedding Plot for Generated Images.*
+<div style="text-align: center;">
+  <img src="images/tsne_visualization.png" alt="TSNE Embedding Plot for Generated Images" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 5: TSNE Embedding Plot for Generated Images.</p>
 </div>
 
 ### Generated Image Grids
 - A 9x9 grid of generated images is created for both Alzheimer's Disease (AD) and Normal Control (NC) classes. This provides a visual assessment of the quality and variety of the synthesized images, showcasing the model's ability to generate realistic brain scans.
 
-
-<div align="center">
-  ![Generated AD images](images/AD_images.png)
-  *Figure 6: Generated AD images.*
+<div style="text-align: center;">
+  <img src="images/AD_images.png" alt="Generated AD images" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 6: Generated AD images.</p>
 </div>
 
-<div align="center">
-  ![Generated NC images](images/NC_images.png)
-  *Figure 7: Generated NC images.*
+<div style="text-align: center;">
+  <img src="images/NC_images.png" alt="Generated NC images" style="width:300px;"/>
+  <p style="font-style: italic;">Figure 7: Generated NC images.</p>
 </div>
 
 ## Conclusion

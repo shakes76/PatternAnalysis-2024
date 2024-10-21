@@ -73,3 +73,37 @@ class TransformerEncoderBlock(nn.Module):
         # Feed-Forward Network with residual connection
         x = x + self.ffn(self.norm2(x))
         return x
+
+
+class VisionTransformer(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_channels=3, emb_size=768, num_heads=12, depth=12, ff_dim=3072, num_classes=2, dropout=0.1, cls_token=True):
+        super(VisionTransformer, self).__init__()
+        self.patch_embed = PatchEmbedding(in_channels, patch_size, emb_size, img_size)
+        num_patches = self.patch_embed.num_patches
+
+        # Classification token
+        self.cls_token = nn.Parameter(torch.randn(1, 1, emb_size)) if cls_token else None
+
+        # Positional Embedding
+        self.pos_embed = nn.Parameter(torch.randn(1, num_patches + (1 if cls_token else 0), emb_size))
+        self.dropout = nn.Dropout(dropout)
+
+        # Transformer Encoder
+        self.encoder = nn.Sequential(
+            *[TransformerEncoderBlock(emb_size, num_heads, ff_dim, dropout) for _ in range(depth)]
+        )
+
+        # Classification Head
+        self.norm = nn.LayerNorm(emb_size)
+        self.head = nn.Linear(emb_size, num_classes)
+
+        # Initialize parameters
+        self._init_weights()
+
+    def _init_weights(self):
+        nn.init.trunc_normal_(self.pos_embed, std=0.02)
+        if self.cls_token is not None:
+            nn.init.trunc_normal_(self.cls_token, std=0.02)
+        nn.init.trunc_normal_(self.head.weight, std=0.02)
+        if self.head.bias is not None:
+            nn.init.zeros_(self.head.bias)

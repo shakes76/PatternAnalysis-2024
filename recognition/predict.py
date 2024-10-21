@@ -1,9 +1,9 @@
 import train
 import matplotlib.pyplot as plt
-from train import unetModel, trainingLoss, trainingAccuracy, trainingValLoss, trainingValAccuracy, testLoss, testAccuracy, trainPredictedSeg
-from dataset import testImages, trainImages, validateImages, testSegImages, trainSegImages, validateSegImages
+from train import unetModel
+from dataset import testImages, testSegImages
 
-trainPredictedSeg = unetModel.predict(testImages)
+testPredictedSeg = unetModel.predict(testImages)
 
 fig, pos = plt.subplots(5, 3, figsize=(15, 25))
 for i in range(5):
@@ -18,7 +18,7 @@ for i in range(5):
     pos[i, 1].axis('off')
 
     # Display predicted segmentation 
-    pos[i, 2].imshow(trainPredictedSeg[i].squeeze(), cmap='gray')
+    pos[i, 2].imshow(testPredictedSeg[i].squeeze(), cmap='gray')
     pos[i, 2].set_title(f'Predicted segmentation {i+1}')
     pos[i, 2].axis('off')
 

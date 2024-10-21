@@ -1,11 +1,5 @@
-import dataset
-import modules
-
-import tensorflow as tf
-import numpy as np
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Conv2DTranspose, concatenate
 from tensorflow.keras.models import Model
-from tensorflow.keras.backend import flatten
 
 
 # List of filters to be applied in the encoding and reverse in the decoding step 

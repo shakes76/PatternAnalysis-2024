@@ -1,20 +1,20 @@
-import os
-import os.path
 import torch
 import nibabel as nib
 import numpy as np
 from tqdm import tqdm
-import torch
 import matplotlib.pyplot as plt
 from matplotlib import transforms
 
 """
-REFERENCES (INCOMPLETE):
- Chandra, S. (2024). Report: Pattern Recognition, Version 1.56. Retrieved 26th September 2024 from 
+REFERENCES:
+ Chandra, S. (2024). Report: Pattern Recognition, Version 1.57. Retrieved 36th September 2024 from 
     https://learn.uq.edu.au/bbcswebdav/pid-10273751-dt-content-rid-65346599_1/xid-65346599_1
 Contains function to load Nifti files as well.
 """
 
+"""
+Dictionary of channel and image dimensions for the VQVAE.
+"""
 dimensions = {
     "size":(256, 144),
     "input": 1, 
@@ -25,9 +25,12 @@ dimensions = {
     "commitment_beta": 0.25
 }
 
+"""
+Dictionary of parameters for the VQVAE.
+"""
 parameters = {
     "lr": 2e-4, 
-    "epochs": 50, 
+    "epochs": 5, 
     "batch": 100,
     "gpu": "cuda",
     "cpu": "cpu"
@@ -42,6 +45,14 @@ def to_channels(arr: np.ndarray , dtype =np.uint8) -> np.ndarray :
 
     return res
 
+"""
+Load data from a particular list of files, already saved by one of the functions
+in dataset.py.  The training dataset contained images that varied between 256x128 and 256x144 pixels, 
+and lead to errors when fetching these files from the cluster. 
+As a result, the code now contains a snippet which stores that maximum dimensions found when loading a dataset and adjusts 
+the height/width of the input image accordingly before providing it to the model. 
+All images are also converted to PyTorch tensors before being loaded into memory.
+"""
 def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32,
     getAffines=False , early_stop=False):
     '''
@@ -101,12 +112,18 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             break
 
     images = torch.tensor(images)
+    # Add an extra dimension, representing the number of channels.
     images = images.unsqueeze(1)
     if getAffines:
         return images,affines
     else:
         return images
 
+"""
+Save a single actual or reconstructed MRI scan to local. 
+Rotate the MRI scan 90 degrees before saving, because 
+by default the images on rangpur are flipped.
+"""
 def SaveOneImage(inputSamples, imgTitle, plotTitle):
     plt.clf()
     tr = transforms.Affine2D().rotate_deg(90)
@@ -124,7 +141,12 @@ def SaveOneImage(inputSamples, imgTitle, plotTitle):
 
     plt.savefig(f'{imgTitle}.png'.format(0))
         
-
+"""
+Save a multiple actual or reconstructed MRI scan to local. 
+Rotate each MRI scan 90 degrees before saving, because 
+by default the images on rangpur are flipped. The number 
+of images saved depends on the batch size.
+"""
 def SaveMultipleImages(inputSamples, imgTitle, plotTitle):
     plt.clf()
     inputSamples = inputSamples.cpu().detach()

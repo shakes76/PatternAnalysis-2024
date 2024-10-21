@@ -55,14 +55,21 @@ All modules:
 ## 5.0 Training Plots
 
 ## 6.0 Actual vs Reconstructed Scans (can also be found in the recognition folder).
+![image](https://github.com/user-attachments/assets/9b454fe0-973e-4d52-9835-026955ebea48)
+
+_Figure 2: Actual Scan._
+
+![image](https://github.com/user-attachments/assets/7746d26c-7739-4325-921b-702cf1eb4734)
+
+_Figure 3: Reconstructed Scan. This scan achieves an SSIM score of 0.67, as demonstrated in the output SLURM script._
+
 ![image](https://github.com/user-attachments/assets/594d9475-aa4c-4208-b437-a8033d15d82d) 
 
-_Figure 2: Actual Scans from the "HipMRI study for Prostate Cancer Radiotherapy" Dataset_
+_Figure 4: Actual Scans from the "HipMRI study for Prostate Cancer Radiotherapy" Dataset_
 
 ![image](https://github.com/user-attachments/assets/dd24be15-34fd-493a-b5d2-cafd69775159)
 
-_Figure 3: Reconstructed Scans. These scans achieved an SSIM score of 0.67._
-
+_Figure 5: Reconstructed Scans. These scans achieved an SSIM score of 0.67, as demonstrated in the output SLURM script._
 
 ## 7.0 Pre-Processing
 The function provided for retrieving 2D MRI scans stored as NIFTI files was modified after it was discovered that the files contained images of different dimensions. 

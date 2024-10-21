@@ -15,7 +15,7 @@ NUM_EPOCHS = 100
 LEARNING_RATE = 0.0001
 ACCUMULATION_STEPS = 4
 NUM_CLASSES = 6
-
+Combineloss = True
 
 
 # 定义设备
@@ -42,14 +42,48 @@ class_weights = torch.tensor(
     device=DEVICE
 )
 
+class CombinedLoss(nn.Module):
+    def __init__(self, ce_weight=0.5, dice_weight=0.5, class_weights=class_weights):
+        super(CombinedLoss, self).__init__()
+        self.dice_weight = dice_weight
+        self.ce_weight = ce_weight
+        self.ce_loss = nn.CrossEntropyLoss(weight=class_weights)
 
+    def dice_loss(self, inputs, targets):
+        smooth = 1e-6
+        # 计算 softmax 后的概率
+        inputs_softmax = torch.softmax(inputs, dim=1)
+        # 将 targets 转换为 one-hot 编码
+        targets_one_hot = F.one_hot(targets, num_classes=inputs.size(1)).permute(0, 4, 1, 2, 3).float()
+
+        # 计算交集和并集
+        intersection = torch.sum(inputs_softmax * targets_one_hot, dim=(2, 3, 4))
+        union = torch.sum(inputs_softmax, dim=(2, 3, 4)) + torch.sum(targets_one_hot, dim=(2, 3, 4))
+
+        dice = (2.0 * intersection + smooth) / (union + smooth)
+        print(dice)
+        return 1 - torch.mean(dice)
+
+    def forward(self, inputs, targets):
+        # 计算交叉熵损失
+        ce = self.ce_loss(inputs, targets)
+        # 计算 Dice 损失
+        dice = self.dice_loss(inputs, targets)
+
+        # 使用 log 函数应用于 Dice 损失
+        log_dice = torch.log(dice + 1e-6)
+
+        # 最终损失为 log(DiceLoss) + CeLoss
+        return self.ce_weight * ce + self.dice_weight * log_dice
 
 # 初始化模型
 model = UNet3D(in_channels=1, out_channels=NUM_CLASSES).to(DEVICE)
 
 # 设置损失函数和优化器
-
-criterion = nn.CrossEntropyLoss(weight=class_weights)
+if CombinedLoss:
+    criterion = CombinedLoss()
+else:
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 optimizer = optim.Adam(model.parameters(),lr=LEARNING_RATE)
 scaler = GradScaler()
@@ -138,7 +172,7 @@ for epoch in range(NUM_EPOCHS):
         plt.ylabel('Loss')
         plt.title('Training and Validation Loss on Validation set')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_training_validation_loss.png')  # 保存图像
+        plt.savefig(f'epoch_{epoch + 1}_1training_validation_loss.png')  # 保存图像
         plt.show()
 
         # 绘制 Dice 系数曲线
@@ -148,10 +182,10 @@ for epoch in range(NUM_EPOCHS):
         plt.ylabel('Dice Score')
         plt.title('Average Validation Dice Score Over Epochs')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_Validation_Dice_Score.png')  # 保存图像
+        plt.savefig(f'epoch_{epoch + 1}_1Validation_Dice_Score.png')  # 保存图像
         plt.show()
 
-        plt.figure(figsize=(12, 5))
+        plt.figure(figsize=(6, 4))
         for c in range(NUM_CLASSES):
             plt.plot(range(1, len(class_val_dice_scores[c]) + 1), class_val_dice_scores[c],
                      label=f'Class {c} Dice Score')
@@ -159,7 +193,7 @@ for epoch in range(NUM_EPOCHS):
         plt.ylabel('Dice Score')
         plt.title('Class Specific Validation Dice Scores Over Epochs')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_class_specific_validation_dice_scores.png')  # 保存图像
+        plt.savefig(f'epoch_{epoch + 1}_1class_specific_validation_dice_scores.png')  # 保存图像
         plt.show()  # 显示图像
 
     # 测试集评估 (用于计算 Dice 系数)
@@ -200,10 +234,10 @@ for epoch in range(NUM_EPOCHS):
         plt.ylabel('Dice Score')
         plt.title('Average Test Dice Score Over Epochs')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_training_test_loss.png')  # 保存图像
+        plt.savefig(f'epoch_{epoch + 1}_1training_test_loss.png')  # 保存图像
         plt.show()
 
-        plt.figure(figsize=(12, 5))
+        plt.figure(figsize=(6, 4))
         for c in range(NUM_CLASSES):
             plt.plot(range(1, len(class_test_dice_scores[c]) + 1), class_test_dice_scores[c],
                      label=f'Class {c} Dice Score')
@@ -211,5 +245,5 @@ for epoch in range(NUM_EPOCHS):
         plt.ylabel('Dice Score')
         plt.title('Class Specific Dice Scores Over Epochs')
         plt.legend()
-        plt.savefig(f'epoch_{epoch + 1}_class_specific_dice_scores.png')  # 保存图像
+        plt.savefig(f'epoch_{epoch + 1}_1class_specific_dice_scores.png')  # 保存图像
         plt.show()  # 显示图像

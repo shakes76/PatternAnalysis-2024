@@ -1,3 +1,9 @@
+"""
+This script is used to perform inference on a pre-trained StyleGAN model.
+It generates new images from latent vectors, saves them, and visualizes the
+UMAP embeddings of the generated and real images.
+"""
+
 import torch
 from train import test  # Import the test function from train.py
 from modules import Generator, MappingNetwork
@@ -10,6 +16,15 @@ import os
 
 # Function to visualize and save UMAP embeddings with ground truth
 def plot_umap(embeddings, labels, title="UMAP Embeddings", save_path="/home/Student/s4760579/test_images/umap_embedding.png"):
+    """
+    Plots UMAP embeddings of generated and real images with ground truth labels.
+    
+    Args:
+        embeddings: The 2D coordinates for plotting (UMAP output).
+        labels: The labels for color-coding the embeddings (real and generated).
+        title: Title of the plot.
+        save_path: Path where the UMAP plot image will be saved.
+    """
     plt.figure(figsize=(10, 7))
     scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=labels, cmap='Spectral', s=10)
     plt.colorbar(scatter)
@@ -25,6 +40,13 @@ def plot_umap(embeddings, labels, title="UMAP Embeddings", save_path="/home/Stud
 
 # Function to save generated images to disk
 def save_images(images, folder_path="/home/Student/s4760579/test_images"):
+    """
+    Saves generated images as PNG files in the specified directory.
+    
+    Args:
+        images: The generated images (in tensor format).
+        folder_path: Directory where images will be saved.
+    """
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
@@ -36,6 +58,15 @@ def save_images(images, folder_path="/home/Student/s4760579/test_images"):
 
 # Function to perform inference and UMAP embedding
 def predict_and_visualize(generator, mapping_network, test_loader, device):
+    """
+    Generates images using the generator, saves them, and visualizes the embeddings using UMAP.
+    
+    Args:
+        generator: The generator model for image generation.
+        mapping_network: The mapping network for latent space transformation.
+        test_loader: DataLoader containing the test images.
+        device: The device (CPU/GPU) to run inference on.
+    """
     # Call the test function to generate images from the generator
     generated_images = test(generator, mapping_network, test_loader, device, num_images=10)
     
@@ -73,6 +104,9 @@ def predict_and_visualize(generator, mapping_network, test_loader, device):
 
 # Main function for predict.py
 if __name__ == "__main__":
+    """
+    Loads models and dataset, performs prediction and UMAP embedding visualization.
+    """
     # Load the models and dataset
     test_dir = r'/home/groups/comp3710/ADNI/AD_NC/test'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

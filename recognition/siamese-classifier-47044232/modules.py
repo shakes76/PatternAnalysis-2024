@@ -39,3 +39,32 @@ class SiameseNetwork(nn.Module):
             A tuple of three Tensors. Each being the respective features of the image. 
         """
         return self.forward_once(image1), self.forward_once(image2), self.forward_once(image3)
+
+class BinaryClassifier(nn.Module):
+    """ Binary classifier to take the SiameseNetwork's features and provide a classification. """
+    def __init__(self):
+        """ Initialises an instance of the classifier. """
+        super().__init__()
+        self._layer1 = nn.Linear(1000, 500)
+        self._layer2 = nn.Linear(500, 100)
+        self._layer3 = nn.Linear(100, 2)
+        self._reLU = nn.ReLU()
+        self._activation = nn.Sigmoid()
+
+    def forward(self, features) -> torch.Tensor:
+        """ Performs a forward processing of the features. 
+
+        Arguments:
+            features (torch.Tensor): The features learnt in the SiameseNetwork. 
+        Returns:
+            The classification of a feature set.
+        """
+        x = self._layer1(features)
+        x = self._reLU(x)
+        x = self._layer2(x)
+        x = self._reLU(x)
+        x = self._layer3(x)
+        return self._activation(x)
+
+
+

@@ -365,7 +365,7 @@ class StyleGAN2Generator(nn.Module):
                  num_mapping_layers,
                  mapping_dropout,
                  label_dim = 2, 
-                 num_layers=5,
+                 num_layers = 5,
                  ngf = 64
                 ):
         super().__init__()
@@ -400,7 +400,7 @@ class StyleGAN2Generator(nn.Module):
             up = 2
             final_resolution = None
             if i == num_layers - 1:  # Last layer
-                final_resolution = (256, 240)  # Use interpolation for final size
+                final_resolution = (256, 256)  # Use interpolation for final size
             self.synthesis_network.append(
                 SynthesisBlock(in_channels, out_channels, w_dim, up=up, final_resolution=final_resolution)
             )
@@ -408,6 +408,7 @@ class StyleGAN2Generator(nn.Module):
             
         # Add a final convolution layer to reduce to 1 channel
         self.to_rgb = nn.Conv2d(int(self.ngf * channel_multipliers[-1]), 1, kernel_size=1)
+
 
 
     def forward(self, z, labels, return_latents=False):
@@ -555,8 +556,8 @@ class StyleGAN2Discriminator(nn.Module):
         self.discrim_network = nn.ModuleList()
         
         # Initial conv layer
-        # In: [batch_size, 1, 256, 240]
-        # Out: [batch_size, 64, 256, 240]
+        # In: [batch_size, 1, 256, 256]
+        # Out: [batch_size, 64, 256, 256]
         self.discrim_network.append(nn.Conv2d(in_channels=num_channels, out_channels=ndf, kernel_size=3, padding=1))
         
         # Residual blocks
@@ -571,26 +572,25 @@ class StyleGAN2Discriminator(nn.Module):
             in_channels = out_channels
             
         # Spatial dims after downsamples
-        # 5 downsamples: 256/(2^5) = 8, 240/(2^5) = 7.5 (rounds down to 7)
-        final_height = image_size[0] // (2 ** num_layers)  # 8
-        final_width = image_size[1] // (2 ** num_layers)   # 7
+        # 5 downsamples: 256/(2^5) = 8
+        final_size = image_size[0] // (2 ** num_layers)  # 8
             
         # Add MiniBatchStdDev layer (adds 1 to channel dim)
-        # In: [batch_size, 1024 (64 * 16), 8, 7]
-        # Out: [batch_size, 1025, 8, 7]
+        # In: [batch_size, 1024 (64 * 16), 8, 8]
+        # Out: [batch_size, 1025, 8, 8]
         self.minibatch_stddev = MiniBatchStdDev()
         
         # Final conv layer
         self.final_conv = nn.Conv2d(in_channels + 1, in_channels, kernel_size=3, padding=1)
         
         # Flattening layer
-        # In: [batch_size, 1024, 8, 7]
-        # Out: [batch_size, 1024 * 8 * 7] = 57344
+        # In: [batch_size, 1024, 8, 8]
+        # Out: [batch_size, 1024 * 8 * 8] = 65536
         self.flatten = nn.Flatten()
         
         # Dense layer - classifier
-        out_features = in_channels * final_height * final_width
-        # In: [batch_size, 57344]
+        out_features = in_channels * final_size * final_size
+        # In: [batch_size, 65536]
         # Out: [batch_size, 1]
         self.final_linear = nn.Linear(out_features, 1)
 

@@ -37,11 +37,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.nn.utils import clip_grad_norm_
 import torch.nn.functional as F
+from torchvision import transforms
 
 # Hyperparams - mostly following StyleGAN2 paper, adjusted for smaller network
 z_dim = 128 # Latent dims (z: input, w: intermediate)
 w_dim = 128  
-num_mapping_layers = 3
+num_mapping_layers = 8
 mapping_dropout = 0.0
 label_dim = 2  # AD and NC
 num_layers = 5
@@ -49,15 +50,37 @@ ngf = 64 # Num generator features
 ndf = 64 # Num discriminator features
 batch_size = 8
 num_epochs = 100
-lr_g = 0.0003
+lr_g = 0.001
 lr_d = 0.00005
 beta1 = 0.5
 beta2 = 0.999  # Adam betas
-r1_gamma = 20.0  # R1 regularisation weight
+r1_gamma = 50.0  # R1 regularisation weight
 d_reg_interval = 16  # Discrim regularisation interval
 max_grad_norm_d = 1.0  # Maximum norm for gradient clipping
 max_grad_norm_g = 10.0
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# ADA parameters
+ada_start_p = 0  # start ADA aug %
+ada_target = 0.6  # Target ADA aug %
+ada_interval = 4  # ADA update interval
+ada_kimg = 500  # ADA adjustment speed (lower -> faster)
+
+class ADAStats:
+    """
+    Class to keep track of Adaptive Discriminator Augmentation (ADA) statistics.
+    """
+    def __init__(self, start_p=0):
+        self.p = start_p  # Current aug %
+        self.rt = 0  # total of sign(real_score)
+        self.num = 0  # Num samples
+        self.avg = 0  # Avg sign(real_score)
+
+    def update(self, real_signs):
+        """Update ADA statistics with new batch of real image signs."""
+        self.rt += real_signs.sum().item()
+        self.num += real_signs.numel()
+        self.avg = self.rt / self.num if self.num > 0 else 0
 
 # Create results dir
 for dir in ["results/AD", "results/NC", "results/UMAP", "checkpoints"]:
@@ -69,7 +92,7 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_worker
 
 # Init generator and discriminator
 generator = StyleGAN2Generator(z_dim, w_dim, num_mapping_layers, mapping_dropout, label_dim, num_layers, ngf).to(device)
-discriminator = StyleGAN2Discriminator(image_size=(256, 240), num_channels=1, ndf=ndf, num_layers=num_layers).to(device)
+discriminator = StyleGAN2Discriminator(image_size=(256, 256), num_channels=1, ndf=ndf, num_layers=num_layers).to(device)
 
 # Init optimisers
 g_optim = optim.Adam(generator.parameters(), lr=lr_g, betas=(beta1, beta2))
@@ -102,6 +125,7 @@ def save_images(generator, z, labels, epoch, batch=None):
             save_image(img.float(), filename, normalize=True)  # Ensure float32 for save_image
 
 def plot_losses(d_losses, g_losses):
+    """Plot and save the discriminator and generator losses."""
     plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")
     plt.plot(g_losses, label="Generator", alpha=0.5)
@@ -113,8 +137,40 @@ def plot_losses(d_losses, g_losses):
     plt.close()
 
 def clear_cache():
+    """Clear CUDA cache and run garbage collection."""
     torch.cuda.empty_cache()
     gc.collect()
+    
+# ADA augmentation function
+def ada_augment(images, p):
+    """Apply adaptive discriminator augmentation to images."""
+    if p > 0:
+        augment_pipe = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+            transforms.RandomAffine(degrees=(-30, 30), translate=(0.2, 0.2), scale=(0.8, 1.2), shear=(-15, 15)),
+            transforms.RandomApply([transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0))], p=0.5),
+            transforms.RandomApply([transforms.ElasticTransform(alpha=250.0, sigma=10.0)], p=0.5),
+            transforms.RandomApply([transforms.RandomAdjustSharpness(sharpness_factor=2)], p=0.5),
+            transforms.RandomApply([transforms.RandomAutocontrast()], p=0.5),
+        ])
+        mask = torch.rand(images.size(0), 1, 1, 1, device=images.device) < p
+        augmented = augment_pipe(images)
+        images = torch.where(mask, augmented, images)
+    return images
+
+def update_ada(ada_stats, real_pred, ada_target, ada_interval, batch_idx, ada_kimg):
+    """Update ADA statistics and adjust augmentation probability."""
+    ada_stats.update(real_pred.sign().to(torch.float32))
+    adjust_p = None
+    if batch_idx % ada_interval == 0:
+        ada_r = ada_stats.avg
+        if ada_r > ada_target:
+            adjust_p = min(ada_stats.p + (1 / ada_kimg), 1)
+        else:
+            adjust_p = max(ada_stats.p - (1 / ada_kimg), 0)
+        ada_stats.p = adjust_p
+    return ada_stats, adjust_p
     
 def d_loss_fn(real_pred, fake_pred):
     real_loss = F.softplus(-real_pred).mean()
@@ -132,69 +188,78 @@ fixed_z = torch.randn(16, z_dim).to(device)
 fixed_labels = torch.cat([torch.zeros(8), torch.ones(8)], dim=0).long().to(device)
 d_losses = []
 g_losses = []
+ada_stats = ADAStats(ada_start_p)
 
 for epoch in range(num_epochs):
-    clear_cache()
+    clear_cache() # Free up GPU mem
     for i, (real_images, labels) in enumerate(dataloader):
         real_images, labels = real_images.to(device), labels.to(device)
         
+        # Apply ADA to real images
+        real_images_aug = ada_augment(real_images, ada_stats.p)
+        
         ### Train Discriminator ###
-        requires_grad(generator, False)
-        requires_grad(discriminator, True)
+        requires_grad(generator, False) # Freeze G
+        requires_grad(discriminator, True) # unfreeze D
         
         with amp.autocast(device_type='cuda'):
-            z = torch.randn(real_images.size(0), z_dim).to(device)
-            fake_images = generator(z, labels)
-            fake_output = discriminator(fake_images.detach())
-            real_output = discriminator(real_images)
+            z = torch.randn(real_images.size(0), z_dim).to(device) # Create noise
+            fake_images = generator(z, labels) # Gen fakes
+            fake_output = discriminator(fake_images.detach()) #D classify fakes
+            real_output = discriminator(real_images_aug) # D classify reals
             # d_loss = criterion(fake_output, torch.zeros_like(fake_output)) + criterion(real_output, torch.ones_like(real_output))
             d_loss = d_loss_fn(real_output, fake_output) # non-saturated GAN loss with R1 regularisation
-            d_losses.append(d_loss.item())
-            
-        d_optim.zero_grad()
-        scaler.scale(d_loss).backward()
-        scaler.unscale_(d_optim)
-        clip_grad_norm_(discriminator.parameters(), max_grad_norm_d)
-        scaler.step(d_optim)
-        scaler.update()
+            d_losses.append(d_loss.item()) # Record loss
         
-        # Discriminator R1 regularisation 
+        # D backprop    
+        d_optim.zero_grad() # Reset grads
+        scaler.scale(d_loss).backward() # Backward pass with scaling
+        scaler.unscale_(d_optim) # Unscale for clipping and step
+        clip_grad_norm_(discriminator.parameters(), max_grad_norm_d) #Clip grads
+        scaler.step(d_optim) # Update D params
+        scaler.update() # Step scaler state
+        
+        # Update ADA stats and prob
+        ada_stats, adjust_p = update_ada(ada_stats, real_output, ada_target, ada_interval, i, ada_kimg)
+        
+        # D R1 regularisation 
         if i % d_reg_interval == 0:
-            real_images.requires_grad = True
+            real_images.requires_grad = True # Enable grad calc
             with amp.autocast(device_type='cuda'):
                 real_pred = discriminator(real_images)
                 r1_loss = d_r1_loss(real_pred, real_images)
-            d_optim.zero_grad()
-            scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward()
-            scaler.unscale_(d_optim)
-            clip_grad_norm_(discriminator.parameters(), max_grad_norm_d)
-            scaler.step(d_optim)
-            scaler.update()
+            d_optim.zero_grad() # Reset grads
+            scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward() # Backward pass
+            scaler.unscale_(d_optim) # Unscale
+            clip_grad_norm_(discriminator.parameters(), max_grad_norm_d) # Clip grads
+            scaler.step(d_optim) # Update d params
+            scaler.update() # update scaler state
             real_images.requires_grad = False  # Reset requires_grad
         
         ### Train Generator ###
-        requires_grad(generator, True)
-        requires_grad(discriminator, False)
+        requires_grad(generator, True) # Unfreeze G
+        requires_grad(discriminator, False) # Freeze D
         
         with amp.autocast(device_type='cuda'):
-            z = torch.randn(real_images.size(0), z_dim).to(device)
-            fake_images = generator(z, labels)
-            fake_pred = discriminator(fake_images)
+            z = torch.randn(real_images.size(0), z_dim).to(device) # Gen noise
+            fake_images = generator(z, labels) # Gen fakes
+            fake_pred = discriminator(fake_images) # D classify fakes
             # g_loss = criterion(fake_pred, torch.ones_like(fake_pred)) # For BCELogitsLoss
             g_loss = g_loss_fn(fake_pred) # Non-saturating GAN loss
-            g_losses.append(g_loss.item())
+            g_losses.append(g_loss.item()) # Record loss
         
-        g_optim.zero_grad()
-        scaler.scale(g_loss).backward()
-        scaler.unscale_(g_optim)
-        clip_grad_norm_(generator.parameters(), max_grad_norm_g)
-        scaler.step(g_optim)
-        scaler.update()
+        g_optim.zero_grad() # Reset grads
+        scaler.scale(g_loss).backward() # BAckward pass
+        scaler.unscale_(g_optim) # Unscale
+        clip_grad_norm_(generator.parameters(), max_grad_norm_g) # Clip grads
+        scaler.step(g_optim) # Update G param
+        scaler.update() # Step scaler state
 
         # Print losses and check for NaN
         if i % print_interval == 0:
             print(f"Epoch [{epoch+1}/{num_epochs}] Batch [{i+1}/{total_batches}] "
-                  f"D_loss: {d_loss.item():.4f} G_loss: {g_loss.item():.4f}")
+                  f"D_loss: {d_loss.item():.4f} G_loss: {g_loss.item():.4f} "
+                  f"ADA_p: {ada_stats.p:.4f}")
             
         if torch.isnan(d_loss) or torch.isnan(g_loss):
             print(f"NaN loss detected at Epoch {epoch+1}, Batch {i+1}. Break.")
@@ -210,6 +275,6 @@ for epoch in range(num_epochs):
             'discrim_state_dict': discriminator.state_dict(),
         }, f"checkpoints/stylegan2_checkpoint_epoch_{epoch+1}.pth")
 
-plot_losses(d_losses, g_losses)
+        plot_losses(d_losses, g_losses)
 
 print("Training complete!")

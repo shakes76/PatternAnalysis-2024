@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 """
 Potential Improvements:
-    LR scheduler
+    
 """
 
 def _train_model(model, data, train):
@@ -61,12 +61,17 @@ def training_loop(num_epochs, model, data, train, valid, test):
     for epoch in range(num_epochs):
         loss = _train_model(model=model, data=data, train=train)
 
+        # Validation and testing step
         valid_loss, test_accuracy = _evaluate_model(model=model, data=data, valid=valid, test=test)
 
+        # Update stats
         losses.append(loss)
         valid_losses.append(valid_loss)
         accuracies.append(test_accuracy)
         
+        # Step the scheduler
+        scheduler.step()
+
         if valid_loss < best_val_loss:
             # early stoppage
             best_val_loss = valid_loss
@@ -119,6 +124,9 @@ if __name__ == '__main__':
     # Setting up Adam Optimiser and Cross Entropy Loss function
     optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser
     criterion = torch.nn.CrossEntropyLoss()
+
+    # Apply learning rate scheduler for better minima accuracy
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimiser, step_size=50, gamma=0.5)
 
     # Plotting Lists
     losses = []

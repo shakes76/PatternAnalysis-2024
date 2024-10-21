@@ -3,12 +3,10 @@ This file contains various constants and fixed parameters used in the training, 
 testing of the model.
 """
 
-import torchio as tio
-
 # Data split parameters
 VALID_START = 195
 TEST_START = 203
-DEBUG = 18
+DEBUG = 6
 LOAD_SIZE = 50
 
 # Data loading parameters

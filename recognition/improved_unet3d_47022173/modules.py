@@ -233,8 +233,12 @@ class Modified3DUNet(nn.Module):
 		logits = out
 		softmax_logits = self.softmax(out)
 
+		prediction_indices_3d = torch.argmax(softmax_logits_3d, dim=1)
+		predictions_3d = torch.zeros_like(softmax_logits_3d)
+		predictions_3d.scatter_(1, prediction_indices_3d.unsqueeze(1), 1)
+
 		prediction_indices = torch.argmax(softmax_logits, dim=1)
 		predictions = torch.zeros_like(softmax_logits)
 		predictions.scatter_(1, prediction_indices.unsqueeze(1), 1)
 
-		return softmax_logits_3d, predictions, logits_3d
+		return predictions_3d, predictions, logits_3d

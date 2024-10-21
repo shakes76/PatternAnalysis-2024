@@ -9,13 +9,17 @@ Abdullah Badat (47022173)
 
 ## Project Overview
 
-## The 3D Improved UNet3D
+## Dataset and processing
 
-### Model Architecture
+## The 3D Improved UNet3D
 
 The 3d improved UNet3D uses both skip connections across the 'U' and residual connections around context modules.
 
+### Model Architecture
+
 ![unet_architecture](assets/unet_architecture.png)
+
+### Hyperparameters
 
 ## Dependencies
 
@@ -60,16 +64,19 @@ options:
 
 ### Example Usage
 
-python3 driver.py -m train -s rangpur -e 150 -bs 4
+`python3 driver.py -m train -s rangpur -e 150 -bs 4 -sp saves_150_4`
 
-Trains the model with rangpur parameters. Runs for 150 epochs
-and uses a batch size of 4.
+Trains the model on rangpur. Runs for 150 epochs and uses a batch size of 4.
+Saves the prediction checkpoints in folder saves_150_4.
+
+`python3 driver.py -m predict -s local -sp saves_predict -p model.pth`
+Runs inference on the test with a model loaded from model.pth. Saves prediction images to a folder called saves_predict.
 
 ## Results
 
-### Hyperparameter search
-
 ### Comparing predictions to masks
+
+### Loss curve and dice curve
 
 ## Discussion
 

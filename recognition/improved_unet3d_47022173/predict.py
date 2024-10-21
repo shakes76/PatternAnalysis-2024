@@ -47,30 +47,30 @@ def predict(
     model.to(device)
 
     model.eval()
-    test_loss = 0.0
-    dice_scores = [0] * N_CLASSES  # Initialize dice scores for each class
-    
-    dice_score = DiceLoss(softmax=True, include_background=False)
+
+    running_loss = 0.0
+    dice_scores = [0] * N_CLASSES
+    dice_score_labels = DiceLoss(softmax=True, reduction='none')
+    dice_score_mean = DiceLoss(softmax=True)
 
     with torch.no_grad():
-        for i, data in enumerate(test_dataloader):  
-            inputs, masks, affines = data
+        for batch_idx, (inputs, masks, affines) in enumerate(test_dataloader):  
             inputs, masks = inputs.to(device), masks.to(device)
             
-            # One-hot encode the ground truth masks for multi-class segmentation
+            # One-hot encode the ground truth masks, reshape to [B, C, W, H, D]
             one_hot_masks_3d = F.one_hot(masks, num_classes=N_CLASSES).permute(0, 4, 1, 2, 3)
 
             # Forward pass
-            softmax_logits, predictions, logits = model(inputs)
+            _, predictions, logits = model(inputs)
 
             # Save predictions
-            save(predictions, affines, i, save_path)
-    
-            for class_idx in range(N_CLASSES):
-                class_logits = logits[:, class_idx, ...]
-                class_masks = one_hot_masks_3d[:, class_idx, ...]
-                dice_scores[class_idx] += 1 - dice_score(class_logits, class_masks)
-    
-    # Compute the average Dice score per class
-    average_dice_scores = [score / len(test_dataloader) for score in dice_scores]
-    print(f"Average Dice Scores per class: {[float(score) for score in average_dice_scores]}")
+            save(predictions, affines, batch_idx, save_path)
+            
+            # Compute the loss
+            score = dice_score_labels(logits, one_hot_masks_3d)
+            running_loss += dice_score_mean(logits, one_hot_masks_3d)
+            for i in range(N_CLASSES):
+                dice_scores[i] += 1 - score[0][i].item()
+
+    print("Valid loss: ", float(running_loss) / len(test_dataloader))
+    print([float(score / len(test_dataloader)) for score in dice_scores])

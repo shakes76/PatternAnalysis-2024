@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms # type: ignore
 import matplotlib.pyplot as plt
-from modules import VQVAE # type: ignore # Import your VQVAE model
+from modules import VQVAE # type: ignore # Import VQVAE model
 from dataset import ProstateMRIDataset  # Import the custom dataset
 from torchvision.utils import make_grid, save_image # type: ignore
 from skimage.metrics import structural_similarity as ssim
@@ -23,7 +23,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define data transformations
 transform = transforms.Compose([
-    transforms.Resize((image_size, image_size)),
+    transforms.Resize((296, 144)),
     transforms.Grayscale(num_output_channels=1),  # Ensuring grayscale images
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))  # Normalize pixel values to [-1, 1]
@@ -183,6 +183,9 @@ def train():
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), os.path.join(model_save_path, 'best_vqvae_model.pth'))
 
+            # ADDED THIS TO SEE WHAT EPOCH AND LOSS VALUE THE MODEL WAS BEING SAVED AT
+            print(f"Model saved at epoch {epoch + 1} with validation loss: {best_val_loss:.4f}")
+            
     # After training, plot and save the SSIM scores and losses
     plot_ssim_scores(train_ssim_scores, val_ssim_scores)
     plot_losses(train_losses, val_losses)

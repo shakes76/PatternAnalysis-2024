@@ -104,7 +104,7 @@ def main():
 
     # Define data transformations (same as training)
     transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
+        transforms.Resize((296, 144)),
         transforms.Grayscale(num_output_channels=1),  # Grayscale images
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]

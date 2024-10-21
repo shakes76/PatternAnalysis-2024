@@ -190,13 +190,13 @@ After training, the SSIM scores and training reconstruction losses for each batc
 The images below show the original training images (top row) vs. the reconstructed images by the VQ-VAE model after certain epoch's (bottom row)  
    
 After 1 epoch:  
-![A Batch of Training Images vs Reconstructed Images - Epoch 1](resources/epoch_1_phase_train(ssim=0.3209).png)  
+![A Batch of Training Images vs Reconstructed Images - Epoch 1](resources/epoch_1_phase_train(ssim=0.2670).png)  
   
 After 5 epochs:  
-![A Batch of Training Images vs Reconstructed Images - Epoch 5](resources/epoch_5_phase_train(ssim=0.6973).png)  
+![A Batch of Training Images vs Reconstructed Images - Epoch 5](resources/epoch_5_phase_train(ssim=0.6683).png)  
   
 After 20 epochs:  
-![A Batch of Training Images vs Reconstructed Images - Epoch 20](resources/epoch_20_phase_train(ssim=0.8056).png)  
+![A Batch of Training Images vs Reconstructed Images - Epoch 20](resources/epoch_20_phase_train(ssim=0.7760).png)  
   
 As previously mentioned above, the SSIM scores for each epoch were calculated and plotted:  
 ![SSIM Scores per Epoch](resources/ssim_scores.png)  
@@ -228,21 +228,22 @@ The testing process can be found in the [predict.py](predict.py) script where it
 The plot of the SSIM scores for all 540 test images:  
 ![SSIM scores for 540 test images](resources/ssim_scores_test_set.png)  
   
-`Highest SSIM score: 0.8553`  
-`Lowest SSIM score: 0.7071`  
-`Average SSIM score: 0.7917`  
+`Highest SSIM score: 0.8655`  
+`Lowest SSIM score: 0.7255`  
+`Average SSIM score: 0.7990`  
   
-As you can see from the plot and printed results above, it shows a generally high level of reconstruction quality, with the average SSIM score being 0.7917. All 540 test images achieved an SSIM score greater than the 0.6 score threshold where even the lowest score still had a value of 0.7071. This indicates that the model is consistently performing well across the entire test set.  
+As you can see from the plot and printed results above, it shows a generally high level of reconstruction quality, with the average SSIM score being 0.7255. All 540 test images achieved an SSIM score greater than the 0.6 score threshold where even the lowest score still had a value of 0.7255. This indicates that the model is consistently performing well across the entire test set.  
   
 One notable observation about the results is that the SSIM scores seem to have a scattered distribution. This suggests some sort of variance in how well certain images are reconstructed, however, it is still clear that the model overall generalises well to data it has not seen. 
 
-The worst reconstructed test image (based on the lowest SSIM score of 0.7071):  
+The worst reconstructed test image (based on the lowest SSIM score of 0.7255):  
 ![Worst reconstructed test image](resources/worst_image.png)  
   
-The best reconstructed test image (based on the highest SSIM score of 0.8553):  
+The best reconstructed test image (based on the highest SSIM score of 0.8655):  
 ![Best reconstructed test image](resources/best_image.png)  
   
-MAYBE HERE I CAN PLOT A BATCH OF RECONSTRUCTED TESTING IMAGES  
+Here are 8 samples of the original test images (top row) and their reconstructions (bottom row):  
+![Random sample of 8 original and reconstructed images](resources/reconstructed_images.png)
   
 In conclusion, the images and results above showcase that the trained VQ-VAE model is effective at generating quality-image reconstructions from the prostate MRI dataset.  
 
@@ -262,6 +263,7 @@ The project was coded on Python using the PyTorch deep learning framework. It re
 | Pillow        | 10.3.0  |
   
 The required dependencies can be installed using the following command if needed:  
+  
 `conda install pytorch torchvision numpy matplotlib scikit-image pillow -c pytorch`  
   
 ### Reproducing Results  
@@ -269,7 +271,7 @@ To train the model in the [train.py](train.py) script from the root directory of
   
 `python recognition/vqvae-s4743500/train.py`  
   
-Running the above command will train the model for 20 epochs and save the best model with the lowest loss value. This model will be saved as a  `.pth` file in the directory `/saved_models/best_vqvae_model.pth`. In addition, running the command will produce the reconstructed training and validation images by the VQ-VAE model for each of the 20 epochs. The reconstructed training and validation images, along with their original input image for comparison, will be saved in `/reconstructions/train/` and `/reconstructions/val/` respectively. A graph showing the relationship between SSIM scores and epochs for both training and validation sets will also be saved as `ssim_scores`. Similarly, another graph of the training reconstruction losses for each epoch will also be created and saved as `batch_losses.png`.  
+Running the above command will train the model for 20 epochs and save the best model with the lowest loss value. This model will be saved as a  `.pth` file in the directory `/saved_models/best_vqvae_model.pth`. In addition, running the command will produce the reconstructed training and validation images for every epoch. The reconstructed training and validation images, along with their original input image for comparison, will be saved in `/reconstructions/train/` and `/reconstructions/val/` respectively. A graph showing the relationship between SSIM scores and epochs for both training and validation sets will also be saved as `ssim_scores`. Similarly, another graph showing the training reconstruction losses for each epoch will also be created and saved as `batch_losses.png`.  
   
 To evaluate the models performance on unseen data, you can run the [predict.py](predict.py) script by executing the command:  
   

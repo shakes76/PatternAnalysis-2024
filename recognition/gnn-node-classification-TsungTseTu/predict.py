@@ -1,36 +1,27 @@
 # -----------------------------------------------------------
-# Project: Graph Attention Network for Node Classification
+# Project: Mixed Graph Neural Networks for Node Classification
 # Filename: predict.py
 # Author: Tsung-Tse Tu
 # Student ID: s4780187
-# Date: October 2024 (Last edited 10/17/2024)
-# Description: This script loads the pre-trained GAT model 
-#              and evaluates it on the test set. It outputs 
-#              the test accuracy and visualizes the learned 
-#              node embeddings using t-SNE.
+# Date: October 2024 (Last edited 10/21/2024)
+# Description: This script loads the pre-trained mixed GNN model 
+#              (GCN, GAT, GraphSAGE) and evaluates it on the test set. 
+#              It generates predictions and visualizes learned node 
+#              embeddings using t-SNE.
 # -----------------------------------------------------------
 
 
 import torch
-from modules import GAT
+from modules import MixedGNN
 from dataset import load_facebook_data
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
-import random
+from train import set_seed
 
-# Set seed for reproducibility
-def set_seed(seed=42):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+
 
 def predict():
     try:
@@ -56,13 +47,21 @@ def predict():
         print("Loading the trained model...")
         input_dim = X_test.shape[1]
         output_dim = len(torch.unique(y_test))
-        model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4, dropout=0.2)
+        
+        # Mixed GNN with GCN, GAT, and GraphSAGE layers (as modified earlier)
+        model = MixedGNN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, 
+                         num_gcn_layers=2, num_gat_layers=2, num_sage_layers=2, 
+                         heads=4, dropout=0.2)
 
+        # Load model
         model.load_state_dict(torch.load('gnn_model.pth', weights_only=True))
         model.eval()
 
+        # Create a mapping of original node indices to reindexed node indices for X_test
         node_map = {old_idx: new_idx for new_idx, old_idx in enumerate(np.unique(edges.flatten())) if old_idx < X_test.size(0)}
 
+
+        # Re-index the edges for the testing set based on the node_map
         new_edges = []
         for edge in edges:
             if edge[0] in node_map and edge[1] in node_map:
@@ -70,6 +69,8 @@ def predict():
 
         edge_reindex = torch.tensor(new_edges, dtype=torch.long).t()
 
+
+        # Predicting
         print("Making predictions on test data...")
         with torch.no_grad():
             out = model(X_test.clone().detach(), edge_reindex.clone().detach())
@@ -78,6 +79,7 @@ def predict():
         accuracy = accuracy_score(y_test.cpu(), preds.cpu())
         print(f"Test Accuracy: {accuracy * 100:.2f}%")
 
+        # t-SNE visualization of node embeddings
         print("Generating t-SNE visualization...")
         tsne = TSNE(n_components=2)
         embeddings = tsne.fit_transform(out.cpu().numpy())

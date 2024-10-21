@@ -1,18 +1,19 @@
 # -----------------------------------------------------------
-# Project: Graph Attention Network for Node Classification
+# Project: Mixed Graph Neural Networks for Node Classification
 # Filename: train.py
 # Author: Tsung-Tse Tu
 # Student ID: s4780187
-# Date: October 2024 (Last update 10/17/2024)
-# Description: This script trains the GAT model using node 
-#              features and graph structure for classification.
-#              It implements early stopping and a learning rate 
-#              scheduler to optimize the model performance.
+# Date: October 2024 (Last update 10/21/2024)
+# Description: This script trains the mixed GNN model (GCN, GAT,
+#              GraphSAGE) using node features and graph structure
+#              for multi-class classification. It implements 
+#              early stopping and a learning rate scheduler to 
+#              optimize the model performance.
 # -----------------------------------------------------------
 import torch
 import numpy as np
 import random
-from modules import GAT
+from modules import MixedGNN
 from sklearn.model_selection import train_test_split
 from dataset import load_facebook_data
 from torch.nn import functional as F
@@ -77,7 +78,11 @@ def train():
         print("Model starting...")
         input_dim = X_train.shape[1]
         output_dim = len(torch.unique(y_train))  # Get number of unique classes
-        model = GAT(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, num_layers=4, heads=4, dropout=0.2)
+
+        # Mixed GNN model with 2 GCN layers, 2 GAT layers, and 2 GraphSAGE layers
+        model = MixedGNN(input_dim=input_dim, hidden_dim=128, output_dim=output_dim, 
+                         num_gcn_layers=2, num_gat_layers=2, num_sage_layers=2, 
+                         heads=4, dropout=0.2)
 
         optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
@@ -93,6 +98,7 @@ def train():
         for epoch in range(10000):
             optimizer.zero_grad()
 
+            # Forward pass using the entire X_train and edge_reindex for every epoch
             out = model(X_train.clone().detach(), edge_reindex.clone().detach())
             loss = loss_fn(out, y_train)
 

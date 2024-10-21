@@ -249,7 +249,7 @@ class GenBlock(nn.Module):
     
 
 class Generator(nn.Module):
-    def __init__(self, z_dim, w_dim, in_channels, img_channels=3):
+    def __init__(self, z_dim, w_dim, in_channels, img_channels=1):
         super(Generator, self).__init__()
         self.starting_constant = nn.Parameter(torch.ones((1, in_channels, 4, 4)))
         self.map = MappingNetwork(z_dim, w_dim)
@@ -315,72 +315,4 @@ def save_model(gen, disc, opt_gen, opt_disc, epoch, step, disc_losses, gen_losse
     }
     torch.save(checkpoint, file_path)
     print(f"Model and losses saved to {file_path}")
-
-
-
-class LoadModel:
-    def __init__(self, file_path="model_checkpoint.pth"):
-        self.checkpoint = torch.load(file_path)
-        self.gen = None
-        self.disc = None
-        self.opt_gen = None
-        self.opt_disc = None
-        self.epoch = None
-        self.step = None
-        self.disc_losses = []
-        self.gen_losses = []
-        self._load_components()
-
-    # Internal function to initialize models and load states
-    def _load_components(self):
-        # Initialize generator and discriminator models
-        self.gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
-        self.disc = Discriminator(IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
-        
-        # Initialize optimizers
-        self.opt_gen = optim.Adam([
-            {"params": [param for name, param in self.gen.named_parameters() if "map" not in name]},
-            {"params": self.gen.map.parameters(), "lr": 1e-5}
-        ])
-        self.opt_disc = optim.Adam(self.disc.parameters())
-        
-        # Load model states
-        self.gen.load_state_dict(self.checkpoint["generator_state_dict"])
-        self.disc.load_state_dict(self.checkpoint["discriminator_state_dict"])
-        self.opt_gen.load_state_dict(self.checkpoint["opt_gen_state_dict"])
-        self.opt_disc.load_state_dict(self.checkpoint["opt_disc_state_dict"])
-
-        # Load additional data
-        self.epoch = self.checkpoint["epoch"]
-        self.step = self.checkpoint["step"]
-        self.disc_losses = self.checkpoint.get("disc_losses", [])
-        self.gen_losses = self.checkpoint.get("gen_losses", [])
-        
-        print(f"Model and losses loaded from {self.checkpoint}, starting from epoch {self.epoch}, step {self.step}")
-
-    # Getter methods for each component
-    def get_generator(self):
-        return self.gen
-    
-    def get_discriminator(self):
-        return self.disc
-    
-    def get_opt_gen(self):
-        return self.opt_gen
-    
-    def get_opt_disc(self):
-        return self.opt_disc
-    
-    def get_epoch(self):
-        return self.epoch
-    
-    def get_step(self):
-        return self.step
-    
-    def get_disc_losses(self):
-        return self.disc_losses
-    
-    def get_gen_losses(self):
-        return self.gen_losses
-
 

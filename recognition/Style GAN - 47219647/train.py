@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from modules import *
 from dataset import data_set_creator
-import params
+from params import *
 
 
 

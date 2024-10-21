@@ -10,6 +10,8 @@ import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+from params import *
+
 
 #Compressing the chanels from 4,8,16,32,128,256
 factors = [1, 1, 1, 1, 1 / 2, 1 / 4, 1 / 8]
@@ -316,19 +318,69 @@ def save_model(gen, disc, opt_gen, opt_disc, epoch, step, disc_losses, gen_losse
 
 
 
-def load_model(gen, disc, opt_gen, opt_disc, file_path="model_checkpoint.pth"):
-    checkpoint = torch.load(file_path)
-    gen.load_state_dict(checkpoint["generator_state_dict"])
-    disc.load_state_dict(checkpoint["discriminator_state_dict"])
-    opt_gen.load_state_dict(checkpoint["opt_gen_state_dict"])
-    opt_disc.load_state_dict(checkpoint["opt_disc_state_dict"])
-    epoch = checkpoint["epoch"]
-    step = checkpoint["step"]
+class LoadModel:
+    def __init__(self, file_path="model_checkpoint.pth"):
+        self.checkpoint = torch.load(file_path)
+        self.gen = None
+        self.disc = None
+        self.opt_gen = None
+        self.opt_disc = None
+        self.epoch = None
+        self.step = None
+        self.disc_losses = []
+        self.gen_losses = []
+        self._load_components()
+
+    # Internal function to initialize models and load states
+    def _load_components(self):
+        # Initialize generator and discriminator models
+        self.gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
+        self.disc = Discriminator(IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
+        
+        # Initialize optimizers
+        self.opt_gen = optim.Adam([
+            {"params": [param for name, param in self.gen.named_parameters() if "map" not in name]},
+            {"params": self.gen.map.parameters(), "lr": 1e-5}
+        ])
+        self.opt_disc = optim.Adam(self.disc.parameters())
+        
+        # Load model states
+        self.gen.load_state_dict(self.checkpoint["generator_state_dict"])
+        self.disc.load_state_dict(self.checkpoint["discriminator_state_dict"])
+        self.opt_gen.load_state_dict(self.checkpoint["opt_gen_state_dict"])
+        self.opt_disc.load_state_dict(self.checkpoint["opt_disc_state_dict"])
+
+        # Load additional data
+        self.epoch = self.checkpoint["epoch"]
+        self.step = self.checkpoint["step"]
+        self.disc_losses = self.checkpoint.get("disc_losses", [])
+        self.gen_losses = self.checkpoint.get("gen_losses", [])
+        
+        print(f"Model and losses loaded from {self.checkpoint}, starting from epoch {self.epoch}, step {self.step}")
+
+    # Getter methods for each component
+    def get_generator(self):
+        return self.gen
     
-    # Retrieve the loss lists
-    disc_losses = checkpoint.get("disc_losses", [])
-    gen_losses = checkpoint.get("gen_losses", [])
+    def get_discriminator(self):
+        return self.disc
     
-    print(f"Model and losses loaded from {file_path}, starting from epoch {epoch}, step {step}")
-    return epoch, step, disc_losses, gen_losses
+    def get_opt_gen(self):
+        return self.opt_gen
+    
+    def get_opt_disc(self):
+        return self.opt_disc
+    
+    def get_epoch(self):
+        return self.epoch
+    
+    def get_step(self):
+        return self.step
+    
+    def get_disc_losses(self):
+        return self.disc_losses
+    
+    def get_gen_losses(self):
+        return self.gen_losses
+
 

@@ -1,4 +1,4 @@
-#Reading NIFTI files - Code from Appendix B
+#Reading Nifti files - Code from Appendix B
 
 import numpy as np
 import nibabel as nib

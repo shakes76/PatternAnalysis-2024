@@ -106,10 +106,10 @@ This project contains the following files:
 ### Conclusion
 The GNN model using GATConv layers was successfully trained on the Facebook Page-Page Network dataset to classify nodes based on their types. The key findings are as follows:
 
-High Accuracy: The model achieved an impressive prediction accuracy of 98.24%, which suggests strong discriminative ability.
-Training Convergence: The training and validation losses converged smoothly, indicating effective training. Only slight fluctuations in the losses towards the end of training suggest potential room for further learning rate optimization.
-Embeddings Visualization: The UMAP visualization of node embeddings highlights well-separated clusters, demonstrating that the GNN effectively captures the underlying relationships between nodes, particularly between different page categories. This clustering indicates the robustness of the learned features in differentiating between node classes.
-The combination of GAT layers, mixed precision training, and effective regularization techniques contributed to this successful result. The insights provided by UMAP confirm that the learned embeddings provide meaningful structure that is aligned with the graph's underlying properties.
+- High Accuracy: The model achieved an impressive prediction accuracy of 98.24%, which suggests strong discriminative ability.
+- Training Convergence: The training and validation losses converged smoothly, indicating effective training. Only slight fluctuations in the losses towards the end of training suggest potential room for further learning rate optimization.
+- Embeddings Visualization: The UMAP visualization of node embeddings highlights well-separated clusters, demonstrating that the GNN effectively captures the underlying relationships between nodes, particularly between different page categories. This clustering indicates the robustness of the learned features in differentiating between node classes.
+- The combination of GAT layers, mixed precision training, and effective regularization techniques contributed to this successful result. The insights provided by UMAP confirm that the learned embeddings provide meaningful structure that is aligned with the graph's underlying properties.
 
 ### Future Improvements
 Hyperparameter Tuning: Perform a grid search for optimal hyperparameters such as learning rate, dropout rate, and hidden dimension size.

@@ -42,7 +42,7 @@ which corresponds to approximately 90% of the data being used for training, 6% f
 The following transformations were applied to the dataset before feeding it into the model:  
   
 `transform = transforms.Compose([`  
-&nbsp;&nbsp;&nbsp;&nbsp;`transforms.Resize((image_size, image_size)),`   
+&nbsp;&nbsp;&nbsp;&nbsp;`transforms.Resize((296, 144)),`   
 &nbsp;&nbsp;&nbsp;&nbsp;`transforms.Grayscale(num_output_channels=1),`   
 &nbsp;&nbsp;&nbsp;&nbsp;`transforms.ToTensor(),`  
 &nbsp;&nbsp;&nbsp;&nbsp;`transforms.Normalize((0.5,), (0.5,))`   
@@ -206,12 +206,12 @@ Observing the SSIM graph above, both training and validation SSIM scores clearly
 The following statistics below show the highest and lowest SSIM scores for the training and validation sets, as well as which epoch it occured in:  
   
 `Highest SSIM score:`  
-`Train SSIM: 0.8056 (Epoch = 20)`  
-`Validation SSIM: 0.7978 (Epoch = 20)`  
+`Train SSIM: 0.7760 (Epoch = 20)`  
+`Validation SSIM: 0.7672 (Epoch = 20)`  
   
 `Lowest SSIM score:`  
-`Train SSIM: 0.3486 (Epoch = 1)`  
-`Validation SSIM: 0.5117 (Epoch = 1)`  
+`Train SSIM: 0.2670 (Epoch = 1)`  
+`Validation SSIM: 0.4377 (Epoch = 1)`  
   
 Similarly, the training reconstruction losses per batch were plotted:  
 ![Training Reconstruction losses per bath no.](resources/batch_losses.png)  
@@ -240,6 +240,7 @@ The worst reconstructed test image (based on the lowest SSIM score of 0.7255):
 ![Worst reconstructed test image](resources/worst_image.png)  
   
 The best reconstructed test image (based on the highest SSIM score of 0.8655):  
+  
 ![Best reconstructed test image](resources/best_image.png)  
   
 Here are 8 samples of the original test images (top row) and their reconstructions (bottom row):  
@@ -277,7 +278,7 @@ To evaluate the models performance on unseen data, you can run the [predict.py](
   
 `python recognition/vqvae-s4743500/predict.py`  
   
-Running the command above will load the saved model weights from the `best_vqvae_model.pth` file, which contains the trained model at the epoch where the validation loss was the lowest. It will also produce a graph which plots the SSIM scores for every reconstructed image in the test set (saved as `ssim_scores_test_set`), along with creating a folder called `/results` where the best (`/results/best_image.png`) and worst (`/results/worst_image.png`) reconstructions are saved. It is assumed that you have access to the same paths configured to access the same train, test, and validation Prostate MRI slices dataset.  
+Running the command above will load the saved model weights from the `best_vqvae_model.pth` file, which contains the trained model at the epoch where the validation loss was the lowest. It will also produce a graph which plots the SSIM scores for every reconstructed image in the test set (saved as `ssim_scores_test_set`), along with creating a folder called `/results` where the best (`/results/best_image.png`) and worst (`/results/worst_image.png`) reconstructions are saved. It is assumed that you have access to the same paths configured to access the train, test, and validation Prostate MRI slices dataset.  
   
 ## Reference List  
 <a name="1">[1]</a> What is VQ-VAE (Vector Quantized Variational Autoencoder): [https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.](https://www.activeloop.ai/resources/glossary/vq-vae-vector-quantized-variational-autoencoder/#:~:text=The%20main%20difference%20between%20them,finite%20set%20of%20learned%20embeddings.)  

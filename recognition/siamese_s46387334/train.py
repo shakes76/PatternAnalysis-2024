@@ -7,21 +7,26 @@ Plots of the losses and metrics during training will be produced.
 
 ###############################################################################
 ### Imports
-from dataset import get_isic2020_data, get_isic2020_data_loaders
-
 from time import gmtime, strftime
 import torch.optim as optim
 import torch
 import numpy as np
 import torch.nn as nn
+from torch.utils.data import DataLoader
 
+from dataset import get_isic2020_data, get_isic2020_data_loaders
+from modules import TripletLoss, SiameseNet
 
 
 
 
 ###############################################################################
 ### Functions
-def predict_siamese_net(model: Sia, data_loader, device):
+def predict_siamese_net(
+    model: SiameseNet,
+    data_loader: DataLoader,
+    device
+) -> list, list, list:
     """
     """
     all_y_pred = []
@@ -45,15 +50,15 @@ def predict_siamese_net(model: Sia, data_loader, device):
     return np.array(all_y_pred), np.array(all_y_prob), np.array(all_y_true)
 
 def train_siamese_net(
-    train_loader,
-    val_loader,
-    model,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    model: SiameseNet,
     optimizer,
-    triplet_loss,
+    triplet_loss: TripletLoss,
     classifier_loss,
-    epochs,
+    epochs: int,
     device
-):
+) -> None:
     """
     """
     best_val_aurroc = 0
@@ -153,7 +158,7 @@ def train_siamese_net(
             best_val_accuracy = val_accuracy
             print(f"New model saved with Validation AUR ROC of: {best_val_aurroc:.4f}")
 
-def set_seed(seed=42):
+def set_seed(seed: int=42):
     """
     """
     np.random.seed(seed)
@@ -194,7 +199,7 @@ def main():
     train_loader, val_loader, test_loader = get_isic2020_data_loaders(images, labels)
 
     # Initalise Model
-    model = SiameseNetwork(config['embedding_dims']).to(device)
+    model = SiameseNet(config['embedding_dims']).to(device)
 
     # Initialise loss fucnctions and optimiser
     optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])

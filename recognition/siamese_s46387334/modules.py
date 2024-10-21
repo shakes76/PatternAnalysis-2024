@@ -9,9 +9,19 @@ Each component is implementated as a class or a function.
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 
-
+###############################################################################
+### Config Settings
+CONFIG = {
+    'data_subset': 8000,
+    'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
+    'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+    'embedding_dims': 128,
+    'learning_rate': 0.0001,
+    'epochs': 20,
+}
 
 ###############################################################################
 ### Classes
@@ -78,3 +88,14 @@ class TripletLoss(nn.Module):
         distance_negative = self.euclidean_dist(anchor, negative)
         losses = torch.relu(distance_positive - distance_negative + self.margin)
         return losses.mean()
+
+def set_seed(seed: int=42):
+    """
+    """
+    np.random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    if torch.cuda.is_available():
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)

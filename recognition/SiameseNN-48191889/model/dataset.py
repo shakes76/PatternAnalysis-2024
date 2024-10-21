@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class ISICDataset(Dataset):
-    def __init__(self, transform=None, undersample=False):
+    def __init__(self, transform=None, method="undersampling"):
         """
         Args:
             csv_file (string): Path to the CSV file with annotations.
@@ -30,9 +30,31 @@ class ISICDataset(Dataset):
         ].index.tolist()
 
         # If undersampling is enabled, match class 0 size to class 1 size
-        if undersample:
+        if method == "undersampling":
             class_1_size = len(self.class_1_indices)
             self.class_0_indices = random.sample(self.class_0_indices, class_1_size)
+        elif method == "mixed":
+            # Oversample the minority class by a factor (e.g., 4x)
+            oversample_factor = 4
+            self.class_1_indices = self.class_1_indices * oversample_factor
+
+            # Undersample the majority class based on an undersample factor (e.g., reduce to 50% of its original size)
+            undersample_factor = 0.5  # 50% of the original size
+            majority_class_target_size = int(
+                len(self.class_0_indices) * undersample_factor
+            )
+
+            if len(self.class_0_indices) > majority_class_target_size:
+                self.class_0_indices = random.sample(
+                    self.class_0_indices, majority_class_target_size
+                )
+
+            print("0 Class:", len(self.class_0_indices))
+            print("1 Class:", len(self.class_1_indices))
+
+            # Combine oversampled minority class and undersampled majority class
+            self.balanced_indices = self.class_0_indices + self.class_1_indices
+            random.shuffle(self.balanced_indices)
 
         # Combine both class indices into one balanced index list
         self.balanced_indices = self.class_0_indices + self.class_1_indices
@@ -90,8 +112,8 @@ class ISICDataset(Dataset):
         return img1, img2, label
 
 
-def getDataLoader(data_transforms, batch_size, undersample=False):
-    isic_dataset = ISICDataset(data_transforms, undersample=undersample)
+def getDataLoader(data_transforms, batch_size, method):
+    isic_dataset = ISICDataset(data_transforms, method=method)
     dataloader = DataLoader(isic_dataset, batch_size=batch_size, shuffle=True)
 
     return dataloader

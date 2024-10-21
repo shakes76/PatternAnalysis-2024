@@ -12,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
 learning_rate = 0.0001
-num_epochs = 50
+num_epochs = 30
 batch_size = 32
 
 data_transforms = transforms.Compose(
@@ -23,10 +23,13 @@ data_transforms = transforms.Compose(
 )
 
 # Initialize dataset
-train_loader = getDataLoader(data_transforms, batch_size, undersample=True)
+train_loader = getDataLoader(data_transforms, batch_size, method="mixed")
 
 # Initialize model
 model = SiameseNetwork().to(device)
+
+# Load the saved model weights if they exist
+model.load_state_dict(torch.load("siamese_model_final.pth"), strict=False)
 
 # Loss and optimizer
 criterion = nn.BCELoss()  # Binary Cross-Entropy Loss

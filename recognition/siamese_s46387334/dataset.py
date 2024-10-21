@@ -13,13 +13,14 @@ import torch
 from cv2 import cv2
 
 from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
+from torchvision import transforms
 
 
 ###############################################################################
 ### Classes
 class TripletDataGenerator(torch.utils.data.Dataset):
     """
-    
     """
     def __init__(self, images, labels=None, train=True, transform=None):
         self.is_train = train
@@ -63,10 +64,10 @@ def get_isic2020_data(metadata_path, image_dir, data_subset):
     Returns: images, labels
     """
     metadata = pd.read_csv(metadata_path)
-    
+
     # Add the file extension to isic_id to match image filenames
     metadata['image_file'] = metadata['isic_id'] + '.jpg'
-    
+
     # Map image filename to target class and get a list of the file paths
     image_to_label = dict(zip(metadata['image_file'], metadata['target']))
     image_paths = [os.path.join(image_dir, img) for img in os.listdir(image_dir) if img in image_to_label]
@@ -110,14 +111,73 @@ def train_val_test_split(images, labels):
         oversample_indices = np.random.choice(np.arange(num_class_1), size=num_class_0 - num_class_1, replace=True)
         oversampled_class_1_images = class_1_images[oversample_indices]
         oversampled_class_1_labels = class_1_labels[oversample_indices]
-        
+
         # Combine original class 1 images with the oversampled ones
         class_1_images = np.concatenate([class_1_images, oversampled_class_1_images], axis=0)
         class_1_labels = np.concatenate([class_1_labels, oversampled_class_1_labels], axis=0)
-    
+
     # Concatenate class 0 and the new class 1 images to get the final balanced dataset
     train_images = np.concatenate([class_0_images, class_1_images], axis=0)
     train_labels = np.concatenate([class_0_labels, class_1_labels], axis=0)
 
     return train_images, val_images, test_images, train_labels, val_labels, test_labels
 
+def get_isic2020_data_loaders(images, labels, train_bs=32, test_val_bs=320, aug_factor=1):
+    """
+    Returns: train_loader, val_loader, test_loader
+    """
+    # Preform the data split
+    train_images, val_images, test_images, train_labels, val_labels, test_labels = train_val_test_split(images, labels)
+
+    # Train dataset
+    train_ds = TripletDataGenerator(
+        images=train_images,
+        labels=train_labels,
+        train=True, 
+        transform = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomRotation(degrees=10 * aug_factor, fill=(255, 255, 255)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+            transforms.ColorJitter(brightness=0.1  * aug_factor, contrast=0.1 * aug_factor, saturation=0.1 * aug_factor, hue=0.05* aug_factor),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            ),
+        ])
+    )
+    train_loader = DataLoader(train_ds, batch_size=train_bs, shuffle=True, num_workers=4)
+
+    # Validation dataset
+    val_ds = TripletDataGenerator(
+        images=val_images,
+        labels=val_labels,
+        train=True,
+        transform=transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            ),
+        ])
+    )
+    val_loader = DataLoader(val_ds, batch_size=test_val_bs, shuffle=True, num_workers=4)
+
+    # Testing dataset
+    test_ds = TripletDataGenerator(
+        images=test_images,
+        labels=test_labels,
+        train=False,
+        transform=transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            )
+        ])
+    )
+    test_loader = DataLoader(test_ds, batch_size=test_val_bs, shuffle=True, num_workers=4)
+    return train_loader, val_loader, test_loader

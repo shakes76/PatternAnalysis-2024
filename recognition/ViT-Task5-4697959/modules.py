@@ -51,3 +51,25 @@ class MultiHeadSelfAttention(nn.Module):
         out = self.fc_out(out)  # (batch_size, num_tokens, emb_size)
         out = self.dropout(out)
         return out
+    
+class TransformerEncoderBlock(nn.Module):
+    def __init__(self, emb_size=768, num_heads=12, ff_dim=3072, dropout=0.1):
+        super(TransformerEncoderBlock, self).__init__()
+        self.norm1 = nn.LayerNorm(emb_size)
+        self.msa = MultiHeadSelfAttention(emb_size, num_heads, dropout)
+        self.norm2 = nn.LayerNorm(emb_size)
+        self.ffn = nn.Sequential(
+            nn.Linear(emb_size, ff_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(ff_dim, emb_size),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x):
+        # Multi-Head Self-Attention with residual connection
+        x = x + self.msa(self.norm1(x))
+
+        # Feed-Forward Network with residual connection
+        x = x + self.ffn(self.norm2(x))
+        return x

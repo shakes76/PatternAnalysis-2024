@@ -23,33 +23,6 @@ import matplotlib.pyplot as plt
 
 ###############################################################################
 ### Functions
-def predict_siamese_net(
-    model: SiameseNet,
-    data_loader: DataLoader,
-    device
-) -> (list, list, list):
-    """
-    """
-    all_y_pred = []
-    all_y_prob = []
-    all_y_true = []
-
-    for batch_idx, (imgs, _, _, labels) in enumerate(data_loader):
-        imgs = imgs.to(device).float()
-        outputs = model.classify(imgs)   
-
-        # Determine positive class probability
-        y_prob = torch.softmax(outputs, dim=1)[:, 1]
-
-        # Determine the predicted class
-        _, y_pred = outputs.max(1)
-
-        all_y_pred.extend(y_pred.cpu().numpy())
-        all_y_prob.extend(y_prob.cpu().numpy())
-        all_y_true.extend(labels.cpu().numpy())
-
-    return np.array(all_y_pred), np.array(all_y_prob), np.array(all_y_true)
-
 def train_siamese_net(
     train_loader: DataLoader,
     val_loader: DataLoader,
@@ -167,6 +140,7 @@ def train_siamese_net(
         val_acc_per_epoch,
         train_aucroc_per_epoch,
         val_aucroc_per_epoch,
+        epochs
     )
 
 def plot_training_graphs(
@@ -176,6 +150,7 @@ def plot_training_graphs(
     val_acc_per_epoch,
     train_aucroc_per_epoch,
     val_aucroc_per_epoch,
+    epochs
 ):    
     """
     """
@@ -183,8 +158,8 @@ def plot_training_graphs(
     plt.figure(figsize=(15, 5))
     
     plt.subplot(1, 3, 1)
-    plt.plot(range(EPOCHS), train_loss_per_epoch, label='Train Loss', color='darkseagreen')
-    plt.plot(range(EPOCHS), val_loss_per_epoch, label='Validation Loss', color='lightcoral')
+    plt.plot(range(epochs), train_loss_per_epoch, label='Train Loss', color='darkseagreen')
+    plt.plot(range(epochs), val_loss_per_epoch, label='Validation Loss', color='lightcoral')
     plt.title('Loss over Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
@@ -192,8 +167,8 @@ def plot_training_graphs(
     
     # Plot Accuracy
     plt.subplot(1, 3, 2)
-    plt.plot(range(EPOCHS), train_acc_per_epoch, label='Train Accuracy', color='darkseagreen')
-    plt.plot(range(EPOCHS), val_acc_per_epoch, label='Validation Accuracy', color='lightcoral')
+    plt.plot(range(epochs), train_acc_per_epoch, label='Train Accuracy', color='darkseagreen')
+    plt.plot(range(epochs), val_acc_per_epoch, label='Validation Accuracy', color='lightcoral')
     plt.title('Accuracy over Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
@@ -201,8 +176,8 @@ def plot_training_graphs(
     
     # Plot AURROC
     plt.subplot(1, 3, 3)
-    plt.plot(range(EPOCHS), train_aucroc_per_epoch, label='Train AURROC', color='darkseagreen')
-    plt.plot(range(EPOCHS), val_aucroc_per_epoch, label='Validation AURROC', color='lightcoral')
+    plt.plot(range(epochs), train_aucroc_per_epoch, label='Train AURROC', color='darkseagreen')
+    plt.plot(range(epochs), val_aucroc_per_epoch, label='Validation AURROC', color='lightcoral')
     plt.title('AURROC over Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('AURROC')
@@ -212,16 +187,7 @@ def plot_training_graphs(
     plt.tight_layout()
     plt.show()
 
-def set_seed(seed: int=42):
-    """
-    """
-    np.random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    if torch.cuda.is_available():
-        torch.backends.cudnn.deterministic = False
-        torch.backends.cudnn.benchmark = True
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+
 
 
 ###############################################################################
@@ -251,6 +217,8 @@ def main():
     classifier_loss = nn.CrossEntropyLoss().to(device)
 
     # Train the model, best model (on validation set) will be saved to folder
+    # Additionally loss, accuracy and aurroc plots will be produced and saved
+    # To view the models progression over training
     train_siamese_net(
         train_loader,
         val_loader,
@@ -262,10 +230,12 @@ def main():
         device
     )
 
-    # Predict results on testing
-    results_siamese_net
+    # Load in best model from the training
+    model.load_state_dict(torch.load("siamese_net_model.pt", weights_only=False))
+    
+    # Predict results on the test set
+    results_siamese_net(test_loader, model, device)
 
-    # Predict Results from test set
 
 if __name__ == "__main__":
     main()

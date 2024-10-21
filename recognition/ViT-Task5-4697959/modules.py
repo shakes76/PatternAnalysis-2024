@@ -107,3 +107,26 @@ class VisionTransformer(nn.Module):
         nn.init.trunc_normal_(self.head.weight, std=0.02)
         if self.head.bias is not None:
             nn.init.zeros_(self.head.bias)
+
+    def forward(self, x):
+        x = self.patch_embed(x)  # (batch_size, num_patches, emb_size)
+
+        if self.cls_token is not None:
+            batch_size = x.size(0)
+            cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # (batch_size, 1, emb_size)
+            x = torch.cat((cls_tokens, x), dim=1)  # (batch_size, num_patches + 1, emb_size)
+
+        x = x + self.pos_embed  # Add positional embedding
+        x = self.dropout(x)
+
+        x = self.encoder(x)
+
+        x = self.norm(x)
+
+        if self.cls_token is not None:
+            x = x[:, 0]  # Extract the cls token
+        else:
+            x = x.mean(dim=1)  # Global average pooling
+
+        x = self.head(x)
+        return x

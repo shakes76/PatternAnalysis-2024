@@ -14,12 +14,12 @@ class CustomImageDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.image_dir, self.image_files[idx])
-        image = Image.open(img_path).convert("RGB")  # Load image as RGB
+        image = Image.open(img_path).convert("RGB")  
         
         if self.transform:
             image = self.transform(image)
 
-        return image, 0  # Return image and dummy label (0)
+        return image, 0  
 
 def data_set_creator(image_size, batch_size):
     augmentation_transforms = transforms.Compose([
@@ -29,13 +29,13 @@ def data_set_creator(image_size, batch_size):
         transforms.ToTensor()
     ])
 
-    # Update the directory to point to your dataset (folder containing images)
-    data_dir = 'recognition/Style GAN - 47219647/AD_NC/'  # Ensure this path points to your folder of images
     
-    # Use the custom dataset class to load all images from the folder
+    data_dir = 'recognition/Style GAN - 47219647/AD_NC/'  
+    
+   
     dataset = CustomImageDataset(image_dir=data_dir, transform=augmentation_transforms)
 
-    # Create a data loader with the given batch size
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=6)
+    
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=10)
 
     return data_loader, dataset

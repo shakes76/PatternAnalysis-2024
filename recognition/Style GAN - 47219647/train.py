@@ -11,7 +11,8 @@ from modules import *
 from dataset import data_set_creator
 from params import *
 
-
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 
 # Function to generate examples at each step
 def generate_examples(gen, steps, n=3):
@@ -98,6 +99,25 @@ def train_fn(disc, gen, loader, dataset, step, alpha, opt_disc, opt_gen, disc_lo
         loop.set_postfix(gp=gp.item(), loss_disc=loss_disc.item())
 
     return alpha
+
+def plot_tsne_style_space(gen, num_samples, Z_DIM, DEVICE):
+    latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)
+    
+    with torch.no_grad():
+        style_codes = gen.mapping_network(latent_vectors)
+
+    # Apply t-SNE to the style codes (W space)
+    tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+    style_codes_2d = tsne.fit_transform(style_codes.cpu().numpy())
+
+    # Plot the t-SNE embedding of the style codes (W space)
+    plt.figure(figsize=(10, 8))
+    plt.scatter(style_codes_2d[:, 0], style_codes_2d[:, 1], s=5, cmap='Spectral')
+    plt.title('t-SNE embedding of StyleGAN Latent Space (W space)')
+    plt.xlabel('t-SNE Component 1')
+    plt.ylabel('t-SNE Component 2')
+    plt.colorbar()
+    plt.show()
 
 if __name__ == "__main__":
     disc_losses = []

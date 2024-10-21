@@ -4,7 +4,6 @@ Util.py
 Contains various Utility functions. Currently handles rotation of matricies.
 """
 import torch
-import numpy as np
 
 def rotate(tensor:torch.Tensor, dim0:int=0, dim1:int=1) -> torch.Tensor:
     if dim0 == dim1:

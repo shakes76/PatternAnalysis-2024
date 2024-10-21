@@ -1,7 +1,6 @@
 """
 train.py
 """
-import numpy as np
 from const import DATASET_PATH, NET_OUTPUT_TARGET
 from dataset import mri_split, MriData3D
 from modules import FullUNet3D

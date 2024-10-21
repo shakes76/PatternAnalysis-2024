@@ -8,28 +8,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from time import time
-
+from monai.losses import DiceLoss
 
 # import from local files  
-from train import trained_model, loss_map, LOSS_IDX
-from dataset import X_test, y_test, Prostate3dDataset
+from train import trained_model, CRITERION, compute_dice_segments
+from dataset import X_test, y_test, Prostate3dDataset, visualise_ground_truths, visualise_predictions
 
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 
-"""
-    Tests improved unet on trained model. 
-    Calcualtes dice coeficient for each image and corresponding ground truth. 
-
-    Parameters:
-    - model (nn.Module): The trained model to be tested.
-    - test_loader (DataLoader): DataLoader for the test dataset.
-    - device (str): The device (e.g., 'cuda' or 'cpu') to run the evaluation on.
-
-    Returns:
-    - dice_scores (list): List of Dice coefficients for each image in the test dataset.
-"""
-def test(model, test_loader, criterion, device):
+def test(model, test_loader, device):
     model.eval()  # Set the model to evaluation mode
+
+    criterion = DiceLoss(batch = True)
     
     test_dice_coefs = np.array([]) # stores dice scores.
     seg_0_dice_coef = np.array([])
@@ -39,15 +29,28 @@ def test(model, test_loader, criterion, device):
     seg_4_dice_coef = np.array([])
     seg_5_dice_coef = np.array([])
 
+    images = []
+    ground_truths = []
+    predictions = []
+
     with torch.no_grad():
-        
-        criterion = criterion
 
         for i, (inputs, masks) in enumerate(test_loader):
             masks = masks.float()
             inputs, masks = inputs.to(device), masks.to(device)
             outputs = model(inputs)
-            test_loss, segment_coefs, test_dice = criterion(outputs, masks)
+            segment_coefs = compute_dice_segments(outputs, masks)
+            dice_loss = criterion(outputs, masks).item()
+
+            test_dice = 1 - dice_loss
+
+            if len(images) < 9:
+                image = inputs[0, 0 , : , : , 50].cpu().numpy()
+                images.append(image)
+                mask = masks[0, : , : , : , 50].cpu().numpy().astype(np.uint8)
+                ground_truths.append(mask)
+                prediction = torch.argmax(outputs[0, : , : , : , 50 ], dim = 0).cpu().numpy().astype(np.uint8)
+                predictions.append(prediction)
 
             seg_0_dice_coef = np.append(seg_0_dice_coef, segment_coefs[0].item())
             seg_1_dice_coef = np.append(seg_1_dice_coef, segment_coefs[1].item())
@@ -58,7 +61,10 @@ def test(model, test_loader, criterion, device):
         
             print(f'Test No.{i} - Overall Dice Coefficient: {test_dice}')
                 
-            test_dice_coefs = np.append(test_dice_coefs, test_dice.item())
+            test_dice_coefs = np.append(test_dice_coefs, test_dice)
+    
+    visualise_ground_truths(images, ground_truths, CRITERION)
+    visualise_predictions(images, predictions, CRITERION)
 
     return test_dice_coefs, seg_0_dice_coef, seg_1_dice_coef, seg_2_dice_coef, seg_3_dice_coef, seg_4_dice_coef, seg_5_dice_coef
 
@@ -66,6 +72,7 @@ def test(model, test_loader, criterion, device):
     Plots dice coefficients of the whole test dataset.
     Takes an array of dice scores as input. 
 """
+
 def plot_dice(dice_coefs, criterion, segment_coefs):
 
     x_values = np.arange(len(dice_coefs))  # Generate x-values as indices
@@ -81,15 +88,13 @@ def plot_dice(dice_coefs, criterion, segment_coefs):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_coefs_test_{str(criterion)}.png')
+    plt.savefig(f'dice_coefs_test_{criterion}_loss.png')
     plt.close()
 
 
 if __name__ == "__main__":
     # connect to gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    criterion = loss_map.get(LOSS_IDX)
 
     test_set = Prostate3dDataset(X_test, y_test)
     test_loader = DataLoader(dataset = test_set, batch_size = BATCH_SIZE)
@@ -99,7 +104,7 @@ if __name__ == "__main__":
     start = time()
 
     # perform predictions
-    dice_coefs, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader, criterion = criterion,
+    dice_coefs, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader,
                                                device = device)
     
     end = time()
@@ -132,6 +137,6 @@ if __name__ == "__main__":
     segment_coefs = [s0, s1, s2, s3, s4, s5]
 
     # plot dice scores across the dataset.
-    plot_dice(dice_coefs, criterion, segment_coefs)
+    plot_dice(dice_coefs, CRITERION, segment_coefs)
 
 

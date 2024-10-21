@@ -9,3 +9,5 @@ Updates:
 - Elastic Transformation - Omitted given the constraint in data type
 - Gamma Correction - Implemented
 - Mirroring - Implemented as a Horizontal Flip
+
+(Loss Function)[https://www.sciencedirect.com/science/article/pii/S1746809422007030]

@@ -189,6 +189,5 @@ class ImprovedUnet(nn.Module):
 
         final_sum = upscale_out_2 + segment_out_3
         
-        output = torch.permute(final_sum, (0, 2, 3, 4, 1))
-        output =  torch.softmax(output, dim = -1)
+        output =  torch.softmax(final_sum, dim = 1)
         return output

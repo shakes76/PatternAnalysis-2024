@@ -11,6 +11,9 @@ import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
 import random
 import torch
+import matplotlib.pyplot as plt
+
+from modules import *
 
 # ==========================
 # Constants
@@ -242,9 +245,16 @@ def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor, device = '
         masks = masks_3d[: , : , j , :]
         masks = masks[np.newaxis, : , :, : ]
 
-        slice = elastic_transformation(image = slice, alpha = alpha, sigma = sigma) if make_elastic else slice
+        unique_elements = np.unique(masks[0, : , : , 0])
+
+        if len(unique_elements) == 1 and unique_elements[0] == 1:
+            slice = torch.full((slice.shape), -1)
+            image[: , : , j] = slice
+            continue
+
         slice = random_rotation(image = slice, angle = angle) if rotate else slice
         slice = random_resize_with_padding(image = slice, height = height, width = width) if resize else slice
+        slice = elastic_transformation(image = slice, alpha = alpha, sigma = sigma) if make_elastic else slice
         slice = gamma_correction(image = slice, gamma = gamma) if adjust_gamma else slice
         slice = F.hflip(slice) if hflip else slice
         slice = F.vflip(slice) if vflip else slice
@@ -252,9 +262,9 @@ def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor, device = '
         for i in range(masks.size(-1)):
             mask = masks[ : , : , : , i]
 
-            mask = elastic_transformation(image = mask, alpha = alpha, sigma = sigma, is_mask = True) if make_elastic else mask
             mask = random_rotation(image = mask, angle = angle) if rotate else mask
             mask = random_resize_with_padding(image = mask, height = height, width = width, is_mask=True) if resize else mask
+            mask = elastic_transformation(image = mask, alpha = alpha, sigma = sigma, is_mask = True) if make_elastic else mask
             mask = F.hflip(mask) if hflip else mask
             mask = F.vflip(mask) if vflip else mask
 
@@ -271,6 +281,7 @@ def apply_transformation(image: torch.Tensor, masks_3d: torch.Tensor, device = '
 
 def augment_training_set(X_train, y_train):
 
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     for i in range(X_train.shape[0]):
@@ -284,6 +295,73 @@ def augment_training_set(X_train, y_train):
         y_train[i, : , : , : , :] = transformed_masks_3d
 
     return X_train, y_train
+
+def visualise_ground_truths(images, ground_truths, criterion):
+
+    # Create a 3x3 grid of subplots
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+
+    # Plot the images
+    for i in range(3):
+        for j in range(3):
+
+            idx = i * 3 + j
+
+            # Original image
+
+            image = images[idx]
+
+            axes[i, j].imshow(image, cmap='gray')
+            axes[i, j].axis('off')
+            axes[i, j].set_title(f'Image {idx+1}')
+
+            # Ground truth mask
+
+            ground_truth = ground_truths[idx]
+            num_masks = ground_truth.shape[0]
+
+            mask_gt = np.zeros((ground_truth.shape[1], y_train.shape[2]), dtype = np.uint8)
+
+            for k in range(num_masks):
+                mask_gt += (k + 1) * ground_truth[k, : , : ]
+            axes[i, j].imshow(mask_gt, cmap='jet', alpha=0.3)
+
+    # Show the plot
+    plt.tight_layout()
+    plt.savefig(f'ground_truths_{criterion}.png')
+    plt.show()
+    
+    return fig, axes
+
+def visualise_predictions(images, predictions, criterion):
+
+    # Create a 3x3 grid of subplots
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+
+    # Plot the images
+    for i in range(3):
+        for j in range(3):
+
+            idx = i * 3 + j
+
+            # Original image
+
+            image = images[idx]
+
+            axes[i, j].imshow(image, cmap='gray')
+            axes[i, j].axis('off')
+            axes[i, j].set_title(f'Image {idx+1}')
+
+            mask_pred = predictions[idx]
+
+            axes[i, j].imshow(mask_pred, cmap='jet', alpha=0.3)
+
+    # Show the plot
+    plt.tight_layout()
+    plt.savefig(f'predictions_{criterion}.png')
+    plt.show()
+    
+    return fig, axes
 
 print('> Loading Dataset')
 
@@ -310,3 +388,6 @@ print('> Augmentation Complete')
 
 X_train = X_train[: ,np.newaxis, :, :, :]
 X_test = X_test[:, np.newaxis, :, :, :]
+
+y_train = np.transpose(y_train, (0, 4, 1, 2, 3))
+y_test = np.transpose(y_test, (0, 4, 1, 2, 3))

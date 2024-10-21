@@ -3,153 +3,38 @@ from modules import ImprovedUnet
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
-import torch.nn as nn
 from time import time
-import math
 import numpy as np
-
+from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 
 NUM_EPOCHS = 300
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
-LOSS_IDX = 3
+CRITERION = DiceLoss(batch=True)
+# CRITERION = DiceCELoss(batch = True, lambda_ce = 0.2) # Based on Thyroid Tumor Segmentation Report
+# CRITERION = DiceFocalLoss(batch = True) # Default gamma = 2
 
-class BaseDice(nn.Module):
-    def __init__(self, epsilon = 1e-7):
-        super(BaseDice, self).__init__()
-        self.epsilon = epsilon
+def compute_dice_segments(predictions, ground_truths):
 
-    def forward(self, y_pred, y_true):
-        raise NotImplementedError("Sublasses should implement this method.")
+    criterion = DiceLoss(reduction='none', batch=True)
 
-class ExponentialWeightedLoss(BaseDice):
-    def __init__(self, epsilon=1e-7):
-        super().__init__(epsilon)
+    num_masks = predictions.size(1)
 
-    def __str__(self):
-        return 'ExponentialWeightedLoss'
+    segment_coefs = torch.zeros(num_masks, device=ground_truths.device)
 
-    def forward(self, y_pred, y_true):
+    segment_losses = criterion(predictions, ground_truths)
 
-        num_masks = y_true.size(-1)
-        segment_coefs = torch.zeros(num_masks, device=y_true.device)
-        for i in range(num_masks):
-            ground_truth_seg = y_true[:, :, :, :, i]
-            pred_seg = y_pred[:, :, :, :, i]
-
-            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
-            segment_coefs[i] = d_coef
-
-        weighted, _ = torch.sort(segment_coefs, descending=True)
-
-        for i in range(num_masks):
-            weighted[i] = segment_coefs[i] * (math.e ** i)
+    for i in range(num_masks):
         
-        d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = 1 - (1 / num_masks) * torch.sum(weighted)
-        return loss, segment_coefs, d_coef
-    
-class ArithmeticWeightedLoss(BaseDice):
-    def __init__(self, epsilon=1e-7):
-        super().__init__(epsilon)
+        segment_coefs[i] = 1 - segment_losses[i, : , : , : ].item()
 
-    def __str__(self):
-        return 'ArithmeticWeightedLoss'
+    return segment_coefs
 
-    def forward(self, y_pred, y_true):
-
-        num_masks = y_true.size(-1)
-        segment_coefs = torch.zeros(num_masks, device=y_true.device)
-        for i in range(num_masks):
-            ground_truth_seg = y_true[:, :, :, :, i]
-            pred_seg = y_pred[:, :, :, :, i]
-
-            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
-            segment_coefs[i] = d_coef
-
-        weighted, _ = torch.sort(segment_coefs)
-
-        for i in range(num_masks):
-            weighted[i] = segment_coefs[i] * (i + 1)
-        
-        d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = 1 - (1 / num_masks) * torch.sum(weighted)
-        return loss, segment_coefs, d_coef
-    
-class PaperLoss(BaseDice):
-    def __init__(self, epsilon=1e-7):
-        super().__init__(epsilon)
-
-    def __str__(self):
-        return 'PaperLoss'
-
-    def forward(self, y_pred, y_true):
-
-        num_masks = y_true.size(-1)
-        segment_coefs = torch.zeros(num_masks, device=y_true.device)
-        for i in range(num_masks):
-            ground_truth_seg = y_true[:, :, :, :, i]
-            pred_seg = y_pred[:, :, :, :, i]
-
-            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
-            segment_coefs[i] = d_coef
-
-        loss = (- 1 / num_masks) * torch.sum(segment_coefs)
-        d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        return loss, segment_coefs, d_coef
-    
-class AlternativeLoss(BaseDice):
-    def __init__(self, epsilon=1e-7):
-        super().__init__(epsilon)
-
-    def __str__(self):
-        return 'AlternativeLoss'
-
-    def forward(self, y_pred, y_true):
-
-        num_masks = y_true.size(-1)
-        segment_coefs = torch.zeros(num_masks, device=y_true.device)
-        for i in range(num_masks):
-            ground_truth_seg = y_true[:, :, :, :, i]
-            pred_seg = y_pred[:, :, :, :, i]
-
-            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
-            segment_coefs[i] = d_coef
-
-        d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = 1 - d_coef
-        return loss, segment_coefs, d_coef
-    
-class DiceBCELoss(BaseDice):
-    def __init__(self, epsilon=1e-7):
-        super().__init__(epsilon)
-
-    def __str__(self):
-        return 'DiceBCELoss'
-
-    def forward(self, y_pred, y_true):
-
-        num_masks = y_true.size(-1)
-        bce = nn.BCELoss()
-        segment_coefs = torch.zeros(num_masks, device=y_true.device)
-
-        for i in range(num_masks):
-            ground_truth_seg = y_true[:, :, :, :, i]
-            pred_seg = y_pred[:, :, :, :, i]
-
-            d_coef = (2 * torch.sum(torch.mul(ground_truth_seg, pred_seg))) / (torch.sum(ground_truth_seg + pred_seg) + self.epsilon)
-            segment_coefs[i] = d_coef
-
-        d_coef = (1 / num_masks) * torch.sum(segment_coefs)
-        loss = (1 - d_coef) + 0.2 * bce(y_pred, y_true) # Based on the FFANet Report
-        return loss, segment_coefs, d_coef
-
-def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
+def train(model, X_train, y_train, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
 
     # set up criterion, optimiser, and scheduler for learning rate. 
-    criterion = loss
     optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma = LR_INITIAL)
 
@@ -176,8 +61,9 @@ def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
             optimiser.zero_grad()
             outputs = model(inputs)
 
-            # the weighted value is only used for updating gradients!
-            loss, segment_coefs, d_coef = criterion(y_pred = outputs, y_true = masks) 
+            loss = criterion(outputs, masks) 
+
+            segment_coefs = compute_dice_segments(outputs, masks)
 
             total_segment_coefs += segment_coefs
 
@@ -185,7 +71,7 @@ def train(model, X_train, y_train, loss, num_epochs=NUM_EPOCHS, device="cuda"):
 
             optimiser.step()
 
-            running_dice += d_coef.item()
+            running_dice += 1 - loss.item()
 
         scheduler.step()
 
@@ -214,18 +100,12 @@ if not torch.cuda.is_available():
 # create model. 
 model = ImprovedUnet()
 
-# Importing Dataloader breaks the implementation. Hence they are loaded below instead:
-
-loss_map = {0 : PaperLoss(), 1 : AlternativeLoss(), 2 : ExponentialWeightedLoss(), 3 : ArithmeticWeightedLoss(), 4 : DiceBCELoss()}
-
-loss = loss_map.get(LOSS_IDX)
-
 print("> Start Training")
 
 start = time()
 
 # train improved unet
-trained_model, training_dice_coefs, seg0, seg1, seg2, seg3, seg4, seg5 = train(model, X_train, y_train, loss = loss,
+trained_model, training_dice_coefs, seg0, seg1, seg2, seg3, seg4, seg5 = train(model, X_train, y_train, criterion = CRITERION,
                                                             device=device, num_epochs=NUM_EPOCHS)
 
 end = time()
@@ -240,10 +120,10 @@ plt.plot(seg2, label='Segment 2 Dice Coefficient')
 plt.plot(seg3, label='Segment 3 Dice Coefficient')
 plt.plot(seg4, label='Segment 4 Dice Coefficient')
 plt.plot(seg5, label='Segment 5 Dice Coefficient')
-plt.title(f'Dice Coefficient Over Epochs for {str(loss)}')
+plt.title(f'Dice Coefficient Over Epochs for {CRITERION}')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'unet_dice_coefs_over_epochs_{str(loss)}.png')
+plt.savefig(f'unet_dice_coefs_over_epochs_{CRITERION}.png')
 plt.close()

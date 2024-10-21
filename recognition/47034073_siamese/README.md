@@ -61,6 +61,10 @@ For example,
 ```bash
 python predict.py data/small_images/ISIC_0015719.jpg
 ```
+To use a custom model other than `best.pt`, run
+```bash
+python predict.py --load-model <model name with .pt extension> <path to jpg image file> 
+```
 
 ## Problem Overview 
 The 2020 Kaggle ISIC malignant lesion detection challenge was to correctly classify images of skin lesions as malignant or benign. The dataset is highly imbalanced with approximately 98% of observations being benign and only 2% being malignant. This meant that using naive metrics such as accuracy was undesirable as a predictor which simply always predicted malignant lesions would obtain a score of 98%. Therefore the Kaggle challenge was to achieve a high reciever-operator-curve area-under-the-curve (ROC-AUC) score. Monitoring precision and recall was also a secondary method of evaluation used.

@@ -92,3 +92,20 @@ Hyperparameter Tuning: Perform a grid search for optimal hyperparameters such as
 Regularization: Add L2 regularization to further reduce overfitting.
 Further Visualization: Visualize attention coefficients learned by GAT layers to gain insights into important node relationships.
 
+### Google Colab Usage Instructions
+This project was developed using Google Colab. If you are running the project in Colab, make sure to mount your Google Drive to access the dataset and save model files.
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+Update all paths to include the correct directory, such as:
+
+base_path = "/content/drive/My Drive/COMP3710/Project"
+
+### Running Locally
+If you are running this project locally (i.e., not using Google Colab), you need to update the paths accordingly to your local directories. For example:
+
+base_path = "C:/path/to/your/project"
+
+### Note
+The images used in this README (training_validation_loss.png and umap_embeddings.png) are located in the graphs folder of the project directory. Make sure to check the graphs folder if the images do not show up directly.

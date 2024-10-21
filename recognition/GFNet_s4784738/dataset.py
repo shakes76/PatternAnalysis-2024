@@ -6,6 +6,7 @@ s4784738
 """
 
 import os
+import torch
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import torchvision.transforms as transforms
@@ -15,9 +16,7 @@ class ADNIDataset(Dataset):
         """
         Initialises the image dataset using ADNI brain data.
 
-        Parameters
-        root_dir: Directory with 'train' or 'test' folders containing 'AD' and 'ND' subfolders
-        with images inside them.
+        root_dir: Directory containing 'AD' and 'ND' subfolders with brain images inside them
         transform: Optional transform to be applied to an image.
         """
         self.root_dir = root_dir
@@ -47,13 +46,14 @@ class ADNIDataset(Dataset):
         """
         Gets the image and label and a certain index in the dataset
 
-        Parameters
         idx: The index in the dataset of the image to be retrieved
-        Returns: The image (in RGB form) and its label
+        Returns: The image (in grayscale) and its label
         """
         image_path = self.image_paths[idx]
-        image = Image.open(image_path).convert('L')  # Convert to grayscale
+        # Open the image as grayscale
+        image = Image.open(image_path).convert('L')
         label = self.labels[idx]
+        label = torch.tensor(label, dtype=torch.float32)
 
         # Transform the image if transforms are being used
         if self.transform:
@@ -62,26 +62,35 @@ class ADNIDataset(Dataset):
         return image, label
 
 
-def get_data_loader(root_dir, batch_size=32, shuffle=True, num_workers=1):
+def get_data_loader(root_dir, split='train', batch_size=32, shuffle=True, num_workers=1):
     """
     Gets a dataloader with characteristics specified by the user.
 
-    Parameters
     root_dir: The root directory in which ADNI images can be found
+    split: Specifies if the dataloader is for a training or validation/testing split
     batch_size: The batch size for images 
     shuffle: True is images should be shuffled, and False otherwise
-    num_workers: The number of 
-    Returns a dataloader with the specified characteristics
+    num_workers: The number of workers
     """
-    transform = transforms.Compose([
-        # Resize to 224x224 from the default size of 256x240 pixels
+    # Set up different transforms for training and testing splits
+    if split == 'train':
+        transform = transforms.Compose([
+            # Resize to 224x224 from the default size of 256x240 pixels
+            transforms.Resize((224, 224)),
+            transforms.Grayscale(),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(30),
+            transforms.ToTensor(),
+            # Pre-calculated mean and standard deviation pixel values
+            transforms.Normalize([0.1155], [0.2224]),
+        ])
+    else:
+        transform = transforms.Compose([
         transforms.Resize((224, 224)),
-        #transforms.Grayscale(),
-        transforms.Grayscale(num_output_channels=3),  # Convert grayscale to 3-channel
+        transforms.Grayscale(),
         transforms.ToTensor(),
-        # Pre-calculated mean and standard deviation pixel values
-        #transforms.Normalize([0.1155], [0.2224]),
-        transforms.Normalize([0.1155, 0.1155, 0.1155], [0.2224, 0.2224, 0.2224]),
+        transforms.Normalize([0.1155], [0.2224]),
     ])
 
     dataset = ADNIDataset(root_dir=root_dir, transform=transform)

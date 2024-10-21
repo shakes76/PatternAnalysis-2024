@@ -14,17 +14,17 @@ import os
 import math
 
 # rangpur or local machine
-LOCAL = True
+LOCAL = False
 OUTPUT_DIR = "model"
 
 # hyperparameters
-BATCH_SIZE = 1
-EPOCHS = 2
+BATCH_SIZE = 10 # there are only about 211 images anyway
+EPOCHS = 80
 NUM_CLASSES = 6  # as per powerpoint slides
 INPUT_CHANNELS = 1  # greyscale
-NUM_LOADED = 7  # set to None to load all
+NUM_LOADED = None  # set to None to load all
 SHUFFLE = False
-WORKERS = 0
+WORKERS = 2
 
 # taken from the paper on the improved unet
 INITIAL_LR = 5e-4

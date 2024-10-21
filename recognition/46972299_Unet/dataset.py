@@ -73,9 +73,10 @@ class ProstateLoader(DataLoader):
     MIN_LOAD = 7  # must load at least 7 images total for this split to work
 
     def __init__(self, image_dir: str, mask_dir: str, num_load: int = None, start_t: float = None, **kwargs) -> None:
-        if num_load < self.MIN_LOAD:
-            raise ValueError(f"Must load at least {
-                             self.MIN_LOAD} images and masks")
+        if num_load is not None:
+            if num_load < self.MIN_LOAD:
+                raise ValueError(f"Must load at least {
+                                self.MIN_LOAD} images and masks")
 
         self.start_t = start_t
         self.kwargs = kwargs

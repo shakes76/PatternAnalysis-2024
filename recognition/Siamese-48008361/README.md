@@ -252,7 +252,8 @@ Analysis:
 ### t-SNE Visualization of Embeddings
 *Figure 4: t-SNE plot of embeddings from Siamese Network*
 ![alt text](graphs/tsne_plotv2.png)
-Red represents malignant cases, blue represents benign cases.
+**Red represents malignant cases, blue represents benign cases.**
+
 Analysis:
 - Clear clustering of benign and malignant cases
 - Some overlap indicates areas of uncertainty or shared characteristics

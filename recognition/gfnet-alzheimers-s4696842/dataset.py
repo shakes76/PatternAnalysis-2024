@@ -16,10 +16,10 @@ def get_train_test_dataloaders(root_dir, train_batch_size, test_batch_size):
     train_transform = transforms.Compose(
         [
             transforms.Grayscale(),
-            transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+            transforms.RandomAffine(degrees=10, translate=(0.15, 0.15), scale=(0.9, 1.1)),
             transforms.RandomResizedCrop(size=(256, 240), scale=(0.9, 1.1)),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2),
-            transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 2.0)),
+            transforms.ColorJitter(brightness=0.4, contrast=0.4),
+            transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.15, 2.0)),
             transforms.Resize(ADNI_IMAGE_DIMENSIONS),
             transforms.ToTensor(),
         ]

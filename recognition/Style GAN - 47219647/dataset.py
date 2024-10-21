@@ -28,14 +28,8 @@ def data_set_creator():
     dataset = datasets.ImageFolder(root=data_dir, transform=augmentation_transforms)
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=True, num_workers=6)
 
-    num_classes = len(dataset.classes)  
 
-    def get_one_hot_encoded_loader():
-        for batch_images, batch_labels in data_loader:
-            one_hot_labels = one_hot_encode(batch_labels, num_classes)
-            yield batch_images, one_hot_labels
-
-    return get_one_hot_encoded_loader()
+    return data_loader, dataset
 
 
 

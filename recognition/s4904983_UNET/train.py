@@ -8,6 +8,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torchvision.utils import save_image
 from tqdm import tqdm
 from dataset import load_img_seg_pair
 from modules import UNet2D
@@ -42,12 +43,15 @@ def train_unet_model():
     # Hyperparameters
     batch_size = 32
     learining_rate = 0.001
-    num_epochs = 20
+    num_epochs = 100
     output_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/outputs/' # Local path
     # output_dir = '/home/Student/COMP3710/project/outputs/' # Rangpur path
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
 
     # Define the model
     model = UNet2D().to(device)
@@ -111,10 +115,34 @@ def train_unet_model():
                 running_loss += loss.item()
                 running_dice += dice_coefficient(outputs, segs)
 
+                # Save output images
+                for j in range(batch_size):
+                    save_image(images[j], os.path.join(output_dir, f'image_{epoch + 1}_{i+j}.png'))
+                    save_image(segs[j], os.path.join(output_dir, f'segmentation_{epoch + 1}_{i+j}.png'))
+                    save_image(outputs[j], os.path.join(output_dir, f'output_{epoch + 1}_{i+j}.png'))
+
+
         val_loss.append(running_loss / len(val_images))
         val_dice.append(running_dice / len(val_images))
 
         print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss[-1]:.4f}, Train Dice: {train_dice[-1]:.4f}, Val Loss: {val_loss[-1]:.4f}, Val Dice: {val_dice[-1]:.4f}')
+    
+    # Save the model
+    torch.save(model.state_dict(), model_dir + 'unet_model.pth')
+
+    # Save the loss and dice coefficient
+    np.save(output_dir + 'train_loss.npy', np.array(train_loss))
+    np.save(output_dir + 'val_loss.npy', np.array(val_loss))
+
+    # Plot the loss and dice coefficient
+    plt.figure()
+    plt.plot(train_loss, label='Train Loss')
+    plt.plot(val_loss, label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig(output_dir + 'loss.png')
+
 
                
 

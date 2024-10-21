@@ -18,13 +18,24 @@ class SiameseNetwork(nn.Module):
 
         self._feature_extractor = resnet50(weights=None, progress=False)
 
-    def forward(self, image1, image2) -> tuple[torch.Tensor, torch.Tensor]:
-        """ Performs a forward processing of the two images.
+    def forward_once(self, image) -> torch.Tensor:
+        """ Performs a forward processing of a singular image.
 
         Arguments:
-            image1 (torch.Tensor): A Tensor representing an image. 
-            image2 (torch.Tensor): A Tensor representing an image.
+            image (torch.Tensor): A Tensor representing an image.
         Returns:
-            A tuple of two Tensors. Each being the respective features of the image. 
+            A Tensor of the the extracted features of the image.
         """
-        return self._feature_extractor(image1), self._feature_extractor(image2)
+        return self._feature_extractor(image)
+
+    def forward(self, image1, image2, image3) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """ Performs a forward processing of the three images.
+
+        Arguments:
+            image1 (torch.Tensor): A Tensor representing an image.
+            image2 (torch.Tensor): A Tensor representing an image.
+            image3 (torch.Tensor): A Tensor representing an image.
+        Returns:
+            A tuple of three Tensors. Each being the respective features of the image. 
+        """
+        return self.forward_once(image1), self.forward_once(image2), self.forward_once(image3)

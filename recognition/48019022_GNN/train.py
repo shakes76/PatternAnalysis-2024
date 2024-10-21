@@ -9,61 +9,28 @@ from modules import GCNModel
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 
+"""
+Potential Improvements:
+    LR scheduler
+"""
 
-# hyperparams
-lr = 0.01 # default
-decay = 0.01 # default
-epochs = 300
-
-# loading data
-data = GNNDataLoader(filepath='facebook.npz')
-
-# data splits
-# precaclulate permutation for consistent splits and no data leakages
-perm = torch.randperm(data.num_nodes)
-# we do a 80/10/10 split between training, validation and testing sets
-train_label = perm[:int(0.8*data.num_nodes)] # 0 -> 80
-valid_label = perm[int(0.8 * data.num_nodes):int(0.9 * data.num_nodes)] # 80 -> 90
-test_label = perm(data.num_nodes)[int(0.9 * data.num_nodes):] # 90 -> 100
-
-# now we can define the model
-# note here that the output dimensions is defined to be 4 classes:
-    # politicians, governmental organizations, television shows and companies
-model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1) # +1 as labels start from 0
-
-optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser
-criterion = torch.nn.CrossEntropyLoss() 
-
-# Potential Improvements
-# LR scheduler
-
-# implementing early stopping to reduce change of overfitting model
-best_val_loss = float('inf')
-patience_count = 0
-patience_lim = 10 #stop training if loss doesn't improve for 10 epochs
-
-
-# To plot
-losses = []
-valid_losses = []
-accuracies = []
-
-def _train_model():
+def _train_model(model, data, train):
     """
     The function for training the model using the pre-defined parameters and loss functions
+    Although we pass the entire dataset through the forward pass, only the training indexes are updating the parameters
     """
     model.train() # set model to training mode
     optimiser.zero_grad() # clear gradients from last backprop
 
-    out = model(data) # forward pass
-    loss = criterion(out[train_label], data.y[train_label])
+    out = model(data.to(device)) # forward pass
+    loss = criterion(out[train].to(device), data.y[train].to(device))
 
     loss.backward() # backprop the gradients
     optimiser.step() # update params
 
     return loss.item() # return loss to monitor
 
-def _test_model():
+def _evaluate_model(model, data, valid, test):
     """
     Function for testing the model accuracy against the validation and test data set
     """
@@ -71,21 +38,30 @@ def _test_model():
 
     with torch.no_grad():
         out = model(data)
-        valid_loss = criterion(out[valid_label], data.y[valid_label]).item() # we calculate validation loss
+        valid_loss = criterion(out[valid], data.y[valid]).item() # we calculate validation loss
 
         # get highest probability predictions for testing data
-        predictions = out[test_label].argmax(dim=1)
+        predictions = out[test].argmax(dim=1)
 
         # calc accuracy by comparing predicted and true labels
-        accuracy = accuracy_score(data.y[test_label].cpu(), predictions.cpu())
+        accuracy = accuracy_score(data.y[test].cpu(), predictions.cpu())
 
     return valid_loss, accuracy
 
-def training_loop():
-    for epoch in range(epochs):
-        loss = _train_model()
+def training_loop(num_epochs, model, data, train, valid, test):
+    """
+    Code for the main training loop.
+    Data is passed through the network to train, and loss plots will be generated
+    """
+    # implementing early stopping to reduce change of overfitting model
+    best_val_loss = float('inf')
+    patience_count = 0
+    patience_lim = 10 #stop training if loss doesn't improve for 10 epochs
 
-        valid_loss, test_accuracy = _test_model()
+    for epoch in range(num_epochs):
+        loss = _train_model(model=model, data=data, train=train)
+
+        valid_loss, test_accuracy = _evaluate_model(model=model, data=data, valid=valid, test=test)
 
         losses.append(loss)
         valid_losses.append(valid_loss)
@@ -117,3 +93,36 @@ def training_loop():
     plt.show()
 
     torch.save(model.state_dict(), 'GCN_model.pth')
+
+if __name__ == '__main__':
+    # Setting up CUDA
+    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    print(device)
+
+    # Setting up environment:
+    # initialise hyperparams
+    lr = 0.01 # default
+    decay = 0.01 # default
+    epochs = 300 # default, perhaps try 200,400,500 etc
+
+    # loading data
+    data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='facebook.npz')
+
+    data = data.to(device)
+    # now we can define the model
+    # note here that the output dimensions is defined to be 4 classes:
+    # politicians, governmental organizations, television shows and companies
+    model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1) # +1 as labels start from 0
+    model = model.to(device)
+    model.train()
+
+    # Setting up Adam Optimiser and Cross Entropy Loss function
+    optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser
+    criterion = torch.nn.CrossEntropyLoss()
+
+    # Plotting Lists
+    losses = []
+    valid_losses = []
+    accuracies = []
+
+    training_loop(epochs, model=model, data=data, train=train_idx, valid=valid_idx, test=test_idx)

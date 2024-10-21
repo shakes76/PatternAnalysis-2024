@@ -12,6 +12,8 @@ def GNNDataLoader(filepath='facebook.npz'):
     Custom dataloader for loading processed node data from file 'facebook.npz'
     We load the Facebook Large Page-Page Network dataset 
     Then convert it into a format suitable for use with PyTorch Geometric
+
+    Then split the data into train, validation and test sets
     """
     # Load in data from file path as some object
     # From the original dataset, keys are: 'edges', 'features', 'target'
@@ -30,4 +32,10 @@ def GNNDataLoader(filepath='facebook.npz'):
     # Create a Data object using PyTorch Geometric
     data = Data(x=features, edge_index=edges, y=targets)
 
-    return data
+    perm = torch.randperm(data.num_nodes)
+    # we do a 80/10/10 split between training, validation and testing sets
+    train_idx = perm[:int(0.8*data.num_nodes)] # 0 -> 80
+    valid_idx = perm[int(0.8 * data.num_nodes):int(0.9 * data.num_nodes)] # 80 -> 90
+    test_idx = perm[int(0.9 * data.num_nodes):] # 90 -> 100
+
+    return data, train_idx, valid_idx, test_idx

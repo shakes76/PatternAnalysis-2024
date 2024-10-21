@@ -4,13 +4,16 @@ Author: Øystein Kvandal
 Description: Contains the functions for loading the medical image data from the dataset for the UNET model.
 """
 
+import os
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 import torchio as tio
+import torch
 
-# Local root path for the dataset
-root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/'
+# Dataset path
+root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/keras_slices_' # Local path
+# root_path = ' /home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_ ' # Rangpur path
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
@@ -44,6 +47,7 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     if categorical:
         first_case = to_channels(first_case, dtype = dtype)
         rows, cols, channels = first_case.shape
+        print(f'Image shape: {rows}x{cols}x{channels}')
         images = np.zeros((num, rows, cols, channels), dtype = dtype)
     else:
         rows, cols = first_case.shape
@@ -62,11 +66,12 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
             inImage = to_channels(inImage, dtype = dtype)
+            print(f'Image shape: {inImage.shape}')
             # Crop images to ensure they are all (256, 128) - some are originally (256, 144)
             # Raise exception if tha image is not (256, 128) or (256, 144)
-            if inImage.shape != (inImage.shape[0], 256, 128) and inImage.shape != (inImage.shape[0], 256, 144):
-                raise ValueError('Image format not (256, 128) or (256, 144). Shape: {}'.format(inImage.shape))
-            inImage = inImage[:,:, (inImage.shape[2] - 128) // 2:(inImage.shape[2] + 128) // 2]
+            if inImage.shape != (256, 128, inImage.shape[2]) and inImage.shape != (256, 144, inImage.shape[2]):
+                raise ValueError(f'Image format not (256, 128, {inImage.shape[2]}) or (256, 144, {inImage.shape[2]}).' +  'Shape: {}'.format(inImage.shape))
+            inImage = inImage[:, (inImage.shape[1] - 128) // 2:(inImage.shape[1] + 128) // 2, :]
             images[i,:,:,:] = inImage
         else:
             # Crop images to ensure they are all (256, 128) - some are originally (256, 144)
@@ -81,15 +86,27 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
             break
 
     if getAffines:
-        return images, affines
+        return torch.tensor(images, dtype = torch.float32), affines
     else:
-        return images
+        return torch.tensor(images, dtype = torch.float32)
 
 
+def load_img_seg_pair(dataset_type="train"):
+    assert dataset_type in ["train", "test", "validate"], "Invalid dataset type. Must be 'train', 'test' or 'validate'."
 
-### Unit test
+    img_path = root_path + dataset_type + '/'
+    seg_path = root_path + 'seg_' + dataset_type + '/'
+    images_paths = os.listdir(img_path)[:130]
+    segmentations_paths = os.listdir(seg_path)[:130]
+    images = load_data_2D([img_path + i for i in images_paths], normImage=True)
+    segmentations = load_data_2D([seg_path + i for i in segmentations_paths])
+
+    return images, segmentations
+
+
+# ### Unit test
 # import os
-# set_path = 'keras_slices_seg_' + 'train' + '/'
+# set_path = 'keras_slices_seg_' + 'test' + '/'
 # imageNames = os.listdir(root_path + set_path)
 
 

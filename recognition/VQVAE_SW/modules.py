@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 # Encoder network for VQVAE
 class Encoder(nn.Module):
-    def __init__(self, in_channels=1, hidden_channels=128, embedding_dim=64):
+    def __init__(self, in_channels=1, hidden_channels=256, embedding_dim=128):
         super(Encoder, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
         self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
@@ -18,7 +18,7 @@ class Encoder(nn.Module):
 
 # Decoder network for VQVAE
 class Decoder(nn.Module):
-    def __init__(self, embedding_dim=64, hidden_channels=128, out_channels=1):
+    def __init__(self, embedding_dim=128, hidden_channels=256, out_channels=1):
         super(Decoder, self).__init__()
         self.conv1 = nn.ConvTranspose2d(embedding_dim, hidden_channels, kernel_size=4, stride=2, padding=1)
         self.conv2 = nn.ConvTranspose2d(hidden_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
@@ -43,7 +43,7 @@ class VectorQuantizer(nn.Module):
     def forward(self, z):
         # Flatten input
         z_flattened = z.view(-1, self.embedding_dim)
-
+        
         # Calculate distances and find closest embedding
         distances = torch.sum(z_flattened**2, dim=1, keepdim=True) + torch.sum(self.embedding.weight**2, dim=1) - 2 * torch.matmul(z_flattened, self.embedding.weight.t())
         encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
@@ -60,7 +60,7 @@ class VectorQuantizer(nn.Module):
 
 # VQVAE Model
 class VQVAE(nn.Module):
-    def __init__(self, in_channels=1, hidden_channels=128, num_embeddings=512, embedding_dim=64):
+    def __init__(self, in_channels=1, hidden_channels=256, num_embeddings=1024, embedding_dim=128):
         super(VQVAE, self).__init__()
         self.encoder = Encoder(in_channels, hidden_channels, embedding_dim)
         self.decoder = Decoder(embedding_dim, hidden_channels, in_channels)

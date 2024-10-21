@@ -17,7 +17,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 def predict(
     model_path: str,
     images_path: str, 
-    masks_path: str
+    masks_path: str,
+    save_path: str
 ) -> None:
     """
     Evaluate a trained 3D UNet model on the test dataset and save the predictions. It also saves
@@ -26,6 +27,7 @@ def predict(
     Parameters:
     - images_path (str): Path to the directory containing the input test images.
     - masks_path (str): Path to the directory containing the ground truth masks for the
+    - save_path (str): Path to the directory to save the predictions.
     test images.
     """
     test_transforms = tio.Compose([
@@ -62,7 +64,7 @@ def predict(
             softmax_logits, predictions, logits = model(inputs)
 
             # Save predictions
-            save(predictions, affines, i)
+            save(predictions, affines, i, save_path)
 
             for class_idx in range(N_CLASSES):
                 class_logits = logits[:, class_idx, ...]

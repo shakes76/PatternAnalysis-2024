@@ -22,7 +22,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 def save(
     predictions: torch.Tensor, 
     affines: torch.Tensor, 
-    epoch: int
+    epoch: int,
+    save_path: str
 ) -> None:
     """
     Save the model's predictions for a single batch as a NIfTI file.
@@ -31,6 +32,7 @@ def save(
     - predictions: The output predictions from the model (logits or softmax outputs).
     - affines: The affine transformations associated with the MRI scans.
     - epoch: The current epoch number, used for naming the saved file.
+    - save_path: The directory path to save the predictions.
     """
     # Get predicted class by taking the argmax along the class dimension
     predictions = torch.argmax(predictions, dim=1)
@@ -48,7 +50,7 @@ def save(
     # Save the prediction as a NIfTI file
     nib.save(
         nib.Nifti1Image(prediction, affine, dtype=np.dtype('int64')), 
-        f"saves_new/prediction_{epoch}.nii.gz"
+        f"{save_path}/prediction_{epoch}.nii.gz"
     )
 
 
@@ -110,7 +112,8 @@ def train(
     step_size: int, 
     gamma: float, 
     epochs: int, 
-    batch_size: int
+    batch_size: int,
+    save_path: str
     ) -> None:
     """
     Train a 3D UNet model on a 3D prostate MRI dataset for segmentation tasks. The model is 
@@ -126,6 +129,7 @@ def train(
     - gamma (float): Multiplicative factor for learning rate decay in the scheduler.
     - epochs (int): The number of epochs to train the model.
     - batch_size (int): The batch size for training data.
+    - save_path (str): Path to save the model predictions.
     """
     train_transforms = tio.Compose([
         tio.RescaleIntensity((0, 1)),
@@ -201,7 +205,7 @@ def train(
         # Periodic validation and model saving
         if epoch % 3 == 0:
             validate(model, valid_dataloader)
-            save(predictions, affines, epoch)
+            save(predictions, affines, epoch, save_path)
 
         # Log training progress
         print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss / len(train_dataloader):.4f}")

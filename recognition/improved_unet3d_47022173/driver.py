@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', type=str, required=True, help="Train, debug or predict.")
     parser.add_argument('-s', '--system', type=str, required=True, help="Local or rangpur.")
+    parser.add_argument('-sp', '--save-path', type=str, required=True, help="Path to save preds.")
     parser.add_argument('-p', '--model-path', type=str, help="Path to the model file for predict.")
     parser.add_argument('-lr', '--learning-rate', type=float, help="Learning rate for optimizer.")
     parser.add_argument('-bs', '--batch-size', type=int, help="Batch size for loader.")
@@ -53,12 +54,14 @@ if __name__ == "__main__":
             step_size,
             gamma,
             epochs,
-            batch_size)
+            batch_size,
+            args.save_path)
         
     elif args.mode == "predict" and args.model_path:
         predict(
             args.model_path,
             images_path, 
-            masks_path)
+            masks_path,
+            args.save_path)
     else:
         print("Invalid mode. Please select train or predict with model path.")

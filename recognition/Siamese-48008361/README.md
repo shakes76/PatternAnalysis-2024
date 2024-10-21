@@ -263,7 +263,7 @@ Analysis:
 - Overall structure validates the Siamese network's ability to learn meaningful representations
 
 ## Performance Summary
-
+*Table 1: Performance metric summary of Siamese Network*
 | Metric | Value |
 |--------|-------|
 | AUC-ROC | 0.89 |

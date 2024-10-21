@@ -55,6 +55,7 @@ def unet_3d(input_shape, num_classes):
     return model
 
 
+
 # Get lists of image and label files
 image_files = sorted(glob.glob(os.path.join(image_dir, '*.nii.gz')))
 label_files = sorted(glob.glob(os.path.join(label_dir, '*.nii.gz')))

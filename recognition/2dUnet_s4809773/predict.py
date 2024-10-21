@@ -1,3 +1,11 @@
+"""
+Author: Roman Kull
+Description: 
+    This file takes in a trained model and compares its performance to true segmentations from the validation set
+    It outputs the model's dice coefficient for every segmentation class
+    Additionally, outputs 3 different sets of images, doing a side by side comparison of the MRI slice, the true segmentation, and the predicted segmentation
+"""
+
 import torch
 import torch.nn.functional as F
 from dataset import create_dataloaders  # Import dataset and loader

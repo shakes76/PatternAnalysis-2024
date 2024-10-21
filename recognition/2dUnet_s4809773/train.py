@@ -1,3 +1,11 @@
+"""
+Author: Roman Kull
+Description: 
+    A training script to train the UNet model on MipMRI data and the corresponding segmentation.
+    Uses AdamW, Kaiming Normal Initialization, and Dice Loss
+    Produces a trained model, and outputs a saved graph of the training and test loss curves
+"""
+
 import torch
 import torch.optim as optim
 import torch.nn as nn

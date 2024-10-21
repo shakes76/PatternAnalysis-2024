@@ -1,3 +1,10 @@
+"""
+Author: Roman Kull
+Description: 
+    This is a UNet model with the same structure as the original UNet paper - 	arXiv:1505.04597
+    The only changes are the use of the 'same' padding, and the use of batch normalisation after each convolution
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,8 +15,8 @@ class UNet(nn.Module):
 
         # Encoder part (downsampling)
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 64, 3, padding="same"),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(1, 64, 3, padding="same"), #using 'same' padding to prevent convolutions from cropping the image
+            nn.BatchNorm2d(64), #added batchnorm to stablise learning
             nn.ReLU()
         )
         self.conv2 = nn.Sequential(

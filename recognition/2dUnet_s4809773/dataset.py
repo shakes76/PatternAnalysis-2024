@@ -1,3 +1,9 @@
+"""
+Author: Roman Kull
+Description: 
+    This code makes a dataloader for nifti image files, and resizes them all to a standard size of 256 x 128 (H x W)
+"""
+
 import os
 import torch
 import torch.utils.data as data
@@ -27,7 +33,7 @@ class NiftiDataset(data.Dataset):
         if self.normImage:
             image = (image - image.mean()) / image.std()
 
-        # Add channel dimensions (assuming grayscale images)
+        # Add channel dimensions
         image = np.expand_dims(image, axis=0)
         mask = np.round(mask).astype(np.int64)  # Round and convert to integer for class indices
         mask = np.expand_dims(mask, axis=0)
@@ -40,7 +46,7 @@ class NiftiDataset(data.Dataset):
         image = F.interpolate(image.unsqueeze(0), size=self.resize_to, mode='bilinear', align_corners=False).squeeze(0)
         mask = F.interpolate(mask.unsqueeze(0).float(), size=self.resize_to, mode='nearest').squeeze(0).long()
 
-        # Apply any transforms if available
+        # Apply any transforms as necessary
         if self.transform:
             image, mask = self.transform(image, mask)
 

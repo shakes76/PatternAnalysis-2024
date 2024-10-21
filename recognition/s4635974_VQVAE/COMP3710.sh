@@ -6,5 +6,6 @@
 #SBATCH --mail-user=s4635974@student.uq.edu.au
 #SBATCH --output=VQ-VAE.out
 
+
 conda activate torch
 python train.py

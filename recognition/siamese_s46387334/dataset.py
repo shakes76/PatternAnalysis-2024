@@ -2,13 +2,62 @@
 Contains the data loader for loading and preprocessing the ISIC 2020 Data
 """
 
+###############################################################################
+### Imports
 import os
+import random
+
 import numpy as np
 import pandas as pd
+import torch
+from cv2 import cv2
+
 from sklearn.model_selection import train_test_split
 
 
+###############################################################################
+### Classes
+class TripletDataGenerator(torch.utils.data.Dataset):
+    """
+    
+    """
+    def __init__(self, images, labels=None, train=True, transform=None):
+        self.is_train = train
+        self.transform = transform
+        self.images = images     
+        self.labels = labels
 
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, anchor_idx):
+        anchor_img = cv2.imread(self.images[anchor_idx]) / 255.0
+        anchor_label = self.labels[anchor_idx]
+
+        if self.is_train:
+            positive_list = [idx for idx, label in enumerate(self.labels) if label == anchor_label and idx != anchor_idx]
+            positive_idx = random.choice(positive_list)
+            positive_img = cv2.imread(self.images[positive_idx]) / 255.0
+
+            negative_list = [idx for idx, label in enumerate(self.labels) if label != anchor_label and idx != anchor_idx]
+            negative_idx = random.choice(negative_list)
+            negative_img = cv2.imread(self.images[negative_idx]) / 255.0
+
+            if self.transform:
+                anchor_img = self.transform(anchor_img)
+                positive_img = self.transform(positive_img)
+                negative_img = self.transform(negative_img)
+
+            return anchor_img, positive_img, negative_img, anchor_label
+
+        else:
+            if self.transform:
+                anchor_img = self.transform(anchor_img)
+            return anchor_img, torch.empty(1), torch.empty(1), anchor_label
+
+
+###############################################################################
+### Functions
 def get_isic2020_data(metadata_path, image_dir, data_subset):
     """
     Returns: images, labels
@@ -71,3 +120,4 @@ def train_val_test_split(images, labels):
     train_labels = np.concatenate([class_0_labels, class_1_labels], axis=0)
 
     return train_images, val_images, test_images, train_labels, val_labels, test_labels
+

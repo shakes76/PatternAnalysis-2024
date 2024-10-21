@@ -33,7 +33,7 @@ def predict_siamese_net(
     all_y_prob = []
     all_y_true = []
 
-    for batch_idx, (imgs, _, _, labels) in enumerate(data_loader):
+    for _, (imgs, _, _, labels) in enumerate(data_loader):
         imgs = imgs.to(device).float()
         outputs = model.classify(imgs)   
 
@@ -76,7 +76,7 @@ def train_siamese_net(
         model.train()  # Set model to training mode
         running_loss = []
         
-        for step, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(train_loader):
+        for _, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(train_loader):
             # Move the data to the device (GPU or CPU)
             anchor_img = anchor_img.to(device).float()
             positive_img = positive_img.to(device).float()
@@ -150,12 +150,12 @@ def train_siamese_net(
             val_aucroc_per_epoch.append(val_aucroc)
     
         # Print out current results
-        print(f"[{strftime('%H:%M:%S', gmtime())}] Epoch: {epoch+1 :>2}/{EPOCHS} -- [Train Loss: {avg_train_loss:.4f} - Train Acc: {train_accuracy:.4f} - Train AUR ROC: {train_aucroc:.4f}] -- [Val Loss {avg_val_loss:.4f} - Val Acc: {val_accuracy:.4f} - Val AUC ROC: {val_aucroc:.4f}]")
+        print(f"[{strftime('%H:%M:%S', gmtime())}] Epoch: {epoch+1 :>2}/{epochs} -- [Train Loss: {avg_train_loss:.4f} - Train Acc: {train_accuracy:.4f} - Train AUR ROC: {train_aucroc:.4f}] -- [Val Loss {avg_val_loss:.4f} - Val Acc: {val_accuracy:.4f} - Val AUC ROC: {val_aucroc:.4f}]")
     
         # Save the model if it preforms better than all other epochs on validation set
         if val_aucroc > best_val_aurroc:
             torch.save(model.state_dict(), "siamese_net_model.pt")
-            best_val_accuracy = val_accuracy
+            best_val_aurroc = val_aucroc
             print(f"New model saved with Validation AUR ROC of: {best_val_aurroc:.4f}")
 
 def set_seed(seed: int=42):

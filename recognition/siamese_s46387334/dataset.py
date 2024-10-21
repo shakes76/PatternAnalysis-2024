@@ -58,7 +58,7 @@ class TripletDataGenerator(torch.utils.data.Dataset):
 
 ###############################################################################
 ### Functions
-def get_isic2020_data(metadata_path, image_dir, data_subset):
+def get_isic2020_data(metadata_path, image_dir, data_subset: int | None=None):
     """
     Returns: images, labels
     """
@@ -72,9 +72,10 @@ def get_isic2020_data(metadata_path, image_dir, data_subset):
     image_paths = [os.path.join(image_dir, img) for img in os.listdir(image_dir) if img in image_to_label]
 
     # If we are using subset of the data, ensure that we try our best to have an equal number of each class
-    pos_paths = [img for img in image_paths if image_to_label[os.path.basename(img)] == 1][:data_subset // 2]
-    neg_paths = [img for img in image_paths if image_to_label[os.path.basename(img)] == 0][:data_subset // 2]
-    image_paths = pos_paths + neg_paths
+    if data_subset:
+        pos_paths = [img for img in image_paths if image_to_label[os.path.basename(img)] == 1][:data_subset // 2]
+        neg_paths = [img for img in image_paths if image_to_label[os.path.basename(img)] == 0][:data_subset // 2]
+        image_paths = pos_paths + neg_paths
 
     # Get a list of the labels for the images we are using
     labels = [image_to_label[os.path.basename(path)] for path in image_paths]

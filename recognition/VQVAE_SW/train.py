@@ -36,3 +36,6 @@ for epoch in range(num_epochs):
         running_loss += loss.item()
 
     print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
+
+# save model
+torch.save(model.state_dict(), 'vqvae_hipmri.pth')

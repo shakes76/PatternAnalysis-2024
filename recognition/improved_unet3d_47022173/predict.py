@@ -48,7 +48,7 @@ def predict(
     test_loss = 0.0
     dice_scores = [0] * N_CLASSES  # Initialize dice scores for each class
     
-    dice_score = DiceLoss(softmax=True)
+    dice_score = DiceLoss(softmax=True, include_background=False)
 
     with torch.no_grad():
         for i, data in enumerate(test_dataloader):  

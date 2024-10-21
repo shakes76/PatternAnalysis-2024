@@ -48,7 +48,7 @@ def save(
     # Save the prediction as a NIfTI file
     nib.save(
         nib.Nifti1Image(prediction, affine, dtype=np.dtype('int64')), 
-        f"saves_deg5/prediction_{epoch}.nii.gz"
+        f"saves_new/prediction_{epoch}.nii.gz"
     )
 
 
@@ -71,7 +71,7 @@ def validate(
     model.eval()  
     
     # Initialize the Dice score metric
-    dice_score = DiceLoss(softmax=True)
+    dice_score = DiceLoss(softmax=True, include_background=False)
     dice_scores = [0] * N_CLASSES
 
     # Disable gradient calculation for validation

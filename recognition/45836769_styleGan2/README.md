@@ -32,58 +32,78 @@ Below are graphs of the generator and discriminator architectures (IDK if this w
 ### Generator Architecture
 
 ```mermaid
-graph TD
-    Z[Input Latent Z] --> MN[Mapping Network]
-    L[Class Label] --> MN
-    MN --> W[Intermediate Latent W]
-    W --> SB1[Synthesis Block 1]
-    W --> SB2[Synthesis Block 2]
-    W --> SB3[Synthesis Block 3]
-    W --> SB4[Synthesis Block 4]
-    W --> SB5[Synthesis Block 5]
+graph TB
+subgraph "Synthesis Block"
+    direction TB
+    MC1["Modulated Conv2D"] --> NI1["Noise Injection"]
+    NI1 --> A1["Activation"]
+    A1 --> MC2["Modulated Conv2D"]
+    MC2 --> NI2["Noise Injection"]
+    NI2 --> A2["Activation"]
+end
+
+subgraph "Generator"
+    direction TB
+    Z["Input Latent Z"] --> MN["Mapping Network"]
+    L["Class Label"] --> MN
+    MN --> W["Intermediate Latent W"]
+    W --> SB1["Synthesis Block 1"]
+    W --> SB2["Synthesis Block 2"]
+    W --> SB3["Synthesis Block 3"]
+    W --> SB4["Synthesis Block 4"]
+    W --> SB5["Synthesis Block 5"]
     SB1 --> SB2
     SB2 --> SB3
     SB3 --> SB4
     SB4 --> SB5
-    SB5 --> FC[Final Conv]
-    FC --> Out[Output Image 256x256]
-    
-    subgraph "Synthesis Block"
-        MC1[Modulated Conv2D] --> NI1[Noise Injection]
-        NI1 --> A1[Activation]
-        A1 --> MC2[Modulated Conv2D]
-        MC2 --> NI2[Noise Injection]
-        NI2 --> A2[Activation]
-    end
+    SB5 --> FC["Final Conv"]
+    FC --> Out["Output Image 256x256"]
+end
 ```
 
 ### Discriminator Architecture
 
 ```mermaid
-graph TD
-    In[Input Image 256x256] --> IC[Initial Conv]
-    IC --> RB1[Residual Block 1]
-    RB1 --> RB2[Residual Block 2]
-    RB2 --> RB3[Residual Block 3]
-    RB3 --> RB4[Residual Block 4]
-    RB4 --> RB5[Residual Block 5]
-    RB5 --> MSD[MiniBatch StdDev]
-    MSD --> FC[Final Conv]
-    FC --> FL[Flatten]
-    FL --> LL[Linear Layer]
-    LL --> Out[Output Score]
-    
-    subgraph "Residual Block"
-        C1[Conv2D] --> A1[Activation]
-        A1 --> C2[Conv2D]
-        C2 --> A2[Activation]
-        A2 --> DS[Downsample]
-        In1[Input] --> SC[Skip Connection]
-        SC --> DS
-        DS --> Add((+))
-    end
+graph TB
+subgraph "Residual Block"
+    direction TB
+    In1["Input"] --> C1["Conv2D"]
+    In1 --> SC["Skip Connection"]
+    C1 --> A1["Activation"]
+    A1 --> C2["Conv2D"]
+    C2 --> A2["Activation"]
+    A2 --> DS["Downsample"]
+    SC --> DS
+    DS --> Add["+ (Add)"]
+end
+
+subgraph "Discriminator"
+    direction TB
+    In["Input Image 256x256"] --> IC["Initial Conv"]
+    IC --> RB1["Residual Block 1"]
+    RB1 --> RB2["Residual Block 2"]
+    RB2 --> RB3["Residual Block 3"]
+    RB3 --> RB4["Residual Block 4"]
+    RB4 --> RB5["Residual Block 5"]
+    RB5 --> MSD["MiniBatch StdDev"]
+    MSD --> FC["Final Conv"]
+    FC --> FL["Flatten"]
+    FL --> LL["Linear Layer"]
+    LL --> Out["Output Score"]
+end
 ```
 
 These graphs are the flow of data through the generator and discriminator networks.
 
+## Requirements
+| Package     | Version  |
+|-------------|----------|
+| matplotlib  | 3.9.1    |
+| torch       | 2.2.2    |
+| torchaudio  | 2.2.2    |
+| torchvision | 0.17.2   |
+| umap-learn  | 0.5.6    |
+| pillow      | 11.0.0   |
+
 ## Results
+

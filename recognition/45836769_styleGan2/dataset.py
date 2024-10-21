@@ -5,7 +5,7 @@ REFERENCES:
     created by Anthropic, PBC. Claude provided guidance on implementing
     StyleGAN2 architecture and training procedures.
 
-    Date of assistance: 8/10/2024
+    Date of assistance: 8-21/10/2024
     Claude version: Claude-3.5 Sonnet
     For more information about Claude: https://www.anthropic.com
 """

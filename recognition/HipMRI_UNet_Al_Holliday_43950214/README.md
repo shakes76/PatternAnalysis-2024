@@ -7,9 +7,15 @@ This is an implementation of a 2D U-Net based on [1] that tries to produce segme
 
 ### Architecture
 
+(insert picture of U-Net here)
+
+In essence I use almost the exact architecture as the original U-Net outlined in [1], but with one of the 'U' layers removed so that there are three encoder and decoder steps instead of four.
+
 ### Dependencies
 
 (List the man deps, perhaps include the conda env file in the repo)
+
+Note that I have also included a conda environment file called `comp3710_env.yml` that should cover all the required dependencies for you.
 
 ### Training and Results
 

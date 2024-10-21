@@ -5,7 +5,7 @@ Contains the code for training, validating, testing, and saving the Unet
 """
 from modules import Improved3DUnet
 from metrics import DiceLoss
-from utils import cur_time
+from utils import cur_time, ModelState
 from dataset import *
 import torch
 import torch.optim as optim
@@ -88,7 +88,7 @@ def main() -> None:
     print(f"[{cur_time(script_start_t)}] Training...")
 
     for epoch in range(EPOCHS):
-        print(f"[{cur_time(script_start_t)}] beginning epoch {epoch}")
+        print(f"[{cur_time(script_start_t)}] Beginning epoch {epoch}")
         for step, (image, mask) in enumerate(data_loader.train()):
             image = image.to(device)
             mask = mask.to(device)
@@ -108,12 +108,25 @@ def main() -> None:
         criterion.save_epoch()
 
         if epoch % output_epochs == 0:
-            torch.save(model.state_dict(), f".{sep}{output_dir}{
+            checkpoint = {
+                ModelState.MODEL.value: model.state_dict(),
+                ModelState.CRITERION.value: criterion.state_dict()
+            }
+
+            torch.save(checkpoint, f".{sep}{output_dir}{
                 sep}model{epoch:0{num_digits}d}.pt")
 
     print(f"[{cur_time(script_start_t)}] Training complete")
 
-    criterion.save_loss_figures(f".{sep}{output_dir}{sep}")
+    endpoint = {
+        ModelState.MODEL.value: model.state_dict(),
+        ModelState.CRITERION.value: criterion.state_dict()
+    }
+
+    torch.save(endpoint, f".{sep}{output_dir}{sep}final_model.pt")
+
+    print(f"[{cur_time(script_start_t)}] find the output model at .{
+          sep}{output_dir}{sep}final_model.py")
 
 
 if LOCAL:

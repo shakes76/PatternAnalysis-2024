@@ -3,10 +3,10 @@ Contains the code for calculating losses and metrics for the Unet, as well as fu
 
 @author Carl Flottmann
 """
+from __future__ import annotations
 import torch
 from torch.nn.modules.loss import _Loss
 import torch.nn.functional as functional
-import matplotlib.pyplot as plt
 
 
 class DiceLoss(_Loss):
@@ -23,6 +23,16 @@ class DiceLoss(_Loss):
         # stores the loss for each iteration for each class, including the total loss
         self.iteration_loss_tracking = torch.zeros(
             0, self.num_classes + 1, device=self.device)
+
+    def reset_epoch(self) -> None:
+        self.iteration_loss_tracking = torch.zeros(
+            0, self.num_classes + 1, device=self.device)
+
+    def epochs_run(self) -> int:
+        return len(self.epoch_loss_tracking[0])
+
+    def iterations_run(self) -> int:
+        return len(self.iteration_loss_tracking[0])
 
     def forward(self, prediction: torch.Tensor, truth: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         prediction = prediction.to(self.device)
@@ -72,8 +82,7 @@ class DiceLoss(_Loss):
             self.epoch_loss_tracking = torch.cat(
                 (self.epoch_loss_tracking, self.iteration_loss_tracking.unsqueeze(0)), dim=0)
 
-        self.iteration_loss_tracking = torch.zeros(
-            0, self.num_classes + 1, device=self.device)
+        self.reset_epoch()
 
     def get_all_losses(self) -> list[list[float]]:
         losses = [[] for _ in range(self.num_classes + 1)]
@@ -165,57 +174,19 @@ class DiceLoss(_Loss):
                 return self.iteration_loss_tracking[:, -1, :]
         return self.epoch_loss_tracking[:, -1, :]
 
-    def save_loss_figures(self, output_path: str, file_names: tuple[str, str, str] = ("complete_dice_loss.png", "average_dice_loss.png", "end_dice_loss.png")) -> None:
-        # first do complete dice loss
-        losses = self.get_all_losses()
+    def state_dict(self) -> dict[str: list[list[torch.Tensor]]]:
+        return {
+            'epoch_loss_tracking': self.epoch_loss_tracking,
+            'iteration_loss_tracking': self.iteration_loss_tracking,
+            'num_classes': self.num_classes,
+            'smooth_factor': self.smooth_factor,
+            'device': self.device
+        }
 
-        x_axis = list(range(len(losses[0])))
-
-        plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
-        for i, class_loss in enumerate(losses[1:]):
-            plt.plot(x_axis, class_loss, label=f"Class {
-                     i + 1} Loss", marker='o')
-
-        plt.xlabel("Total iterations (including epochs)")
-        plt.ylabel("DICE loss")
-        plt.title("Complete DICE Loss Over Training")
-        plt.legend()
-        plt.grid()
-        plt.savefig(f"{output_path}{file_names[0]}")
-        plt.close()
-
-        # second do average dice loss
-        losses = self.get_average_losses()
-
-        x_axis = list(range(len(losses[0])))
-
-        plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
-        for i, class_loss in enumerate(losses[1:]):
-            plt.plot(x_axis, class_loss, label=f"Class {
-                     i + 1} Loss", marker='o')
-
-        plt.xlabel("Total epochs")
-        plt.ylabel("DICE loss")
-        plt.title("Average DICE Loss Over Training")
-        plt.legend()
-        plt.grid()
-        plt.savefig(f"{output_path}{file_names[1]}")
-        plt.close()
-
-        # last do end dice loss
-        losses = self.get_end_losses()
-
-        x_axis = list(range(len(losses[0])))
-
-        plt.plot(x_axis, losses[0], label="Total Loss", marker='o')
-        for i, class_loss in enumerate(losses[1:]):
-            plt.plot(x_axis, class_loss, label=f"Class {
-                     i + 1} Loss", marker='o')
-
-        plt.xlabel("Total epochs")
-        plt.ylabel("DICE loss")
-        plt.title("DICE Loss at the End of Each Epoch Over Training")
-        plt.legend()
-        plt.grid()
-        plt.savefig(f"{output_path}{file_names[2]}")
-        plt.close()
+    @staticmethod
+    def load_state_dict(state_dict: dict[str: list[list[torch.Tensor]]]) -> DiceLoss:
+        obj = DiceLoss(state_dict['num_classes'], state_dict['device'],
+                       smooth_factor=state_dict['smooth_factor'])
+        obj.epoch_loss_tracking = state_dict['epoch_loss_tracking']
+        obj.iteration_loss_tracking = state_dict['iteration_loss_tracking']
+        return obj

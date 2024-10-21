@@ -8,6 +8,12 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 import time
+from enum import Enum
+
+
+class ModelState(Enum):
+    MODEL = "model"
+    CRITERION = "criterion"
 
 
 def cur_time(start: float) -> float:

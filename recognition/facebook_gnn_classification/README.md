@@ -60,7 +60,12 @@ To visualize how well the GNN captures the structure of the graph, **UMAP** was 
 
 ![UMAP Embeddings](graphs/umap_embeddings.png)
 
-The UMAP plot indicates that the model has successfully learned to separate the nodes based on their categories. Different colors represent different page types, and the clustering seen in the visualization suggests that nodes of similar types are grouped together, demonstrating good discriminative power of the learned embeddings.
+The UMAP plot indicates that the model has successfully learned to separate the nodes based on their categories. Different colors represent different page types, and the clustering seen in the visualization suggests that nodes of similar types are grouped together, demonstrating good discriminative power of the learned embeddings. Specifically:
+
+Government (Red): This category is well-clustered and separated from other categories, indicating that the features used to represent government pages are distinct from other node types.
+Tvshows (Blue) and Companies (Green): These categories show some overlap, suggesting that certain features between tvshows and companies might be similar, which aligns with the possibility of common public engagement strategies used by both.
+Politicians (Orange): This group is relatively distinct but has some overlap with the government cluster, which is expected due to similarities in content between politicians and government pages.
+Overall, the UMAP visualization indicates that the embeddings learned by the GNN are effective in capturing the latent structure of the dataset, helping to group nodes of similar types together.
 
 ## Prediction Accuracy
 The model achieved a prediction accuracy of 98.24% on the entire dataset, which shows that it was able to effectively classify nodes into their respective categories.
@@ -73,3 +78,4 @@ Below are some sample predictions from the model:
 - Node 2: Predicted = `1` (True = `1`)
 - Node 3: Predicted = `2` (True = `2`)
 - Node 4: Predicted = `3` (True = `3`)
+

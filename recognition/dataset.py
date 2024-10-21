@@ -3,6 +3,7 @@ import nibabel as nib
 from tqdm import tqdm
 import skimage.transform as skTrans
 from pathlib import Path
+import tensorflow as tf
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -70,8 +71,6 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
-
-
 baseDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/'
 testDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_test/'
 trainDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_train/'
@@ -111,3 +110,14 @@ trainSegImages = load_data_2D(trainSegListNii, normImage=True, categorical=False
 validateSegListNii = list(Path(validateSegDir).glob('*.nii'))
 validateSegImages = load_data_2D(validateSegListNii, normImage=True, categorical=False)
 
+# def normalize(data):
+#     return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+# # Normalize the images and segmentation masks
+# trainImages = normalize(trainImages)
+# validateImages = normalize(validateImages)
+# testImages = normalize(testImages)
+
+# trainSegImages = normalize(trainSegImages)
+# validateSegImages = normalize(validateSegImages)
+# testSegImages = normalize(testSegImages)

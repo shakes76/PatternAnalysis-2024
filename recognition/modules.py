@@ -1,7 +1,6 @@
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Conv2DTranspose, concatenate
 from tensorflow.keras.models import Model
 
-
 # List of filters to be applied in the encoding and reverse in the decoding step 
 filterList = [64,128,256,512]
 
@@ -11,14 +10,10 @@ filterList = [64,128,256,512]
 def encoder(inputTensor):
     skipConnectionList = []
     tensor = inputTensor
-    # Applies two convolutions and a max pool for each of the filters to the given input tensor 
     for filter in filterList: 
-        # First two convolutions applied to the tensor
         firstConv = Conv2D(filter, kernel_size = (3,3), padding = 'same', strides = 1, activation = 'relu')(tensor)
         secondConv = Conv2D(filter, kernel_size = (3,3), padding = 'same', strides = 1, activation = 'relu')(firstConv)
-        # Adds the skip connecton to the list 
         skipConnectionList.append(secondConv)
-        # Computes the max pool of the second convolution
         tensor = MaxPooling2D(pool_size = (2,2), padding = 'same')(secondConv)
     return tensor, skipConnectionList
 
@@ -28,16 +23,12 @@ def encoder(inputTensor):
 def decoder(skipConnectionList, inputTensor):
     tensor = inputTensor
     for filter in reversed(filterList):
-        # Compute the up convolution
         upConv = Conv2DTranspose(filter, kernel_size = (2,2), padding = 'same', activation = 'relu', strides = 2)(tensor)
         skipConnection = skipConnectionList.pop()
-        # Concatinate the skip connection with the tensor
         concatTensor = concatenate([upConv, skipConnection])
-        # Apply two convolutions with the given filter
         firstConv = Conv2D(filter, kernel_size = (3,3), padding = 'same', strides = 1, activation = 'relu')(concatTensor)
         secondConv = Conv2D(filter, kernel_size = (3,3), padding = 'same', strides = 1, activation = 'relu')(firstConv)
         tensor = secondConv
-    # Apply the final convolution with a sigmoid activation function
     finalConv = Conv2D(1, kernel_size=(1, 1), padding='same', strides=1, activation='sigmoid')(tensor)
     return finalConv
 

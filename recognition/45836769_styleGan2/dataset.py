@@ -38,7 +38,7 @@ class ADNIDataset(Dataset):
             self.transform = transforms.Compose([
                 transforms.Grayscale(),
                 transforms.Resize((256, 240)), # making sure images fit expected size
-                transforms.Pad((0, 8, 0, 8), fill=0),  # Pad to 256x256
+                transforms.Pad((8, 0, 8, 0), fill=0),  # Pad to 256x256
                 transforms.ToTensor(),
                 transforms.Normalize([0.5], [0.5]) # [-1, 1] normalisation - see if this makes difference
                 # transforms.Normalize([0.1156], [0.2200])  # Mean, stddev from AD_NC train dataset

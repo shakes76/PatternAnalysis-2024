@@ -16,9 +16,9 @@ from modules import *
 from dataset import *
 import json
 from constants import *
-from predict import generate_umap_plot, load_model, generate_examples
+from predict import generate_umap_plot, load_model, load_optimizers, generate_examples
 
-if os.path.exists("params/data.json"):
+if os.path.exists("params/data.json"):  # loads the json dict which stores the past losses for plotting of loss
     with open("params/data.json", 'r') as f:
         json_data = json.load(f)
     total_epochs = json_data["epochs"]
@@ -35,14 +35,16 @@ else:
                  "D_loss": []}
 
 def train_fn(
-        critic,
-        gen,
-        path_length_penalty,
-        loader,
-        opt_critic,
-        opt_gen,
-        opt_mapping_network,
-):
+        critic: Discriminator,
+        gen: Generator,
+        path_length_penalty: PathLengthPenalty,
+        loader: DataLoader,
+        opt_critic: optim.Adam,
+        opt_gen: optim.Adam,
+        opt_mapping_network: optim.Adam):
+    """
+    A single training loop, displaying the training progress each epoch.
+    """
     loop = tqdm(loader, leave=True)
 
     for batch_idx, (real, _) in enumerate(loop):
@@ -91,6 +93,13 @@ def train_fn(
         )
 
 def plot_loss(g_loss, d_loss):
+    """
+    :param g_loss: a python list that stores the generator lost
+    :param d_loss: a python list that stores the discriminator lost
+    :return: None
+    plots the generator lost and discriminator loss graph, and the generator vs. discriminator loss graph before saving
+    them.
+    """
     plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")
     plt.plot(g_loss, label="G")
@@ -118,6 +127,9 @@ def save_model(generator: Generator,
                optim_critic: optim.Adam,
                optim_map: optim.Adam,
                directory: str = "model"):
+    """
+    Saves the model and optimizers to the given directory
+    """
     if not os.path.exists(directory):
         os.mkdir(directory)
     torch.save(generator.state_dict(), f"{directory}/generator.pth")
@@ -143,13 +155,17 @@ if __name__ == "__main__":
 
     loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.dataset_dir)
 
-    gen, critic, mapping_network, path_length_penalty, opt_gen, opt_critic, opt_mapping_network = \
-        load_model(args.model_dir)
+    gen, critic, mapping_network, path_length_penalty = load_model(args.model_dir)
 
     gen = gen.to(DEVICE)
     critic = critic.to(DEVICE)
     mapping_network = mapping_network.to(DEVICE)
     path_length_penalty = path_length_penalty.to(DEVICE)
+
+    opt_gen, opt_critic, opt_mapping_network = load_optimizers(generator=gen,
+                                                               discriminator=critic,
+                                                               mapping_net=mapping_network,
+                                                               path=args.model_dir)
 
     gen.train()
     critic.train()

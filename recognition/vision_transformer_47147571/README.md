@@ -4,11 +4,18 @@ A GFNet was used to train a binary classifier to identify Alzheimer's disease fr
 
 ## Model Architecture
 
-The Global Filter Network (GFNet) is a neural network with a structure similar to transformers, but it learns long-term spatial dependencies in the frequency domain, which differs from the attention mechanism used in transformers.
+The Global Filter Network (GFNet) is a neural network similar in structure to transformers, but it learns long-term spatial dependencies in the frequency domain, differing from the attention mechanism used in transformers. GFNet replaces the self-attention layers in traditional transformers with three key components: a discrete Fourier transform, element-wise multiplication between the frequency-domain features and global filters, and an inverse Fourier transform. With these modifications, GFNet achieves log-linear complexity while effectively learning long-term spatial dependencies.
+
+GFNet consists of following key components:  
+**Patch Embedding**: Converts the input image into patches, allowing the model to process the image efficiently in a tokenized format, similar to vision transformers.  
+**Global Filter (GF) Layer**: Applies global filters in the frequency domain using the Fast Fourier Transform (FFT) to capture long-range dependencies, enabling better global context understanding.  
+**Residual Block with Global Filter**: Integrates the GF Layer within a residual block to combine global context with local features while ensuring stable gradients and effective training.  
+**Feed-Forward Network (FFN)**: Refines the extracted features by applying linear transformations with non-linear activation, further enhancing global feature representation.  
+
 
 ![GFNet_intro](images/intro.gif)
 
-We adopted the official implementation of GFNet[1] with several necessary adaptations for the binary classification task. Specifically, we modified the final fully connected (FC) layer to output a single logit that can be processed by the sigmoid function to calculate the predicted probability for the positive class (AD). Additionally, we set the input channel to 1, enabling the network to process grayscale MRI scan images correctly. This GFNet takes 210x210 single-channel images as input, which are then split into 15 patches. Each patch is processed by Global Filters in the frequency domain to learn global spatial dependencies. The Global Filters operate in the Fourier domain, capturing long-term dependencies by manipulating the frequency components of the image patches. After the filtering stage, the output undergoes Layer Normalization followed by a Multi-Layer Perceptron (MLP) to apply non-linear transformations and generate the final logits. This approach allows GFNet to learn features more globally compared to conventional convolutional methods, making it especially effective for image classification tasks.
+We adopted the official implementation of GFNet [1] with several necessary adaptations for the binary classification task. Specifically, we modified the final fully connected (FC) layer to output a single logit that can be processed by the sigmoid function to calculate the predicted probability for the positive class (AD). Additionally, we set the input channel to 1, enabling the network to process grayscale MRI scan images correctly. This GFNet takes 210x210 single-channel images as input, which are then split into 15 patches. Each patch is processed by Global Filters in the frequency domain to learn global spatial dependencies. The Global Filters operate in the Fourier domain, capturing long-term dependencies by manipulating the frequency components of the image patches. After the filtering stage, the output undergoes Layer Normalization followed by a Multi-Layer Perceptron (MLP) to apply non-linear transformations and generate the final logits. This approach allows GFNet to learn features more globally compared to conventional convolutional methods, making it especially effective for image classification tasks.
 
 During the test phase, we utilized patient-level information to improve predictions. Each patient has 20 MRI brain scans, and the scans should share consistent information. GFNet assigns a probability of being diseased for each image. We compute the average probability of the 20 images from the same patient and classify the patient as having AD if the average probability exceeds 0.5.
 
@@ -40,7 +47,7 @@ Two dataset classes are provided for loading the data. Both classes automaticall
 
 - **`ADNIDataset`**: This dataset loads each image as a single-channel grayscale image. The dataset splits the data into training and validation sets based on the `seed` and `split_ratio` provided. By setting `val=True`, you can load the validation set. When `seed` and `split_ratio` are fixed, the dataset provides a consistent and complementary split between the training and validation sets, ensuring all data is loaded correctly. The `split` parameter determines which subset (train or test) is being loaded. In our implementation, we used `seed=0` and `split_ratio=0.9`.
   
-- **`ADNIDatasetTest`**: This dataset loads patient-level batches of 20 grayscale images from the same patient based on their patient ID.
+- **`ADNIDatasetTest`**: This dataset loads patient-level batches of 20 grayscale images from the same patient based on their patient ID. It will load the data from `test` folder.
 
 ### Additional Remarks on the Implementation
 
@@ -99,8 +106,9 @@ F1 Score: 0.78
 Test Accuracy: 80.67%
 ```
 
+These results are generated by performing inference on the entire test dataset and comparing our model's predictions with the true labels at the patient level.
 
-## How to use
+## How to Use
 
 To train the model, simply run the following:
 ```

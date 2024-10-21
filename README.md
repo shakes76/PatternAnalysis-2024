@@ -7,9 +7,11 @@ For more details on the architecture, please refer to the original paper: [A Sty
 
 For this training, the **Alzheimer's Disease Neuroimaging Initiative (ADNI)** dataset was used. The dataset consists of MRI brain scans of patients with **Alzheimer's Disease (AD)** and **Normal Controls (NC)**. All images are in grayscale and have a resolution of **256 x 256 pixels**.
 
-- **AD Image**: ![AD Image](recognition/Readme images/218391_78.jpeg)
-    
-- **NC Image**: ![NC Image](recognition/Readme images/808819_88.jpeg)
+- **AD Image**: 
+  ![AD Image](recognition/Readme%20images/218391_78.jpeg)
+
+- **NC Image**: 
+  ![NC Image](recognition/Readme%20images/808819_88.jpeg)
     
 
 The dataset contains approximately **30,000 images** in total, with **20,000** images allocated for training and **10,000** for testing. For the training of my StyleGAN, I exclusively used the training images, and they were sufficient to generate clear MRI brain scans.

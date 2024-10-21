@@ -102,6 +102,8 @@ class UNet3D(nn.Module):
 
     def __init__(self, in_channels=in_chanel, out_channels=out_chanel, features=[32, 64, 128, 256]):
         super(UNet3D, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
         # 编码器部分
         self.encoder1 = DoubleConv(in_channels, features[0])
         self.pool1 = DownSample()

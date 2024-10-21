@@ -1,4 +1,4 @@
-import glob
+import wandb
 import torch 
 import torch.nn as nn
 import torch.optim as optim
@@ -73,6 +73,20 @@ total_mean = mean / count
 total_var = (mean_sq / count) - (total_mean ** 2)
 data_var = float(total_var.item())
 
+wandb.init(project="hip_mri_vqvae", 
+        name="training2",
+        config = {
+            "num_epochs": num_epochs,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "num_emb": num_emb,
+            "e_dim": e_dim,
+            "commit_cost": commit_cost,
+            "h_dim": h_dim,
+            "res_h_dim": res_h_dim,
+            "n_res_layers": n_res_layers,
+            })
+
 # Training
 for epoch in range(num_epochs):
     model.train()
@@ -110,34 +124,49 @@ for epoch in range(num_epochs):
     avg_validation_loss = val_loss / len(validation_set)
     avg_ssim = np.mean(val_ssim)
     print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_validation_loss: .4f},  SSIM: {avg_ssim: .4f}")
+
+    wandb.log({
+        "train_loss": avg_train_loss,
+        "validation_loss": avg_validation_loss,
+        "ssim_loss": avg_ssim,
+        "epoch": epoch + 1
+    })
+    if epoch + 1 == num_epochs:
+        torch.save({
+            'epoch': epoch + 1,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': avg_train_loss,
+        }, 'vqvae_model.pth')
+wandb.finish()
 # Function to save images
-def save_images(tensor_images, save_dir, prefix='recon', num_samples=10):
+# def save_images(tensor_images, save_dir, prefix='recon', num_samples=10):
     # Make sure to clamp the images to the range [0, 1]
-    tensor_images = torch.clamp(tensor_images, 0, 1)
+#    tensor_images = torch.clamp(tensor_images, 0, 1)
     
     # Unnormalize and save each image
-    for i in range(num_samples):
-        img_tensor = tensor_images[i].cpu()
+#    for i in range(num_samples):
+#        img_tensor = tensor_images[i].cpu()
         
         # Convert tensor to a PIL image
-        img_pil = torchvision.transforms.ToPILImage()(img_tensor)
+#        img_pil = torchvision.transforms.ToPILImage()(img_tensor)
         
         # Save the image to the directory
-        img_pil.save(os.path.join(save_dir, f"{prefix}_image_{i}.png"))
+#        img_pil.save(os.path.join(save_dir, f"{prefix}_image_{i}.png"))
 
 # Get a batch of images from your test dataloader
-with torch.no_grad():
-    for batch_idx, batch in enumerate(test_set):
-        batch = batch.to(device)
-        
-        # Pass the batch through the model to get reconstructions
-        _, x_hat, _ = model(batch)
-        
-        # Save the original and reconstructed images
-        save_images(batch, save_dir, prefix=f'original_{batch_idx}', num_samples=10)
-        save_images(x_hat, save_dir, prefix=f'reconstructed_{batch_idx}', num_samples=10)
+#with torch.no_grad():
+#    for batch_idx, batch in enumerate(test_set):
+#        batch = batch.to(device)
+#        
+#        # Pass the batch through the model to get reconstructions
+#        _, x_hat, _ = model(batch)
+#        
+#        # Save the original and reconstructed images
+#        save_images(batch, save_dir, prefix=f'original_{batch_idx}', num_samples=10)
+#        save_images(x_hat, save_dir, prefix=f'reconstructed_{batch_idx}', num_samples=10)
         
         # Only process one batch for saving (you can remove this break to save more batches)
-        break
+#        break
 
-print(f"Images saved to {save_dir}")
+# print(f"Images saved to {save_dir}")

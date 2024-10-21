@@ -6,6 +6,7 @@ import torch.optim as optim
 
 from .modules import GFNet
 from .dataset import get_train_test_dataloaders, ADNI_IMAGE_DIMENSIONS
+from .utils import ADNI_CLASSES, get_device
 
 """ 
 Hyperparamters 
@@ -191,21 +192,6 @@ def plot_metrics(
     plt.show()
 
 
-def get_device():
-    """
-    Determines the best available device ('cuda', 'mps', or 'cpu') for computation.
-
-    Returns:
-        str: The device identifier ('cuda', 'mps', or 'cpu').
-    """
-    if torch.cuda.is_available():
-        return "cuda"
-    elif torch.backends.mps.is_available():
-        return "mps"
-    else:
-        return "cpu"
-
-
 def get_optimizer(model):
     """
     Initializes the optimizer and learning rate scheduler for the model.
@@ -319,11 +305,10 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    height, width = ADNI_IMAGE_DIMENSIONS
     model = GFNet(
-        img_size=(height, width),
+        img_size=ADNI_IMAGE_DIMENSIONS,
         in_chans=1,
-        num_classes=2,
+        num_classes=len(ADNI_CLASSES),
         depth=depth,
         embed_dim=embed_dim,
         drop_rate=drop_rate,

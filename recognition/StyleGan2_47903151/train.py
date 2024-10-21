@@ -5,7 +5,6 @@ Plots losses and metrics during training.
 import argparse
 import torch
 from torch import nn, optim
-from torchvision import datasets, transforms
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from math import log2, sqrt
@@ -102,14 +101,22 @@ def plot_loss(g_loss, d_loss):
     if not os.path.exists("training"):
         os.mkdir("training")
     plt.savefig("training/training_loss.png")
+    plt.figure(figsize=(10, 5))
+    plt.title("Generator loss vs Discriminator Loss During Training")
+    g_d_loss = [g_loss[i]/d_loss[i] for i in range(len(g_loss))]
+    plt.plot(g_d_loss)
+    plt.xlabel("iterations")
+    plt.ylabel("Generator Loss / Discriminator Loss")
+    plt.legend()
+    plt.savefig("training/training_loss_proportion.png")
 
 def save_model(generator: Generator,
                discriminator: Discriminator,
                mapping_net: MappingNetwork,
                plp: PathLengthPenalty,
-               optim_gen,
-               optim_critic,
-               optim_map,
+               optim_gen: optim.Adam,
+               optim_critic: optim.Adam,
+               optim_map: optim.Adam,
                directory: str = "model"):
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -119,6 +126,8 @@ def save_model(generator: Generator,
     torch.save(plp.state_dict(), f"{directory}/PLP.pth")
     torch.save(optim_gen.state_dict(), f"{directory}/generator_opt.pth")
     torch.save(optim_critic.state_dict(), f"{directory}/discriminator_opt.pth")
+    b = optim_critic.state_dict()
+    a = torch.load(f"{directory}/discriminator_opt.pth", weights_only=True)
     torch.save(optim_map.state_dict(), f"{directory}/mapping_opt.pth")
 
 
@@ -146,7 +155,6 @@ if __name__ == "__main__":
     critic.train()
     mapping_network.train()
 
-
     for epoch in range(EPOCHS):
         train_fn(
             critic,
@@ -158,20 +166,20 @@ if __name__ == "__main__":
             opt_mapping_network
         )
         # Saving model every epoch
-        save_model(gen,
-                   critic,
-                   mapping_network,
-                   path_length_penalty,
-                   opt_gen,
-                   opt_critic,
-                   opt_mapping_network,
-                   args.model_dir
+        save_model(generator=gen,
+                   discriminator=critic,
+                   mapping_net=mapping_network,
+                   plp=path_length_penalty,
+                   optim_gen=opt_gen,
+                   optim_critic=opt_critic,
+                   optim_map=opt_mapping_network,
+                   directory=args.model_dir
                    )
 
         if total_epochs % 10 == 0 or total_epochs == 1 or total_epochs == 5:
             generate_examples(gen, mapping_network, total_epochs, 12)
-            generate_umap_plot(critic, loader, total_epochs)
-            save_model(gen, critic, mapping_network, path_length_penalty, opt_gen, critic, opt_mapping_network,
+            # generate_umap_plot(critic, loader, total_epochs)
+            save_model(gen, critic, mapping_network, path_length_penalty, opt_gen, opt_critic, opt_mapping_network,
                        f"model_epoch_{epoch}")
 
         total_epochs += 1

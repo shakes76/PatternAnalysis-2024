@@ -59,8 +59,12 @@ def load_model(path="model"):
                 discriminator.load_state_dict(torch.load(f"{path}/discriminator.pth", map_location=DEVICE))
                 mapping_net.load_state_dict(torch.load(f"{path}/mapping.pth", map_location=DEVICE))
                 plp.load_state_dict(torch.load(f"{path}/PLP.pth", map_location=DEVICE))
+                a = torch.load(f"{path}/generator_opt.pth", map_location=DEVICE)
                 optim_gen.load_state_dict(torch.load(f"{path}/generator_opt.pth", map_location=DEVICE))
-                optim_critic.load_state_dict(torch.load(f"{path}/discriminator_opt.pth", map_location=DEVICE))
+                b = torch.load(f"{path}/discriminator_opt.pth", map_location=DEVICE)
+                optim_critic.load_state_dict(torch.load(f"{path}/discriminator_opt.pth",
+                                                        map_location=DEVICE,
+                                                        weights_only=True))
                 optim_map.load_state_dict(torch.load(f"{path}/mapping_opt.pth", map_location=DEVICE))
             else:
                 generator.load_state_dict(torch.load(f"{path}/generator.pth"))
@@ -72,7 +76,7 @@ def load_model(path="model"):
                 optim_map.load_state_dict(torch.load(f"{path}/mapping_opt.pth"))
         except Exception as err:
             print("Failed to load model. Training on new model instead.")
-            raise(err)
+            # raise err
 
     return generator, discriminator, mapping_net, plp, optim_gen, optim_critic, optim_map
 
@@ -113,18 +117,18 @@ if __name__ == "__main__":
     parser.add_argument("--load_model", type=bool, help="Choose whether to load model or not")
     parser.set_defaults(dataset_dir="AD_NC/train", model_dir="model", load_model=True)
     args = parser.parse_args()
-    loader= get_loader(LOG_RESOLUTION, BATCH_SIZE)
+    loader = get_loader(LOG_RESOLUTION, BATCH_SIZE)
     if args.load_model:
         gen, critic, mapping, plp, opt_gen, opt_critic, opt_mapping = load_model(args.model_dir)
     else:
         gen, critic, mapping, plp, opt_gen, opt_critic, opt_mapping = load_model(None)
 
-    with open("params/data.json", 'r') as f:
-        json_data = json.load(f)
-    total_epochs = json_data["epochs"]
-    generator_loss = json_data["G_loss"]
-    discriminator_loss = json_data["D_loss"]
-
+    # with open("params/data.json", 'r') as f:
+    #     json_data = json.load(f)
+    # total_epochs = json_data["epochs"]
+    # generator_loss = json_data["G_loss"]
+    # discriminator_loss = json_data["D_loss"]
+    total_epochs = 10
     generate_examples(gen, mapping, total_epochs, display=True)
-    generate_umap_plot(critic, loader, total_epochs, 10)
+    generate_umap_plot(critic, loader, total_epochs, 5)
 

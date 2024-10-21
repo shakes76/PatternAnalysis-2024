@@ -88,7 +88,7 @@ def train():
         optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
         loss_fn = torch.nn.CrossEntropyLoss()
 
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.6, patience=10)
 
         early_stop_patience = 50
         early_stop_counter = 0

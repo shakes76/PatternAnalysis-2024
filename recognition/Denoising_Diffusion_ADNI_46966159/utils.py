@@ -81,6 +81,6 @@ def tsne():
     plt.show()
     plt.savefig("tsne.png")
 
-# ddpm_scheduler = modules.DiffusionScheduler(num_time_steps=1000)
-# plot_forward_process(dataset.dataloader)
+ddpm_scheduler = modules.DiffusionScheduler(num_time_steps=1000)
+plot_forward_process(dataset.dataloader)
 tsne()

@@ -1,18 +1,26 @@
 from tkinter import filedialog
-import os, numpy, torch, random, pydicom, torchvision
+import os, torch, random, torchvision
 
 BENIGN = 0
 MALIGNANT = 1
 SIMILAR = 1.0
 DISSIMILAR = 0.0
 IMG_FILE_TYPE = ".jpg"
-IMG_HEIGHT, IMG_WIDTH = (480, 640) # Smallest size in dataset
 DEFAULT_LOCATION = "E:/COMP3710 Project/Images", "E:/COMP3710 Project/Truths.csv"
-PROCESSED_DATA = tuple[dict, list[str], list[str]]
+PROCESSED_DATA = tuple[dict, list[str], list[str]] # Used for typehinting
 
-# With support from:
+"""
+AI and MT tools used to
+ - Explain torchvision package details that might be useful for data augmentation
+ - Explain torch Datasets vs Dataloaders and how to use them (although my understanding of Dataloaders is still... shaky)
+ - Write docstrings (Removed since I'm not sure that's 'appropriate use') (I did not write any myself)
+ - Explaining and interpreting errors (and suggesting possible fixes)
+        (especially shape before preprocessed data became available
+        https://edstem.org/au/courses/18266/discussion/2303245)
+"""
+
+# Imitating:
 # https://github.com/pytorch/examples/blob/main/siamese_network
-
 def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = None
         ) -> tuple[dict[str, str], dict[str, tuple[str, int]], list[str], list[str]]:
     
@@ -33,10 +41,12 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
     
     # Create a mapping from image name to image
     images: dict = {}
-    # Cut down the data to reduce time spent
+    # Cut down the data to balance classes (and avoid a vast minority)
     benigns = benigns[:len(malignants)*2]
     new_benigns = []
     new_malignants = []
+
+    # Load and augment images (effectively doubling)
     for b in benigns:
         b2 = b+"_2"
         image1, image2 = load_image(b+IMG_FILE_TYPE)
@@ -58,6 +68,7 @@ def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = N
     return images, malignants, benigns
 
 def read_truths(file_path_ground_truth):
+    # Read truths from ground_truth file
     malignants, benigns = [], []
     with open(file_path_ground_truth) as file_ground_truth:
         for i, line in enumerate(file_ground_truth):
@@ -78,19 +89,15 @@ def get_path():
     return file_path_image_folder, file_path_ground_truth
 
 def load_image(file_name):
-        """
-        Loads an image from the given filename. This function assumes the image format is `.dcm` (DICOM).
-        Modify as needed to handle other formats.
-        """
-        image = torchvision.io.read_image(file_name)
-        # Define data augmentation transformations
-        augment_and_resize = torchvision.transforms.Compose([
-            torchvision.transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
-            torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
-        ])
-        image2 = augment_and_resize(image).float()
-        image1 = image.float()
-        return image1, image2
+    image = torchvision.io.read_image(file_name)
+    # Define data augmentation transformations
+    augment_and_resize = torchvision.transforms.Compose([
+        torchvision.transforms.RandomHorizontalFlip(1),  # Always flip the image horizontally
+        torchvision.transforms.RandomRotation(20),       # Randomly rotate the image
+    ])
+    image2 = augment_and_resize(image).float()
+    image1 = image.float()
+    return image1, image2
 
 
 class Siamese_DataSet(torch.utils.data.Dataset):
@@ -119,13 +126,11 @@ class Siamese_DataSet(torch.utils.data.Dataset):
         self.data_set = self.train_examples if self.is_train_set() else self.test_examples
 
     def split_dataset(self, train_ratio: float) -> tuple[dict[int, list], dict[int, list]]:
-        """
-        Splits the dataset into training and testing sets based on the given ratio.
-        """
         random.seed(self.RANDOM_SEED)
         train_examples = {BENIGN: [], MALIGNANT: []}
         test_examples = {BENIGN: [], MALIGNANT: []}
 
+        # Shuffle dataset and then split into test and train (using provided ratio)
         for malignancy in self.grouped_examples:
             examples = self.grouped_examples[malignancy]
             random.shuffle(examples)
@@ -136,16 +141,9 @@ class Siamese_DataSet(torch.utils.data.Dataset):
         return train_examples, test_examples
 
     def __len__(self) -> int:
-        """
-        Number of available images
-        """
         return sum([len(val) for key, val in self.data_set.items()])
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Returns a positive or negative pair of images with corresponding label (1 for positive,
-            0 for negative).
-        """
         # Choose a random class (BENIGN or MALIGNANT) for the first image
         selected_class = random.choice([BENIGN, MALIGNANT])
 
@@ -170,22 +168,7 @@ class Siamese_DataSet(torch.utils.data.Dataset):
         return image_1, image_2, target
     
     def is_train_set(self) -> bool:
-        """
-        Checks if the current dataset instance is configured for training.
-        """
         return self._train
-
-    def get_train_ratio(self) -> float:
-        """
-        Retrieves the ratio of the dataset designated for training.
-        """
-        return self.train_ratio
-
-    def get_test_ratio(self) -> float:
-        """
-        Retrieves the ratio of the dataset designated for testing.
-        """
-        return self.test_ratio
     
 class Classifier_DataSet(Siamese_DataSet):
 
@@ -203,18 +186,12 @@ class Classifier_DataSet(Siamese_DataSet):
         self.length = len(self.data_set)
 
     def __len__(self) -> int:
-        """
-        Number of available images
-        """
         return self.length
     
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Returns a positive or negative pair of images with corresponding label (1 for positive,
-            0 for negative).
-        """
         # To avoid going out of bounds (just in case) (although it shouldn't happen?)
         index = index % self.length
+
         image_name, target = self.data_set[index]
         return self.images.get(image_name), target
 

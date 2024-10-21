@@ -1,19 +1,23 @@
 import torch, torchvision
 
+"""
+AI and MT tools used to
+ - Wrangle pytorch package (Gain an understanding of what tools are available for Siamese Networks)
+ - Understand and manipulate torch.nn.Sequential
+ - Understand and manipulate torchvision models (such as the resnet34 eventually used for feature extraction)
+ - Explaining and interpreting errors (and suggesting possible fixes)
+"""
+
 # With support from:
 # https://github.com/pytorch/examples/blob/main/siamese_network
-
 class SiameseNetwork(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super(SiameseNetwork, self).__init__(*args, **kwargs)
-        
-        
+
         # allowed under https://edstem.org/au/courses/18266/discussion/2269791
         self.resnet = torchvision.models.resnet34(weights=torchvision.models.ResNet34_Weights.IMAGENET1K_V1)
-
-
         self.fc_in_features = self.resnet.fc.in_features
-        
+
         # remove the last layer of resnet18 (linear layer which is before avgpool layer)
         self.resnet = torch.nn.Sequential(*(list(self.resnet.children())[:-1]))
 
@@ -30,12 +34,13 @@ class SiameseNetwork(torch.nn.Module):
             torch.nn.Linear(256, 1),
         )
 
+        # Define activation and loss criterion
         self.activation = torch.nn.Sigmoid()
         self.loss_criterion = torch.nn.BCELoss()
 
         # initialize weights
         self.fc.apply(self.init_weights)
-        
+
     def init_weights(self, m):
         if isinstance(m, torch.nn.Linear):
             torch.nn.init.xavier_uniform_(m.weight)
@@ -59,16 +64,16 @@ class SiameseNetwork(torch.nn.Module):
 
         # pass the out of the linear layers to sigmoid layer
         output = self.activation(output)
-        
+
         return output
-    
+
+# recommended under https://edstem.org/au/courses/18266/discussion/2303273
 class Classifier(torch.nn.Module):
     def __init__(self, pretrained_model: SiameseNetwork, *args, **kwargs):
         super(Classifier, self).__init__(*args, **kwargs)
 
         # Load the feature extractor from the Siamese network
         self.feature_extractor = pretrained_model.resnet
-
         self.fc_in_features = pretrained_model.fc_in_features
 
         # Freeze feature extractor to prevent screwing it up
@@ -79,12 +84,13 @@ class Classifier(torch.nn.Module):
         self._dropout = 0.3
         self.fc = pretrained_model.fc
 
-        # No longer accept concatenated features (no longer fc_in_features * 2)
+        # Recreate first fc layer to accept fc_in_features features (no longer fc_in_features * 2)
         self.fc[0] = torch.nn.Linear(self.fc_in_features, 1042)
         # Initialise the weights on the new Linear layer
         torch.nn.init.xavier_uniform_(self.fc[0].weight)
         self.fc[0].bias.data.fill_(0.01)
 
+        # Define activation and loss criterion
         self.activation = torch.nn.Sigmoid()
         self.loss_criterion = torch.nn.BCELoss()
 

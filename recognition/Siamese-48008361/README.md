@@ -202,6 +202,7 @@ Three primary metrics were used to evaluate the model's performance, each chosen
 
 2. **Accuracy Score**:
    - Measures the overall correctness of the model's predictions
+   - This measures classifications that are greater than the 50% threshold (ie. if malignant image probability is greater than 50% it is classified as malignant)
    - Calculated using scikit-learn's `accuracy_score` function
    - While simple to interpret, it can be misleading for imbalanced datasets
    - Used it in conjunction with AUC-ROC for a more comprehensive evaluation

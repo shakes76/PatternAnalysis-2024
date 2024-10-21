@@ -1,8 +1,6 @@
 """
 Weights and Biases config file
 Structure based off Shakes' config file
-
-To be completed.
 """
 import wandb
 

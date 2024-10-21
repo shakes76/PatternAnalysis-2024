@@ -59,7 +59,7 @@ def training_loop(num_epochs, model, data, train, valid, test, optimiser, criter
     # implementing early stopping to reduce change of overfitting model
     best_val_loss = float('inf')
     patience_count = 0
-    patience_lim = 70 #stop training if loss doesn't improve for 10 epochs
+    patience_lim = 70 #stop training if loss doesn't improve
 
     for epoch in range(num_epochs):
         loss = _train_model(model=model, data=data, train=train, optimiser=optimiser, criterion=criterion, device=device)

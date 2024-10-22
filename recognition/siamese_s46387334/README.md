@@ -29,7 +29,7 @@ PatternAnalysis-2024/recognition/siamese_s46387334/
 ```
 
 ### After Data Imports
-However to run these scripts it is a requirement that the ISIC 2020 Kaggle Challenge data set is downloaded into this folder. The following section ('Downloading the data') will outline how to do this.
+However to run these scripts it is a requirement that the ISIC 2020 Kaggle Challenge data set is downloaded into this folder. The following section ('Downloading the data') will outline how to do this. After the data is downloaded the folders should look like this.
 ```
 PatternAnalysis-2024/recognition/siamese_s46387334/
 │
@@ -51,38 +51,6 @@ PatternAnalysis-2024/recognition/siamese_s46387334/
         ├── ISIC_9995166.jpg
         └── ...
 ```
-
-### After Training and Evaluation
-After training and evaluation is run several figures will be saved to this folder to view the outcome of training and testing. The following sections ('Training Details' and 'Evaluation Details') will  run through how to run the training and evaluation and thus produce these figures.
-```
-PatternAnalysis-2024/recognition/siamese_s46387334/
-│
-├── readme_figures/
-│   ├── example1.jpg
-│   ├── example2.jpg
-│   └── ...
-│
-├── dataset.py
-├── modules.py
-├── predict.py
-├── train.py
-├── README.md
-│
-├── data/
-│   ├── train-metadata.csv
-│   └── train-image/image/
-│       ├── ISIC_0015719.jpg
-│       ├── ISIC_9995166.jpg
-│       └── ...
-|
-└── produced_figures/
-    ├── example1.jpg
-    ├── example2.jpg
-    └── ...
-
-```
-
-
 
 ## Environment Setup
 ### Downloading the data
@@ -152,12 +120,37 @@ Before the data can be used in the Siamese Network each of the dataset must be a
 This section will contain details that pertain mainly to `modules.py`
 
 ### Siamese Network Overview
+Siamese Networks are a type model that takes advantage of metric learning to preform classification. Siamese Networks are made of two components:
 
-### Embedding Model Architecture
+1. The Feature Extractor model: This model will map data points into a new space where the distances between points reflect their similarities. Minimising the distance between similar pairs and maximize the distance
+between dissimilar pairs (REF to blacboard powerpoint). This will be done via the use of a loss function focused on metric learning. This new space is called the 'embedding' of the data.
+
+2. The Classifier model: This model will take the 'embedded' data points and based on the embedding produce a classification (normal or melanoma)
+
+### Feature Extractor (Embedding) Model Architecture
+Out model will use a modified implementation of `resnet50` as the Feature Extractor. The bulk of the model follows the traditional `resnet50` architecture pictured bellow.
+
+![alt text](readme_figures/resnet50_arch.jpg)
+
+However the last fully connected layer, FC1000 (layer normally used for class predictions) of `resnet50` is replaced by a sequence of fully connected layers to form our 'Feature Extractor Head' used to produce embeddings. The layers are as follows:
+
+- Linear layer: in: 2048, out: 512
+- ReLU Layer
+- Dropout Layer: prob: 0.5
+- Linear layer: in: 512, out: 256
+- ReLU Layer
+- Dropout Layer: prob: 0.5
+- Linear layer: in: 256, out: `embedding dimensions` 
+
+(see bellow sections for `embedding dimensions` used in training)
 
 ### Classifier Model Architecture
+For the classifier a single fully connected layer was used. The input will be the output embedding from the feature extractor and the output will be the chosen class (normal or melanoma). i.e. the classifier is - Linear Layer: in: `embedding dimensions` out: 2. The bulk of the training / work should be done by the feature extractor.
 
-### Embedding Model Loss function (Triplet Loss)
+
+### Feature Extractor Model Loss function (Triplet Loss)
+
+
 
 ### Classifier Loss function
 

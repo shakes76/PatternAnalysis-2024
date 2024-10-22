@@ -32,6 +32,14 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
 ## Script Usage
 
 ### directory structure
+```bash
+├── download.py      # Download and processes data
+├── dataset.py       # Data loading and preprocessing
+├── modules.py       # Model construction module
+├── train.py         # Model Training Script
+├── predict.py       # Model prediction script
+├── test_driver.py   #Final testing of the model
+├── README.md        # User Guide (i.e. this document)
 
 ### Dependencies
 The project requires the following dependencies[^4]:
@@ -39,7 +47,7 @@ The project requires the following dependencies[^4]:
 - `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
 - `nibabel==3.2.1`: Nibabel for loading Nifti files.
 - `matplotlib==3.4.3`: Matplotlib for visualizing results and training metrics.
-- 
+  
 ### Script usage instructions
 - `download.py`
   - **Purpose**: Downloads MRI data from a specified URL and processes `.nii` and `.nii.g`z files into `.npy` format for training.
@@ -66,6 +74,8 @@ The project requires the following dependencies[^4]:
     - `--data_dir`: Catalog containing Nifti images for training purposes.
     - `--output_dir`: Directory for saving trained models.
   - **Usage example**:
+     ```bash
+     python train.py --data_dir ./data --output_dir ./model_output
   - **Example output**:During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`.
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.

@@ -1,4 +1,8 @@
 """
+Author: Farhaan Rashid
+
+Student Number: s4803279
+
 This file contains the data loader for preprocessing the data.
 
 The data is augmented and then packed into loaders for the model.

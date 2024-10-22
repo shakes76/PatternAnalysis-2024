@@ -1,4 +1,8 @@
 """
+Author: Farhaan Rashid
+
+Student Number: s4803279
+
 This file shows example usage of the trained model.
 
 The trained VQVAE model here can generate new images.
@@ -150,13 +154,3 @@ def main_test(
     # Test the VQVAE model
     print("Generating images using the VQVAE model")
     test_vqvae(test_loader, model, device, output_dir, num_samples)
-
-if __name__ == "__main__":
-    # Paths to the model and test dataset
-    current_location = os.getcwd()
-    model_path = os.path.join(current_location, 'trained_vqvae2_model', 'vqvae2_epoch_final.pth')
-    test_data_dir = os.path.join(current_location, 'recognition', 'VQVAE_s4803279', 'HipMRI_study_keras_slices_data', 'keras_slices_test')
-    output_dir = 'test_model'
-
-    # Call the testing loop
-    main_test(model_path, test_data_dir, output_dir)

@@ -1,4 +1,8 @@
 """
+Author: Farhaan Rashid
+
+Student Number: s4803279
+
 This file contains the source code for the VQVAE model.
 
 Each component of the VQVAE is implemented as a class.

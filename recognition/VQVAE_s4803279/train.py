@@ -1,4 +1,8 @@
 """
+Author: Farhaan Rashid
+
+Student Number: s4803279
+
 This file contains the source code for training, validating, testing and saving the model.
 
 The model should be imported from “modules.py” and the data loader should be imported from “dataset.py”.
@@ -196,10 +200,3 @@ def main(
 
     # Save final model
     save_model(model, 'final', output_dir)
-
-
-if __name__ == "__main__":
-    current_location = os.getcwd()
-    data_dir = os.path.join(current_location, 'recognition', 'VQVAE_s4803279', 'HipMRI_study_keras_slices_data')
-    output_dir = 'trained_vqvae2_model'
-    main(data_dir, output_dir)

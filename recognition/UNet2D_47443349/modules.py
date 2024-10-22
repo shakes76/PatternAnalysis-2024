@@ -1,3 +1,14 @@
+"""
+modules.py
+
+Author: Alex Pitman
+Student ID: 47443349
+COMP3710 - HipMRI UNet2D Segmentation Project
+Semester 2, 2024
+
+Contains UNet2D network architecture.
+"""
+
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as TF

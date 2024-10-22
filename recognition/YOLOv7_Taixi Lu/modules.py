@@ -23,9 +23,9 @@ class YOLOv7Model:
         self.model.to(self.device)
         self.model.eval()
 
-    def forward(self, images, conf_thres=0.2, iou_thres=0.45):
+    def forward(self, images, conf_thres=0.2, iou_thres=0.4):
         with torch.no_grad():
-            preds = self.model(images)
+            preds = self.model(images)[0].cpu()
             results = non_max_suppression(preds, conf_thres=conf_thres, iou_thres=iou_thres)
         return results
 

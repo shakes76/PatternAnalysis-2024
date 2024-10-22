@@ -84,3 +84,24 @@ class Basic3DUNet(nn.Module):
             nn.BatchNorm3d(num_features=features),
             nn.ReLU(inplace=True)
         )
+
+
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.0):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, y_pred, y_true):
+        assert y_pred.size() == y_true.size(
+        ), f"Shape mismatch: {y_pred.size()} != {y_true.size()}"
+
+        batch_size = y_pred.size(0)
+        num_classes = y_pred.size(1)
+        y_pred = y_pred.contiguous().view(batch_size, num_classes, -1)
+        y_true = y_true.contiguous().view(batch_size, num_classes, -1)
+
+        intersection = (y_pred * y_true).sum(2)
+        union = y_pred.sum(2) + y_true.sum(2)
+        dsc = (2. * intersection + self.smooth) / (union + self.smooth)
+
+        return 1. - dsc.mean()

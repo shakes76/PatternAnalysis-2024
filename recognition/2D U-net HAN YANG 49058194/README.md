@@ -1,12 +1,12 @@
 # 2D U-Net model Report
-
+<br />
 ## Author
 Han Yang 49058194
-
+<br />
 ## Introduction
 This project segments MRI images of the prostate using a 2D U-Net model with all labels having a minimum Dice similarity coefficient
 of 0.75 on the test set on the prostate label.
-
+<br />
 ## Model Architecture and Introduction
 This model is a 2D U-Net with encoder decoder structure and skip connections[^1]. <br />
 <br />
@@ -20,17 +20,16 @@ Also known as the extension path or upsampling path, it is symmetrical to the en
 Located between the encoder and decoder, it typically consists of two 3x3 convolutional layers. Its function is to further extract and fuse features, providing more useful information for the decoder.
 
 The 2D U-Net model used here operates on individual 2D slices of MRI images, making it computationally efficient while still leveraging the spatial information inherent in the data. By using a binary cross-entropy loss function combined with the Dice similarity coefficient as an evaluation metric, this model is optimized to accurately segment the prostate with minimal overlap error[^2].<br />
-  
+<br />
 ## How It Works
 This U-Net model employs a convolutional neural network architecture specifically designed for image segmentation tasks. It consists of an encoder-decoder structure with skip connections that enable the model to preserve spatial information while capturing context from the input images[^3].<br />
 <br />
 The process begins with loading Nifti files containing MRI slices using the Nibabel library, converting them into NumPy arrays for preprocessing. Each slice is then resized and normalized to ensure uniform input dimensions of `[1, 1, 128, 128]` for grayscale images. <br />
 <br />
 During training, the model minimizes the binary cross-entropy loss, using the Dice similarity coefficient as a metric for evaluation. Once trained, the model can predict segmentation masks for new MRI slices, providing a clear delineation of the prostate gland against the surrounding tissues, which is crucial for accurate diagnosis and treatment planning.
-
-
+<br />
 ## Script Usage
-
+<br />
 ### directory structure
 ```bash
 ├── download.py      # Download and processes data
@@ -41,31 +40,32 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
 ├── test_driver.py   # Final testing of the model
 ├── README.md        # User Guide (i.e. this document)
 ```
+<br />
 ### Dependencies
 The project requires the following dependencies[^4]:
 - `torch==1.10.0`: PyTorch for building and training the model.
 - `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
 - `nibabel==3.2.1`: Nibabel for loading Nifti files.
 - `matplotlib==3.4.3`: Matplotlib for visualizing results and training metrics.
-  
+ <br /> 
 ### Script usage instructions
 - `download.py`
   - **Purpose**: Downloads MRI data from a specified URL and processes `.nii` and `.nii.g`z files into `.npy` format for training.
   - **Key Functions**:
     - `download_and_extract(url, extract_to)`: Downloads and extracts the dataset.
-    - `load_and_process_nii_files(root_dir, save_dir)`: Loads and resizes NIfTI images to 2D slices, then saves them as NumPy arrays.
+    - `load_and_process_nii_files(root_dir, save_dir)`: Loads and resizes NIfTI images to 2D slices, then saves them as NumPy arrays.<br />
 - `modules.py`
   - **Purpose**: Implements the U-Net model architecture used for MRI image segmentation.
   - **Key Components**:
     - `DoubleConv`: Two sequential convolutional layers.
     - `Down`: Max pooling followed by double convolution.
     - `Up`: Upsampling and concatenation.
-    - `OutConv`: Final layer to output the segmentation map.
+    - `OutConv`: Final layer to output the segmentation map.<br />
 - `dataset.py`
   - **Purpose**: Defines a custom PyTorch `Dataset` class, `ProstateMRIDataset`, to load the preprocessed MRI slices (`.npy` files).
   - **Key Functions**:
     - `__len__()`: Returns the total number of images.
-    - `__getitem__(idx)`: Loads an individual image as a PyTorch tensor.
+    - `__getitem__(idx)`: Loads an individual image as a PyTorch tensor.<br />
 - `train.py`
   - **Purpose**: Handles model training using the U-Net architecture.
   - **Key Functions**:
@@ -77,7 +77,7 @@ The project requires the following dependencies[^4]:
      ```bash
      python train.py --data_dir ./data --output_dir ./model_output
      ```
-  - **Example output**:During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`.
+  - **Example output**:During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`.<br />
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
@@ -92,7 +92,7 @@ The project requires the following dependencies[^4]:
      python predict.py --input_image ./test_data/test_image.nii --model_path ./model_output/unet_model.pth --output_image ./output/prediction.nii
      ```
   - **Example output**:The generated predicted image will be saved as a specified Nifti format file.
-
+<br />
 ## Steps to Run the Project
 
 - ### Step 1. Download and Process Data
@@ -106,7 +106,7 @@ The project requires the following dependencies[^4]:
 
 - ### Step 4. Full Pipeline Execution
 &nbsp; &nbsp; The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
-
+<br />
 ## Code Explanation and Comments
 ### 1 `dataset.py`
 ```bash

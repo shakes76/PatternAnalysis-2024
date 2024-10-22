@@ -4,7 +4,7 @@ Contains the code for training, validating, testing, and saving the Unet
 @author Carl Flottmann
 """
 from modules import Improved3DUnet
-from metrics import DiceLoss, Accuracy
+from metrics import FocalLoss, DiceLoss, Accuracy, FLDice
 from utils import cur_time, ModelFile, save_loss_figures, ModelState
 from dataset import *
 import torch
@@ -19,10 +19,10 @@ OUTPUT_DIR = "model"
 
 # hyperparameters
 BATCH_SIZE = 1  # there are only about 211 images anyway
-EPOCHS = 50
+EPOCHS = 2
 NUM_CLASSES = 6  # as per powerpoint slides
 INPUT_CHANNELS = 1  # greyscale
-NUM_LOADED = None  # set to None to load all
+NUM_LOADED = 10  # set to None to load all
 SHUFFLE = False
 WORKERS = 0
 
@@ -147,7 +147,7 @@ def main() -> None:
     output_steps = int(math.ceil(0.25 * data_loader.validate_size()))
     num_digits = len(str(data_loader.validate_size()))
 
-    criterion.reset()
+    criterion = DiceLoss(NUM_CLASSES, device)
     model.eval()
     accuracy = Accuracy()
 

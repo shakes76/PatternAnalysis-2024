@@ -10,7 +10,7 @@ from tqdm import tqdm
 import time
 from enum import Enum
 import matplotlib.pyplot as plt
-from metrics import DiceLoss
+from metrics import LossClass
 
 
 class ModelState(Enum):
@@ -29,7 +29,7 @@ class ModelFile(Enum):
     STATE = "state"
 
 
-def save_loss_figures(criterion: DiceLoss, output_path: str, mode: str, file_names: tuple[str, str, str] = ("complete_dice", "average_dice", "end_dice")) -> None:
+def save_loss_figures(criterion: LossClass, output_path: str, mode: str) -> None:
     # first do complete dice loss
     losses = criterion.get_all_losses()
     x_axis = list(range(len(losses[0])))
@@ -37,14 +37,14 @@ def save_loss_figures(criterion: DiceLoss, output_path: str, mode: str, file_nam
     for i, class_loss in enumerate(losses[1:]):
         plt.plot(x_axis, class_loss, label=f"Class {i + 1} Loss")
     plt.xlabel("Total iterations (including epochs)")
-    plt.ylabel("DICE loss")
-    plt.title(f"Complete DICE Loss over {mode}")
+    plt.ylabel(criterion.name())
+    plt.title(f"Complete {criterion.name()} over {mode}")
     size = plt.gcf().get_size_inches()
     plt.gcf().set_size_inches(size[0] * 2, size[1] * 2)
     plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
     plt.tight_layout(rect=[0, 0, 0.9, 1])
     plt.grid()
-    plt.savefig(f"{output_path}{file_names[0]}_{mode}.png")
+    plt.savefig(f"{output_path}complete_{criterion.name()}_{mode}.png")
     plt.close()
 
     # second do average dice loss
@@ -54,14 +54,14 @@ def save_loss_figures(criterion: DiceLoss, output_path: str, mode: str, file_nam
     for i, class_loss in enumerate(losses[1:]):
         plt.plot(x_axis, class_loss, label=f"Class {i + 1} Loss")
     plt.xlabel("Total epochs")
-    plt.ylabel("DICE loss")
-    plt.title(f"Average DICE Loss over {mode}")
+    plt.ylabel(criterion.name())
+    plt.title(f"Average {criterion.name()} over {mode}")
     size = plt.gcf().get_size_inches()
     plt.gcf().set_size_inches(size[0] * 2, size[1] * 2)
     plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
     plt.tight_layout(rect=[0, 0, 0.9, 1])
     plt.grid()
-    plt.savefig(f"{output_path}{file_names[1]}_{mode}.png")
+    plt.savefig(f"{output_path}average_{criterion.name()}_{mode}.png")
     plt.close()
 
     # last do end dice loss
@@ -71,14 +71,14 @@ def save_loss_figures(criterion: DiceLoss, output_path: str, mode: str, file_nam
     for i, class_loss in enumerate(losses[1:]):
         plt.plot(x_axis, class_loss, label=f"Class {i + 1} Loss")
     plt.xlabel("Total epochs")
-    plt.ylabel("DICE loss")
-    plt.title(f"DICE Loss at the end of each epoch ever {mode}")
+    plt.ylabel(criterion.name())
+    plt.title(f"{criterion.name()} at the end of each epoch ever {mode}")
     size = plt.gcf().get_size_inches()
     plt.gcf().set_size_inches(size[0] * 2, size[1] * 2)
     plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
     plt.tight_layout(rect=[0, 0, 0.9, 1])
     plt.grid()
-    plt.savefig(f"{output_path}{file_names[2]}_{mode}.png")
+    plt.savefig(f"{output_path}end_{criterion.name()}_{mode}.png")
     plt.close()
 
 

@@ -161,11 +161,12 @@ is minimal, it suggests that the UNet is unable to learn any more information.
 
 The reverse process step can be visualised. Starting with pure noise, the model reverses the noise, from which an image
 of the brain is sampled.
+
 ![reverse1.png](figures/reverse1.png)
 ![reverse2.png](figures/reverse2.png)
 ![reverse3.png](figures/reverse3.png)
 
-Once, this sampled image is transformed back to original dimensions, it yields the following images. The brain
+Once, this sampled image is transformed back to original dimensionsx, it yields the following images. The brain
 structure seems to be present in all the samples, there are missing sections and a lack of finer details. This indicates
 that the current implementation of the denoising diffusion probabilistic model is solid for a starting point, but there is need
 for more refinements such as parameter-tuning or a more powerful UNet model is needed.

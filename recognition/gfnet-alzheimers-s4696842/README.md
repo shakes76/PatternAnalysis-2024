@@ -104,7 +104,8 @@ python -m gfnet-alzheimers-s4696842.predict \
 ## Example
 Here is an example of training this model. The following hyperparameters used 
 in the example achieved **78.51%** accuracy on the test set using the AdamW optimizer
-and cosine annealing learning rate scheduler.
+and cosine annealing learning rate scheduler. This was run for **40 epochs** with
+a **batch size of 32**.
 
 ### Hyperparameters
 ```python

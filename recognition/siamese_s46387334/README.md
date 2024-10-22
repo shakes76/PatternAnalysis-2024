@@ -119,45 +119,50 @@ Each of the images from the resized data set are 256 x 256 pixels and a few exam
 ![alt text](readme_figures/sample_data_images_2.png)
 
 
-### Dataset Processing and Augmentation
-#### Train Validation Test Split
+### Dataset Train Validation Test Split
 The first thing that was done to the data was to split the images up into three sets
+
 - Train Set (80% of all data) 
     - To be used for direct training of the model
     - This is the only data that the model will learn from
+
 - Validation Set (10% of all data)
     - Model will NOT be trained on this data
     - To be used for validation purposes while training
     - To gauge how the current model is preforming on unseen data
     - This data can help reduce overfitting, help with hyper parameter tuning etc.
+
 - Test Set (10% of all data)
     - Only to be used after all training is completed
     - Will be used to evaluate the performance of the final model
 
 The Validation and testing sets were kept relatively small to maximise performance of the model by giving it a larger set of data to train on. Due to the large size of the data set the validation and testing sets are still large enough to get a good idea of the population.
 
-#### Oversampling and Augmentation
-Due to the large class imbalance mentioned above it is prefered if a method is used to ensure that the model is trained on balanced data (REF). This is important as it helps ensure that the model does not bias the majority class when training (REF). To do this we use a two step approch. It should be noted this class balancing was only done for the training set, the Validation and Testing sets are made up of the exact original images.
+### Dataset Oversampling and Augmentation
+Due to the large class imbalance mentioned above it is preferred if a method is used to ensure that the model is trained on balanced data (REF). This is important as it helps ensure that the model does not bias the majority class when training (REF). To do this we use a two step approach - oversampling the minority class, then data augmentation. It should be noted this class balancing was only done for the training set, the Validation and Testing sets are made up of the exact original images.
 
+For oversampling the minority class (melanoma) was oversampled until both classes had an equal number of data points. Then to ensure that this oversampling does not lead to overfitting (i.e. model could memorize the duplicated instances without learning meaningful patterns) - we apply data augmentation to all the sample (we apply the augmentation to both classes to ensure the model does not just learn that certain augmentations indicate a certain class).
 
-#### 
-
-
+Augmentation methods used are as follows (see the following documentation for details https://pytorch.org/vision/main/transforms.html)  (REF):
+- RandomRotation (Randomly rotate the image)
+- RandomHorizontalFlip (Randomly horizontally flip the image)
+- RandomVerticalFlip (Randomly vertically flip the image)
+- ColorJitter (Randomly adjust the brightness, contrast, saturation and hue of the image)
 
 
 
 
 
 ## Siamese Network Details
-
+This section will contain details that pertain mainly to `modules.py`
 
 
 ## Training Details
-
-
+This section will contain details that pertain mainly to `train.py`
 
 
 ## Evaluation Details
+This section will contain details that pertain mainly to `predict.py`
 
 
 

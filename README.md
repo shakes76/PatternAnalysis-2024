@@ -12,7 +12,7 @@ The VQVAE is a generative machine learning model that improves upon variational 
 
 ### VQVAE Architecture
 
-! [Architecture of a VQVAE](markdown_images/vqvae-architecture.png)
+![Architecture of a VQVAE](./markdown_images/vqvae_architecture.png)
 
 The diagram above depicts the classic architecture of a VQVAE, consisting of three main components, the encoder, the vector quantiser, and the decoder.
 
@@ -28,7 +28,7 @@ After the encoder transforms an image into the latent space, it is then passed i
 
 The VQVAE is trained using a loss function of three components, reconstruction, quantisation and commitment loss. These subloss functions combine to form the loss function,
 
-! [VQVAE Loss Function](markdown_images/loss_function.png)
+![VQVAE Loss Function](./markdown_images/loss_function.png)
 
 Where:
 
@@ -38,8 +38,8 @@ Where:
 - $\beta$ is a hyperparameter that controls the weight of the commitment loss term.
 
 Due to the nature of a VQVAE, that is having multiple segments, a combined loss functions allows the training of each part of the model. An example of the loss of this function can be found in the plot below, followed by a plot of SSIM scores that demonstrate the models progressive improvement.
-! [Log Loss of the Training Loop](markdown_images/loss_scores.png)
-! [Validation SSIM Scores](markdown_images/ssim_scores.png)
+![Log Loss of the Training Loop](./markdown_images/loss_scores.png)
+![Validation SSIM Scores](./markdown_images/ssim_scores.png)
 
 ### Image Generation
 
@@ -47,9 +47,9 @@ Images were generated in a grid of 8x4, where the first two rows contain the ori
 
 #### First Epoch
 
-! [Image Generated From First Epoch](markdown_images/epoch1.png)
+![Image Generated From First Epoch](./markdown_images/epoch_1.png)
 This image demonstrates the baseline of the model at the first epoch, clearly the results are unsatisfactory and the model will need substantial training.
-! [Image Generate From Final Model](markdown_images/final_image.png)
+![Image Generate From Final Model](./markdown_images/final_image.png)
 This image demonstrates the full capability of the model to generate recognisable images with an SSIM greater than 0.6 after a full training process. This image achieved an SSIM score of \_\_\_, completing the
 
 ## Dependencies

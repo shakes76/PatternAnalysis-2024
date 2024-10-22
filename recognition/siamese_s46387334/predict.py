@@ -40,12 +40,12 @@ def produce_evaluation_figures(
     conf_matrix_normalized = conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis]
 
     # Plot the normalized confusion matrix
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(8, 6))
     sns.heatmap(
         conf_matrix_normalized,
         annot=True,
         fmt='.2%',
-        cmap='greens', 
+        cmap='Greens', 
         xticklabels=['Normal (0)', 'Melanoma (1)'],
         yticklabels=['Normal (0)', 'Melanoma (1)']
     )
@@ -59,8 +59,8 @@ def produce_evaluation_figures(
     embeddings_2d = tsne.fit_transform(test_embeddings)
 
     # Plot 2d t-SNE Embeddings
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=test_y_true, cmap='RdYlGn')
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=test_y_true, cmap='cividis')
     plt.colorbar(scatter)
     plt.title('t-SNE visualization of embeddings')
     plt.show()
@@ -69,7 +69,7 @@ def produce_evaluation_figures(
     fpr, tpr, thresholds = roc_curve(test_y_true, test_y_probs)
 
     # Plot the ROC curve
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, color='lightcoral', label='ROC curve')
     plt.plot([0, 1], [0, 1], color='darkseagreen', linestyle='--')  # Diagonal line for random guess
     plt.xlim([0.0, 1.0])

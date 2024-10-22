@@ -22,6 +22,7 @@ For more details on the architecture, please refer to the original paper: [A Sty
 - [T-SNE Plot](#t-sne-plot)
 - [Cosine Similarity](#cosine-similarity)
 - [FID Score](#fid-score)
+- [Running Instruction](#run-instructions)
 - [Dependencies](#dependencies)
 - [References](#references)
 
@@ -267,6 +268,29 @@ FID (Fréchet Inception Distance) is a metric used to evaluate the quality of im
 For this evaluation, 3000 real images and 3000 generated images were used for both the AD and NC models. A score around 30 is considered relatively good, as it suggests the generated images are reasonably close to the real ones. The original StyleGAN paper achieved an FID of 4.4159, however, it is difficult to compair these values directly as the paper used the FFHQ data set with 50000 images.
 
 The AD model achieved a slightly better score, indicating that the images generated for the Alzheimer's Disease category are closer to the real data distribution compared to the NC (Normal Control) images. However, both scores suggest that the models are producing relatively good-quality images.
+
+## run-instructions
+
+In order to train the model, first specify your hyperperameters in the params.py and your dataset file directory in the dataset.py. After run the train.py file.
+
+In order to run inference/ predictions, allocate the model path which was saved by the dataset.py. You will also need to specify the number of images you would like to predict and use for FID. 
+
+After doing so you can run the predict.py to generate the FID, t-SNE, and generated images. 
+
+```Python
+    # Define paths for AD and NC models
+    AD_model_path = "/workspace/AD Models/model_checkpoint_step6_epoch9.pth"
+    NC_model_path = "/workspace/NC models/model_checkpoint_step6_epoch9.pth"
+
+    # Paths to real image datasets (replace with actual dataset paths)
+    AD_real_dataset = "/path/to/AD/dataset"
+    NC_real_dataset = "/path/to/NC/dataset"
+    
+    # Number of real/fake images to process
+    num_images_fid = 3000
+    num_image_predic = 10
+    
+```
 
 ## Dependencies
 

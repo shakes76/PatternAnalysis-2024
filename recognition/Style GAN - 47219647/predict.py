@@ -331,4 +331,71 @@ class LatentSpaceAnalyzer:
         return style_codes_ad, style_codes_nc
 
 
+if __name__ == "__main__":
+    
+    # Define paths for AD and NC models
+    AD_model_path = "/workspace/AD Models/model_checkpoint_step6_epoch9.pth"
+    NC_model_path = "/workspace/NC models/model_checkpoint_step6_epoch9.pth"
 
+    # Paths to real image datasets (replace with actual dataset paths)
+    AD_real_dataset = "/path/to/AD/dataset"
+    NC_real_dataset = "/path/to/NC/dataset"
+    
+    # Number of real/fake images to process
+    num_images_fid = 3000
+    num_image_predic = 10
+    
+    # Directories for real and fake images
+    AD_real_dir = "./AD_REAL"
+    AD_fake_dir = "./AD_FAKE"
+    NC_real_dir = "./NC_REAL"
+    NC_fake_dir = "./NC_FAKE"
+    
+    
+
+    # Create directories if they don't exist
+    os.makedirs(AD_real_dir, exist_ok=True)
+    os.makedirs(AD_fake_dir, exist_ok=True)
+    os.makedirs(NC_real_dir, exist_ok=True)
+    os.makedirs(NC_fake_dir, exist_ok=True)
+
+    # Retrieve AD model
+    AD_model = LoadModel(AD_model_path)
+    AD_model.load_model()
+    AD_model.plot_losses("AD Model Loss over training", "AD Loss")
+    AD_model_GEN = AD_model.get_generator()
+
+    # Retrieve NC model
+    NC_model = LoadModel(NC_model_path)
+    NC_model.load_model()
+    NC_model.plot_losses("NC Model Loss over training", "NC Loss")
+    NC_model_GEN = NC_model.get_generator()
+
+    # Create FID_calculator object
+    fid_calculator = FID_calculator(AD_model_path, NC_model_path, num_images_fid)
+    
+    # Move real images to AD_REAL and NC_REAL directories
+    fid_calculator.move_real_images(AD_real_dataset, AD_real_dir)
+    fid_calculator.move_real_images(NC_real_dataset, NC_real_dir)
+    
+    # Generate fake images and save them
+    fid_calculator.generate_fake_images("AD", num_images_fid, AD_fake_dir)
+    fid_calculator.generate_fake_images("NC", num_images_fid, NC_fake_dir)
+    
+    # Calculate FID scores for both AD and NC
+    ad_fid_score = fid_calculator.calculate_clean_fid(AD_real_dir, AD_fake_dir)
+    nc_fid_score = fid_calculator.calculate_clean_fid(NC_real_dir, NC_fake_dir)
+    
+    # Print out the FID scores
+    print(f"FID score for AD: {ad_fid_score}")
+    print(f"FID score for NC: {nc_fid_score}")
+
+    # Plots t-SNE plots in 3D and 2D
+    analyzer = LatentSpaceAnalyzer(AD_model_GEN, NC_model_GEN, num_samples=num_images_fid)
+    analyzer.plot_tsne()
+    style_codes_ad, style_codes_nc = analyzer.plot_3d_tsne()
+    analyzer.checks_cosinsimilarity(style_codes_ad, style_codes_nc)
+
+    # Predict and saves images
+    AD_model.predict_and_save(num_image_predic)
+    NC_model.predict_and_save(num_image_predic)

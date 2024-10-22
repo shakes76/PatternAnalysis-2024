@@ -144,8 +144,8 @@ class MRI3DDataset(Dataset):
     def __init__(self, image_folder, label_folder, normImage=False):
         self.image_folder = image_folder
         self.label_folder = label_folder
-        self.image_filenames = sorted([os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz')])
-        self.label_filenames = sorted([os.path.join(label_folder, f) for f in os.listdir(label_folder) if f.endswith('.nii.gz')])
+        self.image_filenames = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz')]
+        self.label_filenames = [os.path.join(label_folder, f) for f in os.listdir(label_folder) if f.endswith('.nii.gz')]
         self.normImage = normImage
 
     def __len__(self):

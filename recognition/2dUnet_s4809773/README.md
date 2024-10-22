@@ -1,5 +1,10 @@
 # 2D Segmentation of Prostate Cancer HipMRI Data
 
+## Author
+Roman Kull (s4809773)
+
+## Task, and model choices
+
 The goal of this project was to create a model that would be able to take in 2D slices of MRI data from a prostate cancer study, and produce a segmentation of this data into 6 classes, emulating the segmentation produced by a professional in the field. The model architecture chosen was a **UNet** as it excels at tasks where the structure of the original input needs to be preserved in some way. The loss used was **Dice loss**, as the goal was to match the true segmentation provided as closely as possible, meaning that an approach that does pixel-wise intersection between true and predicted segmentation would be effective. 
 
 Other significant choices were to use **batch normalization** and the **AdamW optimizer**, both intended to improve generalizability, and **gradient clipping** and **Kaiming Normal Initialization** (a form of weight initialization), both intended to prevent gradient vanishing/exploding problems.

@@ -15,10 +15,9 @@ from modules import VQVAE2
 
 
 def train_epoch(model, data_loader, optimiser, device):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.train()
     total_loss = 0
-    for batch in data_loader:
+    for batch in tqdm(data_loader):
         batch = batch.to(device)
 
         optimiser.zero_grad()
@@ -33,11 +32,10 @@ def train_epoch(model, data_loader, optimiser, device):
 
 
 def validate_epoch(model, data_loader, device):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     total_loss = 0
     with torch.no_grad():
-        for batch in data_loader:
+        for batch in tqdm(data_loader):
             batch = batch.to(device)
             loss, _ = model(batch)
             total_loss += loss.item()
@@ -67,12 +65,12 @@ def save_model(model, epoch, output_dir):
 def main(
         data_dir,
         output_dir,
-        batch_size = 64,
+        batch_size = 32,
         num_epochs = 1,
         lr = 1e-3,
-        hidden_dims = [256, 128],
-        num_embeddings = [512, 256],
-        embedding_dims = [64, 32],
+        hidden_dims = [128, 256],
+        num_embeddings = [512, 512],
+        embedding_dims = [64, 128],
         commitment_cost = 0.25,
         num_workers = 4):
     # Check if output directory exists
@@ -93,6 +91,9 @@ def main(
     in_channels = 1
     model = VQVAE2(in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost).to(device)
 
+    # Check the number of parameters in the model
+    print("Model No. of Parameters:", sum([param.nelement() for param in model.parameters()]))
+
     # Optimiser
     optimiser = optim.Adam(model.parameters(), lr = lr)
 
@@ -101,9 +102,9 @@ def main(
     val_losses = []
 
     # Training loop
-    print("Starting Training:")
-    for epoch in tqdm(range(num_epochs)):
-        print(f'Epoch {epoch}/{num_epochs}')
+    print("\nStarting Training\n")
+    for epoch in range(num_epochs):
+        print(f'\nEpoch {epoch + 1}/{num_epochs}')
 
         # Train for one epoch
         train_loss = train_epoch(model, train_loader, optimiser, device)
@@ -115,15 +116,15 @@ def main(
 
         print(f'Training Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}')
 
-        # # Save the model periodically
-        # if epoch % 10 == 0:
-        #     save_model(model, epoch, output_dir)
+        # Save the model periodically
+        if epoch % 10 == 0:
+            save_model(model, epoch, output_dir)
 
     # Plot the training and validation losses
     plot_losses(train_losses, val_losses, output_dir)
 
-    # # Save final model
-    # save_model(model, 'final', output_dir)
+    # Save final model
+    save_model(model, 'final', output_dir)
 
 
 if __name__ == "__main__":

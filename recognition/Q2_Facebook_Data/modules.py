@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F 
 from torch_geometric.nn import GCNConv
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+from torch_geometric.utils import dropout_adj, dropout_edge
 
 
 class GNNModel(torch.nn.Module): 
@@ -74,11 +75,11 @@ class GNNModel(torch.nn.Module):
         # O/P layer
         x = self.convs[-1](x, edge_index)
         return x
-    
+ 
 
 class AdvanceGNNModel(torch.nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, output_dim= 4, num_layers=6, dropout=0.7):
+    def __init__(self, input_dim, hidden_dim, output_dim= 4, num_layers=6, dropout=0.65, edge_dropout=0.4):
         """
         Initilise the advance GNN model with a stack of graph convolution layers.
 
@@ -92,15 +93,18 @@ class AdvanceGNNModel(torch.nn.Module):
             The dimensionality of the input node features
         hidden_dim : int
             The dimensionality of the hidden layer(s)
-        output_dim, 
+        output_dim: int 
             The dimensionality of the output (number of classes or regression output)
         num_layers : int, optional (default=6)
             The number of graph convolutional layers in the network.
-        dropout : float, optional (default=0.7)
+        dropout : float, optional (default=0.65)
+            The dropout probability used during training to prevent overfitting.
+        edge_dropout : float, optional (default=0.4)
             The dropout probability used during training to prevent overfitting.
         Returns:
         --------
         None
+
         """
         super(AdvanceGNNModel, self).__init__()
         self.convs = torch.nn.ModuleList()
@@ -109,8 +113,11 @@ class AdvanceGNNModel(torch.nn.Module):
         ## hiddn layers with varying hidden dimensions
         for i in range(1, len(hidden_dim)):
             self.convs.append(GCNConv(hidden_dim[i-1], hidden_dim[i]))
-        self.convs.append(GCNConv(hidden_dim[-1], output_dim)) # O/P layer
+
+        #output layer
+        self.convs.append(GCNConv(hidden_dim[-1], output_dim)) 
         self.dropout = dropout
+        self.edge_dropout = edge_dropout
 
     def forward(self, x, edge_index):
         """
@@ -129,12 +136,28 @@ class AdvanceGNNModel(torch.nn.Module):
         --------
         torch.Tensor
             The output tensor of the model
-
-        """
+                    """
+        # residual = x
         for i, conv in enumerate(self.convs[:-1]):
+            edge_index, _ = dropout_edge(edge_index, p=self.edge_dropout, training=self.training)
             x = conv(x, edge_index)
-            x = F.relu(x)
+
+            # using relu - option 1 - not used
+            # x = F.relu(x)
+
+            # USING elu - option 2 - not used
+            # x = F.elu(x)
+
+            # using swish - option 3 - not used
+            # x = x * F.sigmoid(x)
+
+            # using leaky relu
+            x = F.leaky_relu(x, negative_slope=0.2)
             x = F.dropout(x, p=self.dropout, training=self.training)
+
+            ## adding residual connection to avooid oversmmoothing - not used
+            # x = x + residual if i>0 else x
+            # residual = x
 
         # O/P layer
         x = self.convs[-1](x, edge_index)
@@ -142,11 +165,11 @@ class AdvanceGNNModel(torch.nn.Module):
     
 
 
-
 if __name__ == '__main__':
     """
     This block of code is used to call the implementation of the GNNModel class.
     """
+    # Basic GNN - not used
     # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
-    model = AdvanceGNNModel(input_dim=128, hidden_dim=[128,256,512,128,64])
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
     print(model)

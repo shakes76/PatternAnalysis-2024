@@ -1,3 +1,12 @@
+"""
+@brief: This file contains the hyperparameters for training a StyleGAN model, including settings for 
+blend factor, image channels, latent and style vector dimensions, gradient penalty weight, and progressive 
+training steps across multiple image resolutions. It also defines batch sizes and learning rates based on 
+image sizes.
+
+@Author: Amlan Nag (s4721964)
+"""
+
 import torch
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

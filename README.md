@@ -258,6 +258,7 @@ FID (Fréchet Inception Distance) is a metric used to evaluate the quality of im
 For this evaluation, 3000 real images and 3000 generated images were used for both the AD and NC models. A score around 30 is considered relatively good, as it suggests the generated images are reasonably close to the real ones. The original StyleGAN paper achieved an FID of 4.4159, however, it is difficult to compair these values directly as the paper used the FFHQ data set with 50000 images.
 
 **Clean FID AD Score: 32.00**
+
 **Clean FID NC Score: 39.58**
 
 

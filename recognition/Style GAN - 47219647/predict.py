@@ -1,8 +1,19 @@
+"""
+@brief: This file defines classes responsible for loading trained StyleGAN models, plotting losses, 
+predicting images, calculating FID scores, and performing t-SNE analysis on the latent space of the models. 
+It includes functionality for moving real images, generating fake images, and visualizing the separation 
+of AD and NC latent spaces in both 2D and 3D t-SNE plots.
+
+@Author: Amlan Nag (s4721964)
+"""
+
 import torch
 import os
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
+import torch.optim as optim
+
 from cleanfid import fid
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE

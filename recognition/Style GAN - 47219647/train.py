@@ -1,13 +1,16 @@
+"""
+@brief: This file contains the StyleGAN_Trainer class, which controls the training process of a 
+StyleGAN model using hyperparameters defined in the params.py file. The class handles generator 
+example creation, training loops, and model saving after each step.
+
+@Author: Amlan Nag (s4721964)
+"""
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 import os
-import matplotlib.pyplot as plt
 
 from torchvision.utils import save_image
 from tqdm import tqdm
-from sklearn.manifold import TSNE
 
 from modules import *
 from params import *

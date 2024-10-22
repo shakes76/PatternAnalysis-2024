@@ -1,55 +1,56 @@
-import torch
-from torch import nn, optim
-from torchvision import datasets, transforms
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from torchvision.utils import save_image
-from math import log2
-import numpy as np
-import os
-from tqdm import tqdm
-import matplotlib.pyplot as plt
+"""
+@brief: This file contains the implementation of the main components for training a StyleGAN, 
+including the generator, discriminator, mapping network, AdaIN normalization, and noise injection. 
+It also includes functions to save model checkpoints.
 
+@Author: Amlan Nag (s4721964)
+"""
+import torch
+import torch.nn.functional as F
+
+from torchvision.utils import save_image
 from params import *
+from torch import nn
 
 
 #Compressing the chanels from 4,8,16,32,128,256
 factors = [1, 1, 1, 1, 1 / 2, 1 / 4, 1 / 8]
 
 class PixelNorm(nn.Module):
+    """
+    Normalizes each pixel of the input tensor using its mean across channels to 
+    stabalise the gradient
+    """
     def __init__(self):
         super(PixelNorm, self).__init__()
         self.epsilon = 1e-8
 
     def forward(self, x):
-        return x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + self.epsilon)   
+        return x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + self.epsilon)
+
 
 class WSLinear(nn.Module):
     """
-    Represents the weighted scaled Linear which transforms the input by cobining a
-    set of linear weights.
+    Weighted scaled linear layer with initialized weights for the StyleGAN generator 
+    and discriminator
     """
-    def __init__(
-        self, in_features, out_features,
-    ):
+    def __init__(self, in_features, out_features):
         super(WSLinear, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
-        self.scale = (2 / in_features)**0.5
+        self.scale = (2 / in_features) ** 0.5
         self.bias = self.linear.bias
         self.linear.bias = None
-
-        # initialize linear layer
         nn.init.normal_(self.linear.weight)
         nn.init.zeros_(self.bias)
 
     def forward(self, x):
         return self.linear(x * self.scale) + self.bias
-    
+
 
 class MappingNetwork(nn.Module):
     """
-    The role of the mapping nextwork is used to map random noise into a 
-    latent space which stores structural information.
+    Maps the random noise vector (Z) to the latent space (W) by passing it through 
+    several fully connected layers. This turns the noise into a style code.
     """
     def __init__(self, z_dim, w_dim):
         super().__init__()
@@ -72,18 +73,18 @@ class MappingNetwork(nn.Module):
             WSLinear(w_dim, w_dim),
         )
 
+
     def forward(self, x):
         return self.mapping(x)
-    
+
 
 class AdaIN(nn.Module):
     """
-    A method of normalisation that takes into account the differt classes and
-    styles. This is more effective for styles gans compaired to Batchnorm or 
-    InstanceNorm.
+    Adaptive Instance Normalization layer normalizes activations and adjusts 
+    them based on learned style parameters.
     """
     def __init__(self, channels, w_dim):
-        super().__init__()
+        super(AdaIN, self).__init__()
         self.instance_norm = nn.InstanceNorm2d(channels)
         self.style_scale = WSLinear(w_dim, channels)
         self.style_bias = WSLinear(w_dim, channels)
@@ -93,45 +94,43 @@ class AdaIN(nn.Module):
         style_scale = self.style_scale(w).unsqueeze(2).unsqueeze(3)
         style_bias = self.style_bias(w).unsqueeze(2).unsqueeze(3)
         return style_scale * x + style_bias
-    
+
 
 class InjectNoise(nn.Module):
     """
-    Takes in a tensor and inject noise into the tensor
+    Injects random noise into the input, helping to create variations in image generation.
     """
     def __init__(self, channels):
-        super().__init__()
+        super(InjectNoise, self).__init__()
         self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
 
     def forward(self, x):
         noise = torch.randn((x.shape[0], 1, x.shape[2], x.shape[3]), device=x.device)
         return x + self.weight * noise
-    
+
 
 class WSConv2d(nn.Module):
     """
-    Weight Scales 2d Convolutional Layer
+    Weighted scaled 2D convolutional layer which stabilizes training
+    for StyleGAN by scaling weights properly
     """
-    def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1
-    ):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
         super(WSConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
         self.scale = (2 / (in_channels * (kernel_size ** 2))) ** 0.5
         self.bias = self.conv.bias
         self.conv.bias = None
-
-        # initialize conv layer
         nn.init.normal_(self.conv.weight)
         nn.init.zeros_(self.bias)
 
     def forward(self, x):
         return self.conv(x * self.scale) + self.bias.view(1, self.bias.shape[0], 1, 1)
-    
+
 
 class ConvBlock(nn.Module):
     """
-    Normal Conventional Block with 2 convolutional layers and one leaky rely activation layer
+    Convolutional block with two WSConv2d layers and LeakyReLU activation. 
+    Used in both generator and discriminator
     """
     def __init__(self, in_channels, out_channels):
         super(ConvBlock, self).__init__()
@@ -143,84 +142,53 @@ class ConvBlock(nn.Module):
         x = self.leaky(self.conv1(x))
         x = self.leaky(self.conv2(x))
         return x
-    
+
 
 class Discriminator(nn.Module):
-    
+    """
+    StyleGAN Discriminator responsible for determining whether the generated images are real or fake. 
+    It downsamples the image progressively as it passes through different layers.
+    """
     def __init__(self, in_channels, img_channels=3):
         super(Discriminator, self).__init__()
         self.prog_blocks, self.rgb_layers = nn.ModuleList([]), nn.ModuleList([])
         self.leaky = nn.LeakyReLU(0.2)
 
-        # here we work back ways from factors because the discriminator
-        # should be mirrored from the generator. So the first prog_block and
-        # rgb layer we append will work for input size 1024x1024, then 512->256-> etc
         for i in range(len(factors) - 1, 0, -1):
             conv_in = int(in_channels * factors[i])
             conv_out = int(in_channels * factors[i - 1])
             self.prog_blocks.append(ConvBlock(conv_in, conv_out))
-            self.rgb_layers.append(
-                WSConv2d(img_channels, conv_in, kernel_size=1, stride=1, padding=0)
-            )
+            self.rgb_layers.append(WSConv2d(img_channels, conv_in, kernel_size=1))
 
-        # perhaps confusing name "initial_rgb" this is just the RGB layer for 4x4 input size
-        # did this to "mirror" the generator initial_rgb
-        self.initial_rgb = WSConv2d(
-            img_channels, in_channels, kernel_size=1, stride=1, padding=0
-        )
+        self.initial_rgb = WSConv2d(img_channels, in_channels, kernel_size=1)
         self.rgb_layers.append(self.initial_rgb)
-        self.avg_pool = nn.AvgPool2d(
-            kernel_size=2, stride=2
-        )  # down sampling using avg pool
+        self.avg_pool = nn.AvgPool2d(kernel_size=2, stride=2)
 
-        # this is the block for 4x4 input size
         self.final_block = nn.Sequential(
-            # +1 to in_channels because we concatenate from MiniBatch std
-            WSConv2d(in_channels + 1, in_channels, kernel_size=3, padding=1),
+            WSConv2d(in_channels + 1, in_channels, kernel_size=3),
             nn.LeakyReLU(0.2),
-            WSConv2d(in_channels, in_channels, kernel_size=4, padding=0, stride=1),
+            WSConv2d(in_channels, in_channels, kernel_size=4, stride=1),
             nn.LeakyReLU(0.2),
-            WSConv2d(
-                in_channels, 1, kernel_size=1, padding=0, stride=1
-            ),  # we use this instead of linear layer
+            WSConv2d(in_channels, 1, kernel_size=1),
         )
 
     def fade_in(self, alpha, downscaled, out):
-        """Used to fade in downscaled using avg pooling and output from CNN"""
-        # alpha should be scalar within [0, 1], and upscale.shape == generated.shape
         return alpha * out + (1 - alpha) * downscaled
 
     def minibatch_std(self, x):
-        batch_statistics = (
-            torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
-        )
-        # we take the std for each example (across all channels, and pixels) then we repeat it
-        # for a single channel and concatenate it with the image. In this way the discriminator
-        # will get information about the variation in the batch/image
+        batch_statistics = torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
         return torch.cat([x, batch_statistics], dim=1)
 
     def forward(self, x, alpha, steps):
-        # where we should start in the list of prog_blocks, maybe a bit confusing but
-        # the last is for the 4x4. So example let's say steps=1, then we should start
-        # at the second to last because input_size will be 8x8. If steps==0 we just
-        # use the final block
         cur_step = len(self.prog_blocks) - steps
-
-        # convert from rgb as initial step, this will depend on
-        # the image size (each will have it's on rgb layer)
         out = self.leaky(self.rgb_layers[cur_step](x))
 
-        if steps == 0:  # i.e, image is 4x4
+        if steps == 0:
             out = self.minibatch_std(out)
             return self.final_block(out).view(out.shape[0], -1)
 
-        # because prog_blocks might change the channels, for down scale we use rgb_layer
-        # from previous/smaller size which in our case correlates to +1 in the indexing
         downscaled = self.leaky(self.rgb_layers[cur_step + 1](self.avg_pool(x)))
         out = self.avg_pool(self.prog_blocks[cur_step](out))
-
-        # the fade_in is done first between the downscaled and the input
-        # this is opposite from the generator
         out = self.fade_in(alpha, downscaled, out)
 
         for step in range(cur_step + 1, len(self.prog_blocks)):
@@ -229,14 +197,18 @@ class Discriminator(nn.Module):
 
         out = self.minibatch_std(out)
         return self.final_block(out).view(out.shape[0], -1)
-    
+
 
 class GenBlock(nn.Module):
+    """
+    Generator block with two WSConv2d layers, noise injection, and AdaIN layers.
+    Each block takes a latent vector and transforms it progressively to a final image.
+    """
     def __init__(self, in_channels, out_channels, w_dim):
         super(GenBlock, self).__init__()
         self.conv1 = WSConv2d(in_channels, out_channels)
         self.conv2 = WSConv2d(out_channels, out_channels)
-        self.leaky = nn.LeakyReLU(0.2, inplace=True)
+        self.leaky = nn.LeakyReLU(0.2)
         self.inject_noise1 = InjectNoise(out_channels)
         self.inject_noise2 = InjectNoise(out_channels)
         self.adain1 = AdaIN(out_channels, w_dim)
@@ -246,9 +218,13 @@ class GenBlock(nn.Module):
         x = self.adain1(self.leaky(self.inject_noise1(self.conv1(x))), w)
         x = self.adain2(self.leaky(self.inject_noise2(self.conv2(x))), w)
         return x
-    
+
 
 class Generator(nn.Module):
+    """
+    StyleGAN Generator progressively increases the size of generated images using 
+    multiple blocks, starting from a 4x4 image to the 256x256.
+    """
     def __init__(self, z_dim, w_dim, in_channels, img_channels=1):
         super(Generator, self).__init__()
         self.starting_constant = nn.Parameter(torch.ones((1, in_channels, 4, 4)))
@@ -257,27 +233,19 @@ class Generator(nn.Module):
         self.initial_adain2 = AdaIN(in_channels, w_dim)
         self.initial_noise1 = InjectNoise(in_channels)
         self.initial_noise2 = InjectNoise(in_channels)
-        self.initial_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
-        self.leaky = nn.LeakyReLU(0.2, inplace=True)
+        self.initial_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+        self.leaky = nn.LeakyReLU(0.2)
 
-        self.initial_rgb = WSConv2d(
-            in_channels, img_channels, kernel_size=1, stride=1, padding=0
-        )
-        self.prog_blocks, self.rgb_layers = (
-            nn.ModuleList([]),
-            nn.ModuleList([self.initial_rgb]),
-        )
+        self.initial_rgb = WSConv2d(in_channels, img_channels, kernel_size=1)
+        self.prog_blocks, self.rgb_layers = nn.ModuleList([]), nn.ModuleList([self.initial_rgb])
 
-        for i in range(len(factors) - 1):  # -1 to prevent index error because of factors[i+1]
+        for i in range(len(factors) - 1):
             conv_in_c = int(in_channels * factors[i])
             conv_out_c = int(in_channels * factors[i + 1])
             self.prog_blocks.append(GenBlock(conv_in_c, conv_out_c, w_dim))
-            self.rgb_layers.append(
-                WSConv2d(conv_out_c, img_channels, kernel_size=1, stride=1, padding=0)
-            )
+            self.rgb_layers.append(WSConv2d(conv_out_c, img_channels, kernel_size=1))
 
     def fade_in(self, alpha, upscaled, generated):
-        # alpha should be scalar within [0, 1], and upscale.shape == generated.shape
         return torch.tanh(alpha * generated + (1 - alpha) * upscaled)
 
     def forward(self, noise, alpha, steps):
@@ -293,16 +261,15 @@ class Generator(nn.Module):
             upscaled = F.interpolate(out, scale_factor=2, mode="bilinear")
             out = self.prog_blocks[step](upscaled, w)
 
-        # The number of channels in upscale will stay the same, while
-        # out which has moved through prog_blocks might change. To ensure
-        # we can convert both to rgb we use different rgb_layers
-        # (steps-1) and steps for upscaled, out respectively
         final_upscaled = self.rgb_layers[steps - 1](upscaled)
         final_out = self.rgb_layers[steps](out)
         return self.fade_in(alpha, final_upscaled, final_out)
 
 
 def save_model(gen, disc, opt_gen, opt_disc, epoch, step, disc_losses, gen_losses, file_path="model_checkpoint.pth"):
+    """
+    Saves the model's generator, discriminator, optimizer states, losses, and training steps to a file.
+    """
     checkpoint = {
         "generator_state_dict": gen.state_dict(),
         "discriminator_state_dict": disc.state_dict(),

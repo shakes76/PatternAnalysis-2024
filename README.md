@@ -140,6 +140,6 @@ This indicated that there was room to further utilise the CPU or the the model w
 
 The following plots show the progressive output from the generator at each image size, slowly increasing from 4, 8 , 16, 32, 64, 128 and finally 256. In the earlier stages, the images appear highly pixelated due to the low resolution. Some blurring was unintentionally introduced by the image scaling software used during processing.
 
-![NC Image Progress](/recognition/Readme_images/NC image progress.png)
+<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="700"/>
 
-![AC Image Progress](/recognition/Readme_images/AD image progress.png)
+<img src="recognition/Readme_images/AD image progress (1).jpg" alt="AD Test Results" width="700"/>

@@ -1,5 +1,8 @@
 import tensorflow as tf
+from tensorflow.keras.backend import clear_session
 import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+import numpy as np
 from modules import build_generator, build_discriminator, build_stylegan, LATENT_DIM, INITIAL_SIZE
 from dataset import load_and_preprocess_adni, generate_random_inputs
 import wandb
@@ -8,12 +11,11 @@ import datetime
 
 # Define training parameters
 BATCH_SIZE = 16
-EPOCHS = 1
+EPOCHS = 100
 TARGET_SIZE = (128, 128)
 
 # Directories for AD and NC classes
 ad_dirs = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD']
-nc_dirs = ['/home/groups/comp3710/ADNI/AD_NC/train/NC', '/home/groups/comp3710/ADNI/AD_NC/test/NC']
 
 # Initialize Weights and Biases for each model
 def init_wandb(class_name):
@@ -62,9 +64,9 @@ def train_step(real_images, generator, discriminator, generator_optimizer, discr
 
     return gen_loss, disc_loss
 
-# Function to set up the models and optimizers
-def setup_models():
-    print("Loading models...")
+# Function to set up the models and optimizers for AD dataset
+def setup_ad_models():
+    print("Loading AD models...")
     generator = build_generator()
     discriminator = build_discriminator()
 
@@ -82,18 +84,35 @@ def setup_models():
     # Call the models once to ensure variables are initialized before training
     latent_vectors, constant_inputs = generate_random_inputs(BATCH_SIZE, LATENT_DIM, INITIAL_SIZE)
     generator([latent_vectors, constant_inputs])
-
-    # Initialize discriminator with random grayscale images (1 channel)
     discriminator(tf.random.normal([BATCH_SIZE] + list(TARGET_SIZE) + [1]))
 
-    print("Models compiled.")
+    print("AD models compiled.")
     
     return generator, discriminator, generator_optimizer, discriminator_optimizer
 
+# Function to generate and save t-SNE embeddings
+def generate_tsne_embeddings(model, class_name):
+    # Generate latent vectors and corresponding images
+    latent_vectors, constant_inputs = generate_random_inputs(100, LATENT_DIM, INITIAL_SIZE)
+    generated_images = model([latent_vectors, constant_inputs], training=False)
+    flattened_images = np.reshape(generated_images, (100, -1))  # Flatten images for t-SNE
+    
+    # Apply t-SNE on the latent vectors
+    tsne = TSNE(n_components=2, random_state=0)
+    tsne_results = tsne.fit_transform(flattened_images)
+
+    # Plot t-SNE results
+    plt.figure(figsize=(8, 8))
+    plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=np.arange(100), cmap='viridis', s=10)
+    plt.title(f"t-SNE embeddings for {class_name} at latent space")
+    plt.colorbar()
+    plt.savefig(f'tsne_{class_name}.png')
+    plt.close()
+    print(f"t-SNE plot saved for {class_name}")
 
 # Train function for each class
-def train(epochs, dataset, class_name):
-    generator, discriminator, generator_optimizer, discriminator_optimizer = setup_models()
+def train(epochs, dataset, class_name, setup_func):
+    generator, discriminator, generator_optimizer, discriminator_optimizer = setup_func()
     init_wandb(class_name)
     
     for epoch in range(epochs):
@@ -111,11 +130,11 @@ def train(epochs, dataset, class_name):
         # Save images and models periodically
         if (epoch + 1) % 10 == 0:
             generate_and_save_images(generator, epoch + 1, class_name)
+            generate_tsne_embeddings(generator, class_name)
 
         if (epoch + 1) == epochs:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             generator.save(f'generator_model_{class_name}_time_{timestamp}.h5')
-            discriminator.save(f'discriminator_model_{class_name}_time_{timestamp}.h5')
 
     wandb.finish()
 
@@ -146,11 +165,7 @@ if __name__ == "__main__":
 
     # Load and preprocess the AD and NC datasets
     ad_dataset = load_and_preprocess_adni(ad_dirs, TARGET_SIZE, BATCH_SIZE)
-    nc_dataset = load_and_preprocess_adni(nc_dirs, TARGET_SIZE, BATCH_SIZE)
 
     # Train separate models for AD and NC
     print("Training on AD dataset...")
-    train(EPOCHS, ad_dataset, "AD")
-
-    print("Training on NC dataset...")
-    train(EPOCHS, nc_dataset, "NC")
+    train(EPOCHS, ad_dataset, "AD", setup_ad_models)

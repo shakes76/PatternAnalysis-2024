@@ -135,8 +135,6 @@ class PatchEmbed(nn.Module):
         self.img_size = img_size
         self.patch_size = patch_size
 
-        print("patch embed img size", img_size)
-
         self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
         num_patches = self.grid_size[0] * self.grid_size[1]
         self.num_patches = num_patches
@@ -210,8 +208,6 @@ class GFNet(nn.Module):
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
-
-        print("img size", img_size)
 
         self.patch_embed = PatchEmbed(
             img_size=img_size,

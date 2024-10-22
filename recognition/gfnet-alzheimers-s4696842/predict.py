@@ -5,6 +5,7 @@ from torchvision import transforms
 from PIL import Image
 
 from .modules import GFNet
+from .train import depth, embed_dim, patch_size
 from .utils import ADNI_CLASSES, get_device
 from .dataset import ADNI_IMAGE_DIMENSIONS
 
@@ -25,11 +26,11 @@ def load_model(model_path, device, num_classes=2):
         img_size=ADNI_IMAGE_DIMENSIONS,
         in_chans=1,
         num_classes=num_classes,
-        depth=12,
-        embed_dim=260,
-        drop_rate=0.1,
-        drop_path_rate=0.1,
-        patch_size=(8, 8),
+        depth=depth,
+        embed_dim=embed_dim,
+        drop_rate=0.0,
+        drop_path_rate=0.0,
+        patch_size=patch_size,
     )
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)

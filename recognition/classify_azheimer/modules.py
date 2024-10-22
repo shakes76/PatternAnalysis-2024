@@ -36,19 +36,19 @@ class TransformerEncoder(nn.Module):
         return x
 
 
-class GFNet(nn.Module):
+class TransformerNet(nn.Module):
     def __init__(
         self,
         patch_size=16,
         in_channels=1,
         num_classes=2,
         embed_dim=768,
-        num_heads=8,
-        depth=6,
+        num_heads=16,
+        depth=8,
         mlp_dim=2048,
         dropout=0.1,
     ):
-        super(GFNet, self).__init__()
+        super(TransformerNet, self).__init__()
 
         # Patch embedding
         self.patch_embed = PatchEmbedding(

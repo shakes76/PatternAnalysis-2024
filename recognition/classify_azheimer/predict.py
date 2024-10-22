@@ -24,7 +24,7 @@ def evaluate_model(model, test_loader, device):
 
 def main():
     parser = argparse.ArgumentParser(description="Alzheimer's Disease Classification")
-    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train the model')
+    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train the model')
     args = parser.parse_args()
 
     epochs = args.epochs

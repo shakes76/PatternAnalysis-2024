@@ -1,3 +1,9 @@
+"""
+Author: Ewan Stanich s4742842
+
+This file contains the modules for the VQVAE model, including the Residual Layer, Residual Stack, Vector Quantizer and
+the VQVAE model itself.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as func

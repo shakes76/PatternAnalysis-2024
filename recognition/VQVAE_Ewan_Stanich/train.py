@@ -1,3 +1,8 @@
+"""
+Author: Ewan Stanich s4742842
+
+This file contains the training, validation and testing functionality to train a VQVAE.
+"""
 import math
 from dataset import load_data
 import torch

@@ -1,3 +1,8 @@
+"""
+Author: Ewan Stanich s4742842
+
+This file contains functions to load the data from the Nifti files and returns the training, sting and validation data loaders.
+"""
 import torch
 import torch.nn.parallel
 import torch.utils.data

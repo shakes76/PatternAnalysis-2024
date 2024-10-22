@@ -1,3 +1,8 @@
+"""
+Author: Ewan Stanich s4742842
+
+This file contains the functions to generate samples from the VQVAE model.
+"""
 import torch
 import matplotlib.pyplot as plt
 from itertools import cycle

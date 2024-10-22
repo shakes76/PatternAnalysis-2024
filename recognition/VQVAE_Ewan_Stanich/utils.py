@@ -1,3 +1,9 @@
+"""
+Author: Ewan Stanich s4742842
+
+This file contains helper functions that are used across the VQVAE model, including loading data, initialising weights,
+calculating SSIM, clearing folders, and plotting results.
+"""
 from tqdm import tqdm
 import nibabel as nib
 import cv2

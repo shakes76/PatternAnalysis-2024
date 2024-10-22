@@ -22,4 +22,7 @@ The methods above in combination with metric learning methods such as contrastiv
 
 
 # References
-https://search.library.uq.edu.au/primo-explore/fulldisplay?docid=TN_cdi_proquest_miscellaneous_2896802729&context=PC&vid=61UQ&lang=en_US&search_scope=61UQ_All&adaptor=primo_central_multiple_fe&tab=61uq_all&query=any,contains,Vocal%20Cord%20Leukoplakia%20Classificaton%20Using%20Siamese%20Network%20%20Under%20Small%20samples%20of%20white%20Light%20Endoscopy%20images&facet=rtype,exclude,newspaper_articles,lk&facet=rtype,exclude,reviews,lk&offset=0 
+
+[1]
+Z. You et al., [“Vocal Cord Leukoplakia Classification Using Siamese Network Under Small Samples of White Light Endoscopy Images,”](https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/abs/10.1002/ohn.591) Otolaryngology-head and neck surgery, vol. 170, no. 4, pp. 1099–1108, 2024, doi: 10.1002/ohn.591.
+

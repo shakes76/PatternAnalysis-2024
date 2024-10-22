@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 import modules
 import dataset
+from dice import dice_coeff
 
 
 
@@ -32,20 +33,27 @@ firstSeg = firstSeg.to(dev)
 
 chan = 1
 outDim = 64
+segDim = 6
 
 #basicBlk = modules.UNetBasicBlock(chan, outDim, 3)
 #basicBlk = basicBlk.to(dev) # WHY DO I HAVE TO DO IT THIS WAY? WHY CAN'T 'to()' BE IN-PLACE?
 
 #out = basicBlk(firstImg)
 
-net = modules.UNet(chan, outDim, segDim = 6)
+net = modules.UNet(chan, outDim, segDim = segDim)
 net.load_state_dict(torch.load("H:\\python_work\\hipMri_unet_results\\weights_epoch_31.pth", weights_only = True))
 net = net.to(dev)
 net.eval()
 out = net(firstImg)
 
+
+
 # print a purrity picture
 out1 = torch.permute(out, (1,2,0))
 out2 = torch.argmax(out1, dim=-1)
+out3 = out2[None, :, :].to(dev)
 plt.figure()
 plt.imshow(out2.cpu().numpy())
+
+dc = dice_coeff(out3, firstSeg, dev, lbls = segDim)
+print(dc.cpu().item())

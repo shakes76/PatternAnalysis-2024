@@ -87,6 +87,7 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
     torch.save(net.state_dict(), "./weights.pth")
     # TODO: maybe perform initial testing (i.e. NOT validation) here
     # (This needs the Dice similarity coefficient implemented)
+    diceLosses = []
     net.eval()
     with torch.no_grad():
         for img, seg in testLoader:
@@ -94,8 +95,13 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
             seg = seg.squeeze().long()
             seg = seg.to(dev)
             out = net(img)
-            diceSimilarity = dice_coeff(out, seg, dev)
-            print("current dice: {:.5f}".format(out.cpu().item())) 
+            diceSimilarity = dice_coeff(out, seg, dev, 6)
+            print("current dice: {:.5f}".format(out.cpu().item()))
+            diceLosses.append(diceSimilarity)
+
+    print("Done!")
+    avgDice = sum(diceLosses) / len(diceLosses)
+    print("average dice from initial testing: {:.5f}".format(avgDice))
     
     return net
 

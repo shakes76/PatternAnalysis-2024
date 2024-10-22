@@ -13,12 +13,19 @@ References:
 
 import torch
 
-def dice_coeff(pred, true, dev):
+def dice_coeff(pred, true, dev, lbls = 1):
     # flatten pred from (6, x, y) to (1, x, y)
-    predTmp = torch.permute(pred, (1, 2, 0))
-    predTmp = torch.argmax(predTmp, dim = -1)
-    predTmp = predTmp[None, :, :].to(dev)
+    #predTmp = torch.permute(pred, (1, 2, 0))
+    #predTmp = torch.argmax(predTmp, dim = -1)
+    #predTmp = pred[None, :, :].to(dev)
     
-    intersect = torch.sum(torch.sum(torch.abs(torch.mul(true, predTmp)), dim = 0))
-    union = torch.sum(torch.sum(torch.add(torch.abs(true), torch.abs(predTmp)), dim = 0))
-    return 2 * intersect / union
+    #testOnes = torch.full_like(pred, 6)
+    #testOnes2 = torch.full_like(true, 6)
+    #pred = testOnes
+    #true = testOnes2
+    
+    intersect = torch.sum(torch.sum(torch.abs(true * pred), dim = 0))
+    print("intersect = ", intersect.cpu().item())
+    union = torch.sum(torch.sum(torch.add(torch.abs(true), torch.abs(pred)), dim = 0))
+    print("union = ", union.cpu().item())
+    return (2 * intersect / union) / lbls

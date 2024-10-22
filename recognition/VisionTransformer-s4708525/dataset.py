@@ -56,6 +56,18 @@ class ADNI_Dataset(Dataset):
     def get_category_counts(self):
         return self.category_counts
 
+def preprocess_image(image_path):
+    image = Image.open(image_path).convert('RGB')
+    transform_test = transforms.Compose([
+        transforms.Resize(224),
+        transforms.CenterCrop(128),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
+    ])
+    image = transform(image) 
+    image = image.unsqueeze(0)
+    return image
+
 # Define transformation (data augmentation) for the training data
 transform = transforms.Compose([
         transforms.Resize((224, 224)),

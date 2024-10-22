@@ -76,7 +76,7 @@ The project requires the following dependencies[^4]:
      ```bash
      python train.py --data_dir ./data --output_dir ./model_output
      ```
-  - **Example output**:During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`. <br /> <br />
+  - **Example output**: During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`. <br /> <br />
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
@@ -90,7 +90,7 @@ The project requires the following dependencies[^4]:
     ```bash
      python predict.py --input_image ./test_data/test_image.nii --model_path ./model_output/unet_model.pth --output_image ./output/prediction.nii
      ```
-  - **Example output**:The generated predicted image will be saved as a specified Nifti format file. <br /> <br />
+  - **Example output**: The generated predicted image will be saved as a specified Nifti format file. <br /> <br />
 
 ## Steps to Run the Project
 

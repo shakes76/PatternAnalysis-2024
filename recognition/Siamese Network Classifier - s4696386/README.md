@@ -44,7 +44,7 @@ With a Siamese Network as prescribed basis, it was clear that the project needed
 Although the code used describes 2 separate classes for the different networks, in actuality, the primary difference is in the first Linear layer which is initialized with half the number of expected incoming features and the forward function which takes only a single input. A great deal of the Classifier Network is dierectly inherited from an instance of the Siamese Network.
 
 To learn these discriminant embeddings, a resnet34 was used for feature extraction, and those features fed into a combination of Fully-Connected Linear Layers, ReLU Layers, with dropout (of 0.3 by default) being applied agfter the first ReLU.
-The selection of layers was guided by investigations into (Koch, Zemel & Salakhutdinov 2015)[^2], (examples/siamese_network/main.py, pytorch/examples 2024)'s example[^4], and the desire to begin with a simple model and only increase complexity as necessary, to avoid overfitting.
+The selection of layers was guided by investigations into (Koch, Zemel & Salakhutdinov 2015)[^2], (examples/siamese_network/, pytorch/examples 2024)'s example[^4], and the desire to begin with a simple model and only increase complexity as necessary, to avoid overfitting.
 
 Binary-Cross-Entropy Loss was used as a loss criterion following the same design philosphy. Although Triplet loss might have been a more traditional approach, BCELoss provided an effective starting point, and never required replacing.
 
@@ -105,4 +105,6 @@ The result of this will be 2 saved Networks (1 Siamese, 1 Classifier), assorted 
 
 [^3]: Reddit - Dive into anything 2016, Reddit.com, <https://www.reddit.com/r/learnmachinelearning/comments/18msvh2/source_of_general_convention_of_8020_traintest/>.
 
-‌[^4]: Pytorch examples/siamese_network/main.py, pytorch/examples 2024, GitHub, <https://github.com/pytorch/examples/blob/main/siamese_network/main.py>.
+‌[^4]: examples/siamese_network, pytorch/examples 2024, GitHub, viewed 22 October 2024, <https://github.com/pytorch/examples/tree/main/siamese_network>.
+
+‌

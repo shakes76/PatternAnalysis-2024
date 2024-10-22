@@ -16,23 +16,7 @@ from modules import *
 from dataset import *
 import json
 from constants import *
-from predict import generate_umap_plot, load_model, load_optimizers, generate_examples
-
-if os.path.exists("params/data.json"):  # loads the json dict which stores the past losses for plotting of loss
-    with open("params/data.json", 'r') as f:
-        json_data = json.load(f)
-    total_epochs = json_data["epochs"]
-    generator_loss = json_data["G_loss"]
-    discriminator_loss = json_data["D_loss"]
-else:
-    if not os.path.exists("params"):
-        os.mkdir("params")
-    total_epochs = 0
-    generator_loss = []
-    discriminator_loss = []
-    json_data = {"epochs": 0,
-                 "G_loss": [],
-                 "D_loss": []}
+from predict import load_model, load_optimizers, generate_examples
 
 def train_fn(
         critic: Discriminator,
@@ -140,8 +124,6 @@ def save_model(generator: Generator,
     torch.save(plp.state_dict(), f"{directory}/PLP.pth")
     torch.save(optim_gen.state_dict(), f"{directory}/generator_opt.pth")
     torch.save(optim_critic.state_dict(), f"{directory}/discriminator_opt.pth")
-    b = optim_critic.state_dict()
-    a = torch.load(f"{directory}/discriminator_opt.pth", weights_only=True)
     torch.save(optim_map.state_dict(), f"{directory}/mapping_opt.pth")
 
 
@@ -152,10 +134,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="COMP3506/7505 Assignment Two: Data Structure Tests")
     parser.add_argument("--dataset_dir", type=str, help="Directory for the dataset")
     parser.add_argument("--model_dir", type=str, help="Directory of the saved model, if any")
-    parser.set_defaults(dataset_dir="AD_NC/train", model_dir="model")
+    parser.add_argument("--json_dir", type=str, help="Directory of json file to store training loss")
+    parser.add_argument("--classes", type=str, help="Desired classes to train on. options: all, AD, NC")
+    parser.set_defaults(dataset_dir="AD_NC/train", model_dir="model", json_dir="params", classes="all")
     args = parser.parse_args()
-
-    loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.dataset_dir)
+    if args.classes == "all":
+        loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.dataset_dir)
+    else:
+        loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.classes)
 
     gen, critic, mapping_network, path_length_penalty = load_model(args.model_dir)
 
@@ -172,6 +158,22 @@ if __name__ == "__main__":
     gen.train()
     critic.train()
     mapping_network.train()
+
+    if os.path.exists(f"{args.json_dir}/data.json"):  # loads the json dict which stores the past losses for plotting of loss
+        with open(f"{args.json_dir}/data.json", 'r') as f:
+            json_data = json.load(f)
+        total_epochs = json_data["epochs"]
+        generator_loss = json_data["G_loss"]
+        discriminator_loss = json_data["D_loss"]
+    else:
+        if not os.path.exists(args.json_dir):
+            os.mkdir(args.json_dir)
+        total_epochs = 0
+        generator_loss = []
+        discriminator_loss = []
+        json_data = {"epochs": 0,
+                     "G_loss": [],
+                     "D_loss": []}
 
     for epoch in range(EPOCHS):
         train_fn(
@@ -205,6 +207,6 @@ if __name__ == "__main__":
         json_data["G_loss"] = generator_loss
         json_data["D_loss"] = discriminator_loss
         # Writing to json file to remember num. epochs
-        with open("params/data.json", "w") as f:
+        with open(f"{args.json_dir}/data.json", "w") as f:
             json.dump(json_data, f)
         plot_loss(generator_loss, discriminator_loss)

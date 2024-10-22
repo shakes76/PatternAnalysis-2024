@@ -2,15 +2,44 @@
 Contains data loader for loading and preprocessing data
 Created on 08/10/2024
 """
-
+from typing import Tuple, List, Dict, Union, Optional
+from pathlib import Path
 import torch
 import torch.nn
+import os
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data import *
 
+def find_classes(directory: Union[str, Path],
+                 desired_class_names: Optional[List]) -> Tuple[List[str], Dict[str, int]]:
+    """Finds the class folders in a dataset.
 
-def get_loader(log_resolution, batch_size, directory = "AD_NC/train"):
+    See :class:`DatasetFolder` for details.
+    """
+    classes = sorted(entry.name for entry in os.scandir(directory) if entry.is_dir())
+    if not classes:
+        raise FileNotFoundError(f"Couldn't find any class folder in {directory}.")
+    if desired_class_names is None:
+        class_to_idx = {cls_name: i for i, cls_name in enumerate(classes)}
+    else:
+        class_to_idx = {cls_name: i for i, cls_name in enumerate(classes) if cls_name in desired_class_names}
+    return classes, class_to_idx
+
+class CustomImageFolder(ImageFolder):
+    def __init__(self, root, transform, desired_classes: List):
+        super().__init__(root, transform)
+        self.desired_classes = desired_classes
+
+    def find_classes(self, directory: str) -> Tuple[List[str], Dict[str, int]]:
+        """Finds the class folders in a dataset.
+
+        See :class:`DatasetFolder` for details.
+        """
+        return find_classes(directory, self.desired_classes)
+
+
+def get_loader(log_resolution, batch_size, directory="AD_NC/train", classes=""):
     """
     :param log_resolution: int, log2 of the desired image resolution, for example 8 for 256x256 images.
     :param batch_size: int, the batch size
@@ -29,7 +58,15 @@ def get_loader(log_resolution, batch_size, directory = "AD_NC/train"):
             ),
         ]
     )
-    dataset = ImageFolder(root=directory, transform=transform)
+    if classes == "AD":
+        dataset = CustomImageFolder(root=directory, transform=transform, desired_classes=["AD"])
+        print("Training only on AD dataset")
+    elif classes == "NC":
+        dataset = CustomImageFolder(root=directory, transform=transform, desired_classes=["NC"])
+        print("Training only on NC dataset")
+    else:
+        dataset = CustomImageFolder(root=directory, transform=transform, desired_classes=None)
+        print("Training of all classes")
     loader = DataLoader(
         dataset,
         batch_size=batch_size,

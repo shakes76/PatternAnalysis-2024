@@ -20,7 +20,7 @@ Figure 2: The Overall Architecture of GFNet (Zhao et al., 2021)
 
 ## Description of the Algorithm
 The GFNet model is implemented across four Python files: `dataset.py`, `modules.py`, `train.py` and `predict.py`. The purpose of each file and the explanation of the code is described below: 
-### 1. Dataset.py
+### 1. dataset.py
 The original ADNI brain data was preprocessed into training and testing datasets and has two classes: Alzheimer’s disease and Normal Cognitive (NC). The input images are 2D brain slices in grayscale and have a size of 256 pixels in width and 240 pixels in height. The first 10 input images from the training dataset are shown below:
 
 <img width="974" alt="image" src="https://github.com/user-attachments/assets/5701db24-826a-4ccf-a295-1bb5d51369e9">
@@ -28,6 +28,9 @@ The original ADNI brain data was preprocessed into training and testing datasets
 Figure 3: First 10 Images from the Training AD Dataset with Labels.
 
 Since the images are compressed, the function `extract_zip(zip_path, extract_to)` was created to extract all the images within the zip file to the folder assigned to the ‘extract_to’. The custom dataset class `ADNIDataset`  was used to load images from both ‘AD’ and ‘NC’ classes from respective folder and assign 1 and 0 respectively. In order to normalize the image data, the mean and standard deviation of all pixels were calculated using `get_mean_std(loader) ` ( https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/). However, it was found that mean and std values for both datasets are extremely small, indicating that the image has been normalized during preprocessing (very little variation in pixels values). The most notable aspect of the last function `get_data_loaders` is the use of data augmentations on the training dataset, generating new images to further improve model's performance. Moreover, 20% of the training dataset was used to validate the performance of the model during training.
+
+### 2. modules.py
+The source code for the GFNet model was developed by Yongming Rao, Wenliang Zhao, Zheng Zhu, Jiwen Lu and Jie Zhou in 2021. The code was directly used to implement this image classification task. As mentioned in Introduction, the model’s architecture consists of three major parts: the patch embedding, the global filter layer and MLP. 
 
 
 ## References

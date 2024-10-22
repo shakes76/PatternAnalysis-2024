@@ -5,7 +5,6 @@
 import numpy as np
 import scipy.sparse as sp
 import torch
-FILE_PATH = "./facebook.npz"
 
 
 """ Creates a class instance that will load the data on construction
@@ -39,44 +38,41 @@ class FacebookPagePageLargeNetwork():
         train_indices, val_indices, test_indices = indices[:size_train], indices[size_train:size_train+size_validation], indices[-size_test:]
 
         # Create mask for filtering out only the test/train/validation nodes from dataset
-        train_mask = torch.zeros(num_nodes, dtype=torch.bool)
-        train_mask[train_indices] = 1
+        self.train_mask = torch.zeros(num_nodes, dtype=torch.bool)
+        self.train_mask[train_indices] = 1
 
-        test_mask = torch.zeros(num_nodes, dtype=torch.bool)
-        test_mask[test_indices] = 1
+        self.test_mask = torch.zeros(num_nodes, dtype=torch.bool)
+        self.test_mask[test_indices] = 1
 
-        validation_mask = torch.zeros(num_nodes, dtype=torch.bool)
-        validation_mask[val_indices] = 1
+        self.validation_mask = torch.zeros(num_nodes, dtype=torch.bool)
+        self.validation_mask[val_indices] = 1
 
 
         self.y = torch.tensor(self.target, dtype=torch.int64)
         self.x = torch.tensor(self.features, dtype=torch.float32)
 
         # Separate the data into subsets for train, test and validation
-        self.x_train, self.y_train = self.x[train_mask], self.y[train_mask]
-        self.x_test, self.y_test = self.x[test_mask], self.y[test_mask]
-        self.x_val, self.y_val = self.x[validation_mask], self.y[validation_mask]
+        self.x_train, self.y_train = self.x[self.train_mask], self.y[self.train_mask]
+        self.x_test, self.y_test = self.x[self.test_mask], self.y[self.test_mask]
+        self.x_val, self.y_val = self.x[self.validation_mask], self.y[self.validation_mask]
 
         # Creating an adjacency matrix from the edges information
         self.adjacency_matrix = sp.coo_matrix((np.ones(len(self.edges)), (self.edges[:, 0], self.edges[:, 1])),
-                        shape=(num_nodes, num_nodes))
+                        shape=(num_nodes, num_nodes), dtype=np.float32)
         self.adjacency_matrix = torch.tensor(self.adjacency_matrix.todense())
 
-    # Convet the tensors to CUDA
+    # Convet the tensors to CUDA (or any other device)
     def to(self, device):
         self.x = self.x.to(device)
         self.y = self.y.to(device)
         self.adjacency_matrix = self.adjacency_matrix.to(device)
+
+        self.train_mask = self.train_mask.to(device)
+        self.test_mask = self.test_mask.to(device)
+        self.validation_mask = self.validation_mask.to(device)
+
         self.x_train, self.y_train = self.x_train.to(device), self.y_train.to(device)
-        self.x_test, self.y_test = self.x_train.to(device), self.y_train.to(device)
-        self.x_test, self.y_test = self.x_train.to(device), self.y_train.to(device)
+        self.x_test, self.y_test = self.x_test.to(device), self.y_test.to(device)
+        self.x_val, self.y_val = self.x_val.to(device), self.y_val.to(device)
 
-
-
-if __name__ == "__main__":
-    data = FacebookPagePageLargeNetwork(FILE_PATH, 0.1, 0.1, 31)
-
-    # print(f"Time taken to load the data: {(end_time-start_time)} seconds")
-
-    # print(len(data["edges"]))
-   
+        return self

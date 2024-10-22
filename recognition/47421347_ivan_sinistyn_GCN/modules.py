@@ -25,11 +25,6 @@ class GNNLayer(torch.nn.Module):
 class GCN(torch.nn.Module):
     def __init__(self, in_features, out_features, num_classes, dropout_probability = 0.5) -> None:
         super(GCN, self).__init__()
-        self.in_feature = in_features
-        self.out_features = out_features
-        self.num_classes = num_classes
-        self.dropout_probability = dropout_probability
-
 
         self.gnn1 = GNNLayer(in_features, out_features)
         self.norm1 = torch.nn.BatchNorm1d(out_features)

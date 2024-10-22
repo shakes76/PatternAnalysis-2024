@@ -3,7 +3,7 @@ import torch
 
 
 from dataset import load_data_2D
-
+from modules import UNET
 
 
 
@@ -19,8 +19,8 @@ print(f"Shape of first image: {images[0].shape}")
 #HyperParameters
 LEARN_RATE = 0.01
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 32
-NUM_EPOCHS = 100
+BATCH_SIZE = 4
+NUM_EPOCHS = 3
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 256

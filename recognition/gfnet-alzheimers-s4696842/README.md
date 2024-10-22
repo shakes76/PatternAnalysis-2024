@@ -12,7 +12,7 @@ input images. By applying global filters, the model effectively captures
 long-range dependencies.
 
 ![Model Architecture](./assets/gfnet_example.gif)
-*Simplified architecture of the GFNet model for Alzheimer's classification. Taken from [Global Filter Networks for Image Classification](https://github.com/raoyongming/GFNet)*
+*Taken from [Global Filter Networks for Image Classification](https://github.com/raoyongming/GFNet)*
 
 ## Dependencies
 - Python 3.11

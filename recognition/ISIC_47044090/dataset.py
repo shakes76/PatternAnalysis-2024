@@ -13,7 +13,7 @@ modified_filepath = "data/ISIC"
 
 def resize_image(file, partition):
     """ 
-    Re-sizes all images to (512, 512)
+    Re-sizes image to (512, 512)
 
     1. Adds black letterbox to the smaller between x/y until x=y 
     2. Scales images down to (512, 512) (there can be 1 pixel stretching in 
@@ -31,7 +31,7 @@ def resize_image(file, partition):
 
 def resize_mask(file, partition):
     """ 
-    Re-sizes all images to (512, 512)
+    Re-sizes mask to (512, 512)
 
     1. Adds black letterbox to the smaller between x/y until x=y 
     2. Scales images down to (512, 512) (there can be 1 pixel stretching in 
@@ -55,8 +55,6 @@ def convert_mask_to_txt(file, partition):
     mask must be resized first using resize_mask
     """
     image = Image.open(f'{modified_filepath}/{partition}/masks/ISIC_{file}_segmentation.png')
-    # width, height = image.size
-    # image = cv2.resize(asarray(image), None, fx=1, fy=1)
     ys, xs = np.where(image == 255) # extract x and y coordinates of white pixels (=255)
     x_center = int(np.median(xs))
     width = np.max(xs) - np.min(xs) 
@@ -107,15 +105,3 @@ def test_extraction(mask):
 
 if __name__ == "__main__":
     process_dataset()
-
-# test_extraction("0000001")
-
-# GPU
-# python train.py --workers 8 --device 0 --batch-size 32 --data data/ISIC/isic.yaml --img 512 512 --cfg cfg/training/yolov7.yaml --weights '' --name yolov7 --hyp data/hyp.scratch.p5.yaml
-# python train.py --batch 16 --epochs 2 --data data/ISIC/isic.yaml --img 512 512 --weights 'yolov7.pt'
-
-
-# LOCAL
-# python train.py --batch 32 --epochs 200 --data data/ISIC/isic.yaml --img 512 512 --weights 'yolov7.pt'
-
-# python detect.py --weights runs/train/exp/weights/best.pt --conf 0.25 --img-size 512 --source data/resized_valid_imgs/ISIC_0001769.jpg

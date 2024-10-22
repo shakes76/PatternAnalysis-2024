@@ -60,6 +60,7 @@ def Save_UNet():
 
 
 def main(File_path):
+
     
     print("test")
 
@@ -67,6 +68,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("File_path", help="file path to the dataset to be ??????? modelled on?????")
     parser.add_argument("-fc","--force_CPU", help="set if you wish to allow usage of CPU, if GPU not available", action="store_true", default=False)
+    parser.add_argument("dimensionality", help="specify wether the data is a 2d or 2d segment", type=int, default=2)
+    parser.add_argument("size", help="the n by n dimensions of the images in the dataset")
     args = parser.parse_args()
 
     modules.test_GPU_connection(args.force_CPU)

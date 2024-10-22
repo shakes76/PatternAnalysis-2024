@@ -2,9 +2,11 @@
 #pip install tqdm
 #python -m pip install -U nilearn
 
+import os
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+from torch.utils.data import Dataset, DataLoader
 
 def to_channels ( arr : np.ndarray , dtype = np.uint8 ) -> np.ndarray :
     channels = np.unique( arr )
@@ -137,3 +139,19 @@ def load_data_3D ( imageNames , normImage = False , categorical = False , dtype 
         return images , affines
     else :
         return images
+    
+class Dataset_2d(Dataset):
+    """
+    """
+    def __init__(self, image_dir, mask_dir):
+        self.image_dir = image_dir
+        self.mask_dir = mask_dir
+        self.images = os.listdir(image_dir)
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        DataLoader()
+
+        return image, mask

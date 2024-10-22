@@ -1,6 +1,7 @@
 #the source code of the components of your model. Each component must be
 #implementated as a class or a function
 
+import sys
 import torch
 import torch.nn as nn
 
@@ -18,5 +19,12 @@ def test_GPU_connection(force_CPU):
     return:
         none
     '''
-    return None
+    if torch.cuda.is_available():
+        return 'cuda'
+    elif force_CPU:
+        return 'cpu'
+    else:
+        sys.exit("No GPU detected")
+        return
+
 

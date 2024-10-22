@@ -75,9 +75,13 @@ y_test = np.expand_dims(y_test, axis=-1)
 X_train = X_train / 255.0
 X_val = X_val / 255.0
 X_test = X_test / 255.0
-y_train = np.clip(y_train, 0, 1)
-y_val = np.clip(y_val, 0, 1)
-y_test = np.clip(y_test, 0, 1)
+y_train = y_train / 3
+y_val = y_val / 3
+y_test = y_test / 3
+#Set to 1 if value > 0.5 (white), and to 0 if value <= 0.5 (black)
+y_train = np.where(y_train > 0.5, 1, 0)
+y_val = np.where(y_val > 0.5, 1, 0)
+y_test = np.where(y_test > 0.5, 1, 0)
 
 #Initialise the U-Net model
 model = unet_model(input_size=(256, 128, 1))
@@ -87,7 +91,7 @@ model = unet_model(input_size=(256, 128, 1))
 history = model.fit(
     X_train, y_train,
     validation_data=(X_val, y_val),
-    epochs=20,
+    epochs=50,
     batch_size=8,
     verbose=1  
 )

@@ -83,13 +83,13 @@ The project requires the following dependencies[^4]:
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
     - `dice_score(pred, target)`: Calculates the Dice score.
-    - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
+    - `predict_and_evaluate(root_dir, model_path, threshold)`: Loads the model and evaluates it on the test dataset.
   - **Usage example**:
     ```bash
     root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
     model_path = 'unet_model.pth'
 
-    predict_and_evaluate(root_dir, model_path=model_path)
+    predict_and_evaluate(root_dir, model_path=model_path, threshold=0.5)
     ```
   - **Example output**: The generated predicted image will be saved as a specified Nifti format file. <br /> <br />
 

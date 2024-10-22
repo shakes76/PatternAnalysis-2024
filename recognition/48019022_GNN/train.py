@@ -130,7 +130,7 @@ if __name__ == '__main__':
     epochs = 300 # default, perhaps try 200,400,500 etc
 
     # Change this to change the model
-    architecture = "GCN"
+    architecture = "SAGE"
 
     # loading data
     data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='/Users/anthonyngo/Documents/UQ/24sem2/COMP3710/project/PatternAnalysis-2024/facebook.npz')
@@ -145,6 +145,8 @@ if __name__ == '__main__':
     elif architecture == "GAT":
         # Select GAT
         model = GATModelBasic(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
+    elif architecture == "SAGE":
+        model = GraphSAGE(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
 
     model = model.to(device)
 

@@ -29,7 +29,6 @@ class GCNModel(torch.nn.Module):
 class GATModelBasic(torch.nn.Module):
     """
     A simple graph attention network architecture
-    Dropout -> GATConv -> Relu -> GATConv -> Softmax
     """
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GATModelBasic, self).__init__()
@@ -43,3 +42,20 @@ class GATModelBasic(torch.nn.Module):
         x = self.conv2(x, edge_index)
 
         return F.log_softmax(x, dim=1)
+
+class GraphSAGE(torch.nn.Module):
+    """
+    A simple Graph SAGE architecture
+    """
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(GraphSAGE, self).__init__()
+        self.conv1 = SAGEConv(input_dim, hidden_dim, normalize=True)
+        self.conv2 = SAGEConv(hidden_dim, output_dim, normalize=True)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = F.relu(self.conv1(x, edge_index))
+        x = self.conv2(x, edge_index)
+
+        return x

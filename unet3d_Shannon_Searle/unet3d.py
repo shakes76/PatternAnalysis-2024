@@ -204,40 +204,29 @@ class UNet3D(nn.Module):
             nn.ReLU(inplace=True),
         )
         
-# Evaluation function to test the model after training
-def evaluate_model(model, test_loader, device):
-    model.eval()  # Set model to evaluation mode
-    correct = 0
-    total = 0
-    with torch.no_grad():  # No need to compute gradients during evaluation
-        for images, labels in test_loader:
-            images = images.to(device)
-            labels = labels.to(device)
+
+# Function to evaluate the model
+def evaluate_model(model, dataloader, criterion, device):
+    model.eval()  # Set the model to evaluation mode
+    total_loss = 0.0
+    num_batches = len(dataloader)
+
+    with torch.no_grad():  # Disable gradient computation for evaluation
+        for images, labels in tqdm(dataloader):
+            images, labels = images.to(device), labels.to(device)
             outputs = model(images)
-            
-            # Predictions are the class with the highest probability
-            _, preds = torch.max(outputs, 1)
-            
-            # Get the actual labels
-            labels_class_indices = torch.argmax(labels, dim=1)
 
-            # Count total and correct predictions
-            correct += (preds == labels_class_indices).sum().item()
-            total += labels.size(0)
+            loss = criterion(outputs, labels)
+            total_loss += loss.item()
 
-    # Calculate accuracy
-    accuracy = correct / total * 100
-
-    return accuracy
+    avg_loss = total_loss / num_batches
+    return avg_loss
 
 # Main function
 def main():
     # Construct file paths correctly
-    img_dir = os.path.join("Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-", "data", 
-                        "HipMRI_study_complete_release_v1", "semantic_MRs_anon")
-    labels_dir = os.path.join("Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-", "data", 
-                            "HipMRI_study_complete_release_v1", "semantic_labels_anon")
-
+    img_dir = "Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/data/semantic_MRs_anon"
+    labels_dir = "Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/data/semantic_labels_anon"
     # Check if the directories exist
     if not os.path.exists(img_dir):
         print(f"Image directory {img_dir} does not exist.")
@@ -277,9 +266,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     
     # Training loop
-    n_epochs = 2
-    # Training loop
-    lossPerEpoch = []
+    n_epochs = 1
     for epoch in range(n_epochs):
         print(f"Epoch {epoch + 1}")
         model.train()
@@ -297,11 +284,10 @@ def main():
             optimizer.step()
 
             running_loss += loss.item()
-        lossPerEpoch.append(running_loss/len(train_loader))
-    print(lossPerEpoch)
+        print(running_loss/len(train_loader))
     
     # evaluate the model on the test set
-    accuracy = evaluate_model(model, test_loader, device)
+    accuracy = evaluate_model(model, test_loader, criterion, device)
     print(f"Accuracy: {accuracy:.2f}%")
     
 if __name__ == "__main__":

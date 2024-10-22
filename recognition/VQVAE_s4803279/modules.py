@@ -3,10 +3,6 @@ This file contains the source code for the VQVAE model.
 
 Each component of the VQVAE is implemented as a class.
 """
-"""
-regarding the model, can i just use the structure that i find in papers and online resources?
-    can use a premade model just understand how it works and augment the data in my own way.
-"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,7 +10,11 @@ import torch.nn.functional as F
 
 class ResidualBlock(nn.Module):
     """
-    Residual block used in the encoder and decoder
+    Residual block used in the encoder and decoder.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
     """
     def __init__(self, in_channels, out_channels):
         super(ResidualBlock, self).__init__()
@@ -29,6 +29,15 @@ class ResidualBlock(nn.Module):
 
 
     def forward(self, x):
+        """
+        Forward pass of the residual block.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after applying residual connection.
+        """
         residual = x
 
         out = self.relu(self.conv1(x))
@@ -40,9 +49,17 @@ class ResidualBlock(nn.Module):
         return self.relu(out + residual)
 
 
-class EncoderTopBottom(nn.Module):
+class Encoder(nn.Module):
+    """
+    Encoder module for VQVAE-2 with two levels (top and bottom).
+
+    Args:
+        in_channels (int): Number of input channels.
+        hidden_dims (list): List of hidden dimensions for top and bottom encoders.
+        embedding_dims (list): List of embedding dimensions for top and bottom encoders.
+    """
     def __init__(self, in_channels, hidden_dims, embedding_dims):
-        super(EncoderTopBottom, self).__init__()
+        super(Encoder, self).__init__()
 
         # Top encoder
         self.encoder_top = nn.Sequential(
@@ -61,6 +78,15 @@ class EncoderTopBottom(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Forward pass of the encoder.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            tuple: Latent representations from top and bottom encoders (z_top, z_bottom).
+        """
         z_top = self.encoder_top(x)
         z_bottom = self.encoder_bottom(x)
         return z_top, z_bottom
@@ -68,12 +94,12 @@ class EncoderTopBottom(nn.Module):
 
 class VectorQuantizer(nn.Module):
     """
-    Vector Quantizer module for VQVAE
+    Vector Quantizer module for VQVAE.
 
     Args:
-        num_embeddings: size of the codebook
-        embedding_dim: dimension of each codebook vector
-        commitment_cost: weight for commitment loss
+        num_embeddings (int): Number of embedding vectors in the codebook.
+        embedding_dim (int): Dimensionality of each embedding vector.
+        commitment_cost (float): Weight for the commitment loss.
     """
     def __init__(self, num_embeddings, embedding_dim, commitment_cost):
         super(VectorQuantizer, self).__init__()
@@ -87,6 +113,15 @@ class VectorQuantizer(nn.Module):
 
 
     def forward(self, inputs):
+        """
+        Forward pass for vector quantization.
+
+        Args:
+            inputs (torch.Tensor): Input tensor of shape (batch_size, embedding_dim, height, width).
+
+        Returns:
+            tuple: Quantization loss, quantized output, and encoding indices.
+        """
         # Ensure the embeddings are on the same device as inputs
         self.embedding = self.embedding.to(inputs.device)
 
@@ -117,9 +152,17 @@ class VectorQuantizer(nn.Module):
         return loss, quantized, encoding_indices
 
 
-class DecoderTopBottom(nn.Module):
+class Decoder(nn.Module):
+    """
+    Decoder module for VQVAE-2 with two levels (top and bottom).
+
+    Args:
+        in_channels (int): Number of output channels.
+        hidden_dims (list): List of hidden dimensions for top and bottom decoders.
+        embedding_dims (list): List of embedding dimensions for top and bottom decoders.
+    """
     def __init__(self, in_channels, hidden_dims, embedding_dims):
-        super(DecoderTopBottom, self).__init__()
+        super(Decoder, self).__init__()
 
         # Top decoder
         self.decoder_top = nn.Sequential(
@@ -137,6 +180,16 @@ class DecoderTopBottom(nn.Module):
         )
 
     def forward(self, quant_top, quant_bottom):
+        """
+        Forward pass of the decoder.
+
+        Args:
+            quant_top (torch.Tensor): Quantized top latent representation.
+            quant_bottom (torch.Tensor): Quantized bottom latent representation.
+
+        Returns:
+            torch.Tensor: Reconstructed output.
+        """
         dec_top = self.decoder_top(quant_top)
         dec_top_upsampled = F.interpolate(dec_top, size = quant_bottom.shape[2:])
         combined = torch.cat([dec_top_upsampled, quant_bottom], dim = 1)
@@ -146,14 +199,14 @@ class DecoderTopBottom(nn.Module):
 
 class VQVAE2(nn.Module):
     """
-    VQVAE-2 with hierarchical latent spaces
+    VQVAE-2 model with hierarchical latent spaces.
 
     Args:
-        in_channels: number of input channels
-        hidden_dims: list of hidden dimensions for encoder/decoder
-        num_embeddings: list of codebook sizes for each level
-        embedding_dim: list of embedding dimensions for each level
-        commitment_cost: weight for commitment loss
+        in_channels (int): Number of input channels.
+        hidden_dims (list): List of hidden dimensions for encoder and decoder.
+        num_embeddings (list): List of codebook sizes for each level.
+        embedding_dim (list): List of embedding dimensions for each level.
+        commitment_cost (float): Weight for the commitment loss.
     """
     def __init__(self, in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost):
         super(VQVAE2, self).__init__()
@@ -162,17 +215,26 @@ class VQVAE2(nn.Module):
         self.num_levels = len(num_embeddings)
 
         # Encoders
-        self.encoder = EncoderTopBottom(in_channels, hidden_dims, embedding_dims)
+        self.encoder = Encoder(in_channels, hidden_dims, embedding_dims)
 
         # Vector Quantizers
         self.vq_top = VectorQuantizer(num_embeddings[0], embedding_dims[0], commitment_cost)
         self.vq_bottom = VectorQuantizer(num_embeddings[1], embedding_dims[1], commitment_cost)
 
         # Decoders
-        self.decoder = DecoderTopBottom(in_channels, hidden_dims, embedding_dims)
+        self.decoder = Decoder(in_channels, hidden_dims, embedding_dims)
 
 
     def encode(self, x):
+        """
+        Encodes the input into two latent spaces (top and bottom).
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            tuple: Latent losses and quantized representations for top and bottom levels.
+        """
         z_top, z_bottom = self.encoder(x)
         loss_top, quant_top, indices_top = self.vq_top(z_top)
         loss_bottom, quant_bottom, indices_bottom = self.vq_bottom(z_bottom)
@@ -180,10 +242,29 @@ class VQVAE2(nn.Module):
 
 
     def decode(self, quant_top, quant_bottom):
+        """
+        Decodes the quantized latent representations back to the input space.
+
+        Args:
+            quant_top (torch.Tensor): Quantized top latent representation.
+            quant_bottom (torch.Tensor): Quantized bottom latent representation.
+
+        Returns:
+            torch.Tensor: Reconstructed image.
+        """
         return self.decoder(quant_top, quant_bottom)
 
 
     def forward(self, x):
+        """
+        Full forward pass through the VQVAE-2 model.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            tuple: Total loss and the reconstructed image.
+        """
         # Move input to the same device as the model
         device = next(self.parameters()).device
         x = x.to(device)

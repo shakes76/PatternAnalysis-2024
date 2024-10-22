@@ -44,7 +44,7 @@ The dataset contains approximately **30,000 images** in total, with **20,000** i
 
 This repository consists of the following five major files:
 - **`dataset.py`**: Responsible for all data augmentation and batch loading.
-- **`model.py`**: Defines the model architecture implemented using PyTorch.
+- **`model.py`**: Defines the model architecture implemented using PyTorch. A large section of this was taken from Abd Elilah TAUIL's blog, which can be found in references. 
 - **`params.py`**: Contains important parameters for the model.
 - **`train.py`**: Defines the training loop and training function.
 - **`predict.py`**: Implements a class for loading models and generating images.
@@ -72,6 +72,8 @@ Adaptive Instance Normalization (AdaIN) adjusts the **mean** ( $\mu(x_i)$ ) and 
 ### Mixing Regularization
 
 This technique passes multiple latent vectors to different style layers, preventing overfitting and helping the model generalize styles better.
+
+### Gradient Penalty
 
 Some components of the model, such as the discriminator, were taken directly from the ProGAN paper. In addition, a gradient penalty module was created based on the **Wasserstein GAN with Gradient Penalty** paper.
 
@@ -188,9 +190,9 @@ The following plots show the progressive output from the generator at each image
 </p>
 
 
-After training was completed each of these models was used to generate images. They are as follows.
+After training was completed each of these models was used to generate images. 
 
-2 things are of note:
+2 things of note:
 1. These output images are highly detailed (of the same standard as the input dataset)
 2. There is high diversity suggesting that the model did not experience mode collapse
 
@@ -218,13 +220,13 @@ After training was completed each of these models was used to generate images. T
 In the training process of my GAN, both the discriminator loss and generator loss show distinct patterns of spikes throughout the training cycle. These spikes are not random; they incrementally increase and correspond to specific points during the training where the model transitions to a higher-resolution image size. Each time the model completes a training stage, the image resolution is doubled. This causes an immediate and notable increase in both the discriminator and generator losses.
 
 <p align="center">
- <img src="recognition/Readme_images/NC Loss.png" width="70%" />
+ <img src="recognition/Readme_images/NC Loss.png" width="90%" />
 </p>
 
 At each of these transitions, the model starts training on images of a larger size, requiring the generator to produce higher-resolution images and the discriminator to evaluate them with higher detail.
 
 <p align="center">
- <img src="recognition/Readme_images/AD Loss1.png" width="70%" />
+ <img src="recognition/Readme_images/AD Loss1.png" width="90%" />
 </p>
 
 This incremental increase in the loss spikes can be clearly seen in the AD loss function graph. Arrows in the graph highlight the key points where the image size is doubled (e.g., from 32x32 to 64x64, and so on).
@@ -234,15 +236,18 @@ This incremental increase in the loss spikes can be clearly seen in the AD loss 
 ## T-SNE Plot
 
 <p align="center">
- <img src="recognition/Readme_images/2d TSNE.png" width="45%" />
- <img src="recognition/Readme_images/3d TSNE.png" width="45%" />
+ <img src="recognition/Readme_images/2d TSNE.png" width="70%" />
+</p>
+
+<p align="center">
+ <img src="recognition/Readme_images/3d TSNE.png" width="70%" />
 </p>
 
 The t-SNE plot was generated using the style codes from each model, which were then processed through TensorFlow's t-SNE function to visualize the clustering of these codes. Below, we present both a 2D t-SNE plot (with 2 components) and a 3D version (with 3 components). These plots show a clear distinction between two well-separated clusters, which suggests that the model has successfully developed a well-structured W space. This structure reflects the model's ability to identify and represent the two different styles in the dataset—likely corresponding to the Alzheimer's Disease (AD) and Normal Control (NC) brain images. Additionally, the clustering is evidence that the model has effectively generalized these styles, demonstrating its ability to distinguish between the two categories in the latent space.
 
 ### Cosine Similarity
 
-On top of the t-SNE plot, the mean style code was calculated, and the cosine similarity between the AD and NC style vectors was computed. The resulting value of 0.0102 is close to zero, indicating that the vectors are nearly orthogonal in the W space. This suggests that the model has effectively learned to distinguish between the two styles (AD and NC).
+On top of the t-SNE plot, the mean style code was calculated, and the cosine similarity between the AD and NC style vectors was computed. The resulting value of **0.0102** is close to zero, indicating that the vectors are nearly orthogonal in the W space. This suggests that the model has effectively learned to distinguish between the two styles (AD and NC).
 
 Although these two styles—AD and NC—are very similar and sometimes indistinguishable by untrained professionals, the StyleGAN model, being trained specifically to recognize only these two styles, exaggerates the differences between them in the latent space. This further supports that the StyleGAN has successfully captured the subtle differences between the two categories, despite the minimal visual distinctions in the dataset.
 
@@ -250,10 +255,12 @@ Although these two styles—AD and NC—are very similar and sometimes indisting
 
 FID (Fréchet Inception Distance) is a metric used to evaluate the quality of images generated by the model. It compares the statistical distribution of real and generated images, where lower values indicate better quality. In this project, the Clean FID score was used to ensure a more consistent and reliable evaluation.
 
-For this evaluation, 3000 real images and 3000 generated images were used for both the AD and NC models. A score around 30 is considered relatively good, as it suggests the generated images are reasonably close to the real ones.
+For this evaluation, 3000 real images and 3000 generated images were used for both the AD and NC models. A score around 30 is considered relatively good, as it suggests the generated images are reasonably close to the real ones. The original StyleGAN paper achieved an FID of 4.4159, however, it is difficult to compair these values directly as the paper used the FFHQ data set with 50000 images.
 
-Clean FID AD Score: 32.00
-Clean FID NC Score: 39.58
+**Clean FID AD Score: 32.00**
+**Clean FID NC Score: 39.58**
+
+
 The AD model achieved a slightly better score, indicating that the images generated for the Alzheimer's Disease category are closer to the real data distribution compared to the NC (Normal Control) images. However, both scores suggest that the models are producing relatively good-quality images.
 
 ## Dependencies

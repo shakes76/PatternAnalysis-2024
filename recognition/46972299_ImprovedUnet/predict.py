@@ -12,9 +12,9 @@ import time
 import matplotlib.pyplot as plt
 
 LOCAL = True
-LOAD_FILE_PATH = ".\\model\\validated_model.pt"
+LOAD_FILE_PATH = ".\\local_model\\model56_train.pt"
 # make sure to include the directory separator as a suffix here
-OUTPUT_PATH = ".\\model\\"
+OUTPUT_PATH = ".\\local_model\\"
 BATCH_SIZE = 1
 SHUFFLE = False
 WORKERS = 0

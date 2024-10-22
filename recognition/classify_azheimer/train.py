@@ -12,61 +12,39 @@ from tqdm import tqdm
 from modules import GFNet
 import os
 from torch.optim.lr_scheduler import ExponentialLR
-class AlzheimerClassifier:
-    def __init__(self, model, device):
-        self.model = model.to(device)
-        self.device = device
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.scheduler = ExponentialLR(self.optimizer, gamma=0.9)  # Exponential LR scheduler
-
-    def train(self, train_loader, epochs=10):
-        self._bar = tqdm(range(epochs*len(train_loader)))
-        self.model.train()
-        
-        for epoch in range(epochs):
-            running_loss = 0.0
-            for inputs, labels in train_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, labels)
-                loss.backward()
-                self.optimizer.step()
-                running_loss += loss.item()
-                self._bar.update(1)
-            self.scheduler.step()  # Update the learning rate
-            print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
-
-    def evaluate(self, test_loader):
-        self.model.eval()
-        all_preds = []
-        all_labels = []
-        with torch.no_grad():
-            for inputs, labels in test_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                outputs = self.model(inputs)
-                _, preds = torch.max(outputs, 1)
-                all_preds.extend(preds.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
-        accuracy = accuracy_score(all_labels, all_preds)
-        print(f"Accuracy: {accuracy}")
-        return accuracy
+from sklearn.metrics import classification_report
 
 
-def main():
-    if  os.path.exists("recognition/classify_azheimer/AD_NC"):
+def train_model():
+    if os.path.exists("recognition/classify_azheimer/AD_NC"):
         data_dir = "recognition/classify_azheimer/AD_NC"
     else:
         data_dir = "/home/groups/comp3710/ADNI/AD_NC/"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GFNet(num_classes=2)  # Assuming GFNet is designed for binary classification
-    classifier = AlzheimerClassifier(model, device)
+    model = model.to(device)
+    
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+    scheduler = ExponentialLR(optimizer, gamma=0.9)
+    
     train_loader, test_loader = get_dataloaders(data_dir)
-    classifier.train(train_loader, epochs=10)
-    accuracy = classifier.evaluate(test_loader)
-    torch.save(model.state_dict(), "alzheimer_classifier.pth")
-    print(f"Accuracy: {accuracy}")
+    epochs = 10
+    bar = tqdm(range(epochs * len(train_loader)))
+    model.train()
 
-if __name__ == "__main__":
-    main()
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+            bar.update(1)
+        scheduler.step()  # Update the learning rate
+        print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
+    torch.save(model.state_dict(), "alzheimer_classifier.pth")
+    return model

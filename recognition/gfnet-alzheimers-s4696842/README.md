@@ -69,7 +69,7 @@ images duplicated between the test and training datasets.
 ```bash
 python -m gfnet-alzheimers-s4696842.train \
     data \
-    --epochs 50 \
+    --epochs 40 \
     --batch-size 64 \
     --test \
     --plot \

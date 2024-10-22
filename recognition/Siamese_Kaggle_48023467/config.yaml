@@ -9,3 +9,4 @@ ModelDropoutRate: 0.3
 TripletLossMargin: 1.0
 LearningRate: 0.001
 EpochCount: 16
+ModelPath: "best.pth"

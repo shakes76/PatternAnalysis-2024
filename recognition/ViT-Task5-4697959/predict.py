@@ -77,3 +77,24 @@ def predict(model, image_tensor, device):
         outputs = model(image_tensor)
         _, preds = torch.max(outputs, 1)
     return preds.item(), outputs
+
+def visualize_prediction(image_path, predicted_class, probabilities, class_names, save_dir='saved_models'):
+    """
+    Visualizes the image with prediction probabilities.
+
+    Args:
+        image_path (str): Path to the image.
+        predicted_class (str): Predicted class name.
+        probabilities (numpy.ndarray): Probabilities for each class.
+        class_names (list): List of class names.
+        save_dir (str): Directory to save the visualization.
+    """
+    image = Image.open(image_path).convert('RGB')
+
+    plt.figure(figsize=(8,6))
+    plt.imshow(image)
+    plt.axis('off')
+    plt.title(f"Predicted: {predicted_class}\nProbabilities: {probabilities}")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'prediction_visualization.png'))
+    plt.show()

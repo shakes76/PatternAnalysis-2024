@@ -8,3 +8,7 @@ Tasks may include:
 * Image super resolution
 * Disease classification
 * Generative modelling with StyleGAN and Stable Diffusion
+
+# Training parameters
+Image input size: 3, 224, 224
+training bacth size: 32

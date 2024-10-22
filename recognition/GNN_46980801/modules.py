@@ -18,7 +18,9 @@ class GCNNet(torch.nn.Module):
         #Add three Layers (Maybe increased in future)
         self.convs.append(GCNConv(input_dim, hidden_dim))
         self.convs.append(GCNConv(hidden_dim, hidden_dim))
+        self.convs.append(GCNConv(hidden_dim, hidden_dim))
         self.convs.append(GCNConv(hidden_dim, output_dim))
+        
         self.dropout = dropout
 
     def forward(self, data):

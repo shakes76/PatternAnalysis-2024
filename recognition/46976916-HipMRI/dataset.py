@@ -1,4 +1,6 @@
 #Reading Nifti files - Code from Appendix B
+import os
+import matplotlib.pyplot as plt
 
 import numpy as np
 import nibabel as nib
@@ -66,3 +68,24 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
         return images , affines
     else :
         return images
+
+
+image_dir1 = 'recognition/46976916-HipMRI/HipMRI_study_keras_slices_data/keras_slices_train'
+image_dir = 'recognition/46976916-HipMRI/HipMRI_study_keras_slices_data/keras_slices_seg_train'
+
+
+imageNames = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')]
+
+images= load_data_2D(imageNames, early_stop= True)
+
+# Check the shape and content
+#print(f"Number of images loaded: {len(imageNames)}")
+#print(f"Shape of first image: {images[0].shape}")
+
+image_index = 0
+image = images[image_index]
+
+plt.imshow(image)  # Use cmap='gray' for grayscale display
+plt.title(f'Image {image_index}')
+plt.axis('off')  # Turn off axis labels
+plt.show()

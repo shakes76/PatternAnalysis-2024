@@ -97,12 +97,8 @@ def train_siamese(model, train_loader, val_loader, criterion, optimizer, device,
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        i = 0
+        
         for img1, img2, labels in train_loader:
-            print(i)
-            i+=1
-            if i == 2:
-                break
             img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
 
             optimizer.zero_grad()
@@ -126,12 +122,8 @@ def validate_siamese(model, val_loader, criterion, device):
     total = 0
 
     with torch.no_grad():
-        i = 0
         for img1, img2, labels in val_loader:
-            print(i)
-            i+=1
-            if i == 2:
-                break
+
             img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
 
             outputs = model(img1, img2)
@@ -152,12 +144,8 @@ def train_classifier(model, train_loader, val_loader, criterion, optimizer, devi
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        i = 0
+
         for images, labels in train_loader:
-            print(i)
-            i+=1
-            if i == 2:
-                break
             images, labels = images.to(device), labels.to(device).unsqueeze(1)
 
             optimizer.zero_grad()
@@ -181,12 +169,7 @@ def validate_classifier(model, val_loader, criterion, device):
     total = 0
 
     with torch.no_grad():
-        i = 0
         for images, labels in val_loader:
-            print(i)
-            i+=1
-            if i == 2:
-                break
             images, labels = images.to(device), labels.to(device).unsqueeze(1)
 
             outputs = model(images)
@@ -210,12 +193,7 @@ def evaluate_classifier(model, test_loader, criterion, device):
     all_outputs = []
     
     with torch.no_grad():
-        i = 0
         for images, labels in test_loader:
-            print(i)
-            i+=1
-            if i == 2:
-                break
             images, labels = images.to(device), labels.to(device).unsqueeze(1)
     
             outputs = model(images)

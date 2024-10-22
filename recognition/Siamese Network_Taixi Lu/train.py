@@ -14,7 +14,7 @@ img_dir = 'data/train/'
 
 
 def main():
-    train_loader = get_pair_data_loader(csv_file, img_dir, batch_size=batch_size, shuffle=True, num_workers=16)
+    train_loader = get_pair_data_loader(csv_file, img_dir, batch_size=batch_size, shuffle=True, num_workers=4)
 
     print(f"CUDA Check: {torch.cuda.is_available()}")
     model = SiameseNetwork().cuda()
@@ -23,6 +23,7 @@ def main():
     train_losses = []
 
     for epoch in range(num_epochs):
+        print(f"Epoch [{epoch + 1}/{num_epochs}]", end="")
         epoch_loss = 0.0
         model.train()
         for batch_idx, (img1, img2, label) in enumerate(train_loader):
@@ -39,7 +40,7 @@ def main():
 
         avg_epoch_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_epoch_loss)
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_epoch_loss:.4f}")
+        print(f", Loss: {avg_epoch_loss:.4f}")
 
     plt.plot(train_losses, label='Training Loss')
     plt.xlabel('Epoch')

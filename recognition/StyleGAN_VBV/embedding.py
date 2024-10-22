@@ -25,7 +25,7 @@ generator_nc.eval()
 # Mapping network to transform Z to W
 mapping_network = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)
 
-def generate_w_vectors(generator, num_samples=50):
+def generate_w_vectors(generator, num_samples=200):
     """ Function to generate W vectors """  
     # Reduce number of samples
     latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)

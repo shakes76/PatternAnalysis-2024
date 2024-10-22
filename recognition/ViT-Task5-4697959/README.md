@@ -140,3 +140,59 @@ Dropout is a regularization technique that helps prevent overfitting by randomly
 5. **Weight Decay**:
 
 Weight decay adds a penalty to the loss function based on the magnitude of the model weights, encouraging the network to learn simpler, more generalizable patterns. The initial value was set to `1e-5`, and various values (`1e-4`, `5e-5`, `1e-6`) were tested to reduce overfitting and improve test performance by regulating model complexity.
+
+## Training Results and Evaluation
+
+### Hyperparameter Tuning Results
+
+##### 1. Epoch Tuning 
+
+_Parameters kept constant: learning rate = 3e-4, weight decay = 1e-5, batch size = 32, dropout = 0.1._
+
+| Epochs | Best Validation Accuracy (%) | Test Accuracy (%) | Early Stopping |
+|--------|------------------------------|-------------------|----------------|
+| 30     | 68.1                        | 65.0              | No              |
+| 50     | 51.2                        | 50.4              | Yes             |
+| 80     | 72.0                        | **67.2**          | No              |
+| 200    | 82.0                        | 65.3              | No              | 
+
+##### 2. Learning Rate Tuning
+
+_Parameters kept constant: epochs = 80, weight decay = 1e-5, batch size = 32, dropout = 0.1._
+
+| Learning Rate | Best Validation Accuracy (%) | Test Accuracy (%) | Early Stopping |
+|---------------|------------------------------|-------------------|----------------|
+| 1e-4          | 77.4                        | 64.9              | No            |
+| 3e-4          | 72.0                        | **67.2**          | No             |
+| 5e-4          | 72.3                        | 66.1              | No            |
+
+##### 3. Dropout Tuning
+
+_Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-5, batch size = 32._
+
+| Dropout | Best Validation Accuracy (%) | Test Accuracy (%) | Early Stopping |
+|---------|------------------------------|-------------------|----------------|
+| 0.1     | 72.0                        | **67.2**         | No             |
+| 0.3     | 64.5                        | 63.6              | Yes            |
+| 0.5     | 60.8                        | 58.9              | Yes            |
+
+##### 4. Batch Size Tuning
+
+_Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-5, dropout = 0.1._
+
+| Batch Size | Best Validation Accuracy (%) | Test Accuracy (%) | Early Stopping |
+|------------|------------------------------|-------------------|----------------|
+| 8          | 73.6                        | 66.3              | No             |
+| 16         | 70.1                        | **67.0**          | No             |
+| 32         | 72.2                        | **67.2**          | No             |
+| 64         | 72.6                        | 65.6              | No            |
+
+##### 5. Weight Decay Tuning
+
+_Parameters kept constant: epochs = 80, learning rate = 3e-4, batch size = 32, dropout = 0.1._
+
+| Weight Decay | Best Validation Accuracy (%) | Test Accuracy (%) | Early Stopping |
+|--------------|------------------------------|-------------------|----------------|
+| 1e-6         | 51.2                        | 50.9              | Yes             |
+| 1e-5         | 72.2                        |**67.2**           | No             |
+| 1e-4         | 62.4                        | 59.3              | No            |

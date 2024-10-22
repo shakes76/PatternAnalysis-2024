@@ -31,6 +31,10 @@ class StyleGANGenerator(nn.Module):
         w = w.view(w.size(0), -1, 1, 1)
         generated_image = self.synthesis(w)
         return generated_image
+    
+    @staticmethod
+    def generator_loss(fake_output):
+        return torch.mean((fake_output - 1) ** 2)
 
 class StyleGANDiscriminator(nn.Module):
     def __init__(self, img_channels):
@@ -46,6 +50,12 @@ class StyleGANDiscriminator(nn.Module):
 
     def forward(self, img):
         return self.model(img)
+    
+    @staticmethod
+    def discriminator_loss(real_output, fake_output):
+        real_loss = torch.mean((real_output - 1) ** 2)
+        fake_loss = torch.mean(fake_output ** 2)
+        return (real_loss + fake_loss) / 2
     
 if __name__ == "__main__":
     z_dim = 128  

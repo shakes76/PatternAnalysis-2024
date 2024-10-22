@@ -17,6 +17,13 @@ import torch
 import os
 
 class Prostate3DDataset(torch.utils.data.Dataset):
+    """
+    Dataset class for loading semantic MRs and their corresponding labels for 3D segmentation tasks.
+    
+    semantic_MRs_path (str): Path to the folder containing the MR images.
+    semantic_labels_path (str): Path to the folder containing the segmentation labels.
+    transforms (torchio.transforms): Optional transformations to apply to the dataset.
+    """
     def __init__(self, semantic_MRs_path, semantic_labels_path, transforms=None):
         semantic_MRs_files = [f"{semantic_MRs_path}/{file}" for file in os.listdir(semantic_MRs_path)]
         semantic_labels_files = [f"{semantic_labels_path}/{file}" for file in os.listdir(semantic_labels_path)]
@@ -42,9 +49,15 @@ class Prostate3DDataset(torch.utils.data.Dataset):
             self.subjects.append(subject)
 
     def __len__(self):
+        """
+        Returns the number of subjects in the dataset.
+        """
         return len(self.subjects)
     
     def __getitem__(self, idx):
+        """
+        Retrieves a subject by index.
+        """
         subject = self.subjects[idx]
 
         # Extract image and mask tensors
@@ -55,6 +68,12 @@ class Prostate3DDataset(torch.utils.data.Dataset):
     
 
 def get_data_loaders():
+    """
+    Creates and returns data loaders for training and testing using the Prostate3DDataset class. It applies data transformations.
+
+    Returns:
+        Tuple[DataLoader, DataLoader]: Data loaders for training and testing.
+    """
     # Transforms
     transforms = tio.Compose([
         tio.ZNormalization(),

@@ -1,3 +1,16 @@
+"""
+utils.py
+
+Author: Alex Pitman
+Student ID: 47443349
+COMP3710 - HipMRI UNet2D Segmentation Project
+Semester 2, 2024
+
+Contains various global constants and utility functions
+such as loss functions, dice score calculation, and
+seed setting.
+"""
+
 import torch
 import numpy as np
 import random
@@ -5,10 +18,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 IMAGE_HEIGHT = 256
-IMAGE_WIDTH = 144
+IMAGE_WIDTH = 128
+
+# Mean and standard deviation for entire dataset
+IMAGES_MEAN = 0.2846823
+IMAGES_STD = 0.3161847
 
 TRAIN_IMG_DIR = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 TRAIN_MASK_DIR = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
@@ -34,7 +50,7 @@ def set_seed(seed=SEED):
 
 def dice_score(predictions, masks, smooth=1e-6):
     """
-    Calculates dice Score for each class in multi-class segmentation.
+    Calculates Dice score for each class in multi-class segmentation.
 
     Parameters:
         predictions: Predicted logits of shape (B, C, H, W)
@@ -90,7 +106,10 @@ class WeightedDiceLoss(nn.Module):
         return weighted_dice_loss.mean()
     
 class CombinedLoss(nn.Module):
-    def __init__(self, label_weights=None, dice_weight=0.75, smooth=1e-6):
+    """
+    Calculates loss as a weighted sum of CrossEntropyLoss and DiceLoss
+    """
+    def __init__(self, label_weights=None, dice_weight=0.8, smooth=1e-6):
         super(CombinedLoss, self).__init__()
         self.dice_weight = dice_weight
         self.smooth = smooth

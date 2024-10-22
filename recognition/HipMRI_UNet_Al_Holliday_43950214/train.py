@@ -40,9 +40,9 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
     trans = transforms.Resize((256, 256))
     # example HipMRI dataset root folders (feel free to replace with your own):
     # For Woomy (my laptop)
-    hipMriRoot = "C:\\Users\\al\\HipMRI"
+    #hipMriRoot = "C:\\Users\\al\\HipMRI"
     # For the lab computers
-    #hipMriRoot = "H:\\HipMRI"
+    hipMriRoot = "H:\\HipMRI"
     # For Rangpur
     #hipMriRoot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
     hipmri2dtrain = dataset.HipMRI2d(hipMriRoot, imgSet = "train", transform = trans, applyTrans = True)
@@ -94,11 +94,13 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
             img = img.to(dev)
             #seg = seg.squeeze().long()
             #seg = seg.squeeze()
+            seg = nn.functional.one_hot(seg.squeeze(), num_classes = 6)
+            seg = torch.permute(seg, (0, 3, 1, 2))
             seg = seg.to(dev)
             out = net(img)
-            out = torch.permute(out, (0, 2, 3, 1)) # put the chan dim last
-            out = torch.argmax(out, dim = -1)
-            out = out[:, None, :, :] # reshape back to (batch, chan, h, w)
+            #out = torch.permute(out, (0, 2, 3, 1)) # put the chan dim last
+            #out = torch.argmax(out, dim = -1)
+            #out = out[:, None, :, :] # reshape back to (batch, chan, h, w)
             diceSimilarity = dice_coeff(out, seg, dev, 6)
             print("current dice: {:.5f}".format(diceSimilarity.cpu().item()))
             diceLosses.append(diceSimilarity.cpu().item())

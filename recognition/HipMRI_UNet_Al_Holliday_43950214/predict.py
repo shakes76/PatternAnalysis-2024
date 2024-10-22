@@ -24,9 +24,9 @@ def predict(net, dev):
     trans = transforms.Resize((256, 256))
     # example HipMRI dataset root folders:
     # For Woomy (my laptop)
-    hipMriRoot = "C:\\Users\\al\\HipMRI"
+    #hipMriRoot = "C:\\Users\\al\\HipMRI"
     # For the lab computers
-    #hipMriRoot = "H:\\HipMRI"
+    hipMriRoot = "H:\\HipMRI"
     # For Rangpur
     #hipMriRoot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
     hipmri2dval = dataset.HipMRI2d(hipMriRoot, imgSet = "validate", transform = trans, applyTrans = True)
@@ -39,6 +39,9 @@ def predict(net, dev):
         for img, seg in valLoader:
             img = img.to(dev)
             #seg = seg.squeeze()
+            seg = nn.functional.one_hot(seg.squeeze(), num_classes = 6)
+            seg = torch.permute(seg, (0, 3, 1, 2))
+            seg = seg.to(dev)
             seg = seg.to(dev)
             out = net(img)
             out = torch.permute(out, (0, 2, 3, 1)) # put the chan dim last

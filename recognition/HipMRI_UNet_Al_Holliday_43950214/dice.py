@@ -24,8 +24,12 @@ def dice_coeff(pred, true, dev, lbls = 1):
     #pred = testOnes
     #true = testOnes2
     
-    intersect = torch.sum(torch.sum(torch.abs(true * pred), dim = 1))
-    print("intersect = ", intersect.cpu().item())
-    union = torch.sum(torch.sum(torch.add(torch.abs(true), torch.abs(pred)), dim = 1))
-    print("union = ", union.cpu().item())
-    return (2 * intersect / union) / lbls
+    totDice = 0
+    for i in range(lbls):
+        intersect = torch.sum(torch.sum(torch.abs(true[:, i, :, :] * pred[:, i, :, :]), dim = 1))
+        #print("intersect = ", intersect.cpu().item())
+        union = torch.sum(torch.sum(torch.add(torch.abs(true[:, i, :, :]), torch.abs(pred[:, i, :, :])), dim = 1))
+        #print("union = ", union.cpu().item())
+        totDice += 2 * intersect / union
+    
+    return totDice / lbls

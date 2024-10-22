@@ -28,15 +28,15 @@ def find_classes(directory: Union[str, Path],
 
 class CustomImageFolder(ImageFolder):
     def __init__(self, root, transform, desired_classes: List):
-        super().__init__(root, transform)
         self.desired_classes = desired_classes
+        super().__init__(root, transform)
 
     def find_classes(self, directory: str) -> Tuple[List[str], Dict[str, int]]:
         """Finds the class folders in a dataset.
 
         See :class:`DatasetFolder` for details.
         """
-        return find_classes(directory, self.desired_classes)
+        return find_classes(directory=directory, desired_class_names=self.desired_classes)
 
 
 def get_loader(log_resolution, batch_size, directory="AD_NC/train", classes=""):

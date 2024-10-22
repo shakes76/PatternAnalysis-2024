@@ -141,7 +141,7 @@ if __name__ == "__main__":
     if args.classes == "all":
         loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.dataset_dir)
     else:
-        loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.classes)
+        loader = get_loader(LOG_RESOLUTION, BATCH_SIZE, args.dataset_dir, classes=args.classes)
 
     gen, critic, mapping_network, path_length_penalty = load_model(args.model_dir)
 

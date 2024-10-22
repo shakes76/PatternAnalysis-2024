@@ -138,7 +138,7 @@ def train():
     step = int(log2(START_TRAIN_AT_IMG_SIZE / 4))
     for num_epochs in PROGRESSIVE_EPOCHS[step:]:
         alpha = 1e-5   # start with very low alpha
-        loader, dataset = get_dataloader(4 * 2 ** step)  
+        loader, dataset = get_dataloader(4 * 2 ** step)
         print(f"Current image size: {4 * 2 ** step}")
 
         # Initialize loss lists

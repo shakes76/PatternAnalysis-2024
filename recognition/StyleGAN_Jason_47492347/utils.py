@@ -5,6 +5,7 @@ Imports and utility functions are organised here.
 
 import os
 import time
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,6 +15,7 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 import numpy as np
 import matplotlib.pyplot as plt
+import umap
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset, random_split
 from PIL import Image

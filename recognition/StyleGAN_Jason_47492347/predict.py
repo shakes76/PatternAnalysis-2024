@@ -8,7 +8,7 @@ saved model file. Example usage documented in the README.
 from utils import *
 from settings import *
 from modules import Generator
-import argparse
+
 
 def generate_images(model_path, output_path, num_images, seed=0):
     """
@@ -54,5 +54,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     model_path = f"{SRC}/saved_models/{args.model}.pt"
-    output_path = f"{SRC}/predict_outputs/{args.output}"
+    output_path = f"{SRC}/generated_images/{args.output}"
     generate_images(model_path, output_path, args.n, args.seed)

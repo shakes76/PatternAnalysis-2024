@@ -107,7 +107,7 @@ def save_plots(architecture, epochs, test_acc, test_loss, current_datetime, plot
         test_acc (list): List of test accuracy values.
         test_loss (list): List of test loss values.
         current_datetime (str): Timestamp for saving plots.
-        plot_dir (str): Directory to save plots (default: 'images').
+        plot_dir (str): Directory to save plots (default: 'plots').
     """
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)

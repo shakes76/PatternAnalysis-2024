@@ -33,7 +33,7 @@ def get_args_parser():
     """
     parser = argparse.ArgumentParser('GFNet testing script', add_help=False)
     parser.add_argument('--batch-size', default=128, type=int, help='Batch size for testing.')
-    parser.add_argument('--arch', default='gfnet-b', type=str, help='Model architecture to use.',
+    parser.add_argument('--arch', default='gfnet-s', type=str, help='Model architecture to use.',
                         choices=['gfnet-ti', 'gfnet-xs', 'gfnet-s', 'gfnet-b']) 
                         # Make sure to change 'default=' to the same model as checkpoint best!
     parser.add_argument('--input-size', default=224, type=int, help='Input image size.')
@@ -92,7 +92,7 @@ def main(args):
     # Validate the model on the test data
     print('## Validating model on test dataset...')
     # validate(data_loader_test, model, criterion, device)
-    validate(data_loader_test, model, criterion, device, output_dir='outputs', class_names=('NC', 'AD'))
+    validate(data_loader_test, model, criterion, device, class_names=('NC', 'AD'), output_dir='outputs')
     # Making a single inference
     print('## Making a single inference and saving to output.')
     save_random_test_image(data_loader_test, model, device, class_names=('NC', 'AD'), output_dir='outputs')
@@ -161,7 +161,7 @@ def accuracy(output, target):
         accuracy = correct / target.size(0) * 100
         return accuracy
 
-def validate(val_loader, model, criterion, device, output_dir='images', class_names=('NC', 'AD')):
+def validate(val_loader, model, criterion, device, class_names=('NC', 'AD'), output_dir='outputs'):
     """
     Evaluates the model on the entire validation dataset for binary classification
     and saves a confusion matrix as an image.
@@ -221,7 +221,7 @@ def validate(val_loader, model, criterion, device, output_dir='images', class_na
     return accuracy
 
 
-def save_random_test_image(val_loader, model, device, class_names=('NC', 'AD'), output_dir='images'):
+def save_random_test_image(val_loader, model, device, class_names=('NC', 'AD'), output_dir='outputs'):
     """
     Randomly selects an image from the test dataset, makes a prediction, and saves the image
     with a title showing the true and predicted labels.

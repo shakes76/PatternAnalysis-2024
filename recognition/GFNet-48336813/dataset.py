@@ -14,6 +14,7 @@ import os
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+import timm
 
 # Mean and standard deviation values for different splits of the ADNI dataset
 ADNI_DEFAULT_MEAN_TRAIN = 0.19868804514408112

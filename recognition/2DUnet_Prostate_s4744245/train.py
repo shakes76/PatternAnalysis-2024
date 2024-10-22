@@ -14,7 +14,7 @@ from modules import unet_model
 
 #define training variables
 BATCH_SIZE = 32
-EPOCHS = 100
+EPOCHS = 10
 n_classes = 5
 
 
@@ -37,6 +37,10 @@ def dice_loss(y_true, y_pred):
 
 # Initialize the U-Net model
 model = unet_model(n_classes, input_size=(256, 128, 1))
+
+from sklearn.utils import class_weight
+class_weights = class_weight.compute_class_weight('balanced', np.unique(images_seg_train), images_seg_train)
+print("Class weights:", class_weights)
 
 def train_unet_model(model, 
                      train_images, train_labels, 
@@ -95,7 +99,8 @@ history = train_unet_model(model,
                            images_validate, images_seg_validate, 
                            batch_size=BATCH_SIZE, 
                            epochs=EPOCHS, 
-                           model_save_path="best_unet_model.h5")
+                           model_save_path="best_unet_model.h5",
+                           class_weight=class_weights)
 
 # Optionally, you can plot the training/validation curves from the history
 import matplotlib.pyplot as plt
@@ -147,10 +152,18 @@ def save_validation_image(image, mask, prediction, index):
 
 index = 0
 image = images_validate[index]  # Shape (256, 128, 1)
-mask = images_seg_validate[index]   # Shape (256, 128, 1)
+mask = images_seg_validate[index]   # Shape (256, 128, 5)
+
+
 
 # Get prediction from the model
-prediction = model.predict(image[np.newaxis, ...])  # Add batch dimension, shape becomes (1, 256, 128, 1)
+prediction = model.predict(image[np.newaxis, ..., np.newaxis])  # shape of input (1, 256, 128, 1)
 
-# Save the images
-save_validation_image(image, mask, prediction, index)
+# Convert prediction to class labels (argmax along the last axis)
+predicted_labels = np.argmax(prediction[0], axis=-1)  # Shape (256, 128), per-pixel class
+
+# Convert one-hot encoded mask to class labels for comparison/visualization
+true_labels = np.argmax(mask, axis=-1)  # Shape (256, 128), per-pixel class
+
+# Save the images (modify this function to handle the labels as needed)
+save_validation_image(image, true_labels, predicted_labels, index)

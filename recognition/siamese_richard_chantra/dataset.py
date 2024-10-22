@@ -4,10 +4,15 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 import torchvision.transforms as transforms
+import numpy as np
 
 # File paths
 csv_path = 'archive/train-metadata.csv'
 img_dir = 'archive/train-image/image/'
+
+# Set device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
 # Load metadata
 data = pd.read_csv(csv_path)
@@ -44,33 +49,79 @@ train_data, test_data = train_test_split(data, test_size=0.2, random_state=42, s
 print(f"\nTraining set size: {len(train_data)}")
 print(f"Testing set size: {len(test_data)}")
 
-# Dataset class for DataLoader
-class ImageDataset(Dataset):
+# Dataset class for Siamese Network
+class SiameseDataset(Dataset):
     def __init__(self, data, img_dir):
         self.data = data
         self.img_dir = img_dir
+        self.labels = data['target'].values
+        self.image_ids = data['isic_id'].values
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        row = self.data.iloc[idx]
-        image = load_image(row['isic_id'])  # Now returns preprocessed tensor
-        label = torch.tensor(row['target'], dtype=torch.float32)
-        return image, label
+        # Retrieve image
+        img1_id = self.image_ids[idx]
+        img1_label = self.labels[idx]
+        
+        # Randomly choice for: similar or dissimilar pair
+        should_get_same_class = np.random.random() > 0.5
+        
+        if should_get_same_class:
+            # Second image from the same class
+            same_class_indices = np.where(self.labels == img1_label)[0]
+            second_idx = np.random.choice(same_class_indices)
+            while second_idx == idx:  # Don't pick the same image
+                second_idx = np.random.choice(same_class_indices)
+            img2_id = self.image_ids[second_idx]
+            pair_label = torch.tensor(0.0)
+        else:
+            # Second image from the other class
+            other_class_indices = np.where(self.labels != img1_label)[0]
+            second_idx = np.random.choice(other_class_indices)
+            img2_id = self.image_ids[second_idx]
+            pair_label = torch.tensor(1.0)
+        
+        # Load and preprocess both images
+        img1 = load_image(img1_id)
+        img2 = load_image(img2_id)
+        
+        return img1, img2, pair_label
 
 # Create DataLoader
-train_dataset = ImageDataset(train_data, img_dir)
-test_dataset = ImageDataset(test_data, img_dir)
+def get_dataloaders(batch_size=32):
+    train_dataset = SiameseDataset(train_data, img_dir)
+    test_dataset = SiameseDataset(test_data, img_dir)
+    
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size, 
+        shuffle=True,
+        pin_memory=True
+    )
+    
+    test_loader = DataLoader(
+        test_dataset, 
+        batch_size=batch_size, 
+        shuffle=False,
+        pin_memory=True
+    )
+    
+    return train_loader, test_loader
 
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+# Create loaders
+train_loader, test_loader = get_dataloaders(batch_size=32)
 
 # Test loading
 if __name__ == "__main__":
-    # Load and display sample image info
-    sample_image_id = train_data.iloc[0]['isic_id']
-    sample_tensor = load_image(sample_image_id)
-    print("\nSample image tensor shape:", sample_tensor.shape)
-    print("Sample image tensor range:", 
-          f"min: {sample_tensor.min():.3f}, max: {sample_tensor.max():.3f}")
+    # Retrieving a batch from dataloader
+    batch = next(iter(train_loader))
+    sample_img1, sample_img2, sample_label = batch
+    
+    print("\nSample batch data:")
+    print("Batch size:", sample_img1.shape[0])
+    print("Image 1 shape:", sample_img1.shape)
+    print("Image 2 shape:", sample_img2.shape)
+    print("Labels shape:", sample_label.shape)
+    print("Sample labels:", sample_label[:5].tolist())

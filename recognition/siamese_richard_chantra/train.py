@@ -6,6 +6,10 @@ from tqdm import tqdm
 import math
 import torchvision.models as models
 
+# Set device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 # Siamese Network Architecture
 class SiameseNetwork(nn.Module):
     def __init__(self):
@@ -43,8 +47,6 @@ def contrastive_loss(output1, output2, label, margin=1.0):
     euclidean_distance = torch.sqrt(torch.sum((output1 - output2) ** 2, dim=1))
     
     # Contrastive loss function
-    # For similar pairs (label = 0), minimize distance
-    # For dissimilar pairs (label = 1), push distance to be greater than margin
     loss = torch.mean((1 - label) * 0.5 * euclidean_distance ** 2 +
                       label * 0.5 * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2))
     return loss
@@ -59,8 +61,8 @@ def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
         model.train()
         
         for img1, img2, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
-            # Convert data to float and reshape
-            img1, img2, labels = img1.float(), img2.float(), labels.unsqueeze(1).float()
+            img1, img2 = img1.to(device), img2.to(device) # Move tensors to device
+            labels = labels.to(device)
             
             optimizer.zero_grad()  # Reset gradients
             output1, output2 = model(img1, img2)  # Forward pass
@@ -73,7 +75,7 @@ def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
         epoch_loss = running_loss / len(train_loader)
         print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss}")
 
-        # Save checkpoint if it's the best model so far
+        # Save checkpoint for best model
         if epoch_loss < best_loss:
             best_loss = epoch_loss
             torch.save({
@@ -87,13 +89,8 @@ def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
         with open('siamese_training.txt', 'a') as f:
             f.write(f"Epoch {epoch+1}, Loss: {epoch_loss}\n")
 
-    print(f"Epoch [{epoch+1}/{epochs}], Loss: {running_loss / len(train_loader)}")
-
 if __name__ == "__main__":
-    # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Initialize model and optimizer
+    # Initialize model and move to device
     model = SiameseNetwork().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)  # Adam Optimizer
 

@@ -3,9 +3,9 @@ import torch
 
 import tqdm
 
-from dataset import load_data_2D
 from modules import UNET
 from dataset import ProstateCancerDataset
+import matplotlib.pyplot as plt
 
 
 #image_folder = 'keras_slices_train'
@@ -46,6 +46,10 @@ def main():
 
     print("Image shape:", image.shape)  # Should print something like (1, H, W) where H, W are image dimensions
     print("Ground truth shape:", ground.shape)
+    plt.imshow(ground, cmap='gray')  # Use cmap='gray' for grayscale display
+    plt.title(f'Image 0')
+    plt.axis('off')  # Turn off axis labels
+    plt.show()
 
 if __name__ == "__main__":
     main()

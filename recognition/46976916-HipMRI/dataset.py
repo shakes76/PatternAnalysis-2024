@@ -20,7 +20,7 @@ def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
 
 # load medical image functions
 def load_data_2D ( imageNames , normImage = False , categorical = False , dtype = np . float32 ,
-    getAffines = False , early_stop = False ) :
+    getAffines = False , early_stop = True ) :
     '''
     Load medical image data from names , cases list provided into a list for each .
 

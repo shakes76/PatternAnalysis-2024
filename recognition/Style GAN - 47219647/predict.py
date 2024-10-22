@@ -102,7 +102,6 @@ class LoadModel:
         # Generate random latent vectors (Z space)
         latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)
         
-        # Pass latent vectors through the generator's mapping network to get style codes (W space)
         with torch.no_grad():
             style_codes = self.gen.map(latent_vectors)
 
@@ -117,6 +116,33 @@ class LoadModel:
         plt.xlabel('t-SNE Component 1')
         plt.ylabel('t-SNE Component 2')
         plt.colorbar()
+        plt.show()
+
+    def plot_tsne_two_style_space(self, num_samples, other_gen):
+        
+        latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)
+    
+        with torch.no_grad():
+            style_codes_self = self.gen.map(latent_vectors)
+            style_codes_other = other_gen.map(latent_vectors)
+
+        tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+        style_codes_self_2d = tsne.fit_transform(style_codes_self.cpu().numpy())
+        style_codes_other_2d = tsne.fit_transform(style_codes_other.cpu().numpy())
+    
+        plt.figure(figsize=(10, 8))
+        
+        plt.scatter(style_codes_self_2d[:, 0], style_codes_self_2d[:, 1], s=5, c='blue', label='AD', cmap='Spectral')
+    
+        plt.scatter(style_codes_other_2d[:, 0], style_codes_other_2d[:, 1], s=5, c='red', label='NC', cmap='Spectral')
+
+        plt.title('t-SNE embedding of StyleGAN Latent Space (W space)')
+        plt.xlabel('t-SNE Component 1')
+        plt.ylabel('t-SNE Component 2')
+        plt.colorbar()
+    
+        plt.legend()
+    
         plt.show()
 
 

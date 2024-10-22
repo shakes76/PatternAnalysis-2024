@@ -42,9 +42,7 @@ This network maps the Latent space **$z$** with another latent space $w$. This a
 
 **Adaptive Instance Normalisation:** 
 
-$
-\text{AdaIN}(x_i, y) = y_{s,i} \cdot \frac{x_i - \mu(x_i)}{\sigma(x_i)} + y_{b,i}
-$
+${AdaIN}(x_i, y) = y_{s,i} \cdot \frac{x_i - \mu(x_i)}{\sigma(x_i)} + y_{b,i}$
 
 Adaptive Instance Normalization (AdaIN) adjusts the **mean** ( $\mu(x_i)$ ) and **variance**( $\sigma(x_i)$ ) of the input features (like an image) based on the style you want to apply.
 
@@ -99,3 +97,42 @@ To reduce overfitting, the following augmentations were applied. Random horizont
 Additionally, the images were converted to grayscale with a single channel to improve training efficiency.
 
 The image size was progressively adjusted throughout training, starting from 4x4 and scaling up to 256x256 per batch. This process will be discussed in detail in the following section.
+
+## Training 
+
+Due to the length and intensity of training, the model was trained on an external H100 gpu. The 2 data classes AD and NC were trained separately, in order to allow us to intentionally generate each class. 
+
+### Test run 1 
+
+The initial run had wide range of issues. For this model I attempted to directly generate 256 x 256 images, which manifested poorly as the model did not converge resulting in unrecognisable images. 
+
+<img src="recognition/Readme_images/image copy.png" alt="Initial Test Results" width="500"/>
+
+This issue occurred due to an error in the data augmentation and generator setup. During this test run, the input image was processed with 3 channels, and augmentations such as saturation adjustments, blurring, and discoloration were applied. This led the model to mistakenly interpret the image as colored. Additionally, using 3 channels caused the generator and discriminator to converge more slowly, contributing to the poor image quality observed above.
+
+**Adjustments:**
+
+1. The generator and data augmenter we set to only output greyscale images with single channels
+2.  The image sizes were progressively increased `IMAGE_SIZES = [4, 8, 16, 32, 64, 128, 256]`
+
+
+### Test run 2
+
+The images produces after the initial test 2 were significantly better. However, there was still one major problem related to GPU resource allocation. 
+
+It was notices that during the training CPU usage would remain relatively low and would occasionally drop off. 
+
+<img src="recognition/Readme_images/CPU Usage.png" alt="Initial Test Results" width="500"/>
+
+This indicated that there was room to further utilise the CPU or the the model was being bottle necked in a particular location. A similar problem was faced with the GPU utilisation, where particularly in the earlier image sizes **(4 to 64)**, the GPU was being under utilised. 
+
+<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="500"/>
+
+**Adjustments:**
+1. To further utilise the CPU the number of workers used in the data loader was increased from **6 -> 10**
+2. In addition the batch sizes were doubled each image size 
+`BATCH_SIZES = {4: 256, 8: 128, 16: 64, 32: 32, 64: 16, 128: 8, 256: 4}`
+
+`BATCH_SIZES = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8}`
+
+

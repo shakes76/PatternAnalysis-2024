@@ -17,3 +17,11 @@ class StyleGANGenerator(nn.Module):
     def __init__(self, z_dim, w_dim, img_channels):
         super().__init__()
         self.mapping = MappingNetwork(z_dim, w_dim)
+        self.synthesis = nn.Sequential(
+            nn.ConvTranspose2d(w_dim, 256, kernel_size=4, stride=1, padding=0),
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, img_channels, kernel_size=4, stride=2, padding=1),
+            nn.Tanh()
+        )

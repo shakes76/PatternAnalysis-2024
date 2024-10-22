@@ -9,9 +9,9 @@ import utils
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
 
-def generate_samples(data_loader, model, output_loc, image_loc=None, epoch=-1):
+def generate_samples(data_loader, model, output_loc, ssim_score=None, image_loc=None, epoch=-1):
     """
-        Generates a 4x8 grid of images from a VQVAE where the top 2 rows are the original images and the bottom 2 rows
+        Generates a 2x8 grid of images from a VQVAE where the top row contains the original images and the bottom row
         the reconstructed images. This function is either called for a specific epoch or the final model, as such the
         model can simply be passed through as is or loaded from the final model checkpoint. While the images have only
         one channel and are thus greyscale, they greyscale colourmap is not used as the colour provides better contrast.
@@ -38,23 +38,35 @@ def generate_samples(data_loader, model, output_loc, image_loc=None, epoch=-1):
 
     generated_ims, _, _, _ = model(ims)  # We only want the image
 
-    # Define a 4x8 grid for images (2 rows for inputs, 2 rows for outputs)
-    fig, axes = plt.subplots(4, 8, figsize=(16, 8))
+    # Define a 2x8 grid for images
+    fig, axes = plt.subplots(2, 8, figsize=(16, 8))
     axes = axes.flatten()
+    if ssim_score is not None:
+        fig.suptitle(f'Generated Images with SSIM Score of {ssim_score:.5f}', fontsize=20)
 
-    # Plot the 16 original images in the first two rows
-    for i in range(16):
+    # Plot 8 original images in the first row
+    for i in range(8):
         img = ims[i, :, :].squeeze().cpu().numpy()  # Remove the extra dimension
-        # axes[i].imshow(img, cmap='gray')
         axes[i].imshow(img)
         axes[i].axis("off")
 
-    # Plot the 16 corresponding reconstructed images in the last two rows
-    for i in range(16):
+    # Plot the 8 corresponding reconstructed images in the second row
+    for i in range(8):
         img_tilde = generated_ims[i, :, :].squeeze().detach().cpu().numpy()  # Detach from computation graph
-        # axes[i+16].imshow(img_tilde, cmap='gray')
-        axes[i + 16].imshow(img_tilde)
-        axes[i + 16].axis("off")
+        axes[i + 8].imshow(img_tilde)
+        axes[i + 8].axis("off")
+        
+    # Handle axes titling
+    for i in [0, 8]:
+        axes[i].axis("on")
+        axes[i].set_xticks([])
+        axes[i].set_yticks([])
+        axes[i].spines['top'].set_visible(False)
+        axes[i].spines['right'].set_visible(False)
+        axes[i].spines['bottom'].set_visible(False)
+        axes[i].spines['left'].set_visible(False)
+    axes[0].set_ylabel("Generated", fontsize=20)
+    axes[8].set_ylabel("Reconstructed", fontsize=20)
 
     plt.tight_layout()
 

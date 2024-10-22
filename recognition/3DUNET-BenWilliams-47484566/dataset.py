@@ -150,6 +150,12 @@ class MRI3DDataset(Dataset):
 
     def __len__(self):
         return len(self.image_filenames)
+    def pad_to_shape(self, tensor, target_shape):
+        # Pad the tensor to the target shape
+        diff = [target_shape[i] - tensor.shape[i] for i in range(len(target_shape))]
+        padding = [(0, diff[i]) for i in range(len(diff))]
+        return F.pad(tensor, tuple(pad for pair in reversed(padding) for pad in pair))
+
 
     def __getitem__(self, idx):
         image = load_data_3D([self.image_filenames[idx]], normImage=self.normImage)
@@ -157,6 +163,9 @@ class MRI3DDataset(Dataset):
 
         image = torch.tensor(image, dtype=torch.float32)
         label = torch.tensor(label, dtype=torch.long)
+
+        image = self.pad_to_shape(image, self.target_shape)
+        label = self.pad_to_shape(label, self.target_shape)
 
         return image, label
 

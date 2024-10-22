@@ -110,12 +110,12 @@ The Alzheimer's Disease Neuroimaging Initiative (ADNI) greyscale image dataset i
 Below are an example of an image from the Alzheimer's and Normal classes of the training dataset.
 
 <p align="center">
-    <img src="images/train_set_AD_example" width="80%">
+    <img src="images/train_set_AD_example.jpeg" width="80%">
     <br>
     AD dataset example
 </p>
 <p align="center">
-    <img src="images/train_set_NC_example" width="80%">
+    <img src="images/train_set_NC_example.jpeg" width="80%">
     <br>
     NC dataset example
 </p>

@@ -14,7 +14,7 @@ This report will be completed with documentation about the StyleGAN model for th
 ## **The Problem**
 This project involves implementing **StyleGAN** on the **ADNI (Alzheimer's Disease Neuroimaging Initiative)** brain dataset to generate realistic brain MRI images. The task is to train a GAN (Generative Adversarial Network), specifically the **StyleGAN**. The primary challenge is to generate realistic MRI scans by progressively learning style-based features. The model combines **noise injection, adaptive instance normalization (AdaIN), and modulated convolutions (Affine Transformation)** to generate synthetic brain images.
 
-![](readme_materials/stylegan_structure.jpg)
+![](recognition/47605790styleGAN_ADNI/readme_materials/stylegan_structure.jpg)
 
 ## **Requirements**
 To ensure your project runs smoothly, here’s a list of dependencies along with their versions:
@@ -82,15 +82,15 @@ The train.py run was used to train the generator (120 epochs), mapping network, 
 
 * **Training Loss Plot:** 
 
-![](readme_materials\loss_plot.jpg)
+![](recognition/47605790styleGAN_ADNI/readme_materials/loss_plot.jpg)
 
 * **Generated Images (8 images selected from Testing):**
 
-![](readme_materials\test_combined.jpg)
+![](recognition/47605790styleGAN_ADNI/readme_materials/test_combined.jpg)
 
 * **UMAP embedding plot:**
 
-![](readme_materials\umap.jpg)
+![](recognition/47605790styleGAN_ADNI/readme_materials/umap.jpg)
 
 The next section (Analysis/Evaluation) will discuss these results in detail.
 

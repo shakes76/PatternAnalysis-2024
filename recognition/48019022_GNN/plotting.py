@@ -1,7 +1,6 @@
 """
-TSNE embeddings plotfor the saved model
+TSNE embeddings plot for the saved model
 """
-
 import torch
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
@@ -15,11 +14,11 @@ def plot_tsne(model, data):
         # Get the embeddings from the model
         out = model(data).detach().cpu().numpy()
 
-    # Apply TSNE for dimensionality reduction
+    # TSNE dimensionality reduction
     tsne = TSNE(n_components=2)
     embeddings = tsne.fit_transform(out)
 
-    # Plot the TSNE graph
+    # Plotting embeddings plot
     plt.figure(figsize=(10, 10))
     plt.scatter(embeddings[:, 0], embeddings[:, 1], c=data.y.cpu(), cmap="coolwarm", s=5)
     plt.title('TSNE of GCN Embeddings')

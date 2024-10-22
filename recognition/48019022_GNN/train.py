@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # Setting up environment:
     # initialise hyperparams
     lr = 0.01 # default
-    decay = 0.01 # default
+    decay = 5e-4 # changes: 0.01 -> 5e-4
     epochs = 300 # default, perhaps try 200,400,500 etc
 
     # Change this to change the model
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     # Setup WANDB configurations
-    wandb_config.setup_wandb(architecture=architecture, epochs=epochs)
+    wandb_config.setup_wandb(architecture=architecture, epochs=epochs, decay=decay, lr=lr)
 
     # Setting up Adam Optimiser and Cross Entropy Loss function
     optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser

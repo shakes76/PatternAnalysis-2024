@@ -24,9 +24,9 @@ class SiameseNetwork(nn.Module):
 
         # Fully Connected Layer
         self.fc = nn.Sequential(
-            nn.Linear(2048, 256),  # Output of ResNet50 is a 2048 dim feature vector
-            nn.ReLU(),  # Non-linearity
-            nn.Linear(256, 128)  # Final embedding size of 128 for Euclidean distance calc
+            nn.Linear(2048, 256), # Output of ResNet50 is a 2048 dim feature vector
+            nn.ReLU(),
+            nn.Linear(256, 128) # Final embedding size of 128 for Euclidean distance calc
         )
 
     def forward(self, x1, x2):
@@ -69,7 +69,7 @@ class MLPClassifier(nn.Module):
             nn.Linear(64, 32),
             nn.ReLU(),
             nn.Linear(32, 1),
-            nn.Sigmoid()  # Squashes output into a probability of being malignant
+            nn.Sigmoid() 
         )
 
     def forward(self, embedding):
@@ -90,11 +90,11 @@ def contrastive_loss(output1, output2, label, margin=1.0):
     return loss
 
 # Training Siamese Network
-def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
+def train_siamese_network(siamese_network, train_loader, epochs=5, margin=1.0):
     """
     Train Siamese Network to learn embeddings from images
     """
-    model.train()
+    siamese_network.train()
     best_loss = float('inf')
     
     for epoch in range(epochs):
@@ -107,11 +107,11 @@ def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
             similarity_label = batch['similarity_label'].to(device)
             
             # Compute embeddings and loss
-            optimizer_siamese.zero_grad()
+            siamese_network_optimizer.zero_grad()
             embedding1, embedding2 = model(img1, img2)
             loss = contrastive_loss(embedding1, embedding2, similarity_label, margin)
             loss.backward()
-            optimizer_siamese.step()
+            siamese_network_optimizer.step()
 
             running_loss += loss.item()
 
@@ -123,13 +123,13 @@ def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
             best_loss = epoch_loss
             torch.save({
                 'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer_siamese.state_dict(),
+                'model_state_dict': siamese_network.state_dict(),
+                'optimizer_state_dict': siamese_network_optimizer.state_dict(),
                 'loss': best_loss,
-            }, 'best_siamese_model.pth')
+            }, 'best_siamese_network.pth')
 
-# Train MLP Classifier using Siamese embeddings
-def train_classifier(siamese_model, classifier, train_loader, epochs=5):
+# Train MLP Classifier using Siamese Network embeddings
+def train_mlp_classifier(siamese_network, mlp_classifier, train_loader, epochs=5):
     """
     Train MLP classifier to diagnose melanoma using learned embeddings
     """
@@ -147,9 +147,9 @@ def train_classifier(siamese_model, classifier, train_loader, epochs=5):
             img1 = batch['img1'].to(device)
             diagnosis_label = batch['diagnosis1'].to(device)  # 0 = benign, 1 = malignant
             
-            # Get embeddings from Siamese network
+            # Get embeddings from Siamese Network
             with torch.no_grad():
-                embeddings = siamese_model.get_embedding(img1)
+                embeddings = siamese_network.get_embedding(img1)
             
             # Classify embeddings
             optimizer_classifier.zero_grad()
@@ -177,7 +177,7 @@ def train_classifier(siamese_model, classifier, train_loader, epochs=5):
                 'model_state_dict': classifier.state_dict(),
                 'optimizer_state_dict': optimizer_classifier.state_dict(),
                 'accuracy': best_acc,
-            }, 'best_classifier_model.pth')
+            }, 'best_mlp_classifier.pth')
 
 if __name__ == "__main__":
     # Initialize models
@@ -185,8 +185,8 @@ if __name__ == "__main__":
     mlp_classifier = MLPClassifier().to(device)
     
     # Initialize optimizers
-    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001)
-    optimizer_classifier = optim.Adam(mlp_classifier.parameters(), lr=0.001)
+    optimizer_siamese_network = optim.Adam(siamese_network.parameters(), lr=0.001)
+    optimizer_mlp_classifier = optim.Adam(mlp_classifier.parameters(), lr=0.001)
 
     # First train Siamese network
     print("Training Siamese Network to learn embeddings from images:")

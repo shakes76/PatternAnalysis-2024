@@ -18,10 +18,6 @@ print(f"Total images: {len(data)}")
 print(f"Classes distribution: \n{data['target'].value_counts()}")
 print("\nNote: 0 = benign, 1 = malignant")
 
-# Head of metadata
-print("\nFirst few rows of metadata:")
-print(data.head())
-
 def preprocess_image(image):
     """Preprocess image for ResNet50 input"""
     transform = transforms.Compose([
@@ -42,13 +38,6 @@ train_data, test_data = train_test_split(data, test_size=0.2, random_state=42, s
 
 class SiameseDataset(Dataset):
     """Dataset for Siamese Network training and melanoma classification
-    
-    This dataset serves two purposes:
-    1. Training the Siamese network:
-       - Creates pairs of images
-       - similarity_label: 0 if both images are from same class, 1 if different classes
-    2. Melanoma classification:
-       - Each image has a diagnosis_label: 0 for benign, 1 for malignant
     """
     def __init__(self, data, img_dir):
         self.data = data
@@ -105,11 +94,4 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 if __name__ == "__main__":
-    # Test the dataset
-    batch = next(iter(train_loader))
-    print("\nSample batch data:")
-    print(f"Image 1 shape: {batch['img1'].shape}")
-    print(f"Image 2 shape: {batch['img2'].shape}")
-    print(f"Similarity labels: {batch['similarity_label'][:5]}")  # Show first 5
-    print(f"Diagnosis 1 (0=benign, 1=malignant): {batch['diagnosis1'][:5]}")  # Show first 5
-    print(f"Diagnosis 2 (0=benign, 1=malignant): {batch['diagnosis2'][:5]}")  # Show first 5
+    pass

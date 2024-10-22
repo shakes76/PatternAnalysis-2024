@@ -7,7 +7,14 @@ The purpose of this of this model is to learn from historical data and be able t
 The 3 parts of the model are the Encoder, Vector Quantiser and Decoder. The VQVAE2 model is an generative learning model that learns by compressing images and uses a discrete mapping to reconstruct the images as close to the original. This allows it to eventually generate new images by learning how the features are mapped to the latent embedding space.
 
 ### Pipeline
+<p align="center">
+  <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae_struct_0.PNG" alt="VQVAE Pipiline">
+</p>
 Input Image -> Encoder -> Vector Quaniser -> Decoder -> Generated Image
+
+<p align="center">
+  <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae2_struct_0.PNG" alt="VQVAE2 Top and Bottom Level Encoding">
+</p>
 
 ### Encoder
 The encoder is responsible for compressing the input image like a CNN into a smaller feature set. It extracts the important features buy using the top and bottom level encoder architecture where the top level encoder retains the finer details and the bottom level encoder retains the coarse details of the image. The final feature map will be used in the Vector Quantise layer.
@@ -42,8 +49,7 @@ The training and validation losses:
   <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_plot.png" alt="Loss Plot">
 </p>
 
-The trained model:  
-[Trained Model File](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae2_epoch_final.pth)
+The trained model: [Trained Model File](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae2_epoch_final.pth)
 
 ### Original Image
 <p align="center">

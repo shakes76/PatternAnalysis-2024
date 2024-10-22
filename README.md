@@ -1,6 +1,6 @@
 # Pattern Analysis
 
-Pattern Analysis of various datasets by COMP3710 students at the University of Queensland.
+Pattern Analysis of various datasets by COMP3710 students in 2024 at the University of Queensland.
 
 We create pattern recognition and image processing library for Tensorflow (TF), PyTorch or JAX.
 
@@ -13,6 +13,10 @@ The library includes the following implemented in Tensorflow:
 
 In the recognition folder, you will find many recognition problems solved including:
 
-- OASIS brain segmentation
-- Classification
+- segmentation
+- classification
+- graph neural networks
+- StyleGAN
+- Stable diffusion
+- transformers
   etc.

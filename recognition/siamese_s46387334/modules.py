@@ -9,7 +9,6 @@ Each component is implementated as a class or a function.
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50
-from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 ###############################################################################

@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score
+
 
 def results_siamese_net(
     test_loader,

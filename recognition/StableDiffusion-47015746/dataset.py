@@ -17,41 +17,39 @@ def load_data(root_Train, root_Test):
     workers = 2
 
     # Batch size during training
-    batch_size = 32
+    batch_size = 4
 
-    # Transformation (same for both datasets)
+
     transform = transforms.Compose([
+        transforms.Resize((256, 256)),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
-    # Load the 'train' dataset
+
     train_dataset = dset.ImageFolder(root= data_Train, transform=transform)
-
-    # Load the 'test' dataset
     test_dataset = dset.ImageFolder(root= data_Test, transform=transform)
-
-    # Combine the train and test datasets
     combined_dataset = data.ConcatDataset([train_dataset, test_dataset])
 
-    # Create DataLoader for the combined dataset
+
     dataloader = data.DataLoader(combined_dataset, batch_size, shuffle=True, num_workers= workers)
     
     return dataloader
 
 
-def test_load_data(root):
+def test_load_data():
     # Replace with the path to your dataset
-    dataset_root = root  # Ensure this path points to your image dataset
-
+      # Ensure this path points to your image dataset
+    data_train = "C:/Users/msi/Desktop/AD_NC/train" 
+    data_test = "C:/Users/msi/Desktop/AD_NC/test" 
     # Test load_data function
-    dataloader = load_data(dataset_root)
+    dataloader = load_data(data_train, data_test)
 
     # Check if DataLoader loads data and inspect the first batch
     for i, (images, labels) in enumerate(dataloader):
         print(f"Batch {i+1}")
         print(f"Image batch shape: {images.shape}")
         print(f"Label batch shape: {labels.shape}")
-
+        images = images*0.5 + 0.5
         # Visualize one image from the batch
         img = transforms.ToPILImage()(images[0])
         img.show()  # This will open the first image in the batch for inspection
@@ -59,6 +57,6 @@ def test_load_data(root):
         # Break after the first batch (for testing purposes)
         break
 
-if __name__ == "__main__":
-    test_load_data("/home/groups/comp3710/ADNI")
+#if __name__ == "__main__":
+    #test_load_data()
 

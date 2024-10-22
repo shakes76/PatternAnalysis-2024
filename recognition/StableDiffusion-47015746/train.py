@@ -48,7 +48,43 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
 
 
     
+def train_vqvae(model, dataloader, epochs, device, lr= 0.00001):
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    model.train()  # Set the model in training mode
+    i = 0
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for images, labels in dataloader:
+            images = images.to(device)
 
+            # Zero the parameter gradients
+            optimizer.zero_grad()
+
+            # Forward pass
+            outputs, z, quant_losses = model(images)
+
+            # Reconstruction loss (MSE)
+            recon_loss = F.mse_loss(outputs, images)
+
+            # Codebook loss
+            codebook_loss = quant_losses['codebook_loss']
+            commitment_loss = quant_losses['commitment_loss']
+            print(i/len(dataloader))
+            # Total loss
+            total_loss = recon_loss + codebook_loss + commitment_loss
+            i = i + 1
+            # Backward pass and optimization
+            total_loss.backward()
+            optimizer.step()
+
+            running_loss += total_loss.item()
+
+        
+        print(f'End of Epoch {epoch+1}, Average Loss: {running_loss/len(dataloader):.4f}')
+    # Save the model's state dictionary after training completes
+    torch.save(model.state_dict(), 'VQVAE_state_dict.pth')
+    print("Model saved as 'VQVAE_state_dict.pth'")
+    print("Training finished!")
 
 
 
@@ -56,7 +92,7 @@ def train_vae(vae, dataloader, lr=1e-4, epochs=50):
 
 # Instantiate and train only the diffusion model
 # Adjust the training function
-def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
+def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=50):
     diffusion_model.unet.train()  # Only UNet should be in training mode
     epoch_losses = []  # List to store loss for each epoch
     #learning_rates = []
@@ -78,7 +114,6 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
     # Training loop with the two-phase learning rate schedule
     for epoch in range(epochs):
         total_loss = 0  # Reset total loss for the current epoch
-
         for images, labels in dataloader:
             images = images.to(device)
          
@@ -91,12 +126,12 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
             
             # Calculate loss for denoising
             loss = F.smooth_l1_loss(noise, predicted_noise)
+  
             
             # Backward pass and optimize
             loss.backward()
             optimizer.step()
             total_loss += loss.item()  # Accumulate loss
-
 
 
         # Step through SequentialLR scheduler once per epoch
@@ -115,19 +150,11 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
         #visualize_images(diffusion_model.decoder(latent), diffusion_model.decoder(latent), diffusion_model.decoder(latent), diffusion_model.decoder(latent), epoch + 1)
 
     # Save the model's state dictionary after training completes
-    torch.save(diffusion_model.state_dict(), 'diffusion_model_state_dict.pth')
-    print("Model saved as 'diffusion_model_state_dict.pth'")
+    torch.save(diffusion_model.state_dict(), 'new_diffusion_model_state_dict.pth')
+    print("Model saved as 'new_diffusion_model_state_dict.pth'")
 
-    # After your training completes and you've filled `epoch_losses` and `learning_rates`
-    data = {
-        'Epoch Losses': epoch_losses
-    }
 
-    # Create a DataFrame from the dictionary
-    df = pd.DataFrame(data)
 
-    # Save the DataFrame to an Excel file
-    df.to_excel('training_metrics.xlsx', index=False)
 
 
 
@@ -136,35 +163,32 @@ def train_diffusion_model(diffusion_model, dataloader, optimizer, epochs=100):
 
 if __name__ == '__main__':
     # Load data
-    data_train = "C:/Users/msi/Desktop/AD_NC/train" 
-    data_test = "C:/Users/msi/Desktop/AD_NC/test" 
-    #data_train = "/home/groups/comp3710/ADNI/AD_NC/train"
-    #data_test = "/home/groups/comp3710/ADNI/AD_NC/test"
+    #data_train = "C:/Users/msi/Desktop/AD_NC/train" 
+    #data_test = "C:/Users/msi/Desktop/AD_NC/test" 
+    data_train = "/home/groups/comp3710/ADNI/AD_NC/train"
+    data_test = "/home/groups/comp3710/ADNI/AD_NC/test"
     dataloader = load_data(data_train, data_test)
 
     # Instantiate the model
-    latent_dim = 128
     timesteps = 1000
 
     # Load the pre-trained VAE (encoder and decoder) and instantiate a new UNet and noise scheduler
-    pre_trained_vae = VAE(in_channels=3, latent_dim=128, out_channels=3).to(device)
-    pre_trained_vae.load_state_dict(torch.load("vae_state_dict.pth"))
-    pre_trained_vae.eval()
-    encoder = pre_trained_vae.encoder  # Use pre-trained encoder
-    decoder = pre_trained_vae.decoder  # Use pre-trained decoder
+    pre_trained_vqvae = VQVAE(im_channels=3).to(device)
+    pre_trained_vqvae.load_state_dict(torch.load("VQVAE_state_dict.pth"))
+    pre_trained_vqvae.eval()
 
     # Define the UNet and noise scheduler for the diffusion model
     unet = UNet().to(device)
     noise_scheduler = NoiseScheduler(timesteps=1000)
     unet.train()
     # Instantiate diffusion model with frozen encoder and decoder
-    diffusion_model = DiffusionModel(encoder, unet, decoder, noise_scheduler).to(device)
+    diffusion_model = DiffusionModel(pre_trained_vqvae, unet, noise_scheduler).to(device)
 
     # Define optimizer for only the UNet part
-    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr= 0.00001)
+    diffusion_optimizer = torch.optim.Adam(diffusion_model.unet.parameters(), lr= 0.0001)
 
     # Train the diffusion model as before
-    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=100)
+    train_diffusion_model(diffusion_model, dataloader, diffusion_optimizer, epochs=50)
 
 
     #stable_diffusion_model = StableDiffusionModel(latent_dim, timesteps)

@@ -118,15 +118,18 @@ def main(
         print(f'Training Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}')
 
         # Save the model periodically
-        if epoch % 10 == 0:
-            save_model(model, epoch + 1, output_dir)
+        save_model(model, 'perodical', output_dir)
+
+        # Save the train and validation losses using numpy
+        np.savetxt(os.path.join(output_dir, 'train_losses_periodical.txt'), np.array(train_losses))
+        np.savetxt(os.path.join(output_dir, 'val_losses_periodical.txt'), np.array(val_losses))
 
     # Plot the training and validation losses
     plot_losses(train_losses, val_losses, output_dir)
 
     # Save the train and validation losses using numpy
-    np.save(os.path.join(output_dir, 'train_losses.npy'), np.array(train_losses))
-    np.save(os.path.join(output_dir, 'val_losses.npy'), np.array(val_losses))
+    np.savetxt(os.path.join(output_dir, 'train_losses.txt'), np.array(train_losses))
+    np.savetxt(os.path.join(output_dir, 'val_losses.txt'), np.array(val_losses))
 
     # Save final model
     save_model(model, 'final', output_dir)

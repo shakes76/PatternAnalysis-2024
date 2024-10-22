@@ -105,7 +105,7 @@ The project requires the following dependencies[^4]:
 
 - ### Step 4. Full Pipeline Execution
 &nbsp; &nbsp; The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
-<br />
+<br /> <br />
 ## Code Explanation and Comments
 ### 1 `dataset.py`
 ```bash

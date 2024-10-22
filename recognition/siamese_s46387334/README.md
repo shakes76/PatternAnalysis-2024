@@ -133,24 +133,25 @@ The Validation and testing sets were kept relatively small to maximise performan
 ### Dataset Oversampling and Augmentation
 Due to the large class imbalance mentioned above it is preferred if a method is used to ensure that the model is trained on balanced data (REF).To do this we use a two step approach - oversampling the minority class, then data augmentation. It should be noted this class balancing was only done for the training set.
 
-For oversampling - the minority class (melanoma) was oversampled until both classes had an equal number of data points. Then to ensure that this oversampling does not lead to overfitting (i.e. model could memorize the duplicated instances without learning meaningful patterns) - we apply data augmentation to all the sample (we apply the augmentation to both classes to ensure the model does not just learn that certain augmentations indicate a certain class).
+For oversampling - the minority class (melanoma) was oversampled until both classes had an equal number of data points. Then to ensure that this oversampling does not lead to overfitting - we apply data augmentation to all samples. Augmentation methods used are as follows (see the following documentation for details https://pytorch.org/vision/main/transforms.html)  (REF):
+- `RandomRotation` (Randomly rotate the image)
+- `RandomHorizontalFlip` (Randomly horizontally flip the image)
+- `RandomVerticalFlip` (Randomly vertically flip the image)
+- `ColorJitter` (Randomly adjust the brightness, contrast, saturation and hue of the image)
 
-Augmentation methods used are as follows (see the following documentation for details https://pytorch.org/vision/main/transforms.html)  (REF):
-- RandomRotation (Randomly rotate the image)
-- RandomHorizontalFlip (Randomly horizontally flip the image)
-- RandomVerticalFlip (Randomly vertically flip the image)
-- ColorJitter (Randomly adjust the brightness, contrast, saturation and hue of the image)
+### Triplet Data Generation
+Before the data can be used in the Siamese Network each of the dataset must be arranged into triplets (this is due to the unique `TripletLoss` function we use). `dataset.py` implements the `TripletDataGenerator` class that generates triplets (anchor, positive, negative) for Siamese network training. Each triplet consists of two images from the same class (anchor and positive) and one from the opposite class (negative).
+
 
 > ### How to use dataset.py
-> - The full data set (images and labels) and be accessed via the get_isic2020_data() function in dataset.py
-> - The train (with oversampling), validation, test split data loaders (with augmentation applied) can be accessed accessed via the get_isic2020_data_loaders() function in dataset.py
+> - The full data set (images and labels) and be accessed via the `get_isic2020_data()` function in `dataset.py`
+> - The train (with oversampling), validation, test split triplet data loaders (datasets have been grouped into triplets) (with augmentation applied) can be accessed accessed via the `get_isic2020_data_loaders()` function in `dataset.py`
 
 
 ## Siamese Network Details
 This section will contain details that pertain mainly to `modules.py`
 
 ### Siamese Network Overview
-
 
 ### Embedding Model Architecture
 
@@ -162,12 +163,15 @@ This section will contain details that pertain mainly to `modules.py`
 
 
 > ### How to use modules.py
-> - The full model (embedding + classifier model) can be accessed via
-> - The config used for the model can be accessed via 
+> - The full model (embedding + classifier model) can be accessed via the `SiameseNet()` class in `modules.py`
+> - 
 
 
 ## Training Details
 This section will contain details that pertain mainly to `train.py`
+
+
+> - The config used for the model can be accessed via the `get_config()` function in `modules.py`
 
 
 ## Evaluation Details

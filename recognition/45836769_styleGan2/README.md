@@ -113,8 +113,6 @@ Below are an example of an image from the Alzheimer's and Normal classes of the 
     <img src="images/train_set_AD_example.jpeg" width="40%">
     <br>
     AD dataset example
-</p>
-<p align="center">
     <img src="images/train_set_NC_example.jpeg" width="40%">
     <br>
     NC dataset example

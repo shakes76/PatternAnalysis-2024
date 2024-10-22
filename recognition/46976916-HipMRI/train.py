@@ -1,20 +1,21 @@
 import os
 import torch
 
+import tqdm
 
 from dataset import load_data_2D
 from modules import UNET
+from dataset import ProstateCancerDataset
 
 
+#image_folder = 'keras_slices_train'
+#imageNames = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz')]
 
-image_folder = 'keras_slices_train'
-imageNames = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz')]
-
-images= load_data_2D(imageNames)
+#images= load_data_2D(imageNames)
 
 # Check the shape and content
-print(f"Number of images loaded: {len(imageNames)}")
-print(f"Shape of first image: {images[0].shape}")
+#print(f"Number of images loaded: {len(imageNames)}")
+#print(f"Shape of first image: {images[0].shape}")
 
 #HyperParameters
 LEARN_RATE = 0.01
@@ -26,3 +27,25 @@ IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 256
 PIN_MEMORY = True
 LOAD_MEMORY = True
+
+
+def train_fn(loader, model, optimizer, loss_fn, scaler):
+    loop = tqdm(loader)
+
+    
+
+def main():
+    model = UNET(in_channels=3, out_channels=1).to(DEVICE)
+
+    image_dir = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
+    seg_dir = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
+
+    dataset = ProstateCancerDataset(image_dir, seg_dir)
+
+    image, ground = dataset[0]
+
+    print("Image shape:", image.shape)  # Should print something like (1, H, W) where H, W are image dimensions
+    print("Ground truth shape:", ground.shape)
+
+if __name__ == "__main__":
+    main()

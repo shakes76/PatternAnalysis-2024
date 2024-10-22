@@ -144,20 +144,26 @@ However the last fully connected layer, FC1000 (layer normally used for class pr
 
 (see bellow sections for `embedding dimensions` used in training)
 
+### Feature Extractor Model Loss function (Triplet Loss)
+For the desired metric learning to take place when training the feature extractor, we must use a unique loss function. For this problem we implement the loss function `TripletLoss`, a popular loss for siamese networks (REF). `Tripletloss` will take each triplet output by the data loader and will calculate the loss via the following function (REF):
+
+$
+loss = \max(0, D(A, P) - D(A, N) + margin)
+$
+
+Where $D$ represents Euclidean distance, A, P and N represent the output embeddings of the Anchor, Positive and Negative images from the triplet respectively, and margin is a hyper parameter to enforce a minimum separation between classes. The diagram bellow shows how the loss will react to learning.
+
+![alt text](readme_figures/triplet_loss.png)
+
 ### Classifier Model Architecture
 For the classifier a single fully connected layer was used. The input will be the output embedding from the feature extractor and the output will be the chosen class (normal or melanoma). i.e. the classifier is - Linear Layer: in: `embedding dimensions` out: 2. The bulk of the training / work should be done by the feature extractor.
 
-
-### Feature Extractor Model Loss function (Triplet Loss)
-
-
-
 ### Classifier Loss function
-
+Since we have a two unit output from the classifier we will use `CrossEntropyLoss` as our loss function for the classifier.
 
 > ### How to use modules.py
-> - The full model (embedding + classifier model) can be accessed via the `SiameseNet()` class in `modules.py`
-> - 
+> - The full model (Feature Extractor + Classifier model) can be accessed via the `SiameseNet()` class in `modules.py`
+> - The loss function for the Feature Extractor, `TripletLoss` can be found in `modules.py`
 
 
 ## Training Details

@@ -105,4 +105,4 @@ The result of this will be 2 saved Networks (1 Siamese, 1 Classifier), assorted 
 
 [^3]: Reddit - Dive into anything 2016, Reddit.com, <https://www.reddit.com/r/learnmachinelearning/comments/18msvh2/source_of_general_convention_of_8020_traintest/>.
 
-‌[^4]: examples/siamese_network/main.py, pytorch/examples 2024, GitHub, <https://github.com/pytorch/examples/blob/main/siamese_network/main.py>.
+‌[^4]: Pytorch examples/siamese_network/main.py, pytorch/examples 2024, GitHub, <https://github.com/pytorch/examples/blob/main/siamese_network/main.py>.

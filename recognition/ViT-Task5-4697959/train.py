@@ -128,3 +128,44 @@ def train_model(model, dataloaders, criterion, optimizer, device, num_epochs=25,
                         return model, history
 
     print(f'Training complete. Best val Acc: {best_acc:.4f}')
+
+    # Load best model weights
+    model.load_state_dict(best_model_wts)
+
+    # Save final model
+    torch.save(model.state_dict(), os.path.join(save_dir, 'final_vit_model.pth'))
+    print(f"Final model saved at {os.path.join(save_dir, 'final_vit_model.pth')}")
+
+    return model, history
+
+def plot_metrics(history, save_dir='saved_models'):
+    """
+    Plots training and validation loss and accuracy.
+
+    Args:
+        history (dict): Dictionary containing 'train_loss', 'val_loss', 'train_acc', 'val_acc'.
+        save_dir (str): Directory to save the plots.
+    """
+    epochs = range(1, len(history['train_loss']) +1)
+
+    # Plot Loss
+    plt.figure(figsize=(10,5))
+    plt.plot(epochs, history['train_loss'], label='Train Loss')
+    plt.plot(epochs, history['val_loss'], label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Over Epochs')
+    plt.legend()
+    plt.savefig(os.path.join(save_dir, 'loss_curve.png'))
+    plt.close()
+
+    # Plot Accuracy
+    plt.figure(figsize=(10,5))
+    plt.plot(epochs, history['train_acc'], label='Train Accuracy')
+    plt.plot(epochs, history['val_acc'], label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy Over Epochs')
+    plt.legend()
+    plt.savefig(os.path.join(save_dir, 'accuracy_curve.png'))
+    plt.close()

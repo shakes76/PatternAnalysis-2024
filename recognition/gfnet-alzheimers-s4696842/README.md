@@ -102,14 +102,30 @@ python -m gfnet-alzheimers-s4696842.predict \
 - `--model`: Path to the saved model file.
 
 ## Example
+Here is an example of training this model. The following hyperparameters used 
+in the example achieved **78.51%** accuracy on the test set using the AdamW optimizer
+and cosine annealing learning rate scheduler.
+
+### Hyperparameters
+```python
+learning_rate = 1e-3
+weight_decay = 1e-2
+T_max = 6
+depth = 12
+embed_dim = 260
+drop_rate = 0.1
+drop_path_rate = 0.1
+patch_size = (8, 8)
+```
 
 ### Training Metrics
 
 ![Training Loss and Cumulative Epoch Accuracy and Test Loss and Accuracy](./assets/train_test_graph.png)
 
-### Prediction Output
+### Prediction
 
 ```bash
+$ python -m gfnet-alzheimers-s4696842.predict --model model.pth --image ~/AD_NC/test/NC/1261605_84.jpeg
 Using device: cuda
 using linear droppath with expect rate 0.0
 Image tensor shape: torch.Size([1, 1, 256, 240])

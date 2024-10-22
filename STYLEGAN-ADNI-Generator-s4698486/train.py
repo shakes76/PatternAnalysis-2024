@@ -1,121 +1,125 @@
 # train.py
-import tensorflow as tf
-from modules import define_discriminator, discriminator_loss, generator_loss, StyleGANGenerator, MappingNetwork#mapping_network, StyleGANGenerator#define_generator
-from dataset import load_data
-import numpy as np
-from matplotlib import pyplot as plt
+import torch.amp
+import torch
+from torch import optim
+from tqdm import tqdm
 
-# Define hyperparameters
-batch_size = 10
-latent_dim = 512
-epochs = 1
-mixing_prob = 0.90
+import generate_images
+from constants import *
+from dataset import get_data
+from modules import *
+import utils
 
-# Initialize models
-discriminator = define_discriminator()
-mapping_network = MappingNetwork()  # Use the modified mapping network
-generator = StyleGANGenerator(mapping_network)
+# SETTING UP
 
-# Define optimizers
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.0, beta_2=0.99, epsilon=1e-8)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.0, beta_2=0.99, epsilon=1e-8) #TODO: Paper also suggests beta_1=0, beta_2=0.99, epsilon=1e-8 for all learning rates.
+# Device Config
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print('Device: ', device)
 
-# TODO: ADD OPTIMISER FOR MAPPING NETWORK HERE.
-mapping_network_optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # Papers suggest 100x lower, I will do 10x because my learning rates are already very low.
+# Module initilization
+loader = get_data(DATA, batch_size)
 
-# Define training step
-@tf.function
-def train_step(images):
-    noise1 = tf.random.normal([batch_size, latent_dim])
-    noise2 = tf.random.normal([batch_size, latent_dim])
-    
-    # Need a persistent gradient tape as we will be using it to update both the generator and the mapping network
-    # without it being persistent it will be "used" after being used for the generator.
-    with tf.GradientTape(persistent=True) as gen_tape, tf.GradientTape() as disc_tape:
+# Obtain models from modules.py.
+generator = Generator(log_resolution, w_dim).to(device)
+discriminator = Discriminator(log_resolution).to(device)
+mapping_network = MappingNetwork(z_dim, w_dim).to(device)
+path_length_penalty = PathLengthPenalty(0.99).to(device)
 
-        # Generating two distinct subsections of style space from noise in order to 
-        # use style mixing.
-        style1 = mapping_network(noise1)
-        style2 = mapping_network(noise2)
+# Initilise Adam optimisation for all modules.
+generator_optimiser = optim.Adam(generator.parameters(), lr=learning_rate, betas=(0.0, 0.99))
+discriminator_optimiser = optim.Adam(discriminator.parameters(), lr=learning_rate, betas=(0.0, 0.99))
+mapping_network_optimiser = optim.Adam(mapping_network.parameters(), lr=learning_rate, betas=(0.0, 0.99))
 
-        #print("BEFORE GENERATOR WITH style1 = ", type(style1))
-        #print("BEFORE GENERATOR WITH style2 = ", type(style2))
+'''
+Main training loop
+'''
+def train_fn():
+    loop = tqdm(loader, leave=True) # Adds a progress bar for training.
 
-        generated_images = generator(style1, style2, mixing_prob=mixing_prob)
+    current_gen_loss = []
+    current_discriminator_loss = []
+
+    for batch_idx, (real, _) in enumerate(loop):
+        real = real.to(device)
+        cur_batch_size = real.shape[0]
+
+        style_vector = utils.get_style_vector(cur_batch_size, mapping_network, device)
+        noise = utils.get_noise(cur_batch_size, device)
+
+        # Use cuda AMP for accelerated training
+        with torch.amp.autocast(device_type=device):
+            generated_images = generator(style_vector, noise)
+            discriminator_fake_output = discriminator(generated_images.detach()) # Will be our predicted labels for each of the fake images.
+            
+            # So, real is [32, 1, 256, 256]
+            discriminator_real_output = discriminator(real) # Will be our predicted labels for each of the real images.
+
+            discriminator_loss = utils.discriminator_loss(real_output=discriminator_real_output, fake_output=discriminator_fake_output)
+            generator_loss = utils.generator_loss(fake_output=discriminator_fake_output)
         
-        #print("AFTER GENERATOR")
+        # Append the observed Discriminator loss to the list
+        current_discriminator_loss.append(discriminator_loss.item())
 
-        #print("generated images shape =", generated_images.shape)
-        
-        real_output = discriminator(images, training=True)
-        fake_output = discriminator(generated_images, training=True)
-        
-        
-        gen_loss = generator_loss(fake_output) #TODO: CAN POSSIBLY ADD PATH_LENGTH_REGULARISATION TO THIS
-        disc_loss = discriminator_loss(real_output, fake_output) #TODO: CAN POSSIBLY ADD R1 REGULARISATION TO THIS.
-    
-    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
-    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
-    
-    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
-    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+        # Backpropagate discriminator - letting it learn.
+        discriminator.zero_grad()
+        discriminator_loss.backward()
+        discriminator_optimiser.step()
 
-    # Update mapping network separately
-    mapping_network_variables = mapping_network.trainable_variables
-    gradients_of_mapping_network = gen_tape.gradient(gen_loss, mapping_network_variables)
-    mapping_network_optimizer.apply_gradients(zip(gradients_of_mapping_network, mapping_network_variables))
+        # Apply path length penalty on every 16 Batches
+        if batch_idx % 16 == 0:
+            plp = path_length_penalty(style_vector, generated_images)
+            if not torch.isnan(plp):
+                # Trying to minimise plp's potential to cause nans.
+                plp = torch.clamp(plp, min=0.1, max=10.0) # plp is being clipped basically every time...
+                generator_loss = generator_loss + plp
 
-    # Check for gradient issues - trying to fix the warning that I am having.
-    for var, grad in zip(generator.trainable_variables, gradients_of_generator):
-        if grad is None:
-            print(f"Warning: Gradient for generator variable {var.name} is None")
-    
-    for var, grad in zip(discriminator.trainable_variables, gradients_of_discriminator):
-        if grad is None:
-            print(f"Warning: Gradient for discriminator variable {var.name} is None")
+        # Append the observed Generator loss to the list
+        current_gen_loss.append(generator_loss.item())
+       
+        # Learning for generator and mapping network.
+        mapping_network.zero_grad()
+        generator.zero_grad()
+        generator_loss.backward()
+        generator_optimiser.step()
+        mapping_network_optimiser.step()
 
-    for var, grad in zip(mapping_network_variables, gradients_of_mapping_network):
-        if grad is None:
-            print(f"Warning: Gradient for mapping network variable {var.name} is None")
+        # Updates progress whilst training.
+        loop.set_postfix(
+            loss_critic=discriminator_loss.item(),
+            loss_gen=generator_loss.item(),
+        )
 
-    # So that it doesn't persist beyond its required usage (ie; into other epochs)
-    del gen_tape
-    
-    return disc_loss, gen_loss
+    return (current_discriminator_loss, current_gen_loss)
+ 
+if __name__ == "__main__":
 
-# Define training loop
-def train():
-    # Load data
-    images = load_data()
-    
-    # Prepare dataset
-    train_dataset = tf.data.Dataset.from_tensor_slices(images).shuffle(len(images)).batch(batch_size)
-    
-    print("train dataset size =", len(list(train_dataset)))
+    # Train the following modules
+    generator.train()
+    discriminator.train()
+    mapping_network.train()
 
+    # Keeps a Log of total loss over the training
+    lifetime_generator_losses = []
+    lifetime_discriminator_losses = []
+
+    # loop over total epcoh.
     for epoch in range(epochs):
-        for i, image_batch in enumerate(train_dataset):
-            #print("CALLING TRAIN STEP")
-            print("Handling batch ", i)
-            d_loss, g_loss = train_step(image_batch)
-        
-        print(f'Epoch {epoch+1}, Discriminator Loss: {d_loss}, Generator Loss: {g_loss}')
-        
-        # Visualize generated images
-        if (epoch + 1) % 1 == 0:  # Save every epoch
-            visualize_generated_images(epoch, generator)
+        current_discriminator_loss, current_gen_loss = train_fn()
 
-def visualize_generated_images(epoch, generator, n_samples=5):
-    noise = tf.random.normal([n_samples, latent_dim])
-    generated_images = generator(noise, training=False)
-    
-    plt.figure(figsize=(25, 25))
-    for i in range(n_samples):
-        plt.subplot(5, 5, i + 1)
-        plt.axis('off')
-        plt.imshow(generated_images[i, :, :, 0], cmap='gray')
-    plt.savefig(f'generated_images_epoch_{epoch+1}.png')
-    plt.show()
+        # Append the current loss to the main list
+        lifetime_generator_losses.extend(current_gen_loss)
+        lifetime_discriminator_losses.extend(current_discriminator_loss)
 
-if __name__ == '__main__':
-    train()
+        # Save generator's fake image every 2nd epoch
+        if epoch % 2 == 0:
+            generate_images.generate_examples(generator, mapping_network, epoch, device)
+
+	    # Save model every 4 epochs
+        if epoch % 4 == 0:
+            torch.save(generator.state_dict(), f'Models/Gen/{image_height}x{image_width}/{epoch}')
+            torch.save(discriminator.state_dict(), f'Models/Discriminator/{image_height}x{image_width}/{epoch}')
+            torch.save(mapping_network.state_dict(), f'Models/MappingNetwork/{image_height}x{image_width}/{epoch}')
+
+
+    # Once training complete, plot lifetime generator and discriminator losses.
+    generate_images.plot_loss(lifetime_generator_losses, lifetime_discriminator_losses)

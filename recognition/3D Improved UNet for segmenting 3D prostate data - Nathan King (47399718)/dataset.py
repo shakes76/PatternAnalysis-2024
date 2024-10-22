@@ -121,3 +121,24 @@ for file in os.listdir(directory):
     else:
         
         x_test.append((data, data_seg))
+
+#Generator for training dataset
+def load_train():
+   
+    for data in x_train:
+     
+        yield data[0], data[1]
+    
+#Generator for testing dataset
+def load_test():
+
+    for data in x_test:
+        
+       yield data[0], data[1]
+            
+#Generator for validation dataset
+def load_validate():
+
+    for data in x_validate:
+        
+        yield data[0], data[1]

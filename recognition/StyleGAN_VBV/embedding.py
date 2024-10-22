@@ -1,66 +1,68 @@
 import torch
-import torchvision.transforms as transforms
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-from PIL import Image
+from modules import Generator, MappingNetwork
 
-# Set the paths to your image directories
-ad_image_dir = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/saved_examples/step5/seperate_images/AD'  
-nc_image_dir = '/home/Student/s4742656/PatternAnalysis-2024/recognition/StyleGAN_VBV/saved_examples/step5/seperate_images/NC' 
+# Define constants
+Z_DIM = 512
+W_DIM = 512
+IN_CHANNELS = 512
+CHANNELS_IMG = 3
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Define the preprocessing transformations for the input images
-preprocess = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize images to 224x224
-    transforms.ToTensor(),  # Convert images to tensor format
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize based on ImageNet stats
-])
+# Load both generators
+generator_ad = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)
+generator_ad.load_state_dict(torch.load('AD_generator_final.pth', map_location=DEVICE))
 
-def load_and_preprocess_images(image_dir, label):
-    """ Load and preprocess images from a specified directory. """
-    features = []  # List to hold extracted features
-    labels = []    # List to hold corresponding labels
+generator_nc = Generator(Z_DIM, W_DIM, IN_CHANNELS, CHANNELS_IMG).to(DEVICE)
+generator_nc.load_state_dict(torch.load('NC_generator_final.pth', map_location=DEVICE))
 
-    # Iterate over each image in the directory
-    for img_name in os.listdir(image_dir):
-        img_path = os.path.join(image_dir, img_name)  # Construct full image path
-        img = Image.open(img_path).convert('RGB')  # Open image and convert to RGB
-        img_tensor = preprocess(img)  # Preprocess image
-        img_tensor = img_tensor.unsqueeze(0)  # Add a batch dimension for model input
+# Set to evaluation mode
+generator_ad.eval()
+generator_nc.eval()
 
-        # Simple feature extraction: use pixel values as features
-        feature = img_tensor.numpy().flatten()  # Flatten the tensor and append to the list
-        features.append(feature)  # Append feature to the list
-        labels.append(label)  # Append the label for this image
+# Mapping network to transform Z to W
+mapping_network = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)
 
-    return np.array(features), labels  # Return the features and labels as arrays
+def generate_w_vectors(generator, num_samples=50):
+    """ Function to generate W vectors """  
+    # Reduce number of samples
+    latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)
+    with torch.no_grad():
+        w_vectors = mapping_network(latent_vectors)
+    return w_vectors.cpu().numpy()  # Only return W vectors to save memory
 
-# Load images for both NC and AD sets and extract features
-nc_features, nc_labels = load_and_preprocess_images(nc_image_dir, label=0)  # Label 0 for NC
-ad_features, ad_labels = load_and_preprocess_images(ad_image_dir, label=1)  # Label 1 for AD
+def plot_tsne(latent_vectors, labels=None):
+    """ Function to plot t-SNE """ 
+    tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+    tsne_results = tsne.fit_transform(latent_vectors)
 
-# Combine features and labels from both sets
-features = np.vstack((nc_features, ad_features))  # Stack features vertically
-labels = np.array(nc_labels + ad_labels)  # Concatenate labels
+    plt.figure(figsize=(10, 6))
+    scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], 
+                          c=labels, alpha=0.7, cmap='viridis')
+    
+    unique_labels = np.unique(labels)
+    handles = [plt.Line2D([0], [0], marker='o', color='w', label='AD' if label == 0 else 'NC', 
+                           markerfacecolor=scatter.cmap(scatter.norm(label)), markersize=10) for label in unique_labels]
+    
+    plt.legend(handles=handles, title="Classes")
+    plt.colorbar(scatter)
+    
+    plt.title('t-SNE Embedding of StyleGAN Latent Space')
+    plt.xlabel('t-SNE Component 1')
+    plt.ylabel('t-SNE Component 2')
+    plt.grid(True)
+    plt.savefig('tsne_visualization.png')
 
-# Optional: Reduce dimensions using PCA for visualization
-pca = PCA(n_components=min(10, len(features)))  # Choose the number of components
-reduced_features = pca.fit_transform(features)  # Fit and transform the features
+# Generate W vectors for AD and NC
+num_samples = 50 
+w_vectors_ad = generate_w_vectors(generator_ad, num_samples)
+w_vectors_nc = generate_w_vectors(generator_nc, num_samples)
 
-# Apply t-SNE for further dimensionality reduction and visualization
-tsne = TSNE(n_components=2, perplexity=5, random_state=42)  # Define t-SNE parameters
-tsne_results = tsne.fit_transform(reduced_features)  # Fit and transform the PCA-reduced features
+# Combine W vectors and create labels
+w_vectors = np.concatenate((w_vectors_ad, w_vectors_nc), axis=0)
+labels = np.array([0] * num_samples + [1] * num_samples)  # 0 for AD, 1 for NC
 
-# Visualize the t-SNE results
-plt.figure(figsize=(10, 8))
-scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=labels, cmap='viridis', alpha=0.7)
-plt.colorbar(scatter, ticks=[0, 1], label='Class')
-plt.title('t-SNE Visualization of ADNI Brain Images')
-plt.xlabel('Component 1')
-plt.ylabel('Component 2')
-plt.xticks(fontsize=12)
-plt.yticks(fontsize=12)
-plt.grid()
-plt.savefig('tsne_visualization.png')
+# Plot the t-SNE results
+plot_tsne(w_vectors, labels)

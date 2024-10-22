@@ -8,8 +8,8 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-original_filepath = "data/ORIGINAL_ISIC"
-modified_filepath = "data/ISIC"
+original_filepath = "datasets/ORIGINAL_ISIC"
+modified_filepath = "datasets/ISIC"
 
 def resize_mask(file, partition):
     """ 

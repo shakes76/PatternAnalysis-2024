@@ -29,7 +29,18 @@ The process begins with loading Nifti files containing MRI slices using the Niba
 During training, the model minimizes the binary cross-entropy loss, using the Dice similarity coefficient as a metric for evaluation. Once trained, the model can predict segmentation masks for new MRI slices, providing a clear delineation of the prostate gland against the surrounding tissues, which is crucial for accurate diagnosis and treatment planning.
 
 
-## File Structure and Descriptions
+## Script Usage
+
+### directory structure
+
+### Dependencies
+The project requires the following dependencies[^4]:
+- `torch==1.10.0`: PyTorch for building and training the model.
+- `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
+- `nibabel==3.2.1`: Nibabel for loading Nifti files.
+- `matplotlib==3.4.3`: Matplotlib for visualizing results and training metrics.
+- 
+### Script usage instructions
 - `download.py`
   - **Purpose**: Downloads MRI data from a specified URL and processes `.nii` and `.nii.g`z files into `.npy` format for training.
   - **Key Functions**:
@@ -51,28 +62,24 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
   - **Purpose**: Handles model training using the U-Net architecture.
   - **Key Functions**:
     - `train_model(root_dir, num_epochs, lr)`: Trains the U-Net model on the dataset, saves the model, and logs the loss.
+  - **Parameters**:
+    - `--data_dir`: Catalog containing Nifti images for training purposes.
+    - `--output_dir`: Directory for saving trained models.
+  - **Usage example**:
+  - **Example output**:During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`.
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
     - `dice_score(pred, target)`: Calculates the Dice score.
     - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
-- `test_driver.py`
-  - **Purpose**: Test driver script that calls and runs algorithm.
-  - **Key Steps**:
-    - Download and preprocess data.
-    - Train the U-Net model.
-    - Evaluate and predict the segmentation quality using the trained model.
-- `README.md`
-  - **Purpose**: Project documentation.
- 
-## Dependencies
-The project requires the following dependencies[^4]:
-- `torch==1.10.0`: PyTorch for building and training the model.
-- `numpy==1.21.0`: NumPy for handling numerical operations and array manipulations.
-- `nibabel==3.2.1`: Nibabel for loading Nifti files.
-- `matplotlib==3.4.3`: Matplotlib for visualizing results and training metrics.
+  - **Parameters**:
+    - `--Input_image`: Enter the Nifti image file path.
+    - `--model_path`: Trained model path.
+    - `--Output_image`: Predict output save path.
+  - **Usage example**:
+  - **Example output**:The generated predicted image will be saved as a specified Nifti format file.
 
-## Usage：Steps to Run the Project
+## Steps to Run the Project
 
 - ### Step 1. Download and Process Data
 &nbsp; &nbsp; Run `download.py` to download the `.nii` files from the given URL, process them, and convert them to `.npy` format.
@@ -85,6 +92,12 @@ The project requires the following dependencies[^4]:
 
 - ### Step 4. Full Pipeline Execution
 &nbsp; &nbsp; The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
+
+## Code Explanation and Comments
+### 1 `dataset.py`
+### 2 `modules.py`
+### 3 `train.py`
+### 4 `predict.py`
 
 ## Details
 - **Loss function**: `Binary cross entropy with Logits`.

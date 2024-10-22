@@ -73,9 +73,12 @@ def load_data_3D(imageNames , normImage = False , categorical = False , dtype = 
     else :
         return images
 
+#Factor to downscale the data
+DOWNSIZE_FACTOR = 4
+
 def load_mri_data(data_path, only_testing):
     """
-    Load all the data and split it into training, testing and validation sets.
+    Load all the data, downscale it and split it into training, testing and validation sets.
     input: data_path - location of the data
            only_testing - whether only testing data is required
     output: (train_dataset, test_dataset, validate_dataset) - preprocessed data
@@ -111,14 +114,15 @@ def load_mri_data(data_path, only_testing):
         img = load_data_3D([data_path + "non_seg/" + filename + "/" + filename])[0]
         img = img.tolist()
         
-        data = [[[[x/255] for x in y[:128]] for y in z[:256]] for z in img[:256]]
+        #Downscale
+        data = [[[[x/255] for x in y[:128:DOWNSIZE_FACTOR]] for y in z[:256:DOWNSIZE_FACTOR]] for z in img[:256:DOWNSIZE_FACTOR]]
         
         #Get labelled data
         img_seg = load_data_3D([data_path + "seg/" + filename[:-8] + "SEMANTIC_" + filename[-8:] + "/" + filename[:-8] + "SEMANTIC_" + filename[-8:]])[0]
         img_seg = img_seg.tolist()
-            
-        #Convert to one-hot encoding
-        data_seg = [[[((int(x) * [0]) + [1] + ((5 - int(x)) * [0])) for x in y[:128]] for y in z[:256]] for z in img_seg[:256]]
+        
+        #Downscale and convert to one-hot encoding
+        data_seg = [[[((int(x) * [0]) + [1] + ((5 - int(x)) * [0])) for x in y[:128:DOWNSIZE_FACTOR]] for y in z[:256:DOWNSIZE_FACTOR]] for z in img_seg[:256:DOWNSIZE_FACTOR]]
         
         #Split data into training, testing and validation sets
         if file_index < 0.8 * number_of_files:
@@ -158,21 +162,21 @@ def load_mri_data(data_path, only_testing):
     train_dataset = tf.data.Dataset.from_generator(
         load_train,
         output_signature=(
-            tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
-            tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
-
+            tf.TensorSpec(shape=(256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 1), dtype=tf.float32),
+            tf.TensorSpec(shape=(256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 6), dtype=tf.int32)))
+    
     #Load testing data into dataset
     test_dataset = tf.data.Dataset.from_generator(
         load_test,
         output_signature=(
-            tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
-            tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
-
+            tf.TensorSpec(shape=(256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 1), dtype=tf.float32),
+            tf.TensorSpec(shape=(256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 6), dtype=tf.int32)))
+    
     #Load validation data into dataset
     validate_dataset = tf.data.Dataset.from_generator(
         load_validate,
         output_signature=(
-            tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
-            tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+            tf.TensorSpec(shape=(256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 1), dtype=tf.float32),
+            tf.TensorSpec(shape=(256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 6), dtype=tf.int32)))
     
     return (train_dataset, test_dataset, validate_dataset)

@@ -19,7 +19,7 @@ def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
 
 # load medical image functions
 def load_data_2D ( imageNames , normImage = False , categorical = False , dtype = np . float32 ,
-    getAffines = False , early_stop = False ) :
+    getAffines = False , early_stop = True ) :
     '''
     Load medical image data from names , cases list provided into a list for each .
 
@@ -71,7 +71,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
     else :
         return images
 
-
+'''
 image_dir1 = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
 image_dir = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
 
@@ -92,6 +92,7 @@ plt.imshow(image)  # Use cmap='gray' for grayscale display
 plt.title(f'Image {image_index}')
 plt.axis('off')  # Turn off axis labels
 plt.show()
+'''
 
 class ProstateCancerDataset(Dataset):
     def __init__(self, input_dir, groundtruth_dir, normImage=False, categorical=False, dtype=np.float32, transform=None):

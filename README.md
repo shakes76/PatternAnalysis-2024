@@ -28,9 +28,7 @@ After the encoder transforms an image into the latent space, it is then passed i
 
 The VQVAE is trained using a loss function of three components, reconstruction, quantisation and commitment loss. These subloss functions combine to form the loss function,
 
-$$
-\mathcal{L} = \underbrace{| x - \hat{x} |^2}_{\text{reconstruction loss}} + \underbrace{| \text{sg}[\mathbf{z}_e(x)] - \mathbf{e} |^2}_{\text{quantization loss}} + \underbrace{\beta | \mathbf{z}_e(x) - \text{sg}[\mathbf{e}] |^2}_{\text{commitment loss}}
-$$
+! [VQVAE Loss Function](./markdown_images/loss_function.png)
 
 Where:
 

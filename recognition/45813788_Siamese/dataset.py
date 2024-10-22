@@ -12,8 +12,7 @@ default_aug = transforms.Compose([
     transforms.Resize((224,224)),
     transforms.ToTensor(),
     #normalise using ImageNet (pytorch defaults)
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 ])
 
 
@@ -24,9 +23,9 @@ train_aug = transforms.Compose([
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomRotation(30),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 ])
+
 
 class ISICDataset(Dataset):
     def __init__(self, df, images_dir, transform=None, augment_ratio=1.0):
@@ -57,7 +56,7 @@ class ISICDataset(Dataset):
         if self.transform:
             img = self.transform(img)
         else:
-            img = transforms.ToTensor(img)
+            img = default_aug(img)
      
         
         return img, torch.tensor(label, dtype=torch.long)

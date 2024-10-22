@@ -75,7 +75,7 @@ def main():
     
     test_loader = DataLoader(
         test_dataset, 
-        batch_size=32,
+        batch_size=batch_size,
         shuffle=False, 
         num_workers=4,
         pin_memory=True
@@ -83,7 +83,7 @@ def main():
 
 
 
-    #siamese_train(current_dir, train_loader,val_loader, images, epochs=50, plots=True)
+    #siamese_train(current_dir, train_loader,val_loader, images, lr=1e-4, epochs=50, plots=True)
 
     siamese_net = SiameseNN()
     siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
@@ -92,7 +92,7 @@ def main():
 
     #Testing part
     classifier_net = Classifier()
-    classifier_dict = os.path.join(current_dir,'models','classifier_best.pth')
+    classifier_dict = os.path.join(current_dir,'models','classifier.pth')
     classifier_net.load_state_dict(torch.load(classifier_dict)) 
     test(siamese_net,classifier_net,test_loader,images)
 

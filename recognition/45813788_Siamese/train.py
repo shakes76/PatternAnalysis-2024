@@ -1,38 +1,34 @@
 import os
 import torch
-from torch.nn import BCEWithLogitsLoss, BCELoss
-from torch.utils.data import DataLoader
+from torch.nn import BCEWithLogitsLoss
 from modules import SiameseNN, Classifier
-from utils import visualise_embededding, plot_loss, plot_accuracy, plot_auc
+from utils import visualise_embedding, plot_loss, plot_accuracy, plot_auc
 from pytorch_metric_learning.losses import ContrastiveLoss
 from pytorch_metric_learning.reducers import AvgNonZeroReducer
 from pytorch_metric_learning.distances import LpDistance
 from tqdm import tqdm
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.metrics import roc_auc_score, classification_report
 import numpy as np
 
 
 
-def siamese_train(current_dir, train_loader, val_loader, images, epochs=50, plots=False):
+def siamese_train(current_dir, train_loader, val_loader, images, epochs=50, lr=1e-4, plots=False):
     
     save_dir = os.path.join(current_dir,'models')
 
-    print("Training Siamese Netowork")
+    print("Training Siamese Network")
     # Initialize model and move to device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = SiameseNN().to(device)
 
     # Contrastive Loss from PyTorch Metric Learning
     criterion = ContrastiveLoss(
-        pos_margin=0,
-        neg_margin=1,
         distance=LpDistance(normalize_embeddings=True, p=2, power=1),
-        reducer=AvgNonZeroReducer(),
     )
     
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
     #scheduler
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
@@ -106,7 +102,7 @@ def siamese_train(current_dir, train_loader, val_loader, images, epochs=50, plot
         # Visualize embeddings using t-SNE and PCA
         if plots == True:
             all_embeddings_tensor = torch.cat(all_embeddings)
-            visualise_embededding (all_embeddings_tensor, all_labels, epoch+1)
+            visualise_embedding(all_embeddings_tensor, all_labels, epoch+1, current_dir)
 
 
     # Save the final model
@@ -137,7 +133,7 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
     optimizer = torch.optim.Adam(classifier.parameters(), lr=1e-4, weight_decay=1e-5)
 
     #scheduler
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
+    #scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, threshold=0.01)
 
     
     # Count of each class
@@ -150,8 +146,8 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
 
 
     #Criterion
-    #criterion = BCEWithLogitsLoss(pos_weight=pos_weight)
-    criterion = BCELoss()
+    criterion = BCEWithLogitsLoss(pos_weight=pos_weight)
+    #criterion = BCELoss()
 
     #Training parameters
     best_loss = float('inf')
@@ -203,9 +199,16 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
         # Compute AUROC for training
         try:
             train_auroc = roc_auc_score(train_labels, train_probs)
+            binary_train_probs = [1 if p >= 0.5 else 0 for p in train_probs] 
+            print("Training Classification Report:")
+            print(classification_report(train_labels, binary_train_probs, zero_division=0))
+            
+
         except ValueError:
             train_auroc = np.nan  # Handle cases where AUROC is undefined
+
         train_aurocs.append(train_auroc)
+
 
         # Validation
         classifier.eval()
@@ -248,14 +251,21 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
         # Compute AUROC for validation
         try:
             val_auroc = roc_auc_score(val_labels, val_probs)
+            binary_val_probs = [1 if p >= 0.5 else 0 for p in val_probs] 
+            print("Training Classification Report:")
+            print(classification_report(val_labels, binary_val_probs, zero_division=0))
+
         except ValueError:
             val_auroc = np.nan  # Handle cases where AUROC is undefined
+
         val_aurocs.append(val_auroc)
 
-
         print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+        print(f"Train Accuracy: {train_accuracy:.4f} - Val Accuracy: {val_accuracy:.4f}")
+        print(f"Train AUROC: {train_auroc:.4f} - Val AUROC: {val_auroc:.4f}")
+
         # Step the scheduler
-        scheduler.step(avg_val_loss)
+        #scheduler.step(avg_val_loss)
 
         # Monitor learning rate
         for idx, param_group in enumerate(optimizer.param_groups):

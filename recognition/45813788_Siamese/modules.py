@@ -67,7 +67,7 @@ class Classifier(nn.Module):
             nn.Linear(64, 32),
             nn.ReLU(inplace=True),
             nn.Linear(32, 1),
-            nn.Sigmoid()
+            #nn.Sigmoid()
         )
         
 

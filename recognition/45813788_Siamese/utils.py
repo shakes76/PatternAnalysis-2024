@@ -5,7 +5,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 
-def visualise_embededding(embeddings, labels, epoch):
+def visualise_embedding(embeddings, labels, epoch, current_dir):
     """
     Visualize embeddings using t-SNE and PCA.
 
@@ -44,11 +44,7 @@ def visualise_embededding(embeddings, labels, epoch):
     plt.ylabel('Principal Component 2')
 
     plt.tight_layout()
-
-
-    current_dir = os.getcwd()
     save_dir = os.path.join(current_dir,'images')
-    os.makedirs(save_dir, exist_ok=True)
     file_name = f"epoch{epoch}.jpg"
     save_path = os.path.join(save_dir, file_name)
 

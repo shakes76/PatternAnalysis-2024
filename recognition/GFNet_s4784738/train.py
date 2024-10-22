@@ -94,6 +94,45 @@ def evaluate(data_loader, model, criterion, device):
     epoch_loss = test_loss / len(data_loader)
     accuracy = 100 * correct / total
     return epoch_loss, accuracy
+
+
+def plot_data(train_acc, train_loss, val_acc, val_loss):
+    """
+    Plots and saves the training and validation loss and accuracy metrics.
+    
+    train_acc: List of training accuracies
+    train_loss: List of training losses
+    val_acc: List of validation accuracies
+    val_loss: List of validation losses
+    """
+    # Create images directory if it doesn't exist
+    os.makedirs('./assets', exist_ok=True)
+
+    # Plot training accuracy.loss
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(train_acc, label='Training Accuracy', color='blue')
+    plt.plot(train_loss, label='Training Loss', color='orange')
+    plt.title('Training at each Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy/Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('./assets/train_plot.png')
+    #plt.close() 
+
+    # Plot validation accuracy/loss
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 2)
+    plt.plot(val_acc, label='Validation Accuracy', color='blue')
+    plt.plot(val_loss, label='Validation Loss', color='orange')
+    plt.title('Validation at each Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy/loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('./assets/validate_plot.png')
+    plt.show()
     
 
 def train_GFNet(dataloaders):
@@ -183,6 +222,9 @@ def train_GFNet(dataloaders):
     print("### Now it's time to run inference on the test dataset ###")
     test_acc, test_loss = evaluate(data_loader_test, model, criterion, device)
     print(f'Accuracy on test set: {test_acc:.1f}, and loss: {test_loss:.1f}\n')
+    
+    plot_data(train_loss, val_loss, train_acc, val_acc)
+    print('Saved loss and accuracy plots in ./assets/')
     
     print('Saving model...')
     torch.save(model.state_dict(), 'best_model.pth')

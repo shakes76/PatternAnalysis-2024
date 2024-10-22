@@ -22,7 +22,9 @@ class ISICDataset(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.root_dir, self.annotations.iloc[idx, 0])
+        img_path = os.path.join(self.root_dir, "ISIC-2017_Training_Data", self.annotations.iloc[idx, 0])
+        if not img_path.endswith('.jpg'):
+            img_path += ".jpg"
         image = Image.open(img_path).convert("RGB")
         if self.transform:
             image = self.transform(image)

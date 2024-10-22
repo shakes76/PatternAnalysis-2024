@@ -78,28 +78,27 @@ def get_data_loader(root_dir, dataset='train', batch_size=32, shuffle=True, spli
         transform = transforms.Compose([
             # Resize to 224x224 from the default size of 256x240 pixels
             transforms.Resize((224, 224)),
-            #transforms.Grayscale(),
+            transforms.Grayscale(),
             transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.RandomRotation(35),
+            #transforms.RandomVerticalFlip(),
+            #transforms.RandomRotation(35),
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            #transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
             # Pre-calculated mean and standard deviation pixel values
-            transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
+            #transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
             #transforms.Normalize([0.1155], [0.2224]),
         ])
     else:
         transform = transforms.Compose([
         transforms.Resize((224, 224)),
-        #transforms.Grayscale(),
+        transforms.Grayscale(),
         transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-        transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
+        #transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+        #transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
         #transforms.Normalize([0.1155], [0.2224]),
     ])
 
     adni_dataset = ADNIDataset(root_dir=root_dir, transform=transform)
-    #dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     
     # Split the train dataset into training and validation sets
     if dataset == 'train':
@@ -115,5 +114,3 @@ def get_data_loader(root_dir, dataset='train', batch_size=32, shuffle=True, spli
         # For testing or validation dataset (i.e., after training)
         data_loader = DataLoader(adni_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         return data_loader
-    
-    #return dataloader

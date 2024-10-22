@@ -67,6 +67,12 @@ PatternAnalysis-2024/recognition/siamese_s46387334/
     ```
     pip install pytorch torchvision matplotlib pandas numpy seaborn
     ```
+
+The environment should be setup as follows:
+- Python - 3.10.14
+
+
+
 (TODO FINISH - add all moduals nad == for vresions)
 
 
@@ -163,25 +169,47 @@ Since we have a two unit output from the classifier we will use `CrossEntropyLos
 
 > ### How to use modules.py
 > - The full model (Feature Extractor + Classifier model) can be accessed via the `SiameseNet()` class in `modules.py`
-> - The loss function for the Feature Extractor, `TripletLoss` can be found in `modules.py`
+> - The loss function for the Feature Extractor, `TripletLoss()` can be found in `modules.py`
 
 
 ## Training Details
 This section will contain details that pertain mainly to `train.py`
 
+### Hyper Parameter Selection
+Grid Search using a validation set was used determine the optimal set of hyper parameters for training, the parameters are as follows:
 
-> - The config used for the model can be accessed via the `get_config()` function in `modules.py`
+(TODO: add final values)
+
+### Training Process
+A standard training loop will take place ensuring that both the Feature Extractor and Classifier models are trained. The model that preforms best on the validation set (in terms of AUR ROC metric) will be saved as `siamese_net_model.pt`.
+
+>### How to use train.py
+> - The config (including hyper parameters) used for the model can be accessed via the `get_config()` function in `modules.py`
+> - The training process can be run by running `python3 train.py` in the terminal.
+> - Results / progress will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 
 ## Evaluation Details
 This section will contain details that pertain mainly to `predict.py`
 
+###
 
 
 
 
 ## Results Summary
 
+
+## Reproduction of Results
+Note that due to the inescapable randomness of GPUs (REF) there may be some variation between runs.
+
+1. Follow steps above for downloading data
+2. Follow steps above for setting up environment
+3. Running training script, enter the following command in your terminal
+    `
+    python3 train.py
+    `
+4. Results / progress will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 
 ## Future Work and Improvments

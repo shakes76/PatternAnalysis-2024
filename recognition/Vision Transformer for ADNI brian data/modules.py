@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.container import Sequential
 from functools import partial
+from collections import OrderedDict
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
 
@@ -13,7 +14,7 @@ from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 ## https://github.com/raoyongming/GFNet/blob/master/gfnet.py
 
 class GFNet(nn.Module):
-    def __init__(self, img_size, patch_size, in_channels=1, num_classes=2,
+    def __init__(self, img_size=224, patch_size=16, in_channels=1, num_classes=2,
                 embed_dim=783, depth=12, ratio=3, norm_layer=None, dropout=0.3, drop_path_rate=0.1):
         super().__init__()
         self.num_classes=num_classes
@@ -32,11 +33,14 @@ class GFNet(nn.Module):
 
         self.blocks = nn.ModuleList([
             Block(
-                dim=embed_dim, mlp_ratio=ratio, norm_layer=norm_layer, h=h, w=w, drop=dropout, drop_path=dropPath[i]
+                dim=embed_dim, mlp_ratio=ratio, norm_layer=norm_layer, 
+                h=h, w=w, drop=dropout, drop_path=dropPath[i]
             ) for i in range(depth)
         ])
 
         self.norm = norm_layer(embed_dim)
+
+        self.pre_logits = nn.Identity()
 
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
@@ -141,9 +145,11 @@ class Block(nn.Module):
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
+""" 
+    Image to Patch Embedding
+"""
 class PatchEmbed(nn.Module):
-    """ Image to Patch Embedding
-    """
+    
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
         super().__init__()
         img_size = to_2tuple(img_size)
@@ -157,7 +163,6 @@ class PatchEmbed(nn.Module):
 
     def forward(self, x):
         B, C, H, W = x.shape
-        # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
         x = self.proj(x).flatten(2).transpose(1, 2)

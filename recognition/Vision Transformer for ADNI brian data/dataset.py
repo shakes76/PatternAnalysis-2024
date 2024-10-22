@@ -82,10 +82,10 @@ def sort_patients(bucket):
     return sorted(bucket)
 
 def load_data(path=DATASET_PATH, transform=DATASET_TRANSFORM, batch_size=BATCH_SIZE,
-               imgs_per_patient=IMAGES_PER_PATIENT, training=False):
-    if training:
-        train_images = datasets.ImageFolder(root=osP.join(path, "test"), transform=DATASET_TRANSFORM)
-        return train_images, len(list(train_images)), None
+               imgs_per_patient=IMAGES_PER_PATIENT, testing=False):
+    if testing:
+        test_images = datasets.ImageFolder(root=osP.join(path, "test"), transform=DATASET_TRANSFORM)
+        return test_images, len(list(test_images)), None
 
     # create training datasets including lables with their respective class
     AD_files = FileLister(root=osP.join(path, "train", "AD"), 

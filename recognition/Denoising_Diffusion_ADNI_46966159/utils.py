@@ -4,18 +4,6 @@ from sklearn.manifold import TSNE
 from timm.utils import ModelEmaV3
 import modules, dataset
 
-def add_noise(image, beta, t):
-    """
-    Add noise to image
-    :param image: input image
-    :param beta: diffusion coefficient
-    :param t: timestep
-    :return:
-    """
-    noise = torch.randn_like(image)  # Generate random noise
-    noisy_image = image * torch.sqrt(beta[t]) + noise * torch.sqrt(1 - beta[t])  # Add noise
-    return noisy_image
-
 def plot_forward_process(data_loader,  timesteps=5):
     """
     Visualise forward process
@@ -38,8 +26,8 @@ def plot_forward_process(data_loader,  timesteps=5):
 
     # Plot noisy images at various timesteps
     for t in range(timesteps):
-        # Create gradual noise by interpolating
-        noise = torch.randn_like(image)  # Generate random noise
+        # simulate gradual noise
+        noise = torch.randn_like(image)  # sample random noise
         noisy_image = (1 - (t / (timesteps - 1))) * image + (t / (timesteps - 1)) * noise
         plt.subplot(1, timesteps + 1, t + 2)
         plt.imshow(noisy_image.permute(1, 2, 0).cpu().numpy())
@@ -50,7 +38,7 @@ def plot_forward_process(data_loader,  timesteps=5):
 
 def tsne():
     """
-    t-sne plot for visudalisation.
+    t-sne plot for visualisation.
     Load the model and perform dimension reduction
     :return: t-SNE plot
     """

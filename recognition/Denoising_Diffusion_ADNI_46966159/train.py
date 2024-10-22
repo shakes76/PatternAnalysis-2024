@@ -12,7 +12,7 @@ def train(batch_size = ds.batch_size, num_time_steps = 1000, num_epochs = 15, em
     """
     Entire training pipeline using 1000 steps, 15 epochs, learning rate 2e-5 and ema of 0.9999
     :param batch_size: Training batch size
-    :param num_time_steps: number tiem steps in diffusion process
+    :param num_time_steps: number time steps in diffusion process
     :param num_epochs: number of epochs to train for
     :param ema_decay: exponential moving average decay
     :param epsilon: learning rate
@@ -54,7 +54,7 @@ def train(batch_size = ds.batch_size, num_time_steps = 1000, num_epochs = 15, em
         print(f'Epoch {i+1} | Loss {total_loss / (60000/batch_size):.5f}')
 
     plt.figure(figsize=(10,5))
-    plt.title("Generator and Discriminator Loss During Training")
+    plt.title("Loss Function During Training")
     plt.plot(losses)
     plt.xlabel("iterations")
     plt.ylabel("Loss")

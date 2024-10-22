@@ -131,9 +131,13 @@ found. Finally, the images were normalised and then converted to a tensor.
 
 ## Results
 ### Training
-An example batch of training images is displayed below.
+Below is a plot of a sample of images in the training data set comprised of AD and CN
+classes.
 ![training_img.png](figures/training_img.png)
 
+The forward process is demonstrated below. An image from the training set is taken
+and transformed by resizing, normalising and randomly flipping horizontally. Random noise is then
+sampled and added to the image until it is pure noise.
 ![forward_process.png](figures/forward_process.png)
 
 $`t`$-distributed stochastic neighbor embeddings is a non-linear dimensionality reduction technique
@@ -147,20 +151,25 @@ and AD is extremely complex, and it would be difficult to classify and make pred
 at least for these two dimensions.
 
 ![tsne.png](figures/tsne.png)
-*t-SNE embedding plot of ADNI images*
 
 ### Sampling
-The loss function after 100 epochs looks like:
+The loss function over time for 100 epochs is plotted below along with the loss function for an additional 70 epochs. 
+This loss function is unusual in that it rapidly decreases but appears to plateau with some oscillations. While the loss
+is minimal, it suggests that the UNet is unable to learn any more information.
 ![loss.png](figures/loss.png)
+![loss2.png](figures/loss2.png)
 
-We show a plot of 9 generated images. These are not very photo-realistic at this stage,
-but it is a starting point to go from.
-![sampled_images.png](figures/sampled_images.png)
-
-In addition, we can show the reverse process in action for some of the samples:
+The reverse process step can be visualised. Starting with pure noise, the model reverses the noise, from which an image
+of the brain is sampled.
 ![reverse1.png](figures/reverse1.png)
 ![reverse2.png](figures/reverse2.png)
 ![reverse3.png](figures/reverse3.png)
+
+Once, this sampled image is transformed back to original dimensions, it yields the following images. The brain
+structure seems to be present in all the samples, there are missing sections and a lack of finer details. This indicates
+that the current implementation of the denoising diffusion probabilistic model is solid for a starting point, but there is need
+for more refinements such as parameter-tuning or a more powerful UNet model is needed.
+![sampled_images.png](figures/sampled_images.png)
 
 [^1]: Denoising Diffusion Probabilistic Models https://arxiv.org/abs/1706.03762
 [^2]: U-Net: Convolutional Networks for Biomedical Image Segmentation https://arxiv.org/abs/1505.04597

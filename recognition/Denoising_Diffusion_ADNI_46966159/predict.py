@@ -54,11 +54,18 @@ def generate_images(checkpoint_path = None, num_time_steps = 1000, ema_decay = 0
             temp = scheduler.beta[0] / ((torch.sqrt(1 - scheduler.alpha[0])) * (torch.sqrt(1 - scheduler.beta[0])))
             x = (1 / (torch.sqrt(1 - scheduler.beta[0]))) * z - (temp * model(z.cuda(), [0]).cpu())
 
+            # reverse normalisation to construct original-like images
+            mean = torch.tensor([0.1798, 0.1798, 0.1798]).view(1, 3, 1, 1)
+            std = torch.tensor([0.1964, 0.1964, 0.1964]).view(1, 3, 1, 1)
+            x = (x * std) + mean
+
             images.append(x)
-            x = rearrange(x.squeeze(0), 'c h w -> h w c').detach()
-            x = x.numpy()
+
+            # Convert to numpy and visualize
+            x = rearrange(x.squeeze(0), 'c h w -> h w c').detach().numpy()
             plt.imshow(x)
             plt.show()
+
             display_reverse(images)
             images = []
 

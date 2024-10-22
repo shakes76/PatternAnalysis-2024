@@ -25,3 +25,9 @@ class StyleGANGenerator(nn.Module):
             nn.ConvTranspose2d(128, img_channels, kernel_size=4, stride=2, padding=1),
             nn.Tanh()
         )
+        
+    def forward(self, z):
+        w = self.mapping(z)
+        w = w.view(w.size(0), -1, 1, 1)
+        generated_image = self.synthesis(w)
+        return generated_image

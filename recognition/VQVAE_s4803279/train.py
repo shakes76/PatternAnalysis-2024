@@ -13,6 +13,7 @@ from tqdm import tqdm
 from dataset import create_nifti_data_loaders
 from modules import VQVAE2
 import numpy as np
+import time
 
 
 def train_epoch(model, data_loader, optimiser, device):
@@ -108,7 +109,7 @@ def main(
         data_dir,
         output_dir,
         batch_size = 16,
-        num_epochs = 10,
+        num_epochs = 20,
         lr = 1e-3,
         hidden_dims = [64, 128],
         num_embeddings = [256, 256],
@@ -158,6 +159,8 @@ def main(
     train_losses = []
     val_losses = []
 
+    start = time.time()
+
     # Training loop
     print("\nStarting Training:")
     for epoch in range(num_epochs):
@@ -179,6 +182,10 @@ def main(
         # Save the train and validation losses using numpy
         np.savetxt(os.path.join(output_dir, 'train_losses_periodical.txt'), np.array(train_losses))
         np.savetxt(os.path.join(output_dir, 'val_losses_periodical.txt'), np.array(val_losses))
+    
+    end = time.time()
+
+    print("Time taken to train", (end - start), "seconds or", ((end - start)/60), "minutes.")
 
     # Plot the training and validation losses
     plot_losses(train_losses, val_losses, output_dir)

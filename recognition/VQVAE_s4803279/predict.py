@@ -115,7 +115,7 @@ def main_test(
         test_data_dir,
         output_dir,
         batch_size = 16,
-        num_samples = 10,
+        num_samples = 5,
         hidden_dims = [64, 128],
         num_embeddings = [256, 256],
         embedding_dims = [32, 64],
@@ -148,7 +148,7 @@ def main_test(
     model = load_model(model_path, in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost, device)
 
     # Test the VQVAE model
-    print("Generating images using the VQVAE model...")
+    print("Generating images using the VQVAE model")
     test_vqvae(test_loader, model, device, output_dir, num_samples)
 
 if __name__ == "__main__":

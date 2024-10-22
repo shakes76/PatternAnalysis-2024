@@ -65,12 +65,12 @@ def save_model(model, epoch, output_dir):
 def main(
         data_dir,
         output_dir,
-        batch_size = 32,
+        batch_size = 16,
         num_epochs = 1,
         lr = 1e-3,
-        hidden_dims = [128, 256],
-        num_embeddings = [512, 512],
-        embedding_dims = [64, 128],
+        hidden_dims = [64, 128],
+        num_embeddings = [256, 256],
+        embedding_dims = [32, 64],
         commitment_cost = 0.25,
         num_workers = 4):
     # Check if output directory exists

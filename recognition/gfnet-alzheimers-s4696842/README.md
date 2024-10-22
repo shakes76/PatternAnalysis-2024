@@ -42,7 +42,11 @@ data/
 ```
 
 ## Preprocessing
-- **Training Data**:
+### Training Data
+The following transformations were applied to the training data. Since the ADNI 
+dataset images were already mostly consistent in terms of translation, scale, 
+and orientation, random flips were not used, and most augmentations were kept 
+mild. The primary variations in the dataset involved brightness and blur.
   - Grayscale conversion
   - Random affine transformations (degrees up to 10°, translation up to 15%)
   - Random resized cropping (scale between 90% and 110%)
@@ -51,7 +55,7 @@ data/
   - Resizing to `(256, 240)`
   - Conversion to tensor
 
-- **Test Data**:
+### Test Data
   - Grayscale conversion
   - Resizing to `(256, 240)`
   - Conversion to tensor

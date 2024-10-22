@@ -40,7 +40,7 @@ def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     return res
 
 
-def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False, target_shape = None):
+def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.float32, getAffines = False, early_stop = False, target_shape = (256, 128)):
     affines = []
     num = len(imageNames)
     
@@ -96,7 +96,7 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
 
 
 class VQVAENIfTIDataset(Dataset):
-    def __init__(self, data_dir, transform = transform, normImage = True, categorical = False, target_shape = (128, 128)):
+    def __init__(self, data_dir, transform = None, normImage = True, categorical = False, target_shape = (128, 128)):
         self.data_dir = data_dir
         self.transform = transform
         self.normImage = normImage
@@ -111,7 +111,7 @@ class VQVAENIfTIDataset(Dataset):
 
 
     def __getitem__(self, idx):
-        # image = self.images[idx]
+        # inImage = self.images[idx]
 
         # Lazy loading: load the NIfTI file when accessing this index
         inName = self.file_list[idx]
@@ -142,7 +142,7 @@ class VQVAENIfTIDataset(Dataset):
 
         if self.transform:
             image_tensor = self.transform(image_tensor.permute(1, 2, 0))  # (H, W, C) for transform
-            image_tensor = image_tensor.permute(2, 0, 1)
+            image_tensor = image_tensor.permute(0, 1, 2)
 
         return image_tensor
 

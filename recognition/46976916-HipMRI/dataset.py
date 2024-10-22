@@ -1,6 +1,8 @@
 #Reading Nifti files - Code from Appendix B
 import os
 import matplotlib.pyplot as plt
+from torch.utils.data import Dataset
+import torch
 
 import numpy as np
 import nibabel as nib
@@ -70,22 +72,53 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
         return images
 
 
-image_dir1 = 'recognition/46976916-HipMRI/HipMRI_study_keras_slices_data/keras_slices_train'
-image_dir = 'recognition/46976916-HipMRI/HipMRI_study_keras_slices_data/keras_slices_seg_train'
+image_dir1 = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
+image_dir = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
 
-
-imageNames = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')]
-
-images= load_data_2D(imageNames, early_stop= True)
+imageNames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
 
 # Check the shape and content
 #print(f"Number of images loaded: {len(imageNames)}")
 #print(f"Shape of first image: {images[0].shape}")
 
 image_index = 0
+
+
+images= load_data_2D(imageNames) #early_stop= True
 image = images[image_index]
 
+print("length of images is ", len(images))
 plt.imshow(image)  # Use cmap='gray' for grayscale display
 plt.title(f'Image {image_index}')
 plt.axis('off')  # Turn off axis labels
 plt.show()
+
+class ProstateCancerDataset(Dataset):
+    def __init__(self, input_dir, groundtruth_dir, normImage=False, categorical=False, dtype=np.float32, transform=None):
+        # Use load_data_2D to load all the input images and ground truth masks at once
+        imageNames = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith('.nii.gz')]
+        self.images = load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype)
+        groundtruthNames = [os.path.join(groundtruth_dir, f) for f in os.listdir(groundtruth_dir) if f.endswith('.nii.gz')]
+        self.groundtruths = load_data_2D(groundtruthNames, normImage=normImage, categorical=categorical, dtype=dtype)
+        
+        self.transform = transform  # Optional transformations (like resizing or normalization)
+    
+    def __len__(self):
+        return len(self.images)  # Return the number of samples
+
+    def __getitem__(self, idx):
+        # Get the input image and ground truth mask for the given index
+        image = self.images[idx]
+        groundtruth = self.groundtruths[idx]
+
+        # Apply any transformations (if any)
+        if self.transform:
+            image = self.transform(image)
+            groundtruth = self.transform(groundtruth)
+
+        # Convert to PyTorch tensors (adding a channel dimension if necessary)
+        #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
+        #groundtruth_tensor = torch.tensor(groundtruth, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
+
+        return image, groundtruth
+        

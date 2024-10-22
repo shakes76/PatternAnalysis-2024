@@ -38,6 +38,18 @@ class CNN(nn.Module):
         x = self.fc(x)
         return x
 
+class SiameseNetwork(nn.Module):
+    def __init__(self):
+        super(SiameseNetwork, self).__init__()
+        self.cnn = CNN()
+    
+    def forward(self, input1, input2):
+        output1 = self.cnn(input1)
+        output2 = self.cnn(input2)
 
-
+        distance = torch.abs(output1 - output2)
+        
+        similarity_score = torch.sum(distance, dim=1)
+        
+        return similarity_score
 

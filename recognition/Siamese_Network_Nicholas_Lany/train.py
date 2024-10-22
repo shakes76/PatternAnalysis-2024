@@ -4,6 +4,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from modules import CNN
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 class TrainCNN:
     def __init__(self, num_classes, input_width, input_height, learning_rate=0.001):
         self.model = CNN(num_classes, input_width, input_height)
@@ -47,3 +49,37 @@ class TrainCNN:
 
     def load_model(self, path):
         self.model.load_state_dict(torch.load(path))
+
+class TrainSiameseNetwork:
+    def __init__(self, model, dataloader, criterion, optimizer, num_epochs=10):
+        self.model = model
+        self.dataloader = dataloader
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.num_epochs = num_epochs
+
+    def train(self):
+        self.model.train()
+        
+        for epoch in range(self.num_epochs):
+            total_loss = 0.0
+            for img1, img2, labels in self.dataloader:
+                img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
+
+                self.optimizer.zero_grad()
+
+                similarity = self.model(img1, img2)
+
+                loss = self.criterion(similarity, labels.float())
+                total_loss += loss.item()
+
+                loss.backward()
+                self.optimizer.step()
+
+            avg_loss = total_loss / len(self.dataloader)
+            print(f'Epoch [{epoch+1}/{self.num_epochs}], Loss: {avg_loss:.4f}')
+
+    def evaluate(self):
+        self.model.eval()
+        with torch.no_grad():
+

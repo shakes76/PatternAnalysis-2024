@@ -152,7 +152,7 @@ def main():
     parser.add_argument('--patch_size', type=int, default=16, help="Patch size used in ViT")
     parser.add_argument('--num_transformer_layers', type=int, default=12, help="Number of transformer layers in ViT")
     parser.add_argument('--data_path', type=str, default="/home/groups/comp3710/ADNI/AD_NC", help="Path to the dataset")
-    parser.add_argument('--run', type=str, default="brain-viz", help="Path to the dataset")
+    parser.add_argument('--run', type=str, default="predict", help="Path to the dataset")
     
     args = parser.parse_args()
 

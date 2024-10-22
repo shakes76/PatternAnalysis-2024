@@ -31,10 +31,18 @@ After training, the model, logs, and plots will be saved in the respective direc
 ### Testing
 Use the following terminal command to test the model and perform one of two actions:
 
-- `--run predict`: Get the test loss/accuracy of the trained model.
+- `--run predict`: Get the test loss/accuracy of the trained model. (Default if --run is not specified).
 - `--run brain-viz`: Visualize model predictions and display image grids with predicted labels and probabilities.
 
 Examples:
+
+Assuming there were no changes in model architecture (i.e defaults were used for train.py), then the below command will work.
+```bash
+python predict.py --model_path models/best_model.pth
+```
+
+If the trained model used different architectures (via --arg lines), the same changes must be put for the prediction.
+
 ```bash
 python predict.py --model_path models/v10best_model.pth --run predict --num_transformer_layers 16
 ```
@@ -44,28 +52,61 @@ For image visualisation:
 ```bash
 python predict.py --model_path models/v10best_model.pth --run brain-viz --num_transformer_layers 16
 ```
-This visualizes the predictions for a batch of test images, displaying both true labels and predicted probabilities (using softmax).
+This visualizes the predictions for a batch of test images, displaying both true labels and predicted probabilities (using softmax). 
 
+
+### Repository Structure
+
+- `predict.py`: Contains the code for making predictions using the trained ViT model. Softmax is applied externally for generating probability distributions for predictions. Can either generate classification report, or a  
+- `dataset.py`: Handles dataset loading and augmentation techniques. This includes resizing the images to 224x224 and applying normalization based on empirical statistics or ImageNet statistics.
+- `modules.py`: Includes the implementation of the Vision Transformer model and the necessary transformer blocks.
+- `train.py`: The main training script to run experiments with different configurations such as number of transformer layers and batch size.
+
+```
+/
+├── dataset.py
+├── modules.py
+├── train.py
+├── predict.py
+├── logs/
+├── models/
+├── plots/
+```
 
 ## Vision Transformer Architecture
+{INFO ABOUT VIT; CITE THE REFERENCES HERE. ADD IMAGES. YAY.}
 
-## Repository Structure
-
-
-- predict.py
-Softmax applied onto model externally for probability predictions!!
 
 ## Preprocessing: Dataset Loading + Augmentation
-- vision trasnfoemrs seem to want image sizes that are multiples of 16. So 224x224 might be the angle.
-- Also need to normalise the data so we can help the model train better and converge faster.
-- we tried multiple versiopns of data augmentation, settled down for this.
-- 
-Resize to 224x224.
-<!-- Random Horizontal Flip.
-Random Rotation (small angles, e.g., ±10 degrees).
-Random Brightness/Contrast Adjustments (slight, e.g., ±20%). -->
-Normalization using empirically gathered statistics from our ADNI dataset; basically found the normalisation from training dataset, applied this everywhere 
-(only colelcted from train dataset so no data leakage occurs).
+To ensure optimal performance and prevent data leakage, the dataset is split into training, validation, and test sets. The following preprocessing steps are applied:
+
+1. Dataset Organization
+The dataset, sourced from the ADNI database, is structured into two primary categories—Alzheimer’s Disease (AD) and No Alzheimer’s (NC)—for both training and test sets. The directory structure is as follows:
+```
+ADNI/
+├── train/
+│   ├── AD/
+│   └── NC/
+└── test/
+    ├── AD/
+    └── NC/
+```
+Each subdirectory (AD and NC) contains brain MRI images that are categorized accordingly.
+
+2. Image Size and Normalization
+After experimenting with different data augmentations (no normalisation, only normalisation, and aggressive augmenting + normalising), we found aggressive augmenting to work best.
+
+The original vision transformer uses 16x16 image patches, and as our images are by default 256x256, we resize them to 224x224 pixels. Additionally, normalization is applied based on statistics computed from the training dataset to stabilize the model during training. These statistics include the mean (0.1156) and standard deviation (0.2229) for each RGB channel (in this case, all channels have equivalent statistics as they are greyscale images). Normalization ensures that the pixel values fall within a similar range, which helps the model converge faster.
+
+Mean and standard deviation are computed only on the training dataset to avoid **data leakage** and are then applied consistently across training, validation, and test sets.
+
+3. Data Augmentation
+Data augmentation techniques are applied to the training dataset to improve the model’s robustness and generalization. These include:
+
+Random Horizontal Flip: Randomly flips the image horizontally with a 50% probability.
+Random Rotation: Randomly rotates the image by small angles (up to ±10 degrees).
+Random Resized Crop: Randomly crops the image and resizes it to the target dimensions (224x224), using a scale of 0.8 to 1.0 of the original image size.
+Center Crop: A smaller center crop (224 // 1.2) is applied after resizing.
 
 ## Experiments
 

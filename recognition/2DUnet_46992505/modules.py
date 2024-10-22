@@ -93,7 +93,7 @@ def unet_model(input_size=(256, 128, 1)):
 
     model = models.Model(inputs, conv10)
     opt = Adam(learning_rate=1e-4)
-    model.compile(optimizer=opt, loss=dice_loss, metrics=[dice_coefficient])
+    model.compile(optimizer=opt, loss=dice_loss, metrics="accuracy")
 
     return model
 

@@ -28,7 +28,6 @@ def evaluate_classifier(model, device, test_loader):
     correct = 0
     all_targets = []
     all_preds = []
-    benign_count = 0
 
     criterion = model.loss_criterion
 
@@ -52,7 +51,6 @@ def evaluate_classifier(model, device, test_loader):
     precision = precision_score(all_targets, all_preds)
     recall = recall_score(all_targets, all_preds)
     f1 = f1_score(all_targets, all_preds)
-    benign_count = all_preds.count(0)
 
     print(f"Classifier: Average loss: {test_loss:.4f}\nAccuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset):.2f}%)")
     print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nF1 Score: {f1:.4f}\n")

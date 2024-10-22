@@ -235,3 +235,34 @@ def evaluate_model(model, dataloader, device, class_names, save_dir='saved_model
     plt.xlabel('Predicted label')
     plt.savefig(os.path.join(save_dir, 'confusion_matrix.png'))
     plt.close()
+
+
+def main():
+
+    # Set the seed for reproducibility
+    set_seed(42)
+
+    # Start the timer
+    start_time = time.time()
+
+    # Configuration
+    data_dir = "/home/groups/comp3710/ADNI/AD_NC"  # Dataset path
+    batch_size = 32 # change the batch size 
+    img_size = 224
+    val_split = 0.2
+    num_workers = 4
+    num_classes = 2
+    emb_size = 768
+    num_heads = 12
+    depth = 12
+    ff_dim = 3072
+    dropout = 0.1 # increased dropout
+    patch_size = 16
+    cls_token = True
+    num_epochs = 80 
+    patience = 50 # num of epochs before early stopping 
+    learning_rate = 3e-4 # increased learning rate
+    weight_decay = 1e-5 # decreased weight decay
+    save_dir = 'saved_models'
+    
+    

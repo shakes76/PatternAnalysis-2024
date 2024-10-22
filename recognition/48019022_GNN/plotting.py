@@ -30,13 +30,15 @@ if __name__ == "__main__":
     data, train_idx, valid_idx, test_idx = GNNDataLoader('/Users/anthonyngo/Documents/UQ/24sem2/COMP3710/project/PatternAnalysis-2024/facebook.npz')
 
     # Select model
-    architecture = "GCN"
+    architecture = "SAGE"
 
     # Initialize model, ensuring the input, hidden, and output dimensions match the training setup
     if architecture == "GCN":
         model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1)
     elif architecture == "GAT":
         model = GATModelBasic(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1)
+    elif architecture == "SAGE":
+        model = GraphSAGE(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
     
     # Load the best performing model of the chosen architecture
     savedpath = "best_" + architecture + "_model.pth"

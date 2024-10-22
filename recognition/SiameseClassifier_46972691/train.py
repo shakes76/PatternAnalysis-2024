@@ -62,7 +62,7 @@ def main():
     siamese_model = SiameseNetwork().to(device)
     criterion_siam = nn.BCEWithLogitsLoss()
     optimizer_siam = optim.Adam(siamese_model.parameters(), lr=0.001)
-    num_epochs = 10
+    num_epochs = 50
 
     print("Training Siamese Network...")
     train_siamese(siamese_model, train_loader_siam, val_loader_siam, criterion_siam, optimizer_siam, device, num_epochs)

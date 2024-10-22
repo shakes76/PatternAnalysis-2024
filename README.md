@@ -1,5 +1,8 @@
 # StyleGAN Training from Scratch using the ADNI Dataset
 
+author: Amlan Nag
+Student Number: 4721964
+
 This repository discusses the **training data augmentation**, **module development**, and the overall **training process** for the original StyleGAN model. Although more advanced models such as **StyleGAN2** and **StyleGAN3** have since been introduced, the original **StyleGAN** was chosen for this project due to its pioneering role in integrating the **style-based architecture** into generative adversarial networks (GANs).
 
 For more details on the architecture, please refer to the original paper: [A Style-Based Generator Architecture for Generative Adversarial Networks](https://arxiv.org/abs/1812.04948).
@@ -83,35 +86,35 @@ Some components of the model, such as the discriminator, were taken directly fro
 def gradient_penalty(disc, real, fake, alpha, train_step, device="CPU"):
 
     BATCH_SIZE, C, H, W = real.shape
- beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
- interpolated_images = real * beta + fake.detach() * (1 - beta)
- interpolated_images.requires_grad_(True)
-    
- mixed_scores = disc(interpolated_images, alpha, train_step)
- gradient = torch.autograd.grad(
-        inputs=interpolated_images,
-        outputs=mixed_scores,
-        grad_outputs=torch.ones_like(mixed_scores),
-        create_graph=True,
-        retain_graph=True,
- )[0]
-    
- gradient = gradient.view(gradient.shape[0], -1)
- gradient_norm = gradient.norm(2, dim=1)
- gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
+    beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
+    interpolated_images = real * beta + fake.detach() * (1 - beta)
+    interpolated_images.requires_grad_(True)
+        
+    mixed_scores = disc(interpolated_images, alpha, train_step)
+    gradient = torch.autograd.grad(
+            inputs=interpolated_images,
+            outputs=mixed_scores,
+            grad_outputs=torch.ones_like(mixed_scores),
+            create_graph=True,
+            retain_graph=True,
+    )[0]
+        
+    gradient = gradient.view(gradient.shape[0], -1)
+    gradient_norm = gradient.norm(2, dim=1)
+    gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
     
     return gradient_penalty
 ```
 
 The model implementation was heavily inspired by a digital Ocean blog by [Abd Elilah TAUIL](https://blog.paperspace.com/author/abd/).
 
-## StyleGAN Advantages
+### StyleGAN Advantages
 
 - High-Quality Image Generation: Produces highly realistic and detailed images
 - Control Over Image Style: The StyleGAN is better at generalising styles due to its style mapping module 
 - Progressive Training: Generator and Discriminator are initially trained on smaller images, and the list is slowly increased. This provided faster training
 
-## StyleGAN Disadvantages
+### StyleGAN Disadvantages
 
 - Computationally Expensive: Requires large GPUs and long training times, particularly with larger image sizes
 - Hard to extend to different modalities: It is difficult to adapt for video, audio, or non-image tasks.

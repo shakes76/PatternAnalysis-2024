@@ -73,93 +73,100 @@ def load_data_3D(imageNames , normImage = False , categorical = False , dtype = 
     else :
         return images
 
-data_path = "C:/Users/nk200/Downloads/HipMRI_study_complete_release_v1/"
+def load_mri_data(data_path):
+    """
+    Load all the data and split it into training, testing and validation sets.
+    input: data_path - location of the data
+    output: (train_dataset, test_dataset, validate_dataset) - preprocessed data
+    """
+    
+    x_train = []
+    x_test = []
+    x_validate = []
 
-x_train = []
-x_test = []
-x_validate = []
+    #Get directory
+    directory = os.fsencode(data_path + "non_seg")
+    file_index = -1
+    number_of_files = len(os.listdir(directory))
+    print("Number of files:", number_of_files)
 
-#Get directory
-directory = os.fsencode(data_path + "non_seg")
-file_index = -1
-number_of_files = len(os.listdir(directory))
-print("Number of files:", number_of_files)
-
-#Iterate through each MRI with its corresponing label
-for file in os.listdir(directory):
-    
-    file_index += 1
-    
-    if file_index == number_of_files:
+    #Iterate through each MRI with its corresponing label
+    for file in os.listdir(directory):
         
-        break
-    
-    filename = os.fsdecode(file)
+        file_index += 1
         
-    #Get MRI data
-    img = load_data_3D([data_path + "non_seg/" + filename + "/" + filename])[0]
-    img = img.tolist()
-    
-    data = [[[[x/255] for x in y[:128]] for y in z[:256]] for z in img[:256]]
-    
-    #Get labelled data
-    img_seg = load_data_3D([data_path + "seg/" + filename[:-8] + "SEMANTIC_" + filename[-8:] + "/" + filename[:-8] + "SEMANTIC_" + filename[-8:]])[0]
-    img_seg = img_seg.tolist()
-        
-    #Convert to one-hot encoding
-    data_seg = [[[((int(x) * [0]) + [1] + ((5 - int(x)) * [0])) for x in y[:128]] for y in z[:256]] for z in img_seg[:256]]
-    
-    #Split data into training, testing and validation sets
-    if file_index < 0.8 * number_of_files:
-        
-        x_train.append((data, data_seg))
-        
-    elif file_index < 0.9 * number_of_files:
+        if file_index == number_of_files:
             
-        x_validate.append((data, data_seg))
+            break
         
-    else:
-        
-        x_test.append((data, data_seg))
-
-#Generator for training dataset
-def load_train():
-   
-    for data in x_train:
-     
-        yield data[0], data[1]
-    
-#Generator for testing dataset
-def load_test():
-
-    for data in x_test:
-        
-       yield data[0], data[1]
+        filename = os.fsdecode(file)
             
-#Generator for validation dataset
-def load_validate():
-
-    for data in x_validate:
+        #Get MRI data
+        img = load_data_3D([data_path + "non_seg/" + filename + "/" + filename])[0]
+        img = img.tolist()
         
-        yield data[0], data[1]
+        data = [[[[x/255] for x in y[:128]] for y in z[:256]] for z in img[:256]]
+        
+        #Get labelled data
+        img_seg = load_data_3D([data_path + "seg/" + filename[:-8] + "SEMANTIC_" + filename[-8:] + "/" + filename[:-8] + "SEMANTIC_" + filename[-8:]])[0]
+        img_seg = img_seg.tolist()
+            
+        #Convert to one-hot encoding
+        data_seg = [[[((int(x) * [0]) + [1] + ((5 - int(x)) * [0])) for x in y[:128]] for y in z[:256]] for z in img_seg[:256]]
+        
+        #Split data into training, testing and validation sets
+        if file_index < 0.8 * number_of_files:
+            
+            x_train.append((data, data_seg))
+            
+        elif file_index < 0.9 * number_of_files:
+                
+            x_validate.append((data, data_seg))
+            
+        else:
+            
+            x_test.append((data, data_seg))
 
-#Load training data into dataset
-train_dataset = tf.data.Dataset.from_generator(
-    load_train,
-    output_signature=(
-        tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
-        tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+    #Generator for training dataset
+    def load_train():
+       
+        for data in x_train:
+         
+            yield data[0], data[1]
+        
+    #Generator for testing dataset
+    def load_test():
 
-#Load testing data into dataset
-test_dataset = tf.data.Dataset.from_generator(
-    load_test,
-    output_signature=(
-        tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
-        tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+        for data in x_test:
+            
+           yield data[0], data[1]
+                
+    #Generator for validation dataset
+    def load_validate():
 
-#Load validation data into dataset
-validate_dataset = tf.data.Dataset.from_generator(
-    load_validate,
-    output_signature=(
-        tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
-        tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+        for data in x_validate:
+            
+            yield data[0], data[1]
+
+    #Load training data into dataset
+    train_dataset = tf.data.Dataset.from_generator(
+        load_train,
+        output_signature=(
+            tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
+            tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+
+    #Load testing data into dataset
+    test_dataset = tf.data.Dataset.from_generator(
+        load_test,
+        output_signature=(
+            tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
+            tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+
+    #Load validation data into dataset
+    validate_dataset = tf.data.Dataset.from_generator(
+        load_validate,
+        output_signature=(
+            tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
+            tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+    
+    return (train_dataset, test_dataset, validate_dataset)

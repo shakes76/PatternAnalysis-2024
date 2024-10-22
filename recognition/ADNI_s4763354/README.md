@@ -121,42 +121,56 @@ But I quickly realized that the performance was suboptimal due to the relatively
  ```
  Figure 1 and 2 show the training loss and accuracy of Approach 1:
 
-![GFNet - Accuracy](images/acc_approach1.png)
+<p>
+    <img src="images/acc_approach1.png" width="48%" style="display: inline-block; margin-right: 2%;">
+    <img src="images/loss_approach1.png" width="48%" style="display: inline-block;">
+</p>
 
-![GFNet -Loss](images/loss_approach1.png)
+
 
 ### (Optional) Approach 2
 While I have already trained my model using pre-existing GFNet model, I would like to compare it with pre-trained models as an additional experiemnt. I applied transfer learning by loading a pretrained GFNet and fine-tuned it on my dataset. I trained the GFNet_H_Ti and GFNet_H_B model. This approach yielded an improvement in test accuracy, reaching over 75%. To address overfitting, I set dropout rate set to 0.5, used CosineAnnealingLR scheduler with 5e-6 learning rate, set weight_decay to 1e-2, applied early stopping and more. However, the results are not favourable. Further adjustment and regularization on overfitting problem is need for such complex pretrained models. 
 
 **Fine-tuned pre-trained gfnet_h_ti model:**
 
-![Pretrained GFNet_H_Ti Model - Accuracy](images/acc_hti.png)
-![Pretrained GFNet_H_Ti Model - Loss](images/loss_hti.png)
+<p>
+    <img src="images/acc_hti.png" width="48%" style="display: inline-block; margin-right: 2%;">
+    <img src="images/loss_hti.png" width="48%" style="display: inline-block;">
+</p>
 
 
 **Fine-tune pretrain GFNet_H_B model:**
 
-![Pretrained GFNet_H_B Model - Accuracy](images/acc_hb.png)
-![Pretrained GFNet_H_B Model - Loss](images/loss_hb.png)
-
+<p>
+    <img src="images/acc_hb.png" width="48%" style="display: inline-block; margin-right: 2%;">
+    <img src="images/loss_hb.png" width="48%" style="display: inline-block;">
+</p>
 
 ## Prediction Results and Analysis
 
 ### Approach 1 with GFNet: 
 
 ![GFNet Example Classification](images/example_classifications_1.png)
-![GFNet Confusion Matrix](images/confusion_matrix_1.png)
 
-**Test accuracy: 66.34%**  
-**Recall: 72.9%**
+<p style="text-align: center;">
+    <img src="images/confusion_matrix_1.png" width="50%">
+</p>
+
+
+> **Test accuracy: 66.34%**  
+> **Recall: 72.9%**
 
 ### Approach 2 with Fine-tuned gfnet_h_b model: 
 
 ![GFNet_H_B Example Classification](images/example_classifications_2.png)
-![GFNet_H_B Confusion Matrix](images/confusion_matrix_2.png)
 
-**Test accuracy: 75%**  
-**Recall: 92.6%**
+<p style="text-align: center;">
+    <img src="images/confusion_matrix_2.png" width="50%">
+</p>
+
+
+> **Test accuracy: 75%**  
+> **Recall: 92.6%**
 
 ### Discussion  
 In the prediction results of approach 1, even though four of the five randomly chosen predictions correctly identified the slices with high confidence, the recall (TP/(TP+FN)) in the confusion matrix is only 73.9% where the model fails to identify all of the diseased patients. Recall is important as it calculates the number of correctly identifed cases among all the people who actually have Alzheimer's Disease. Missed diagnoses may cause severe consequences since this can delay treatment and care. As for the results of approach 2, the recall reaches 92.6%.  

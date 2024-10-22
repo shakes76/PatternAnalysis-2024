@@ -7,13 +7,13 @@
 **Objective:**  Generate a reasonably clear image from the ADNI brain dataset using a diffusion model (The model will be trained conditionally) 
 
 ## Background of the Diffusion Model
-AI image generation is a technology that has been hotly discussed in the art and Deep Learning (DL) field. You must have heard of the AI Art Generator such as Dall-E 2 or NovelAI, a DL model that generates realistic-looking images from a given text sequence. To explore this technology deeper, we need to introduce a new class in the generative model called ‘diffusion’, first proposed by Sohl-Dickstein et al. (2015), which aimed to generate images from noise using a backward denoising process.
+AI image generation has been a significant topic of discussion in the fields of art and deep learning. Generative models like DALL-E 2 and NovelAI have shown incredible results in the fields of art and computer vision. To delve deeper into this technology, we need to introduce a new class of generative models called 'diffusion models,' which were first proposed by Sohl-Dickstein et al. (2015) to generate images from noise through a backward denoising process.
 
-So far, several generative models exist, including GAN, VAE and Flow-based models. Most of them could generate a high-quality image, such as StyleGAN-1, 2, the State-of-the-Art image generation model before diffusion model appears. However, each has some limitations of its own.
+Several types of generative models already exist, including GANs, VAEs, and flow-based models. Each of these can generate high-quality images, with models like StyleGAN-1 and StyleGAN-2 previously being the state-of-the-art in image generation. However, each model type has its own limitations ~
 
- > GAN models are known for potentially unstable training and less diversity in generation due to their adversarial training nature. VAE relies on a surrogate loss. Flow models have to use specialized architectures to construct reversible transforms (Lilian Weng, 2021)
+ > GAN models are potentially unstable training and less diversity in generation due to the adversarial training nature. VAE relies on a surrogate loss. Flow models have to design a reversible mapping function between two distribution with jacobian easy to comput.
 
-The diffusion model has provided a slow and iterative process when noise is converted into an image; this makes the diffusion model more scalable than the GAN model. Besides, since the target of the diffusion model is to predict the input noise, which is supervised learning, we could expect the training of the diffusion model will be much more stable than GAN (unsupervised learning).
+The diffusion model provides a slow and iterative process for converting noise into an image, which makes it more scalable than the GAN model. Additionally, since the objective of the diffusion model is to predict the noise at each timestep—a supervised learning task—we can expect its training to be much more stable than that of GANs, which involve unsupervised learning.
 
 ## What is Diffusion
 

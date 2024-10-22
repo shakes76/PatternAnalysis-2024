@@ -76,9 +76,12 @@ def load_data_3D(imageNames , normImage = False , categorical = False , dtype = 
 #Factor to downscale the data
 DOWNSIZE_FACTOR = 4
 
+#Augmentation using flips in all 3 dimensions
+FLIP_AUGMENTERS = ((1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1), (-1, 1, 1), (-1, 1, -1), (-1, -1, 1), (-1, -1, -1))
+
 def load_mri_data(data_path, only_testing):
     """
-    Load all the data, downscale it and split it into training, testing and validation sets.
+    Load all the data, downscale it, augment it and split it into training, testing and validation sets.
     input: data_path - location of the data
            only_testing - whether only testing data is required
     output: (train_dataset, test_dataset, validate_dataset) - preprocessed data
@@ -127,7 +130,12 @@ def load_mri_data(data_path, only_testing):
         #Split data into training, testing and validation sets
         if file_index < 0.8 * number_of_files:
             
-            x_train.append((data, data_seg))
+            #Create 8 copies of data and data_seg using all combinations of reflections in 3 dimensions
+            flipped_data = [[[y[::flip[2]] for y in z[::flip[1]]] for z in data[::flip[0]]] for flip in FLIP_AUGMENTERS]
+            flipped_data_seg = [[[y[::flip[2]] for y in z[::flip[1]]] for z in data_seg[::flip[0]]] for flip in FLIP_AUGMENTERS]
+            for i in range(8):
+                
+                x_train.append((flipped_data[i], flipped_data_seg[i]))
             
         elif file_index < 0.9 * number_of_files:
                 

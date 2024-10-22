@@ -15,14 +15,13 @@ from constants import image_height, image_width
 
  This is just a test to ensure that the images are being loaded as expected.
 '''
-def show_imgs(loader):    
+def generate_sample_images(loader):    
     
     for i in range(5):
         features, _ = next(iter(loader))
-        print(f"Feature batch shape: {features.size()}")
         img = features[0].squeeze()
         plt.imshow(img, cmap="gray")
-        save_image(img*0.5+0.5, f"aug_img_{i}.png")
+        save_image(img*0.5+0.5, f"aug_img_{i}.png") # Making sure to rescale image from [-1, 1] to [0, 1] for output.
 
 '''
  Data Loader
@@ -51,6 +50,6 @@ def get_data(data, batchSize):
 
     loader = DataLoader(dataset, batchSize, shuffle=True) # shuffle to minimise overfitting to certain patterns in data order.
 
-    show_imgs(loader) 
+    generate_sample_images(loader) 
         
     return loader

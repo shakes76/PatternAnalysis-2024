@@ -10,11 +10,13 @@ NUM_CHANNELS = 1
 FINAL_SIZE = 128
 
 class AdaIN(Layer):
-    def __init__(self, **kwargs):
+    def __init__(self, num_channels=None, **kwargs):
         super(AdaIN, self).__init__(**kwargs)
+        self.num_channels = num_channels 
 
     def build(self, input_shape):
-        self.num_channels = input_shape[0][-1]
+        if self.num_channels is None:
+            self.num_channels = input_shape[0][-1]
         self.style_scale_transform = Dense(self.num_channels)
         self.style_shift_transform = Dense(self.num_channels)
 
@@ -31,15 +33,13 @@ class AdaIN(Layer):
     def get_config(self):
         config = super(AdaIN, self).get_config()
         config.update({
-            "num_channels": self.num_channels,
+            "num_channels": self.num_channels,  
         })
-        print(f"AdaIN Layer: get_config called. Config: {config}")
         return config
 
     @classmethod
     def from_config(cls, config):
-        print(f"AdaIN Layer: from_config called with config: {config}")
-        return cls(**config)
+        return cls(**config) 
 
 
 class ApplyNoise(Layer):

@@ -12,60 +12,98 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class VectorQuantizer(nn.Module):
-    """
-    Vector Quantizer module for VQVAE
+# class Encoder(nn.Module):
+#     def __init__(self, in_channels=1, hidden_channels=64, latent_dim=128):
+#         super(Encoder, self).__init__()
+#         self.conv1 = nn.Conv2d(in_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
+#         self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
+#         self.conv3 = nn.Conv2d(hidden_channels, latent_dim, kernel_size=4, stride=2, padding=1)
+#         self.batch_norm1 = nn.BatchNorm2d(hidden_channels)
+#         self.batch_norm2 = nn.BatchNorm2d(latent_dim)
 
-    Args:
-        num_embeddings: size of the codebook
-        embedding_dim: dimension of each codebook vector
-        commitment_cost: weight for commitment loss
-    """
-    def __init__(self, num_embeddings, embedding_dim, commitment_cost):
-        super(VectorQuantizer, self).__init__()
-        self.num_embeddings = num_embeddings
-        self.embedding_dim = embedding_dim
-        self.commitment_cost = commitment_cost
-
-        # Create the codebook
-        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
-        self.embedding.weight.data.uniform_(-1 / num_embeddings, 1 / num_embeddings)
+#     def forward(self, x):
+#         x = F.relu(self.batch_norm1(self.conv1(x)))
+#         x = F.relu(self.batch_norm1(self.conv2(x)))
+#         x = self.batch_norm2(self.conv3(x))  # No ReLU on the output
+#         return x
 
 
-    def forward(self, inputs):
-        # Ensure the embeddings are on the same device as inputs
-        self.embedding = self.embedding.to(inputs.device)
-        
-        # Convert inputs from BCHW -> BHWC
-        inputs = inputs.permute(0, 2, 3, 1).contiguous()
-        input_shape = inputs.shape
+# class Decoder(nn.Module):
+#     def __init__(self, out_channels=1, hidden_channels=64, latent_dim=128):
+#         super(Decoder, self).__init__()
+#         self.deconv1 = nn.ConvTranspose2d(latent_dim, hidden_channels, kernel_size=4, stride=2, padding=1)
+#         self.deconv2 = nn.ConvTranspose2d(hidden_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
+#         self.deconv3 = nn.ConvTranspose2d(hidden_channels, out_channels, kernel_size=4, stride=2, padding=1)
 
-        # Flatten input
-        flat_input = inputs.view(-1, self.embedding_dim)
+#     def forward(self, x):
+#         x = F.relu(self.deconv1(x))
+#         x = F.relu(self.deconv2(x))
+#         x = torch.sigmoid(self.deconv3(x))  # Output between [0, 1]
+#         return x
 
-        # Calculate distances
-        distances = (torch.sum(flat_input ** 2, dim = 1, keepdim = True)
-                    + torch.sum(self.embedding.weight ** 2, dim = 1)
-                    - 2 * torch.matmul(flat_input, self.embedding.weight.t()))
 
-        # Encoding
-        encoding_indices = torch.argmin(distances, dim = 1).unsqueeze(1)
-        encodings = torch.zeros(encoding_indices.shape[0], self.num_embeddings)
-        encodings.scatter_(1, encoding_indices, 1)
+# class VectorQuantizer(nn.Module):
+#     def __init__(self, num_embeddings, embedding_dim, commitment_cost):
+#         super(VectorQuantizer, self).__init__()
+#         self.embedding_dim = embedding_dim
+#         self.num_embeddings = num_embeddings
+#         self.commitment_cost = commitment_cost
 
-        # Quantize and unflatten
-        quantized = torch.matmul(encodings, self.embedding.weight).view(input_shape)
+#         # Initialize the embedding table
+#         self.embeddings = nn.Embedding(num_embeddings, embedding_dim)
+#         self.embeddings.weight.data.uniform_(-1 / num_embeddings, 1 / num_embeddings)
 
-        # Loss
-        e_latent_loss = F.mse_loss(quantized.detach(), inputs)
-        q_latent_loss = F.mse_loss(quantized, inputs.detach())
-        loss = q_latent_loss + self.commitment_cost * e_latent_loss
+#     def forward(self, z):
+#         # Flatten z to B x D
+#         z_flattened = z.view(-1, self.embedding_dim)
 
-        # Straight-through estimator
-        quantized = inputs + (quantized - inputs).detach()
+#         # Calculate distances between z and embedding vectors
+#         distances = (torch.sum(z_flattened ** 2, dim=1, keepdim=True)
+#                      + torch.sum(self.embeddings.weight ** 2, dim=1)
+#                      - 2 * torch.matmul(z_flattened, self.embeddings.weight.t()))
 
-        # Convert quantized from BHWC -> BCHW
-        return loss, quantized.permute(0, 3, 1, 2).contiguous(), encoding_indices
+#         # Get the indices of the nearest embeddings
+#         encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+
+#         # Quantize z
+#         z_quantized = torch.index_select(self.embeddings.weight, dim=0, index=encoding_indices.view(-1))
+
+#         # Reshape quantized vectors to the original shape
+#         z_quantized = z_quantized.view_as(z)
+
+#         # Compute the loss to encourage commitment
+#         loss = F.mse_loss(z_quantized.detach(), z) + self.commitment_cost * F.mse_loss(z_quantized, z.detach())
+
+#         # Add the straight-through gradient
+#         z_quantized = z + (z_quantized - z).detach()
+
+#         return z_quantized, loss, encoding_indices
+
+
+# class VQVAE(nn.Module):
+#     def __init__(self, in_channels=1, hidden_channels=64, latent_dim=128, num_embeddings=512, commitment_cost=0.25):
+#         super(VQVAE, self).__init__()
+#         self.encoder = Encoder(in_channels, hidden_channels, latent_dim)
+#         self.quantizer = VectorQuantizer(num_embeddings, latent_dim, commitment_cost)
+#         self.decoder = Decoder(in_channels, hidden_channels, latent_dim)
+
+#     def forward(self, x):
+#         # Encode
+#         z = self.encoder(x)
+
+#         # Quantize
+#         z_quantized, vq_loss, encoding_indices = self.quantizer(z)
+
+#         # Decode
+#         x_recon = self.decoder(z_quantized)
+
+#         return x_recon, vq_loss
+
+#     def encode(self, x):
+#         return self.encoder(x)
+
+#     def decode(self, z):
+#         return self.decoder(z)
 
 
 class ResidualBlock(nn.Module):
@@ -96,6 +134,110 @@ class ResidualBlock(nn.Module):
         return self.relu(out + residual)
 
 
+class EncoderTopBottom(nn.Module):
+    def __init__(self, in_channels, hidden_dims, embedding_dims):
+        super(EncoderTopBottom, self).__init__()
+
+        # Top encoder
+        self.encoder_top = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_dims[0], kernel_size = 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[0], hidden_dims[0]),
+            nn.ReLU(),
+            nn.Conv2d(hidden_dims[0], embedding_dims[0], 1)
+        )
+
+        # Bottom encoder
+        self.encoder_bottom = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_dims[1], kernel_size = 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[1], hidden_dims[1]),
+            nn.ReLU(),
+            nn.Conv2d(hidden_dims[1], embedding_dims[1], 1)
+        )
+
+    def forward(self, x):
+        z_top = self.encoder_top(x)
+        z_bottom = self.encoder_bottom(x)
+        return z_top, z_bottom
+
+
+class VectorQuantizer(nn.Module):
+    """
+    Vector Quantizer module for VQVAE
+
+    Args:
+        num_embeddings: size of the codebook
+        embedding_dim: dimension of each codebook vector
+        commitment_cost: weight for commitment loss
+    """
+    def __init__(self, num_embeddings, embedding_dim, commitment_cost):
+        super(VectorQuantizer, self).__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.commitment_cost = commitment_cost
+
+        # Create the codebook
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
+        self.embedding.weight.data.uniform_(-1 / num_embeddings, 1 / num_embeddings)
+
+
+    def forward(self, inputs):
+        # Ensure the embeddings are on the same device as inputs
+        self.embedding = self.embedding.to(inputs.device)
+
+        # Flatten input
+        flat_input = inputs.view(-1, self.embedding_dim)
+
+        # Calculate distances
+        distances = (torch.sum(flat_input ** 2, dim = 1, keepdim = True)
+                    + torch.sum(self.embedding.weight ** 2, dim = 1)
+                    - 2 * torch.matmul(flat_input, self.embedding.weight.t()))
+
+        # Encoding
+        encoding_indices = torch.argmin(distances, dim = 1).unsqueeze(1)
+        encodings = torch.zeros(encoding_indices.shape[0], self.num_embeddings, device = inputs.device)
+        encodings.scatter_(1, encoding_indices, 1)
+
+        # Quantize and unflatten
+        quantized = torch.matmul(encodings, self.embedding.weight).view(inputs.shape)
+
+        # Loss
+        e_latent_loss = F.mse_loss(quantized.detach(), inputs)
+        q_latent_loss = F.mse_loss(quantized, inputs.detach())
+        loss = q_latent_loss + self.commitment_cost * e_latent_loss
+
+        # Straight-through estimator
+        quantized = inputs + (quantized - inputs).detach()
+
+        return loss, quantized, encoding_indices
+
+
+class DecoderTopBottom(nn.Module):
+    def __init__(self, in_channels, hidden_dims, embedding_dims):
+        super(DecoderTopBottom, self).__init__()
+
+        # Top decoder
+        self.decoder_top = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dims[0], hidden_dims[0], kernel_size = 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[0], hidden_dims[0]),
+            nn.ReLU()
+        )
+
+        # Bottom decoder
+        self.decoder_bottom = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dims[1] + hidden_dims[0], hidden_dims[1], kernel_size = 4, stride = 2, padding = 1),
+            ResidualBlock(hidden_dims[1], hidden_dims[1]),
+            nn.ReLU(),
+            nn.Conv2d(hidden_dims[1], in_channels, 1)
+        )
+
+    def forward(self, quant_top, quant_bottom):
+        dec_top = self.decoder_top(quant_top)
+        dec_top_upsampled = F.interpolate(dec_top, size = quant_bottom.shape[2:])
+        combined = torch.cat([dec_top_upsampled, quant_bottom], dim = 1)
+        x_recon = self.decoder_bottom(combined)
+        return x_recon
+
+
 class VQVAE2(nn.Module):
     """
     VQVAE-2 with hierarchical latent spaces
@@ -113,68 +255,33 @@ class VQVAE2(nn.Module):
         assert len(num_embeddings) == len(embedding_dims)
         self.num_levels = len(num_embeddings)
 
-        # Top level encoder
-        self.encoder_top = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dims[0], 4, stride = 2, padding = 1),
-            ResidualBlock(hidden_dims[0], hidden_dims[0]),
-            nn.ReLU(inplace = False),
-            nn.Conv2d(hidden_dims[0], embedding_dims[0], 1)
-        )
-
-        # Bottom level encoder
-        self.encoder_bottom = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dims[1], 4, stride = 2, padding = 1),
-            ResidualBlock(hidden_dims[1], hidden_dims[1]),
-            nn.ReLU(inplace = False),
-            nn.Conv2d(hidden_dims[1], embedding_dims[1], 1)
-        )
+        # Encoders
+        self.encoder = EncoderTopBottom(in_channels, hidden_dims, embedding_dims)
 
         # Vector Quantizers
         self.vq_top = VectorQuantizer(num_embeddings[0], embedding_dims[0], commitment_cost)
         self.vq_bottom = VectorQuantizer(num_embeddings[1], embedding_dims[1], commitment_cost)
 
         # Decoders
-        self.decoder_top = nn.Sequential(
-            nn.ConvTranspose2d(embedding_dims[0], hidden_dims[0], 4, stride = 2, padding = 1),
-            ResidualBlock(hidden_dims[0], hidden_dims[0]),
-            nn.ReLU(inplace = False)
-        )
-
-        self.decoder_bottom = nn.Sequential(
-            nn.ConvTranspose2d(embedding_dims[1] + hidden_dims[0], hidden_dims[1], 4, stride = 2, padding = 1),
-            ResidualBlock(hidden_dims[1], hidden_dims[1]),
-            nn.ReLU(inplace = False),
-            nn.Conv2d(hidden_dims[1], in_channels, 1)
-        )
+        self.decoder = DecoderTopBottom(in_channels, hidden_dims, embedding_dims)
 
 
     def encode(self, x):
-        # Top level encoding
-        z_top = self.encoder_top(x)
+        z_top, z_bottom = self.encoder(x)
         loss_top, quant_top, indices_top = self.vq_top(z_top)
-
-        # Bottom level encoding
-        z_bottom = self.encoder_bottom(x)
         loss_bottom, quant_bottom, indices_bottom = self.vq_bottom(z_bottom)
-
         return (loss_top, quant_top, indices_top), (loss_bottom, quant_bottom, indices_bottom)
 
 
     def decode(self, quant_top, quant_bottom):
-        # Decode top level
-        dec_top = self.decoder_top(quant_top)
-
-        # Upsample top features to match bottom size
-        dec_top_upsampled = F.interpolate(dec_top, size = quant_bottom.shape[2:])
-
-        # Concatenate with bottom features and decode
-        combined = torch.cat([dec_top_upsampled, quant_bottom], dim = 1)
-        x_recon = self.decoder_bottom(combined)
-
-        return x_recon
+        return self.decoder(quant_top, quant_bottom)
 
 
     def forward(self, x):
+        # Move input to the same device as the model
+        device = next(self.parameters()).device
+        x = x.to(device)
+
         # Encode
         (loss_top, quant_top, _), (loss_bottom, quant_bottom, _) = self.encode(x)
 

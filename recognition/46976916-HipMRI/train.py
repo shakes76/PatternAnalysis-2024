@@ -46,7 +46,7 @@ def main():
 
     print("Image shape:", image.shape)  # Should print something like (1, H, W) where H, W are image dimensions
     print("Ground truth shape:", ground.shape)
-    plt.imshow(ground, cmap='gray')  # Use cmap='gray' for grayscale display
+    plt.imshow(image, cmap='gray')  # Use cmap='gray' for grayscale display
     plt.title(f'Image 0')
     plt.axis('off')  # Turn off axis labels
     plt.show()

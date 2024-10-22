@@ -10,9 +10,10 @@ import nibabel as nib
 from tqdm import tqdm
 
 def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
-    channels = np . unique ( arr )
-    res = np . zeros ( arr . shape + ( len ( channels ) ,) , dtype = dtype )
-    for c in channels :
+    #channels = np . unique ( arr )
+    test = 5
+    res = np . zeros ( arr . shape + ( test ,) , dtype = dtype )
+    for c in range(test) :
         c = int ( c )
         res [... , c : c +1][ arr == c ] = 1
 
@@ -60,8 +61,8 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
             # ~ inImage = inImage / np . linalg . norm ( inImage )
             # ~ inImage = 255. * inImage / inImage . max ()
             inImage = ( inImage - inImage . mean () ) / inImage . std ()
-            if categorical :
-                inImage = utils.to_channels ( inImage , dtype = dtype )
+        if categorical :
+                inImage = to_channels ( inImage , dtype = dtype )
                 images [i ,: ,: ,:] = inImage
         else :
             images [i ,: ,:] = inImage
@@ -99,12 +100,12 @@ plt.show()
 '''
 
 class ProstateCancerDataset(Dataset):
-    def __init__(self, input_dir, groundtruth_dir, normImage=False, categorical=False, dtype=np.float32, transform=None):
+    def __init__(self, input_dir, groundtruth_dir, normImage=True, categorical=False, dtype=np.float32, transform=None):
         # Use load_data_2D to load all the input images and ground truth masks at once
         imageNames = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith('.nii.gz')]
         self.images = load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype)
         groundtruthNames = [os.path.join(groundtruth_dir, f) for f in os.listdir(groundtruth_dir) if f.endswith('.nii.gz')]
-        self.groundtruths = load_data_2D(groundtruthNames, normImage=normImage, categorical=categorical, dtype=dtype)
+        self.groundtruths = load_data_2D(groundtruthNames, normImage=normImage, categorical=True, dtype=dtype)
         
         self.transform = transform  # Optional transformations (like resizing or normalization)
     

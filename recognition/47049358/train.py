@@ -1,4 +1,4 @@
-from dataset import X_train, y_train, Prostate3dDataset
+from dataset import train_dict, train_transforms
 from modules import ImprovedUnet
 import matplotlib.pyplot as plt
 import torch
@@ -6,15 +6,16 @@ from torch.utils.data import DataLoader
 from time import time
 import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
+from monai.data import DataLoader, Dataset
 
-NUM_EPOCHS = 300
+NUM_EPOCHS = 3
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
-CRITERION = DiceLoss(batch=True)
-# CRITERION = DiceCELoss(batch = True, lambda_ce = 0.2) # Based on Thyroid Tumor Segmentation Report
-# CRITERION = DiceFocalLoss(batch = True) # Default gamma = 2
+CRITERION = DiceLoss(include_background=False, batch=True)
+# CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2) # Based on Thyroid Tumor Segmentation Report
+# CRITERION = DiceFocalLoss(include_background=False, batch = True) # Default gamma = 2
 
 def compute_dice_segments(predictions, ground_truths):
 
@@ -32,7 +33,7 @@ def compute_dice_segments(predictions, ground_truths):
 
     return segment_coefs
 
-def train(model, X_train, y_train, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
+def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
 
     # set up criterion, optimiser, and scheduler for learning rate. 
     optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
@@ -49,21 +50,21 @@ def train(model, X_train, y_train, criterion, num_epochs=NUM_EPOCHS, device="cud
     seg_4_dice_coefs = np.zeros(NUM_EPOCHS)
     seg_5_dice_coefs = np.zeros(NUM_EPOCHS)
 
-    train_set = Prostate3dDataset(X_train, y_train)
-    train_loader = DataLoader(dataset = train_set, batch_size = BATCH_SIZE)
-
     for epoch in range(num_epochs):
         running_dice = 0.0
-        total_segment_coefs = torch.zeros(y_train.shape[1], device=device)
-        for inputs, masks in train_loader:
-            masks = masks.float()
-            inputs, masks = inputs.to(device), masks.to(device)
+        total_segment_coefs = torch.zeros(6, device=device)
+        for batch_data in train_loader:
+            inputs, labels = (
+                batch_data["image"].to(device),
+                batch_data["label"].to(device),
+            )
+
             optimiser.zero_grad()
             outputs = model(inputs)
 
-            loss = criterion(outputs, masks) 
+            loss = criterion(outputs, labels) 
 
-            segment_coefs = compute_dice_segments(outputs, masks)
+            segment_coefs = compute_dice_segments(outputs, labels)
 
             total_segment_coefs += segment_coefs
 
@@ -104,8 +105,11 @@ print("> Start Training")
 
 start = time()
 
+train_set = Dataset(data=train_dict, transform=train_transforms)
+train_loader = DataLoader(train_set, batch_size=BATCH_SIZE)
+
 # train improved unet
-trained_model, training_dice_coefs, seg0, seg1, seg2, seg3, seg4, seg5 = train(model, X_train, y_train, criterion = CRITERION,
+trained_model, training_dice_coefs, seg0, seg1, seg2, seg3, seg4, seg5 = train(model, train_loader, criterion = CRITERION,
                                                             device=device, num_epochs=NUM_EPOCHS)
 
 end = time()
@@ -113,17 +117,19 @@ end = time()
 elapsed_time = end - start
 print(f"> Training completed in {elapsed_time:.2f} seconds")
 
-plt.plot(training_dice_coefs, label='Training Dice Coefficient')
-plt.plot(seg0, label='Segment 0 Dice Coefficient')
-plt.plot(seg1, label='Segment 1 Dice Coefficient')
-plt.plot(seg2, label='Segment 2 Dice Coefficient')
-plt.plot(seg3, label='Segment 3 Dice Coefficient')
-plt.plot(seg4, label='Segment 4 Dice Coefficient')
-plt.plot(seg5, label='Segment 5 Dice Coefficient')
+epochs = range(1, NUM_EPOCHS + 1)
+
+plt.plot(epochs, training_dice_coefs, label='Training Dice Coefficient')
+plt.plot(epochs, seg0, label='Segment 0 Dice Coefficient')
+plt.plot(epochs, seg1, label='Segment 1 Dice Coefficient')
+plt.plot(epochs, seg2, label='Segment 2 Dice Coefficient')
+plt.plot(epochs, seg3, label='Segment 3 Dice Coefficient')
+plt.plot(epochs, seg4, label='Segment 4 Dice Coefficient')
+plt.plot(epochs, seg5, label='Segment 5 Dice Coefficient')
 plt.title(f'Dice Coefficient Over Epochs for {CRITERION}')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'unet_dice_coefs_over_epochs_{CRITERION}.png')
+plt.savefig(f'training_results/unet_dice_coefs_over_epochs_{CRITERION}.png')
 plt.close()

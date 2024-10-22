@@ -9,12 +9,11 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from time import time
 from monai.losses import DiceLoss
+from monai.data import DataLoader, Dataset
 
 # import from local files  
 from train import trained_model, CRITERION, compute_dice_segments
-from dataset import X_test, y_test, Prostate3dDataset
-
-BATCH_SIZE = 1
+from dataset import test_dict, test_transforms
 
 def visualise_ground_truths(images, ground_truths, criterion):
 
@@ -48,7 +47,7 @@ def visualise_ground_truths(images, ground_truths, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'ground_truths_{criterion}.png')
+    plt.savefig(f'test_results/ground_truths_{criterion}.png')
     plt.close()
     
     return fig, axes
@@ -78,7 +77,7 @@ def visualise_predictions(images, predictions, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'predictions_{criterion}.png')
+    plt.savefig(f'test_results/predictions_{criterion}.png')
     plt.close()
     
     return fig, axes
@@ -102,19 +101,21 @@ def test(model, test_loader, device):
 
     with torch.no_grad():
 
-        for i, (inputs, masks) in enumerate(test_loader):
-            masks = masks.float()
-            inputs, masks = inputs.to(device), masks.to(device)
+        for i, batch_data in enumerate(test_loader):
+            inputs, labels = (
+                batch_data["image"].to(device),
+                batch_data["label"].to(device),
+            )
             outputs = model(inputs)
-            segment_coefs = compute_dice_segments(outputs, masks)
-            dice_loss = criterion(outputs, masks).item()
+            segment_coefs = compute_dice_segments(outputs, labels)
+            dice_loss = criterion(outputs, labels).item()
 
             test_dice = 1 - dice_loss
 
             if len(images) < 9:
                 image = inputs[0, 0 , : , : , 50].cpu().numpy()
                 images.append(image)
-                mask = masks[0, : , : , : , 50].cpu().numpy().astype(np.uint8)
+                mask = labels[0, : , : , : , 50].cpu().numpy().astype(np.uint8)
                 ground_truths.append(mask)
                 prediction = torch.argmax(outputs[0, : , : , : , 50 ], dim = 0).cpu().numpy().astype(np.uint8)
                 predictions.append(prediction)
@@ -155,7 +156,7 @@ def plot_dice(dice_coefs, criterion, segment_coefs):
     plt.title("Dice Coefficient across test inputs")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_coefs_test_{criterion}_loss.png')
+    plt.savefig(f'test_results/dice_coefs_test_{criterion}.png')
     plt.close()
 
 
@@ -163,8 +164,8 @@ if __name__ == "__main__":
     # connect to gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    test_set = Prostate3dDataset(X_test, y_test)
-    test_loader = DataLoader(dataset = test_set, batch_size = BATCH_SIZE)
+    test_set = Dataset(test_dict, test_transforms)
+    test_loader = DataLoader(dataset = test_set, batch_size = 1)
 
     print('> Start Testing')
 
@@ -178,7 +179,7 @@ if __name__ == "__main__":
 
     elapsed_time = end - start
     
-    print(f"> Testing completed in {elapsed_time:.2f} seconds")
+    print(f"> Test completed in {elapsed_time:.2f} seconds")
 
     average_dice = np.mean(dice_coefs)
     print(f"Average Dice Coefficient: {average_dice:.4f}")

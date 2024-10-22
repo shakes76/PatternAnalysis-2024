@@ -444,9 +444,9 @@ class StyleGAN2Generator(nn.Module):
     
 class ResidualBlock(nn.Module):
     """
-    Residual blcok for StyleGAN2.
+    Simplified Residual block for StyleGAN2.
 
-    2 convs, skip connection, optional downsampling.
+    Single conv with skip connection, optional downsampling.
     Args:
         in_channels (int): Num input channels
         out_channels (int): Num output channels
@@ -454,28 +454,20 @@ class ResidualBlock(nn.Module):
     """
     def __init__(self, in_channels, out_channels, downsample=True):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+        # Reduced to single conv layer
+        self.conv = nn.Conv2d(in_channels, out_channels, 3, padding=1)
         self.skip = nn.Conv2d(in_channels, out_channels, 1, bias=False)
         self.downsample = downsample
         self.activation = nn.LeakyReLU(0.2)
 
     def forward(self, x):
-        """
-        Forward pass of Residual Block.
-
-        Args:
-            x (torch.Tensor): Input tensor - shape [N, in_channels, H, W]
-
-        Returns:
-            torch.Tensor: Processed tensor - shape [N, out_channels, H', W']
-        """
+        """Forward pass of simplified Residual Block."""
         residual = self.skip(x)
         if self.downsample:
             residual = F.avg_pool2d(residual, 2)
 
-        out = self.activation(self.conv1(x))
-        out = self.activation(self.conv2(out))
+        # Single conv operation
+        out = self.activation(self.conv(x))
         if self.downsample:
             out = F.avg_pool2d(out, 2)
 

@@ -1,4 +1,6 @@
+import tensorflow as tf
 import numpy as np
+import os
 import nibabel as nib
 from tqdm import tqdm
 
@@ -70,3 +72,52 @@ def load_data_3D(imageNames , normImage = False , categorical = False , dtype = 
         return images , affines
     else :
         return images
+
+data_path = "C:/Users/nk200/Downloads/HipMRI_study_complete_release_v1/"
+
+x_train = []
+x_test = []
+x_validate = []
+
+#Get directory
+directory = os.fsencode(data_path + "non_seg")
+file_index = -1
+number_of_files = len(os.listdir(directory))
+print("Number of files:", number_of_files)
+
+#Iterate through each MRI with its corresponing label
+for file in os.listdir(directory):
+    
+    file_index += 1
+    
+    if file_index == number_of_files:
+        
+        break
+    
+    filename = os.fsdecode(file)
+        
+    #Get MRI data
+    img = load_data_3D([data_path + "non_seg/" + filename + "/" + filename])[0]
+    img = img.tolist()
+    
+    data = [[[[x/255] for x in y[:128]] for y in z[:256]] for z in img[:256]]
+    
+    #Get labelled data
+    img_seg = load_data_3D([data_path + "seg/" + filename[:-8] + "SEMANTIC_" + filename[-8:] + "/" + filename[:-8] + "SEMANTIC_" + filename[-8:]])[0]
+    img_seg = img_seg.tolist()
+        
+    #Convert to one-hot encoding
+    data_seg = [[[((int(x) * [0]) + [1] + ((5 - int(x)) * [0])) for x in y[:128]] for y in z[:256]] for z in img_seg[:256]]
+    
+    #Split data into training, testing and validation sets
+    if file_index < 0.8 * number_of_files:
+        
+        x_train.append((data, data_seg))
+        
+    elif file_index < 0.9 * number_of_files:
+            
+        x_validate.append((data, data_seg))
+        
+    else:
+        
+        x_test.append((data, data_seg))

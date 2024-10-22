@@ -16,8 +16,21 @@ import numpy as np
 
 
 def train_epoch(model, data_loader, optimiser, device):
+    """
+    Trains the model for one epoch.
+
+    Args:
+        model (torch.nn.Module): The VQVAE2 model to train.
+        data_loader (torch.utils.data.DataLoader): DataLoader providing the training data.
+        optimiser (torch.optim.Optimizer): The optimizer used to update model parameters.
+        device (torch.device): The device (CPU or GPU) used for training.
+
+    Returns:
+        float: Average training loss for the epoch.
+    """
     model.train()
     total_loss = 0
+
     for batch in tqdm(data_loader):
         batch = batch.to(device)
 
@@ -33,8 +46,20 @@ def train_epoch(model, data_loader, optimiser, device):
 
 
 def validate_epoch(model, data_loader, device):
+    """
+    Validates the model for one epoch.
+
+    Args:
+        model (torch.nn.Module): The VQVAE2 model to validate.
+        data_loader (torch.utils.data.DataLoader): DataLoader providing the validation data.
+        device (torch.device): The device (CPU or GPU) used for validation.
+
+    Returns:
+        float: Average validation loss for the epoch.
+    """
     model.eval()
     total_loss = 0
+
     with torch.no_grad():
         for batch in tqdm(data_loader):
             batch = batch.to(device)
@@ -46,9 +71,17 @@ def validate_epoch(model, data_loader, device):
 
 
 def plot_losses(train_losses, val_losses, output_dir):
+    """
+    Plots training and validation losses and saves the plot to the specified directory.
+
+    Args:
+        train_losses (list): List of training losses over epochs.
+        val_losses (list): List of validation losses over epochs.
+        output_dir (str): Directory to save the plot.
+    """
     plt.figure()
-    plt.plot(train_losses, label='Training Loss')
-    plt.plot(val_losses, label='Validation Loss')
+    plt.plot(train_losses, label = 'Training Loss')
+    plt.plot(val_losses, label = 'Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
@@ -58,6 +91,14 @@ def plot_losses(train_losses, val_losses, output_dir):
 
 
 def save_model(model, epoch, output_dir):
+    """
+    Saves the model's state dictionary to the specified directory.
+
+    Args:
+        model (torch.nn.Module): The model to be saved.
+        epoch (int or str): The current epoch or 'final' to denote the final model save.
+        output_dir (str): Directory to save the model.
+    """
     model_path = os.path.join(output_dir, f'vqvae2_epoch_{epoch}.pth')
     torch.save(model.state_dict(), model_path)
     print(f'Model saved at {model_path}')
@@ -74,6 +115,21 @@ def main(
         embedding_dims = [32, 64],
         commitment_cost = 0.25,
         num_workers = 4):
+    """
+    Main function to train and validate the VQVAE2 model on MRI data.
+
+    Args:
+        data_dir (str): Directory containing training and validation data.
+        output_dir (str): Directory to save the trained model and loss plots.
+        batch_size (int): Batch size for data loading. Default is 16.
+        num_epochs (int): Number of training epochs. Default is 10.
+        lr (float): Learning rate for the optimizer. Default is 1e-3.
+        hidden_dims (list): List of hidden dimensions for the model layers.
+        num_embeddings (list): List of codebook sizes for each level of VQVAE2.
+        embedding_dims (list): List of embedding dimensions for each level of VQVAE2.
+        commitment_cost (float): Weight for the commitment loss in VQVAE2.
+        num_workers (int): Number of worker threads for data loading. Default is 4.
+    """
     # Check if output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

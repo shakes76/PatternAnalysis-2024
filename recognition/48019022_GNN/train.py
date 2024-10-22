@@ -51,7 +51,7 @@ def _evaluate_model(model, data, valid, test, criterion):
 
     return valid_loss, accuracy
 
-def training_loop(num_epochs, model, data, train, valid, test, optimiser, criterion, device, losses, valid_losses, accuracies, scheduler):
+def training_loop(architecture, num_epochs, model, data, train, valid, test, optimiser, criterion, device, losses, valid_losses, accuracies, scheduler):
     """
     Code for the main training loop.
     Data is passed through the network to train, and loss plots will be generated
@@ -88,7 +88,7 @@ def training_loop(num_epochs, model, data, train, valid, test, optimiser, criter
             # early stoppage
             best_val_loss = valid_loss
             patience_count = 0
-            torch.save(model.state_dict(), 'early_stop_model.pth')
+            torch.save(model.state_dict(), 'early_stop_' + architecture +'model.pth')
         else:
             patience_count += 1
 
@@ -109,7 +109,8 @@ def training_loop(num_epochs, model, data, train, valid, test, optimiser, criter
     plt.title('Training and Validation Loss')
     plt.show()
 
-    torch.save(model.state_dict(), 'GCN_model.pth')
+    savedpath = "best_" + architecture + "_model.pth"
+    torch.save(model.state_dict(), savedpath)
 
 
 """
@@ -142,8 +143,8 @@ if __name__ == '__main__':
         # Select GCN
         model = GCNModel(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1) # +1 as labels start from 0
     elif architecture == "GAT":
-        # Update when GAT is implemented
-        pass
+        # Select GAT
+        model = GATModelBasic(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
 
     model = model.to(device)
 
@@ -165,7 +166,8 @@ if __name__ == '__main__':
     accuracies = []
 
     start_time = time.time()
-    training_loop(epochs, 
+    training_loop(architecture=architecture,
+                  num_epochs=epochs, 
                   model=model, 
                   data=data, 
                   train=train_idx, 

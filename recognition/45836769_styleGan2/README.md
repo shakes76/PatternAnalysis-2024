@@ -25,7 +25,7 @@ StyleGAN had some issues with atrifacts in its images. StyleGAN2 extends on Styl
 
 5. **Modulated Convolution**: Used in the synthesis network to apply style information at each layer. Controls the generated images across all resolutions.
 
-6. **Residual Network**: Used in the discriminator to downsample images before classification. Blocks are made up of two convolution layers (with activations) added to the input through a skip connection.
+6. **Residual Network**: Used in the discriminator to downsample images before classification. Blocks are made up of a convolution layer with leakyReLU activation, added to the input through a skip connection.
 
 The training process involves alternating between generator and discriminator updates. The generator aims to produce increasingly realistic brain images, while the discriminator classifies real and generated images. This aims to remain balanced between the two models so both continue to learn until the generated images are satisfactory.
 
@@ -103,6 +103,22 @@ end
 | torchvision | 0.17.2   |
 | umap-learn  | 0.5.6    |
 | pillow      | 11.0.0   |
+
+## Dataset
+The Alzheimer's Disease Neuroimaging Initiative (ADNI) greyscale image dataset is used. The dataset was split into train and test partitions with the training set containing 10,401 Alzheimer's labeled images, and 11,121 normal control images. The test set can be used to evaluate discriminator performance on unseen real images. The test split contains 4,461 Alzheimer's brain images and 4,541 normal brain images. The images are imported to a custom dataset class (dataset.py) in which they are transformed before training. The default transform forces all images to the expected greyscale and size (256x240) - just as a precaution. Then the left and right edges are padded with 8 black pixels each to make the image size 256x256, with both dimensions being a factor of two to be easier to work with. Then the image tensor is normalised with mean and standard deviation of 0.5 to scale the pixel values between -1 to 1. Centered data works better with the activation functions (LeakyReLU and Tanh) used in the network, helping the model converge faster and avoid issues like vanishing or exploding gradients.
+
+Below are an example of an image from the Alzheimer's and Normal classes of the training dataset.
+
+<p align="center">
+    <img src="images/train_set_AD_example" alt="" width="80%">
+    <br>
+    AD dataset example
+</p>
+<p align="center">
+    <img src="images/train_set_NC_example" alt="" width="80%">
+    <br>
+    NC dataset example
+</p>
 
 ## Results
 

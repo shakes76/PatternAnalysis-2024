@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 from modules import unet_model  
 from dataset import load_data_2D  
@@ -83,17 +83,50 @@ y_train = np.where(y_train > 0.5, 1, 0)
 y_val = np.where(y_val > 0.5, 1, 0)
 y_test = np.where(y_test > 0.5, 1, 0)
 
+#Now for data augmentation to prevent overfitting
+#Data augmentation settings
+data_gen_args = dict(rotation_range=15,
+                     width_shift_range=0.1,
+                     height_shift_range=0.1,
+                     zoom_range=0.2,
+                     horizontal_flip=True,
+                     fill_mode='nearest')
+
+#Create the ImageDataGenerator for the images (X_train)
+image_datagen = ImageDataGenerator(**data_gen_args)
+
+#Create the ImageDataGenerator for the masks (y_train)
+mask_datagen = ImageDataGenerator(**data_gen_args)
+
+#Fit the generators to the data (required if you use normalization or other preprocessing)
+image_datagen.fit(X_train, augment=True)
+mask_datagen.fit(y_train, augment=True)
+
+#Create a generator that yields augmented images and masks
+def train_generator(image_datagen, mask_datagen, X_train, y_train, batch_size):
+    image_gen = image_datagen.flow(X_train, batch_size=batch_size, seed=1)
+    mask_gen = mask_datagen.flow(y_train, batch_size=batch_size, seed=1)
+    
+    while True:
+        X_batch = image_gen.next()
+        y_batch = mask_gen.next()
+        yield (X_batch, y_batch)
+
+batch_size = 8
+
+#Create the training data generator
+train_gen = train_generator(image_datagen, mask_datagen, X_train, y_train, batch_size=batch_size)
+
 #Initialise the U-Net model
 model = unet_model(input_size=(256, 128, 1))
 
-
-#Train the model and show progress during training
+#Train the model using the data generator
 history = model.fit(
-    X_train, y_train,
+    train_gen,
+    steps_per_epoch=len(X_train) // batch_size,
     validation_data=(X_val, y_val),
     epochs=50,
-    batch_size=8,
-    verbose=1  
+    verbose=1
 )
 
 #Plot training and validation accuracy

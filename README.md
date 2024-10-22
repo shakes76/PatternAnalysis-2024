@@ -220,13 +220,13 @@ After training was completed each of these models was used to generate images.
 In the training process of my GAN, both the discriminator loss and generator loss show distinct patterns of spikes throughout the training cycle. These spikes are not random; they incrementally increase and correspond to specific points during the training where the model transitions to a higher-resolution image size. Each time the model completes a training stage, the image resolution is doubled. This causes an immediate and notable increase in both the discriminator and generator losses.
 
 <p align="center">
- <img src="recognition/Readme_images/NC Loss.png" width="90%" />
+ <img src="recognition/Readme_images/NC Loss.png" width="100%"/>
 </p>
 
 At each of these transitions, the model starts training on images of a larger size, requiring the generator to produce higher-resolution images and the discriminator to evaluate them with higher detail.
 
 <p align="center">
- <img src="recognition/Readme_images/AD Loss1.png" width="90%" />
+ <img src="recognition/Readme_images/AD Loss1.png" width="100%"/>
 </p>
 
 This incremental increase in the loss spikes can be clearly seen in the AD loss function graph. Arrows in the graph highlight the key points where the image size is doubled (e.g., from 32x32 to 64x64, and so on).

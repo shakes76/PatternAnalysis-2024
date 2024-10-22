@@ -9,6 +9,10 @@ from sklearn.manifold import TSNE
 from modules import *
 
 class LoadModel:
+    """
+    Class that is responsible for loading saved model and ploting basic stats
+    from the saved models
+    """
     def __init__(self, file_path="model_checkpoint.pth"):
         self.checkpoint = torch.load(file_path)
         self.gen = None
@@ -21,12 +25,18 @@ class LoadModel:
         self.gen_losses = []
 
     def load_plotting(self):
+        """
+        Weaker method used only when plotting is needed
+        """
         self.disc_losses = self.checkpoint.get("disc_losses", [])
         self.gen_losses = self.checkpoint.get("gen_losses", [])
         
-    # Internal function to initialize models and load states
+
     def load_model(self):
-        # # Initialize generator and discriminator models
+        """
+        Full loading function to initialize models and load states
+        """
+        # Initialize generator and discriminator 
         self.gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
         self.disc = Discriminator(IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
         
@@ -49,7 +59,6 @@ class LoadModel:
         self.disc_losses = self.checkpoint.get("disc_losses", [])
         self.gen_losses = self.checkpoint.get("gen_losses", [])
         
-    # Getter methods for each component
     def get_generator(self):
         return self.gen
     
@@ -75,6 +84,9 @@ class LoadModel:
         return self.gen_losses
     
     def plot_losses(self, title, name):
+        """
+        Plots the losses based on what the model saved
+        """
         plt.figure(figsize=(10, 5))
         plt.plot(self.disc_losses, label="Discriminator Loss")
         plt.plot(self.gen_losses, label="Generator Loss")
@@ -87,6 +99,9 @@ class LoadModel:
         plt.savefig(name)
 
     def predict(self, num_images):
+        """
+        Uses the generator to predict and product images for quality checking.
+        """
         latent_vectors = torch.randn(num_images, Z_DIM).to(DEVICE)
 
         self.gen.eval()
@@ -122,7 +137,14 @@ class LoadModel:
             save_image(generated_images[i], save_path, normalize=True)
             print(f"Saved: {save_path}")
 
+
 class FID_calculator:
+    """
+    This class is responsible for calculating the FID (Fréchet Inception Distance).
+    This is an important metric used to bechmark model based on the diversity of 
+    images they produce.
+    This class also includes important methods to calculate the FID.
+    """
 
     def __init__(self, AD_model_directory, NC_model_directory, number):
         self._ad_dir = AD_model_directory
@@ -130,15 +152,14 @@ class FID_calculator:
         self._number = number
 
     def move_real_images(self, target_dir, new_dir):
+        """
+        This function samples the real image data base and moved it to a seperate
+        folder.
+        """
         files = os.listdir(target_dir)
-    
-        # Sort the files (optional, in case you want a specific order)
-        files.sort()
-        
-        # Select the first X images
+
         files_to_move = files[:self._number]
         
-        # Move the files
         for file_name in files_to_move:
             # Create full paths for the source and destination
             source_path = os.path.join(target_dir, file_name)
@@ -163,45 +184,49 @@ class FID_calculator:
 
 
 class LatentSpaceAnalyzer:
-    def __init__(self, ad_model, nc_model, device='cuda'):
+    """
+    This class is responsible for plotting the TSNE for the latent spaces for the
+    two models which were trained on AD and NC respectively. After creating the 
+    plots there should a seperation between the 2 clusters, illustaraing how 
+    StyleGAN and learnt to distinguish between these 2 styles.
+    """
+    
+    def __init__(self, ad_model, nc_model, num_samples = 1000):
+        #Defines models and number of samples
         self.ad_model = ad_model
         self.nc_model = nc_model
-        self.device = device
+        self.num_samples = num_samples
+        self.device = DEVICE
         
-    def generate_style_codes(self, num_samples=1000, batch_size=100):
+    def generate_style_codes(self,  batch_size=100):
+        """
+        Geneartes the styles codes for the given latens spaces
+        """
+        #Style container that stores the style code
         style_codes_ad = []
         style_codes_nc = []
         
+        #Creates the Style codes in batches
         with torch.no_grad():
-            for i in range(0, num_samples, batch_size):
-                current_batch_size = min(batch_size, num_samples - i)
-                # Use same latent vectors for both models for fair comparison
+            for i in range(0, self.num_samples, batch_size):
+                current_batch_size = min(batch_size, self.num_samples - i)
+                
                 z = torch.randn(current_batch_size, Z_DIM).to(self.device)
                 
-                # Get W space vectors from both models
                 w_ad = self.ad_model.map(z).cpu().numpy()
                 w_nc = self.nc_model.map(z).cpu().numpy()
                 
                 style_codes_ad.append(w_ad)
                 style_codes_nc.append(w_nc)
-        
+
+        #Restructure the array to remove batches 
         return np.vstack(style_codes_ad), np.vstack(style_codes_nc)
 
-    def analyze_distributions(self, style_codes_ad, style_codes_nc):
-        """Analyze statistical properties of the style codes"""
-        print("AD Style Codes Statistics:")
-        print(f"Mean: {np.mean(style_codes_ad):.4f}")
-        print(f"Std: {np.std(style_codes_ad):.4f}")
-        print(f"Min: {np.min(style_codes_ad):.4f}")
-        print(f"Max: {np.max(style_codes_ad):.4f}")
+    def checks_cosinsimilarity(self, style_codes_ad, style_codes_nc):
+        """
+        Prints the important statistics for the style codes of each model
+        """
         
-        print("\nNC Style Codes Statistics:")
-        print(f"Mean: {np.mean(style_codes_nc):.4f}")
-        print(f"Std: {np.std(style_codes_nc):.4f}")
-        print(f"Min: {np.min(style_codes_nc):.4f}")
-        print(f"Max: {np.max(style_codes_nc):.4f}")
-        
-        # Calculate cosine similarity between random pairs
         from sklearn.metrics.pairwise import cosine_similarity
         random_indices = np.random.choice(len(style_codes_ad), size=1000)
         cos_sim = cosine_similarity(
@@ -210,63 +235,89 @@ class LatentSpaceAnalyzer:
         )
         print(f"\nMean Cosine Similarity: {np.mean(cos_sim):.4f}")
 
-    def plot_enhanced_tsne(self, num_samples=1000, perplexity=30, scale_data=True):
-        """Plot TSNE with additional preprocessing and visualization enhancements"""
+    def plot_tsne(self, perplexity=30):
+        """
+        Plot TSNE using the AD and NC model latent spaces
+        """
         # Generate style codes
-        style_codes_ad, style_codes_nc = self.generate_style_codes(num_samples)
+        style_codes_ad, style_codes_nc = self.generate_style_codes(self.num_samples)
         
         # Combine data for scaling
         combined_data = np.vstack([style_codes_ad, style_codes_nc])
-        
-        # Scale data if requested
-        if scale_data:
-            scaler = StandardScaler()
-            combined_data = scaler.fit_transform(combined_data)
-            
-        # Split back into AD and NC
-        style_codes_ad = combined_data[:num_samples]
-        style_codes_nc = combined_data[num_samples:]
+
+        scaler = StandardScaler()
+        style_codes_ad = scaler.fit_transform(combined_data)
         
         # Perform t-SNE
         tsne = TSNE(n_components=2, perplexity=perplexity, random_state=42)
         combined_tsne = tsne.fit_transform(combined_data)
         
         # Split TSNE results
-        tsne_ad = combined_tsne[:num_samples]
-        tsne_nc = combined_tsne[num_samples:]
+        tsne_ad = combined_tsne[:self.num_samples]
+        tsne_nc = combined_tsne[self.num_samples:]
         
-        # Create enhanced visualization
         plt.figure(figsize=(12, 8))
-        
-        # Plot with transparency and different markers
         plt.scatter(tsne_ad[:, 0], tsne_ad[:, 1], 
                    alpha=0.6, c='blue', label='AD', marker='o')
         plt.scatter(tsne_nc[:, 0], tsne_nc[:, 1], 
-                   alpha=0.6, c='red', label='NC', marker='^')
-        
+                   alpha=0.6, c='red', label='NC', marker='o')
         plt.title('t-SNE Visualization of StyleGAN Latent Space (W space)')
         plt.xlabel('t-SNE Component 1')
         plt.ylabel('t-SNE Component 2')
-        plt.legend()
-        
-        # Add density estimation
-        from scipy.stats import gaussian_kde
-        for data, color in [(tsne_ad, 'blue'), (tsne_nc, 'red')]:
-            kde = gaussian_kde(data.T)
-            x_range = np.linspace(data[:, 0].min(), data[:, 0].max(), 100)
-            y_range = np.linspace(data[:, 1].min(), data[:, 1].max(), 100)
-            xx, yy = np.meshgrid(x_range, y_range)
-            positions = np.vstack([xx.ravel(), yy.ravel()])
-            z = kde(positions)
-            plt.contour(xx, yy, z.reshape(100, 100), levels=5, colors=color, alpha=0.3)
-        
+        plt.legend()        
         plt.grid(True, alpha=0.3)
         plt.show()
+        plt.savefig("2D TSNE plot")
+        
+        # Split back into AD and NC
+        style_codes_ad = combined_data[:self.num_samples]
+        style_codes_nc = combined_data[self.num_samples:]
         
         return style_codes_ad, style_codes_nc
 
-# Example usage:
-# analyzer = LatentSpaceAnalyzer(ad_model.gen, nc_model.gen)
-# style_codes_ad, style_codes_nc = analyzer.plot_enhanced_tsne(num_samples=2000, scale_data=True)
-# analyzer.analyze_distributions(style_codes_ad, style_codes_nc)
+    def plot_3d_tsne(self, perplexity=30):
+        """
+        Plot 3D TSNE using the AD and NC model latent spaces
+        """
+        # Generate style codes
+        style_codes_ad, style_codes_nc = self.generate_style_codes(self.num_samples)
+        
+        # Combine data for scaling
+        combined_data = np.vstack([style_codes_ad, style_codes_nc])
+    
+        scaler = StandardScaler()
+        combined_data = scaler.fit_transform(combined_data)
+        
+        # Perform t-SNE with 3 components
+        tsne = TSNE(n_components=3, perplexity=perplexity, random_state=42)
+        combined_tsne = tsne.fit_transform(combined_data)
+        
+        # Split TSNE results
+        tsne_ad = combined_tsne[:self.num_samples]
+        tsne_nc = combined_tsne[self.num_samples:]
+        
+        # Create enhanced 3D visualization
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+
+        ax.scatter(tsne_ad[:, 0], tsne_ad[:, 1], tsne_ad[:, 2], 
+                   alpha=0.6, c='blue', label='AD', marker='o')
+        ax.scatter(tsne_nc[:, 0], tsne_nc[:, 1], tsne_nc[:, 2], 
+                   alpha=0.6, c='red', label='NC', marker='^')
+        
+        ax.set_title('3D t-SNE Visualization of StyleGAN Latent Space (W space)')
+        ax.set_xlabel('t-SNE Component 1')
+        ax.set_ylabel('t-SNE Component 2')
+        ax.set_zlabel('t-SNE Component 3')
+        ax.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+        plt.savefig("3D TSNE plot")
+        
+        style_codes_ad = combined_data[:self.num_samples]
+        style_codes_nc = combined_data[self.num_samples:]
+        
+        return style_codes_ad, style_codes_nc
+
+
 

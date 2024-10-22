@@ -1,9 +1,13 @@
-from torchvision import datasets, transforms
+from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
 
 class CustomImageDataset(Dataset):
+    """
+    Custom data set which does not use classes nor files. Hence making it easier
+    to load singular classes such as AD individually.
+    """
     def __init__(self, image_dir, transform=None):
         self.image_dir = image_dir
         self.transform = transform
@@ -22,20 +26,24 @@ class CustomImageDataset(Dataset):
         return image, 0  
 
 def data_set_creator(image_size, batch_size):
+    """
+    Function that augments the data based on the batch size and image size.
+    """
     augmentation_transforms = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),  
-        transforms.Resize((image_size, image_size)),  
+        # Converts images to greyscale
+        transforms.Grayscale(num_output_channels=1),
+        # Resizes them based on training stage 
+        transforms.Resize((image_size, image_size)),
+        # Randomly flips them  
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor()
     ])
 
+    # Locan file directory 
+    data_dir = 'recognition/Style GAN - 47219647/AD_NC/train/AD'  
     
-    data_dir = 'recognition/Style GAN - 47219647/AD_NC/'  
-    
-   
     dataset = CustomImageDataset(image_dir=data_dir, transform=augmentation_transforms)
 
-    
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=10)
 
     return data_loader, dataset

@@ -1,15 +1,15 @@
 # 2D U-Net model Report
-<br />
+
 ## Author
 Han Yang 49058194
-<br />
+
 ## Introduction
 This project segments MRI images of the prostate using a 2D U-Net model with all labels having a minimum Dice similarity coefficient
 of 0.75 on the test set on the prostate label.
-<br />
+
 ## Model Architecture and Introduction
 This model is a 2D U-Net with encoder decoder structure and skip connections[^1]. <br />
-<br />
+
        ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/%E8%81%94%E6%83%B3%E6%88%AA%E5%9B%BE_20241009103621.png "DBSCAN Performance Comparison")
 ### The core components of U-Net：
 - **Encoder**：<br />

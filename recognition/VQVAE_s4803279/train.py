@@ -109,7 +109,7 @@ def main(
         data_dir,
         output_dir,
         batch_size = 16,
-        num_epochs = 20,
+        num_epochs = 10,
         lr = 1e-3,
         hidden_dims = [64, 128],
         num_embeddings = [256, 256],

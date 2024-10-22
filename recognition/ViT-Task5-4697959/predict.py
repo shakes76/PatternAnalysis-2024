@@ -57,3 +57,23 @@ def preprocess_image(image_path, img_size=224):
     image = Image.open(image_path).convert('RGB')
     image = transform(image).unsqueeze(0)  # Add batch dimension
     return image
+
+def predict(model, image_tensor, device):
+    """
+    Predicts the class of the input image.
+
+    Args:
+        model (nn.Module): Trained model.
+        image_tensor (torch.Tensor): Preprocessed image tensor.
+        device (torch.device): Device to perform inference on.
+
+    Returns:
+        int: Predicted class index.
+        torch.Tensor: Output logits.
+    """
+    image_tensor = image_tensor.to(device)
+
+    with torch.no_grad():
+        outputs = model(image_tensor)
+        _, preds = torch.max(outputs, 1)
+    return preds.item(), outputs

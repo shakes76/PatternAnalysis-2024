@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 #Training Loop 
 def train(model, data):
-    #Adam chosen for loss fucntion 
+    #Adam chosen for loss function 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
     #Cross Entropy Chosen for criterion 
@@ -52,7 +52,7 @@ def evaluate(model, data):
 model = GCNNet(input_dim=128, hidden_dim=64, output_dim=10)
 
 #Configure epochs
-epochs = range(200)
+epochs = range(1000)
 
 losses = []
 train_accs = []
@@ -69,6 +69,7 @@ for epoch in epochs:
     test_accs.append(acc_test)
     print(f'Epoch: {epoch}, Loss: {loss:.4f}, Train Acc: {acc_train:.4f}, Test Acc: {acc_test:.4f}')
 
+#Save model weights
 torch.save(model.state_dict(), 'weights.pth')
 
 #Loss Plot
@@ -77,7 +78,7 @@ plt.plot(epochs, losses, label="Losses")
 plt.xlabel("Epochs")
 plt.title("Loss Vs Epoch")
 plt.ylabel("Loss")
-plt.savefig('loss.png')
+plt.savefig('graphs/loss.png')
 
 #Train accuracy plot
 plt.figure()
@@ -85,7 +86,7 @@ plt.plot(epochs, train_accs, label="Training Accuracy")
 plt.xlabel("Epochs")
 plt.title("Training Accuracy Vs Epoch")
 plt.ylabel("Accuracy")
-plt.savefig('train_acc.png')
+plt.savefig('graphs/train_acc.png')
 
 
 #test accuracy plot
@@ -94,6 +95,6 @@ plt.plot(epochs, test_accs, label="Test Accuracy")
 plt.xlabel("Epochs")
 plt.title("Test Accuracy Vs Epoch")
 plt.ylabel("Accuracy")
-plt.savefig('test_acc.png')
+plt.savefig('graphs/test_acc.png')
 
 

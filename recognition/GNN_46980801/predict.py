@@ -28,7 +28,7 @@ def main():
         plt.ylabel('Component 2')
         plt.legend(title='Ground Truth Labels', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
-        plt.savefig('TSNE' + str(num) + '.png')
+        plt.savefig('graphs/TSNE' + str(num) + '.png')
         plt.show()
 
     #Model definition

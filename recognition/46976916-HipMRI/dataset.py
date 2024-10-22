@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 import torch
+import skimage.transform as skTrans
 
 import numpy as np
 import nibabel as nib
@@ -19,7 +20,7 @@ def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
 
 # load medical image functions
 def load_data_2D ( imageNames , normImage = False , categorical = False , dtype = np . float32 ,
-    getAffines = False , early_stop = True ) :
+    getAffines = False , early_stop = False ) :
     '''
     Load medical image data from names , cases list provided into a list for each .
 
@@ -47,8 +48,11 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
 
     for i , inName in enumerate ( tqdm ( imageNames ) ) :
         niftiImage = nib . load ( inName )
-        inImage = niftiImage . get_fdata ( caching = "unchanged") # read disk only
+        Pre_inImage = niftiImage . get_fdata ( caching = "unchanged") # read disk only
         affine = niftiImage . affine
+        #Now loads as Pre_inImage and the Pre_inImage is resized to always be 256,128
+        inImage = skTrans.resize(Pre_inImage, (256,128), order=1, preserve_range=True)
+
         if len ( inImage . shape ) == 3:
             inImage = inImage [: ,: ,0] # sometimes extra dims in HipMRI_study data
             inImage = inImage . astype ( dtype )

@@ -24,7 +24,8 @@ y_test = np.expand_dims(y_test, axis=-1)
 
 #Normalise the test data
 X_test = X_test / 255.0
-y_test = np.clip(y_test, 0, 1)
+y_test = y_test / 3
+y_test = np.where(y_test > 0.5, 1, 0)
 
 #Make predictions on the test set
 y_pred = model.predict(X_test)
@@ -40,7 +41,7 @@ overall_dice = np.mean(dice_scores)
 print(f'Overall Dice Similarity Coefficient on Test Set: {overall_dice:.4f}')
 
 #Now, let's generate a mask with our model and compare it to a true mask
-sample_index = 0
+sample_index = 1
 input_image = X_test[sample_index]
 true_mask = y_test[sample_index]
 predicted_mask = y_pred_binary[sample_index]
@@ -67,7 +68,7 @@ plt.title('Predicted Mask')
 plt.axis('off')
 
 #Save the plot to a file
-output_file = 'test_image_prediction_comparison.png'
+output_file = 'test_image_prediction_comparison_100.png'
 plt.savefig(output_file)
 
 plt.show()

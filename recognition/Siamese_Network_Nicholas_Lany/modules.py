@@ -15,7 +15,7 @@ def PCA_transform(input_data, n_components, shape):
 
 class CNN(nn.Module):
     def __init__(self, shape, num_classes):
-        super(CNN, self).__init__(): 
+        super(CNN, self).__init__()
         self.conv[0] = nn.Conv2d(3, 64, kernel_size=10)
         self.conv[1] = nn.Conv2d(64, 128, kernel_size=7)
         self.conv[2] = nn.Conv2d(128, 128, kernel_size=4)

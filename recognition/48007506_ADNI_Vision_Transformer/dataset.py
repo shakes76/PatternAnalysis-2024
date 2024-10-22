@@ -18,13 +18,12 @@ def load_data():
     """
     # Define transformations for training and testing
     transform_train = transforms.Compose([
-        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),                                    # Resize images
-        transforms.RandomResizedCrop(IMAGE_SIZE, scale=(0.8, 1.0)),                     # Random crop
-        transforms.RandomHorizontalFlip(p=0.5),                                         # Flip images horizontally
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Color jitter
-        transforms.RandomRotation(2),                                                   # Rotate images randomly
-        transforms.ToTensor(),                                                          # Convert image to tensor
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])              # Normalise values
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),                        # Resize images
+        transforms.RandomResizedCrop(IMAGE_SIZE, scale=(0.8, 1.0)),         # Random crop
+        transforms.RandomHorizontalFlip(p=0.5),                             # Flip images horizontally
+        transforms.RandomRotation(2),                                       # Rotate images randomly
+        transforms.ToTensor(),                                              # Convert image to tensor
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # Normalise values
     ])
 
     transform_test = transforms.Compose([

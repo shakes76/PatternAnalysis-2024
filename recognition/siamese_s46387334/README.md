@@ -90,7 +90,7 @@ The full original dataset can be sourced from https://challenge2020.isic-archive
 
 
 ### Dataset Train Validation Test Split
-The first thing that was done to the data was to split the images up into three sets
+The first thing that was done to the data was to split the images up into three sets. Stratified sampling is used to ensure an even split of the classes.
 
 - Train Set (80% of all data) 
     - This is the only data that the model will learn from
@@ -192,12 +192,46 @@ A standard training loop will take place ensuring that both the Feature Extracto
 ## Evaluation Details
 This section will contain details that pertain mainly to `predict.py`
 
-###
+### Evaluation Metrics
+1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
+    - This is the primary evaluation metric for the model (see above for reasoning)
+2. Testing Specificity (true negative rate)
+    - Gauges how well the model preforms at predicting normal examples
+3. Testing Sensitivity (true positive rate)
+    - Gauges how well the model preforms at predicting melanoma examples
 
+### Evaluation Figures
+1. Training / Validation loss, accuracy and AUR ROC over the training epochs
+    - Visualise the performance of the model as it trains
+    - (This will be produced directly after training in `train.py`)
+2. Testing ROC Curve
+    - Visualise the Trade-off Between Sensitivity and Specificity
+3. Testing Confusion Matrix
+    - Visualise prediction results in a single figure
+4. Testing t-SNE Embedding Visualization
+    - Visualise how well the model is able to apply metric learning (using TripletLoss) to separate the embeddings for each class.
 
-
+>### How to use predict.py
+> - To run evaluation the test set using the 'best' model (`siamese_net_model.pt`) run `python3 predict.py` in the terminal.
+> - Metrics will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 ## Results Summary
+### Evaluation Metrics
+1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
+
+2. Testing Specificity (true negative rate)
+
+3. Testing Sensitivity (true positive rate)
+
+
+### Evaluation Figures
+1. Training / Validation loss, accuracy and AUR ROC over the training epochs
+
+2. Testing ROC Curve
+
+3. Testing Confusion Matrix
+
+4. Testing t-SNE Embedding Visualization
 
 
 ## Reproduction of Results
@@ -205,10 +239,7 @@ Note that due to the inescapable randomness of GPUs (REF) there may be some vari
 
 1. Follow steps above for downloading data
 2. Follow steps above for setting up environment
-3. Running training script, enter the following command in your terminal
-    `
-    python3 train.py
-    `
+3. Running training script, enter the following command in your terminal `python3 train.py`
 4. Results / progress will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 
@@ -222,15 +253,4 @@ Note that due to the inescapable randomness of GPUs (REF) there may be some vari
 
 
 
-
-
-## Results Summary
-
-
-
-## Future Work and Improvments
-
-
-
-## References
 

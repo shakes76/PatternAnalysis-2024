@@ -47,7 +47,7 @@ Images were generated in a grid of 8x4, where the first two rows contain the ori
 
 #### First Epoch
 
-![Image Generated From First Epoch](./markdown_images/epoch_1.png)
+![Image Generated From First Epoch](./markdown_images/epoch1.png)
 This image demonstrates the baseline of the model at the first epoch, clearly the results are unsatisfactory and the model will need substantial training.
 ![Image Generate From Final Model](./markdown_images/final_image.png)
 This image demonstrates the full capability of the model to generate recognisable images with an SSIM greater than 0.6 after a full training process. This image achieved an SSIM score of \_\_\_, completing the

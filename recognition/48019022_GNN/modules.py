@@ -34,12 +34,11 @@ class GATModelBasic(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GATModelBasic, self).__init__()
         # 8 heads: performing multi-head-attention
-        self.conv1 = GATConv(input_dim, hidden_dim, heads=8, concat=False)
-        self.conv2 = GATConv(hidden_dim, output_dim, heads=8, concat=False)
+        self.conv1 = GATConv(input_dim, hidden_dim, heads=8)
+        self.conv2 = GATConv(hidden_dim * 8, output_dim, heads=1)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
-        x = F.dropout(x, p=0.6, training=self.training)
         x = F.relu(self.conv1(x, edge_index))
         x = self.conv2(x, edge_index)
 

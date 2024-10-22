@@ -169,3 +169,40 @@ def plot_metrics(history, save_dir='saved_models'):
     plt.legend()
     plt.savefig(os.path.join(save_dir, 'accuracy_curve.png'))
     plt.close()
+
+def evaluate_model(model, dataloader, device, class_names, save_dir='saved_models'):
+    """
+    Evaluates the model on the test set and prints classification metrics.
+
+    Args:
+        model (nn.Module): Trained model.
+        dataloader (DataLoader): Test DataLoader.
+        device (torch.device): Device to perform evaluation on.
+        class_names (list): List of class names.
+        save_dir (str): Directory to save the confusion matrix plot.
+    """
+    model.eval()
+    all_preds = []
+    all_labels = []
+    correct = 0  # Initialize correct predictions counter
+    total = 0    # Initialize total predictions counter
+
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            correct += torch.sum(preds == labels.data)
+            total += labels.size(0)
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    # Calculate and print test accuracy
+    test_accuracy = correct.double() / total
+    print(f"Test Accuracy: {test_accuracy*100:.2f}%")
+
+    # Classification Report
+    report = classification_report(all_labels, all_preds, target_names=class_names)
+    print("Classification Report:\n", report)

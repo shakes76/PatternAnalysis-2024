@@ -6,6 +6,7 @@ from dataset import MRI3DDataset
 from torch import amp
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # Example setup
 #model = UNet3D(in_channels=3, out_channels=3)

@@ -63,6 +63,27 @@ class ADNIDataset(Dataset):
             logger.info(f"Test set size: {len(X_test)}")
             return X_test, y_test
 
+    def pad_to_square(self, image):
+        """
+        Add padding to make the image square (256x256).
+        Args:
+            image (PIL.Image): Input image
+        Returns:
+            PIL.Image: Padded square image
+        """
+        width, height = image.size
+        target_size = 256
+
+        # Calculate padding
+        delta_w = target_size - width
+        delta_h = target_size - height
+        padding = (delta_w // 2, delta_h // 2, delta_w - (delta_w // 2), delta_h - (delta_h // 2))
+
+        # Add padding with black (0)
+        padded_image = Image.new('L', (target_size, target_size), 0)
+        padded_image.paste(image, (padding[0], padding[1]))
+        return padded_image
+
     def __len__(self):
         return len(self.images)
 
@@ -72,12 +93,17 @@ class ADNIDataset(Dataset):
 
         img_path = self.images[idx]
         image = Image.open(img_path).convert('L')  # Open as grayscale
+
+        # Add padding to make the image square
+        image = self.pad_to_square(image)
+
         label = self.labels[idx]
 
         if self.transform:
             image = self.transform(image)
 
         return image, label
+
 
 def get_transform():
     """
@@ -86,10 +112,10 @@ def get_transform():
         transforms.Compose: The transformation pipeline.
     """
     return transforms.Compose([
-        transforms.Resize((256, 240)),  # Ensure the image is 256x240
-        transforms.ToTensor(),
+        transforms.ToTensor(),  # Remove Resize since we're padding instead
         transforms.Normalize((0.5,), (0.5,)),  # Normalize for grayscale images
     ])
+
 
 def get_dataloader(root_dir, batch_size, train=True, num_workers=4):
     """
@@ -105,9 +131,10 @@ def get_dataloader(root_dir, batch_size, train=True, num_workers=4):
     dataset = ADNIDataset(root_dir, transform=get_transform(), train=train)
     return DataLoader(dataset, batch_size=batch_size, shuffle=train, num_workers=num_workers)
 
-# Example usage
+
+# Example usage and testing
 if __name__ == "__main__":
-    root_dir = "C:\\Users\\Ovint\\Documents\\PatternAnalysis-2024\\recognition\\styleGAN2_s4743209\\dataset\\ADNI\\train"
+    root_dir = "./dataset/ADNI/train/"
     train_loader = get_dataloader(root_dir, batch_size=32, train=True)
     test_loader = get_dataloader(root_dir, batch_size=32, train=False)
 
@@ -116,4 +143,13 @@ if __name__ == "__main__":
         logger.info(f"Batch shape: {images.shape}")
         logger.info(f"Labels shape: {labels.shape}")
         logger.info(f"Label distribution: {np.bincount(labels)}")
+
+        # Save a few example images to verify padding
+        for i in range(min(5, len(images))):
+            img = images[i].cpu().numpy()
+            plt.figure(figsize=(5, 5))
+            plt.imshow(img[0], cmap='gray')
+            plt.title(f"Sample {i + 1} - Shape: {img.shape}")
+            plt.savefig(f"sample_{i + 1}_padded.png")
+            plt.close()
         break

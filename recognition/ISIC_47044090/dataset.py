@@ -11,9 +11,9 @@ import matplotlib.patches as patches
 original_filepath = "data/ORIGINAL_ISIC"
 modified_filepath = "data/ISIC"
 
-def resize_image(file, partition):
+def resize_mask(file, partition):
     """ 
-    Re-sizes image to (512, 512)
+    Re-sizes mask to (512, 512)
 
     1. Adds black letterbox to the smaller between x/y until x=y 
     2. Scales images down to (512, 512) (there can be 1 pixel stretching in 
@@ -29,9 +29,10 @@ def resize_image(file, partition):
     im = Image.fromarray(image)
     im.save(f"{modified_filepath}/{partition}/labels/ISIC_{file}_segmentation.png")
 
-def resize_mask(file, partition):
+
+def resize_image(file, partition):
     """ 
-    Re-sizes mask to (512, 512)
+    Re-sizes image to (512, 512)
 
     1. Adds black letterbox to the smaller between x/y until x=y 
     2. Scales images down to (512, 512) (there can be 1 pixel stretching in 

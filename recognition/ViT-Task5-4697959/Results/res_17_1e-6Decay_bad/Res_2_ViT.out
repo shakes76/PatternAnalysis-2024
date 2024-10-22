@@ -1,0 +1,367 @@
+Matplotlib created a temporary cache directory at /scratch/216758/matplotlib-kiu6j3vr because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+/home/Student/s4697959/miniconda3/envs/demo/lib/python3.12/site-packages/torch/utils/data/dataloader.py:557: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+/home/Student/s4697959/miniconda3/envs/demo/lib/python3.12/site-packages/torch/utils/data/dataloader.py:557: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+Key parameters for this trainning session: Batch size: 16, Dropout: 0.5, Learning Rate: 0.0003, Epoch: 80, Weight Decay: 1e-06
+Using device: cuda
+Epoch 1/80
+----------
+Train Loss: 0.7212 Acc: 0.5021
+Val Loss: 0.6936 Acc: 0.4879
+Best model updated and saved.
+
+Epoch 2/80
+----------
+Train Loss: 0.7011 Acc: 0.5021
+Val Loss: 0.6936 Acc: 0.4879
+No improvement for 1 epochs.
+
+Epoch 3/80
+----------
+Train Loss: 0.6980 Acc: 0.4999
+Val Loss: 0.7063 Acc: 0.5121
+Best model updated and saved.
+
+Epoch 4/80
+----------
+Train Loss: 0.6987 Acc: 0.4963
+Val Loss: 0.6957 Acc: 0.5121
+No improvement for 1 epochs.
+
+Epoch 5/80
+----------
+Train Loss: 0.6994 Acc: 0.4995
+Val Loss: 0.7023 Acc: 0.5121
+No improvement for 2 epochs.
+
+Epoch 6/80
+----------
+Train Loss: 0.6989 Acc: 0.4967
+Val Loss: 0.6930 Acc: 0.5193
+Best model updated and saved.
+
+Epoch 7/80
+----------
+Train Loss: 0.7003 Acc: 0.4976
+Val Loss: 0.6934 Acc: 0.4909
+No improvement for 1 epochs.
+
+Epoch 8/80
+----------
+Train Loss: 0.6982 Acc: 0.5033
+Val Loss: 0.7140 Acc: 0.5121
+No improvement for 2 epochs.
+
+Epoch 9/80
+----------
+Train Loss: 0.6991 Acc: 0.5019
+Val Loss: 0.7016 Acc: 0.4879
+No improvement for 3 epochs.
+
+Epoch 10/80
+----------
+Train Loss: 0.6984 Acc: 0.5017
+Val Loss: 0.6947 Acc: 0.5121
+No improvement for 4 epochs.
+
+Epoch 11/80
+----------
+Train Loss: 0.6977 Acc: 0.5006
+Val Loss: 0.6970 Acc: 0.5121
+No improvement for 5 epochs.
+
+Epoch 12/80
+----------
+Train Loss: 0.6981 Acc: 0.4988
+Val Loss: 0.6971 Acc: 0.5121
+No improvement for 6 epochs.
+
+Epoch 13/80
+----------
+Train Loss: 0.6978 Acc: 0.5015
+Val Loss: 0.6927 Acc: 0.4879
+No improvement for 7 epochs.
+
+Epoch 14/80
+----------
+Train Loss: 0.6988 Acc: 0.4910
+Val Loss: 0.7001 Acc: 0.5121
+No improvement for 8 epochs.
+
+Epoch 15/80
+----------
+Train Loss: 0.6976 Acc: 0.4962
+Val Loss: 0.6958 Acc: 0.5121
+No improvement for 9 epochs.
+
+Epoch 16/80
+----------
+Train Loss: 0.6970 Acc: 0.5039
+Val Loss: 0.6931 Acc: 0.4879
+No improvement for 10 epochs.
+
+Epoch 17/80
+----------
+Train Loss: 0.6977 Acc: 0.4961
+Val Loss: 0.6932 Acc: 0.4879
+No improvement for 11 epochs.
+
+Epoch 18/80
+----------
+Train Loss: 0.6967 Acc: 0.5018
+Val Loss: 0.6926 Acc: 0.5165
+No improvement for 12 epochs.
+
+Epoch 19/80
+----------
+Train Loss: 0.6973 Acc: 0.5005
+Val Loss: 0.7038 Acc: 0.4879
+No improvement for 13 epochs.
+
+Epoch 20/80
+----------
+Train Loss: 0.6965 Acc: 0.5034
+Val Loss: 0.6944 Acc: 0.5121
+No improvement for 14 epochs.
+
+Epoch 21/80
+----------
+Train Loss: 0.6963 Acc: 0.5016
+Val Loss: 0.6934 Acc: 0.5142
+No improvement for 15 epochs.
+
+Epoch 22/80
+----------
+Train Loss: 0.6968 Acc: 0.5039
+Val Loss: 0.6987 Acc: 0.5121
+No improvement for 16 epochs.
+
+Epoch 23/80
+----------
+Train Loss: 0.6967 Acc: 0.5012
+Val Loss: 0.6956 Acc: 0.5121
+No improvement for 17 epochs.
+
+Epoch 24/80
+----------
+Train Loss: 0.6964 Acc: 0.5049
+Val Loss: 0.6936 Acc: 0.4879
+No improvement for 18 epochs.
+
+Epoch 25/80
+----------
+Train Loss: 0.6958 Acc: 0.5006
+Val Loss: 0.6931 Acc: 0.4961
+No improvement for 19 epochs.
+
+Epoch 26/80
+----------
+Train Loss: 0.6958 Acc: 0.5036
+Val Loss: 0.6946 Acc: 0.4879
+No improvement for 20 epochs.
+
+Epoch 27/80
+----------
+Train Loss: 0.6965 Acc: 0.5067
+Val Loss: 0.6931 Acc: 0.4879
+No improvement for 21 epochs.
+
+Epoch 28/80
+----------
+Train Loss: 0.6964 Acc: 0.5019
+Val Loss: 0.6990 Acc: 0.5121
+No improvement for 22 epochs.
+
+Epoch 29/80
+----------
+Train Loss: 0.6965 Acc: 0.5043
+Val Loss: 0.6936 Acc: 0.4882
+No improvement for 23 epochs.
+
+Epoch 30/80
+----------
+Train Loss: 0.6951 Acc: 0.5076
+Val Loss: 0.6928 Acc: 0.5114
+No improvement for 24 epochs.
+
+Epoch 31/80
+----------
+Train Loss: 0.6966 Acc: 0.5010
+Val Loss: 0.6944 Acc: 0.4879
+No improvement for 25 epochs.
+
+Epoch 32/80
+----------
+Train Loss: 0.6963 Acc: 0.5016
+Val Loss: 0.6931 Acc: 0.4935
+No improvement for 26 epochs.
+
+Epoch 33/80
+----------
+Train Loss: 0.6953 Acc: 0.5138
+Val Loss: 0.7207 Acc: 0.5121
+No improvement for 27 epochs.
+
+Epoch 34/80
+----------
+Train Loss: 0.6953 Acc: 0.5057
+Val Loss: 0.6950 Acc: 0.5116
+No improvement for 28 epochs.
+
+Epoch 35/80
+----------
+Train Loss: 0.6951 Acc: 0.5119
+Val Loss: 0.7248 Acc: 0.5121
+No improvement for 29 epochs.
+
+Epoch 36/80
+----------
+Train Loss: 0.6959 Acc: 0.5092
+Val Loss: 0.6940 Acc: 0.5116
+No improvement for 30 epochs.
+
+Epoch 37/80
+----------
+Train Loss: 0.6962 Acc: 0.5012
+Val Loss: 0.6942 Acc: 0.5095
+No improvement for 31 epochs.
+
+Epoch 38/80
+----------
+Train Loss: 0.6949 Acc: 0.5123
+Val Loss: 0.6946 Acc: 0.5137
+No improvement for 32 epochs.
+
+Epoch 39/80
+----------
+Train Loss: 0.6961 Acc: 0.5058
+Val Loss: 0.6960 Acc: 0.5125
+No improvement for 33 epochs.
+
+Epoch 40/80
+----------
+Train Loss: 0.6951 Acc: 0.5138
+Val Loss: 0.6943 Acc: 0.5112
+No improvement for 34 epochs.
+
+Epoch 41/80
+----------
+Train Loss: 0.6948 Acc: 0.5137
+Val Loss: 0.6934 Acc: 0.5079
+No improvement for 35 epochs.
+
+Epoch 42/80
+----------
+Train Loss: 0.6950 Acc: 0.5100
+Val Loss: 0.6934 Acc: 0.4937
+No improvement for 36 epochs.
+
+Epoch 43/80
+----------
+Train Loss: 0.6956 Acc: 0.5048
+Val Loss: 0.6970 Acc: 0.5114
+No improvement for 37 epochs.
+
+Epoch 44/80
+----------
+Train Loss: 0.6945 Acc: 0.5146
+Val Loss: 0.6951 Acc: 0.5100
+No improvement for 38 epochs.
+
+Epoch 45/80
+----------
+Train Loss: 0.6950 Acc: 0.5092
+Val Loss: 0.6948 Acc: 0.5125
+No improvement for 39 epochs.
+
+Epoch 46/80
+----------
+Train Loss: 0.6945 Acc: 0.5104
+Val Loss: 0.6973 Acc: 0.5116
+No improvement for 40 epochs.
+
+Epoch 47/80
+----------
+Train Loss: 0.6964 Acc: 0.5040
+Val Loss: 0.6942 Acc: 0.5102
+No improvement for 41 epochs.
+
+Epoch 48/80
+----------
+Train Loss: 0.6947 Acc: 0.5091
+Val Loss: 0.6934 Acc: 0.4882
+No improvement for 42 epochs.
+
+Epoch 49/80
+----------
+Train Loss: 0.6950 Acc: 0.5117
+Val Loss: 0.7066 Acc: 0.4879
+No improvement for 43 epochs.
+
+Epoch 50/80
+----------
+Train Loss: 0.6953 Acc: 0.5067
+Val Loss: 0.6932 Acc: 0.4949
+No improvement for 44 epochs.
+
+Epoch 51/80
+----------
+Train Loss: 0.6960 Acc: 0.5038
+Val Loss: 0.6930 Acc: 0.4907
+No improvement for 45 epochs.
+
+Epoch 52/80
+----------
+Train Loss: 0.6947 Acc: 0.5094
+Val Loss: 0.6947 Acc: 0.5118
+No improvement for 46 epochs.
+
+Epoch 53/80
+----------
+Train Loss: 0.6952 Acc: 0.5031
+Val Loss: 0.6945 Acc: 0.5123
+No improvement for 47 epochs.
+
+Epoch 54/80
+----------
+Train Loss: 0.6953 Acc: 0.5071
+Val Loss: 0.6951 Acc: 0.4879
+No improvement for 48 epochs.
+
+Epoch 55/80
+----------
+Train Loss: 0.6949 Acc: 0.5068
+Val Loss: 0.6933 Acc: 0.4984
+No improvement for 49 epochs.
+
+Epoch 56/80
+----------
+Train Loss: 0.6952 Acc: 0.5107
+Val Loss: 0.7010 Acc: 0.5121
+No improvement for 50 epochs.
+
+Early stopping triggered.
+Training and validation metrics plotted and saved to saved_models.
+Test Accuracy: 50.88%
+Classification Report:
+               precision    recall  f1-score   support
+
+          AD       0.51      0.40      0.44      4460
+          NC       0.51      0.62      0.56      4540
+
+    accuracy                           0.51      9000
+   macro avg       0.51      0.51      0.50      9000
+weighted avg       0.51      0.51      0.50      9000
+
+Confusion Matrix:
+ [[1768 2692]
+ [1729 2811]]
+Evaluation on test set completed. Confusion matrix saved to saved_models.
+Total time taken: 165m 6s
+Matplotlib created a temporary cache directory at /scratch/216758/matplotlib-1cj7gv4a because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+/home/Student/s4697959/PR-Report/predict_2.py:35: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(model_path, map_location=device))
+Model loaded successfully.
+Prediction for the image '1003730_100.jpeg': NC
+Probabilities: [0.49600202 0.503998  ]

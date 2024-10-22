@@ -9,6 +9,7 @@ from constants import *
 from dataset import get_data
 from modules import *
 import utils
+from torch.optim.lr_scheduler import CyclicLR
 
 # SETTING UP
 
@@ -26,9 +27,15 @@ mapping_network = MappingNetwork(z_dim, w_dim).to(device)
 path_length_penalty = PathLengthPenalty(0.99).to(device)
 
 # Initilise Adam optimisation for all modules.
-generator_optimiser = optim.Adam(generator.parameters(), lr=learning_rate, betas=(0.0, 0.99))
+generator_optimiser = optim.Adam(generator.parameters(), lr=learning_rate, betas=(0.0, 0.99)) # NOTE: Parameters according to StyleGAN2 paper.
 discriminator_optimiser = optim.Adam(discriminator.parameters(), lr=learning_rate, betas=(0.0, 0.99))
-mapping_network_optimiser = optim.Adam(mapping_network.parameters(), lr=learning_rate, betas=(0.0, 0.99))
+mapping_network_optimiser = optim.Adam(mapping_network.parameters(), lr=base_lr, betas=(0.0, 0.99))
+
+# Use a learning rate scheduler to increase learning rate of generator and discriminator far beyond that of the mapping network
+# which is suggested by the StyleGAN2 paper.
+generator_scheduler = CyclicLR(generator_optimiser, base_lr=base_lr, max_lr=learning_rate, step_size_up=2000, mode='triangular')
+discriminator_scheduler = CyclicLR(discriminator_optimiser, base_lr=base_lr, max_lr=learning_rate, step_size_up=2000, mode='triangular')
+
 
 '''
 Main training loop
@@ -74,6 +81,7 @@ def train_fn():
         discriminator.zero_grad()
         discriminator_loss.backward()
         discriminator_optimiser.step()
+        discriminator_scheduler.step()
 
         # Apply path length penalty on every 16 Batches
         if batch_idx % 16 == 0:
@@ -91,6 +99,7 @@ def train_fn():
         generator.zero_grad()
         generator_loss.backward()
         generator_optimiser.step()
+        generator_scheduler.step()
         mapping_network_optimiser.step()
 
         # Updates progress whilst training.

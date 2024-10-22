@@ -4,6 +4,7 @@ DATA = "/home/groups/comp3710/ADNI/AD_NC/"
 # Hyper Parameters
 epochs = 50            # Number of epochs to train
 learning_rate = 0.001    # Learning rate
+base_lr = 1e-5
 channels = 1            # Number of channels (3 channels for the image if RGB)
 batch_size = 32         # Batch Size
 log_resolution = 8      # 256*256 image size as such 2^8 = 256 # use 2^7 for single gpu (faster)

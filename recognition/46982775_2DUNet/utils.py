@@ -1,10 +1,21 @@
 """
 Helper file with various functions to load 2D Nifti files.
 
-Original Author: Shekhar "Shakes" Chandra
-Modified: Joseph Reid
+Authors:
+    to_channels: Shekhar "Shakes" Chandra, modified by Joseph Reid
+    load_data_2D: Shekhar "Shakes" Chandra, modified by Joseph Reid
+    load_data_2D_from_directory: Joseph Reid
 
-Dependencies: numpy nibabel tqdm scikit-image
+Functions:
+    to_channels: One hot encode segment data
+    load_data_2D: Load 2D Nifti image files from iterable
+    load_data_2D_from_directory: Create and pass in above iterable
+
+Dependencies: 
+    numpy 
+    nibabel 
+    tqdm 
+    scikit-image
 """
 
 import os
@@ -13,9 +24,11 @@ import nibabel as nib
 from tqdm import tqdm
 from skimage.transform import resize
 
+# Apply one hot encoding to segments
 IMG_LABELS = 6 # To transform segments to correct size (6, 256, 128) instead of (256, 128)
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
+    """ One hot encode segment data."""
     # channels = np.unique(arr)
     channels = IMG_LABELS
     # res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
@@ -71,7 +84,7 @@ def load_data_2D (imageNames, normImage=False, categorical=False, dtype = np.flo
             images[i, : , :] = inImage
 
         affines.append(affine)
-        if i > 20 and early_stop:
+        if i > 40 and early_stop:
             break
     
     if getAffines:

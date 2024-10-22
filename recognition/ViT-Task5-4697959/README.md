@@ -1,0 +1,1 @@
+![ViT model](Readme-imgs/VIT_architecture.png)

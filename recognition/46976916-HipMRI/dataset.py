@@ -30,7 +30,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
 
     # get fixed size
     num = len ( imageNames )
-    first_case = nib . load ( imageNames [0]) . get_fdata ( caching = ' unchanged ')
+    first_case = nib . load ( imageNames [0]) . get_fdata ( caching = "unchanged")
     if len ( first_case . shape ) == 3:
         first_case = first_case [: ,: ,0] # sometimes extra dims , remove
     if categorical :
@@ -43,7 +43,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
 
     for i , inName in enumerate ( tqdm ( imageNames ) ) :
         niftiImage = nib . load ( inName )
-        inImage = niftiImage . get_fdata ( caching = ' unchanged ') # read disk only
+        inImage = niftiImage . get_fdata ( caching = "unchanged") # read disk only
         affine = niftiImage . affine
         if len ( inImage . shape ) == 3:
             inImage = inImage [: ,: ,0] # sometimes extra dims in HipMRI_study data

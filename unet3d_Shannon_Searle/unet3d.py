@@ -203,6 +203,32 @@ class UNet3D(nn.Module):
             nn.BatchNorm3d(features),
             nn.ReLU(inplace=True),
         )
+        
+# Evaluation function to test the model after training
+def evaluate_model(model, test_loader, device):
+    model.eval()  # Set model to evaluation mode
+    correct = 0
+    total = 0
+    with torch.no_grad():  # No need to compute gradients during evaluation
+        for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = model(images)
+            
+            # Predictions are the class with the highest probability
+            _, preds = torch.max(outputs, 1)
+            
+            # Get the actual labels
+            labels_class_indices = torch.argmax(labels, dim=1)
+
+            # Count total and correct predictions
+            correct += (preds == labels_class_indices).sum().item()
+            total += labels.size(0)
+
+    # Calculate accuracy
+    accuracy = correct / total * 100
+
+    return accuracy
 
 # Main function
 def main():
@@ -273,7 +299,10 @@ def main():
             running_loss += loss.item()
         lossPerEpoch.append(running_loss/len(train_loader))
     print(lossPerEpoch)
-    # Save predictions to disk after each epoch
+    
+    # evaluate the model on the test set
+    accuracy = evaluate_model(model, test_loader, device)
+    print(f"Accuracy: {accuracy:.2f}%")
     
 if __name__ == "__main__":
     main()

@@ -54,7 +54,6 @@ This class defines the structure of each transformer block, consisting of a mult
 
 This is the main class for the Vision Transformer model. It integrates all the components mentioned above and defines the forward pass for the entire architecture, from patch embedding to the classification head. 
 
-
 ## Implementation Details in `dataset.py`
 
 This file is responsible for data loading and preprocessing. It includes the following components [4]:
@@ -67,7 +66,45 @@ The file defines functions to load the ADNI dataset and split it into training, 
 
 Several image transformations are applied to preprocess the data, including resizing, normalization, and augmentation such as random flips or rotations. Specifically, the dataset is normalized using `ImageNet`'s means and standard deviations and the images are also resized to `224x224` pixels, a typical input size for Vision Transformers [5]. These augmentations are designed to increase data diversity, helping the model generalize better to unseen images.
  
-
 3. **Data Pipeline**:
 
 The dataset is split into training (80%) and validation (20%) sets. An independent test set is used to evaluate the final model’s performance. The function `get_data_loaders` returns PyTorch DataLoader objects for training, validation, and testing. It accepts parameters like batch size and validation split ratio.
+
+## Data Configuration and Data Example
+ 
+The dataset is organized in the following folder structure and can be obtain from the Rangpur Path: `/home/groups/comp3710/ADNI`.
+
+```
+AD_NC
+├── test
+│   ├── AD
+│   └── NC
+└── train
+    ├── AD
+    └── NC
+```
+
+Below are some example of input images of the different classes:
+
+AD:
+
+![AD image 1](Readme-imgs/sample_train/AD/388206_85.jpeg)
+![AD image 2](Readme-imgs/sample_train/AD/388206_86.jpeg)
+
+NC:
+
+![NC image 1](Readme-imgs/sample_train/NC/1182968_105.jpeg)
+![NC image 2](Readme-imgs/sample_train/NC/1182968_106.jpeg)
+
+## Dependencies
+
+To run this project, you will need the following dependencies:
+
+```
+Python 3.8+
+PyTorch 1.12+
+torchvision 0.13+
+scikit-learn 1.0+
+matplotlib 3.5+
+numpy 1.21+
+```

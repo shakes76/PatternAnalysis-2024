@@ -22,7 +22,7 @@ def train_epoch(model, data_loader, optimiser, device):
     Args:
         model (torch.nn.Module): The VQVAE2 model to train.
         data_loader (torch.utils.data.DataLoader): DataLoader providing the training data.
-        optimiser (torch.optim.Optimizer): The optimizer used to update model parameters.
+        optimiser (torch.optim.Optimiser): The optimiser used to update model parameters.
         device (torch.device): The device (CPU or GPU) used for training.
 
     Returns:
@@ -123,7 +123,7 @@ def main(
         output_dir (str): Directory to save the trained model and loss plots.
         batch_size (int): Batch size for data loading. Default is 16.
         num_epochs (int): Number of training epochs. Default is 10.
-        lr (float): Learning rate for the optimizer. Default is 1e-3.
+        lr (float): Learning rate for the optimiser. Default is 1e-3.
         hidden_dims (list): List of hidden dimensions for the model layers.
         num_embeddings (list): List of codebook sizes for each level of VQVAE2.
         embedding_dims (list): List of embedding dimensions for each level of VQVAE2.

@@ -92,9 +92,9 @@ class Encoder(nn.Module):
         return z_top, z_bottom
 
 
-class VectorQuantizer(nn.Module):
+class VectorQuantiser(nn.Module):
     """
-    Vector Quantizer module for VQVAE.
+    Vector Quantiser module for VQVAE.
 
     Args:
         num_embeddings (int): Number of embedding vectors in the codebook.
@@ -102,7 +102,7 @@ class VectorQuantizer(nn.Module):
         commitment_cost (float): Weight for the commitment loss.
     """
     def __init__(self, num_embeddings, embedding_dim, commitment_cost):
-        super(VectorQuantizer, self).__init__()
+        super(VectorQuantiser, self).__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         self.commitment_cost = commitment_cost
@@ -114,13 +114,13 @@ class VectorQuantizer(nn.Module):
 
     def forward(self, inputs):
         """
-        Forward pass for vector quantization.
+        Forward pass for vector quantisation.
 
         Args:
             inputs (torch.Tensor): Input tensor of shape (batch_size, embedding_dim, height, width).
 
         Returns:
-            tuple: Quantization loss, quantized output, and encoding indices.
+            tuple: Quantisation loss, quantised output, and encoding indices.
         """
         # Ensure the embeddings are on the same device as inputs
         self.embedding = self.embedding.to(inputs.device)
@@ -138,18 +138,18 @@ class VectorQuantizer(nn.Module):
         encodings = torch.zeros(encoding_indices.shape[0], self.num_embeddings, device = inputs.device)
         encodings.scatter_(1, encoding_indices, 1)
 
-        # Quantize and unflatten
-        quantized = torch.matmul(encodings, self.embedding.weight).view(inputs.shape)
+        # Quantise and unflatten
+        quantised = torch.matmul(encodings, self.embedding.weight).view(inputs.shape)
 
         # Loss
-        e_latent_loss = F.mse_loss(quantized.detach(), inputs)
-        q_latent_loss = F.mse_loss(quantized, inputs.detach())
+        e_latent_loss = F.mse_loss(quantised.detach(), inputs)
+        q_latent_loss = F.mse_loss(quantised, inputs.detach())
         loss = q_latent_loss + self.commitment_cost * e_latent_loss
 
         # Straight-through estimator
-        quantized = inputs + (quantized - inputs).detach()
+        quantised = inputs + (quantised - inputs).detach()
 
-        return loss, quantized, encoding_indices
+        return loss, quantised, encoding_indices
 
 
 class Decoder(nn.Module):
@@ -184,8 +184,8 @@ class Decoder(nn.Module):
         Forward pass of the decoder.
 
         Args:
-            quant_top (torch.Tensor): Quantized top latent representation.
-            quant_bottom (torch.Tensor): Quantized bottom latent representation.
+            quant_top (torch.Tensor): Quantised top latent representation.
+            quant_bottom (torch.Tensor): Quantised bottom latent representation.
 
         Returns:
             torch.Tensor: Reconstructed output.
@@ -217,9 +217,9 @@ class VQVAE2(nn.Module):
         # Encoders
         self.encoder = Encoder(in_channels, hidden_dims, embedding_dims)
 
-        # Vector Quantizers
-        self.vq_top = VectorQuantizer(num_embeddings[0], embedding_dims[0], commitment_cost)
-        self.vq_bottom = VectorQuantizer(num_embeddings[1], embedding_dims[1], commitment_cost)
+        # Vector Quantisers
+        self.vq_top = VectorQuantiser(num_embeddings[0], embedding_dims[0], commitment_cost)
+        self.vq_bottom = VectorQuantiser(num_embeddings[1], embedding_dims[1], commitment_cost)
 
         # Decoders
         self.decoder = Decoder(in_channels, hidden_dims, embedding_dims)
@@ -233,7 +233,7 @@ class VQVAE2(nn.Module):
             x (torch.Tensor): Input tensor.
 
         Returns:
-            tuple: Latent losses and quantized representations for top and bottom levels.
+            tuple: Latent losses and quantised representations for top and bottom levels.
         """
         z_top, z_bottom = self.encoder(x)
         loss_top, quant_top, indices_top = self.vq_top(z_top)
@@ -243,11 +243,11 @@ class VQVAE2(nn.Module):
 
     def decode(self, quant_top, quant_bottom):
         """
-        Decodes the quantized latent representations back to the input space.
+        Decodes the quantised latent representations back to the input space.
 
         Args:
-            quant_top (torch.Tensor): Quantized top latent representation.
-            quant_bottom (torch.Tensor): Quantized bottom latent representation.
+            quant_top (torch.Tensor): Quantised top latent representation.
+            quant_bottom (torch.Tensor): Quantised bottom latent representation.
 
         Returns:
             torch.Tensor: Reconstructed image.

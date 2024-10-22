@@ -33,3 +33,23 @@ The encoder consists of multiple layers of multi-head self-attention and feed-fo
 4. **Classification Head**:
 
 A special classification token `CLS` is added to the sequence of patch embeddings. This token aggregates information from all patches through the transformer layers. The final state of this token is used as the image representation, which is passed through a fully connected layer to produce the output class (AD or NC).
+
+## Implementation Details in `modules.py`
+
+The code for the Vision Transformer is organized into four main classes [3]: 
+
+1. **`PatchEmbedding`**:
+
+This class splits the input image into patches and embeds each patch into a fixed-size vector using a linear layer. The patch embeddings are then combined with positional encodings to retain spatial information.
+
+2. **`MultiHeadSelfAttention`**:
+
+This class implements the multi-headed self-attention mechanism. The multi-head self-attention mechanism computes attention scores for each patch, determining the importance of different patches relative to each other. This mechanism is implemented using matrix multiplication and scaled dot-product attention. 
+
+3. **`TransformerEncoderBlock`**: 
+
+This class defines the structure of each transformer block, consisting of a multi-headed self-attention layer followed by a feed-forward neural network with skip connections and layer normalization. The feed-forward layer consists of two linear layers with a GELU (Gaussian Error Linear Unit) activation in between. The feed-forward network is applied independently to each token.
+
+4. **`VisionTransformer`**:
+
+This is the main class for the Vision Transformer model. It integrates all the components mentioned above and defines the forward pass for the entire architecture, from patch embedding to the classification head. 

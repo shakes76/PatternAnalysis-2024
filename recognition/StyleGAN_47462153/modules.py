@@ -17,4 +17,3 @@ class StyleGANGenerator(nn.Module):
     def __init__(self, z_dim, w_dim, img_channels):
         super().__init__()
         self.mapping = MappingNetwork(z_dim, w_dim)
-        

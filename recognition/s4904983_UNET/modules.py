@@ -19,14 +19,14 @@ class UNet2D(nn.Module):
         self.down_conv_2 = double_conv2d(64, 128)
         self.down_conv_3 = double_conv2d(128, 256)
         self.down_conv_4 = double_conv2d(256, 512)
-        self.down_conv_5 = double_conv2d(512, 1024)
+        # self.down_conv_5 = double_conv2d(512, 1024)
 
         # Upstream
-        self.up_trans_1 = nn.ConvTranspose2d(in_channels=1024, 
-                                            out_channels=512, 
-                                            kernel_size=2, 
-                                            stride=2)
-        self.up_conv_1 = double_conv2d(1024, 512)
+        # self.up_trans_1 = nn.ConvTranspose2d(in_channels=1024, 
+        #                                     out_channels=512, 
+        #                                     kernel_size=2, 
+        #                                     stride=2)
+        # self.up_conv_1 = double_conv2d(1024, 512)
         self.up_trans_2 = nn.ConvTranspose2d(in_channels=512,
                                             out_channels=256,
                                             kernel_size=2,
@@ -43,7 +43,7 @@ class UNet2D(nn.Module):
                                             stride=2)
         self.up_conv_4 = double_conv2d(128, 64)
         self.out = nn.Conv2d(in_channels=64,
-                            out_channels=1,
+                            out_channels=5,
                             kernel_size=1)
     
     def forward(self, image):

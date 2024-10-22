@@ -14,10 +14,10 @@ RES_HIDDEN_DIM = 32
 N_RES_LAYERS = 5
 N_EMBEDDINGS = 512
 EMBEDDING_DIM = 64
-LEARNING_RATE = 2e-4
-N_EPOCHS = 10 if IS_TESTING else 100
+LEARNING_RATE = 3e-4
+N_EPOCHS = 10 if IS_TESTING else 150
 BATCH_SIZE = 16
-BETA = 0.25
+BETA = 0.25 # As per the original paper
 
 # Folder Locations
 MODEL_LOCATION = "./models/"
@@ -93,12 +93,12 @@ def train_model():
             epoch_idx + 1, time.time() - epoch_start, avg_epoch_loss))
 
         # Validate the model after each epoch
-        validate_model(epoch_idx + 1)
+        ssim_score = validate_model(epoch_idx + 1)
         
         # Generate samples every 2 epochs
         if (epoch_idx + 1) % 2 == 0:
             print("Generating Epoch Image")
-            generate_samples(test_loader, model, MODEL_LOCATION, IMAGE_LOCATION, epoch_idx + 1)
+            generate_samples(test_loader, model, MODEL_LOCATION, ssim_score, IMAGE_LOCATION, epoch_idx + 1)
         
         utils.plot_results(train_losses, ssim_scores, epoch_idx + 1, OUTPUT_LOCATION)
 
@@ -133,6 +133,8 @@ def validate_model(epoch):
         print(f"Achieved an SSIM score of {epoch_ssim_score}, NEW BEST! saving model")
     else:
         print(f"Achieved an SSIM score of {epoch_ssim_score}")
+    
+    return epoch_ssim_score
 
 
 def test():
@@ -168,4 +170,4 @@ if __name__ == "__main__":
     test_ssim = test()
     print(f"Test SSIM achieved as {test_ssim}")
     utils.plot_results(train_losses, ssim_scores, N_EPOCHS, OUTPUT_LOCATION)
-    generate_samples(test_loader, model, OUTPUT_LOCATION, IMAGE_LOCATION)
+    generate_samples(test_loader, model, OUTPUT_LOCATION, test_ssim, IMAGE_LOCATION)

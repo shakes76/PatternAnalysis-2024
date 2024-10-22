@@ -65,7 +65,7 @@ def generate_samples(data_loader, model, output_loc, ssim_score=None, image_loc=
         axes[i].spines['right'].set_visible(False)
         axes[i].spines['bottom'].set_visible(False)
         axes[i].spines['left'].set_visible(False)
-    axes[0].set_ylabel("Generated", fontsize=20)
+    axes[0].set_ylabel("Original", fontsize=20)
     axes[8].set_ylabel("Reconstructed", fontsize=20)
 
     plt.tight_layout()

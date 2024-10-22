@@ -69,26 +69,29 @@ The project requires the following dependencies[^4]:
   - **Purpose**: Handles model training using the U-Net architecture.
   - **Key Functions**:
     - `train_model(root_dir, num_epochs, lr)`: Trains the U-Net model on the dataset, saves the model, and logs the loss.
-  - **Parameters**:
-    - `--data_dir`: Catalog containing Nifti images for training purposes.
-    - `--output_dir`: Directory for saving trained models.
+    - `train_losses`：Record the training loss for each epoch and finally plot the loss curve.
   - **Usage example**:
      ```bash
-     python train.py --data_dir ./data --output_dir ./model_output
+    root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
+    num_epochs = 30
+    learning_rate = 0.001
+
+    train_model(root_dir, num_epochs=num_epochs, lr=learning_rate)
      ```
-  - **Example output**: During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`. <br /> <br />
+  - **Example output**: During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved. <br /> <br />
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.
   - **Key Functions**:
     - `dice_score(pred, target)`: Calculates the Dice score.
     - `predict_and_evaluate(root_dir, model_path)`: Loads the model and evaluates it on the test dataset.
-  - **Parameters**:
-    - `--Input_image`: Enter the Nifti image file path.
-    - `--model_path`: Trained model path.
-    - `--Output_image`: Predict output save path.
   - **Usage example**:
     ```bash
-     python predict.py --input_image ./test_data/test_image.nii --model_path ./model_output/unet_model.pth --output_image ./output/prediction.nii
+    ```
+    root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
+    model_path = 'unet_model.pth'
+
+    predict_and_evaluate(root_dir, model_path=model_path, threshold=threshold)
+    ```
      ```
   - **Example output**: The generated predicted image will be saved as a specified Nifti format file. <br /> <br />
 

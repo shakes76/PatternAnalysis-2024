@@ -10,11 +10,12 @@ For this training, the **Alzheimer's Disease Neuroimaging Initiative (ADNI)** da
 <p align="center">
   <div style="display: inline-block; text-align: center;">
     <p><strong>AD Image</strong></p>
-    <img src="/recognition/Readme_images/218391_78.jpeg" width="45%" />
+    <img src="recognition/Readme_images/AD data set image.jpeg" width="45%" />
   </div>
+
   <div style="display: inline-block; text-align: center;">
     <p><strong>NC Image</strong></p>
-    <img src="/recognition/Readme_images/808819_88.jpeg" width="45%" />
+    <img src="recognition/Readme_images/NC data set image.jpeg" width="45%" />
   </div>
 </p>
     
@@ -34,7 +35,7 @@ This repository consists of the following five major files:
 ## Model Architecture 
 
 <p align="center">
-	<img src="recognition/Readme_images/image.png" alt="Model Architecture" width="500"/>
+	<img src="recognition/Readme_images/model structure.png" alt="Model Architecture" width="500"/>
 </p>
 
 The StyleGAN model architecture is similar to the GAN with a few changes. The GAN model relied an adversarial network which trained a Generator and a Discriminator to progressively improve the image generation outputs. However, a major issue with the GAN model is that it was prone to overfitting, model collapes and offered little diversity in the output images.
@@ -138,7 +139,7 @@ It was notices that during the training CPU usage would remain relatively low an
 This indicated that there was room to further utilise the CPU or the the model was being bottle necked in a particular location. A similar problem was faced with the GPU utilisation, where particularly in the earlier image sizes **(4 to 64)**, the GPU was being under utilised. 
 
 <p align="center">
-	<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="500"/>
+	<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="600"/>
 </p>
 
 **Adjustments:**
@@ -154,11 +155,11 @@ This indicated that there was room to further utilise the CPU or the the model w
 The following plots show the progressive output from the generator at each image size, slowly increasing from 4, 8 , 16, 32, 64, 128 and finally 256. In the earlier stages, the images appear highly pixelated due to the low resolution. Some blurring was unintentionally introduced by the image scaling software used during processing.
 
 <p align="center">
-	<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="500"/>
+	<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="600"/>
 </p>
 
 <p align="center">
-	<img src="recognition/Readme_images/AD image progress.jpg" alt="AD Test Results" width="500"/>
+	<img src="recognition/Readme_images/AD image progress.jpg" alt="AD Test Results" width="600"/>
 </p>
 
 
@@ -196,6 +197,9 @@ After training was completed each of these models were used to generated images.
 </p>
 
 <h2>Model Benchmarking</h2>
+
+## T-SNE Plot
+
 <p align="center">
   <img src="recognition/Readme_images/2d TSNE.png" width="45%" />
   <img src="recognition/Readme_images/3d TSNE.png" width="45%" />

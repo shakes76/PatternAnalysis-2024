@@ -1,3 +1,10 @@
+"""
+This script contains a function used to downscale and load the training,
+testing and validation data from the MRI and label .nii files.
+
+@author Nathan King
+"""
+
 import tensorflow as tf
 import numpy as np
 import os
@@ -81,7 +88,7 @@ FLIP_AUGMENTERS = ((1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1), (-1, 1, 1), (
 
 def load_mri_data(data_path, only_testing):
     """
-    Load all the data, downscale it, augment it and split it into training, testing and validation sets.
+    Load all the data, downscale it, augment it, and split it into training, testing and validation sets.
     input: data_path - location of the data
            only_testing - whether only testing data is required
     output: (train_dataset, test_dataset, validate_dataset) - preprocessed data
@@ -90,13 +97,13 @@ def load_mri_data(data_path, only_testing):
     x_train = []
     x_test = []
     x_validate = []
-
+    
     #Get directory
     directory = os.fsencode(data_path + "non_seg")
     file_index = -1
     number_of_files = len(os.listdir(directory))
     print("Number of files:", number_of_files)
-
+    
     #Iterate through each MRI with its corresponing label
     for file in os.listdir(directory):
         
@@ -112,7 +119,7 @@ def load_mri_data(data_path, only_testing):
             continue
         
         filename = os.fsdecode(file)
-            
+        
         #Get MRI data
         img = load_data_3D([data_path + "non_seg/" + filename + "/" + filename])[0]
         img = img.tolist()
@@ -138,34 +145,34 @@ def load_mri_data(data_path, only_testing):
                 x_train.append((flipped_data[i], flipped_data_seg[i]))
             
         elif file_index < 0.9 * number_of_files:
-                
+            
             x_validate.append((data, data_seg))
             
         else:
             
             x_test.append((data, data_seg))
-
+        
     #Generator for training dataset
     def load_train():
-       
-        for data in x_train:
-         
-            yield data[0], data[1]
         
+        for data in x_train:
+            
+            yield data[0], data[1]
+    
     #Generator for testing dataset
     def load_test():
-
+        
         for data in x_test:
             
-           yield data[0], data[1]
-                
+            yield data[0], data[1]
+            
     #Generator for validation dataset
     def load_validate():
-
+        
         for data in x_validate:
             
             yield data[0], data[1]
-
+    
     #Load training data into dataset
     train_dataset = tf.data.Dataset.from_generator(
         load_train,

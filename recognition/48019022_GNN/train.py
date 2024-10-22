@@ -88,7 +88,7 @@ def training_loop(architecture, num_epochs, model, data, train, valid, test, opt
             # early stoppage
             best_val_loss = valid_loss
             patience_count = 0
-            torch.save(model.state_dict(), 'early_stop_' + architecture +'model.pth')
+            torch.save(model.state_dict(), 'early_stop_' + architecture +'_model.pth')
         else:
             patience_count += 1
 

@@ -12,7 +12,19 @@ import numpy as np
 
 
 
-def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plots=False):
+def siamese_train(current_dir, train_loader, val_loader, epochs=5, lr=1e-4, plots=False):
+
+    '''
+    Train, validate and save the model
+    args:
+    current_dir[string]: directory the model is being run in
+    train_loader[Dataloader]: dataloader of the training set
+    val_loader[Dataloader]: dataloader of the validation set
+    epochs[int]: number of epochs to run
+    lr[float]: learning rate
+    plots[bool]: option to display plots after training
+    '''
+
     save_dir = os.path.join(current_dir, 'models')
     os.makedirs(save_dir, exist_ok=True)
 
@@ -54,19 +66,18 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
 
             optimizer.zero_grad()
 
-            # Forward pass
+    
             embeddings, logits = model(images_batch)
 
             logits = logits.squeeze()
 
-            # Compute losses
             loss_bce = criterion_bce(logits, labels_batch)
             loss_contrastive = criterion_contrastive(embeddings, labels_batch)
 
-            # Total loss
+            # Total loss as per paper
             total_loss = loss_bce + loss_contrastive
 
-            # Backward and optimize
+ 
             total_loss.backward()
             optimizer.step()
 
@@ -76,11 +87,10 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
             probs = torch.sigmoid(logits)
             preds = (probs >= 0.5).float()
 
-            # Calculate correct predictions
             correct_train += (preds == labels_batch).sum().item()
             total_train += labels_batch.size(0)
 
-            # Store labels and probabilities for AUROC
+        
             train_labels.extend(labels_batch.cpu().numpy())
             train_probs.extend(probs.detach().cpu().numpy())
 
@@ -89,14 +99,14 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
         train_accuracy = correct_train / total_train
         train_accuracies.append(train_accuracy)
 
-        # Compute AUROC for training
+        # Compute AUROC 
         try:
             train_auroc = roc_auc_score(train_labels, train_probs)
             binary_train_preds = (np.array(train_probs) >= 0.5).astype(int)
             print("Training Classification Report:")
             print(classification_report(train_labels, binary_train_preds, zero_division=0))
         except ValueError:
-            train_auroc = np.nan  # Handle cases where AUROC is undefined
+            train_auroc = np.nan 
 
         train_aurocs.append(train_auroc)
 
@@ -107,6 +117,7 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
         total_val = 0
         val_labels = []
         val_probs = []
+        all_embeddings = []
 
         with torch.no_grad():
             for images_batch, labels_batch in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} Validating"):
@@ -116,27 +127,29 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
 
                 logits = logits.squeeze()
 
-                # Compute losses
+            
                 loss_bce = criterion_bce(logits, labels_batch)
                 loss_contrastive = criterion_contrastive(embeddings, labels_batch)
 
-                # Total loss
+              
                 total_loss = loss_bce + loss_contrastive
 
                 val_loss += total_loss.item()
 
-                # Predictions and probabilities
+                # Predictions and probabilities as per paper
                 probs = torch.sigmoid(logits)
                 preds = (probs >= 0.5).float()
 
-                # Calculate correct predictions
+             
                 correct_val += (preds == labels_batch).sum().item()
                 total_val += labels_batch.size(0)
 
-                # Store labels and probabilities for AUROC
+        
                 val_labels.extend(labels_batch.cpu().numpy())
                 val_probs.extend(probs.cpu().numpy())
+                all_embeddings.append(embeddings.cpu())
 
+        
         avg_val_loss = val_loss / len(val_loader)
         val_losses.append(avg_val_loss)
         val_accuracy = correct_val / total_val
@@ -149,7 +162,7 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
             print("Validation Classification Report:")
             print(classification_report(val_labels, binary_val_preds, zero_division=0))
         except ValueError:
-            val_auroc = np.nan  # Handle cases where AUROC is undefined
+            val_auroc = np.nan  
 
         val_aurocs.append(val_auroc)
 
@@ -157,7 +170,7 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
         print(f"Train Accuracy: {train_accuracy:.4f} - Val Accuracy: {val_accuracy:.4f}")
         print(f"Train AUROC: {train_auroc:.4f} - Val AUROC: {val_auroc:.4f}")
 
-        # Step the scheduler
+
         scheduler.step(avg_val_loss)
 
         # Monitor learning rate
@@ -175,13 +188,6 @@ def siamese_train(current_dir, train_loader, val_loader, epochs=50, lr=1e-4, plo
 
         # Visualize embeddings if needed
         if plots:
-            all_embeddings = []
-            with torch.no_grad():
-                for images_batch, labels_batch in val_loader:
-                    images_batch = images_batch.to(device)
-                    embeddings, _ = model(images_batch)
-                    all_embeddings.append(embeddings.cpu())
-
             all_embeddings_tensor = torch.cat(all_embeddings)
             visualise_embedding(all_embeddings_tensor, val_labels, epoch+1, current_dir)
 

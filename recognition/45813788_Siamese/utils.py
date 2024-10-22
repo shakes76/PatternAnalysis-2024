@@ -7,12 +7,7 @@ from sklearn.decomposition import PCA
 
 def visualise_embedding(embeddings, labels, epoch, current_dir):
     """
-    Visualize embeddings using t-SNE and PCA.
-
-    Args:
-        embeddings (torch.Tensor): The embeddings tensor.
-        labels (list or np.array): The corresponding labels.
-        epoch (int): Current epoch number.
+    Function to Visualize embeddings using t-SNE and PCA.
     """
     # Convert embeddings and labels to numpy arrays
     embeddings_np = embeddings.numpy()
@@ -27,7 +22,7 @@ def visualise_embedding(embeddings, labels, epoch, current_dir):
     embeddings_pca = pca.fit_transform(embeddings_np)
 
     # Plot t-SNE
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
     scatter = plt.scatter(embeddings_tsne[:, 0], embeddings_tsne[:, 1], c=labels_np, cmap='viridis', alpha=0.7)
     plt.legend(handles=scatter.legend_elements()[0], labels=['Benign', 'Malignant'])
@@ -54,7 +49,9 @@ def visualise_embedding(embeddings, labels, epoch, current_dir):
 
 
 def plot_loss(train_losses, val_losses):
-    # Plotting the Loss Curves
+    '''
+    Function for Plotting the Loss Curves
+    '''
     plt.figure(figsize=(10,5))
     plt.plot(range(1, len(train_losses)+1), train_losses, label='Training Loss')
     plt.plot(range(1, len(val_losses)+1), val_losses, label='Validation Loss')
@@ -64,9 +61,11 @@ def plot_loss(train_losses, val_losses):
     plt.legend()
     plt.show()
   
+ 
 def plot_accuracy(train_accuracies, val_accuracies):
-    import matplotlib.pyplot as plt
-
+    '''
+    Function that plots accuracy of the model.
+    '''
     epochs = range(1, len(train_accuracies) + 1)
     plt.figure(figsize=(10, 5))
     plt.plot(epochs, train_accuracies, label='Training Accuracy')
@@ -79,7 +78,9 @@ def plot_accuracy(train_accuracies, val_accuracies):
     plt.show()
 
 def plot_auc(train_aurocs, val_aurocs):
-    
+    '''
+    Function to plot Receiver Operator Partial Under the Area Curve
+    '''
     plt.figure(figsize=(10, 5))
     epochs = range(1, len(train_aurocs) + 1)
     plt.plot(epochs, train_aurocs, label='Training AUROC')

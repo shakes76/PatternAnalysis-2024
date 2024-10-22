@@ -11,8 +11,6 @@ from sklearn.model_selection import train_test_split
 default_aug = transforms.Compose([
     transforms.Resize((224,224)),
     transforms.ToTensor(),
-    #normalise using ImageNet (pytorch defaults)
-    #transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 ])
 
 
@@ -23,7 +21,6 @@ train_aug = transforms.Compose([
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomRotation(30),
     transforms.ToTensor(),
-    #transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 ])
 
 
@@ -84,74 +81,3 @@ def split_data(df, train_ratio=0.75, val_ratio=0.15, test_ratio=0.10, random_sta
     )
 
     return train_df, val_df, test_df
-
-'''
-# Get the path to the image
-image_name = benign['isic_id'][0]  # Replace with malignant['isic_id'][0] if you want a malignant image
-image_path = os.path.join(images, f"{image_name}.jpg")
-
-# Open the image using PIL
-image = Image.open(image_path)
-
-# Apply the transformation (use benign_aug or malig_aug depending on the target)
-augmented_image = benign_aug(image)  # For benign; use malig_aug for malignant
-
-# Convert the tensor back to a PIL image for display (undo normalization for display purposes)
-def tensor_to_image(tensor):
-    tensor = tensor.clone().detach().numpy()
-    tensor = tensor.transpose(1, 2, 0)
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
-    tensor = std * tensor + mean  # unnormalize
-    tensor = tensor.clip(0, 1)  # clip values to be in range [0, 1]
-    return tensor
-
-# Convert the augmented tensor to an image
-augmented_image_np = tensor_to_image(augmented_image)
-
-# Display the image
-plt.imshow(augmented_image_np)
-plt.axis('off')  # Turn off axis labels
-plt.show()
-
-
-# Check if the path exists
-
-# Create an instance of the dataset
-dataset = ISISCDataset(
-    benign_df=benign,
-    malignant_df=malignant,
-    images_dir=images,
-    transform_benign=benign_aug,
-    transform_malignant=malig_aug,
-    augment_ratio=1.0
-)
-
-# Create a DataLoader to iterate through the dataset
-data_loader = DataLoader(dataset, batch_size=4, shuffle=True)  # Adjust batch size as needed
-
-# Get a batch of images from the loader
-for img1, img2, labels in data_loader:
-    # We are using the first batch here; you could loop over more if needed
-    break
-
-# Plot the images
-fig, axes = plt.subplots(2, 4, figsize=(12, 6))  # Create a grid for 4 pairs of images
-
-for i in range(4):
-    # Convert img1 and img2 tensors back to images
-    img1_np = tensor_to_image(img1[i])
-    img2_np = tensor_to_image(img2[i])
-    
-    # Display img1 and img2 side by side
-    axes[0, i].imshow(img1_np)
-    axes[0, i].axis('off')
-    axes[0, i].set_title(f'Image 1 (Label: {labels[i].item()})')
-
-    axes[1, i].imshow(img2_np)
-    axes[1, i].axis('off')
-    axes[1, i].set_title(f'Image 2 (Label: {labels[i].item()})')
-
-plt.tight_layout()
-plt.show()
-'''

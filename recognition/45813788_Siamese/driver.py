@@ -7,10 +7,19 @@ import torch
 from torch.utils.data import DataLoader
 from predict import test
 from pytorch_metric_learning.samplers import MPerClassSampler
-from dataset import load_data, split_data, ISICDataset, default_aug, train_aug
+from dataset import load_data, split_data, ISICDataset, train_aug
 
-# Run the training
+
 def main():
+
+    '''
+    function that runs the whole thing, training and testing
+    '''
+
+    #HYPER PARAMS
+    batch_size = 64
+    learning_rate = 1e-4
+    epochs = 15
 
     # Paths
     current_dir = os.getcwd()
@@ -52,7 +61,6 @@ def main():
 
     #balance samples
     labels = train_dataset.labels
-    batch_size = 64
     sampler = MPerClassSampler(labels, m=(batch_size/2), batch_size=batch_size)
 
 
@@ -82,7 +90,7 @@ def main():
     )
  
     #Train the siamese
-    #siamese_train(current_dir, train_loader, val_loader, epochs=15, lr=1e-4, plots=True)
+    #siamese_train(current_dir, train_loader, val_loader, epochs=epochs, lr=learning_rate, plots=True)
 
     #Test it
     siamese_net = SiameseNN()

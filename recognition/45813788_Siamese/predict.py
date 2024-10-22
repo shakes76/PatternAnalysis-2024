@@ -6,17 +6,23 @@ import random
 from tqdm import tqdm
 from dataset import ISICDataset
 from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, classification_report
+from utils import visualise_embedding
 
+def test(siamese, test_loader, current_dir):
+    '''
+    Run inference on a test set with data thats never been used for training, this will also plot.
+    args:
+    siamese: loaded state dictionary of the siamsese network
+    current_dir[string]: directory the model is being run in
+    test_loader[Dataloader]: dataloader of the test set
+    '''
 
-def test(siamese, classifier, test_loader, images):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     siamese.to(device)
     siamese.eval()
     
-    classifier.to(device)
-    classifier.eval()
-
+    all_embeddings = []
     all_preds = []
     all_labels = []
     all_probs = []
@@ -26,18 +32,20 @@ def test(siamese, classifier, test_loader, images):
         for images,labels in tqdm(test_loader, desc="Testing"):
             images, labels = images.to(device), labels.to(device)
 
-            embeddings = siamese(images)
-            output = classifier(embeddings).squeeze()
-
-            preds = (output >= 0.5).float()
-            probs = torch.sigmoid(output)
+            embeddings, logits = siamese(images) 
+            
+            # Predictions and probabilities
+            probs = torch.sigmoid(logits)
+            preds = (probs >= 0.5).float()
 
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
             all_probs.extend(probs.cpu().detach().numpy())
-            
+            all_embeddings.append(embeddings.cpu())
+                                  
 
-    
+    all_embeddings_tensor = torch.cat(all_embeddings)
+    visualise_embedding(all_embeddings_tensor, all_labels, 'Test', current_dir) 
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
     all_probs = np.array(all_probs)

@@ -8,11 +8,7 @@ Author: Chiao-Yu Wang (Student No. 48007506)
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
-
-TRAIN_DATA_PATH = "AD_NC/train"
-TEST_DATA_PATH = "AD_NC/test"
-IMAGE_SIZE = 128
-BATCH_SIZE = 32
+from constants import IMAGE_SIZE, TRAIN_DATA_PATH, TEST_DATA_PATH, BATCH_SIZE
 
 torch.manual_seed(1)
 
@@ -22,16 +18,18 @@ def load_data():
     """
     # Define transformations for training and testing
     transform_train = transforms.Compose([
-        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),      # Resize images to the given size
-        transforms.RandomHorizontalFlip(p=0.5),           # Flip images horizontally
-        transforms.RandomRotation(2),                     # Rotate images randomly
-        transforms.ToTensor(),                            # Convert image to tensor
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # Normalise values
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),                                    # Resize images
+        transforms.RandomResizedCrop(IMAGE_SIZE, scale=(0.8, 1.0)),                     # Random crop
+        transforms.RandomHorizontalFlip(p=0.5),                                         # Flip images horizontally
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Color jitter
+        transforms.RandomRotation(2),                                                   # Rotate images randomly
+        transforms.ToTensor(),                                                          # Convert image to tensor
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])              # Normalise values
     ])
 
     transform_test = transforms.Compose([
-        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),      # Resize images to the given size
-        transforms.ToTensor(),                            # Convert image to tensor
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),                        # Resize images
+        transforms.ToTensor(),                                              # Convert image to tensor
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # Normalise values
     ])
 

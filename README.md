@@ -166,7 +166,7 @@ It was noticed that during the training CPU usage would remain relatively low an
 This indicated that there was room to further utilise the CPU or that the model was being bottlenecked in a particular location. A similar problem was faced with the GPU utilisation, where particularly in the earlier image sizes **(4 to 64)**, the GPU was being underutilised. 
 
 <p align="center">
- <img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="600"/>
+ <img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="700"/>
 </p>
 
 **Adjustments:**

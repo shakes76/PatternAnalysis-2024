@@ -36,3 +36,24 @@ def load_model(model_path, device, img_size=224, patch_size=16, emb_size=768, nu
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     return model
+
+def preprocess_image(image_path, img_size=224):
+    """
+    Preprocesses the input image.
+
+    Args:
+        image_path (str): Path to the image.
+        img_size (int): Size to resize the image.
+
+    Returns:
+        torch.Tensor: Preprocessed image tensor.
+    """
+    transform = transforms.Compose([
+        transforms.Resize((img_size, img_size)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+
+    image = Image.open(image_path).convert('RGB')
+    image = transform(image).unsqueeze(0)  # Add batch dimension
+    return image

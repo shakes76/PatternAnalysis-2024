@@ -1,7 +1,7 @@
 # GNN Node Classification on Facebook Large Page-Page Network
 
 ## 1. Project Overview
-This project implements a Graph Neural Network (GNN) for semi-supervised multi-class node classification using the Facebook Large Page-Page Network Dataset. The goal of the project is to predict the class of each node (page) based on 128-dimensional feature vectors and the graph structure connecting the nodes.
+This project implements a **Mixed Graph Neural Network (GNN)** for **semi-supervised multi-class node classification** using the **Facebook Large Page-Page Network Dataset**.  The goal of the project is to predict the class of each node (page) based on 128-dimensional feature vectors and the graph structure connecting the nodes.
 
 Additionally, the node embeddings learned by the GNN model are visualized using t-SNE to demonstrate how well the model clusters nodes of the same class.
 
@@ -24,40 +24,41 @@ pip install torch==2.4.1 torch-geometric==2.6.1 numpy==1.26.4 matplotlib==3.8.4 
 ```
 
 ## 3. Model Structure
-The implemented model is a multi-layer **Graph Convolutional Network (GCN)** using two `GCNConv` layers:
+The implemented model is a multi-layer **Mixed GNN** combining layers of **GCN**, **GAT**, and **GraphSAGE**:
 - **Input Layer**: 128-dimensional input features per node.
 - **Hidden Layer**: Four layers with 128 hidden units and 4 attention heads.
+  - 2 GCNConv layers.
+  - 2 GATConv layers with 4 attention heads.
+  - 2 GraphSAGE layers.
 - **Output Layer**: Provides logits for multi-class classification.
 
 
-Hyperparameters (Best-Performing, accuracy:57.37%):
-Optimizer: AdamW
-Learning Rate: 0.001
-Weight Decay: 0.0001
-Hidden Dimensions: 128
-Number of Layers: 4
-Dropout: 0.2
-Batch Normalization: Applied after each layer
+Hyperparameters (Best-Performing, accuracy:59.97%):
+- Optimizer: AdamW
+- Learning Rate: 0.001
+- Weight Decay: 0.0001
+- Hidden Dimensions: 128
+- Number of Layers: 6 (2 GCN, 2 GAT, 2 GraphSAGE)
+- Dropout: 0.3
+- Early Stopping: 50 epochs patience
+- learn rate scheduler: factor 0.6, patience 10
 
 ## 4. How Model Works
 
-My model implements a **Graph Attention Network (GAT)** for **semi-supervised node classification**. The model uses the graph structure and node features to classify nodes into predefined categories. Here's a brief overview of how the model works:
+My model implements a a Mixed GNN that combines layers of **GCN**, **GAT**, and **GraphSAGE** for **semi-supervised node classification**. The model uses the graph structure and node features to classify nodes into predefined categories. Here's a brief overview of how the model works:
 
 ### Node Features and Graph Structure:
 - Each node in the graph has a **128-dimensional feature vector** representing its attributes (e.g., properties of a Facebook page).
 - The graph is represented by its **edges**, which define the connections between nodes (e.g., links between Facebook pages).
 
-### Graph Attention Mechanism:
-- The model uses a **Graph Attention Network (GAT)**, which computes attention scores for each node's neighbors.
-- These attention scores determine how much **influence** a neighbor should have on a node’s representation. This allows the model to focus on the most important neighbors when updating each node’s representation.
+### Graph Attention and Convolution Mechanism:
+- The model uses a **Graph Attention Network (GAT)**, which computes attention scores for each node's neighbors, and **Graph Convolution (GCN)** and **GraphSAGE** layers to update node representations based on their neighbors.
+-  This allows the model to focus on the most important neighbors when updating each node’s representation.
 
-### Multi-Layer Architecture:
-- The GAT model consists of **four layers**, where each layer updates the node representations by aggregating information from neighboring nodes.
-- After the final layer, the model outputs a **classification** for each node.
 
 ### Learning Process:
 - The model is trained to **minimize the classification error** on the labeled nodes. The training process uses **AdamW** optimizer with a learning rate of **0.001** and a weight decay of **0.0001**.
-- We also use a **learning rate scheduler** and **early stopping** to avoid overfitting and help the model converge faster.
+- I also use a **learning rate scheduler** and **early stopping** to avoid overfitting and help the model converge faster.
 
 ### Evaluation:
 - The model is evaluated on a separate test set, and its performance is visualized using **t-SNE** to project the high-dimensional node embeddings onto a 2D space.
@@ -75,7 +76,7 @@ python train.py
 
 This script:
 - Load the **Facebook Large Page-Page Network Dataset**
-- Initialize a GNN model with **128 input features** and **128 hidden layers**
+- Initialize a GNN model with **128 input features** , **GCN**, **GAT**, and **GraphSAGE** layers.
 - Random Seed: 42 for reproducibility
 - Training is done with early stopping and learning rate scheduling (ReduceLROnPlateau).
 - Train the GNN model for a number of epochs
@@ -91,7 +92,7 @@ python predict.py
 This script:
 - Loads the pre-trained model.
 - Predicts node classes and computes the accuracy on the test set.
-- Visualizes node embeddings using t-SNE.
+- Visualizes node embeddings using **t-SNE**.
 
 ## 6. Dataset
 The dataset I used is  **Facebook Large Page-Page Network dataset**, where the features are in the form of 128 dim vectors.
@@ -106,12 +107,10 @@ It consist of:
 
 #### Preprocessing:
 The original dataset was preprocessed by:
-- **Loading the `.npz` file** and extracting the relevant arrays:
-  - **edges**: A list of edges between nodes.
-  - **features**: A matrix of 128-dimensional node features.
-  - **target**: The class label for each node.
+
+Loading the `.npz` file and extracting the relevant arrays.
+ 
   
-The features (128-dimensional vectors) are already preprocessed and ready to be used by the GNN model. No further feature transformation is applied; the dataset is ready to be fed directly into the GNN model. Tested without train/test split and got 97% accuracy, the preprocessed dataset is good.
 
 #### Data Splitting:
 The dataset is split into:
@@ -125,44 +124,38 @@ The split is done using the train_test_split function from scikit-learn, with a 
 
 ### 7.1. Accuracy
 
-The model achieved an accuracy of 57.37% on the test set after using the best hyperparameters (listed above).
+The model achieved an accuracy of 59.97% on the test set after using the best hyperparameters (listed above).
 
 
 ### 7.2. Embedding Visualization (t-SNE)
 
-Below is an ideal t-SNE visualization of the learned node embeddings which I ran without train-test split. Each color represents a different class, and the clusters indicate that the GNN effectively learned representations that separate nodes of different classes.
+Below is the **t-SNE visualization** of the learned node embeddings. Each color represents a different class, and the clusters show how the GNN model clusters nodes based on their learned embeddings.
 
-![SNE(ideal)](./images/SNE%20visualization%20(ideal).png)
 
-**Ideal t-SNE Visualization** (First Image):
-- The ideal t-SNE visualization shows distinct clusters, each representing a different class.
-- Each color represents a different node class, and the clear separation between the clusters indicates that the model has successfully learned meaningful representations of the data, where nodes of the same class are grouped closely together.
-- This ideal scenario implies that the embeddings generated by the model contain enough information to differentiate between the classes with minimal overlap or confusion.
 
-Below is the t-SNE visualization of the learned node embeddings with train-test split.
-![SNE(reality)](./images/SNE%20visualization%20(reality).png)
+![SNE visualization](./images/SNE%20visualization.png)
 
-**Reality t-SNE Visualization** (Second Image):
-- In the reality t-SNE visualization, the separation between clusters is not as clear as in the ideal case.
-- There is more overlap between points of different colors (classes), indicating that the model's learned representations are not as distinct or discriminative as what we expected.
-- Some nodes belonging to different classes are intermixed, meaning the model has difficulty separating some classes in the feature space, which could be:
-  - Limited complexity in the model's architecture.
-  - Insufficient feature information in the dataset itself.
-  - The inherent difficulty of the task and noise in the data.
+In this **t-SNE Visualization**:
+- While some distinct clusters are visible, there is still overlap between different classes, indicating that the model’s representations are not fully separated for all classes.
+
+- The overlapping regions suggest that the model has difficulty differentiating certain classes based on the learned embeddings, potentially due to:
+  - Limited feature information in the dataset.
+  - The inherent difficulty and possible noise in the task.
+  - The model’s architecture, which could be further optimized.
 
 ## 8. Drawbacks and Future Improvement
 
 ### 8.1. Model Performance and Scalability
-- **Accuracy Ceiling**: The highest accuracy obtained was 57.37%, despite several hyperparameter tuning efforts. Achieving higher accuracy with this dataset may require more advanced techniques or larger hidden dimensions, but by doing this also increase training time significantly.
+- **Accuracy Ceiling**: 59.95% was the highest accuracy achieved despite extensive hyperparameter tuning.
 
-- **Training Time**: Increasing the number of hidden layers and hidden dimensions led to much longer training times without significant improvements in accuracy. Increases in model complexity beyond a certain point diminished returns in terms of performance.
+- **Training Time**: Adding more layers increased training time without significantly improving accuracy.
 
-### 8.2. Hyperparameter Tuning
-- **Limited Gains from Additional Layers**: Adding more layers (beyond four) resulted in diminishing accuracy improvements and sometimes worsened the performance due to overfitting or vanishing gradients.
+### 8.2. Future Imrpovement
+- **Ensemble Learning**: Try ensembling multiple models for higher accuracy..
 
-- **Learning Rate Sensitivity**: The learning rate required careful tuning. Lower learning rates slowed convergence significantly, while higher rates caused instability during training.
+- **Additional Layers**: Explore adding more attention heads or hidden layers with suitable hyperparameter settings.
 
-- **Grid Search**: Grid Search with the given hyperparameter would take hours to run one training, and also without significant output.
+- **Hyperparameter Search**: Search (random, grid...) for more optimal learning rates or dropout rates could improve performance.
 
 
 ## 9. Reference

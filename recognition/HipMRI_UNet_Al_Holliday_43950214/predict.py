@@ -26,14 +26,15 @@ def predict(net, dev):
     # For Woomy (my laptop)
     #hipMriRoot = "C:\\Users\\al\\HipMRI"
     # For the lab computers
-    hipMriRoot = "H:\\HipMRI"
+    #hipMriRoot = "H:\\HipMRI"
     # For Rangpur
-    #hipMriRoot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
+    hipMriRoot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
     hipmri2dval = dataset.HipMRI2d(hipMriRoot, imgSet = "validate", transform = trans, applyTrans = True)
     valLoader = DataLoader(hipmri2dval, batch_size = 8, shuffle = False)
     
     # perform validation
     print("Validating")
+    net.eval()
     diceLosses = []
     with torch.no_grad():
         for img, seg in valLoader:
@@ -44,9 +45,9 @@ def predict(net, dev):
             seg = seg.to(dev)
             seg = seg.to(dev)
             out = net(img)
-            out = torch.permute(out, (0, 2, 3, 1)) # put the chan dim last
-            out = torch.argmax(out, dim = -1)
-            out = out[:, None, :, :] # reshape back to (batch, chan, h, w)
+            #out = torch.permute(out, (0, 2, 3, 1)) # put the chan dim last
+            #out = torch.argmax(out, dim = -1)
+            #out = out[:, None, :, :] # reshape back to (batch, chan, h, w)
             diceSimilarity = dice_coeff(out, seg, dev, 6)
             print("current dice: {:.5f}".format(diceSimilarity.cpu().item()))
     print("Done!")

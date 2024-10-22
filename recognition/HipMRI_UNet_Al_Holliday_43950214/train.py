@@ -42,9 +42,9 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
     # For Woomy (my laptop)
     #hipMriRoot = "C:\\Users\\al\\HipMRI"
     # For the lab computers
-    hipMriRoot = "H:\\HipMRI"
+    #hipMriRoot = "H:\\HipMRI"
     # For Rangpur
-    #hipMriRoot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
+    hipMriRoot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data"
     hipmri2dtrain = dataset.HipMRI2d(hipMriRoot, imgSet = "train", transform = trans, applyTrans = True)
     hipmri2dtest = dataset.HipMRI2d(hipMriRoot, imgSet = "test", transform = trans, applyTrans = True)
     trainLoader = DataLoader(hipmri2dtrain, batch_size = 8, shuffle = False)

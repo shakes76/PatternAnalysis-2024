@@ -9,7 +9,7 @@ Main driver script
 import torch
 
 import modules
-#from predict import predict
+from predict import predict
 from train import train
 
 def main():
@@ -21,8 +21,8 @@ def main():
     # perform training
     net = train(net, dev, chan, outDim, numEpochs = 16)
     
-    # perform validation
-    # TODO : ^^^^^^^^^^^ DO THAT!!!!
+    # perform validation on the trained model
+    predict(net, dev)
 
 
 if __name__ == "__main__":

@@ -158,7 +158,7 @@ While I have already trained my model using pre-existing GFNet model, I would li
 
 
 > **Test accuracy: 66.34%**  
-> **Recall: 72.9%**
+> **Recall: 73.9%**
 
 ### Approach 2 with Fine-tuned gfnet_h_b model: 
 

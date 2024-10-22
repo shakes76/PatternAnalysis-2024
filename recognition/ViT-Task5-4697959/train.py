@@ -206,3 +206,30 @@ def evaluate_model(model, dataloader, device, class_names, save_dir='saved_model
     # Classification Report
     report = classification_report(all_labels, all_preds, target_names=class_names)
     print("Classification Report:\n", report)
+
+    # Confusion Matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    print("Confusion Matrix:\n", cm)
+
+    # Plot Confusion Matrix
+    plt.figure(figsize=(6,6))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix')
+    plt.colorbar()
+    tick_marks = range(len(class_names))
+    plt.xticks(tick_marks, class_names, rotation=45)
+    plt.yticks(tick_marks, class_names)
+
+    # Normalize the confusion matrix.
+    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, f"{cm[i, j]} ({cm_normalized[i, j]:.2f})",
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.savefig(os.path.join(save_dir, 'confusion_matrix.png'))
+    plt.close()

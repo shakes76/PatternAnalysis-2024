@@ -1,4 +1,4 @@
-# Siamese network for Classification of ISIC 2020 Kaggle Challenge data set
+# Siamese network for Classification of ISIC 2020 data set
 ## Project Introduction
 ### Project Summary and Aim
 The purpose of this project was to create a Siamese Network that is able to classify skin lesions from the ISIC 2020 Kaggle Challenge data set as either 'normal' or 'melanoma'. The full data set contains 33,126 images of skin lesions  (584 (1.8%) melanoma and 32542 (98.2%) normal).
@@ -216,6 +216,7 @@ This section will contain details that pertain mainly to `predict.py`
 > - Metrics will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 ## Results Summary
+(TODO:  FILL EVERYTHING IN)
 ### Evaluation Metrics
 1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
 

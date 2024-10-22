@@ -13,20 +13,6 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 ###############################################################################
-### Config Settings
-def get_config() -> dict:
-    config = {
-        'data_subset': 8000,
-        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
-        'embedding_dims': 128,
-        'learning_rate': 0.0001,
-        'epochs': 20,
-    }
-    return config
-
-
-###############################################################################
 ### Classes
 class SiameseNet(nn.Module):
     def __init__(self, emb_dim=128):
@@ -38,9 +24,10 @@ class SiameseNet(nn.Module):
         resnet = resnet50() 
         
         # Slice out last fully connected layer so we can replace with our custom layers
+        # Since we are not predicing 1000 classes here - we need our own custom Feature Extractor Head
         self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
                
-        # Embedding Head
+        # Feature Extractor Head
         # Used to produce embeddings
         self.fc_layers = nn.Sequential(
             nn.Linear(2048, 512),

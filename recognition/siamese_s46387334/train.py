@@ -20,6 +20,18 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 #from modules import TripletLoss, SiameseNet
 
 
+###############################################################################
+### Config Settings
+def get_config() -> dict:
+    config = {
+        'data_subset': 1300,
+        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
+        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+        'embedding_dims': 128,
+        'learning_rate': 0.0001,
+        'epochs': 2,
+    }
+    return config
 
 
 ###############################################################################
@@ -160,7 +172,7 @@ def plot_training_graphs(
     """
     """
     # Plot Loss
-    plt.figure(figsize=(15, 5))
+    plt.figure(figsize=(15, 8))
     
     plt.subplot(1, 3, 1)
     plt.plot(range(epochs), train_loss_per_epoch, label='Train Loss', color='darkseagreen')

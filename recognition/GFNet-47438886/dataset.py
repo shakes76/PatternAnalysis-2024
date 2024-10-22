@@ -42,8 +42,24 @@ class ADNIDataset(Dataset):
             image = self.transform(image)
 
         return image, label
+    
+# Custom Transform to add Gaussian Noise
+class AddGaussianNoise(object):
+    def __init__(self, mean=0.0, std=1.0):
+        self.mean = mean
+        self.std = std
 
-def load_adni_data(root_dir, valid_size=0.2, batch_size=32):
+    def __call__(self, tensor):
+        noise = torch.randn(tensor.size()) * self.std + self.mean
+        noisy_tensor = tensor + noise
+        # Clip the tensor to ensure values remain in [0, 1] range
+        return torch.clamp(noisy_tensor, 0., 1.)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
+    
+
+def load_adni_data(root_dir, valid_size=0.2, batch_size=32, testing=False):
     """
     Load the ADNI dataset and ensure no leakage by splitting data subject-wise.
     
@@ -60,54 +76,75 @@ def load_adni_data(root_dir, valid_size=0.2, batch_size=32):
     image_paths = []
     labels = []
 
+    directory = 'train' if not testing else 'test'
+
     # Load images from NC (Normal Control) and AD (Alzheimer's Disease) folders
     classes = {'NC': 0, 'AD': 1}  # 0 for NC, 1 for AD
     for class_name, label in classes.items():
-        class_dir = os.path.join(root_dir, 'train', class_name)
+        class_dir = os.path.join(root_dir, directory, class_name)
         for file_name in os.listdir(class_dir):
             if file_name.endswith(('.png', '.jpg', '.jpeg')):
                 image_paths.append(os.path.join(class_dir, file_name))
                 labels.append(label)
 
-    # Extract patient IDs to ensure no leakage
-    patient_ids = [extract_patient_id(os.path.basename(path)) for path in image_paths]
-    
-    # Create a DataFrame to assist in patient-wise splitting
-    data = list(zip(image_paths, labels, patient_ids))
-    
-    # Perform a patient-wise split
-    unique_patients = set(patient_ids)
-    train_patients, val_patients = train_test_split(list(unique_patients), test_size=valid_size, random_state=42)
-    
-    # Split the dataset into training and validation based on patient IDs
-    train_data = [(img, lbl) for img, lbl, pid in data if pid in train_patients]
-    val_data = [(img, lbl) for img, lbl, pid in data if pid in val_patients]
+    if not testing:  # If not testing, need to split into training and validation set
 
-    # Separate image paths and labels
-    train_image_paths, train_labels = zip(*train_data)
-    val_image_paths, val_labels = zip(*val_data)
+        # Extract patient IDs to ensure no leakage
+        patient_ids = [extract_patient_id(os.path.basename(path)) for path in image_paths]
+        
+        # Create a DataFrame to assist in patient-wise splitting
+        data = list(zip(image_paths, labels, patient_ids))
+        
+        # Perform a patient-wise split
+        unique_patients = set(patient_ids)
+        train_patients, val_patients = train_test_split(list(unique_patients), test_size=valid_size, random_state=42)
+        
+        # Split the dataset into training and validation based on patient IDs
+        train_data = [(img, lbl) for img, lbl, pid in data if pid in train_patients]
+        val_data = [(img, lbl) for img, lbl, pid in data if pid in val_patients]
 
+        # Separate image paths and labels
+        train_image_paths, train_labels = zip(*train_data)
+        val_image_paths, val_labels = zip(*val_data)
+
+    mean = 0.1156
+    std = 0.2199
     # Define image transformations
     # ! Check the correct transforms are used
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # Resize to fit model input size (256 x 240)
+    if not testing:
+        transform = transforms.Compose([
+            transforms.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
+            transforms.RandomVerticalFlip(p=0.5),
+            transforms.ToTensor(),  # Convert image to PyTorch tensor
+            transforms.Normalize(mean=[mean], std=[std]) 
+        ])
+
+    else:  # Testing
+        transform = transforms.Compose([
+        transforms.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
         transforms.ToTensor(),  # Convert image to PyTorch tensor
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize
+        transforms.Normalize(mean=[mean], std=[std]) 
     ])
 
-    # Create ADNIDataset instances for training and validation
-    train_dataset = ADNIDataset(train_image_paths, train_labels, transform=transform)
-    val_dataset = ADNIDataset(val_image_paths, val_labels, transform=transform)
+    if not testing:
+        # Create ADNIDataset instances for training and validation
+        train_dataset = ADNIDataset(train_image_paths, train_labels, transform=transform)
+        val_dataset = ADNIDataset(val_image_paths, val_labels, transform=transform)
+    else:
+        train_dataset = ADNIDataset(image_paths, labels, transform=transform)
 
     # Create DataLoaders for batching and parallel data loading
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
-    return train_loader, val_loader
+    if not testing:
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        return train_loader, val_loader
 
-if platform.system() == "Windows":
-    root_dir = 'ADNI_AD_NC_2D/AD_NC'
-else:
-    root_dir = '~/ADNI/AD_NC'
+    return train_loader  # No validation
 
-train_loader, val_loader = load_adni_data(root_dir)
+#if platform.system() == "Windows":
+#    root_dir = 'ADNI_AD_NC_2D/AD_NC'
+#else:
+#    root_dir = '~/ADNI/AD_NC'
+
+#train_loader, val_loader = load_adni_data(root_dir)

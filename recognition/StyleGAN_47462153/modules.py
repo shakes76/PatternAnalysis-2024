@@ -31,7 +31,11 @@ class StyleGANGenerator(nn.Module):
         w = w.view(w.size(0), -1, 1, 1)
         generated_image = self.synthesis(w)
         return generated_image
-    
+
+class StyleGANDiscriminator(nn.Module):
+    def __init__(self, img_channels):
+        super().__init__()
+        
 
 if __name__ == "__main__":
     z_dim = 128  

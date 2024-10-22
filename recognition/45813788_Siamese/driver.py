@@ -1,8 +1,8 @@
 #calls and runs algo, everything from here
 import os
 from dataset import load_data, split_data
-from train import siamese_train, classifier_train
-from modules import SiameseNN, Classifier
+from train import siamese_train
+from modules import SiameseNN
 import torch
 from torch.utils.data import DataLoader
 from predict import test
@@ -80,23 +80,16 @@ def main():
         num_workers=4,
         pin_memory=True
     )
+ 
+    #Train the siamese
+    #siamese_train(current_dir, train_loader, val_loader, epochs=15, lr=1e-4, plots=True)
 
-
-
-    #siamese_train(current_dir, train_loader,val_loader, images, lr=1e-4, epochs=15, plots=True)
-
+    #Test it
     siamese_net = SiameseNN()
-    siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
+    siamese_dict = os.path.join(current_dir, 'models', 'siamese_best.pth')
     siamese_net.load_state_dict(torch.load(siamese_dict))
-    #classifier_train(current_dir, train_loader, val_loader, images, siamese_net, epochs=15, plots=True)
 
-    #Testing part
-    classifier_net = Classifier()
-    classifier_dict = os.path.join(current_dir,'models','classifier_best.pth')
-    classifier_net.load_state_dict(torch.load(classifier_dict)) 
-    test(siamese_net,classifier_net,test_loader,images)
-
-    #we can improve this alot, lot of repeating code in training loops we can handle creating the DataLoaders here
+    test(siamese_net, test_loader, current_dir)
 
 
 if __name__ == "__main__":

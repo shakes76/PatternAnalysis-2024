@@ -216,7 +216,8 @@ This section will contain details that pertain mainly to `predict.py`
 > - Metrics will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 ## Results Summary
-(TODO:  FILL EVERYTHING IN)
+After running training and prediction as listed above, these were the results produced when predicting on the unseen testing set.
+
 ### Evaluation Metrics
 1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
 
@@ -244,7 +245,7 @@ Note that due to the inescapable randomness of GPUs (REF) there may be some vari
 4. Results / progress will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 
-## Future Work and Improvments
+## Future Work and Improvements
 
 
 

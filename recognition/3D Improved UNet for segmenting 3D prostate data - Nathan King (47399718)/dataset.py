@@ -73,10 +73,11 @@ def load_data_3D(imageNames , normImage = False , categorical = False , dtype = 
     else :
         return images
 
-def load_mri_data(data_path):
+def load_mri_data(data_path, only_testing):
     """
     Load all the data and split it into training, testing and validation sets.
     input: data_path - location of the data
+           only_testing - whether only testing data is required
     output: (train_dataset, test_dataset, validate_dataset) - preprocessed data
     """
     
@@ -98,6 +99,11 @@ def load_mri_data(data_path):
         if file_index == number_of_files:
             
             break
+        
+        #For only loading testing data
+        if only_testing == True and file_index < 0.9 * number_of_files:
+            
+            continue
         
         filename = os.fsdecode(file)
             

@@ -98,3 +98,65 @@ def visualize_prediction(image_path, predicted_class, probabilities, class_names
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'prediction_visualization.png'))
     plt.show()
+
+def main():
+    # Configuration
+    model_path = "saved_models/best_vit_model.pth"  # Path to your trained model
+    image_path = "/home/groups/comp3710/ADNI/AD_NC/test/AD/1003730_100.jpeg"  # Replace with an actual image path
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    img_size = 224
+    patch_size = 16
+    emb_size = 768
+    num_heads = 12
+    depth = 12
+    ff_dim = 3072
+    num_classes = 2
+    dropout = 0.1 # change dropout here 
+    cls_token = True
+    class_names = ['AD', 'NC'] 
+
+    # Check if image exists
+    if not os.path.exists(image_path):
+        print(f"Image not found at {image_path}. Please provide a valid path.")
+        return
+
+    # Load the model
+    model = load_model(
+        model_path=model_path,
+        device=device,
+        img_size=img_size,
+        patch_size=patch_size,
+        emb_size=emb_size,
+        num_heads=num_heads,
+        depth=depth,
+        ff_dim=ff_dim,
+        num_classes=num_classes,
+        dropout=dropout,
+        cls_token=cls_token
+    )
+    print("Model loaded successfully.")
+
+    # Preprocess the image
+    image_tensor = preprocess_image(image_path, img_size=img_size)
+
+    # Make prediction
+    pred_idx, outputs = predict(model, image_tensor, device)
+    predicted_class = class_names[pred_idx]
+    probabilities = torch.softmax(outputs, dim=1).cpu().numpy()[0]
+
+    print(f"Prediction for the image '{os.path.basename(image_path)}': {predicted_class}")
+    print(f"Probabilities: {probabilities}")
+
+    # Visualize prediction
+    visualize_prediction(image_path, predicted_class, probabilities, class_names, save_dir='saved_models')
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+
+
+

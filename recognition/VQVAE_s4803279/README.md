@@ -76,5 +76,3 @@ VQVAE Paper - Oord, A. V. D., Vinyals, O., & Kavukcuoglu, K. (2018). Neural disc
 VQVAE2 Paper - Razavi, A., van den Oord, A., & Vinyals, O. (2019). Generating diverse high-fidelity images with VQ-VAE-2. DeepMind. Retrieved from https://arxiv.org/abs/1906.00446
 
 CSIRO Dataset - Dowling, Jason; & Greer, Peter (2021): Labelled weekly MR images of the male pelvis. v2. CSIRO. Data Collection. https://doi.org/10.25919/45t8-p065
-
-

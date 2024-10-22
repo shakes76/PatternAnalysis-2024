@@ -25,9 +25,26 @@ class StyleGANGenerator(nn.Module):
             nn.ConvTranspose2d(128, img_channels, kernel_size=4, stride=2, padding=1),
             nn.Tanh()
         )
-        
+
     def forward(self, z):
         w = self.mapping(z)
         w = w.view(w.size(0), -1, 1, 1)
         generated_image = self.synthesis(w)
         return generated_image
+    
+
+if __name__ == "__main__":
+    z_dim = 128  
+    w_dim = 512  
+    img_channels = 3  
+
+    generator = StyleGANGenerator(z_dim=z_dim, w_dim=w_dim, img_channels=img_channels)
+
+    generator.eval()
+
+    z = torch.randn(1, z_dim) 
+
+    with torch.no_grad():
+        generated_image = generator(z)
+        
+    print(f"Output shape: {generated_image.shape}")

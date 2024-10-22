@@ -141,12 +141,13 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images
 
 class MRI3DDataset(Dataset):
-    def __init__(self, image_folder, label_folder, normImage=False):
+    def __init__(self, image_folder, label_folder, normImage=False, target_shape=(256, 256, 128)):
         self.image_folder = image_folder
         self.label_folder = label_folder
         self.image_filenames = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz')]
         self.label_filenames = [os.path.join(label_folder, f) for f in os.listdir(label_folder) if f.endswith('.nii.gz')]
         self.normImage = normImage
+        self.target_shape = target_shape
 
     def __len__(self):
         return len(self.image_filenames)

@@ -71,69 +71,21 @@ def resize_image(image, target_shape):
 
 # Class for basic data augmentation, such as random flipping
 class Augment:
-    def __init__(self, target_shape=(64, 64, 64)):
-        # Define the augmentation methods and their probabilities
-        flip = tio.transforms.RandomFlip()  # No flip
-        bias_field = tio.transforms.RandomBiasField()  # Bias field distortion
-        blur = tio.transforms.RandomBlur()  # Random blur
-        spike = tio.transforms.RandomSpike()  # MRI artifact spikes
-        gamma = tio.transforms.RandomGamma(log_gamma=(-0.3, 0.3))  # Random gamma adjustment
-        elastic = tio.transforms.RandomElasticDeformation(num_control_points=7, max_displacement=7.5)  # Elastic deformation
-
-        # Define probabilities for each augmentation method
-        prob = {flip: 0.5, bias_field: 0.1, blur: 0.1, spike: 0.1, gamma: 0.1, elastic: 0.1}
-
-        # Apply a random augmentation based on the defined probabilities
-        self.oneof = tio.transforms.OneOf(prob)
-
-        # Use multiple augmentations sequentially for weak classes
-        self.heavy_augment = tio.Compose([
-            tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5),  # Random flipping along all axes
-            tio.RandomAffine(scales=(0.8, 1.2), degrees=(-15, 15), isotropic=True),  # Random affine transform
-            tio.RandomGamma(log_gamma=(-0.3, 0.3)),  # Gamma adjustment
-            tio.RandomElasticDeformation(num_control_points=7, max_displacement=8.0),  # Elastic deformation
-            tio.RandomNoise(mean=0, std=0.05),  # Add random noise
-            tio.CropOrPad(target_shape),  # Crop or pad to the target shape
+    def __init__(self, target_shape=(96, 96, 96)):
+        '''
+        Initialize the augmentation object with a set of transformations.
+        '''
+        self.transform = tio.Compose([
+            tio.RandomFlip(axes=(0, 1, 2), flip_probability=0.5)
         ])
 
-        # Crop or pad the image to the target shape
-        self.shrink = tio.CropOrPad(target_shape)
-
-    def apply_augmentation(self, image, label):
-        """
-        Apply augmentation only if the label contains class 4 or 5 (weaker classes).
-
-        Parameters:
-        - image: 3D medical image (NumPy array).
-        - label: 3D label image (NumPy array).
-
-        Returns:
-        - Augmented image if label contains class 4 or 5, otherwise returns the original image.
-        """
-        # Check if label contains class 4 or 5 (weak classes)
-        if np.isin([4, 5], label).any():
-            # Convert the image to a TorchIO ScalarImage for augmentation
-            image = tio.ScalarImage(tensor=torch.tensor(image).unsqueeze(0))  # Add a channel dimension
-
-            # First, crop or pad the image to the target shape
-            image = self.shrink(image)
-
-            # Apply the heavier augmentation sequence for weak classes
-            image = self.heavy_augment(image)
-
-            # Convert the augmented image back to a NumPy array
-            image = image.data.numpy()
-
-            # Remove the channel dimension for compatibility with the rest of the pipeline
-            image = np.squeeze(image)
-        else:
-            # If not a weak class, apply the standard augmentation
-            image = tio.ScalarImage(tensor=torch.tensor(image).unsqueeze(0))
-            image = self.shrink(image)
-            image = self.oneof(image)
-            image = image.data.numpy()
-            image = np.squeeze(image)
-
+    def apply_augmentation(self, image):
+        '''
+        Apply the defined augmentations to a given image.
+        '''
+        image = tio.ScalarImage(tensor=torch.tensor(image).unsqueeze(0))  # Add channel dimension
+        image = self.transform(image)
+        image = image.data.numpy().squeeze()
         return image
 
 

@@ -72,9 +72,7 @@ subgraph "Residual Block"
     In1["Input"] --> C1["Conv2D"]
     In1 --> SC["Skip Connection"]
     C1 --> A1["Activation"]
-    A1 --> C2["Conv2D"]
-    C2 --> A2["Activation"]
-    A2 --> DS["Downsample"]
+    A1 --> DS["Downsample"]
     SC --> DS
     DS --> Add["Add"]
 end

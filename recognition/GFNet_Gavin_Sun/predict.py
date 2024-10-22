@@ -1,3 +1,8 @@
+"""
+Evaluates a trained model on a test dataset, displays predictions, 
+and visualizes results.
+"""
+
 import torch
 from torch.utils.data import DataLoader
 from dataset import get_adni_dataloader, ADNIDataset, ADNI_ROOT_PATH, TEST_TRANSFORM  # Import data loader and dataset classes
@@ -8,7 +13,8 @@ import math
 
 def evaluate_model(model, device, test_loader):
     """
-    Function to evaluate the model's accuracy on the test dataset.
+    Evaluate the model's accuracy on the test dataset.
+    
     Args:
         model: Trained model to be evaluated.
         device: Torch device (CPU or GPU).
@@ -30,6 +36,17 @@ def evaluate_model(model, device, test_loader):
     print(f'Accuracy on the test set: {accuracy:.2f}%')
 
 def do_predictions(model, device: torch.device, num_predictions: int = 9, show_plot: bool = True):
+    """
+    Randomly selects a number of samples from the test dataset,
+    makes predictions using the model, and displays.
+
+    Args:
+        model: Trained model for making predictions.
+        device (torch.device): Torch device (CPU or GPU) for computation.
+        num_predictions (int): Number of predictions to visualize (default: 9).
+        show_plot (bool): Flag to display the plot (default: True).
+    """
+
     test_dataset = ADNIDataset(ADNI_ROOT_PATH, train=False, transform=TEST_TRANSFORM)
     nrc = math.ceil(math.sqrt(num_predictions))
     fig, axes = plt.subplots(nrows=nrc, ncols=nrc, squeeze=False, figsize=(math.ceil(224 * nrc / 100), math.ceil(224 * nrc / 100)))

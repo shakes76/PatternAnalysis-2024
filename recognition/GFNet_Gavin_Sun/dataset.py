@@ -1,3 +1,8 @@
+"""
+Preprocesses training and testing set. 
+Handles Loading of ADNI dataset.
+"""
+
 import torch
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image

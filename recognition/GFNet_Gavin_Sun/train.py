@@ -10,7 +10,7 @@ from dataset import get_adni_dataloader
 from modules import GFNet  
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
-
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -18,7 +18,7 @@ def main():
     batch_size = 8
     base_lr = 0.0001  
     max_lr = 0.001    
-    num_epochs = 60
+    num_epochs = 120 # Prev 100
     step_size = 5
 
     T_0 = 10  
@@ -29,13 +29,14 @@ def main():
 
     model = GFNet().to(device)  
     criterion = nn.CrossEntropyLoss()
-    # optimizer = optim.Adam(model.parameters(), lr=base_lr)
+    optimizer = optim.Adam(model.parameters(), lr=base_lr)
 
     # # cosine lr
     # scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, 
     #                                         step_size_up=step_size, mode='triangular')
-    optimizer = AdamW(model.parameters(), lr=base_lr)
-    scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=num_epochs)
+    # optimizer = AdamW(model.parameters(), lr=base_lr)
+    # scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=num_epochs)
+    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
 
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []
@@ -43,6 +44,8 @@ def main():
     for epoch in range(num_epochs):
         train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler, train_losses, train_accuracies, device)
         validate_one_epoch(epoch, model, val_loader, criterion, val_losses, val_accuracies, device)
+
+        scheduler.step(epoch + 1)
 
         print(f'Epoch [{epoch + 1}/{num_epochs}], '
               f'Train Loss: {train_losses[-1]:.4f}, Train Acc: {train_accuracies[-1]:.2f}, '

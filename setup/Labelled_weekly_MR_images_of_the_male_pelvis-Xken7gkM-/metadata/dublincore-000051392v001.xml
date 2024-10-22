@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dcterms:dc xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://purl.org/dc/elements/1.1/ https://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd">
+  <dc:title>Labelled weekly MR images of the male pelvis</dc:title>
+  <dc:creator>Jason Dowling</dc:creator>
+  <dc:subject>Radiology and organ imaging</dc:subject>
+  <dc:subject>Radiation therapy</dc:subject>
+  <dc:description>Anonymised data in NIfTI file format.  These data have been acquired as part of a retrospective MRI-alone radiation therapy study from the Calvary Mater Newcastle Hospital described in Dowling, et al. (2015), Automatic Substitute Computed Tomography Generation and Contouring for Magnetic Resonance Imaging (MRI)-Alone External Beam Radiation Therapy From Standard MRI Sequences, International Journal of Radiation Oncology*Biology*Physics, 93(5), pp. 1144-1153, https://doi.org/10.1016/j.ijrobp.2015.08.045 .</dc:description>
+  <dc:publisher>CSIRO</dc:publisher>
+  <dc:contributor>Peter Greer</dc:contributor>
+  <dc:date>2021-09-02</dc:date>
+  <dc:type />
+  <dc:format />
+  <dc:identifier>https://doi.org/10.25919/45t8-p065</dc:identifier>
+  <dc:language />
+  <dcterms:temporal xsi:type="dcterms:Period">start=2014-01-01; end=2014-12-31</dcterms:temporal>
+  <dcterms:spatial xsi:type="dcterms:Point">north=-32.8982; east=151.7203; projection=WGS84; projection=WGS84</dcterms:spatial>
+  <dc:rights />
+</dcterms:dc>

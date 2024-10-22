@@ -65,8 +65,8 @@ if __name__ == "__main__":
     w_dim = 512
     img_channels = 3
 
-    generator = StyleGANGenerator(z_dim=z_dim, w_dim=w_dim, img_channels=img_channels)
-    discriminator = StyleGANDiscriminator(img_channels=img_channels)
+    generator = StyleGANGenerator(z_dim, w_dim, img_channels)
+    discriminator = StyleGANDiscriminator(img_channels)
 
     generator.eval()
     discriminator.eval()
@@ -85,7 +85,8 @@ if __name__ == "__main__":
     print(f"Real output shape: {real_output.shape}")
     print(f"Fake output shape: {fake_output.shape}")
 
-    gen_loss = StyleGANGenerator.generator_loss(fake_output)
-    disc_loss = StyleGANDiscriminator.discriminator_loss(real_output, fake_output)
+    gen_loss = generator.generator_loss(fake_output)
+    disc_loss = discriminator.discriminator_loss(real_output, fake_output)
+
     print(f"Generator loss: {gen_loss.item()}")
     print(f"Discriminator loss: {disc_loss.item()}")

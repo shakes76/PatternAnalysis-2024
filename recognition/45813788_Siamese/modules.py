@@ -16,17 +16,12 @@ class FeatureExtraction(nn.Module):
 
         self.embedding = nn.Sequential(
             nn.Flatten(),
-            #nn.Dropout(p=0.3),
-            nn.Linear(2048, 1024),
-            nn.ReLU(inplace=True),
-            nn.Linear(1024, 512),
+            nn.Dropout(p=0.3),
+            nn.Linear(2048, 512),
             nn.ReLU(inplace=True),
             nn.Linear(512, 256),
             nn.ReLU(inplace=True),
-            nn.Linear(256, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 64)
-
+            nn.Linear(256, 64),
         )
  
         #true to train all layers false if not

@@ -150,7 +150,7 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
     #criterion = BCELoss()
 
     #Training parameters
-    best_loss = float('inf')
+    best_auroc = 0.0
     train_losses = []
     val_losses = []
     train_accuracies = []
@@ -252,7 +252,7 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
         try:
             val_auroc = roc_auc_score(val_labels, val_probs)
             binary_val_probs = [1 if p >= 0.5 else 0 for p in val_probs] 
-            print("Training Classification Report:")
+            print("Validation Classification Report:")
             print(classification_report(val_labels, binary_val_probs, zero_division=0))
 
         except ValueError:
@@ -272,14 +272,14 @@ def classifier_train(current_dir, train_loader, val_loader, images, siamese, epo
             print(f"Learning rate for param group {idx}: {param_group['lr']}")
 
         # save current pest model
-        if avg_val_loss < best_loss:
-            best_loss = avg_val_loss
+        if val_auroc > best_auroc:
+            best_auroc = val_auroc
             file_name = 'classifier_best.pth'
             save_path = os.path.join(save_dir, file_name)
             torch.save(classifier.state_dict(), save_path)
-            print("Validation loss decreased. Saving model.")
+            print("Validation Auroc improved. Saving model.")
         else:
-            print("No improvement in validation loss.")
+            print("No improvement in validation Auroc.")
 
 
     # Save the final model

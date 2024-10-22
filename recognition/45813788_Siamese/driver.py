@@ -53,7 +53,7 @@ def main():
     #balance samples
     labels = train_dataset.labels
     batch_size = 64
-    sampler = MPerClassSampler(labels, m=(batch_size/2), length_before_new_iter=len(labels))
+    sampler = MPerClassSampler(labels, m=(batch_size/2), batch_size=batch_size)
 
 
     # Initialize DataLoaders
@@ -68,7 +68,7 @@ def main():
     val_loader = DataLoader(
         val_dataset, 
         batch_size=batch_size,
-        shuffle=False, 
+        shuffle=True, 
         num_workers=4,
         pin_memory=True
     )
@@ -83,7 +83,7 @@ def main():
 
 
 
-    #siamese_train(current_dir, train_loader,val_loader, images, lr=1e-4, epochs=50, plots=True)
+    #siamese_train(current_dir, train_loader,val_loader, images, lr=1e-4, epochs=15, plots=True)
 
     siamese_net = SiameseNN()
     siamese_dict = os.path.join(current_dir, 'models', 'siamese_resnet18_best.pth')
@@ -92,7 +92,7 @@ def main():
 
     #Testing part
     classifier_net = Classifier()
-    classifier_dict = os.path.join(current_dir,'models','classifier.pth')
+    classifier_dict = os.path.join(current_dir,'models','classifier_best.pth')
     classifier_net.load_state_dict(torch.load(classifier_dict)) 
     test(siamese_net,classifier_net,test_loader,images)
 
@@ -101,4 +101,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

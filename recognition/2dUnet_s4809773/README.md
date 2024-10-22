@@ -61,3 +61,8 @@ Additionally, here are two examples of the model's performance - the first being
 ![Validation Example 1](images_for_README/validation_1.png)
 
 ![Validation Example 2](images_for_README/validation_2.png)
+
+
+## Installing Dependencies
+
+pip install numpy matplotlib tqdm torch torchvision nibabel

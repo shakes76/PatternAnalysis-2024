@@ -38,7 +38,7 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
 ├── modules.py       # Model construction module
 ├── train.py         # Model Training Script
 ├── predict.py       # Model prediction script
-├── test_driver.py   #Final testing of the model
+├── test_driver.py   # Final testing of the model
 ├── README.md        # User Guide (i.e. this document)
 ```
 ### Dependencies
@@ -88,6 +88,9 @@ The project requires the following dependencies[^4]:
     - `--model_path`: Trained model path.
     - `--Output_image`: Predict output save path.
   - **Usage example**:
+    ```bash
+     python predict.py --input_image ./test_data/test_image.nii --model_path ./model_output/unet_model.pth --output_image ./output/prediction.nii
+     ```
   - **Example output**:The generated predicted image will be saved as a specified Nifti format file.
 
 ## Steps to Run the Project
@@ -106,9 +109,114 @@ The project requires the following dependencies[^4]:
 
 ## Code Explanation and Comments
 ### 1 `dataset.py`
+```bash
+"""
+dataset.py
+This script handles loading and preprocessing the HipMRI dataset.
+
+Functions:
+- load_data(data_dir): Loads the Nifti images and preprocesses them for training and testing.
+"""
+import os
+import numpy as np
+import nibabel as nib
+import torch
+
+def load_data(data_dir):
+    """
+    Loads Nifti images from the specified directory, resizes them, and normalizes pixel values.
+
+    Args:
+        data_dir (str): Directory containing Nifti files.
+
+    Returns:
+        images (torch.Tensor): Normalized and resized images ready for training.
+    """
+    # code implementation...
+```
+
 ### 2 `modules.py`
+```bash
+"""
+modules.py
+Contains the model architecture components for the 2D U-Net used in this study.
+
+Classes:
+- UNet: Implements the U-Net model for segmentation tasks.
+"""
+import torch.nn as nn
+
+class UNet(nn.Module):
+    """
+    The 2D U-Net model architecture for image segmentation.
+
+    Args:
+        in_channels (int): Number of input channels (e.g., 1 for grayscale).
+        out_channels (int): Number of output channels (e.g., 1 for binary segmentation).
+
+    Methods:
+        forward(x): Forward pass through the network.
+    """
+    # Model architecture implementation...
+```
+
 ### 3 `train.py`
+```bash
+"""
+train.py
+This script is used for training the 2D U-Net model for prostate segmentation.
+
+Arguments:
+- data_dir: Directory containing the Nifti images for training.
+- output_dir: Directory to save the trained model.
+
+Example usage:
+python train.py --data_dir ./data --output_dir ./model_output
+"""
+import torch
+from dataset import load_data
+from modules import UNet
+
+def train_model(data_dir, output_dir):
+    """
+    Trains the U-Net model using the given dataset.
+
+    Args:
+        data_dir (str): Directory containing training data.
+        output_dir (str): Directory to save the trained model.
+    """
+    # Implementation of training steps...
+    # Print training loss and validate Dice coefficient...
+```
+
 ### 4 `predict.py`
+```bash
+"""
+train.py
+This script is used for training the 2D U-Net model for prostate segmentation.
+
+Arguments:
+- data_dir: Directory containing the Nifti images for training.
+- output_dir: Directory to save the trained model.
+
+Example usage:
+python train.py --data_dir ./data --output_dir ./model_output
+"""
+import torch
+from dataset import load_data
+from modules import UNet
+
+def train_model(data_dir, output_dir):
+    """
+    Trains the U-Net model using the given dataset.
+
+    Args:
+        data_dir (str): Directory containing training data.
+        output_dir (str): Directory to save the trained model.
+    """
+    # Implementation of training steps...
+    # Print training loss and validate Dice coefficient...
+```
 
 ## Details
 - **Loss function**: `Binary cross entropy with Logits`.

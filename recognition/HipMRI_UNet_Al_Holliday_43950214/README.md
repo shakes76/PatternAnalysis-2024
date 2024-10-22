@@ -27,7 +27,7 @@ In addition it also produced segment maps that were not ideal. Below is the resu
 
 | Original image						| Expected segment map 						| Predicted segment map						|
 | :---								| :---								| :---								|
-| ![train_loss](./report_assets/hipmri_test0_orig_img.png)	| ![train_loss](./report_assets/hipmri_test0_orig_seg_map.png)	| ![train_loss](./report_assets/hipmri_test0_seg_pred2.png)	|
+| ![train_loss](./report_assets/hipMri_test0_orig_img.png)	| ![train_loss](./report_assets/hipMri_test0_orig_seg_map.png)	| ![train_loss](./report_assets/hipmri_test0_seg_pred2.png)	|
 
 ## Author
 

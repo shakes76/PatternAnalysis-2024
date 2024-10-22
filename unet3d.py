@@ -6,8 +6,6 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from tqdm import tqdm
-from sklearn.model_selection import train_test_split
-from scipy.ndimage import zoom
 
 # Function to convert labels to one-hot encoded channels
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -231,7 +229,7 @@ def main():
 
 
     # Create dataset
-    dataset= CustomDataset(image_filenames, img_dir, labels_dir, transform = transform) #!transform=transform
+    dataset= CustomDataset(image_filenames, img_dir, labels_dir, transform = transform) 
     
     # Split into training and test sets
     train_size = int(0.8 * len(dataset))
@@ -253,8 +251,9 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     
     # Training loop
-    n_epochs = 1
+    n_epochs = 2
     # Training loop
+    lossPerEpoch = []
     for epoch in range(n_epochs):
         print(f"Epoch {epoch + 1}")
         model.train()
@@ -272,9 +271,8 @@ def main():
             optimizer.step()
 
             running_loss += loss.item()
-
-        print(f"Epoch [{epoch+1}/{n_epochs}], Loss: {running_loss/len(train_loader):.4f}")
-
+        lossPerEpoch.append(running_loss/len(train_loader))
+    print(lossPerEpoch)
     # Save predictions to disk after each epoch
     
 if __name__ == "__main__":

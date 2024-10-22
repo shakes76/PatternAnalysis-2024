@@ -2,16 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def PCA_transform(input_data, n_components):
-    # Center the data
+def PCA_transform(input_data, n_components, shape):
     mean = torch.mean(input_data, dim=0)
     X -= mean
 
-    # Perform SVD
     U, S, V = torch.linalg.svd(X, full_matrices=False)
     components = V[:n_components]
 
-    transformed_data = components.view(n_components, h, w)
+    transformed_data = components.view(n_components, shape[0], shape[1])
 
     return transformed_data
 

@@ -12,8 +12,8 @@ import torchio as tio
 import torch
 
 # Dataset path
-root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/keras_slices_' # Local path
-# root_path = ' /home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_ ' # Rangpur path
+# root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/keras_slices_' # Local path
+root_path = ' /home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_ ' # Rangpur path
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
@@ -96,10 +96,10 @@ def load_img_seg_pair(dataset_type="train"):
 
     img_path = root_path + dataset_type + '/'
     seg_path = root_path + 'seg_' + dataset_type + '/'
-    images_paths = os.listdir(img_path)[:130]
-    segmentations_paths = os.listdir(seg_path)[:130]
-    images = load_data_2D([img_path + i for i in images_paths], normImage=True)
-    segmentations = load_data_2D([seg_path + i for i in segmentations_paths])
+    images_paths = sorted([os.path.join(img_path, img) for img in os.listdir(img_path) if img.endswith('.nii.gz')])
+    segmentations_paths =  sorted([os.path.join(seg_path, seg) for seg in os.listdir(seg_path) if seg.endswith('.nii.gz')])
+    images = load_data_2D(images_paths, normImage=True)
+    segmentations = load_data_2D(segmentations_paths)
 
     return images, segmentations
 

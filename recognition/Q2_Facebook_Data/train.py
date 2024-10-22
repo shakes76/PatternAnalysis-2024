@@ -1,12 +1,14 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from modules import GNNModel , AdvanceGNNModel
+from modules import GNNModel, AdvanceGNNModel
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import load_facebook_data, split_data
 import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report, confusion_matrix 
 
-def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4, patience=20):
+
+def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4, patience=20):
     """
     This function trains the given model on the given data.
     The training loop is run for the specified number of epochs.
@@ -22,18 +24,15 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4,
         The model to train
     epochs : int, optional (default=400)
         The number of epochs to train the model for
-    learning_rate : float, optional (default=0.001)
+    learning_rate : float, optional (default=0.0012)
         The learning rate for the Adam optimiser
     weight_decay : float, optional (default=2e-4)
         The weight decay for the Adam optimiser
-    patience : int, optional (default=20)
-        The number of epochs to wait for an improvement in validation accuracy before stopping training
-    
+   
     Returns:
     --------
     model : torch.nn.Module
         The trained model
-
     """
     # Prepare masks
     train_mask, val_mask, test_mask = split_data(data)
@@ -52,6 +51,7 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4,
 
     # Track metrics
     train_losses = []
+    val_losses = []
     val_accuracies = []
 
     # early stop setup
@@ -66,6 +66,7 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4,
 
         # loss
         loss = loss_fn(out[data.train_mask], data.y[data.train_mask])
+
         # backward pass
         loss.backward()
         # optimiser step
@@ -83,6 +84,12 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4,
             val_acc = int(correct.sum()) / int(data.val_mask.sum())
             val_accuracies.append(val_acc)
 
+            ## track validation loss as well
+            val_out = model(data.x, data.edge_index)
+            val_loss = loss_fn(out[data.val_mask], data.y[data.val_mask])
+            val_loss = val_loss.item()
+            val_losses.append(val_loss)
+
         # early stopping
         if val_acc > best_val_acc:
             best_val_acc = val_acc
@@ -95,7 +102,7 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4,
             patience_counter += 1
 
         # stop training if no improement in validation accuracy
-        if patience_counter >= patience:
+        if patience_counter >= patience and val_acc>=max(val_accuracies):
             print(f"Early stopping at epoch {epoch}")
             break
 
@@ -104,13 +111,53 @@ def train_model(data, model, epochs=400, learning_rate=0.001, weight_decay=2e-4,
         # print (each value upto 4 deicmal places)
         print(f"Epoch: {epoch}, Loss: {loss.item():.4f}, Val Acc: {val_acc:.4f}")
 
-    # PLotting
-    plt.plot(train_losses, label='Train Loss')
-    plt.plot(val_accuracies, label='Val Acc')
+    # show confusion matrix on console only for both train, valida data
+    correct = pred[data.train_mask] == data.y[data.train_mask]
+    train_acc = int(correct.sum()) / int(data.train_mask.sum())
+    print(f"Train Accuracy: {train_acc:.4f}")
+
+    # confusion matrix
+    train_preds = out[data.train_mask].argmax(dim=1).cpu().numpy()
+    train_labels = data.y[data.train_mask].cpu().numpy()
+
+    train_confusion_matrix = confusion_matrix(train_labels, train_preds)
+    print("Confusion Matrix for Train Data:")
+    print(train_confusion_matrix)
+
+
+    # validation data
+    correct = pred[data.val_mask] == data.y[data.val_mask]
+    val_acc = int(correct.sum()) / int(data.val_mask.sum())
+    print(f"Validation Accuracy: {val_acc:.4f}")
+    
+    # confusion matrix
+    val_preds = out[data.val_mask].argmax(dim=1).cpu().numpy()
+    val_labels = data.y[data.val_mask].cpu().numpy()
+
+    val_confusion_matrix = confusion_matrix(val_labels, val_preds)
+    print("Confusion Matrix for Validation Data:")
+    print(val_confusion_matrix)
+
+    # PLotting validation acc and training loss on seprate graphs
+    plt.figure(figsize=(10, 8))
+    plt.plot(val_accuracies, label='Validation Accuracy')
     plt.legend()
+    
+    # save the graph
+    plt.savefig('recognition/Q2_Facebook_Data/val_accuracy.png')
+    plt.show()
+
+
+    plt.plot(train_losses, label='Train Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.legend()
+    plt.title('Losses')
+    # save the graph
+    plt.savefig('recognition/Q2_Facebook_Data/losses.png')
     plt.show()
 
     return model
+
 
 def test_model(data, model):
     """
@@ -123,11 +170,12 @@ def test_model(data, model):
         The input data for the model
     model : torch.nn.Module
         The trained model - GNN Model
-    
+   
     Returns:
     --------
     test_acc : float
-        The test accuracy of the model   
+        The test accuracy of the model  
+
 
     """
     model.eval()
@@ -138,6 +186,7 @@ def test_model(data, model):
         test_acc = int(correct.sum()) / int(data.test_mask.sum())
         print(f"Test Accuracy: {test_acc:.4f}")
         return test_acc
+
 
 
 if __name__ == '__main__':
@@ -160,17 +209,16 @@ if __name__ == '__main__':
 
 
     # initialise the model
+    # Basic GNN - not used
     # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
-    model = AdvanceGNNModel(input_dim=128, hidden_dim=[128,1028,512,64])
-
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
     # train the model
     model = train_model(data, model)
-
 
     # test the model
     test_model(data, model)
 
-
-    # save the model
+    # save the model - not in use as model is saved in train_model function
+    # modelName = "recognition/Q2_Facebook_Data/modelEnhance1.pth"
     # modelName = "recognition/Q2_Facebook_Data/modelAdvance1.pth"
     # torch.save(model.state_dict(), modelName)

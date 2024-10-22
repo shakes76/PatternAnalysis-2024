@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.amp import autocast, GradScaler
+from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ def run_epoch(model, dataloader_train, loss_triplet, loss_classify, optimizer, s
         optimizer.zero_grad()
 
         # Main loop, obtain network outputs and evaluate loss
-        with autocast(torch_device_name):
+        with autocast():
             out_anchor, out_positive, out_negative = model(anchor, positive, negative)
             out_loss_triplet = loss_triplet(out_anchor, out_positive, out_negative)
             
@@ -48,10 +48,9 @@ def run_epoch(model, dataloader_train, loss_triplet, loss_classify, optimizer, s
         record_probpos.extend(prob_pos.detach().cpu().numpy())
         record_predictions.extend(predictions.cpu().numpy())
         
-        running_acc = accuracy_score(record_label, record_predictions)
-        
         # Display running metric
-        #print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
+        running_acc = accuracy_score(record_label, record_predictions)
+        print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
             
     avg_loss = running_loss / len(dataloader_train)
     acc = accuracy_score(record_label, record_predictions)
@@ -95,7 +94,7 @@ def run_validate(model, dataloader_val, loss_triplet, loss_classify, torch_devic
             
             # Display running metric
             running_acc = accuracy_score(record_label, record_predictions)
-            #print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
+            print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
                 
         avg_loss = running_loss / len(dataloader_val)
         acc = accuracy_score(record_label, record_predictions)

@@ -8,7 +8,7 @@ The aim of this project is to produce a model that is able to achieve an 'accura
 ### Accuracy  Metric
 As noted above the data set is highly unbalanced (1.8% melanoma images and 98.2% normal images). Thus using the standard accuracy metric to gauge the performance of the model is very misleading. As, for example we could just have our model predict all images as normal thus achieving an 'accuracy' of 98.2% whilst learning nothing about the data and being unable to predict melanomas.
 
-Therefore it was decided that AUR ROC should be used as the metric to gauge the performance of the model. This metric was chosen as it provides a balance between sensitivity (True Positive Rate) and specificity (True Negative Rate)ensuring that both classes are considered, and therefore evaluates the model's ability to correctly identify both minority and majority classes (REFERENCE!!!). This metric is very commonly used for imbalanced datasets such as this (REFERENCE!!!). Thus this project will aim to maximise AUR ROC on the testing set. (See ed post #253 for support of this approach (REFERENCE!!!))
+Therefore it was decided that AUR ROC should be used as the metric to gauge the performance of the model. This metric was chosen as it provides a balance between sensitivity (True Positive Rate) and specificity (True Negative Rate)ensuring that both classes are considered, and therefore evaluates the model's ability to correctly identify both minority and majority classes (REFERENCE!!!). This metric is very commonly used for imbalanced datasets such as this (REFERENCE!!!). Thus this project will aim to maximise AUR ROC on the testing set. (See ed post #253 for support of this approach (REFERENCE!!!)). Additionally it should be noted that the official kaggle challenge that this dataset originated from used AUR ROC as the metric to determine accuracy of test predictions (REF https://www.kaggle.com/c/siim-isic-melanoma-classification/overview).
 
 ## File Structure
 ### Current Structure
@@ -103,16 +103,44 @@ PatternAnalysis-2024/recognition/siamese_s46387334/
 
 
 ## Dataset Details
+This section will contain details that pertain mainly to `dataset.py`
+
 ### Dataset Introduction
+The ISIC 2020 Kaggle Challenge data set is self described as a "Skin Lesion Analysis Towards Melanoma Detection" (REF https://challenge2020.isic-archive.com/). The dataset contains 33,126 dermoscopic images of unique skin lesions from over 2,000 patients. (REF https://challenge2020.isic-archive.com/).
+
+The full original dataset can be sourced from https://challenge2020.isic-archive.com/ (REF). However due to the dataset size - to ensure efficient computation a resized version of the data set was used that was sourced from https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized (REF). From now on the resized data set will be discussed.
+
+The full data set contains 33,126 images of skin lesions (584 (1.8%) melanoma and 32542 (98.2%) normal). No train test split is provided thus the data will have to be split up into train, validation and test sets as apart of the training and testing procedure. The images are located in a single folder (train-image/image/) and the classifications of each image are contained within a single csv file (train-metadata.csv)
+
+Each of the images from the resized data set are 256 x 256 pixels and a few examples of these images are pictured bellow.
+
+![alt text](readme_figures/sample_data_images.png)
+
+![alt text](readme_figures/sample_data_images_2.png)
 
 
 ### Dataset Processing and Augmentation
+#### Train Validation Test Split
+The first thing that was done to the data was to split the images up into three sets
+- Train Set (80% of all data) 
+    - To be used for direct training of the model
+    - This is the only data that the model will learn from
+- Validation Set (10% of all data)
+    - Model will NOT be trained on this data
+    - To be used for validation purposes while training
+    - To gauge how the current model is preforming on unseen data
+    - This data can help reduce overfitting, help with hyper parameter tuning etc.
+- Test Set (10% of all data)
+    - Only to be used after all training is completed
+    - Will be used to evaluate the performance of the final model
+
+The Validation and testing sets were kept relatively small to maximise performance of the model by giving it a larger set of data to train on. Due to the large size of the data set the validation and testing sets are still large enough to get a good idea of the population.
+
+#### Oversampling and Augmentation
+Due to the large class imbalance mentioned above it is prefered if a method is used to ensure that the model is trained on balanced data (REF). This is important as it helps ensure that the model does not bias the majority class when training (REF). To do this we use a two step approch. It should be noted this class balancing was only done for the training set, the Validation and Testing sets are made up of the exact original images.
 
 
-
-
-
-
+#### 
 
 
 

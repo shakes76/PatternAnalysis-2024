@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from modules import UNet3D  # 确保你的模型路径正确
 from dataset import *  # 你的数据集类
+import os
+
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 加载模型
 model = UNet3D(in_channels=1, out_channels=6)
-model.load_state_dict(torch.load("model_final.pth"))
+model.load_state_dict(torch.load("/home/Student/s4764092/final.pth"))
 model = model.to(device)
 model.eval()
 

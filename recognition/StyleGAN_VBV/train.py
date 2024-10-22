@@ -26,7 +26,6 @@ LAMBDA_GP = 10  # Weight for the gradient penalty term
 PROGRESSIVE_EPOCHS = [30, 30, 30, 30, 30, 30]  # Number of epochs for each progressive training stage
 START_TRAIN_IMG_SIZE = 4  # Starting image size for training
 
-# Function to calculate the gradient penalty for the WGAN-GP
 def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
     """ Calculate the gradient penalty for the WGAN-GP """
     BATCH_SIZE, C, H, W = real.shape  # Get dimensions of the real images
@@ -49,9 +48,8 @@ def gradient_penalty(critic, real, fake, alpha, train_step, device="cpu"):
     gradient_penalty = torch.mean((gradient_norm - 1) ** 2)  # Calculate the gradient penalty
     return gradient_penalty  # Return the calculated penalty
 
-# Function to train the generator and discriminator for one step
 def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
-    """Main training function for one training step"""
+    """Main training function for one training step of Generator and Discriminator"""
     loop = tqdm(loader, leave=True)  # Progress bar for loading batches
 
     # Initialize lists to store losses for plotting
@@ -103,14 +101,12 @@ def train_fn(critic, gen, loader, dataset, step, alpha, opt_critic, opt_gen):
     
     return alpha, losses_critic, losses_gen  # Return updated alpha and losses
 
-# Function to save the generator and critic models
 def save_model(gen, critic, step):
     """Save the generator and critic models to disk."""
 
     torch.save(gen.state_dict(), CURRENT_DATASET+'generator_final.pth')  # Save generator's state
     torch.save(critic.state_dict(), CURRENT_DATASET+'critic_final.pth')  # Save critic's state
 
-# Function to plot and save the loss curves
 def plot_loss(losses_critic, losses_gen, step, moving_average):
     """Generate and save a loss plot for the generator and critic."""
 

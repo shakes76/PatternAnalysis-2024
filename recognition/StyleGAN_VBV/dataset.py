@@ -1,12 +1,9 @@
 import os 
-import glob  
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, datasets
+from torchvision import transforms
 import matplotlib.pylab as plt
 from math import log2
-import pandas as pd
-from torchvision.io import read_image
 from PIL import Image
 
 # Constants for dataset and model configuration

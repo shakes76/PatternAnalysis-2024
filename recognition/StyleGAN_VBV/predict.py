@@ -1,6 +1,5 @@
 import torch
 from torchvision.utils import save_image, make_grid
-from modules import Generator
 import os 
 
 # Constants for model dimensions and device configuration

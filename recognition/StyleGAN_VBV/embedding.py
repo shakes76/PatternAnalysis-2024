@@ -27,28 +27,45 @@ mapping_network = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)
 
 def generate_w_vectors(generator, num_samples=200):
     """ Function to generate W vectors """  
-    # Reduce number of samples
+    # Generate random latent vectors from a normal distribution
     latent_vectors = torch.randn(num_samples, Z_DIM).to(DEVICE)
+    
+    # Disable gradient calculation to save memory and computation time
     with torch.no_grad():
+        # Map the latent vectors to the W space using the mapping network
         w_vectors = mapping_network(latent_vectors)
+    
+    # Convert the W vectors to a NumPy array and return
     return w_vectors.cpu().numpy()  # Only return W vectors to save memory
 
 def plot_tsne(latent_vectors, labels=None):
-    """ Function to plot t-SNE """ 
+    """ Function to plot t-SNE visualization of latent vectors."""
+    
+    # Initialize t-SNE
     tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+    
+    # Fit and transform the latent vectors to 2D space
     tsne_results = tsne.fit_transform(latent_vectors)
 
+    # Create a new figure for the plot
     plt.figure(figsize=(10, 6))
+    
+    # Scatter plot of the t-SNE results, coloring by the provided labels
     scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], 
                           c=labels, alpha=0.7, cmap='viridis')
     
+    # Create legend handles
     unique_labels = np.unique(labels)
-    handles = [plt.Line2D([0], [0], marker='o', color='w', label='AD' if label == 0 else 'NC', 
-                           markerfacecolor=scatter.cmap(scatter.norm(label)), markersize=10) for label in unique_labels]
+    handles = [
+        plt.Line2D([0], [0], marker='o', color='w', 
+                   label='AD' if label == 0 else 'NC', 
+                   markerfacecolor=scatter.cmap(scatter.norm(label)), markersize=10) 
+        for label in unique_labels
+    ]
     
+    # plot
     plt.legend(handles=handles, title="Classes")
     plt.colorbar(scatter)
-    
     plt.title('t-SNE Embedding of StyleGAN Latent Space')
     plt.xlabel('t-SNE Component 1')
     plt.ylabel('t-SNE Component 2')

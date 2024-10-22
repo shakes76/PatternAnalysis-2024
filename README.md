@@ -122,11 +122,11 @@ The images produces after the initial test 2 were significantly better. However,
 
 It was notices that during the training CPU usage would remain relatively low and would occasionally drop off. 
 
-<img src="recognition/Readme_images/CPU Usage.png" alt="Initial Test Results" width="500"/>
+<img src="recognition/Readme_images/CPU Usage.png" alt="Initial Test Results" width="800"/>
 
 This indicated that there was room to further utilise the CPU or the the model was being bottle necked in a particular location. A similar problem was faced with the GPU utilisation, where particularly in the earlier image sizes **(4 to 64)**, the GPU was being under utilised. 
 
-<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="500"/>
+<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="800"/>
 
 **Adjustments:**
 1. To further utilise the CPU the number of workers used in the data loader was increased from **6 -> 10**
@@ -140,6 +140,6 @@ This indicated that there was room to further utilise the CPU or the the model w
 
 The following plots show the progressive output from the generator at each image size, slowly increasing from 4, 8 , 16, 32, 64, 128 and finally 256. In the earlier stages, the images appear highly pixelated due to the low resolution. Some blurring was unintentionally introduced by the image scaling software used during processing.
 
-<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="700"/>
+<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="800"/>
 
-<img src="recognition/Readme_images/AD image progress (1).jpg" alt="AD Test Results" width="700"/>
+<img src="recognition/Readme_images/AD image progress (1).jpg" alt="AD Test Results" width="800"/>

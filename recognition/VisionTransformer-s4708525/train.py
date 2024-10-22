@@ -18,6 +18,12 @@ else:
 
 print('Device:', device)
 
+NUM_EPOCHS = 100
+EARLY_STOPPING_PATIENCE = 5
+OPTIMIZER_LEARNING_RATE = 1e-3
+SCHEDULER_STEP_SIZE = 10
+SCHEDULER_GAMMA = 0.1
+
 def evaluate_model_on_loader(model, data_loader):
     """Evaluates the model on a given DataLoader.
 
@@ -46,7 +52,7 @@ def evaluate_model_on_loader(model, data_loader):
     accuracy = 100 * correct / total
     return avg_loss, accuracy
 
-def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=100, patience=5):
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=NUM_EPOCHS, patience=EARLY_STOPPING_PATIENCE):
     """
     Function to handle the training model using defined hyperparameters
 
@@ -154,12 +160,13 @@ if __name__ == "__main__":
 
     """Main function to train, evaluate, and save the CvT model."""
 
-    model = CvT(in_channels=3, num_classes=2, embed_dim=32, num_heads=8, mlp_dim=128, num_transformer_blocks=4, dropout=0.3)
+    # initiate CvT model using default parameter from modules
+    model = CvT() 
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    optimizer = optim.Adam(model.parameters(), lr=OPTIMIZER_LEARNING_RATE)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=SCHEDULER_GAMMA)
 
     print('Start training')
     start_time = time.time()
@@ -172,7 +179,7 @@ if __name__ == "__main__":
 
     print('End training')
 
-    # visualizae train and val loss and accuracy
+    # visualize train and val loss and accuracy
     show_plot_loss(train_losses, val_losses)
     show_plot_accuracy(train_accuracies, val_accuracies)
 

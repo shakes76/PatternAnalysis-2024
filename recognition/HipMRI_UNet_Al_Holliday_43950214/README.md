@@ -9,6 +9,8 @@ This is an implementation of a 2D U-Net based on [1] that tries to produce segme
 
 ![U-Net. Source: \[1\] ](./report_assets/u-net-architecture.png)
 
+(Talk more about the architecture in [1])
+
 In essence I use almost the exact architecture as the original U-Net outlined in [1], but with one of the 'U' layers removed so that there are three encoder and decoder steps instead of four. This was due to the fact that the sizes of the images used in this problem are too small for the original architecture; it encoded to a tiny latent space of 8x8 pixels.
 
 Another difference between my final model and the original U-Net [1] is that while the original had different input and output sizes (572x572 vs 388x388) my model has a consistent input and output size (an input of 256x256 pixel images, and an output of 256x256 pixel segment maps). This is mainly due to the fact that the original used unpadded convolutions [1] whereas I use a padding size of one. This is more consistent with examples seen in [2], [3], [4]. 
@@ -23,9 +25,20 @@ The only real difference between this and [1] is that this has 25% spatial dropo
 
 The main dependencies for this project are:
 
-Note that I have also included a conda environment file called `comp3710_env.yml` that should cover all the required dependencies for you.
+- PyTorch 2.4.0 (for Python 3.12 with cuda 11.8 and cudnn9.0)
+- pytorch-cuda 11.8
+- torchvision 0.19.0
+- Numpy 1.26.4
+- NiBabel 5.2.1 (in order to read Nifti images)
+
+Note that I have also included a conda environment file called `comp3710_env.yml` that should cover all the required dependencies for you, plus some more. To create a conda environment from a file just use
+```
+conda env create -f <env_file>
+```
 
 ### Training and Results
+
+(more results pending)
 
 Although the current code functions and runs, unfortunately it does not produce great results. The most recent run produced the training loss illustrated in Figure 3, eventually producing a final cross-entropy loss value of around 0.58 over 32 epochs:
 

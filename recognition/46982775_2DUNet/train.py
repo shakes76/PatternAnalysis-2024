@@ -14,17 +14,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-import torchvision
-from torchmetrics.functional import dice
 from torchmetrics.segmentation import GeneralizedDiceScore
-import numpy as np
 
 from dataset import ProstateDataset
 from modules import UNet
 
 # Prostate dataset classes
 CLASSES_DICT = {
-    0: 'BACKGROUND',
+    0: "BACKGROUND",
     1: "BODY",
     2: "BONES",
     3: "BLADDER",
@@ -39,10 +36,32 @@ BATCH_SIZE = 2
 
 # Model name - Change for each training to save model
 MODEL_NAME = "2d_unet_initial"
-MODEL_CHECKPOINT1 = os.path.join(os.getcwd(), 'recognition', '46982775_2DUNet', 'trained_models', MODEL_NAME, 'checkpoint1.pth')
-MODEL_CHECKPOINT2 = os.path.join(os.getcwd(), 'recognition', '46982775_2DUNet', 'trained_models', MODEL_NAME, 'checkpoint2.pth')
-MODEL_CHECKPOINT3 = os.path.join(os.getcwd(), 'recognition', '46982775_2DUNet', 'trained_models', MODEL_NAME, 'checkpoint3.pth')
-MODEL_CHECKPOINT4 = os.path.join(os.getcwd(), 'recognition', '46982775_2DUNet', 'trained_models', MODEL_NAME, 'checkpoint4.pth')
+MODEL_DIR = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "trained_models", MODEL_NAME)
+MODEL_CHECKPOINT1 = os.path.join(MODEL_DIR, "checkpoint1.pth")
+MODEL_CHECKPOINT2 = os.path.join(MODEL_DIR, "checkpoint2.pth")
+MODEL_CHECKPOINT3 = os.path.join(MODEL_DIR, "checkpoint3.pth")
+MODEL_CHECKPOINT4 = os.path.join(MODEL_DIR, "checkpoint4.pth")
+
+# Log file directory to save a log of messages
+LOG_DIR = os.path.join(MODEL_DIR, "log.txt")
+
+# Also print messages when they are written to the log file
+VERBOSE = True
+
+def create_log_file():
+    """ Create log.txt in MODEL_DIR to save a log of messages."""
+    os.makedirs(MODEL_DIR)
+    # Use "x" to verify that MODEL_NAME has been changed
+    f = open(LOG_DIR, "x")
+    f.close()
+
+def write_log_file(msg: str):
+    """ Write msg to new line of log.txt."""
+    f = open(LOG_DIR, "a")
+    f.write(msg + "\n")
+    f.close
+    if VERBOSE:
+        print(msg)
 
 def train_model(model, loader, criterion, optimiser, device):
     """ Train the model on the train data."""
@@ -98,7 +117,7 @@ def test_model(model, loader, device):
     test_dice_score = torch.zeros(len(CLASSES_DICT)).to(device)
     # Class to calculate dice score for each class
     gds = GeneralizedDiceScore(num_classes=len(CLASSES_DICT), per_class=True, 
-                                weight_type='linear').to(device)
+                                weight_type="linear").to(device)
     model.eval()
     with torch.no_grad():
         for i, (images, labels) in enumerate(loader):
@@ -118,7 +137,7 @@ def test_model(model, loader, device):
             test_dice_score = torch.add(test_dice_score, dice_score)
 
             if (i+1) % 10 == 0:
-                print(f"Step: {i+1}/{len(loader)}, Dice score: {(test_dice_score / (i+1))}")
+                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(test_dice_score / (i+1))}")
 
         # Testing finished. Compute and print final average dice scores
         average_test_dice_score = test_dice_score / len(loader)
@@ -131,16 +150,16 @@ def test_model(model, loader, device):
 # For testing purposes
 if __name__ == "__main__":
     # Device config
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not torch.cuda.is_available():
         print("Warning CUDA not Found. Using CPU")
 
     # File paths
-    main_dir = os.path.join(os.getcwd(), 'recognition', '46982775_2DUNet', 'HipMRI_study_keras_slices_data')
-    train_image_path = os.path.join(main_dir, 'keras_slices_train')
-    train_mask_path = os.path.join(main_dir, 'keras_slices_seg_train')
-    test_image_path = os.path.join(main_dir, 'keras_slices_test')
-    test_mask_path = os.path.join(main_dir, 'keras_slices_seg_test')
+    main_dir = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "HipMRI_study_keras_slices_data")
+    train_image_path = os.path.join(main_dir, "keras_slices_train")
+    train_mask_path = os.path.join(main_dir, "keras_slices_seg_train")
+    test_image_path = os.path.join(main_dir, "keras_slices_test")
+    test_mask_path = os.path.join(main_dir, "keras_slices_seg_test")
 
     # Datasets
     train_dataset = ProstateDataset(train_image_path, train_mask_path)
@@ -158,5 +177,6 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    train_model(model, train_loader, criterion, optimiser, device)
+    create_log_file()
+    # train_model(model, train_loader, criterion, optimiser, device)
     test_model(model, test_loader, device)

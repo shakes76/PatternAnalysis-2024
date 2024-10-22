@@ -32,7 +32,7 @@ def generate_examples(gen, steps, n=100, label=MODEL_LABEL):
     fully trained model to generate images.
     """
     gen.eval()
-    alpha = 1.0
+    alpha = 1.0  # for fully trained model
     for i in range(n):
         with torch.no_grad():
             noise = torch.randn(1, Z_DIM).to(DEVICE)

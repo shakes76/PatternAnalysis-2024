@@ -1,3 +1,9 @@
+"""
+Main training script for StyleGAN model. Use the settings file to configure
+desired hyperparameters before running this script to train a custom model.
+"""
+
+
 from utils import *
 from settings import *
 from dataset import get_dataloader
@@ -41,7 +47,7 @@ def train_fn(
     opt_gen: optim.Adam,
 ):
     """
-    Main training function.
+    This is a single training loop for a given epoch.
     """
     loop = tqdm(loader, leave=True)
 
@@ -91,19 +97,25 @@ def train_fn(
     return alpha, gen_loss, critic_loss
 
 
-def plot_losses(gen_loss, critic_loss, step):
+def plot_losses(gen_loss, critic_loss, step, batch=True):
     """
-    TODO: fix
+    Takes in generator and critic loss lists and saves them as plots.
     """
+    if not os.path.exists(f"{SRC}/loss_plots/{MODEL_LABEL}"):
+        os.makedirs(f"{SRC}/loss_plots/{MODEL_LABEL}")
     plt.figure(figsize=(10, 5))
     plt.plot(gen_loss, label="Generator Loss", color="orange")
     plt.plot(critic_loss, label="Critic Loss", color="blue")
-    plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()
-    if not os.path.exists(f"{SRC}/loss_plots/{MODEL_LABEL}"):
-        os.makedirs(f"{SRC}/loss_plots/{MODEL_LABEL}")
-    plt.savefig(f"{SRC}/loss_plots/{MODEL_LABEL}/loss_plot_step{step}.png")
+    if batch:
+        plt.xlabel("Batch")
+        plt.title(f"Loss Per Batch: Step {step}")
+        plt.savefig(f"{SRC}/loss_plots/{MODEL_LABEL}/loss_per_batch_step{step}.png")
+    else:
+        plt.xlabel("Epochs")
+        plt.title(f"Mean Loss Per Epoch: Step {step}")
+        plt.savefig(f"{SRC}/loss_plots/{MODEL_LABEL}/loss_per_epoch_step{step}.png")
 
 
 def train():
@@ -122,20 +134,20 @@ def train():
     gen.train()
     critic.train()
 
-    # Initialize storage for losses
-    cum_gen_loss = []
-    cum_critic_loss = []
-
-    # start at step that corresponds to img size that we set in config
+    # start at step that corresponds to img size set in config
     step = int(log2(START_TRAIN_AT_IMG_SIZE / 4))
     for num_epochs in PROGRESSIVE_EPOCHS[step:]:
         alpha = 1e-5   # start with very low alpha
         loader, dataset = get_dataloader(4 * 2 ** step)  
         print(f"Current image size: {4 * 2 ** step}")
 
+        # Initialize loss lists
         step_gen_loss = []
         step_critic_loss = []
+        epoch_gen_loss = []
+        epoch_critic_loss = []
 
+        # Main training loop
         for epoch in range(num_epochs):
             print(f"Epoch [{epoch+1}/{num_epochs}]")
             alpha, gen_loss, critic_loss = train_fn(
@@ -152,14 +164,16 @@ def train():
             # Extend cumulative loss lists
             step_gen_loss.extend(gen_loss)
             step_critic_loss.extend(critic_loss)
-            cum_gen_loss.extend(gen_loss)
-            cum_critic_loss.extend(critic_loss)
+            epoch_gen_loss.append(np.mean(gen_loss))
+            epoch_critic_loss.append(np.mean(critic_loss))
 
+        # Save example images and plot losses
         generate_examples(gen, step)
         plot_losses(step_gen_loss, step_critic_loss, step)
+        plot_losses(epoch_gen_loss, epoch_critic_loss, step, batch=False)
         step += 1  # progress to the next img size
 
-    # Save models
+    # Save models once training is complete
     if not os.path.exists(f"{SRC}/saved_models"):
         os.makedirs(f"{SRC}/saved_models")
     torch.save(gen.state_dict(), f"{SRC}/saved_models/gen_{MODEL_LABEL}.pt")

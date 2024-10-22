@@ -1,7 +1,16 @@
+"""
+Data processing and loading functionalities.
+"""
+
+
 from utils import *
 
 
 def get_dataloader(img_size):
+    """
+    Returns a PyTorch DataLoader object containing batches of preprocessed
+    images from the dataset.
+    """
     transform = transforms.Compose([
         transforms.Resize((img_size, img_size)),
         transforms.Grayscale(CHANNELS_IMG),
@@ -15,18 +24,17 @@ def get_dataloader(img_size):
 
 loader, _ = get_dataloader(IMG_SIZE)
 
-# TODO: Write unit test for dataloader
-# def check_loader():
-#     """
-#     https://blog.paperspace.com/implementation-of-progan-from-scratch/
-#     """
-#     loader,_ = get_dataloader(128)
-#     cloth ,_ = next(iter(loader))
-#     _, ax    = plt.subplots(3,3, figsize=(8,8))
-#     plt.suptitle('Some real samples', fontsize=15, fontweight='bold')
-#     ind = 0 
-#     for k in range(3):
-#         for kk in range(3):
-#             ind += 1
-#             ax[k][kk].imshow((cloth[ind].permute(1,2,0)+1)/2) 
-# check_loader()
+def check_loader():
+    """
+    https://blog.paperspace.com/implementation-of-progan-from-scratch/
+    """
+    loader, _ = get_dataloader(128)
+    mri, _ = next(iter(loader))
+    _, ax = plt.subplots(2, 4, figsize=(20, 5))
+    plt.suptitle('Samples from dataloader', fontsize=15, fontweight='bold')
+    for i in range(4):
+        for j in range(2):
+            ax[j, i].imshow(mri[j + i].permute(1, 2, 0).squeeze(), cmap='gray')
+    plt.show()
+
+check_loader()

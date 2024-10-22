@@ -1,3 +1,10 @@
+"""
+Custom script for generating images using a pre-trained StyleGAN model. Use
+this with command line arguments to produce a desired number of images from a
+saved model file. Example usage documented in the README.
+"""
+
+
 from utils import *
 from settings import *
 from modules import Generator
@@ -13,7 +20,7 @@ def generate_images(model_path, output_path, num_images, seed=0):
     - num_images (int): Number of images to generate.
     - seed (int): Seed for random number generator (default: 0).
     """
-    # load model
+    # load model and set to evaluation mode
     gen = Generator(Z_DIM, W_DIM, IN_CHANNELS, img_channels=CHANNELS_IMG).to(DEVICE)
     gen.load_state_dict(torch.load(model_path, weights_only=True))
     gen.eval()
@@ -34,6 +41,7 @@ def generate_images(model_path, output_path, num_images, seed=0):
                 os.makedirs(output_path)
             vutils.save_image(img*0.5+0.5, f"{output_path}/img_{i}.png")
 
+    # toggle back to training mode
     gen.train()
 
 

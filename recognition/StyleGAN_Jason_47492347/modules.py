@@ -1,12 +1,17 @@
 """
 This contains the individual modules that make up the StyleGAN architecture.
 
-Reference: https://blog.paperspace.com/implementation-stylegan-from-scratch/#models-implementation
+References: 
+https://blog.paperspace.com/implementation-stylegan-from-scratch/#models-implementation
+https://arxiv.org/pdf/1710.10196
+http://arxiv.org/pdf/1812.04948
 """
+
+
 from utils import *
 
 
-# number of channels for each resolution step
+# multiplication factors for number of channels in each resolution step
 factors = [1, 1, 1, 1, 1 / 2, 1 / 4, 1 / 8, 1 / 16, 1 / 32]
 
 
@@ -44,7 +49,7 @@ class MappingNetwork(nn.Module):
 
 class WSLinear(nn.Module):
     """
-    Weight-scaled linear layer. TODO: explain
+    Weight-scaled linear layer.
     """
     def __init__(
         self, in_features, out_features,
@@ -65,8 +70,8 @@ class WSLinear(nn.Module):
 
 class PixelNorm(nn.Module):
     """
-    Custom layer for per-pixel normalization on the latent z vector.
-    TODO: ProGAN paper
+    Custom layer for per-pixel normalization on the latent z vector. This is an
+    implementation detail taken from the ProGAN paper.
     """
     def __init__(self):
         super(PixelNorm, self).__init__()
@@ -108,7 +113,7 @@ class InjectNoise(nn.Module):
 
 class WSConv2d(nn.Module):
     """
-    Weight-scaled 2D convolutional layer. TODO: explain
+    Weight-scaled 2D convolutional layer.
     """
     def __init__(
         self, in_channels, out_channels, kernel_size=3, stride=1, padding=1
@@ -148,6 +153,9 @@ class GenBlock(nn.Module):
 
 
 class Generator(nn.Module):
+    """
+    Main Generator model for StyleGAN to be called in training and prediction.
+    """
     def __init__(self, z_dim, w_dim, in_channels, img_channels=3):
         super(Generator, self).__init__()
         self.starting_constant = nn.Parameter(torch.ones((1, in_channels, 4, 4)))
@@ -167,7 +175,8 @@ class Generator(nn.Module):
             nn.ModuleList([self.initial_rgb]),
         )
 
-        for i in range(len(factors) - 1):  # -1 to prevent index error because of factors[i+1]
+        # add the series of main progressive growing blocks
+        for i in range(len(factors) - 1):
             conv_in_c = int(in_channels * factors[i])
             conv_out_c = int(in_channels * factors[i + 1])
             self.prog_blocks.append(GenBlock(conv_in_c, conv_out_c, w_dim))
@@ -192,10 +201,7 @@ class Generator(nn.Module):
             upscaled = F.interpolate(out, scale_factor=2, mode="bilinear")
             out = self.prog_blocks[step](upscaled, w)
 
-        # The number of channels in upscale will stay the same, while
-        # out which has moved through prog_blocks might change. To ensure
-        # we can convert both to rgb we use different rgb_layers
-        # (steps-1) and steps for upscaled, out respectively
+        # final processing of upscaled output
         final_upscaled = self.rgb_layers[steps - 1](upscaled)
         final_out = self.rgb_layers[steps](out)
         return self.fade_in(alpha, final_upscaled, final_out)
@@ -203,7 +209,7 @@ class Generator(nn.Module):
 
 class ConvBlock(nn.Module):
     """
-    Convolutional block for the discriminator model.
+    Simple convolutional block for the discriminator model.
     """
     def __init__(self, in_channels, out_channels):
         super(ConvBlock, self).__init__()
@@ -218,14 +224,15 @@ class ConvBlock(nn.Module):
 
 
 class Discriminator(nn.Module):
+    """
+    Main Discriminator model for StyleGAN to be called in training.
+    """
     def __init__(self, in_channels, img_channels=3):
         super(Discriminator, self).__init__()
         self.prog_blocks, self.rgb_layers = nn.ModuleList([]), nn.ModuleList([])
         self.leaky = nn.LeakyReLU(0.2)
 
-        # here we work back ways from factors because the discriminator
-        # should be mirrored from the generator. So the first prog_block and
-        # rgb layer we append will work for input size 1024x1024, then 512->256-> etc
+        # work backwards through factors to mirror size progression of generator
         for i in range(len(factors) - 1, 0, -1):
             conv_in = int(in_channels * factors[i])
             conv_out = int(in_channels * factors[i - 1])
@@ -234,8 +241,7 @@ class Discriminator(nn.Module):
                 WSConv2d(img_channels, conv_in, kernel_size=1, stride=1, padding=0)
             )
 
-        # perhaps confusing name "initial_rgb" this is just the RGB layer for 4x4 input size
-        # did this to "mirror" the generator initial_rgb
+        # RGB layer for the smallest size
         self.initial_rgb = WSConv2d(
             img_channels, in_channels, kernel_size=1, stride=1, padding=0
         )
@@ -244,9 +250,9 @@ class Discriminator(nn.Module):
             kernel_size=2, stride=2
         )  # down sampling using avg pool
 
-        # this is the block for 4x4 input size
+        # final block => output
         self.final_block = nn.Sequential(
-            # +1 to in_channels because we concatenate from MiniBatch std
+            # +1 to in_channels because we concatenate from MiniBatch stdev
             WSConv2d(in_channels + 1, in_channels, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2),
             WSConv2d(in_channels, in_channels, kernel_size=4, padding=0, stride=1),
@@ -257,31 +263,30 @@ class Discriminator(nn.Module):
         )
 
     def fade_in(self, alpha, downscaled, out):
-        """Used to fade in downscaled using avg pooling and output from CNN"""
+        """
+        Used to fade in downscaled using avg pooling and output from CNN
+        """
         # alpha should be scalar within [0, 1], and upscale.shape == generated.shape
         return alpha * out + (1 - alpha) * downscaled
 
     def minibatch_std(self, x):
+        """
+        Take the stdev for each example in the batch, repeat for single channel
+        and concatenate with the image.
+        """
         batch_statistics = (
             torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
         )
-        # we take the std for each example (across all channels, and pixels) then we repeat it
-        # for a single channel and concatenate it with the image. In this way the discriminator
-        # will get information about the variation in the batch/image
         return torch.cat([x, batch_statistics], dim=1)
 
     def forward(self, x, alpha, steps):
-        # where we should start in the list of prog_blocks, maybe a bit confusing but
-        # the last is for the 4x4. So example let's say steps=1, then we should start
-        # at the second to last because input_size will be 8x8. If steps==0 we just
-        # use the final block
+        # place to start in the progressive growing blocks
         cur_step = len(self.prog_blocks) - steps
 
-        # convert from rgb as initial step, this will depend on
-        # the image size (each will have it's on rgb layer)
+        # convert from rgb as initial step depending on img size
         out = self.leaky(self.rgb_layers[cur_step](x))
 
-        if steps == 0:  # i.e, image is 4x4
+        if steps == 0:  # smallest size
             out = self.minibatch_std(out)
             return self.final_block(out).view(out.shape[0], -1)
 

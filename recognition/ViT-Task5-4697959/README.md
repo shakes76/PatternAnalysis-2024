@@ -53,3 +53,21 @@ This class defines the structure of each transformer block, consisting of a mult
 4. **`VisionTransformer`**:
 
 This is the main class for the Vision Transformer model. It integrates all the components mentioned above and defines the forward pass for the entire architecture, from patch embedding to the classification head. 
+
+
+## Implementation Details in `dataset.py`
+
+This file is responsible for data loading and preprocessing. It includes the following components [4]:
+
+1. **Data Loading**:
+
+The file defines functions to load the ADNI dataset and split it into training, validation, and test sets. The dataset is split with an 80-20 rule for training and validation, while a separate set is used for testing. The `get_data_loaders` function uses PyTorch’s `DataLoader` class to load and batch the data efficiently.
+
+2. **Transforms**:
+
+Several image transformations are applied to preprocess the data, including resizing, normalization, and augmentation such as random flips or rotations. Specifically, the dataset is normalized using `ImageNet`'s means and standard deviations and the images are also resized to `224x224` pixels, a typical input size for Vision Transformers [5]. These augmentations are designed to increase data diversity, helping the model generalize better to unseen images.
+ 
+
+3. **Data Pipeline**:
+
+The dataset is split into training (80%) and validation (20%) sets. An independent test set is used to evaluate the final model’s performance. The function `get_data_loaders` returns PyTorch DataLoader objects for training, validation, and testing. It accepts parameters like batch size and validation split ratio.

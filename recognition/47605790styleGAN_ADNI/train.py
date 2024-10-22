@@ -6,6 +6,7 @@ and control the flow of data
 
 import torch
 import torch.optim as optim
+import matplotlib.pyplot as plt
 from PIL import Image
 from torch.utils.data import DataLoader
 from modules import Generator, Discriminator, MappingNetwork, adversarial_loss
@@ -46,6 +47,10 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
     model_save_dir = "C:\\Users\\Admin\\Downloads\\models"
     if not os.path.exists(model_save_dir):
         os.makedirs(model_save_dir)
+    
+    # Lists to store losses for plotting
+    g_losses = []
+    d_losses = []
 
     for epoch in range(epochs):
         for i, (real_imgs, _) in enumerate(train_loader):
@@ -88,6 +93,10 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
             d_loss.backward()
             optimizer_D.step()
 
+            # Track losses for plotting
+            g_losses.append(g_loss.item())
+            d_losses.append(d_loss.item())
+
             # Print progress
             if i % 220 == 0:
                 print(f"[Epoch {epoch}/{epochs}] [Batch {i}/{len(train_loader)}] "
@@ -104,6 +113,33 @@ def train(generator, discriminator, mapping_network, train_loader, epochs, devic
         if epoch == 119:  # Saving models only at the 120th epoch
             torch.save(generator.state_dict(), f"{model_save_dir}/generator_120.pth")
             torch.save(mapping_network.state_dict(), f"{model_save_dir}/mapping_network_120.pth")
+
+    # Plot the generator and discriminator losses at the end of training
+    plot_losses(g_losses, d_losses)
+
+# Function to plot and save the loss curves for generator and discriminator
+def plot_losses(g_losses, d_losses, save_path="/home/Student/s4760579/test_images/loss_plot.png"):
+    """
+    Plots the generator and discriminator losses during training.
+    
+    Args:
+        g_losses: List of generator losses.
+        d_losses: List of discriminator losses.
+        save_path: Path where the plot will be saved.
+
+    Returns:
+        None: Saves the plot to disk.
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(g_losses, label="Generator Loss")
+    plt.plot(d_losses, label="Discriminator Loss")
+    plt.title("Loss During Training")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(save_path)
+    plt.close()  # Close the figure to save memory
 
 def save_generated_images(generator, mapping_network, fixed_z, epoch, device):
     """

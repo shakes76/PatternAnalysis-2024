@@ -4,34 +4,29 @@ import torch.optim as optim
 from dataset import train_loader, test_loader
 from tqdm import tqdm
 import math
+import torchvision.models as models
 
 # Siamese Network Architecture
 class SiameseNetwork(nn.Module):
     def __init__(self):
         super(SiameseNetwork, self).__init__()
 
-        # Convolutional Layer
-        self.cnn = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1), # First conv layer: 3 input channels, 64 output channels
-            nn.ReLU(), # Non-linearity
-            nn.MaxPool2d(2), # Reduce spatial dimensions
-            nn.Conv2d(64, 128, kernel_size=3, padding=1), # Second conv layer: 64 input channels, 128 output channels
-            nn.ReLU(), # Non-linearity
-            nn.MaxPool2d(2) # Reduce spatial dimensions
-        )
+        # ResNet50 Feature Extractor
+        resnet = models.resnet50(pretrained=True)
+        self.features = nn.Sequential(*list(resnet.children())[:-1])
 
         # Fully Connected Layer
         self.fc = nn.Sequential(
-            nn.Linear(128 * 64 * 64, 256), # Flatten and reduce to 256 dimensions
-            nn.ReLU(), # Non-linearity
+            nn.Linear(2048, 256),  # ResNet50 outputs 2048-dim feature vectors
+            nn.ReLU(),  # Non-linearity
             nn.Linear(256, 128)  # Final embedding size of 128 for Euclidean distance calc
         )
 
     # Forward Pass
     def forward(self, x1, x2):
-        # Process inputs through CNN
-        out1 = self.cnn(x1)
-        out2 = self.cnn(x2)
+        # Process inputs through ResNet50
+        out1 = self.features(x1)
+        out2 = self.features(x2)
 
         # Flatten outputs
         out1 = out1.view(out1.size(0), -1)
@@ -75,24 +70,24 @@ def train_siamese_network(model, train_loader, epochs=5, margin=1.0):
 
             running_loss += loss.item()
 
-            epoch_loss = running_loss / len(train_loader)
-            print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss}")
+        epoch_loss = running_loss / len(train_loader)
+        print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss}")
 
-            # Save checkpoint if it's the best model so far
-            if epoch_loss < best_loss:
-                best_loss = epoch_loss
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': best_loss,
-                }, 'best_model.pth')
+        # Save checkpoint if it's the best model so far
+        if epoch_loss < best_loss:
+            best_loss = epoch_loss
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': best_loss,
+            }, 'best_model.pth')
 
-            # Log epoch results
-            with open('siamese_training.txt', 'a') as f:
-                f.write(f"Epoch {epoch+1}, Loss: {epoch_loss}\n")
+        # Log epoch results
+        with open('siamese_training.txt', 'a') as f:
+            f.write(f"Epoch {epoch+1}, Loss: {epoch_loss}\n")
 
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {running_loss / len(train_loader)}")
+    print(f"Epoch [{epoch+1}/{epochs}], Loss: {running_loss / len(train_loader)}")
 
 if __name__ == "__main__":
     # Set device
@@ -100,7 +95,7 @@ if __name__ == "__main__":
 
     # Initialize model and optimizer
     model = SiameseNetwork().to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.001) # Adam Optimizer
+    optimizer = optim.Adam(model.parameters(), lr=0.001)  # Adam Optimizer
 
     # Train model
     train_siamese_network(model, train_loader, epochs=5, margin=1.0)

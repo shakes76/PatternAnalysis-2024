@@ -35,7 +35,15 @@ class StyleGANGenerator(nn.Module):
 class StyleGANDiscriminator(nn.Module):
     def __init__(self, img_channels):
         super().__init__()
-        
+        self.model = nn.Sequential(
+            nn.Conv2d(img_channels, 128, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(0.2),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(0.2),
+            nn.Flatten(),
+            nn.Linear(256 * 32 * 32, 1)
+        )
+
 
 if __name__ == "__main__":
     z_dim = 128  

@@ -22,9 +22,9 @@ The nodes are randomly indexed to ensure good distribution among the datasets. M
 
 ### Adjacency matrix preprocessing
 The graph structure is defined by the edges between nodes and represented as an adjacency matrix:
--**Add Self-loops:** Add self-loops to each node to ensure that each node can consider its own characteristics during message passing.
--**Normalization:** The adjacency matrix is ​​normalized using the symmetric normalization method and adjusted based on the node degree. This can prevent high-degree nodes from excessively affecting the calculation results during training and ensure stable training.
--**Sparse Tensor Representation:** The normalized adjacency matrix is ​​converted to a PyTorch sparse tensor to facilitate efficient memory utilization during model training.
+- **Add Self-loops:** Add self-loops to each node to ensure that each node can consider its own characteristics during message passing.
+- **Normalization:** The adjacency matrix is ​​normalized using the symmetric normalization method and adjusted based on the node degree. This can prevent high-degree nodes from excessively affecting the calculation results during training and ensure stable training.
+- **Sparse Tensor Representation:** The normalized adjacency matrix is ​​converted to a PyTorch sparse tensor to facilitate efficient memory utilization during model training.
 
 ### Output information
 Edges Shape: torch.Size([342004, 2]), indicating the connection relationship between nodes.
@@ -46,19 +46,19 @@ The output of each layer of GCN can be expressed as:
 $$Z = \text{ReLU}\left( \hat{A} X W \right)$$
 
 ### Model components
--**First GCNLayer**: The input features have a dimension of in_channels and the output features have a dimension of hidden_channels. We apply batch normalization and ReLU activation function after the output, and introduce dropout to prevent overfitting.
--**Second GCNLayer**: This layer is similar to the first layer, with an input dimension of hidden_channels and an output dimension of hidden_channels. Batch normalization, ReLU activation, and dropout are also applied.
--**Third GCNLayer**: The output layer has a dimension of hidden_channels to num_classes (number of categories), and this layer does not contain an activation function. The output is used for classification tasks through log-softmax.
+- **First GCNLayer**: The input features have a dimension of in_channels and the output features have a dimension of hidden_channels. We apply batch normalization and ReLU activation function after the output, and introduce dropout to prevent overfitting.
+- **Second GCNLayer**: This layer is similar to the first layer, with an input dimension of hidden_channels and an output dimension of hidden_channels. Batch normalization, ReLU activation, and dropout are also applied.
+- **Third GCNLayer**: The output layer has a dimension of hidden_channels to num_classes (number of categories), and this layer does not contain an activation function. The output is used for classification tasks through log-softmax.
 
 ### Model Regularization
--**Batch Normalization**: Batch Normalization is applied after each layer to speed up the convergence of the model and stabilize the training process. It normalizes the output data of each batch to make its mean 0 and variance 1.
--**Dropout**: After the output of each layer, we use dropout (random inactivation) to discard the output of some neurons with a certain probability (controlled by the parameter dropout_prob), thereby enhancing the generalization ability of the model and avoiding overfitting.
+- **Batch Normalization**: Batch Normalization is applied after each layer to speed up the convergence of the model and stabilize the training process. It normalizes the output data of each batch to make its mean 0 and variance 1.
+- **Dropout**: After the output of each layer, we use dropout (random inactivation) to discard the output of some neurons with a certain probability (controlled by the parameter dropout_prob), thereby enhancing the generalization ability of the model and avoiding overfitting.
 
 ### Forward propagation of the model
--**First GCN layer**: linearly transform the input feature matrix, propagate features through the adjacency matrix, and then apply batch normalization, ReLU activation, and dropout.
--**Second GCN layer**: the same process, first feature transformation, adjacency matrix propagation, then batch normalization, ReLU activation, and dropout.
--**Third GCN layer**: the output layer does not perform activation function operations and directly outputs category scores.
--**Softmax**: after the last layer, the model uses the log-softmax function for normalization, so that the output becomes a probability distribution of each category.
+- **First GCN layer**: linearly transform the input feature matrix, propagate features through the adjacency matrix, and then apply batch normalization, ReLU activation, and dropout.
+- **Second GCN layer**: the same process, first feature transformation, adjacency matrix propagation, then batch normalization, ReLU activation, and dropout.
+- **Third GCN layer**: the output layer does not perform activation function operations and directly outputs category scores.
+- **Softmax**: after the last layer, the model uses the log-softmax function for normalization, so that the output becomes a probability distribution of each category.
 
 ### Loss Function
 The loss function of the model uses cross-entropy loss, which is suitable for multi-category classification problems. During training, we optimize the model parameters by minimizing this loss function.
@@ -66,14 +66,14 @@ The loss function of the model uses cross-entropy loss, which is suitable for mu
 ## Training results and visualization
 ### Training part
 #### Main steps:
--**Data loading and preprocessing**: Load node features, adjacency matrix and labels from the Facebook page network dataset, and divide them into training, validation and test sets.
--**GCN model initialization**: Initialize the GCN model according to the number of node features, hidden layer size and number of categories.
--**Forward propagation**: Input node features and adjacency matrix, and calculate the classification results of each node through the model.
--**Loss calculation**: Use the cross entropy loss function to calculate the training and validation losses of the model.
--**Backward propagation and gradient update**: Calculate the gradient through back propagation, and use the Adam optimizer to update the model parameters. Use gradient clipping to prevent gradient explosion.
--**Early stopping mechanism and learning rate scheduling**: During the training process, if the validation set accuracy no longer improves, enable the early stopping mechanism. At the same time, use the learning rate scheduler to adjust the learning rate according to the validation set performance.
--**Performance evaluation**: During the training process, record and output the training loss, validation loss, training accuracy and validation accuracy of each epoch, and evaluate the test set accuracy at the end.
--**Visualization**: Draw and save the accuracy and loss change curves on the training and validation sets.
+- **Data loading and preprocessing**: Load node features, adjacency matrix and labels from the Facebook page network dataset, and divide them into training, validation and test sets.
+- **GCN model initialization**: Initialize the GCN model according to the number of node features, hidden layer size and number of categories.
+- **Forward propagation**: Input node features and adjacency matrix, and calculate the classification results of each node through the model.
+- **Loss calculation**: Use the cross entropy loss function to calculate the training and validation losses of the model.
+- **Backward propagation and gradient update**: Calculate the gradient through back propagation, and use the Adam optimizer to update the model parameters. Use gradient clipping to prevent gradient explosion.
+- **Early stopping mechanism and learning rate scheduling**: During the training process, if the validation set accuracy no longer improves, enable the early stopping mechanism. At the same time, use the learning rate scheduler to adjust the learning rate according to the validation set performance.
+- **Performance evaluation**: During the training process, record and output the training loss, validation loss, training accuracy and validation accuracy of each epoch, and evaluate the test set accuracy at the end.
+- **Visualization**: Draw and save the accuracy and loss change curves on the training and validation sets.
 
 #### Output:
 The loss and accuracy of each epoch during model training, as well as the final test set accuracy.
@@ -94,11 +94,11 @@ Save the trained GCN model (GCN_Model.pt).
 
 ### Prediction part
 #### Main steps:
--**Data loading and preprocessing**: Load node features, adjacency matrix and labels to ensure consistency with the data used in training.
--**Model loading**: Load the previously trained GCN model and move it to the computing device (CPU or GPU).
--**Forward propagation**: Input node features and adjacency matrix, calculate the output representation of the node through the model for visualization.
--**t-SNE dimension reduction**: Use the t-SNE algorithm to reduce high-dimensional node features to two dimensions, which is convenient for visualizing the distribution relationship between nodes.
--**Visualization**: Draw and save a scatter plot of nodes in two-dimensional space, and colors represent different node categories.
+- **Data loading and preprocessing**: Load node features, adjacency matrix and labels to ensure consistency with the data used in training.
+- **Model loading**: Load the previously trained GCN model and move it to the computing device (CPU or GPU).
+- **Forward propagation**: Input node features and adjacency matrix, calculate the output representation of the node through the model for visualization.
+- **t-SNE dimension reduction**: Use the t-SNE algorithm to reduce high-dimensional node features to two dimensions, which is convenient for visualizing the distribution relationship between nodes.
+- **Visualization**: Draw and save a scatter plot of nodes in two-dimensional space, and colors represent different node categories.
 
 #### Output:
 The node feature visualization diagram after dimensionality reduction using the t-SNE algorithm shows the node classification representation learned by the model, and saves the diagram as an image file.
@@ -108,21 +108,21 @@ The boundaries between the four categories are relatively clear, indicating that
 Although most points show clear classification, there is confusion at the junction of 1 and 2. This shows that the feature similarity between nodes is high.
 
 ## Hyperparameters and Functions
--**Epochs:** 100
+- **Epochs:** 100
 Set to 100 iterations to ensure that the model has enough training time to converge, and cooperate with the early stopping mechanism to avoid overfitting.
--**Learning Rate:** 0.01
+- **Learning Rate:** 0.01
 Use a moderate learning rate to balance the convergence speed and stability. Too high a learning rate may cause gradient explosion or oscillation, while too low a learning rate will make the model train slowly.
--**Hidden Dimensions:** 16
+- **Hidden Dimensions:** 16
 The hidden dimension is set to 16 as a suitable balance point to capture the high-order features of the data while avoiding excessive computational overhead.
--**Dropout Probability:** 0.5
+- **Dropout Probability:** 0.5
 Set to 50% dropout probability to prevent the model from overfitting during training.
--**Gradient Clipping:** 1.0
+- **Gradient Clipping:** 1.0
 Clip the gradient at each backpropagation to prevent the gradient explosion problem. By limiting the maximum norm of the gradient, the training process is ensured to be more stable.
--**Optimizer:** Adam
+- **Optimizer:** Adam
 The Adam optimizer is used, and its adaptive learning rate adjustment mechanism helps improve the training efficiency of the model while maintaining high accuracy.
--**Loss Function:** Cross Entropy Loss
+- **Loss Function:** Cross Entropy Loss
 Cross Entropy Loss is a standard loss function for multi-class classification tasks, which is used to measure the difference between the classification probability output by the model and the actual category.
--**Early Stopping:**
+- **Early Stopping:**
 Set the patience value to 10 rounds. If the accuracy of the validation set does not improve within 10 rounds, stop training to prevent overfitting.
 
 ## Usage

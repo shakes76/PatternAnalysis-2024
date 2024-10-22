@@ -1,4 +1,5 @@
 # Generative Model for Brain Image Synthesis using StyleGAN
+Veslemøy Berge-Venter
 
 ## Description
 This project implements a generative adversarial network (GAN) architecture, specifically a modified version of StyleGAN, to synthesize high-quality brain images from the Alzheimer’s Disease Neuroimaging Initiative (ADNI) dataset. The model employs various innovative layers such as Pixel Normalization, Adaptive Instance Normalization, and Weighted Sum Linear layers to effectively generate images that mimic real brain scans.

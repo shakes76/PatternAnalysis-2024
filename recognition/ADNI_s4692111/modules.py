@@ -7,6 +7,7 @@ from sklearn.metrics import classification_report
 from tqdm import tqdm
 class ADNICNN(nn.Module):
     def __init__(self):
+        super(ADNICNN, self).__init__()
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
@@ -15,7 +16,7 @@ class ADNICNN(nn.Module):
         self.norm1 = nn.BatchNorm2d(128)
         self.norm2 = nn.BatchNorm2d(256)
         self.dropout = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(256 * 2 * 2, 512)
+        self.fc1 = nn.Linear(50176, 512)
         self.fc2 = nn.Linear(512, 128)
         self.fc3 = nn.Linear(128, 2)
 

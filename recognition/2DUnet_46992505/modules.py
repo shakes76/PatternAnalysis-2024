@@ -1,6 +1,19 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
+import numpy as np
+
+
+# Dice coefficient function
+def dice_coefficient(y_true, y_pred, smooth=1e-6):
+    y_true_f = tf.reshape(y_true, [-1])  # Flatten the arrays
+    y_pred_f = tf.reshape(y_pred, [-1])  # Flatten the arrays
+    intersection = tf.reduce_sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (np.sum(y_true_f) + np.sum(y_pred_f) + smooth)
+
+# Negative Dice coefficient (used as a loss function)
+def dice_loss(y_true, y_pred, smooth=1e-6):
+    return 1 - dice_coefficient(y_true, y_pred, smooth)
 
 def unet_model(input_size=(256, 128, 1)):
     inputs = layers.Input(input_size)
@@ -79,8 +92,8 @@ def unet_model(input_size=(256, 128, 1)):
     conv10 = layers.Conv2D(1, (1, 1), activation='sigmoid')(conv9)
 
     model = models.Model(inputs, conv10)
-    opt = Adam(lr=1e-4)
-    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+    opt = Adam(learning_rate=1e-4)
+    model.compile(optimizer=opt, loss=dice_loss, metrics=[dice_coefficient])
 
     return model
 

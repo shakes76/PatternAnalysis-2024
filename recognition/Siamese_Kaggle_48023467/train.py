@@ -111,20 +111,23 @@ def show_metrics(loss_train, loss_val, acc_train, acc_val, auc_train, auc_val):
     axs[0, 0].plot(range(1, len(loss_train)+1), loss_train, label="Training Loss")
     axs[0, 1].plot(range(1, len(loss_val)+1), loss_val, label="Validation Loss")
     axs.flat[0].set(xlabel="Epoch", ylabel="Loss")
+    axs.flat[1].set(xlabel="Epoch", ylabel="Loss")
     axs[0, 0].set_title("Training Loss")
     axs[0, 1].set_title("Validation Loss")
 
     # Training and validation classification accuracy
     axs[1, 0].plot(range(1, len(acc_train)+1), acc_train, label="Training Accuracy")
     axs[1, 1].plot(range(1, len(acc_val)+1), acc_val, label="Validation Accuracy")
-    axs.flat[1].set(xlabel="Epoch", ylabel="Accuracy")
+    axs.flat[2].set(xlabel="Epoch", ylabel="Accuracy")
+    axs.flat[3].set(xlabel="Epoch", ylabel="Accuracy")
     axs[1, 0].set_title("Training Accuracy")
     axs[1, 1].set_title("Validation Accuracy")
 
     # Training and validation AUC-ROC
     axs[2, 0].plot(range(1, len(auc_train)+1), auc_train, label="Training AUC-ROC")
     axs[2, 1].plot(range(1, len(auc_val)+1), auc_val, label="Validation AUC-ROC")
-    axs.flat[2].set(xlabel="Epoch", ylabel="AUC-ROC")
+    axs.flat[4].set(xlabel="Epoch", ylabel="AUC-ROC")
+    axs.flat[5].set(xlabel="Epoch", ylabel="AUC-ROC")
     axs[2, 0].set_title("Training AUC-ROC")
     axs[2, 1].set_title("Validation AUC-ROC")
 
@@ -161,6 +164,7 @@ def main():
     # Load params
     data_dir, train_ratio, batch_size, triplet_margin, lr, n_epochs = load_params()
     
+    # Load data
     print("Loading data...")
     train_loader, val_loader = generate_dataloaders(data_dir, ratio=train_ratio, batch_size=batch_size)
     

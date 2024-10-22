@@ -25,7 +25,8 @@ def predict(model, dataloader_test, device):
         for i, (anchor, label, _, _) in enumerate(dataloader_test):
             # Send to pytorch device
             anchor = anchor.to(device)
-            out = model.classify(anchor)
+            output = model.forward_once(anchor)
+            out = model.classify(output)
             
             # Evaluate results
             probs = torch.softmax(out, dim=1)[:, 1] 

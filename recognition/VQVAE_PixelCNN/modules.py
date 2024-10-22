@@ -8,9 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 
-# Checking the PyTorch Version
-print("PyTorch Version: ", torch.__version__)
-
 # Getting the device (in my case GPU with cuda 12.4)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

@@ -14,6 +14,7 @@ from collections import Counter
 from torchvision.transforms import Normalize, Compose, ToTensor
 import torchvision.transforms as transforms
 from PIL import Image
+from train_VQVAE import BATCH_SIZE
 
 def count_image_dimensions(image_dir):
     """
@@ -46,10 +47,6 @@ def count_image_dimensions(image_dir):
     print("Image Dimension Distribution|:")
     for dim, count in dimension_counter.items():
         print(f"Dimension: {dim}, Count: {count}")
-
-count_image_dimensions('HipMRI_study_keras_slices_data/keras_slices_train')
-count_image_dimensions('HipMRI_study_keras_slices_data/keras_slices_test')
-count_image_dimensions('HipMRI_study_keras_slices_data/keras_slices_validate')
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8 ) -> np.ndarray:
@@ -192,6 +189,12 @@ class ProstateMRIDataset(Dataset):
         # Filter the image files by their dimensions
         self.image_files = filter_image_files_by_dimension(all_image_files, target_size=self.target_size)
 
+                # Define the transform for resizing, remove ToTensor
+        self.transform = transforms.Compose([
+            # transforms.Resize(final_size),  # Resize to 128x128
+            transforms.Grayscale(num_output_channels=1),  # Convert to single-channel grayscale
+            ToTensor()
+        ])
         
         # Load the valid images using the `load_data_2D` function
         if getAffines:
@@ -210,13 +213,19 @@ class ProstateMRIDataset(Dataset):
     def __getitem__(self, idx):
         """Return an image by index."""
         image = self.images[idx]
+
+        # Convert the NumPy array to PIL Image before resizing
+        image = Image.fromarray(image)
+
+        # Apply transformations, including resizing
+        image = self.transform(image)  # Apply Resize
         
         if self.categorical:
             image = image.astype(np.float32)  # Ensure one-hot encoded data is in float32 format
-        return np.array(image)  
+        return np.array(image)  # Convert back to NumPy array if needed
 
 
-def get_dataloader(root_dir, batch_size=32, normImage=False, categorical=False, target_size=(256, 128)):
+def get_dataloader(root_dir, batch_size=BATCH_SIZE, normImage=False, categorical=False, target_size=(256, 128)):
     """
     Create a PyTorch DataLoader for batching and shuffling the dataset from Folder1, Folder2, and Folder3.
     
@@ -233,24 +242,10 @@ def get_dataloader(root_dir, batch_size=32, normImage=False, categorical=False, 
     dataset = ProstateMRIDataset(root_dir, normImage=normImage, categorical=categorical, target_size=target_size)
     return DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-dataloader = get_dataloader("HipMRI_study_keras_slices_data")
-
-# Verifying the dataset loader
-
-# Check the total number of images loaded
-dataset = dataloader.dataset
-print(f"Total number of images in the dataset: {len(dataset)}")
-
-# Fetch one sample and check its shape and type
-sample_image = dataset[0]  # Get the first image
-print(type(sample_image))
-print(f"Sample image shape: {sample_image.shape}")
-print(f"Sample image data type: {sample_image.dtype}")
-
 
 # Dataset Visualizer
 
-def visualize_samples(dataloader, num_samples=4, save_path='output/sample_visualization.png'):
+def visualize_samples(dataloader, num_samples=4, save_path='Output/sample_visualization.png'):
     """
     Visualize a few sample images from the dataset.
     
@@ -280,5 +275,3 @@ def visualize_samples(dataloader, num_samples=4, save_path='output/sample_visual
     plt.savefig(save_path)  # Save the plot
     plt.show()
     plt.close()  # Close the plot to free up memory
-
-visualize_samples(dataloader, num_samples=5)

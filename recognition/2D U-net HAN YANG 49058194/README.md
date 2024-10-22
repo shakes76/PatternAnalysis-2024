@@ -110,6 +110,47 @@ The project requires the following dependencies[^4]:
 ## Code Explanation and Comments
 
 ### 1 `download.py`
+```bash
+"""
+download.py
+-----------
+This script downloads and preprocesses MRI data for training a segmentation model.
+
+Usage:
+    Run this script to download and prepare the dataset for model training.
+
+Author: Han Yang
+Date: 24/09/2024
+"""
+import os
+import requests
+import zipfile
+import io
+import nibabel as nib
+from skimage.transform import resize
+import numpy as np
+
+def download_and_extract(url, extract_to='HipMRI_project_data'):
+    """    
+    Downloads and extracts a ZIP file from a specified URL.
+    
+    Args:
+        url (str): The URL to download the dataset from.
+        extract_to (str): Directory to extract the downloaded files.
+    """
+    # Downloading and extraction implementation...
+
+def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
+    """    
+    Loads NIfTI files, processes them, and saves as .npy files.
+    
+    Args:
+        root_dir (str): Directory containing NIfTI files.
+        save_dir (str): Directory to save processed .npy files.
+        target_size (tuple): Target size for resizing images.
+    """
+    # Processing NIfTI files implementation...
+```
 
 ### 2 `dataset.py`
 ```bash
@@ -153,23 +194,21 @@ class ProstateMRIDataset(Dataset):
 ```bash
 """
 modules.py
+----------
 Contains the model architecture components for the 2D U-Net used in this study.
-
 Classes:
 - UNet: Implements the U-Net model for segmentation tasks.
 """
 import torch.nn as nn
 
 class UNet(nn.Module):
-    """
-    The 2D U-Net model architecture for image segmentation.
-
+    """    
+    The 2D U-Net model architecture for image segmentation.    
     Args:
-        in_channels (int): Number of input channels (e.g., 1 for grayscale).
-        out_channels (int): Number of output channels (e.g., 1 for binary segmentation).
-
-    Methods:
-        forward(x): Forward pass through the network.
+        in_channels (int): Number of input channels (e.g., 1 for grayscale).  
+        out_channels (int): Number of output channels (e.g., 1 for binary segmentation).    
+    Methods:       
+        forward(x): Forward pass through the network.  
     """
     # Model architecture implementation...
 ```
@@ -178,58 +217,94 @@ class UNet(nn.Module):
 ```bash
 """
 train.py
-This script is used for training the 2D U-Net model for prostate segmentation.
+--------
+This script trains a U-Net model on MRI data for prostate segmentation.
 
-Arguments:
-- data_dir: Directory containing the Nifti images for training.
-- output_dir: Directory to save the trained model.
+Input:
+    - MRI slices and segmentation masks from the dataset.
 
-Example usage:
-python train.py --data_dir ./data --output_dir ./model_output
+Output:
+    - Trained model weights (saved as unet_model.pth).
+    - Training loss curve displayed after training.
+
+Usage:
+    Run this script to start training the U-Net model.
+
+Author: Han Yang
+Date: 28/09/2024
 """
+import os
 import torch
-from dataset import load_data
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 from modules import UNet
+from dataset import ProstateMRIDataset
+import matplotlib.pyplot as plt
 
-def train_model(data_dir, output_dir):
-    """
-    Trains the U-Net model using the given dataset.
-
+def train_model(root_dir, num_epochs=30, lr=0.001):
+    """    
+    Trains the U-Net model on the provided MRI dataset.
+    
     Args:
-        data_dir (str): Directory containing training data.
-        output_dir (str): Directory to save the trained model.
+        root_dir (str): Directory containing the training dataset.
+        num_epochs (int): Number of epochs for training.
+        lr (float): Learning rate for the optimizer.
     """
-    # Implementation of training steps...
-    # Print training loss and validate Dice coefficient...
+    # Training implementation...
 ```
 
 ### 5 `predict.py`
 ```bash
 """
-train.py
-This script is used for training the 2D U-Net model for prostate segmentation.
+predict.py
+----------
+This script performs prediction using a trained U-Net model on test MRI slices.
 
-Arguments:
-- data_dir: Directory containing the Nifti images for training.
-- output_dir: Directory to save the trained model.
+Input:
+    - Preprocessed MRI slices to predict on.
+    - Trained model weights (specified by model_path).
 
-Example usage:
-python train.py --data_dir ./data --output_dir ./model_output
+Output:
+    - Predicted segmentation masks visualized alongside original images.
+
+Usage:
+    Run this script to visualize predictions on a set of test MRI images.
+
+Author: Han Yang
+Date: 30/09/2024
 """
 import torch
-from dataset import load_data
+import numpy as np
 from modules import UNet
+from dataset import ProstateMRIDataset
+import matplotlib.pyplot as plt
 
-def train_model(data_dir, output_dir):
-    """
-    Trains the U-Net model using the given dataset.
-
+def dice_score(pred, target, threshold=0.5, eps=1e-6):
+    """    
+    Computes the Dice Similarity Coefficient (DSC) for evaluation.
+    
     Args:
-        data_dir (str): Directory containing training data.
-        output_dir (str): Directory to save the trained model.
+        pred (torch.Tensor): Predicted segmentation.
+        target (torch.Tensor): Ground truth segmentation.
+        threshold (float): Threshold to binarize predictions.
+        eps (float): Small value to avoid division by zero.
+        
+    Returns:
+        float: Calculated Dice score.
     """
-    # Implementation of training steps...
-    # Print training loss and validate Dice coefficient...
+    # Dice score calculation implementation...
+
+def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
+    """    
+    Loads the model and performs predictions on the test dataset.
+    
+    Args:
+        root_dir (str): Directory containing the test dataset.
+        model_path (str): Path to the trained model weights.
+        threshold (float): Threshold for binarizing predictions.
+    """
+    # Prediction and evaluation implementation...
 ```
 
 ## Details

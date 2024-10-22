@@ -7,23 +7,21 @@
 **Objective:**  Generate a reasonably clear image from the ADNI brain dataset using a diffusion model (The model will be trained conditionally) 
 
 ## Background of the Diffusion Model
-AI image generation has been a significant topic of discussion in the fields of art and deep learning. Generative models like DALL-E 2 and NovelAI have shown incredible results in the fields of art and computer vision. To delve deeper into this technology, we need to introduce a new class of generative models called 'diffusion models,' which were first proposed by Sohl-Dickstein et al. (2015) to generate images from noise through a backward denoising process.
+AI image generation has been a significant topic of discussion in the fields of art and deep learning. Generative models like DALL-E 2 and NovelAI have shown incredible results in the fields of art and computer vision. Several types of generative models already exist, including GANs, VAEs, and flow-based models. Each of these can generate high-quality images, with models like StyleGAN-1 and StyleGAN-2 previously being the state-of-the-art in image generation. However, each model type has its own limitations ~
 
-Several types of generative models already exist, including GANs, VAEs, and flow-based models. Each of these can generate high-quality images, with models like StyleGAN-1 and StyleGAN-2 previously being the state-of-the-art in image generation. However, each model type has its own limitations ~
+ > GAN models are potentially unstable training and less diversity in generation due to the adversarial nature. VAE relies on a surrogate loss. Flow models have to design a reversible mapping function between two distribution with jacobian easy to comput.
 
- > GAN models are potentially unstable training and less diversity in generation due to the adversarial training nature. VAE relies on a surrogate loss. Flow models have to design a reversible mapping function between two distribution with jacobian easy to comput.
-
-The diffusion model provides a slow and iterative process for converting noise into an image, which makes it more scalable than the GAN model. Additionally, since the objective of the diffusion model is to predict the noise at each timestep—a supervised learning task—we can expect its training to be much more stable than that of GANs, which involve unsupervised learning.
+Diffusion model were first proposed by Sohl-Dickstein et al. (2015) to generate images from noise through a backward denoising process. It provides a slow and iterative process for converting noise into an image, which makes it more scalable than the GAN model. Additionally, since the objective of the diffusion model is to predict the noise at each timestep—a supervised learning task—we can expect its training to be much more stable than that of GANs, which involve unsupervised learning.
 
 ## What is Diffusion
 
  <p align="center">
  <img width="500px" src="https://github.com/Yukino1010/Diffusion_Model/blob/master/image_source/diffusion.png" >
  </p>
- 
-Diffusion refers to the movement of substances from a region of higher concentration to a region of lower concentration. Inspired by this concept, diffusion models define a Markov chain that gradually adds random noise to an image. This Markov chain can be viewed as a diffusion process, where the act of adding noise represents the "movement." Our goal is to determine the noise (movement) added to the image and reverse this process. 
 
-The diffusion model mainly consists of two phases: Forward Noising and Backward Denoising. Basically, noise is continuously added to the image, and the challenge is to reverse this process to recover the original image. (the u-net model usually used to predict the noise or velocity)
+The concept of diffusion refers to the movement of substances from a region of higher concentration to a region of lower concentration. Inspired by this concept, diffusion models construct a Markov chain to 'push' or 'pull' the image between the original and target distributions (standard Gaussian distribution) by adding or removing noise from the input data. The final goal of the diffusion model is then to determine the noise added to the image and reverse this process.
+
+The diffusion model consists of two phases: Forward Noising and Backward Denoising. Basically, noise is continuously added to the image, and the challenge is to reverse this process to recover the original image. (the u-net model usually used to predict the noise or velocity)
 
 ## Forward Diffusion Process
 <p align="center">

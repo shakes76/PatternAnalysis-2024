@@ -12,23 +12,38 @@ Study dataset.
 
 
 ## How It Works
-The 3D U-Net architecture is a convolutional neural network 
-designed to operate on 3D input volumes, making it particularly 
-effective for volumetric medical data such as MRI scans. The 
-model follows an encoder-decoder structure, where the 
-**encoder** compresses the input into a latent representation, and 
-the **decoder** reconstructs it into a segmentation mask. **Skip 
-connections** between corresponding layers in the encoder and 
-decoder help retain important spatial information lost during 
-compression. This network outputs a class label for each voxel 
-(3D pixel), predicting structures like organs, lesions, or other 
-relevant features.
+The 3D U-Net architecture, as implemented in the code, 
+is a convolutional neural network designed to process 3D 
+input volumes, making it particularly effective for segmenting 
+volumetric medical data like MRI scans. The model utilizes an 
+encoder-decoder structure, where the encoder (contracting path)
+uses ResNet blocks to compress the input into a 
+lower-dimensional latent space, and the decoder (expanding path)
+reconstructs the segmentation mask. Skip connections between the
+encoder and decoder layers preserve essential spatial information
+by concatenating the corresponding feature maps, ensuring that 
+fine details lost during downsampling are recovered.
 
-The diagram below illustrates the 3D U-Net architecture, showing 
+In this implementation, the encoder applies downsampling 
+through 3D convolutions and max pooling, while the decoder 
+uses upsampling with transposed convolutions to generate 
+segmentation predictions. Each voxel (3D pixel) in the output 
+receives a class label that corresponds to a structure such 
+as an organ or lesion.
+
+The code also incorporates ResNet-style blocks in the 
+encoder and bottleneck layers, enhancing the model’s feature 
+extraction by including residual connections, which help 
+stabilize training. These connections allow the network to 
+better capture complex structures in the input volumes, 
+leading to more accurate segmentation.
+
+The diagram below illustrates an example 3D U-Net architecture, 
+showing 
 how the model processes input volumes and generates segmentation 
 masks:
 
-![3D U-Net Architecture](./content/UNET_model.png)
+![3D U-Net Architecture](./Content/UNET_model.png)
 
 ### Visualization
 Below is an example visualization of the segmentation process for a given slice from an MRI scan:
@@ -36,7 +51,7 @@ Below is an example visualization of the segmentation process for a given slice 
 - **Center**: Ground truth segmentation mask
 - **Right**: Model prediction
 
-![Sample Visualization](./visuals/visualization_sample.png)
+![Sample Visualization](./COntent/visualization_sample.png)
 
 
 ## Dependencies
@@ -85,6 +100,7 @@ segmentation output.
 - **Prediction:**
 ![Prediction Mask](./visuals/visualization_pred.png)
 
+
 ## Pre-processing
 Before training, the MRI volumes were normalized to ensure 
 consistent intensity distribution across the dataset. 
@@ -102,6 +118,40 @@ for training while reserving enough data for accurate
 evaluation. The data was stratified by cases to ensure that 
 images from the same subject were not present in multiple 
 sets, which could otherwise lead to overfitting.
+
+## Results
+The 3D U-Net model was trained for 16 epochs, with early 
+stopping applied after **Epoch 12**. Below is a summary of 
+the key results from the training process:
+
+ - Epoch [1/16], Loss: 0.7396
+Class-specific Dice Scores: [0.98168078 0.91843471 0.05575329 0.44867237 0.00546562 0.1901122 ]
+ - Epoch [2/16], Loss: 0.4922
+   - Class-specific Dice Scores: [0.98146727 0.77852851 0.3306287  0.07353068 0.00168459 0.01371561]
+- Epoch [3/16], Loss: 0.3613 
+  - Class-specific Dice Scores: [0.98314504 0.9352279  0.46974399 0.49166848 0.38004141 0.12213351]
+- Epoch [4/16], Loss: 0.2760
+  - Class-specific Dice Scores: [0.98131116 0.94516828 0.74051519 0.41558598 0.49725519 0.47306966]
+- Epoch [5/16], Loss: 0.2228
+  - Class-specific Dice Scores: [0.98536606 0.95066454 0.75680236 0.5930551  0.43019679 0.41207429]
+- Epoch [6/16], Loss: 0.1871
+  - Class-specific Dice Scores: [0.98399602 0.94690789 0.67935657 0.46950318 0.65837656 0.62739768]
+- Epoch [7/16], Loss: 0.1678
+  - Class-specific Dice Scores: [0.98218483 0.95115498 0.77507274 0.65916569 0.6241418  0.57728968]
+- Epoch [8/16], Loss: 0.1433
+  - Class-specific Dice Scores: [0.98212918 0.950911   0.78564328 0.67374016 0.68587627 0.40712179]
+- Epoch [9/16], Loss: 0.1291
+  - Class-specific Dice Scores: [0.9842072  0.95312278 0.78852241 0.62817013 0.59529447 0.50053505]
+- Epoch [10/16], Loss: 0.1204
+  - Class-specific Dice Scores: [0.98578121 0.95990683 0.81827442 0.73743585 0.68902261 0.5927277 ]
+- Epoch [11/16], Loss: 0.1071
+  - Class-specific Dice Scores: [0.97903265 0.95000044 0.82465145 0.79983808 0.71879922 0.68511068]
+- Epoch [12/16], Loss: 0.1043
+  - Class-specific Dice Scores: [0.98194693 0.95313792 0.76935486 0.77318901 0.72986509 0.75210351]
+- Early stopping at epoch 12, all classes have Dice scores ≥ 0.7
+  - Test Loss: 0.1276
+  - Test Class-specific Dice Scores: [0.98341535 0.95497757 0.78998656 0.79622618 0.72969815 0.76118778]
+
 
 ## References
 - Isensee, F., et al. "nnU-Net: a self-adapting framework for U-Net-based medical image segmentation." Nature Methods 18.2 (2021): 203-211.

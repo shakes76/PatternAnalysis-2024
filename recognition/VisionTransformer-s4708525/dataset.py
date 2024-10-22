@@ -57,6 +57,15 @@ class ADNI_Dataset(Dataset):
         return self.category_counts
 
 def preprocess_image(image_path):
+    """
+    Function to preprocess image to be predicted
+
+    Args:
+        image_path: String of the image path
+    
+    Returns:
+        image: Preprocessed image tensor suitable for input to the model.
+    """
     image = Image.open(image_path).convert('RGB')
     transform_test = transforms.Compose([
         transforms.Resize(224),

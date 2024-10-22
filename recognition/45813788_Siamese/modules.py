@@ -23,6 +23,15 @@ class FeatureExtraction(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(256, 64),
         )
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=0.3),
+            nn.Linear(64, 32),
+            nn.ReLU(inplace=True),
+            nn.Linear(32, 1),
+            
+        )
+    
  
         #true to train all layers false if not
         for param in self.model.parameters():
@@ -34,8 +43,9 @@ class FeatureExtraction(nn.Module):
         features = self.model(x) #[batch_Size, 2048, 1 ,1]
         embeddings = self.embedding(features) #[batch_size, embedding_dim]
         
+        logits = self.classifier(embeddings)
 
-        return embeddings
+        return embeddings, logits
     
 class SiameseNN(nn.Module):
     def __init__(self):
@@ -45,30 +55,6 @@ class SiameseNN(nn.Module):
 
     def forward(self, x):
 
-        y = self.feature_extractor(x)
+        embeddings,logits = self.feature_extractor(x)
 
-        return y
-
-#classification network
-class Classifier(nn.Module):
-    
-    def __init__(self):
-        
-        super(Classifier, self).__init__()
-
-        self.classifier = nn.Sequential(
-            #add dropout if needed
-            nn.Dropout(p=0.3),
-            nn.Linear(64, 32),
-            nn.ReLU(inplace=True),
-            nn.Linear(32, 1),
-            #nn.Sigmoid()
-        )
-        
-
-    def forward(self, x):
-        
-        y = self.classifier(x)
-
-        return y
-    
+        return embeddings, logits

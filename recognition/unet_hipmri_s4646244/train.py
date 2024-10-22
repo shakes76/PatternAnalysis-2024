@@ -30,8 +30,8 @@ early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3, restore_best_
 
 # Set up the model from the modules file
 unetModel = unet()
-unetModel.compile(optimizer=Adam(learning_rate=0.0001), loss=BinaryCrossentropy(), metrics = ['accuracy',dice_metric])
-#unetModel.compile(optimizer=Adam(learning_rate=0.0001), loss=dice_loss, metrics=[dice_metric])
+#unetModel.compile(optimizer=Adam(learning_rate=0.0001), loss=BinaryCrossentropy(), metrics = ['accuracy',dice_metric])
+unetModel.compile(optimizer=Adam(learning_rate=0.0001), loss=combined_loss, metrics=[dice_metric])
 
 #unetModel.summary()
 

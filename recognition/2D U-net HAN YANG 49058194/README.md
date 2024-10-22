@@ -40,7 +40,7 @@ During training, the model minimizes the binary cross-entropy loss, using the Di
 ├── predict.py       # Model prediction script
 ├── test_driver.py   #Final testing of the model
 ├── README.md        # User Guide (i.e. this document)
-
+```
 ### Dependencies
 The project requires the following dependencies[^4]:
 - `torch==1.10.0`: PyTorch for building and training the model.
@@ -76,6 +76,7 @@ The project requires the following dependencies[^4]:
   - **Usage example**:
      ```bash
      python train.py --data_dir ./data --output_dir ./model_output
+     ```
   - **Example output**:During the training process, the log will display the training loss and the validation Dice similarity coefficient. Ultimately, the trained model will be saved in the specified `output dir`.
 - `predict.py`
   - **Purpose**: Evaluates the trained model and computes the Dice Similarity Coefficient for segmentation accuracy.

@@ -6,8 +6,13 @@ from torchvision import datasets
 from pathlib import Path
 import argparse
 import torch.nn.functional as F  # Import this for applying softmax
-from sklearn.metrics import classification_report  # For generating classification report
 from torch.nn import CrossEntropyLoss
+
+from sklearn.metrics import classification_report, confusion_matrix, precision_recall_fscore_support
+import seaborn as sns
+import pandas as pd
+from torch.nn import CrossEntropyLoss
+from tqdm import tqdm
 
 ## Custom py files
 from modules import ViT
@@ -41,7 +46,7 @@ def imshow(img, label=None, prediction=None, font_size=8):
     plt.axis('off')
 
 
-def predict_batch(model, dataloader, device, num_images=32, font_size=8):
+def predict_batch(model, dataloader, device, num_images=32, font_size=8, idx_to_class={0: "AD", 1: "Normal"}):
     """
     Load a batch of images, make predictions, and display the images with predictions.
     
@@ -73,12 +78,16 @@ def predict_batch(model, dataloader, device, num_images=32, font_size=8):
         for i in range(num_images):
             plt.subplot(4, 8, i + 1)  # Adjust grid layout (4 rows, 8 columns)
             prob = probabilities[i][preds[i].item()]  # Get probability of the predicted class
-            imshow(images[i].cpu(), label=labels[i].item(), prediction=(preds[i].item(), prob), font_size=font_size)
+            label_name = idx_to_class[labels[i].item()]  # Get the true label as a class name
+            pred_name = idx_to_class[preds[i].item()]  # Get the predicted label as a class name
+            imshow(images[i].cpu(), label=label_name, prediction=(pred_name, prob), font_size=font_size)
         plt.tight_layout()
-        plt.show()
+        plt.savefig(f"plots/batch_predictions.png")  # Save the batch images with predictions
+        print("Saved prediction images!!")
 
 
-def evaluate_model(model, dataloader, device):
+
+def evaluate_model(model, dataloader, device, idx_to_class={0: "AD", 1: "Normal"}):
     """
     Evaluates the model on the test set and generates a classification report.
     
@@ -95,17 +104,42 @@ def evaluate_model(model, dataloader, device):
     all_labels = []
     
     with torch.no_grad():
-        for images, labels in dataloader:
+        for images, labels in tqdm(dataloader, desc="Evaluating", leave=False):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, preds = torch.max(outputs, 1)  # Get the predicted class index
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-    # Generate classification report
-    class_report = classification_report(all_labels, all_preds, target_names=['Class 0', 'Class 1'], digits=4)
+    # Generate classification report using the class names
+    target_names = [idx_to_class[i] for i in range(len(idx_to_class))]
+    class_report = classification_report(all_labels, all_preds, target_names=target_names, digits=4)
+    print("Classification Report:\n", class_report)
+
+    # Save classification report
+    with open("plots/classification_report.txt", "w") as f:
+        f.write(class_report)
+
+    # Generate confusion matrix using the class names
+    conf_matrix = confusion_matrix(all_labels, all_preds)
+    print("Confusion Matrix:\n", conf_matrix)
+
+    # Save confusion matrix as an image
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=target_names, yticklabels=target_names)
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.savefig(f"plots/confusion_matrix.png")
+    print("Saved confusion matrix as png in /plots!")
+    plt.close()
+
+    # Calculate precision, recall, F1-score
+    precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='binary')
+    print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1:.4f}")
     
     return class_report
+
 
 
 def main():
@@ -146,15 +180,23 @@ def main():
 
     # Load the dataset for prediction (using the test set)
         # Get all the loaders 
-    _, _, test_loader = get_dataloaders(batch_size=args.batch_size, image_size=args.image_size, path = args.data_path)
+    _, _, test_loader = get_dataloaders(batch_size=args.batch_size, image_size=args.image_size, path = args.data_path, shuffle_test=True)
+    class_to_idx = test_loader.dataset.class_to_idx
 
+    # Invert the dictionary to get idx-to-class mapping
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+    print("YOOOO,", args.run)
     if args.run == "predict":
-        print("YO")
+        print("Evaluating model performance...")
+        class_report = evaluate_model(model, test_loader, device, idx_to_class=idx_to_class)
         test_loss, test_acc = evaluate(model, test_loader, CrossEntropyLoss(), device)
         print(f"Test Accuracy: {test_acc:.2f}%, and {test_loss=}")
+        print("Class report: ", class_report)
+        print("Done model performance!")
     elif args.run == "brain-viz":
         # Make predictions and visualize results
-        predict_batch(model, test_loader, device, num_images=args.batch_size)
+        print("Running graph viz!")
+        predict_batch(model, test_loader, device, num_images=args.batch_size, idx_to_class = idx_to_class)
     
     # # Generate and print the classification report
     # class_report = evaluate_model(model, test_loader, device)

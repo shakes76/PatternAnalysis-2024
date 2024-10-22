@@ -10,6 +10,43 @@ This project focuses on using Vision Transformers (ViT) for the detection of Alz
 
 The Vision Transformer model is utilized to process brain images and make predictions with a target test accuracy of 80%. This project includes dataset preprocessing, augmentation, and the implementation of a Vision Transformer architecture for image classification.
 
+
+## Usage 
+### Install
+**Set up your environment**:
+- Create a virtual environment using venv or conda.
+- Install the necessary dependencies:
+```bash
+pip install -r requirements.txt
+```
+### Training
+
+Run the following command to train the model, adjusting the hyperparameters and dataset path as needed:
+
+```bash
+python train.py --transformer_layers 8 --num_epochs 50 --embedding_dims 256 --mlp_size 1024 --num_heads 8 --exp_name "your_experiment_name" --path "/path/to/dataset"
+```
+After training, the model, logs, and plots will be saved in the respective directories (`models/`, `logs/`, `plots/`).
+
+### Testing
+Use the following terminal command to test the model and perform one of two actions:
+
+- `--run predict`: Get the test loss/accuracy of the trained model.
+- `--run brain-viz`: Visualize model predictions and display image grids with predicted labels and probabilities.
+
+Examples:
+```bash
+python predict.py --model_path models/v10best_model.pth --run predict --num_transformer_layers 16
+```
+This command loads a model saved as v10best_model.pth (which was trained with 16 transformer layers) and outputs the test loss and accuracy.
+
+For image visualisation:
+```bash
+python predict.py --model_path models/v10best_model.pth --run brain-viz --num_transformer_layers 16
+```
+This visualizes the predictions for a batch of test images, displaying both true labels and predicted probabilities (using softmax).
+
+
 ## Vision Transformer Architecture
 
 ## Repository Structure
@@ -32,20 +69,6 @@ Normalization using empirically gathered statistics from our ADNI dataset; basic
 
 ## Experiments
 
-## Usage 
-Run all files from the directory.
-
-1. `pip install -r requirements.txt`
-   
-#### Training
-... `terminal command to train stuff etc`, data path, plots, etc...
-
-#### Testing
-terminal command to test 
---run `predict`, get test acc/loss on a model or `graph-viz`, visualise model images with prediction and probabilities (default)
-
-Examples:
-`python predict.py --model_path models/v10best_model.pth --run predict --num_transformer_layers 16` # Gets test loss/acc of v10 (v10 used 16 layers so we have to make it the same architecture)
 
 ## References
 

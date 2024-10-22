@@ -54,7 +54,7 @@ def get_mean_std(loader: DataLoader):
     return mean, std
 
 
-def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction = 0.9, num_workers = 2, path: str = "./ADNI/AD_NC", use_transforms = True):
+def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction = 0.9, num_workers = 2, path: str = "./ADNI/AD_NC", use_transforms = True, shuffle_test = False):
     """
     Loads the training, validation, and test datasets, applies optional transformations,
     and returns DataLoaders for each dataset.
@@ -67,6 +67,7 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
         path (str, optional): Path to the dataset directory. Default is './ADNI/AD_NC'.
         use_transforms (bool, optional): Whether to apply data augmentation and normalization 
             transforms. Default is True.
+        shuffle_test (bool, optional): Tells us whether to shuffle the test loader or not (for batch prediction stuff)
 
     Returns:
         tuple: A tuple containing:
@@ -126,7 +127,7 @@ def get_dataloaders(batch_size: int = 32, image_size: int = 224, train_fraction 
 
     # Val/test dataloaders
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last= True)  # No need to shuffle validation set
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last= True)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=shuffle_test, num_workers=num_workers, drop_last= True)
 
     # Check dataset sizes
     print(f"Training set size: {len(train_dataset)}")

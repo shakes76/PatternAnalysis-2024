@@ -7,13 +7,16 @@ For more details on the architecture, please refer to the original paper: [A Sty
 
 For this training, the **Alzheimer's Disease Neuroimaging Initiative (ADNI)** dataset was used. The dataset consists of MRI brain scans of patients with **Alzheimer's Disease (AD)** and **Normal Controls (NC)**. All images are in grayscale and have a resolution of **256 x 256 pixels**.
 
-- **AD Image**: 
-
-![AD Image](/recognition/Readme_images/218391_78.jpeg)
-
-- **NC Image**: 
-
-![NC Image](/recognition/Readme_images/808819_88.jpeg)
+<p align="center">
+  <div style="display: inline-block; text-align: center;">
+    <p><strong>AD Image</strong></p>
+    <img src="/recognition/Readme_images/218391_78.jpeg" width="45%" />
+  </div>
+  <div style="display: inline-block; text-align: center;">
+    <p><strong>NC Image</strong></p>
+    <img src="/recognition/Readme_images/808819_88.jpeg" width="45%" />
+  </div>
+</p>
     
 
 The dataset contains approximately **30,000 images** in total, with **20,000** images allocated for training and **10,000** for testing. For the training of my StyleGAN, I exclusively used the training images, and they were sufficient to generate clear MRI brain scans.
@@ -29,8 +32,10 @@ This repository consists of the following five major files:
 
 
 ## Model Architecture 
-<img src="recognition/Readme_images/image.png" alt="Model Architecture" width="500"/>
 
+<p align="center">
+	<img src="recognition/Readme_images/image.png" alt="Model Architecture" width="500"/>
+</p>
 
 The StyleGAN model architecture is similar to the GAN with a few changes. The GAN model relied an adversarial network which trained a Generator and a Discriminator to progressively improve the image generation outputs. However, a major issue with the GAN model is that it was prone to overfitting, model collapes and offered little diversity in the output images.
 
@@ -53,6 +58,7 @@ This technique passes multiple latent vectors to different style layers, prevent
 Some components of the model such as the discriminator were taken directly from the ProGAN paper. In addition, a gradient penalty module was created which was based of the **Wasserstein GAN with Gradient Penalty** paper. 
 
 The goal of the gradient penalty is to ensure that small changes in the input (real or generated images) lead to small, gradual changes in the discriminator's output. To achieve this, the authors of WGAN-GP introduced a method that interpolates between real and fake images, then encourages the discriminator to respond smoothly to these changes by penalizing large gradients. This helps improve the stability and performance of the model during training.
+
 
 
 ```Python
@@ -106,7 +112,9 @@ Due to the length and intensity of training, the model was trained on an externa
 
 The initial run had wide range of issues. For this model I attempted to directly generate 256 x 256 images, which manifested poorly as the model did not converge resulting in unrecognisable images. 
 
-<img src="recognition/Readme_images/image copy.png" alt="Initial Test Results" width="500"/>
+<p align="center">
+  <img src="recognition/Readme_images/image copy.png" alt="Initial Test Results" width="500"/>
+</p>
 
 This issue occurred due to an error in the data augmentation and generator setup. During this test run, the input image was processed with 3 channels, and augmentations such as saturation adjustments, blurring, and discoloration were applied. This led the model to mistakenly interpret the image as colored. Additionally, using 3 channels caused the generator and discriminator to converge more slowly, contributing to the poor image quality observed above.
 
@@ -120,13 +128,18 @@ This issue occurred due to an error in the data augmentation and generator setup
 
 The images produces after the initial test 2 were significantly better. However, there was still one major problem related to GPU resource allocation. 
 
-It was notices that during the training CPU usage would remain relatively low and would occasionally drop off. 
+It was notices that during the training CPU usage would remain relatively low and would occasionally drop off.
 
-<img src="recognition/Readme_images/CPU Usage.png" alt="Initial Test Results" width="700"/>
+<p align="center">
+	<img src="recognition/Readme_images/CPU Usage.png" alt="Initial Test Results" width="400"/>
+</p>
+
 
 This indicated that there was room to further utilise the CPU or the the model was being bottle necked in a particular location. A similar problem was faced with the GPU utilisation, where particularly in the earlier image sizes **(4 to 64)**, the GPU was being under utilised. 
 
-<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="700"/>
+<p align="center">
+	<img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="500"/>
+</p>
 
 **Adjustments:**
 1. To further utilise the CPU the number of workers used in the data loader was increased from **6 -> 10**
@@ -140,13 +153,17 @@ This indicated that there was room to further utilise the CPU or the the model w
 
 The following plots show the progressive output from the generator at each image size, slowly increasing from 4, 8 , 16, 32, 64, 128 and finally 256. In the earlier stages, the images appear highly pixelated due to the low resolution. Some blurring was unintentionally introduced by the image scaling software used during processing.
 
-<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="700"/>
+<p align="center">
+	<img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="500"/>
+</p>
 
-<img src="recognition/Readme_images/AD image progress (1).jpg" alt="AD Test Results" width="700"/>
+<p align="center">
+	<img src="recognition/Readme_images/AD image progress.jpg" alt="AD Test Results" width="500"/>
+</p>
+
 
 After training was completed each of these models were used to generated images. They are as follows.
 
-**AD Model Images:**
 
 <h2>AD Generated Images</h2>
 <p align="center">
@@ -157,13 +174,45 @@ After training was completed each of these models were used to generated images.
   <img src="recognition/Readme_images/AD GENERATES IMAGES/generated_image_1009.png" width="19%" />
 </p>
 
-**NC Model Images:**
+
 
 <h2>NC Generated Images</h2>
 <p align="center">
   <img src="recognition/Readme_images/NC Generated Images/generated_image_1001.png" width="19%" />
   <img src="recognition/Readme_images/NC Generated Images/generated_image_1004.png" width="19%" />
   <img src="recognition/Readme_images/NC Generated Images/generated_image_1006.png" width="19%" />
-  <img src="recognition/Readme_images/NC Generated Images/generated_image_1018png" width="19%" />
+  <img src="recognition/Readme_images/NC Generated Images/generated_image_1018.png" width="19%" />
   <img src="recognition/Readme_images/NC Generated Images/generated_image_1027.png" width="19%" />
 </p>
+
+## Training Loss
+
+<p align="center">
+  <img src="recognition/Readme_images/NC Loss.png" width="70%" />
+</p>
+
+<p align="center">
+  <img src="recognition/Readme_images/AD Loss1.png" width="70%" />
+</p>
+
+<h2>Model Benchmarking</h2>
+<p align="center">
+  <img src="recognition/Readme_images/2d TSNE.png" width="45%" />
+  <img src="recognition/Readme_images/3d TSNE.png" width="45%" />
+</p>
+
+### Cosine Similarity
+
+
+### FID Score 
+
+
+## StyleGAN Advantages
+
+## StyleGAN Disadvantages
+
+## Dependencies
+
+## References 
+
+

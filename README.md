@@ -65,7 +65,9 @@ This network maps the latent space **$z$** with another latent space $w$. This a
 
 ### Adaptive Instance Normalization (AdaIN)
 
-${AdaIN}(x_i, y) = y_{s,i} \cdot \frac{x_i - \mu(x_i)}{\sigma(x_i)} + y_{b,i}$
+<p align="center">
+ <img src="recognition/Readme_images/AINI.png" alt="Model Architecture" width="400"/>
+</p>
 
 Adaptive Instance Normalization (AdaIN) adjusts the **mean** ( $\mu(x_i)$ ) and **variance**( $\sigma(x_i)$ ) of the input features (like an image) based on the style you want to apply.
 

@@ -136,6 +136,87 @@ def visualize_tsne(embeddings, labels):
     plt.savefig('tsne_plot.png')
     plt.close()
 
+def show_predictions(model, test_loader, device, num_examples=9):
+    """
+    Show and plot predictions for examples from the test set.
+
+    Args:
+        model (nn.Module): The trained Siamese Network model.
+        test_loader (DataLoader): DataLoader for the test dataset.
+        device (torch.device): Device to run the model on (CPU or GPU).
+        num_examples (int): Number of examples to show (default: 4)
+    """
+    model.eval()
+    
+    # Get one batch
+    anchor, _, _, labels = next(iter(test_loader))
+    
+    with torch.no_grad():
+        # Get only the number of examples requested
+        anchor = anchor[:num_examples].to(device)
+        labels = labels[:num_examples]
+        
+        # Get predictions
+        outputs = model.classify(anchor)
+        probabilities = torch.softmax(outputs, dim=1)
+        predictions = outputs.argmax(1)
+        
+        # Calculate grid dimensions
+        num_rows = int(np.ceil(np.sqrt(num_examples)))
+        num_cols = int(np.ceil(num_examples / num_rows))
+        
+        # Create a figure with subplots
+        fig, axes = plt.subplots(num_rows, num_cols, figsize=(4*num_cols, 4*num_rows))
+        if num_examples > 1:
+            axes = axes.ravel()
+        
+        # Plot each example
+        for i in range(num_examples):
+            # Convert tensor to image
+            img = anchor[i].cpu().permute(1, 2, 0)
+            # Denormalize the image
+            mean = torch.tensor([0.485, 0.456, 0.406])
+            std = torch.tensor([0.229, 0.224, 0.225])
+            img = img * std + mean
+            img = img.numpy()
+            img = np.clip(img, 0, 1)
+            
+            true_label = "Malignant" if labels[i] == 1 else "Benign"
+            pred_label = "Malignant" if predictions[i] == 1 else "Benign"
+            
+            # Plot image
+            if num_examples == 1:
+                ax = axes
+            else:
+                ax = axes[i]
+            ax.imshow(img)
+            ax.axis('off')
+            
+            # Add predictions as title
+            color = 'green' if true_label == pred_label else 'red'
+            title = f'True: {true_label}\nPred: {pred_label}\n'
+            title += f'Benign: {probabilities[i][0]:.2f}\n'
+            title += f'Malignant: {probabilities[i][1]:.2f}'
+            ax.set_title(title, color=color)
+            
+            # Log predictions
+            logging.info(f"\nExample {i+1}:")
+            logging.info(f"True Label: {true_label}")
+            logging.info(f"Predicted: {pred_label}")
+            logging.info(f"Benign Probability: {probabilities[i][0]:.4f}")
+            logging.info(f"Malignant Probability: {probabilities[i][1]:.4f}")
+
+        # Hide empty subplots if any
+        if num_examples > 1:
+            for i in range(num_examples, len(axes)):
+                axes[i].axis('off')
+                axes[i].set_visible(False)
+
+        plt.tight_layout()
+        plt.savefig('example_predictions.png')
+        plt.close()
+        logging.info("\nExample predictions plot saved as 'example_predictions.png'")
+
 def main():
     """
     Main function to run the prediction and evaluation pipeline.
@@ -183,7 +264,7 @@ def main():
     # Visualize embeddings using t-SNE
     visualize_tsne(embeddings, true_labels)
     logging.info("t-SNE plot saved as 'tsne_plot.png'")
-
+    show_predictions(model, test_loader, device)
     # Additional metrics
     tn, fp, fn, tp = cm.ravel()
     specificity = tn / (tn + fp)

@@ -1,4 +1,5 @@
 # train.py
+import os
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -12,8 +13,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
 learning_rate = 0.0001
-num_epochs = 30
+num_epochs = 50
 batch_size = 32
+patience = 5  # Early stopping patience: stop if no improvement after 'patience' epochs
+min_delta = 0.001  # Minimum change to qualify as an improvement
 
 data_transforms = transforms.Compose(
     [
@@ -29,7 +32,10 @@ train_loader = getDataLoader(data_transforms, batch_size, method="mixed")
 model = SiameseNetwork().to(device)
 
 # Load the saved model weights if they exist
-model.load_state_dict(torch.load("siamese_model_final.pth"), strict=False)
+model_path = "siamese_model_final.pth"
+if os.path.exists(model_path):
+    model.load_state_dict(torch.load(model_path), strict=False)
+    print("Model loaded successfully.")
 
 # Loss and optimizer
 criterion = nn.BCELoss()  # Binary Cross-Entropy Loss
@@ -38,9 +44,15 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 # Lists to store losses for plotting
 train_losses = []
 
+# Early stopping variables
+best_loss = float("inf")
+early_stop_counter = 0
+
 
 def train():
+    global best_loss, early_stop_counter
     model.train()
+
     for epoch in range(num_epochs):
         running_loss = 0.0
 
@@ -72,6 +84,21 @@ def train():
         train_losses.append(epoch_loss)
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
 
+        # Early stopping check
+        if epoch_loss < best_loss - min_delta:
+            best_loss = epoch_loss
+            early_stop_counter = 0
+            # Save the best model
+            torch.save(model.state_dict(), "siamese_model_best.pth")
+            print("Best model saved.")
+        else:
+            early_stop_counter += 1
+            print(f"No improvement for {early_stop_counter} epochs.")
+
+        if early_stop_counter >= patience:
+            print(f"Early stopping triggered after {epoch+1} epochs.")
+            break
+
     # Save final model
     torch.save(model.state_dict(), "siamese_model_final.pth")
 
@@ -87,5 +114,6 @@ def plot_losses(save_path="loss_plot.png"):
     plt.clf()
 
 
+# Call the train function to resume training
 train()
 plot_losses()

@@ -58,11 +58,13 @@ def generate_random_inputs(batch_size, latent_dim, initial_size):
     
     return latent_vectors, constant_inputs
 
+
+
 # Example usage
 if __name__ == "__main__":
     BATCH_SIZE = 16
     LATENT_DIM = 512
-    INITIAL_SIZE = 4
+    INITIAL_SIZE = 8
     TARGET_SIZE = (128, 128)
 
     # Create ADNI dataset for AD and NC classes separately

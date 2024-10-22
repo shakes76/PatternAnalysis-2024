@@ -90,7 +90,7 @@ def main():
     )
  
     #Train the siamese
-    #siamese_train(current_dir, train_loader, val_loader, epochs=epochs, lr=learning_rate, plots=True)
+    siamese_train(current_dir, train_loader, val_loader, epochs=epochs, lr=learning_rate, plots=True)
 
     #Test it
     siamese_net = SiameseNN()

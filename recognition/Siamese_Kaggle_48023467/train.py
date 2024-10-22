@@ -19,10 +19,9 @@ def run_epoch(model, dataloader_train, loss_triplet, loss_classify, optimizer, s
     record_probpos = []
     record_predictions = []
     
-    print("Running training epoch...")
-    for i, (anchor, positive, negative, labels) in enumerate(dataloader_train):
+    for i, (anchor, label, positive, negative) in enumerate(dataloader_train):
         # Send to pytorch device
-        anchor, positive, negative, labels = anchor.to(torch_device), positive.to(torch_device), negative.to(torch_device), labels.to(torch_device)
+        anchor, positive, negative, label = anchor.to(torch_device), positive.to(torch_device), negative.to(torch_device), label.to(torch_device)
         optimizer.zero_grad()
 
         # Main loop, obtain network outputs and evaluate loss
@@ -30,13 +29,13 @@ def run_epoch(model, dataloader_train, loss_triplet, loss_classify, optimizer, s
             out_anchor, out_positive, out_negative = model(anchor, positive, negative)
             out_loss_triplet = loss_triplet(out_anchor, out_positive, out_negative)
             
-            out_classifier = model.classify(anchor)
-            out_loss_classifier = loss_classify(out_classifier, labels)
+            out_classifier = model.classify(out_anchor)
+            out_loss_classifier = loss_classify(out_classifier, label)
             
             total_loss = out_loss_triplet + out_loss_classifier
         
         # Scale loss and apply learning
-        scaler.scale(total_loss).backward
+        scaler.scale(total_loss).backward()
         scaler.step(optimizer)
         scaler.update()
         
@@ -45,18 +44,18 @@ def run_epoch(model, dataloader_train, loss_triplet, loss_classify, optimizer, s
         prob_pos = torch.softmax(out_classifier, dim=1)[:, 1]
         _, predictions = torch.max(out_classifier, 1)
         
-        record_label.extend(labels.cpu().numpy())
+        record_label.extend(label.cpu().numpy())
         record_probpos.extend(prob_pos.detach().cpu().numpy())
         record_predictions.extend(predictions.cpu().numpy())
         
         running_acc = accuracy_score(record_label, record_predictions)
         
         # Display running metric
-        print("Loss:", (running_loss / (i + 1)), "Acc:", f"{running_acc:.4f}")
+        #print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
             
     avg_loss = running_loss / len(dataloader_train)
     acc = accuracy_score(record_label, record_predictions)
-    auc_roc = roc_auc_score(record_label, record_predictions)
+    auc_roc = roc_auc_score(record_label, record_probpos)
     
     return avg_loss, acc, auc_roc
     
@@ -72,16 +71,16 @@ def run_validate(model, dataloader_val, loss_triplet, loss_classify, torch_devic
     
     # No gradient calculations for evaluation
     with torch.no_grad():
-        for i, (anchor, positive, negative, labels) in enumerate(dataloader_val):
+        for i, (anchor, label, positive, negative) in enumerate(dataloader_val):
             # Send to pytorch device
-            anchor, positive, negative, labels = anchor.to(torch_device), positive.to(torch_device), negative.to(torch_device), labels.to(torch_device)
+            anchor, positive, negative, label = anchor.to(torch_device), positive.to(torch_device), negative.to(torch_device), label.to(torch_device)
             
             # Main loop, obtain network outputs and evaluate loss
             out_anchor, out_positive, out_negative = model(anchor, positive, negative)
             out_loss_triplet = loss_triplet(out_anchor, out_positive, out_negative)
             
-            out_classifier = model.classify(anchor)
-            out_loss_classifier = loss_classify(out_classifier, labels)
+            out_classifier = model.classify(out_anchor)
+            out_loss_classifier = loss_classify(out_classifier, label)
             
             total_loss = out_loss_triplet + out_loss_classifier
             
@@ -90,19 +89,17 @@ def run_validate(model, dataloader_val, loss_triplet, loss_classify, torch_devic
             prob_pos = torch.softmax(out_classifier, dim=1)[:, 1]
             _, predictions = torch.max(out_classifier, 1)
             
-            record_label.extend(labels.cpu().numpy())
+            record_label.extend(label.cpu().numpy())
             record_probpos.extend(prob_pos.detach().cpu().numpy())
             record_predictions.extend(predictions.cpu().numpy())
             
-            running_acc = accuracy_score(record_label, record_predictions)
-            
             # Display running metric
             running_acc = accuracy_score(record_label, record_predictions)
-            print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
+            #print(f"Loss: {(running_loss / (i + 1)):.4f}, Acc: {running_acc:.4f}")
                 
         avg_loss = running_loss / len(dataloader_val)
         acc = accuracy_score(record_label, record_predictions)
-        auc_roc = roc_auc_score(record_label, record_predictions)
+        auc_roc = roc_auc_score(record_label, record_probpos)
     
     return avg_loss, acc, auc_roc
 
@@ -112,25 +109,25 @@ def show_metrics(loss_train, loss_val, acc_train, acc_val, auc_train, auc_val):
     fig, axs = plt.subplots(3, 2)
     
     # Training and validation loss
-    axs[0, 0].plot(range(len(loss_train)+1), loss_train, label="Training Loss")
-    axs[0, 1].plot(range(len(loss_val)+1), loss_val, label="Validation Loss")
+    axs[0, 0].plot(range(1, len(loss_train)+1), loss_train, label="Training Loss")
+    axs[0, 1].plot(range(1, len(loss_val)+1), loss_val, label="Validation Loss")
     axs.flat[0].set(xlabel="Epoch", ylabel="Loss")
-    axs[0, 0].title("Training Loss")
-    axs[0, 1].title("Validation Loss")
+    axs[0, 0].set_title("Training Loss")
+    axs[0, 1].set_title("Validation Loss")
 
     # Training and validation classification accuracy
-    axs[1, 0].plot(range(len(acc_train)+1), acc_train, label="Training Accuracy")
-    axs[1, 1].plot(range(len(acc_val)+1), acc_val, label="Validation Accuracy")
+    axs[1, 0].plot(range(1, len(acc_train)+1), acc_train, label="Training Accuracy")
+    axs[1, 1].plot(range(1, len(acc_val)+1), acc_val, label="Validation Accuracy")
     axs.flat[1].set(xlabel="Epoch", ylabel="Accuracy")
-    axs[0, 0].title("Training Accuracy")
-    axs[0, 1].title("Validation Accuracy")
+    axs[1, 0].set_title("Training Accuracy")
+    axs[1, 1].set_title("Validation Accuracy")
 
     # Training and validation AUC-ROC
-    axs[2, 0].plot(range(len(auc_train)+1), auc_train, label="Training AUC-ROC")
-    axs[2, 1].plot(range(len(auc_val)+1), auc_val, label="Validation AUC-ROC")
-    axs.flat[1].set(xlabel="Epoch", ylabel="AUC-ROC")
-    axs[0, 0].title("Training AUC-ROC")
-    axs[0, 1].title("Validation AUC-ROC")
+    axs[2, 0].plot(range(1, len(auc_train)+1), auc_train, label="Training AUC-ROC")
+    axs[2, 1].plot(range(1, len(auc_val)+1), auc_val, label="Validation AUC-ROC")
+    axs.flat[2].set(xlabel="Epoch", ylabel="AUC-ROC")
+    axs[2, 0].set_title("Training AUC-ROC")
+    axs[2, 1].set_title("Validation AUC-ROC")
 
     plt.tight_layout()
     plt.savefig("metrics.png")
@@ -159,6 +156,9 @@ def main():
     device_name = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device_name)
     
+    print("PyTorch Version:", torch.__version__)
+    print("PyTorch Device:", device_name)
+    
     # Load params
     data_dir, train_ratio, batch_size, triplet_margin, lr, n_epochs = load_params()
     
@@ -182,6 +182,7 @@ def main():
     
     # Run epochs
     for epoch in range(n_epochs):
+        print(f"Running training epoch {epoch+1}")
         # Train
         train_loss, train_acc, train_auc = run_epoch(model, train_loader, triplet_loss, classifier_loss, optimizer, scaler, device, device_name)
         val_loss, val_acc, val_auc = run_validate(model, val_loader, triplet_loss, classifier_loss, device)
@@ -203,8 +204,8 @@ def main():
         scheduler.step(val_auc)
 
         # Update best model if higher accuracy reached
-        if val_auc > best_val_auc:
-            best_val_auc = val_auc
+        if val_auc > best_auc:
+            best_auc = val_auc
             torch.save(model.state_dict(), 'best.pth')
 
     print("Training complete")

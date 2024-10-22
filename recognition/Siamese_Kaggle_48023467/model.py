@@ -17,26 +17,28 @@ class Siamese(nn.Module):
         resnet_out_features = 2048
         
         # Freeze parameters of feature extractor
-        for param in self.resnet.parameters():
-            param.requires_grad = True
+        '''for param in self.resnet.parameters():
+            param.requires_grad = False'''
             
         # Fully connected layers
         self.fc = nn.Sequential(
-            nn.Linear(resnet_out_features, 512),
+            nn.Linear(resnet_out_features, 1024),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            
+            nn.Linear(1024, 512),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
             
             nn.Linear(512, 256),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
-            
-            nn.Linear(256, 64)
         )
         
-        # Seperately definite the classifier for predictions
+        # Seperately define the classifier for predictions
         self.classifier = nn.Sequential(
-            nn.Linear(64, 2),
-            nn.Sigmoid()
+            nn.Linear(256, 2)
+            #nn.Sigmoid()
         )
     
         return
@@ -54,7 +56,7 @@ class Siamese(nn.Module):
     
     # Main forward pass to be fed into loss functio
     def forward(self, data, pos, neg):
-
+        
         out_data = self.forward_once(data)
         out_pos = self.forward_once(pos)
         out_neg = self.forward_once(neg)

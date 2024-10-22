@@ -113,11 +113,11 @@ class ISICDataset(Dataset):
         img_ref, label = self._imgs[index]
         
         # Generate random indexes for positive and negative images
-        index_pos = random.choice(self._imgs_split[index])
+        index_pos = random.choice(self._imgs_split[label])
         while index_pos == index:
-            index_pos = random.choice(self._imgs_split[index])
+            index_pos = random.choice(self._imgs_split[label])
             
-        index_neg = random.choice(self._imgs_split[1-index])
+        index_neg = random.choice(self._imgs_split[1-label])
         
         # Acquire images
         img_anchor = self.load_img(img_ref)
@@ -177,6 +177,7 @@ def generate_dataloaders(dir, batch_size=16, ratio=0.75, n_workers=4):
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         num_workers=n_workers,
+        batch_size=batch_size,
         pin_memory=True
     )
 
@@ -184,6 +185,7 @@ def generate_dataloaders(dir, batch_size=16, ratio=0.75, n_workers=4):
         val_dataset,
         shuffle=False,
         num_workers=n_workers,
+        batch_size=batch_size,
         pin_memory=True
     )
 

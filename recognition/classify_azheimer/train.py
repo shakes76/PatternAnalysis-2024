@@ -15,7 +15,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 from sklearn.metrics import classification_report
 
 
-def train_model():
+def train_model(epochs=10):
     if os.path.exists("recognition/classify_azheimer/AD_NC"):
         data_dir = "recognition/classify_azheimer/AD_NC"
     else:
@@ -23,13 +23,12 @@ def train_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GFNet(num_classes=2)  # Assuming GFNet is designed for binary classification
     model = model.to(device)
-    
+
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
     scheduler = ExponentialLR(optimizer, gamma=0.9)
-    
+
     train_loader, test_loader = get_dataloaders(data_dir)
-    epochs = 10
     bar = tqdm(range(epochs * len(train_loader)))
     model.train()
 

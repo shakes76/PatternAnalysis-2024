@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report
 from dataset import get_dataloaders
 from train import train_model
+import argparse
 
 
 def evaluate_model(model, test_loader, device):
@@ -22,6 +23,11 @@ def evaluate_model(model, test_loader, device):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Alzheimer's Disease Classification")
+    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train the model')
+    args = parser.parse_args()
+
+    epochs = args.epochs
     if os.path.exists("recognition/classify_azheimer/AD_NC"):
         data_dir = "recognition/classify_azheimer/AD_NC"
     else:
@@ -31,7 +37,7 @@ def main():
     train = True
 
     if train or not os.path.exists("alzheimer_classifier.pth"):
-        model = train_model()
+        model = train_model(epochs)
     else:
         model = torch.load("alzheimer_classifier.pth")
     report = evaluate_model(model, test_loader, device)

@@ -4,11 +4,10 @@ import torch.nn.functional as F
 
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_channels=1, embed_dim=768):
+    def __init__(self, patch_size=16, in_channels=1, embed_dim=768):
         super(PatchEmbedding, self).__init__()
-        self.img_size = img_size
         self.patch_size = patch_size
-        self.n_patches = (img_size // patch_size) ** 2
+        self.n_patches = (256 // patch_size) * (240 // patch_size)
 
         self.patch_embed = nn.Conv2d(
             in_channels, embed_dim, kernel_size=patch_size, stride=patch_size
@@ -40,7 +39,6 @@ class TransformerEncoder(nn.Module):
 class GFNet(nn.Module):
     def __init__(
         self,
-        img_size=224,
         patch_size=16,
         in_channels=1,
         num_classes=2,
@@ -54,7 +52,6 @@ class GFNet(nn.Module):
 
         # Patch embedding
         self.patch_embed = PatchEmbedding(
-            img_size=img_size,
             patch_size=patch_size,
             in_channels=in_channels,
             embed_dim=embed_dim,
@@ -65,7 +62,7 @@ class GFNet(nn.Module):
 
         # Positional encoding
         self.pos_embed = nn.Parameter(
-            torch.randn(1, (img_size // patch_size) ** 2 + 1, embed_dim)
+            torch.randn(1, (256 // patch_size) * (240 // patch_size) + 1, embed_dim)
         )
 
         # Transformer Encoder

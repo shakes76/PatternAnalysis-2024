@@ -283,9 +283,12 @@ vae_encoder.apply(weights_init)
 vae_decoder.apply(weights_init)
 unet.apply(weights_init)
 
+vae_losses = []
+
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 50
-'''for epoch in range(num_epochs):
+num_epochs = 100
+for epoch in range(num_epochs):
+    vae_it_loss = []
     for images, labels in tqdm(data_loader):
         images = images.to(device)
         labels = labels.to(images.device)
@@ -301,6 +304,8 @@ num_epochs = 50
         recon_loss = vae_criterion(reconstructed_images, images)
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         vae_loss = 0.5*recon_loss + kl_div
+
+        vae_it_loss.append(vae_loss.item())
         
         # Backpropagation for VAE
         vae_optimizer.zero_grad()
@@ -309,17 +314,18 @@ num_epochs = 50
 
     vae_scheduler.step()
     print(f"Epoch [{epoch+1}/{num_epochs}], VAE Loss: {vae_loss.item()}")
-    if (epoch + 1) % 20 == 0:
-        with torch.no_grad():
-            # Decode denoised latent to generate images
-            generated_images = vae_decoder(z).clamp(-1, 1)
-            display_images(generated_images, num_images=5)
-            sample = vae_encoder.decode(torch.randn(5, latent_dim).to(device))
-            generated_images = vae_decoder(sample)
-            display_images(generated_images, num_images=5)
+    vae_losses.append(np.mean(vae_it_loss))
+    #if (epoch + 1) % 20 == 0:
+    #    with torch.no_grad():
+    #        # Decode denoised latent to generate images
+    #        generated_images = vae_decoder(z).clamp(-1, 1)
+    #        display_images(generated_images, num_images=5)
+    #        sample = vae_encoder.decode(torch.randn(5, latent_dim).to(device))
+    #        generated_images = vae_decoder(sample)
+    #        display_images(generated_images, num_images=5)
 
 torch.save(vae_encoder, "models/encoder.model")
-torch.save(vae_decoder, "models/decoder.model")'''
+torch.save(vae_decoder, "models/decoder.model")
 
 vae_encoder = torch.load("models/encoder.model", weights_only=False)
 vae_encoder.eval()
@@ -358,15 +364,7 @@ def display_sample_images(images):
         plt.axis('off')
     plt.show()
 
-
-#'''
-# Visualize noisy images at different timesteps
-""" z = 0 * torch.randn(5, latent_dim, 25, 25).to(device)
-for t in [0, 20, 50, 90]:
-    noisy_latent, _ = add_noise(z, t)
-    generated_images = vae_decoder(noisy_latent).clamp(-1, 1)
-    display_images(generated_images, num_images=5) """
-
+diffusion_losses = []
 for epoch in range(num_epochs):
     losses = []
     for images, labels in tqdm(data_loader):
@@ -398,15 +396,12 @@ for epoch in range(num_epochs):
         unet_optimizer.zero_grad()
         diffusion_loss.backward()
         unet_optimizer.step()
-        #torch.nn.utils.clip_grad_norm_(unet.parameters(), max_norm=1.0)
-        
-        #sample_images = generate_sample(0, unet, vae_decoder, num_samples=5)
-        #display_images(sample_images, num_images=5)
 
     unet_scheduler.step()
     print(f"Epoch [{epoch+1}/{num_epochs}], Diffusion Loss: {np.mean(losses)}")
+    diffusion_losses.append(np.mean(losses))
     
-    if (epoch+1) % 1 == 0:
+    if (epoch+1) % 99 == 0:
         with torch.no_grad():
             # Reverse the diffusion process
             print(t)
@@ -425,6 +420,17 @@ torch.save(unet, "models/unet.model")
 unet = torch.load("models/unet.model", weights_only=False)
 unet.eval()
 
+plt.plot(vae_losses)
+plt.title("VAE Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.show()
+
+plt.plot(diffusion_losses)
+plt.title("Diffusion Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.show()
 
 # Example usage to generate images for class label 0
 sample_images = generate_sample(0, unet, vae_decoder, num_samples=5)

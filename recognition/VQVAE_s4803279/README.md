@@ -37,7 +37,7 @@ The testing set included 540 images 4.2% of the data. The testing set is the sma
 ## Results
 This model achieved an average Structures Similarity Index Mearure (SSIM) of 0.8732
 
-The training and validation losses: VQVAE_s4803279\Results\loss_plot.png
+The training and validation losses: ![recognition/VQVAE_s4803279/Results/loss_plot.png](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_plot.png)
 
 The trained model: VQVAE_s4803279\Results\vqvae2_epoch_final.pth
 

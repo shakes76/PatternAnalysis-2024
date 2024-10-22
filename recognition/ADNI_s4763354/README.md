@@ -11,8 +11,7 @@ GFNet is a cutting-edge transformer model that leverage global filter layers to 
 
 Alzheimer's disease is a progressive neurodegenerative disorder that leads to cognitive decline and the dementia symptoms will get worse gradually year by year. Therefore, early and accurate diagnosis is very crucial to identify the cause and utilize effective treatment as early as possible. Traditional models often struggle with the complexity of brain images since minor differences between healthy and diseased brains are hard to capture. This project addresses the challenge of classifying brain images to assist in the diagnosis of Alzheimer's disease using state-of-the-art Transformer model - GFNet. GFNet's ability to leverage global filtering and frequency-domain transformations efficiently process brain images and detect minor differences that are essential to distinguish normal and AD cases. This also provides a valuable tool for clinicians to automate and imrpove efficiency in medical dialogsis in general.
 
- <img src="images/gfnet.png" alt="description" width="700" height="400">
-
+![GFNet](images/gfnet.png)
 
 ## Usage
 ### Dependencies
@@ -31,12 +30,12 @@ The following Python packages are needed to be installed with specified versions
 ### Directory Structure
 ```
 ADNI_s4763354/
-├── modules.py        # Source code for model components
-├── dataset.py        # Data loader and preprocessing code
-├── train.py          # Code for training, validating, testing, and saving the model
-├── predict.py        # Example usage of the trained model for predictions
-├── README.md         # Project documentation
-├── images/           # Folder for images (may include visualization, model architecture, prediction examples, etc.)
+|-- modules.py        # Source code for model components
+|-- dataset.py        # Data loader and preprocessing code
+|-- train.py          # Code for training, validating, testing, and saving the model
+|-- predict.py        # Example usage of the trained model for predictions
+|-- README.md         # Project documentation
+|-- images/           # Folder for images 
 ```
 ### Reproduction
 Perform training in `recognition/ADNI_s4763354`: 
@@ -75,8 +74,7 @@ For the pre-processing stage, it is carried out in 'dataset.py'.
    For the validation and test datasets, only resizing and normalization are applied, as no augmentation and shuffling is necessary for evaluation.<br>
  Below shows the transformed image examples: 
  
- <img src="images/transformed.png" alt="description" width="900" height="200">
-
+![Transformed Image](images/transformed.png)
 
 2. **Train-validation split**: Patient-wise splitting approach is used. Data is split based on unique patient IDs so that all images from the same patient do not appear in both sets. This prevents overfitting. The train-validation ratio is 8:2. 
 
@@ -102,13 +100,13 @@ Total samples: 17200
 ### Approach 1
 I initially trained the GFNet model using the [pre-existing GFNet classes](https://github.com/raoyongming/GFNet) on the preprocessed ADNI images. There are two functions to define the model, `GFNet` and `GFNetPyramid`. The `GFNet` function implements the core architecture of the Global Filter Network while GFNetPyramid introduces a pyramid structure that processes features at multiple scales. I used `GFNet` as it has a simplier model architecture which prevents overfitting and is well-suited for small dataset. Here is the model parameters:
 ```
-- Image size: 224x224       #pixels for input brain scan images.
-- Patch size: 16x16         #The image is divided into patches of size 16x16 for processing.
-- Embedding dimensions:512  #These define the feature map sizes at different stages of the network.
-- Depth: 19                 #Number of transformer blocks in each stage
-- MLP ratio:4               #A multiplier for the hidden dimension size in the MLP layers
-- Normalization layer       #LayerNorm is applied at each stage for stable training.
-- Dropout rates: 0.25       #Used to prevent overfitting by randomly dropping some connections or neurons
+- Image size: 224x224    #Pixels for input brain scan images.
+- Patch size: 16x16      #Image is divided into patches for processing.
+- Embedding dim:512      #Define the feature map sizes at different stages.
+- Depth: 19              #Number of transformer blocks in each stage
+- MLP ratio:4            #A multiplier for the hidden dimension size in the MLP layers
+- Normalization layer    #Stabilize training.
+- Dropout rates: 0.25    #Prevent overfitting by randomly drop some connections or neurons
 ```
 But I quickly realized that the performance was suboptimal due to the relatively small data size to a Transformer model, reaching 66% test accuracy. Transformer model usually requires a substantial amount of data for robust performance. Initially, my model overfitted with training accuracy around 96.77% but only 78.33% and 57.41% for validation and test accuracy respectively. I adjusted hyperparameters to deal with overfitting as follows. The training and validation accuracy is 83% and 72%, with 66% test accuracy.
 ```
@@ -123,75 +121,46 @@ But I quickly realized that the performance was suboptimal due to the relatively
  ```
  Figure 1 and 2 show the training loss and accuracy of Approach 1:
 
-<div style="display: flex; justify-content: center; gap: 10px;">
-  <figure>
-    <img src="images/acc_approach1.png" alt="Training Accuracy Curve" width="400" height="200">
-    <figcaption>Figure 1: Training Accuracy Curve</figcaption>
-  </figure>
+![GFNet - Accuracy](images/acc_approach1.png)
 
-  <figure>
-    <img src="images/loss_approach1.png" alt="Training Loss Curve" width="400" height="200">
-    <figcaption>Figure 2: Training Loss Curve</figcaption>
-  </figure>
-</div>
+![GFNet -Loss](images/loss_approach1.png)
 
 ### (Optional) Approach 2
 While I have already trained my model using pre-existing GFNet model, I would like to compare it with pre-trained models as an additional experiemnt. I applied transfer learning by loading a pretrained GFNet and fine-tuned it on my dataset. I trained the GFNet_H_Ti and GFNet_H_B model. This approach yielded an improvement in test accuracy, reaching over 75%. To address overfitting, I set dropout rate set to 0.5, used CosineAnnealingLR scheduler with 5e-6 learning rate, set weight_decay to 1e-2, applied early stopping and more. However, the results are not favourable. Further adjustment and regularization on overfitting problem is need for such complex pretrained models. 
 
-  Fine-tune pretrain gfnet_h_ti model: 
+**Fine-tuned pre-trained gfnet_h_ti model:**
 
-<div style="display: flex; justify-content: center; gap: 10px;">
-  <figure>
-    <img src="images/acc_hti.png" alt="Pretrain GFNet_H_Ti Model - Accuracy" width="400" height="200">
-    <figcaption>Figure 3: GFNet_H_Ti Model - Accuracy</figcaption>
-  </figure>
-
-  <figure>
-    <img src="images/acc_hti.png" alt="Pretrain GFNet_H_Ti Model - Loss" width="400" height="200">
-    <figcaption>Figure 4: GFNet_H_Ti Model - Loss</figcaption>
-  </figure>
-</div>
-
- Fine-tune pretrain gfnet_h_b model: 
-<div style="display: flex; justify-content: center; gap: 10px;">
-  <figure>
-    <img src="images/acc_hb.png" alt="Pretrain GFNet_H_B Model - Accuracy" width="400" height="200">
-    <figcaption>Figure 5: GFNet_H_B Model - Accuracy</figcaption>
-  </figure>
-
-  <figure>
-    <img src="images/loss_hb.png" alt="Pretrain GFNet_H_B Model - Loss" width="400" height="200">
-    <figcaption>Figure 6: GFNet_H_B Model - Loss</figcaption>
-  </figure>
-</div>
+![Pretrained GFNet_H_Ti Model - Accuracy](images/acc_hti.png)
+![Pretrained GFNet_H_Ti Model - Loss](images/loss_hti.png)
 
 
-## Result and Analysis
+**Fine-tune pretrain GFNet_H_B model:**
 
-### Prediction
-
-  #### Approach 1 with GFNet: 
-
-   <img src="images/example_classifications_1.png" >
+![Pretrained GFNet_H_B Model - Accuracy](images/acc_hb.png)
+![Pretrained GFNet_H_B Model - Loss](images/loss_hb.png)
 
 
-   <img src="images/confusion_matrix_1.png" width="500" height="400">
+## Prediction Results and Analysis
 
-  **Test accuracy: 66.34%<br>
-  Recall: 72.9%**
+### Approach 1 with GFNet: 
 
-   #### Approach 2 with Fine-tuned gfnet_h_b model: 
+![GFNet Example Classification](images/example_classifications_1.png)
+![GFNet Confusion Matrix](images/confusion_matrix_1.png)
 
-   <img src="images/example_classifications_2.png" alt="gfnet_h_b model with AdamW">
+**Test accuracy: 66.34%**  
+**Recall: 72.9%**
 
+### Approach 2 with Fine-tuned gfnet_h_b model: 
 
-   <img src="images/confusion_matrix_2.png" alt="gfnet_h_b model with AdamW" width="500" height="400">
+![GFNet_H_B Example Classification](images/example_classifications_2.png)
+![GFNet_H_B Confusion Matrix](images/confusion_matrix_2.png)
 
-**Test accuracy: 75% <br>
-Recall: 92.6%**
+**Test accuracy: 75%**  
+**Recall: 92.6%**
 
-### Discussion 
-Based on the above results, we observe that the pre-trained model performs far better than the vanilla model on testing set. However, complex pre-trained models are usually prone to severe overfitting as shown in the Figure 5 and 6. Large numbers of parameters allows them to easily fit noise and anomalies in the training set, rather than improving generalization. In the prediction results of approach 1, even though four of the five randomly chosen predictions correctly identified the slices with high confidence, the recall (TP/(TP+FN)) in the confusion matrix is only 73.9% where the model fails to identify all of the diseased patients. Recall is important as it calculates the number of correctly identifed cases among all the people who actually have Alzheimer's Disease. Missed diagnoses may cause severe consequences since this can delay treatment and care. As for the results of approach 2, the recall reaches 92.6%.  
+### Discussion  
+In the prediction results of approach 1, even though four of the five randomly chosen predictions correctly identified the slices with high confidence, the recall (TP/(TP+FN)) in the confusion matrix is only 73.9% where the model fails to identify all of the diseased patients. Recall is important as it calculates the number of correctly identifed cases among all the people who actually have Alzheimer's Disease. Missed diagnoses may cause severe consequences since this can delay treatment and care. As for the results of approach 2, the recall reaches 92.6%.  
+Based on the above results, we observe that the pre-trained model performs far better than the vanilla model on testing set. However, complex pre-trained models are usually prone to severe overfitting. Large numbers of parameters allows them to easily fit noise and anomalies in the training set, rather than improving generalization.
 
 ## References
 - [1] Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification. Advances in neural information processing systems, 34, 980-993.

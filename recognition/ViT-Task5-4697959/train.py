@@ -265,4 +265,71 @@ def main():
     weight_decay = 1e-5 # decreased weight decay
     save_dir = 'saved_models'
     
+    print(f"Key parameters for this trainning session: Batch size: {batch_size}, Dropout: {dropout}, Learning Rate: {learning_rate}, Epoch: {num_epochs}, Weight Decay: {weight_decay}")
     
+    # Device configuration
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # Get data loaders, class names, and class weights
+    dataloaders, class_names, class_weights = get_data_loaders(
+        data_dir=data_dir,
+        batch_size=batch_size,
+        img_size=img_size,
+        val_split=val_split,
+        num_workers=num_workers
+    )
+
+    # Initialize the Vision Transformer model
+    model = VisionTransformer(
+        img_size=img_size,
+        patch_size=patch_size,
+        in_channels=3,
+        emb_size=emb_size,
+        num_heads=num_heads,
+        depth=depth,
+        ff_dim=ff_dim,
+        num_classes=num_classes,
+        dropout=dropout,
+        cls_token=cls_token
+    ).to(device)
+
+    # Define loss function and optimizer
+    criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    # Train the model
+    model, history = train_model(
+        model=model,
+        dataloaders=dataloaders,
+        criterion=criterion,
+        optimizer=optimizer,
+        device=device,
+        num_epochs=num_epochs,
+        patience=patience,
+        save_dir=save_dir
+    )
+
+    # Plot training metrics
+    plot_metrics(history, save_dir=save_dir)
+    print(f"Training and validation metrics plotted and saved to {save_dir}.")
+
+    # Evaluate the model on the test set
+    evaluate_model(
+        model=model,
+        dataloader=dataloaders['test'],
+        device=device,
+        class_names=class_names,
+        save_dir=save_dir
+    )
+    print(f"Evaluation on test set completed. Confusion matrix saved to {save_dir}.")
+
+    # End the timer
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    minutes = int(elapsed_time // 60)
+    seconds = int(elapsed_time % 60)
+    print(f"Total time taken: {minutes}m {seconds}s")
+
+if __name__ == '__main__':
+    main()

@@ -72,13 +72,20 @@ data/
     train/
         AD/
         NC/
-    val/
+    test/
         AD/
         NC/
 ```
 
 Where AD represents Alzheimer's Disease samples and NC represents Normal Control samples. 
 The training data has been split with 20% for validation and 80% for training to ensure the Unet does not overfit.
+
+Any model checkpoints will need to be placed in their appropriate folder:
+```
+checkpoints/
+    Diffusion/
+    VAE/
+```
 
 ## Usage
 

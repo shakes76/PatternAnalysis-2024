@@ -6,7 +6,7 @@ import torch.nn as nn
  This function samples a random latent space vector z and passes it through our mapping network
  in order to generate the stylised vector space.
 """
-def get_w(batch_size, mapping_network, device):
+def get_style_vector(batch_size, mapping_network, device):
 
     z = torch.randn(batch_size, w_dim).to(device)
     w = mapping_network(z)
@@ -56,3 +56,31 @@ def generator_loss(fake_output):
     # Compares discriminator's "evaluation" of the generated images to 1s. 
     # This is because the generator wants the discriminator to think its images are 1s (real). 
     return criterion(fake_output, torch.ones_like(fake_output))
+
+
+def gradient_penalty(critic, real, fake,device="cpu"):
+    BATCH_SIZE, C, H, W = real.shape
+    beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
+    interpolated_images = real * beta + fake.detach() * (1 - beta)
+    interpolated_images.requires_grad_(True)
+
+    # Calculate critic scores
+    mixed_scores = critic(interpolated_images)
+ 
+    # Calculates the gradient of scores with respect to the images
+    # and we need to create and retain graph since we have to compute gradients
+    # with respect to weight on this loss.
+    gradient = torch.autograd.grad(
+        inputs=interpolated_images,
+        outputs=mixed_scores,
+        grad_outputs=torch.ones_like(mixed_scores),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
+    # Reshape gradients to calculate the norm
+    gradient = gradient.view(gradient.shape[0], -1)
+    # Calculate the norm and then the loss
+    gradient_norm = gradient.norm(2, dim=1)
+    gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
+
+    return gradient_penalty

@@ -30,7 +30,7 @@ Dictionary of parameters for the VQVAE.
 """
 parameters = {
     "lr": 2e-4, 
-    "epochs": 5, 
+    "epochs": 50, 
     "batch": 100,
     "gpu": "cuda",
     "cpu": "cpu"

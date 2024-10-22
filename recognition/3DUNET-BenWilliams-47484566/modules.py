@@ -81,11 +81,13 @@ class UNet3D(nn.Module):
 
         #final convolution
         out = self.final_conv(dec1)
+        out = F.softmax(out, dim=1)
         return out
-
+        
 
 def dice_coefficient(pred, target, epsilon=1e-6):
-    pred = (pred > 0.5).float()
+    if pred.size(1) > 1:  # If the model output has more than one class
+        pred = torch.argmax(pred, dim=1)
     
     pred = pred.contiguous().view(-1)
     target = target.contiguous().view(-1)
@@ -106,5 +108,8 @@ class crossEntropyLoss(nn.Module):
         self.weight = weight
 
     def forward(self, output, target):
+        if self.weight is not None:
+            self.weight = self.weight.to(output.device)
+        #target = torch.squeeze(target, dim=1)
         loss = F.cross_entropy(output, target, weight=self.weight, ignore_index=3)
         return loss

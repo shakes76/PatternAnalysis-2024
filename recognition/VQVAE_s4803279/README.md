@@ -24,12 +24,12 @@ I did not apply any preprocessing or augment the images as the images were alrea
 ## Training
 The training set included 11460 images which is about 90.5% of the data. This meant that the bulk of the data was used for training the model and learning the features and improving the vector quantisation.
 
-The training loss: [VQVAE_s4803279\Results\train_losses.txt](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/train_losses.txt)
+The training loss: [Training Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/train_losses.txt)
 
 ## Validation
 The validation set included 660 images which is about 5.3% of the data. This ensures that were is some data that the model has not seen yet and can be used to strengthen the training of the model. This improves the generalisation of the model and improves the back propogation.
 
-The validation loss: [VQVAE_s4803279\Results\val_losses.txt](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/val_losses.txt)
+The validation loss: [Validation Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/val_losses.txt)
 
 ## Testing
 The testing set included 540 images 4.2% of the data. The testing set is the smallest as the model should already be in a good spot to generate new images by now so the testing set is used to evaluate how well the model works by comparing the generated images with the original ones. This is why the set is tthe smallest.
@@ -37,16 +37,23 @@ The testing set included 540 images 4.2% of the data. The testing set is the sma
 ## Results
 This model achieved an average Structures Similarity Index Mearure (SSIM) of 0.8732
 
-The training and validation losses: 
-![recognition/VQVAE_s4803279/Results/loss_plot.png](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_plot.png)
+The training and validation losses:  
+<p align="center">
+  <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_plot.png" alt="Loss Plot">
+</p>
 
-The trained model: [VQVAE_s4803279\Results\vqvae2_epoch_final.pth](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae2_epoch_final.pth)
+The trained model:  
+[Trained Model File](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae2_epoch_final.pth)
 
-Original Image: 
-![VQVAE_s4803279\Results\original_0.png](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/original_0.png)
+### Original Image
+<p align="center">
+  <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/original_0.png" alt="Original Image">
+</p>
 
-Generated Image: 
-![VQVAE_s4803279\Results\reconstruction_0.png](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/reconstruction_0.png)
+### Generated Image
+<p align="center">
+  <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/reconstruction_0.png" alt="Generated Image">
+</p>
 
 If you have a look at the original and the reconstructed image you can see that the generative model is working very well at learning the generating from the black and white hip MRI data. There are some places where information is lost in the generated model however this is expected ad the reproduction is only 87% accurate.
 

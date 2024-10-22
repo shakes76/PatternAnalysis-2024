@@ -23,7 +23,6 @@ class StyleGAN_Trainer:
     This class generates examples from the generator, defines the train function
     and the main training loop.
     """
-
     def __init__(self):
         """
         Initialises all necessay variables.

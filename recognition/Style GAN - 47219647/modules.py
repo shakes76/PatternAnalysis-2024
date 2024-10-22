@@ -202,7 +202,7 @@ class Discriminator(nn.Module):
 class GenBlock(nn.Module):
     """
     Generator block with two WSConv2d layers, noise injection, and AdaIN layers.
-    Each block takes a latent vector and transforms it progressively to a final image.
+    Each block takes a latent vector and transforms it to a image.
     """
     def __init__(self, in_channels, out_channels, w_dim):
         super(GenBlock, self).__init__()

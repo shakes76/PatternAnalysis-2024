@@ -44,7 +44,9 @@ class StyleGANDiscriminator(nn.Module):
             nn.Linear(256 * 32 * 32, 1)
         )
 
-
+    def forward(self, img):
+        return self.model(img)
+    
 if __name__ == "__main__":
     z_dim = 128  
     w_dim = 512  

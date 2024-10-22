@@ -5,7 +5,7 @@ Code for training, validating, tesing and saving the model.
 """
 import torch
 from dataset import GNNDataLoader
-from modules import GCNModel
+from modules import *
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import wandb_config
@@ -59,7 +59,7 @@ def training_loop(num_epochs, model, data, train, valid, test, optimiser, criter
     # implementing early stopping to reduce change of overfitting model
     best_val_loss = float('inf')
     patience_count = 0
-    patience_lim = 70 #stop training if loss doesn't improve
+    patience_lim = 50 #stop training if loss doesn't improve
 
     for epoch in range(num_epochs):
         loss = _train_model(model=model, data=data, train=train, optimiser=optimiser, criterion=criterion, device=device)
@@ -111,6 +111,12 @@ def training_loop(num_epochs, model, data, train, valid, test, optimiser, criter
 
     torch.save(model.state_dict(), 'GCN_model.pth')
 
+
+"""
+Main loop.
+Initialises hyper parameters and sets up model.
+Here, you can change the model used by changing the 'architecture' flag
+"""
 if __name__ == '__main__':
     # Setting up CUDA
     device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")

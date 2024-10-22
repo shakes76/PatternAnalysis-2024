@@ -8,6 +8,9 @@ import numpy as np
 from tqdm import tqdm
 import math
 from PIL import Image
+import umap
+
+reducer = umap.UMAP(min_dist=0, n_neighbors=35)
 
 from dataset import *
 
@@ -134,13 +137,29 @@ class VAEEncoder(nn.Module):
         eps = torch.randn_like(std)
         return mu + eps * std
 
-# UNet for denoising, now accepts label embeddings
+class CrossAttention(nn.Module):
+    def __init__(self, embed_dim, heads):
+        super(CrossAttention, self).__init__()
+        self.attention = nn.MultiheadAttention(embed_dim, num_heads=heads, batch_first=True)
 
+    def forward(self, x, context):
+        # x: (batch_size, num_channels, height, width), context: label embedding (batch_size, num_classes)
+        b, c, h, w = x.size()
+        x_flat = x.view(b, c, h * w).permute(0, 2, 1)  # (batch_size, h*w, num_channels)
+        context = context.unsqueeze(1).repeat(1, h * w, 1)  # (batch_size, 1, num_classes)
+        
+        attn_output, _ = self.attention(x_flat, context, context)  # (batch_size, h*w, num_channels)
+        attn_output = attn_output.permute(0, 2, 1).view(b, c, h, w)  # Reshape back to (batch_size, num_channels, height, width)
+        return attn_output
 
+# UNet for denoising
 class UNet(nn.Module):
     def __init__(self, latent_dim=256, num_classes=2):
         super(UNet, self).__init__()
         self.channel_size = 128
+
+        self.label_embedding = nn.Embedding(num_classes, 512)
+        self.cross_attention = CrossAttention(embed_dim=512, heads=4)
 
         # Encoder part (downsampling)
         self.enc1 = nn.Sequential(
@@ -202,28 +221,32 @@ class UNet(nn.Module):
             nn.Sigmoid()  # Final activation to scale outputs to [0, 1]
         )
 
-        self.time_embedding_layer = nn.Linear(32, 25)
+        self.time_embedding_layer = nn.Linear(32, 128)
 
     def forward(self, x, label, t):
         # Time embedding
         t_embedding = get_timestep_embedding(t, 32).to(x.device)  # Ensure tensor is on the same device
         t_embedding = self.time_embedding_layer(t_embedding)  # Map time embedding to latent_dim
-        t_embedding = t_embedding # Shape: (batch_size, latent_dim, 1, 1)
+        t_embedding = t_embedding.unsqueeze(2).unsqueeze(3).repeat(x.shape[0], 1, 25, 25) # Shape: (batch_size, latent_dim, 1, 1)
+
+        label_embedding = label.view(x.shape[0], 1).expand(-1,512).float()
 
         # Pass through the encoder with added time embedding
-        enc1_out = self.enc1(x + t_embedding)  # Ensure shapes match for addition
+        enc1_out = self.enc1(torch.concat((x,t_embedding), dim=2))  # Ensure shapes match for addition
         enc2_out = self.enc2(enc1_out)
         enc3_out = self.enc3(enc2_out)
 
         # Pass through the bottleneck
         bottleneck_out = self.bottleneck(enc3_out)
 
+        bottleneck_out = self.cross_attention(bottleneck_out, label_embedding)
+
         # Pass through the decoder with skip connections
         dec3 = self.crop_and_add(self.dec3(bottleneck_out), enc2_out)
         dec2 = self.crop_and_add(self.dec2(dec3), enc1_out)
         dec1 = self.crop_and_add(self.dec1(dec2), x)  # Skip connection with original input
 
-        return dec1
+        return dec1, bottleneck_out
 
     def crop_and_add(self, upsampled, skip_connection):
         """Crops the upsampled tensor to match the size of the skip connection tensor."""
@@ -286,8 +309,8 @@ unet.apply(weights_init)
 vae_losses = []
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
-num_epochs = 100
-for epoch in range(num_epochs):
+num_epochs = 10
+'''for epoch in range(num_epochs):
     vae_it_loss = []
     for images, labels in tqdm(data_loader):
         images = images.to(device)
@@ -325,7 +348,7 @@ for epoch in range(num_epochs):
     #        display_images(generated_images, num_images=5)
 
 torch.save(vae_encoder, "models/encoder.model")
-torch.save(vae_decoder, "models/decoder.model")
+torch.save(vae_decoder, "models/decoder.model")'''
 
 vae_encoder = torch.load("models/encoder.model", weights_only=False)
 vae_encoder.eval()
@@ -337,19 +360,38 @@ def generate_sample(label, model, vae_decoder, num_samples=1):
     model.eval()
     vae_decoder.eval()
     output_images = torch.tensor(())
+    label = torch.tensor([label] * num_samples).to(device)
     
     with torch.no_grad():
         x = torch.randn(num_samples, latent_dim).to(device) # Ensure dimensions match the expected input size
         x = vae_encoder.decode(x)
         for t in reversed(range(num_timesteps)):
             #x, _ = add_noise(x,t)
-            predicted_noise = model(x, label, t)
+            predicted_noise, _ = model(x, label, t)
             x = reverse_diffusion(x, predicted_noise, t)#.clamp(-1, 1)
             output_image = vae_decoder(x)#.clamp(-1, 1)  # Clamp only the final images for proper display
             if t in [0,1,2,3,4,5,6,7,9,10]:
                 output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)
 
     return output_images
+
+def generate_sample_latent(label, model, vae_decoder, num_samples=1):
+    model.eval()
+    vae_decoder.eval()
+    output_images = torch.tensor(())
+    label = torch.tensor([label] * num_samples).to(device)
+    
+    with torch.no_grad():
+        x = torch.randn(num_samples, latent_dim).to(device) # Ensure dimensions match the expected input size
+        x = vae_encoder.decode(x)
+        for t in reversed(range(num_timesteps)):
+            #x, _ = add_noise(x,t)
+            predicted_noise, y = model(x, label, t)
+            output_image = y#.clamp(-1, 1)  # Clamp only the final images for proper display
+            output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)
+
+    return output_images
+
 
 
 # Function to display the generated images
@@ -386,7 +428,7 @@ for epoch in range(num_epochs):
         noisy_latent, noise = add_noise(z, t)
 
         # Predict the noise using the UNet
-        predicted_noise = unet(noisy_latent, labels, t)
+        predicted_noise, _ = unet(noisy_latent, labels, t)
 
         # Compute diffusion loss
         diffusion_loss = diffusion_criterion(predicted_noise, noise)
@@ -412,6 +454,9 @@ for epoch in range(num_epochs):
             sample_images = generate_sample(0, unet, vae_decoder, num_samples=10)
             plt.imshow(np.transpose(vutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
             plt.show()
+            sample_images = generate_sample(1, unet, vae_decoder, num_samples=10)
+            plt.imshow(np.transpose(vutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
+            plt.show()
 
 print("Training completed!")
 
@@ -432,9 +477,31 @@ plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.show()
 
-# Example usage to generate images for class label 0
-sample_images = generate_sample(0, unet, vae_decoder, num_samples=5)
+
+n_images = 10
 
 # Display the generated images
+sample_images = generate_sample(0, unet, vae_decoder, num_samples=n_images)
 display_sample_images(sample_images)
 
+n_images = 100
+
+# Example usage to generate images for class label 0
+embedded0 = generate_sample_latent(0, unet, vae_decoder, num_samples=n_images).view(-1,512*13*7)
+#h,mu,logvar = vae_encoder(sample_images)
+#embedded0 = vae_encoder.reparameterize(mu,logvar)
+
+print(embedded0.shape)
+
+embedded1 = generate_sample_latent(1, unet, vae_decoder, num_samples=n_images).view(-1,512*13*7)
+#h,mu,logvar = vae_encoder(sample_images)
+#embedded1 = vae_encoder.reparameterize(mu,logvar)
+print(embedded1.shape)
+
+embedded = torch.cat((embedded0,embedded1),dim=0)
+
+print(embedded.shape)
+
+embedding = reducer.fit_transform(embedded.cpu().numpy())
+plt.scatter(embedding[:, 0], embedding[:, 1], c=[0] * n_images *10 + [1] * n_images*10, cmap='Spectral', s=10)
+plt.show()

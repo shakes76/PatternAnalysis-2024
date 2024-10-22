@@ -120,22 +120,28 @@ def clear_folder(folder_path):
             os.remove(file_path)
 
 
-def folder_check(output_loc, model_loc, image_loc):
+def folder_check(output_loc=None, model_loc=None, image_loc=None):
     """
         This function checks if the folders for the models and epoch reconstructions exist and if they do not, creates
     """
-    if not os.path.exists(output_loc):
-        os.makedirs(output_loc)
+    if output_loc is not None:
+        print("OUTPUT")
+        if not os.path.exists(output_loc):
+            os.makedirs(output_loc)
+    
+    if model_loc is not None:
+        print("MODEL")
+        if not os.path.exists(model_loc):
+            os.makedirs(model_loc)
+        else:
+            clear_folder(model_loc)
         
-    if not os.path.exists(model_loc):
-        os.makedirs(model_loc)
-    else:
-        clear_folder(model_loc)
-        
-    if not os.path.exists(image_loc):
-        os.makedirs(image_loc)
-    else:
-        clear_folder('epoch_reconstructions')
+    if image_loc is not None:
+        print("IMAGE")
+        if not os.path.exists(image_loc):
+            os.makedirs(image_loc)
+        else:
+            clear_folder('epoch_reconstructions')
 
 def plot_results(train_losses, ssim_scores, n_epochs, output_loc):
     """

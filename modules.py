@@ -140,7 +140,7 @@ class VectorQuantizer(nn.Module):
 
         # Compute the commitment loss based on the formula
         commitment_loss = self.beta * torch.mean((quantised_z - z.detach()) ** 2)
-        vq_loss = (torch.mean((quantised_z.detach()-z)**2))
+        vq_loss = (torch.mean((quantised_z.detach()-z) ** 2))
         embedding_loss = commitment_loss + vq_loss
 
         # Preserve the gradient before returning

@@ -8,14 +8,14 @@ from modules import VQVAE
 from predict import generate_samples
 
 # Hyperparameters
-IS_TRAINING = False
+IS_TESTING = False
 HIDDEN_DIM = 128
 RES_HIDDEN_DIM = 32
 N_RES_LAYERS = 5
 N_EMBEDDINGS = 512
 EMBEDDING_DIM = 64
 LEARNING_RATE = 2e-4
-N_EPOCHS = 10 if IS_TRAINING else 200
+N_EPOCHS = 10 if IS_TESTING else 100
 BATCH_SIZE = 16
 BETA = 0.25
 
@@ -30,9 +30,9 @@ train_losses = []
 best_epoch = 0
 
 # Initialize model and optimisers
-utils.folder_check(OUTPUT_LOCATION, MODEL_LOCATION, IMAGE_LOCATION) # Ensure the output directories exist and are empty from prior runs
+utils.folder_check(output_loc=OUTPUT_LOCATION, model_loc=MODEL_LOCATION, image_loc=IMAGE_LOCATION) # Ensure the output directories exist and are empty from prior runs
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")  # Initialise the device
-train_loader, test_loader, val_loader = load_data(testing=IS_TRAINING, batch_size=BATCH_SIZE) # Initialise the data loader
+train_loader, test_loader, val_loader = load_data(testing=IS_TESTING, batch_size=BATCH_SIZE) # Initialise the data loader
 model = VQVAE(HIDDEN_DIM,
               RES_HIDDEN_DIM,
               N_RES_LAYERS,

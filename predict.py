@@ -1,12 +1,15 @@
 import torch
 import matplotlib.pyplot as plt
 from itertools import cycle
+from dataset import load_test_data
+from modules import VQVAE
+import utils
 
 # Initialise the device
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
 
-def generate_samples(data_loader, model, output_loc, image_loc, epoch=-1):
+def generate_samples(data_loader, model, output_loc, image_loc=None, epoch=-1):
     """
         Generates a 4x8 grid of images from a VQVAE where the top 2 rows are the original images and the bottom 2 rows
         the reconstructed images. This function is either called for a specific epoch or the final model, as such the
@@ -54,7 +57,6 @@ def generate_samples(data_loader, model, output_loc, image_loc, epoch=-1):
         axes[i + 16].axis("off")
 
     plt.tight_layout()
-    plt.show()
 
     # Determine where to save the image based on what purpose it was called for
     if epoch == -1:
@@ -62,3 +64,11 @@ def generate_samples(data_loader, model, output_loc, image_loc, epoch=-1):
     else:
         plt.savefig(image_loc + f'epoch{epoch}.png')
     plt.close()
+
+
+if __name__ == "__main__":
+    OUTPUT_LOCATION = "./outputs/"
+    utils.folder_check(output_loc=OUTPUT_LOCATION)
+    test_loader = load_test_data()
+    model = VQVAE(128, 32, 5, 512, 64)
+    generate_samples(test_loader, model, OUTPUT_LOCATION)

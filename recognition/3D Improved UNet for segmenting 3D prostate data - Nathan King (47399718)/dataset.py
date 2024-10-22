@@ -142,3 +142,24 @@ def load_validate():
     for data in x_validate:
         
         yield data[0], data[1]
+
+#Load training data into dataset
+train_dataset = tf.data.Dataset.from_generator(
+    load_train,
+    output_signature=(
+        tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
+        tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+
+#Load testing data into dataset
+test_dataset = tf.data.Dataset.from_generator(
+    load_test,
+    output_signature=(
+        tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
+        tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))
+
+#Load validation data into dataset
+validate_dataset = tf.data.Dataset.from_generator(
+    load_validate,
+    output_signature=(
+        tf.TensorSpec(shape=(256, 256, 128, 1), dtype=tf.float32),
+        tf.TensorSpec(shape=(256, 256, 128, 6), dtype=tf.int32)))

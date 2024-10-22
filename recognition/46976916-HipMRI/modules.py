@@ -58,7 +58,7 @@ class UNET(nn.Module):
         return self.finalconv(x)
     
 def test():
-    x = torch.randn((3, 1, 160, 160))
+    x = torch.randn((3, 1, 256, 128))
     model = UNET(in_channels=1, out_channels=1)
     preds = model(x)
     print(preds.shape)
@@ -67,3 +67,6 @@ def test():
 
 if __name__ == "__main__":
     test()
+
+def dice_loss(pred, target):
+    pass

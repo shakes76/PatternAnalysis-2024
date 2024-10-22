@@ -54,8 +54,18 @@ def train_fn():
             # So, real is [32, 1, 256, 256]
             discriminator_real_output = discriminator(real) # Will be our predicted labels for each of the real images.
 
+            # Combining real and fake leads to [32, 32, 256, 256] sized interpolated images.
+            gp = utils.gradient_penalty(discriminator, real, generated_images, device=device)
+
             discriminator_loss = utils.discriminator_loss(real_output=discriminator_real_output, fake_output=discriminator_fake_output)
             generator_loss = utils.generator_loss(fake_output=discriminator_fake_output)
+
+            # Update discriminator loss with gradient penalty and regularisation.
+            discriminator_loss += lambda_gp * gp
+            discriminator_loss += 0.001 * torch.mean(discriminator_real_output ** 2)
+
+            regularization = 0.001 * torch.mean(torch.square(list(generator.parameters())[0])) # Adjust the regularization strength
+            generator_loss += regularization
         
         # Append the observed Discriminator loss to the list
         current_discriminator_loss.append(discriminator_loss.item())

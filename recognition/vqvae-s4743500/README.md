@@ -25,7 +25,7 @@ Firstly, the process starts with an input image being **encoded** into a latent 
 The following sections provide an overview of the deep learning pipeline used for this project:  
 &nbsp;&nbsp;&nbsp;&nbsp; [1. Data Loading & Preprocessing](#1-data-loading--preprocessing)  
 &nbsp;&nbsp;&nbsp;&nbsp; [2. Model Architecture](#2-model-architecture)  
-&nbsp;&nbsp;&nbsp;&nbsp; [3. Training Process](#3vq-vae-training-process)  
+&nbsp;&nbsp;&nbsp;&nbsp; [3. Training Process](#3-vq-vae-training-process)  
 &nbsp;&nbsp;&nbsp;&nbsp; [4. Testing Process](#4-vq-vae-testing-process)  
 
 ## 1. Data Loading & Preprocessing  

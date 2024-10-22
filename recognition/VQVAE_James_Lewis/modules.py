@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import numpy as np
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class Encoder(nn.Module):
     """
     Encoder module for VQ-VAE
@@ -17,26 +18,25 @@ class Encoder(nn.Module):
 
     """
 
-    def __init__(self, input_dim, output_dim, n_res_block, n_res_channel, stride):
+    def __init__(self, input_dim, output_dim, n_res_block, n_res_channel):
         super(Encoder, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.n_res_block = n_res_block
         self.n_res_channel = n_res_channel
-        self.stride = stride
+        stride = 2
 
         self.conv_stack = nn.Sequential(
-            nn.Conv2d(input_dim, input_dim // 2, 3, stride, 1),  # First layer: reduce channels
+            nn.Conv2d(3, output_dim//2, kernel_size=4, stride=stride, padding=1),
             nn.ReLU(),
-            nn.Conv2d(input_dim // 2, input_dim // 4, 3, stride, 1),  # Second layer: further reduce channels
+            nn.Conv2d(output_dim//2, output_dim, kernel_size=4, stride=stride, padding=1),
             nn.ReLU(),
-            nn.Conv2d(input_dim // 4, input_dim // 4, 3, stride, 1),  # Third layer: maintain channels
-            nn.ReLU(),
-            nn.Conv2d(input_dim // 4, input_dim // 4, 3, stride, 1),  # Fourth layer: maintain channels
+            nn.Conv2d(output_dim, 32, kernel_size=3, stride=stride - 1, padding=1),
             nn.ReLU()
         )
 
     def forward(self, x):
+
         x = self.conv_stack(x)
         return x
 
@@ -55,20 +55,20 @@ class Decoder(nn.Module):
 
     """
 
-    def __init__(self, dim, output_dim, n_res_block, n_res_channel, stride):
+    def __init__(self, dim, output_dim, n_res_block, n_res_channel):
         super(Decoder, self).__init__()
         self.dim = dim
         self.output_dim = output_dim
         self.n_res_block = n_res_block
         self.n_res_channel = n_res_channel
-        self.stride = stride
+        stride = 1
 
         self.inv_conv_stack = nn.Sequential(
-            nn.ConvTranspose2d(dim, dim, 3, stride, 1),  # First layer: maintain channels
+            nn.ConvTranspose2d(32, output_dim, 3, stride, 1),  # First layer: maintain channels
             nn.ReLU(),
-            nn.ConvTranspose2d(dim, dim // 2, 4, 2, 1),  # Second layer: reduce channels, increase spatial size
+            nn.ConvTranspose2d(output_dim, output_dim // 2, 4, 2, 1),  # Second layer: reduce channels, increase spatial size
             nn.ReLU(),
-            nn.ConvTranspose2d(dim // 2, output_dim, 4, 2, 1)  # Third layer: output layer to match output dimensions
+            nn.ConvTranspose2d(output_dim // 2, 3, 4, 2, 1)  # Third layer: output layer to match output dimensions
         )
 
     def forward(self, x):
@@ -96,25 +96,38 @@ class VectorQuantizer(nn.Module):
         self.embed.weight.data.uniform_(-1/n_embed, 1/n_embed)
 
     def forward(self, z):
-        #flatten the input tensor
-        z_flattened = z.view(-1, z.size(-1))
+        z = z.permute(0, 2, 3, 1).contiguous()
+        z_flattened = z.view(-1, self.dim)
 
-        #calculate the distances
-        distances = (z_flattened ** 2).sum(dim=1, keepdim=True) + \
-                    (self.embed.weight ** 2).sum(dim=1) - \
-                    2 * torch.matmul(z_flattened, self.embed.weight.t())
 
-        #find the nearest embedding
-        min_encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+        d = torch.sum(z_flattened ** 2, dim=1, keepdim=True) + \
+            torch.sum(self.embed.weight ** 2, dim=1) - 2 * \
+            torch.matmul(z_flattened, self.embed.weight.t())
 
-        # quantize the input
-        z_q = self.embed(min_encoding_indices).view(z.shape)
+        # find closest encodings
+        min_encoding_indices = torch.argmin(d, dim=1).unsqueeze(1)
+        min_encodings = torch.zeros(
+            min_encoding_indices.shape[0], self.n_embed).to(device)
+        min_encodings.scatter_(1, min_encoding_indices, 1)
 
-        #compute the commitment loss
-        z_e = z_flattened.view(z.shape)  #flattened input for loss computation
-        commitment_loss = self.commitment_cost * F.mse_loss(z_e, z_q.detach())
+        # get quantized latent vectors
+        z_q = torch.matmul(min_encodings, self.embed.weight).view(z.shape)
 
-        return z_q, min_encoding_indices, commitment_loss
+        # compute loss for embedding
+        loss = torch.mean((z_q.detach() - z) ** 2) + self.commitment_cost * \
+               torch.mean((z_q - z.detach()) ** 2)
+
+        # preserve gradients
+        z_q = z + (z_q - z).detach()
+
+        # perplexity
+        e_mean = torch.mean(min_encodings, dim=0)
+        perplexity = torch.exp(-torch.sum(e_mean * torch.log(e_mean + 1e-10)))
+
+        # reshape back to match original input shape
+        z_q = z_q.permute(0, 3, 1, 2).contiguous()
+
+        return loss, z_q, perplexity, min_encodings, min_encoding_indices
 
 class VQVAE(nn.Module):
     """
@@ -132,23 +145,25 @@ class VQVAE(nn.Module):
 
     """
 
-    def __init__(self, input_dim, dim, n_res_block, n_res_channel, stride, n_embed, commitment_cost):
+    def __init__(self, input_dim, dim, n_res_block, n_res_channel, stride, n_embed, commitment_cost, embedding_dims):
         super(VQVAE, self).__init__()
         self.input_dim = input_dim
         self.dim = dim
         self.n_res_block = n_res_block
         self.n_res_channel = n_res_channel
         self.stride = stride
+        self.embedding_dims = embedding_dims
         self.n_embed = n_embed
         self.commitment_cost = commitment_cost
 
-        self.encoder = Encoder(input_dim, dim, n_res_block, n_res_channel, stride)
-        self.decoder = Decoder(dim, input_dim, n_res_block, n_res_channel, stride)
-        self.vector_quantizer = VectorQuantizer(dim, n_embed, commitment_cost)
+        self.encoder = Encoder(3, dim, n_res_block, n_res_channel)
+        self.vector_quantizer = VectorQuantizer(embedding_dims, n_embed, commitment_cost)
+        self.decoder = Decoder(embedding_dims, dim, n_res_block, n_res_channel)
+
 
     def forward(self, x):
         z = self.encoder(x)
-        z_q, min_encoding_indices, commitment_loss = self.vector_quantizer(z)
+        commitment_loss, z_q, perplexity, min_encodings, min_encoding_indices,  = self.vector_quantizer(z)
         x_recon = self.decoder(z_q)
 
         return x_recon, commitment_loss

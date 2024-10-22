@@ -108,34 +108,48 @@ The project requires the following dependencies[^4]:
 &nbsp; &nbsp; The entire pipeline (from data download to model evaluation) can be executed via `test_driver.py`.
 <br /> <br />
 ## Code Explanation and Comments
-### 1 `dataset.py`
+
+### 1 `download.py`
+
+### 2 `dataset.py`
 ```bash
 """
 dataset.py
-This script handles loading and preprocessing the HipMRI dataset.
+----------
+Custom dataset class for loading MRI slices and segmentation masks.
 
-Functions:
-- load_data(data_dir): Loads the Nifti images and preprocesses them for training and testing.
+Input:
+    - Root directory containing the dataset in .npy format.
+
+Output:
+    - Torch Dataset objects that can be used for training/testing with DataLoader.
+
+Usage:
+    Import this module to create a Dataset instance for training and evaluation.
+
+Author: Han Yang
+Date: 25/09/2024
 """
 import os
 import numpy as np
-import nibabel as nib
 import torch
+from torch.utils.data import Dataset
 
-def load_data(data_dir):
-    """
-    Loads Nifti images from the specified directory, resizes them, and normalizes pixel values.
-
+class ProstateMRIDataset(Dataset):
+    """    
+    Custom Dataset for loading and processing Prostate MRI data.
+    
     Args:
-        data_dir (str): Directory containing Nifti files.
-
-    Returns:
-        images (torch.Tensor): Normalized and resized images ready for training.
+        root_dir (str): Directory containing .npy files of MRI slices.
+        
+    Methods:
+        __len__(): Returns the number of samples in the dataset.
+        __getitem__(idx): Loads and returns a sample at the specified index.
     """
-    # code implementation...
+    # Implementation of the dataset class...
 ```
 
-### 2 `modules.py`
+### 3 `modules.py`
 ```bash
 """
 modules.py
@@ -160,7 +174,7 @@ class UNet(nn.Module):
     # Model architecture implementation...
 ```
 
-### 3 `train.py`
+### 4 `train.py`
 ```bash
 """
 train.py
@@ -189,7 +203,7 @@ def train_model(data_dir, output_dir):
     # Print training loss and validate Dice coefficient...
 ```
 
-### 4 `predict.py`
+### 5 `predict.py`
 ```bash
 """
 train.py

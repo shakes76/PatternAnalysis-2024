@@ -14,6 +14,7 @@ import numpy as np
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 #from dataset import get_isic2020_data, get_isic2020_data_loaders
 #from modules import TripletLoss, SiameseNet
@@ -28,6 +29,7 @@ def train_siamese_net(
     val_loader: DataLoader,
     model: SiameseNet,
     optimizer,
+    scheduler,
     triplet_loss: TripletLoss,
     classifier_loss,
     epochs: int,
@@ -107,11 +109,11 @@ def train_siamese_net(
             avg_val_loss = np.mean(val_running_loss)
     
             # Calculate
-            test_y_pred, test_y_probs, test_y_true = predict_siamese_net(model, val_loader, device)
+            test_y_pred, test_y_probs, test_y_true, _ = predict_siamese_net(model, val_loader, device)
             val_accuracy = accuracy_score(test_y_true, test_y_pred)
             val_aucroc = roc_auc_score(test_y_true, test_y_probs)
         
-            train_y_pred, train_y_probs, train_y_true = predict_siamese_net(model, train_loader, device)
+            train_y_pred, train_y_probs, train_y_true, _ = predict_siamese_net(model, train_loader, device)
             train_accuracy = accuracy_score(train_y_true, train_y_pred)
             train_aucroc = roc_auc_score(train_y_true, train_y_probs)
         
@@ -122,7 +124,10 @@ def train_siamese_net(
             val_acc_per_epoch.append(val_accuracy)
             train_aucroc_per_epoch.append(train_aucroc)
             val_aucroc_per_epoch.append(val_aucroc)
-    
+
+        # Trigger scheduler based on the current Validation AUR ROC
+        scheduler.step(val_aucroc)
+        
         # Print out current results
         print(f"[{strftime('%H:%M:%S', gmtime())}] Epoch: {epoch+1 :>2}/{epochs} -- [Train Loss: {avg_train_loss:.4f} - Train Acc: {train_accuracy:.4f} - Train AUR ROC: {train_aucroc:.4f}] -- [Val Loss {avg_val_loss:.4f} - Val Acc: {val_accuracy:.4f} - Val AUC ROC: {val_aucroc:.4f}]")
     
@@ -195,26 +200,35 @@ def plot_training_graphs(
 def main():
     """
     """   
+    # Set Seed
+    set_seed()
+
     # Determine device that we are training on
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Get the current config
+    config = get_config()
+    
     # Extract the data from the given locations
     images, labels = get_isic2020_data(
-        metadata_path=CONFIG['metadata_path'],
-        image_dir=CONFIG['image_dir'],
-        data_subset=CONFIG['data_subset']
+        metadata_path=config['metadata_path'],
+        image_dir=config['image_dir'],
+        data_subset=config['data_subset']
     )
 
     # Get the data loaders
     train_loader, val_loader, test_loader = get_isic2020_data_loaders(images, labels)
 
     # Initalise Model
-    model = SiameseNet(CONFIG['embedding_dims']).to(device)
+    model = SiameseNet(config['embedding_dims']).to(device)
 
-    # Initialise loss fucnctions and optimiser
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
+    # Initialise loss fucnctions
     triplet_loss = TripletLoss().to(device)
-    classifier_loss = nn.CrossEntropyLoss().to(device)
+    classifier_loss = nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
+
+    # Initialise Optimiser and Scheduler
+    optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+    scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5)
 
     # Train the model, best model (on validation set) will be saved to folder
     # Additionally loss, accuracy and aurroc plots will be produced and saved
@@ -224,9 +238,10 @@ def main():
         val_loader,
         model,
         optimizer,
+        scheduler,
         triplet_loss,
         classifier_loss,
-        CONFIG['epochs'],
+        config['epochs'],
         device
     )
 

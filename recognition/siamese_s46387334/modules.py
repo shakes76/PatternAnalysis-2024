@@ -9,18 +9,22 @@ Each component is implementated as a class or a function.
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 ###############################################################################
 ### Config Settings
-CONFIG = {
-    'data_subset': 8000,
-    'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-    'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
-    'embedding_dims': 128,
-    'learning_rate': 0.0001,
-    'epochs': 20,
-}
+def get_config() -> dict:
+    config = {
+        'data_subset': 8000,
+        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
+        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+        'embedding_dims': 128,
+        'learning_rate': 0.0001,
+        'epochs': 20,
+    }
+    return config
+
 
 ###############################################################################
 ### Classes
@@ -57,16 +61,11 @@ class SiameseNet(nn.Module):
         """
         out = self.feature_extractor(img)
         return self.fc_layers(out.view(out.size(0), -1))
-
-    def get_embedding(self, img):
-        """
-        """
-        return self.forward(img)
     
     def classify(self, img):
         """
         """
-        return self.classifier(self.get_embedding(img))
+        return self.classifier(self(img))
 
 class TripletLoss(nn.Module):
     """

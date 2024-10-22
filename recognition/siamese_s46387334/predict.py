@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score, roc_auc_score
-
+from sklearn.manifold import TSNE
 
 def results_siamese_net(
     test_loader,
@@ -31,7 +30,7 @@ def results_siamese_net(
         plt.show()
     
         # Results from the testing set
-        test_y_pred, test_y_probs, test_y_true = predict_siamese_net(model, test_loader, device)
+        test_y_pred, test_y_probs, test_y_true, test_embeddings = predict_siamese_net(model, test_loader, device)
         test_accuracy = accuracy_score(test_y_true, test_y_pred)
         test_auc_roc = roc_auc_score(test_y_true, test_y_probs)
     
@@ -53,6 +52,15 @@ def results_siamese_net(
         plt.xlabel('Predicted Labels')
         plt.show()
 
+        tsne = TSNE(n_components=2, random_state=42)
+        embeddings_2d = tsne.fit_transform(test_embeddings)
+    
+        plt.figure(figsize=(10, 8))
+        scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=test_y_true)
+        plt.colorbar(scatter)
+        plt.title('t-SNE visualization of embeddings')
+        plt.show()
+
 def predict_siamese_net(
     model: SiameseNet,
     data_loader: DataLoader,
@@ -63,10 +71,14 @@ def predict_siamese_net(
     all_y_pred = []
     all_y_prob = []
     all_y_true = []
+    all_embeddings = []
 
-    for batch_idx, (imgs, _, _, labels) in enumerate(data_loader):
+    for batch_idx, (imgs, _, _, y_true) in enumerate(data_loader):
         imgs = imgs.to(device).float()
-        outputs = model.classify(imgs)   
+        outputs = model.classify(imgs) 
+
+        # Determine model embeddings
+        embeddings = model(imgs)
 
         # Determine positive class probability
         y_prob = torch.softmax(outputs, dim=1)[:, 1]
@@ -76,9 +88,10 @@ def predict_siamese_net(
 
         all_y_pred.extend(y_pred.cpu().numpy())
         all_y_prob.extend(y_prob.cpu().numpy())
-        all_y_true.extend(labels.cpu().numpy())
+        all_y_true.extend(y_true.cpu().numpy())
+        all_embeddings.extend(embeddings.cpu().numpy())
 
-    return np.array(all_y_pred), np.array(all_y_prob), np.array(all_y_true)
+    return np.array(all_y_pred), np.array(all_y_prob), np.array(all_y_true), np.array(all_embeddings)
 
 
 ###############################################################################
@@ -93,22 +106,25 @@ def main():
     # Determine device that we are testing on
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Get the current config
+    config = get_config()
+    
     # Load in best model - we will use this model for our final predictions on test set
-    model = SiameseNet(CONFIG['embedding_dims']).to(device)
+    model = SiameseNet(config['embedding_dims']).to(device)
     model.load_state_dict(torch.load("siamese_net_model.pt", weights_only=False))
 
     # Extract the data from the given locations
     images, labels = get_isic2020_data(
-        metadata_path=CONFIG['metadata_path'],
-        image_dir=CONFIG['image_dir'],
-        data_subset=CONFIG['data_subset']
+        metadata_path=config['metadata_path'],
+        image_dir=config['image_dir'],
+        data_subset=config['data_subset']
     )
 
     # Get the data loaders
     _, _, test_loader = get_isic2020_data_loaders(images, labels)
 
     # Determine results of best model on test set
-    results_siamese_net(test_loader, model)
+    results_siamese_net(test_loader, model,  device)
 
 # if __name__ == "__main__":
 #     main()

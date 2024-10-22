@@ -44,7 +44,7 @@ With a Siamese Network as prescribed basis, it was clear that the project needed
 Although the code used describes 2 separate classes for the different networks, in actuality, the primary difference is in the first Linear layer which is initialized with half the number of expected incoming features and the forward function which takes only a single input. A great deal of the Classifier Network is dierectly inherited from an instance of the Siamese Network.
 
 To learn these discriminant embeddings, a resnet34 was used for feature extraction, and those features fed into a combination of Fully-Connected Linear Layers, ReLU Layers, with dropout (of 0.3 by default) being applied agfter the first ReLU.
-The selection of layers was guided by a investigations into (Koch, Zemel & Salakhutdinov 2015)[^2], (examples/siamese_network/main.py, pytorch/examples 2024)[^4], and the desire to begin with a simple model and only increase complexity as necessary, to avoid overfitting.
+The selection of layers was guided by a investigations into (Koch, Zemel & Salakhutdinov 2015)[^2], (examples/siamese_network/main.py, pytorch/examples 2024) [^4], and the desire to begin with a simple model and only increase complexity as necessary, to avoid overfitting.
 
 Binary-Cross-Entropy Loss was used as a loss criterion following the same design philosphy. Although Triplet loss might have been a more traditional approach, BCELoss provided an effective starting point, and never required replacing.
 

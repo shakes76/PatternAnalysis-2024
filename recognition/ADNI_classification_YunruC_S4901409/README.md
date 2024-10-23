@@ -19,7 +19,7 @@ Figure 2: The Overall Architecture of GFNet (Zhao et al., 2021)
 
 
 ## Description of the Algorithm
-The GFNet model is implemented across four Python files: `dataset.py`, `modules.py`, `train.py` and `predict.py`. The purpose of each file and the explanation of the code is described below: 
+The GFNet model is implemented across four Python files: `dataset.py`, `modules.py`, `train.py` and `predict.py` The purpose of each file and the explanation of the code is described below: 
 ### 1. dataset.py
 The original ADNI brain data was preprocessed into training and testing datasets and has two classes: Alzheimer’s disease and Normal Cognitive (NC). The input images are 2D brain slices in grayscale and have a size of 256 pixels in width and 240 pixels in height. The first 10 input images from the training dataset are shown below:
 
@@ -27,10 +27,150 @@ The original ADNI brain data was preprocessed into training and testing datasets
 
 Figure 3: First 10 Images from the Training AD Dataset with Labels.
 
-Since the images are compressed, the function `extract_zip(zip_path, extract_to)` was created to extract all the images within the zip file to the folder assigned to the ‘extract_to’. The custom dataset class `ADNIDataset`  was used to load images from both ‘AD’ and ‘NC’ classes from respective folder and assign 1 and 0 respectively. In order to normalize the image data, the mean and standard deviation of all pixels were calculated using `get_mean_std(loader) ` [(Saturn Cloud, 2023)]( https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/). However, it was found that mean and std values for both datasets are extremely small, indicating that the image has been normalized during preprocessing (very little variation in pixels values). The most notable aspect of the last function `get_data_loaders` is the use of data augmentations on the training dataset, generating new images to further improve model's performance. Moreover, 20% of the training dataset was used to validate the performance of the model during training.
+Since the images are compressed, the function `extract_zip(zip_path, extract_to)` is created to extract all the images within the zip file to the folder assigned to the ‘extract_to’. The custom dataset class `ADNIDataset`  is used to load images from both ‘AD’ and ‘NC’ classes from respective folder and assign 1 and 0 respectively. In order to normalize the image data, the mean and standard deviation of all pixels were calculated using `get_mean_std(loader) ` [(Saturn Cloud, 2023)]( https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/). However, it was found that mean and std values for both datasets are extremely small, indicating that the image has been normalized during preprocessing (very little variation in pixels values). The most notable aspect of the last function `get_data_loaders` is the use of data augmentations on the training dataset, generating new images to further improve model's performance. Moreover, 20% of the training dataset is used to validate the performance of the model during training.
 
 ### 2. modules.py
-The source code for the GFNet model was developed by Yongming Rao, Wenliang Zhao, Zheng Zhu, Jiwen Lu and Jie Zhou in 2021 [(Rao et al., 2021)](https://github.com/raoyongming/GFNet/blob/master/gfnet.py). The code was directly used to implement this image classification task. As mentioned in Introduction, the model’s architecture consists of three major parts: the patch embedding, the global filter layer and MLP. 
+The source code for the GFNet model was developed by Yongming Rao, Wenliang Zhao, Zheng Zhu, Jiwen Lu and Jie Zhou in 2021 [(Rao et al., 2021)](https://github.com/raoyongming/GFNet/blob/master/gfnet.py). The code was directly used to implement the ADNI image classification task. As mentioned in Introduction, the model’s architecture consists of three major parts: the patch embedding, the global filter layer and MLP. 
+
+In `PatchEmbed` class, the utility function `to_2tuple` ensures that both single `img_size` and `patch_size` inputs are converted into tuples of two values. For example, a single input 224 will be transformed to `(224, 224)`, indicating 224 x 224 pixels. 
+```python
+self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+```
+```python
+def forward(self, x):
+        B, C, H, W = x.shape
+        # FIXME look at relaxing size constraints
+        assert H == self.img_size[0] and W == self.img_size[1], \
+            f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+        x = self.proj(x).flatten(2).transpose(1, 2)
+        return x
+```
+During the forward pass, the assertion makes sure the input image size matches the expected size. The input image is first projected into patch embeddings using the convolution operation `self.proj`, where each patch is transformed into an embedding vector of a specific dimension: `embed_dim`. The output of `self.proj` has the shape `(B, embed_dim, H/patch_size, w/patch_size)`. This is followed by `flatten(2)` which flattens the spatial dimensions (height and width) of the output into a single dimension `num_patches = (H/patch_size)*( w/patch_size)`. The resulting output, in the form `(B, embed_dim, num_patches)` is then switched into 
+`(B, num_patches, embed_dim)`using `transpose(1,2)`.
+
+```python
+self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
+```
+```python
+def forward(self, x, spatial_size=None):
+        B, N, C = x.shape
+        if spatial_size is None:
+            a = b = int(math.sqrt(N))
+        else:
+            a, b = spatial_size
+
+        x = x.view(B, a, b, C)
+
+        x = x.to(torch.float32)
+
+        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
+        weight = torch.view_as_complex(self.complex_weight)
+        x = x * weight
+        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
+
+        x = x.reshape(B, N, C)
+
+        return x
+```
+In `GlobalFilter`, `B`, `N` and `C` correspond to the output from `PatchEmbed`. The `self.complex_weight` defines the learnable parameter with shape `(h, w, dim, 2)`. However, the flat sequence produced by the patch embedding need to be reshaped into a 2D spatial format for FFT operation. As a result, N is sqaure-rooted into `a` and `b` if `spatial_size' is not specified. By multiplying the input by the learned complex weight, the model can adjust specific frequency components within the input.
+
+```python
+class Mlp(nn.Module):
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
+        super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+```
+In MLP, the fully connected layers `self.fc1` and `self.fc2` map the input features to a hidden layer of size `hidden_features`, and then the `out_features`. The `nn.layer` applies a linear transformation in the form of `y = xW+b` with weight matrix w and bias b. The activation function `GELU` by default applies a non-linear transformation to the output of the fc1, which helps the model to learn complex patterns. Moreover, the `self.drop` is a regularization technique that randomly sets a fraction of elements to zero during training to prevent overfitting. 
+Furthermore, the `Block` class represents a building block used in GFNet
+
+Essentially, the GFNet is built using the three classes mentioned above with a single processing block `Block`.
+
+```python
+class Block(nn.Module):
+
+    def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.filter = GlobalFilter(dim, h=h, w=w)
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+
+    def forward(self, x):
+        x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
+        return x
+```
+
+The layer normalization is used both before and after the filter, as shown in Figure 2. Additionally, an advanced technique known as stochastic depth (drop path) is applied to Mlp output, allowing some blocks to be skipped during training to reduce overfitting. If `drop_path = 0`, no operation will perform on the input due to `nn.Identity()`. 
+Another point worth noting in `GFNet` is that the position embeddings are added to the patch embeddings to encode spatial information in `GFNet` class, and dropout is applied for regularization.
+
+```python
+self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
+self.pos_drop = nn.Dropout(p=drop_rate)
+```
+```python
+def forward_features(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for blk in self.blocks:
+            x = blk(x)
+
+        x = self.norm(x).mean(1)
+        return x
+```
+### 3. train.py
+There are three functions contained in `train.py`. The first is the `plot_metrics` whcih generates the graphs for training and validation losses, as well as accuracy over the epochs, and saves the graph to `save_path` if provided. The other two functions, `train` and `validate`, are responsible for training and validating the model, calculating the average loss, accuracy, and confusion matrix. To maintain repeatability, set seeds during training. Since hyperparameters in training GFNet are significant on its performance, an Optuna study is employed to identify the optimal values for the learning rate, weight decay rate and drop path rate within the provided range.
+
+```python
+learning_rate = trial.suggest_loguniform('lr', 1e-5, 1e-3)
+weight_decay = trial.suggest_loguniform('weight_decay', 1e-5, 1e-3)
+drop_path_rate = trial.suggest_uniform('drop_path_rate', 0.0, 0.5)
+```
+The model, criterion and optimizer are initilized as below:
+```python
+model = GFNet(
+                img_size=512, 
+                patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=drop_path_rate,
+                norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+model.to(device)
+```
+Once the optimization is completed, graphs of the optimization history and parameters will be plotted. Finally, the best hyperparameters obtained will then be used to train the model for 100 epochs, with the best model (model with the highest validation accuracy) saved to `model.pth`, and the losses and accuracy visualized.
+
+### 4. predict.py
+The best model identified during training is used to evaluate the performance on the test dataset, and the resulting confusion matrix is displayed.
+```python
+model.load_state_dict(torch.load('model.pth'))
+test_loss, test_accuracy, cm = validate(model, test_loader, criterion, device)
+print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
+
+print(f"Confusion Matrix:\n{cm}")
+```
+
+## Result Analysis
+
+
+
 
 
 ## References

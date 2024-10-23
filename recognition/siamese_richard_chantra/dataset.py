@@ -23,18 +23,29 @@ class DataManager:
         """
         self.data = pd.read_csv(self.csv_path)
 
-    def balance_dataset(self, data):
+    def balance_dataset(self, data, data_augmentation='oversampling'):
         """
-        Balance dataset by undersampling the majority (benign) class
+        Balance dataset using specified sampling strategy
         """
+        if data_augmentation is None:
+            return data
+            
         # Separate majority and minority classes
         malignant = data[data['target'] == 1]
         benign = data[data['target'] == 0]
 
-        n_samples = len(malignant)
-        benign_undersampled = benign.sample(n=n_samples, random_state=42) # random sample
-        balanced_data = pd.concat([malignant, benign_undersampled]) # combine
-        return balanced_data.sample(frac=1, random_state=42).reset_index(drop=True) # shuffle
+        if data_augmentation == 'oversampling':
+            n_samples = len(benign)
+            malignant_oversampled = malignant.sample(n=n_samples, replace=True, random_state=42)
+            balanced_data = pd.concat([benign, malignant_oversampled])
+        elif data_augmentation == 'undersampling':
+            n_samples = len(malignant)
+            benign_undersampled = benign.sample(n=n_samples, random_state=42)
+            balanced_data = pd.concat([malignant, benign_undersampled])
+        else:
+            raise ValueError(f"Unknown data_augmentation parameter: {data_augmentation}")
+
+    return balanced_data.sample(frac=1, random_state=42).reset_index(drop=True)
 
     def split_data(self):
         """

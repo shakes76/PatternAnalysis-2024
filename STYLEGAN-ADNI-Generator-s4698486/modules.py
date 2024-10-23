@@ -51,21 +51,21 @@ class MappingNetwork(nn.Module):
 
         # Create a Sequential container with 8 Equalized Linear layer using ReLU activ fn
         self.mapping = nn.Sequential(
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim),
+            EqualizedLinear(z_dim, w_dim),
             nn.ReLU(),
-            F.linear(z_dim, w_dim)
+            EqualizedLinear(z_dim, w_dim)
         )
     
     def forward(self, x):
@@ -74,6 +74,19 @@ class MappingNetwork(nn.Module):
         # Maps z to w
         return self.mapping(x)
 
+
+"""
+ Linear layer - just with equal weight and bias. Empirically works better with MappingNetwork
+"""
+class EqualizedLinear(nn.Module):
+    def __init__(self, in_features, out_features, bias=0):
+        super().__init__()
+        self.weight = EqualizedWeight([out_features, in_features])
+        self.bias = nn.Parameter(torch.ones(out_features) * bias)
+
+    def forward(self, x: torch.Tensor):
+        # Linear transformation
+        return F.linear(x, self.weight(), bias=self.bias)
 
 # Weight equalization layer
 """

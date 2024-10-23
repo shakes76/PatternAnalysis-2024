@@ -47,6 +47,9 @@ def train_model():
                                    validation_steps = VALIDATION_STEPS,
                                    validation_data = validation_batches,
                                    verbose = True)
+    
+    #Evaluate the model on the test set
+    mri_improved_3d_unet_model.evaluate(test_batches)
 
 if __name__ == "__main__":
     

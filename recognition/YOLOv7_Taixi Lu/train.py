@@ -1,5 +1,6 @@
 import time
 import torch.optim as optim
+from matplotlib import pyplot as plt
 from modules import *
 from dataset import get_dataloader
 from PIL import Image
@@ -9,6 +10,7 @@ import os
 
 def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=10):
     model.train()
+    losses = []
     for epoch in range(num_epochs):
         print(f"\nEpoch [{epoch + 1}/{num_epochs}]:")
         epoch_start_time = time.time()
@@ -48,6 +50,7 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
             optimizer.step()
 
         avg_loss = epoch_loss / len(dataloader)
+        losses.append(avg_loss)
         epoch_end_time = time.time()
         epoch_duration = epoch_end_time - epoch_start_time
         time_left = epoch_duration * (num_epochs - (epoch + 1))
@@ -60,6 +63,15 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
         torch.save(model.state_dict(), model_save_path)
         print(f"    Model saved to {model_save_path}")
 
+    # Plot the training losses
+    plt.figure()
+    plt.plot(range(1, num_epochs + 1), losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Over Epochs')
+    plt.legend()
+    plt.savefig('training_loss.png')
+    plt.show()
 
 def validate_yolo(model, dataloader, ground_truth_path, device):
     model.eval()

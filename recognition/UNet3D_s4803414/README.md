@@ -43,7 +43,7 @@ showing
 how the model processes input volumes and generates segmentation 
 masks:
 
-![3D U-Net Architecture](content/UNET_model.png)
+![3D U-Net Architecture](Content/UNET_model.png)
 
 ### Visualization
 Below is an example visualization of the segmentation process for a given slice from an MRI scan:
@@ -51,7 +51,7 @@ Below is an example visualization of the segmentation process for a given slice 
 - **Center**: Ground truth segmentation mask
 - **Right**: Model prediction
 
-![Prediction Image](./content/prediction.png)
+![Prediction Image](./Content/prediction.png)
 
 
 ## Dependencies
@@ -99,7 +99,7 @@ assigned a class label corresponding to the target structure.
 Below is a sample input MRI slice and the corresponding 
 segmentation output.
 
-![Output Image](./content/prediction2.png)
+![Output Image](./Content/prediction2.png)
 
 
 ## Pre-processing

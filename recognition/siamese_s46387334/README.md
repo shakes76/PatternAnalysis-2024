@@ -177,8 +177,20 @@ This section will contain details that pertain mainly to `train.py`
 
 ### Hyper Parameter Selection
 Grid Search using a validation set was used determine the optimal set of hyper parameters for training, the parameters are as follows:
+- Batch Size: `32`
+- Learning Rate: `0.0001`
+- Epochs: `20`
+- Embedding Dimensions: `128`
+- TripletLoss Margin: `1.0`
 
-(TODO: add final values)
+
+## Other Training Selections
+List of other selections made for training. Where possible - grid Search using a validation set was used determine the optimal selection:
+- Learning Rate Scheduler: `ReduceLROnPlateau`
+- Feature Extractor Loss: `TripletLoss`
+- Classifier Loss: `CrossEntropyLoss`
+- Optimiser: `Adam`
+- Save best model based on: AUR ROC on Validation Set
 
 ### Training Process
 A standard training loop will take place ensuring that both the Feature Extractor and Classifier models are trained. The model that preforms best on the validation set (in terms of AUR ROC metric) will be saved as `siamese_net_model.pt`.

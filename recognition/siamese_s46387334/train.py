@@ -33,9 +33,10 @@ def get_config() -> dict:
     Returns: the current config settings
     """
     config = {
-        'data_subset': 16000,
         'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
         'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+        'data_subset': 16000,
+        'batch_size': 32,
         'embedding_dims': 128,
         'learning_rate': 0.0001,
         'epochs': 20,
@@ -249,7 +250,11 @@ def main() -> None:
     )
 
     # Get the data loaders
-    train_loader, val_loader, test_loader = get_isic2020_data_loaders(images, labels)
+    train_loader, val_loader, test_loader = get_isic2020_data_loaders(
+        images=images,
+        labels=labels,
+        train_bs=config['batch_size']
+    )
 
     # Initalise Model
     model = SiameseNet(config['embedding_dims']).to(device)

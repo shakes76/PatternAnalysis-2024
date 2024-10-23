@@ -41,9 +41,6 @@ class ADNI_Dataset(Dataset):
                 self.image_paths.append(os.path.join(sub_dir_path, image_name))
                 self.labels.append(label)
 
-    def __len__(self):
-        return len(self.image_paths)
-
     def __getitem__(self, idx):
         image = Image.open(self.image_paths[idx]).convert('RGB')
         label = self.labels[idx]

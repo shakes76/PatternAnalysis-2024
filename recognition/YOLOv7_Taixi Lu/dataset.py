@@ -36,8 +36,8 @@ class ISICDataset(Dataset):
             label = 2
         else:
             label = 0
-            # I have checked the dataset, No data is melanoma and seborrheic_keratosis the same time
-        return image, torch.tensor(label, dtype=torch.int64), img_name
+        # I have checked the dataset, No data is melanoma and seborrheic_keratosis the same time
+        return image, label, img_name
 
 # Data loader function
 def get_dataloader(csv_file, root_dir, batch_size=8, shuffle=True):

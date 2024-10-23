@@ -1,12 +1,9 @@
-# Siamese network-based Classifier on ISIC 2020 Resized Dataset 
+# Siamese Network-based Classifier on ISIC 2020 Resized Dataset
 
 #### Author: Kai Graz, UQ Student Number: 46963868
 
 ## Introduction
-This project aims to classify images of skin lesions from the ISIC 2002 Resized Dataset as benign or malignant, spcifically with a Classifier based on a Siamese Network.
-
-### Algorithm implemented
-TODO
+Medical professionals spend many hours each year examining patients for malignant skin lesions. Working to imitate their abilities, this project aims to classify images of skin lesions from the ISIC 2002 Resized Dataset as benign or malignant, spcifically with a Classifier based on a Siamese Network.
 
 ### Datasets used
 
@@ -25,7 +22,7 @@ And, each image has a horizontally flipped copy (with optional random rotation) 
 
 In this way, once the data is loaded we are left with 2 lists and a dictionary: a list of each class containing the names of each image, and it's augmented copy; and a dictionary of names to image Tensors
 
-Train/Test splitting is then as simple as splitting the lists of classes by some index, and then only fetching the corresponding images. A 80/20 split was selected for this dataset by convention (discussion abounds on correct splitting practice[^3], but for the problem at hand it serves as an effective starting point)
+Train/Test splitting is then as simple as splitting the lists of classes by some index, and then only fetching the corresponding images. A 80/20 split was selected for this dataset by convention (discussion abounds on correct splitting practice[^1], but for the problem at hand it serves as an effective starting point)
 
 Finally, we have a dataset of `3 * #original malignant cases` unaugmented images, and the same number again of augmented images.
 
@@ -43,12 +40,11 @@ Finally, we have a dataset of `3 * #original malignant cases` unaugmented images
 With a Siamese Network as prescribed basis, it was clear that the project needed two different possible forms of output: either a similarity (when provided with 2 images) or a binary classification (when provided with 1 image). To accomodate this a Siamese network would act as the foundation, learning discriminant embeddings in the traditional manner for Siamese Networks (with 2 images), and once a suitable accuracy was achieved the weights would be transfered to a second classifier network capable of classifying individual images.
 Although the code used describes 2 separate classes for the different networks, in actuality, the primary difference is in the first Linear layer which is initialized with half the number of expected incoming features and the forward function which takes only a single input. A great deal of the Classifier Network is dierectly inherited from an instance of the Siamese Network.
 
-To learn these discriminant embeddings, a resnet34 was used for feature extraction, and those features fed into a combination of Fully-Connected Linear Layers, ReLU Layers, with dropout (of 0.3 by default) being applied agfter the first ReLU.
-The selection of layers was guided by investigations into (Koch, Zemel & Salakhutdinov 2015)[^2], (Examples/siamese_network/, pytorch/examples 2024)'s example[^4], and the desire to begin with a simple model and only increase complexity as necessary, to avoid overfitting.
+To learn these discriminant embeddings, a resnet34 was used for feature extraction, and those features fed into a combination of Fully-Connected Linear Layers, ReLU Layers, with dropout (of 0.3 by default) being applied after the first ReLU.
+The selection of layers was guided by investigations into (Koch, Zemel & Salakhutdinov 2015)[^2], (Examples/siamese_network/, pytorch/examples 2024)'s example[^3], and the philoshophy of simplicity: begin with a simple model and only increase complexity as necessary, to avoid overfitting.
 
 Binary-Cross-Entropy Loss was used as a loss criterion following the same design philosphy. Although Triplet loss might have been a more traditional approach, BCELoss provided an effective starting point, and never required replacing.
-
-The ADAM optimizer was used with the same reasoning, requiring no changes and providing effective optimisation.
+The ADAM optimizer was used with similar reasoning, requiring no changes and providing effective optimisation.
 
 ### Hyperparameters
 
@@ -68,14 +64,72 @@ All other hyperparameters (such as gamma, dropout rate, etc) were set at a base 
 As a Binary Classification task, the model performance can be easily evaluated with a confusion matrix, or more broadly using an accuracy rating.
 Model performance was high once a suitable feature extractor was selected, and the accuracy of both the Siamese Network and the Classifier Network range from 90% to 100% on the unseen test-data.
 
-A graph of losses across epochs from 10 separate model runs can be seen here, along with the confusion matrix of a single model run. TODO
+A graph of losses across epochs from 10 separate model runs can be seen here, along with the confusion matrix of a single model run.
 
-![loss over epochs both](./images/both_total.png)
-![confusion matrix](./images/confusion_matrix.png)
+###### Figure 1
+![loss over both epochs](./images/Combined_Loss.png)
+###### Figure 2
+![confusion matrix](./images/Confusion_Matrix.png)
+
+The collection of losses in Figure 1 starting near 0.7 is from the Siamese network, and as is evident from the figure, the Siamese network takes roughly 12 Epochs to reach a stable plateau of roughly $1 \over 15$ of the original loss. The second collection of losses maintains a loss of roughly 0.12 consistently. The difference in performance between the two models is because the Classifier acts as an extension of the Siamese Network, with pretrained weights already loaded (except for 1 Linear Layer). Because of this it should not be surprising that the Classifier does well: that is the aim of the entire assembly.
+
+The confusion matrix is the matrix of a single model, tested on the 20% tesing split of the data.
+
+Further diagnostic metrics of each run will be printed as below at the end of a models run:
+```
+Classifier: Average loss: 0.0060
+Accuracy: 678/702 (96.58%)
+Accuracy: 0.9658
+Precision: 0.9565
+Recall: 0.9402
+F1 Score: 0.9483
+```
+And with verbose training enabled (True by default), a Models progress will be displayed as below:
+```
+Train Siamese Epoch: 1 [0/2802 (0.00%)]
+Loss: 0.9796696901321411
+Train Siamese Epoch: 1 [160/2802 (5.68%)]
+Loss: 1.234261155128479
+Train Siamese Epoch: 1 [320/2802 (11.36%)]
+Loss: 0.7183441519737244
+Train Siamese Epoch: 1 [480/2802 (17.05%)]
+Loss: 0.7024695873260498
+Train Siamese Epoch: 1 [640/2802 (22.73%)]
+Loss: 0.6465725898742676
+Train Siamese Epoch: 1 [800/2802 (28.41%)]
+Loss: 0.7998968362808228
+Train Siamese Epoch: 1 [960/2802 (34.09%)]
+Loss: 0.7738028764724731
+Train Siamese Epoch: 1 [1120/2802 (39.77%)]
+Loss: 0.7581069469451904
+Train Siamese Epoch: 1 [1280/2802 (45.45%)]
+Loss: 0.6827537417411804
+Train Siamese Epoch: 1 [1440/2802 (51.14%)]
+Loss: 0.6931984424591064
+Train Siamese Epoch: 1 [1600/2802 (56.82%)]
+Loss: 0.7175575494766235
+Train Siamese Epoch: 1 [1760/2802 (62.50%)]
+Loss: 0.6808750629425049
+Train Siamese Epoch: 1 [1920/2802 (68.18%)]
+Loss: 0.6432032585144043
+Train Siamese Epoch: 1 [2080/2802 (73.86%)]
+Loss: 0.6961710453033447
+Train Siamese Epoch: 1 [2240/2802 (79.55%)]
+Loss: 0.661441445350647
+Train Siamese Epoch: 1 [2400/2802 (85.23%)]
+Loss: 0.6602127552032471
+Train Siamese Epoch: 1 [2560/2802 (90.91%)]
+Loss: 0.7196227312088013
+Train Siamese Epoch: 1 [2720/2802 (96.59%)]
+Loss: 0.6925568580627441
+```
+Once the model passes from being a Siamese Network to being a Classifier, the display will change appropriately.
 
 The individual losses of the Siamese and Classification networks can be seen below:
-![loss over epochs siamese](./images/siamese_total.png)
-![loss over epochs classifier](./images/classifier_total.png)
+###### Figure 3
+![loss over siamese epochs](./images/Siamese_Loss.png)
+###### Figure 4
+![loss over classifier epochs](./images/Classifier_Loss.png)
 
 
 ## How to Use
@@ -95,16 +149,11 @@ The result of this will be 2 saved Networks (1 Siamese, 1 Classifier), assorted 
 - torchvision (2.4.1)
 - matplotlib (3.9.2)
 - scikit-learn (1.5.2)
-- ISIC Resized Dataset  ISIC[^1]
+- ISIC Resized Dataset  ISIC[^4]
 
-## Reference
-
-[^1]: Nischay Dhankhar 2020, ISIC 2020 JPG 256x256 RESIZED, Kaggle.com, <https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data>.
-
+## References
+<!-- I have tried *everything* but the strange lines here do not go away :( -->
+[^1]: Reddit - Dive into anything 2016, Reddit.com, <https://www.reddit.com/r/learnmachinelearning/comments/18msvh2/source_of_general_convention_of_8020_traintest/>.
 [^2]: Koch, G, Zemel, R & Salakhutdinov, R 2015, Siamese Neural Networks for One-shot Image Recognition, <https://www.cs.cmu.edu/~rsalakhu/papers/oneshot1.pdf>.
-
-[^3]: Reddit - Dive into anything 2016, Reddit.com, <https://www.reddit.com/r/learnmachinelearning/comments/18msvh2/source_of_general_convention_of_8020_traintest/>.
-
-‌[^4]: Examples/siamese_network, pytorch/examples 2024, GitHub, viewed 22 October 2024, <https://github.com/pytorch/examples/tree/main/siamese_network>.
-
-‌
+[^3]: Examples/siamese_network, pytorch/examples 2024, GitHub, <https://github.com/pytorch/examples/tree/main/siamese_network/>.
+[^4]: Nischay Dhankhar 2020, ISIC 2020 JPG 256x256 RESIZED, Kaggle.com, <https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data>.

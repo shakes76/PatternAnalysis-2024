@@ -14,7 +14,7 @@ from dataset import HipMRIDataset
 from modules import VQVAE
 from utils import calculate_ssim, read_yaml_file, get_transforms, combine_images
     
-    
+ 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train VQVAE model.')
     parser.add_argument('--config', type=str, required=True, 
@@ -51,13 +51,13 @@ if __name__ == '__main__':
                         format='%(asctime)s - %(levelname)s - %(message)s')
     shutil.copy(config_path, log_dir)
 
-    train_transform = get_transforms(train_transforms)
-    val_test_transform = get_transforms(val_transforms)
-
     model = VQVAE(**model_parameters).to(device)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
+    
+    train_transform = get_transforms(train_transforms)
+    val_test_transform = get_transforms(val_transforms)
+    
     # Dataset loader
     train_dataset = HipMRIDataset(train_dataset_dir, train_transform, num_samples=num_samples)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -73,6 +73,8 @@ if __name__ == '__main__':
     val_total_losses = []
     train_ssim_scores = []
     val_ssim_scores = []
+    
+    best_val_loss = float('inf')
     
     start_time = time.time()
     for epoch in range(1, num_epochs + 1):
@@ -142,7 +144,6 @@ if __name__ == '__main__':
                 plt.savefig(os.path.join(image_log_dir, f'epoch_{epoch}.png'))
                 plt.close()
         
-        
         train_loss = train_total_loss / len(train_loader)
         val_loss = val_total_loss / len(val_loader)
         train_vq_losses.append(train_total_vq_loss / len(train_loader))
@@ -156,6 +157,10 @@ if __name__ == '__main__':
             
         if epoch % log_frequency == 0:
             logging.info(f"Epoch [{epoch}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train SSIM: {train_total_ssim / len(train_loader):.4f}, Val SSIM: {val_total_ssim / len(val_loader):.4f}")
+            
+        if val_loss < best_val_loss:
+            torch.save(model.state_dict(), os.path.join(log_dir, 'best_model.pth'))
+            best_val_loss = val_loss
     
     end_time = time.time()
     logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes")
@@ -189,4 +194,4 @@ if __name__ == '__main__':
     plt.close()
     
     # Save model
-    torch.save(model.state_dict(), os.path.join(log_dir, 'model.pth'))
+    torch.save(model.state_dict(), os.path.join(log_dir, 'latest_model.pth'))

@@ -3,13 +3,13 @@ import numpy as np
 from PIL import Image
 from numpy import asarray
 import math
-from matplotlib import cm
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import re
 
-original_filepath = "datasets/ORIGINAL_ISIC"
-modified_filepath = "datasets/ISIC"
+original_filepath = "./datasets/ORIGINAL_ISIC"
+modified_filepath = "./datasets/ISIC"
 
 def resize_mask(file, partition):
     """ 
@@ -70,11 +70,10 @@ def scan_directory(partition):
     Gathers all labels in directory into a list
     """
     imgs = []
-    for filename in os.scandir(f"{original_filepath}/{partition}/labels"):
+    for filename in os.scandir(f"{original_filepath}/{partition}/masks"):
         if filename.is_file():
-            imgs.append(str(filename.path[32+len(partition):-17]))
-    if "" in imgs:
-        imgs.remove("")
+            imgs.append(re.sub(r'\D', '', filename.path))
+    
     return imgs
 
 

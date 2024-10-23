@@ -41,7 +41,9 @@ Imbalance in data classes is addressed by oversampling the minority class (malig
 Balanced dataset is split based on a splitting ratio (`TrainTestRario` in `config.yaml`) into training and validation datasets. The data is well mixed prior to splitting to ensure a mix of both classes is present in both training and validation. The splitting method used also ensures complete separation between the two datasets, preventing the repetitive presence of data impacting network performance.
 4. Training Data Augmentation
 Training data is augmented in various ways to encourage generalisation in training for better performance, as well as diversifying the duplicated copies of the minority class. Validation data is not augmented to maintain data integrity and allow the direct deployment of data for immediate results in practice. Augmentations used are randomised reflections in both axis, as well as randomised modifications in HSV.
+
 To run the script, download the dataset and extract into a folder in the project workspace. Modify the `DatasetImageDir`, `LabelCSV`, and `OutputDir` parameters in the `config.yaml` file to set the data directory, CSV file path, as well as the name of the output directory to be generated.
+
 Following this, run `python3 dataset.py` to run the pre-processing script.
 ## 3.2 Network Architecture and Training
 The Siamese network architecture consists of a pair of neural networks with shared design, weights, and biases. These networks are use to identify dissimilarities between pairs of datapoints. The type of neural network used in a Siamese network can vary greatly, and is selected differently depending on the form of data and requires output.

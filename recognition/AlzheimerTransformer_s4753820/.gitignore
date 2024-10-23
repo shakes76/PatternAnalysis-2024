@@ -8,4 +8,3 @@ run_model.sh
 *.out
 models/
 logs/
-plots/

@@ -49,7 +49,7 @@ Or a simpler command to use transformer defaults:
 python train.py --exp_name "your_experiment_name" --path "/path/to/dataset"
 ```
 
-After training, the model, logs, and plots will be saved in the respective directories (`models/`, `logs/`, `plots/`), with names with respect to `--exp_name`.
+After training, the model, logs, and plots will be saved in the respective directories (`models/`, `logs/`, `plots/`), with names with respect to `--exp_name`. Each run, a single model will be saved to save on space, and this model corresponds to the model that had the highest validation accuracy during training under the name `{exp_name}best_model.pth`.
 
 
 ### Testing
@@ -72,12 +72,16 @@ python predict.py --model_path models/v10best_model.pth --run predict --num_tran
 ```
 This command loads a model saved as v10best_model.pth (which was trained with 16 transformer layers, and the rest as transformer defaults) and outputs the test loss and accuracy as well as a classification report saved under `/plots`.
 
+Examples are located in Experiments and Results.
+
 For image visualisation:
 ```bash
 python predict.py --model_path models/v10best_model.pth --run brain-viz --num_transformer_layers 16
 ```
 This visualizes the predictions for a batch of test images, displaying both true labels and predicted probabilities (using softmax). 
 
+Example output.
+![alt text](plots/batch_predictions.png)
 
 
 ## Vision Transformer Architecture
@@ -123,7 +127,23 @@ yers, epochs trained etc... (default usually unless otherwise specified).}
 
 The following experiments were conducted using different configurations of the Vision Transformer (ViT) architecture, varying parameters such as the number of transformer layers, embedding dimensions, MLP size, and other settings. The test accuracy results were recorded for each configuration, however some experiments were not mentioned as they had a model error, ran out of time, or were accidentally overwritten.
 
-{EXPLAIN HERE LIKE.. You used the thing from akshay, found that maybe it wasn't giving super good results and wondered if that was bc dropout + custom Multhihead layers, used pytorch version (see sources) at v3, and it did POOOP so I just went back to akshay and kept the embedding dropout (which was v5 onwards)}
+Initially, we implemented the Vision Transformer (ViT) based on Akshay Ballal's (2023) blog, using custom modules for the attention heads, MLP blocks, and patch embeddings, with default hyperparameters (number of transformer layers, embedding dimensions, heads, etc..) taken from the ViT paper by Dosovitskiy et al (2020).
+
+As we progressed, we tried substituting PyTorch's default MultiheadAttention layers in v3 (LearnPytorch.io, 2023). However, this approach destabilized our training, leading to poor results (effectively 50% accuracy), likely due to discrepancies in how dropout and normalization were handled within PyTorch’s implementation. v3 demonstrated a drop in accuracy, suggesting that using the pre-built TransformerEncoderLayer might not align well with our custom architecture.
+
+Recognizing this issue, we reverted to Akshay’s original design in v5, but retained the embedding dropout layer (recommended in Appendix B of the ViT paper). This setup marked a significant improvement in performance. Further experimentation with v6 and v7 introduced aggressive data augmentation and a learning rate scheduler (ReduceLROnPlateau). These additions helped stabilize training and improved generalization, with v7 reaching a stable test accuracy of around 66% (see table and v7 graph below).
+<p float="left">
+  <img src="plots/v7_true_acc_plot.png" width="600" />
+  <img src="plots/v7_true_loss_plot.png" width="600" /> </p>
+<small> (Forgive the graph name) </small>.
+
+
+
+
+The scheduler adjusted the learning rate dynamically based on the validation loss, which helped prevent overfitting, while the aggressive transformations forced the model to become more robust to input variations. Subsequent larger models like v10 and v13 showed promising results as well.
+
+The following table summarizes the experiments and test accuracies achieved across various configurations.
+
 
 | **Version** | **Transformer Layers** | **Embedding Dims** | **MLP Size** | **Num Heads** | **Epochs** | **Batch Size** | **Learning Rate** | **Scheduler** | **Transforms**        | **Test Accuracy** |
 |-------------|------------------------|--------------------|--------------|---------------|------------|----------------|-------------------|---------------|-----------------------|-------------------|
@@ -140,17 +160,55 @@ The following experiments were conducted using different configurations of the V
 | **v14**     | 8                      | 256                | 1024         | 8             | 50         | 32             | 3e-4              | Yes           | Aggressive Transforms           | **67.93%**         |
 | **v15**     | 12                     | 256                | 1024         | 8             | 100        | 32             | 3e-4              | Yes           | Aggressive Transforms           | **67.28%**         |
 
-Aggressive transforms simply means the current transformations within dataset.py (with image rotation, etc...).
+Aggressive transforms simply means the current transformations within dataset.py (with image rotation, random cropping, etc.).
+#### Examples of experiment results
+All plots are located within `/plots`.
 
-![alt text](plots/v0noAugments_accuracy_plot.png) ![alt text](plots/v0noAugments_loss_plot.png)
-
+v0 Experiment: 
 <p float="left">
-  <img src="plots/v0noAugments_accuracy_plot.png" width="400" />
-  <img src="plots/v0noAugments_loss_plot.png" width="400" />
+  <img src="plots/v0noAugments_accuracy_plot.png" width="600" />
+  <img src="plots/v0noAugments_loss_plot.png" width="600" />
 </p>
+
+v3: Changed transformer encoder to be pytorch's default encoderlayer. Added embedding dropout layer as ViT paper has it in Appendix B (Dosovitskiy et al., 2020). Re-implementing normalisation but without other data augmentation.
+<p float="left">
+  <img src="plots/v3_accuracy_plot.png" width="600" />
+  <img src="plots/v3_loss_plot.png" width="600" />
+</p>
+
+
+
+v14: Seeing as 13 performed well with reducing the complexity of the model, v13 reduces the complexity even more by reducing the number of transformer layers, heads in each layer, nlp size and embedding dims. It also is the best performing model thus far.
+<p float="left">
+  <img src="plots/v14_accuracy_plot.png" width="600" />
+  <img src="plots/v14_loss_plot.png" width="600" />
+</p>
+
 
 {Show v0, v6/v7, and then v14; do loss and acc} Explain that v15 is v14 but more epochs, but it just didn't scale enough, likely because the learning rate wsa too high and we didnt save ethe scheduler so it had restarted at the high LR}
 
+### Best Model Results
+From the test accuracy, we see that our best model was v14 with a test accuracy of 67.93%. When running predict.py for both `predict` and `brain-viz`, we see:
+
+```
+              precision    recall  f1-score   support
+
+          AD     0.6939    0.6097    0.6491      4458
+          NC     0.6571    0.7356    0.6941      4534
+
+    accuracy                         0.6732      8992
+   macro avg     0.6755    0.6726    0.6716      8992
+weighted avg     0.6754    0.6732    0.6718      8992
+```
+![alt text](plots/confusion_matrix.png).
+
+#### Sample predictions from v14 (best model)
+![alt text](plots/batch_predictions.png)
+
+
+### Future Extensions
+For future research, trying out other transformer architectures and different data augmentation styles may lead to better results. GFNets are a promising area, but also, based on some of the loss plots certain models were not actually trained to the asymptote line (see v13 plot below)). This suggests that longer training times may result in better accuracies.
+![alt text](plots/v13_loss_plot.png)
 ## References
 
 Ballal, A., 2023. Building a Vision Transformer from Scratch in PyTorch, Available at: https://www.akshaymakes.com/blogs/vision-transformer [Accessed 21 October 2024].

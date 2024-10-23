@@ -7,3 +7,7 @@ Nifti file format and sample code is provided in Appendix B. [Easy Difficulty]"
 
 An initial test code was run to just visualise one of the slices before using 2D UNet to get a sense of 
 what the images look like. The resuling image afer test.py was run can be seen in Figure_1.png.
+
+The data loader was run in a simple for to check that it worked, it was ~50% successful when it errorred due
+to image sizing issue. To resolve this, an image resizing function was added to be called by the data
+loader.

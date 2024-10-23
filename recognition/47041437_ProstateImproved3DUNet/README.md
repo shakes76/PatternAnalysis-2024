@@ -20,10 +20,10 @@ This report specifically looks at a 3D prostate dataset and attempts to extract 
 
 **dataset.py:** This file includes a class that loads NIfTI images and labels using the nibabel library. .nii.gz files are converted into tensors and are reshaped for the network input [3]. It also includes image augmentation, which includes random cropping, flipping, and applying random bias fields, blurs, or spikes to introduce variability and improve model robustness.
 
-**module_unet3D.py:** Includes a 3D U-Net model[4]
+**module_unet3D.py:** Includes a 3D U-Net model [4]
 
 
-**module_improvedunet3D.py:** Includes an improved 3D U-Net model[3]
+**module_improvedunet3D.py:** Includes an improved 3D U-Net model [3]
 
 
 **train.py:** The training loop uses the Adam optimiser as well as cross-entropy and dice loss functions for measuring the segmentation accuracy across the 6 labels. The model is trained for 40/45 epochs (U-Net vs improved), where each epoch processes augmented images. After each training epoch, the model's performance is evaluated on a validation set, calculating the Dice Similarity Coefficient (DSC) for each label. The model is saved, and statistics like DSC per label is printed after each epoch, providing insights into the model's performance.
@@ -76,7 +76,7 @@ With the improved 3D U-Net model, all labels achieved a **DSC of at least 0.8.**
 
 
 
-Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the original image and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. Both the original and improved 3D U-Net models produce great results, with the improved 3D U-Net producing comparatively higher quality segmentations (last row).
+Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the original image (first row) and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. Both the original (second row) and improved 3D U-Net (last row) models produce great results, with the improved 3D U-Net producing comparatively higher quality segmentations.
 
 
 

@@ -261,6 +261,20 @@ class Conv2dWeightModulate(nn.Module):
     
 
 """
+ Adds weight equalisation to conv2d block, in order to enhance stabilisation of training
+"""
+class EqualizedConv2d(nn.Module):
+
+    def __init__(self, in_features, out_features, kernel_size, padding = 0):
+        super().__init__()
+        self.padding = padding
+        self.weight = EqualizedWeight([out_features, in_features, kernel_size, kernel_size])
+        self.bias = nn.Parameter(torch.ones(out_features))
+
+    def forward(self, x: torch.Tensor):
+        return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
+
+"""
  Path length penalty regularisation, which ensures that a change in the latent vector corresponds to a proportional
  change to the generated image. The intention of this is to disentangle features in the style space further.
 """

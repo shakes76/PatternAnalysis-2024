@@ -15,12 +15,20 @@ class Encoder(nn.Module):
         stride = 2
 
         self.conv_stack = nn.Sequential(
-            nn.Conv2d(1, output_dim // 2, kernel_size=4, stride=stride, padding=1),
+            nn.Conv2d(1, output_dim // 16, kernel_size=4, stride=stride, padding=1),  # 1 → output_dim/16
             nn.ReLU(),
-            nn.Conv2d(output_dim // 2, output_dim, kernel_size=4, stride=stride, padding=1),
+            nn.Conv2d(output_dim // 16, output_dim // 8, kernel_size=4, stride=stride, padding=1),
+            # output_dim/16 → output_dim/8
             nn.ReLU(),
-            nn.Conv2d(output_dim, 32, kernel_size=3, stride=stride - 1, padding=1),
-            ResidualStack(32, 32, n_res_block, n_res_channel)
+            nn.Conv2d(output_dim // 8, output_dim // 4, kernel_size=4, stride=stride, padding=1),
+            # output_dim/8 → output_dim/4
+            nn.ReLU(),
+            nn.Conv2d(output_dim // 4, output_dim // 2, kernel_size=3, stride=stride - 1, padding=1),
+            # output_dim/4 → output_dim/2
+            nn.ReLU(),
+            nn.Conv2d(output_dim // 2, output_dim//2, kernel_size=3, stride=stride - 1, padding=1),
+            # output_dim/2 → output_dim
+            ResidualStack(output_dim//2, output_dim//2, n_res_block, n_res_channel)  # Keep the same for the residual stack
         )
 
     def forward(self, x):
@@ -37,11 +45,15 @@ class Decoder(nn.Module):
         stride = 1
 
         self.inv_conv_stack = nn.Sequential(
-            nn.ConvTranspose2d(32, output_dim, 3, stride, 1),
-            ResidualStack(output_dim, output_dim, n_res_block, n_res_channel),
-            nn.ConvTranspose2d(output_dim, output_dim // 2, 4, 2, 1),
+            nn.ConvTranspose2d(dim, dim//2, 3, stride, 1),
+            ResidualStack(dim//2, dim//2, n_res_block, n_res_channel),
+            nn.ConvTranspose2d(dim//2, dim//4, 3, stride, 1),
             nn.ReLU(),
-            nn.ConvTranspose2d(output_dim // 2, 1, 4, 2, 1)  # Output layer for grayscale images
+            nn.ConvTranspose2d(dim//4, dim//8, 4, 2, 1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(dim//8, dim//16, 4, 2, 1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(dim // 16, 1, 4, 2, 1)  # Output layer for grayscale images
         )
 
     def forward(self, x):
@@ -49,79 +61,69 @@ class Decoder(nn.Module):
         return x
 
 
+
 class VectorQuantizer(nn.Module):
-    def __init__(self, dim, n_embed, commitment_cost):
+    def __init__(self, embedding_dim, num_embeddings, commitment_cost=0.25, epsilon=1e-5):
         super(VectorQuantizer, self).__init__()
-        self.dim = dim
-        self.n_embed = n_embed
+
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
         self.commitment_cost = commitment_cost
+        self.epsilon = epsilon
 
-        # Initialize embeddings with a smaller range for better stability
-        self.embed = nn.Embedding(n_embed, dim)
-        self.embed.weight.data.uniform_(-1 / (2 * n_embed), 1 / (2 * n_embed))  # Adjust initialization range
 
-    def forward(self, z):
-        # Change the shape of z to [batch_size, height, width, channels]
-        z = z.permute(0, 2, 3, 1).contiguous()
-        z_flattened = z.view(-1, self.dim)
-
-        # Calculate distances between input and embedding weights
-        d = (z_flattened ** 2).sum(dim=1, keepdim=True) + \
-            (self.embed.weight ** 2).sum(dim=1) - 2 * \
-            torch.matmul(z_flattened, self.embed.weight.t())
-
-        # Find closest encodings
-        min_encoding_indices = torch.argmin(d, dim=1).unsqueeze(1)
-
-        # Ensure the tensor is on the correct device
-        device = z.device
-        min_encodings = torch.zeros(min_encoding_indices.shape[0], self.n_embed,
-                                    device=device)  # Move tensor to correct device
-        min_encodings.scatter_(1, min_encoding_indices, 1)
-
-        # Get quantized latent vectors
-        z_q = torch.matmul(min_encodings, self.embed.weight).view(z.shape)
-
-        # Compute loss for embedding
-        loss = (z_q.detach() - z).pow(2).mean() + self.commitment_cost * (z_q - z.detach()).pow(2).mean()
-
-        # Preserve gradients
-        z_q = z + (z_q - z).detach()
-
-        # Perplexity
-        e_mean = min_encodings.mean(dim=0)
-        perplexity = torch.exp(-torch.sum(e_mean * torch.log(e_mean + 1e-10)))
-
-        # Reshape back to match original input shape
-        z_q = z_q.permute(0, 3, 1, 2).contiguous()
-
-        return loss, z_q, min_encoding_indices, perplexity
-
-class VQVAE(nn.Module):
-    def __init__(self, input_dim, dim, n_res_block, n_res_channel, stride, n_embed, commitment_cost, embedding_dims):
-        super(VQVAE, self).__init__()
-        self.input_dim = input_dim
-        self.dim = dim
-        self.n_res_block = n_res_block
-        self.n_res_channel = n_res_channel
-        self.stride = stride
-        self.embedding_dims = embedding_dims
-        self.n_embed = n_embed
-        self.commitment_cost = commitment_cost
-
-        self.encoder = Encoder(input_dim, dim, n_res_block, n_res_channel)
-        self.pre_quantization_conv = nn.Conv2d(
-            dim, embedding_dims, kernel_size=1, stride=1)
-        # Input dim set to 1 for grayscale
-        self.vector_quantizer = VectorQuantizer(embedding_dims, n_embed, commitment_cost)
-        self.decoder = Decoder(embedding_dims, dim, n_res_block, n_res_channel)
+        self.embeddings = nn.Embedding(num_embeddings, embedding_dim)
+        self.embeddings.weight.data.uniform_(-1 / num_embeddings, 1 / num_embeddings)
 
     def forward(self, x):
+        # Reshape input to [batch_size * height * width, embedding_dim]
+        x = x.permute(0, 2, 3, 1).contiguous()
+        flat_x = x.view(-1, self.embedding_dim)
+
+        # Compute distances between input features and embeddings
+        distance = torch.sum(flat_x ** 2, dim=1, keepdim=True) + \
+                   torch.sum(self.embeddings.weight ** 2, dim=1) - \
+                   2 * torch.matmul(flat_x, self.embeddings.weight.t())
+
+        # Find the index of the closest embedding
+        encoding_indices = torch.argmin(distance, dim=1).unsqueeze(1)
+
+        # Quantize the input by replacing it with the closest embedding
+        quantized_x = self.embeddings(encoding_indices).view(x.shape)
+
+        # Calculate the dictionary loss (Equation 3, term 2 in the VQ-VAE paper)
+        dictionary_loss = F.mse_loss(quantized_x.detach(), x)
+
+        # Calculate the commitment loss (Equation 3, term 3 in the VQ-VAE paper)
+        commitment_loss = F.mse_loss(quantized_x, x.detach())
+
+        # Combine quantized input with straight-through gradient estimator
+        quantized_x = x + (quantized_x - x).detach()
+
+        # Return quantized outputs, dictionary loss, and commitment loss
+        total_loss = dictionary_loss + self.commitment_cost * commitment_loss
+
+        quantized_x = quantized_x.permute(0, 3, 1, 2).contiguous()
+        return quantized_x, total_loss, encoding_indices.view(x.shape[0], -1)
+
+class VQVAE(nn.Module):
+    def __init__(self, input_dim, out_dim, n_res_block, n_res_channel, stride, n_embed, commitment_cost, embedding_dims):
+        super(VQVAE, self).__init__()
+
+        self.encoder = Encoder(input_dim, out_dim, n_res_block, n_res_channel)
+        self.pre_quantization_conv = nn.Conv2d(
+            out_dim//2, embedding_dims, kernel_size=1, stride=1)
+        self.vector_quantizer = VectorQuantizer(embedding_dims, n_embed, commitment_cost)
+        self.decoder = Decoder(out_dim, input_dim, n_res_block, n_res_channel)
+
+    def forward(self, x):
+
         z = self.encoder(x)
-        commitment_loss, z_q, min_encoding_indices, perplexity = self.vector_quantizer(z)
+        z = self.pre_quantization_conv(z)
+        z_q,  loss, min_encoding_indices = self.vector_quantizer(z)
         x_recon = self.decoder(z_q)
 
-        return x_recon, commitment_loss
+        return x_recon, loss
 
 
 
@@ -132,6 +134,7 @@ class ResidualStack(nn.Module):
         self.out_dim = out_dim
         self.n_res_block = n_res_block
         self.n_res_channel = n_res_channel
+
         stack = []
         for i in range(n_res_block):
             stack.append(nn.Sequential(nn.ReLU(),
@@ -141,6 +144,7 @@ class ResidualStack(nn.Module):
         self.stack = nn.ModuleList(stack)
 
     def forward(self, x):
-        for i in range(self.n_res_block):
-            x = self.stack[i](x)
+        for res_block in self.stack:
+            identity = x  # Save the input for the skip connection
+            x = res_block(x) + identity  # Add the input to the output
         return x

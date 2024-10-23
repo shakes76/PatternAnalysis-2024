@@ -1,6 +1,6 @@
 # Alzheimer's Disease Classification Using Vision Transformers (Task 5)
 
-Author: John Kong 4697959
+Author: John Kong 46979597
 
 ## Problem Description
 
@@ -145,7 +145,7 @@ Weight decay adds a penalty to the loss function based on the magnitude of the m
 
 ### Hyperparameter Tuning Results
 
-##### 1. Epoch Tuning 
+1. **Epoch Tuning**
 
 _Parameters kept constant: learning rate = 3e-4, weight decay = 1e-5, batch size = 32, dropout = 0.1._
 
@@ -156,7 +156,7 @@ _Parameters kept constant: learning rate = 3e-4, weight decay = 1e-5, batch size
 | 80     | 72.0                        | **67.2**          | No              |
 | 200    | 82.0                        | 65.3              | No              | 
 
-##### 2. Learning Rate Tuning
+2. **Learning Rate Tuning**
 
 _Parameters kept constant: epochs = 80, weight decay = 1e-5, batch size = 32, dropout = 0.1._
 
@@ -166,7 +166,7 @@ _Parameters kept constant: epochs = 80, weight decay = 1e-5, batch size = 32, dr
 | 3e-4          | 72.0                        | **67.2**          | No             |
 | 5e-4          | 72.3                        | 66.1              | No            |
 
-##### 3. Dropout Tuning
+3. **Dropout Tuning**
 
 _Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-5, batch size = 32._
 
@@ -176,7 +176,7 @@ _Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-
 | 0.3     | 64.5                        | 63.6              | Yes            |
 | 0.5     | 60.8                        | 58.9              | Yes            |
 
-##### 4. Batch Size Tuning
+4. B**atch Size Tuning**
 
 _Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-5, dropout = 0.1._
 
@@ -187,7 +187,7 @@ _Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-
 | 32         | 72.2                        | **67.2**          | No             |
 | 64         | 72.6                        | 65.6              | No            |
 
-##### 5. Weight Decay Tuning
+5. **Weight Decay Tuning**
 
 _Parameters kept constant: epochs = 80, learning rate = 3e-4, batch size = 32, dropout = 0.1._
 
@@ -196,3 +196,41 @@ _Parameters kept constant: epochs = 80, learning rate = 3e-4, batch size = 32, d
 | 1e-6         | 51.2                        | 50.9              | Yes             |
 | 1e-5         | 72.2                        |**67.2**           | No             |
 | 1e-4         | 62.4                        | 59.3              | No            |
+
+### Some Worst Plots
+
+In this section, we first present the worst-case plots to illustrate the impact of inappropriate hyperparameter settings and the model's response. These plots reveal significant discrepancies between training and validation curves, showing evidence of overfitting, instability, and poor generalization performance. 
+
+Following this, we present the best-case plots, which demonstrate the improvements and stability achieved after fine-tuning. 
+
+Some example of worst plots from inapporiate hyperparameters:
+
+![worst plot 1](Results/res_17_1e-6Decay_bad/accuracy_curve.png)
+![worst plot 2](Results/res_17_1e-6Decay_bad/loss_curve.png)
+
+![worst plot 1](Results/res_16_1-e4Decay_bad/accuracy_curve.png)
+![worst plot 2](Results/res_16_1-e4Decay_bad/loss_curve.png)
+
+### Best Parameters and Plots
+
+After hyperparameter fine-tuning, the best parameters were determined as follows:
+
+**epochs = 80, learning rate = 3e-4, batch size = 32, dropout = 0.1, weight decay = 1e-5**
+
+The results of training using these parameters are illustrated in the following plots. 
+
+#### **Best Accuracy Curve**
+
+![best plot 1](Results/res_7_80epoch/accuracy_curve.png)
+
+SHOW THE PLOT HERE
+
+The training and validation accuracies are relatively close together, indicating that the model is learning effectively and generalizing well within these parameters. While the training accuracy shows less fluctuation, the validation accuracy exhibits wider variations, suggesting that the model is somewhat sensitive to different validation batches.  At around the 11th epoch, both the training and validation accuracies sharply increase, indicating a significant learning point where the model adjusts its parameters effectively. It shows that the model found a good set of features early on but needed further epochs to refine the accuracy.
+
+#### **Best Loss Curve**
+
+![best plot 1](Results/res_7_80epoch/loss_curve.png)
+
+Both the training and validation losses generally follow a downward trend, indicating that the model is learning to minimize errors. At around the 20th epoch, the curves align closely, suggesting that the model's performance is balanced between training and validation at this stage. Beyond this point, the validation loss starts fluctuating significantly, with no clear trend. This variability implies that while the model performs well on the training set, it struggles with generalizing to unseen data. The wild fluctuations and lack of trend in the validation loss curve highlight potential overfitting, as the model may be adapting too specifically to the training data.
+
+Overall, the test accuracy of 67% is slightly lower than the best validation accuracy of 72%, meaning that there is still overfitting.

@@ -18,7 +18,7 @@ from torchvision.transforms import v2
 import config
 from modules import SiameseNetwork, BinaryClassifier
 from dataset import ISICKaggleChallengeSet
-from utils import split_data
+from utils import split_data, generate_loss_plot
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == "cpu":
@@ -74,20 +74,23 @@ Siamese Network Training
 """
 train_loss = []
 val_loss = []
-test_loss = []
 
 print("Starting training now...")
 start = time.time()
 # Training cycle
 for epoch in range(config.EPOCHS_SIAMESE):
     model.train()
+    t_loss_total = []
+    v_loss_total = []
+    
+    # Training
     for i, (anchor, positive, negative, label) in enumerate(train_loader):
         model.zero_grad() # Stops gradients from acumalating across batches
         loss = processes_batch(anchor, positive, negative)
         loss.backward()
         optimiser.step()
 
-        train_loss.append(loss.item())
+        t_loss_total.append(loss.item())
         if i % (len(train_loader)//4) == 0 and i != len(train_loader)-1:
             print(f"Epoch: {epoch}, Batch: {i}, Loss: {loss.item()}")
     
@@ -96,20 +99,24 @@ for epoch in range(config.EPOCHS_SIAMESE):
     with torch.no_grad(): # Using this to reduce memory usage
         for i, (anchor, positive, negative, label) in enumerate(val_loader):
             loss = processes_batch(anchor, positive, negative)
-            val_loss.append(loss)
+            v_loss_total.append(loss.item())
             if i % (len(val_loader)//2) == 0 and i != len(val_loader)-1:
                 print(f"Validation: Batch: {i}, Loss: {loss.item()}")
 
-stop = time.time()
-print(f"Training complete! It took {(stop-start)/60} minutes")
+    train_loss.append(sum(t_loss_total)/len(t_loss_total))
+    val_loss.append(sum(v_loss_total)/len(v_loss_total))
 
-# TODO generate some loss plots
+stop = time.time()
+print(f"Training complete! It took {(stop-start)/60} minutes\n")
+
+generate_loss_plot(train_loss, val_loss, "Siamese Network", save=True)
 
 # The feature vectors can be stored while testing as the training is done
 testing_features = []
 testing_labels = []
 
 # Evaluating the Siamese Network with test data
+print("Testing the model to see loss...")
 model.eval()
 with torch.no_grad(): # Reduces memory usage
     for i, (anchor, positive, negative, label) in enumerate(test_loader):
@@ -123,33 +130,59 @@ with torch.no_grad(): # Reduces memory usage
         testing_labels.append(label.to(device))
 
         loss = tripletloss(anchor_result, positive_result, negative_result)
-        test_loss.append(loss)
         if i % (len(test_loader)//2) == 0 and i != len(test_loader)-1:
             print(f"Testing: Batch: {i}, Loss: {loss.item()}")
 
-torch.save(model.state_dict(), config.MODELPATH + "/siamese_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
-
-# Obtain the features vectures from the training dataset
+# Obtain the features vectors from the training and validation dataset
 training_features = []
 training_labels = []
+validation_features = []
+validation_labels = []
 with torch.no_grad():
     for anchor, _, _, label in train_loader:
         features = model.forward_once(anchor.to(device))
         training_features.append(features)
         training_labels.append(label.to(device))
+    for anchor, _, _, label in val_loader:
+        features = model.forward_once(anchor.to(device))
+        validation_features.append(features)
+        validation_labels.append(label.to(device))
 
 """
 Using a binary classifier to learn the feature vectors of the Siame Network.
 """
 model = BinaryClassifier().to(device)
-loss = CrossEntropyLoss()
+cross_entropy = CrossEntropyLoss()
 optimiser = Adam(model.parameters(), 0.001, (0.9, 0.999))
+
+train_loss = []
+val_loss = []
+
 for epoch in range(config.EPOCHS_CLASSIFIER):
+    model.train()
+    t_loss_total = []
+    v_loss_total = []
+
+    # Training
     for features, labels in zip(training_features, training_labels):
         optimiser.zero_grad()
         out = model(features)
-        loss(out, labels).backward()
+        loss = cross_entropy(out, labels)
+        t_loss_total.append(loss.item())
+        loss.backward()
         optimiser.step()
+    
+    # Validation
+    model.eval()
+    with torch.no_grad():
+        for features, labels in zip(validation_features, validation_labels):
+            optimiser.zero_grad()
+            out = model(features)
+            loss = cross_entropy(out, labels)
+            v_loss_total.append(loss.item())
+    
+    train_loss.append(sum(t_loss_total)/len(t_loss_total))
+    val_loss.append(sum(v_loss_total)/len(v_loss_total))
 
 # Testing the classifier
 model.eval()
@@ -164,4 +197,7 @@ with torch.no_grad():
 
     print('Test Accuracy: {} %'.format(100 * correct / total))
 
+generate_loss_plot(train_loss, val_loss, "Binary Classifier", save=True)
+
+torch.save(model.state_dict(), config.MODELPATH + "/siamese_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
 torch.save(model.state_dict(), config.MODELPATH + "/classifier_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))

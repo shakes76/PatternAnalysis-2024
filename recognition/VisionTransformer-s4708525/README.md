@@ -43,6 +43,8 @@ Below is a visualization of the Convolutional Transformer Block, which includes 
 
 ![Convolutional Transformer](results/convTransformer.png)
 
+[Wu et al., 2021]
+
 ## ADNI brain data
 Alzheimer’s disease (AD) is a progressive neurodegenerative disorder that leads to cognitive decline due to brain tissue deterioration, affecting millions globally. The ADNI study monitors the progression of AD by tracking biomarkers (such as chemicals in the blood and brain changes in MRI/PET scans) along with clinical measures. These assessments are conducted across three disease stages: cognitively normal, mild cognitive impairment, and dementia (Alzheimer's Disease Neuroimaging Initiative, n.d.). 
 

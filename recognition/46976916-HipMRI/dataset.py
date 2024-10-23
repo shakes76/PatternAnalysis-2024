@@ -100,12 +100,12 @@ plt.show()
 '''
 
 class ProstateCancerDataset(Dataset):
-    def __init__(self, input_dir, groundtruth_dir, normImage=True, categorical=False, dtype=np.float32, transform=None):
+    def __init__(self, image_dir, seg_dir, normImage=True, categorical=False, dtype=np.float32, transform=None):
         # Use load_data_2D to load all the input images and ground truth masks at once
-        imageNames = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith('.nii.gz')]
+        imageNames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
         self.images = load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype)
-        groundtruthNames = [os.path.join(groundtruth_dir, f) for f in os.listdir(groundtruth_dir) if f.endswith('.nii.gz')]
-        self.groundtruths = load_data_2D(groundtruthNames, normImage=normImage, categorical=True, dtype=dtype)
+        segNames = sorted([os.path.join(seg_dir, f) for f in os.listdir(seg_dir) if f.endswith('.nii.gz')])
+        self.segImages = load_data_2D(segNames, normImage=normImage, categorical=True, dtype=dtype)
         
         self.transform = transform  # Optional transformations (like resizing or normalization)
     
@@ -115,16 +115,16 @@ class ProstateCancerDataset(Dataset):
     def __getitem__(self, idx):
         # Get the input image and ground truth mask for the given index
         image = self.images[idx]
-        groundtruth = self.groundtruths[idx]
+        segImage = self.segImages[idx]
 
         # Apply any transformations (if any)
         if self.transform:
             image = self.transform(image)
-            groundtruth = self.transform(groundtruth)
+            segImage = self.transform(segImage)
 
         # Convert to PyTorch tensors (adding a channel dimension if necessary)
         #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
-        #groundtruth_tensor = torch.tensor(groundtruth, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
+        #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
 
-        return image, groundtruth
+        return image, segImage
         

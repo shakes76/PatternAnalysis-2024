@@ -24,7 +24,7 @@ IMAGE_SIZE = 256
 CHECKPOINT_INTERVAL = 10
 SAMPLE_INTERVAL = 500
 LAMBDA_GP = 5  # Gradient penalty lambda
-DATA_PATH = "/home/groups/comp3710/ADNI/AD_NC/train/"
+DATA_PATH = "./dataset/ADNI/train"
 
 
 def compute_gradient_penalty(discriminator, real_samples, fake_samples):
@@ -65,8 +65,7 @@ def weights_init(m):
     elif classname == 'NoiseInjection':
         nn.init.constant_(m.weight.data, 0.0)
     elif classname == 'Generator':
-        nn.init.normal_(m.input.data, 0.0, 0.02)
-
+        nn.init.normal_(m.const.data, 0.0, 0.02)
 
 def save_sample_images(model, epoch, device, sample_dir="output/samples"):
     """Generate and save sample images"""

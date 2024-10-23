@@ -4,11 +4,13 @@ import torch.nn.functional as F
 
 
 class AAConvLayer(nn.Module):
-    """Attention-Augmented Convolutional Layer"""
-
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, style_dim):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+
+        # Style modulation
+        self.style_scale = nn.Linear(style_dim, out_channels)
+        self.style_bias = nn.Linear(style_dim, out_channels)
 
         # Self-attention components
         self.query = nn.Conv2d(out_channels, out_channels // 8, 1)
@@ -19,61 +21,74 @@ class AAConvLayer(nn.Module):
         self.norm = nn.InstanceNorm2d(out_channels)
         self.activation = nn.LeakyReLU(0.2)
 
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in [self.conv, self.query, self.key, self.value]:
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias.data, 0)
+
+        # Initialize style modulation layers
+        for m in [self.style_scale, self.style_bias]:
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+            nn.init.constant_(m.bias.data, 0)
+
     def attention(self, x):
         batch, C, H, W = x.size()
 
-        # Compute query, key, value
         query = self.query(x).view(batch, -1, H * W).permute(0, 2, 1)
         key = self.key(x).view(batch, -1, H * W)
         value = self.value(x).view(batch, -1, H * W)
 
-        # Compute attention map
         attention = torch.bmm(query, key)
         attention = F.softmax(attention, dim=-1)
 
-        # Apply attention
         out = torch.bmm(value, attention.permute(0, 2, 1))
         out = out.view(batch, C, H, W)
 
         return self.gamma * out + x
 
-    def forward(self, x):
+    def forward(self, x, style):
         x = self.conv(x)
+
+        # Apply style modulation
+        scale = self.style_scale(style).view(style.size(0), -1, 1, 1)
+        bias = self.style_bias(style).view(style.size(0), -1, 1, 1)
+        x = x * (1 + scale) + bias
+
         x = self.attention(x)
         x = self.norm(x)
         return self.activation(x)
 
 
 class MappingNetwork(nn.Module):
-    def __init__(self, z_dim, w_dim, num_classes):
+    def __init__(self, z_dim, w_dim, num_layers=8):
         super().__init__()
-        # Class embedding
-        self.class_embed = nn.Linear(num_classes, w_dim)
-
-        # Mapping layers
         layers = []
-        input_dim = z_dim + w_dim  # concatenated noise and class embedding
-        for _ in range(4):  # 4 mapping layers as shown in diagram
-            layers.append(nn.Linear(input_dim, w_dim))
-            layers.append(nn.LeakyReLU(0.2))
-            input_dim = w_dim
+        in_dim = z_dim
+        for _ in range(num_layers):
+            layers.extend([
+                nn.Linear(in_dim, w_dim),
+                nn.LeakyReLU(0.2)
+            ])
+            in_dim = w_dim
 
         self.mapping = nn.Sequential(*layers)
+        self._init_weights()
 
-    def forward(self, z, class_labels):
-        # Convert class labels to one-hot
-        class_onehot = F.one_hot(class_labels, num_classes=2).float()
-        # Get class embedding
-        class_embed = self.class_embed(class_onehot)
-        # Concatenate noise and class embedding
-        z_with_class = torch.cat([z, class_embed], dim=1)
-        # Map to W space
-        w = self.mapping(z_with_class)
-        return w
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight.data, 0.0, 0.02)
+                nn.init.constant_(m.bias.data, 0)
+
+    def forward(self, z):
+        return self.mapping(z)
 
 
 class Generator(nn.Module):
-    def __init__(self, style_dim, num_layers=13, channels=(512, 512, 512, 512, 256, 128, 64), img_size=256):
+    def __init__(self, style_dim, num_layers=7, channels=(512, 512, 512, 512, 256, 128, 64), img_size=256):
         super().__init__()
         self.style_dim = style_dim
         self.num_layers = num_layers
@@ -86,17 +101,19 @@ class Generator(nn.Module):
         # AA Conv layers
         self.aa_layers = nn.ModuleList()
         in_chan = channels[0]
-        for i, out_chan in enumerate(channels):
-            self.aa_layers.append(AAConvLayer(in_chan, out_chan))
+        for out_chan in channels:
+            self.aa_layers.append(AAConvLayer(in_chan, out_chan, style_dim))
             in_chan = out_chan
 
-        # To RGB layers
-        self.to_rgb = nn.Conv2d(channels[-1], 1, 1)  # 1 channel for grayscale
+        # To RGB layer
+        self.to_rgb = nn.Conv2d(channels[-1], 1, 1)
+        self._init_weights()
 
-        # Upsampling
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+    def _init_weights(self):
+        nn.init.normal_(self.to_rgb.weight.data, 0.0, 0.02)
+        nn.init.constant_(self.to_rgb.bias.data, 0)
 
-    def forward(self, styles, noise=None):
+    def forward(self, styles):
         batch_size = styles.size(0)
 
         # Start with constant input
@@ -104,16 +121,17 @@ class Generator(nn.Module):
 
         # Process through AA-Conv layers
         for i, aa_layer in enumerate(self.aa_layers):
-            # Apply style modulation
-            style = styles[:, i] if styles.dim() > 2 else styles
-            style = style.view(batch_size, -1, 1, 1)
+            # Get style for current layer
+            if styles.dim() == 3:
+                style = styles[:, i]
+            else:
+                style = styles
 
-            x = aa_layer(x)
-            x = x * (1 + style)  # Style modulation
+            x = aa_layer(x, style)
 
             # Upsample after each layer except the last
             if i != len(self.aa_layers) - 1:
-                x = self.upsample(x)
+                x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)
 
         # Generate final image
         x = self.to_rgb(x)
@@ -129,26 +147,26 @@ class Discriminator(nn.Module):
         super().__init__()
         self.channels = channels
 
-        # Initial conv layer
-        layers = [
-            nn.Conv2d(1, channels[0], 3, padding=1),
-            nn.LeakyReLU(0.2)
-        ]
-
-        # Downsampling conv layers
-        in_chan = channels[0]
-        for out_chan in channels[1:]:
+        layers = []
+        in_channel = 1  # Grayscale input
+        for out_channel in channels:
             layers.extend([
-                nn.Conv2d(in_chan, out_chan, 3, stride=2, padding=1),
-                nn.InstanceNorm2d(out_chan),
+                nn.Conv2d(in_channel, out_channel, 3, stride=2, padding=1),
+                nn.InstanceNorm2d(out_channel),
                 nn.LeakyReLU(0.2)
             ])
-            in_chan = out_chan
+            in_channel = out_channel
 
         self.main = nn.Sequential(*layers)
-
-        # Final classification layer
         self.final = nn.Conv2d(channels[-1], 1, 4, padding=0)
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight.data, 0.0, 0.02)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias.data, 0)
 
     def forward(self, x):
         x = self.main(x)
@@ -158,17 +176,12 @@ class Discriminator(nn.Module):
 class StyleGAN2(nn.Module):
     def __init__(self, w_dim, num_layers, channels, img_size=256):
         super().__init__()
-        self.mapping = MappingNetwork(w_dim, w_dim, num_classes=2)
+        self.mapping = MappingNetwork(w_dim, w_dim)
         self.generator = Generator(w_dim, num_layers, channels, img_size)
         self.discriminator = Discriminator(channels)
 
-    def generate(self, z, class_labels=None):
-        if class_labels is None:
-            # If no labels provided, randomly assign them
-            class_labels = torch.randint(0, 2, (z.size(0),), device=z.device)
-        # Map noise and class labels to W space
-        w = self.mapping(z, class_labels)
-        # Generate images
+    def generate(self, z):
+        w = self.mapping(z)
         return self.generator(w)
 
     def discriminate(self, image):

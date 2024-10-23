@@ -13,11 +13,11 @@ DATASET                 = "./AD/train"  # Path to the training dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
 EPOCHS                  = 100  # Number of training epochs
 LEARNING_RATE           = 1e-3  # Learning rate for optimization
-BATCH_SIZE              = 64  # Batch size for training
+BATCH_SIZE              = 32  # Batch size for training
 LOG_RESOLUTION          = 7  # Logarithmic resolution used for 128*128 images
 Z_DIM                   = 256  # Dimension of the latent space
 W_DIM                   = 256  # Dimension of the mapping network output
-LAMBDA_GP               = 10  # Weight for the gradient penalty term
+LAMBDA_GP               = 15  # Weight for the gradient penalty term
 
 # Define transformations for the dataset (resize to 128x128, normalize to [-1, 1])
 image_transforms = transforms.Compose([

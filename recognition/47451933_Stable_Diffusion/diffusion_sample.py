@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import math
-from PIL import Image
 import umap
+import torchvision.utils as tvutils
 
 reducer = umap.UMAP(min_dist=0, n_neighbors=35)
 
@@ -65,14 +63,6 @@ def display_images(images, num_images=5):
     plt.show()
 
 data_loader = data.get_train()
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-import matplotlib.pyplot as plt
-import numpy as np
 
 # VAE Encoder for mapping input images to latent space
 class VAEDecoder(nn.Module):
@@ -228,6 +218,8 @@ class UNet(nn.Module):
         t_embedding = get_timestep_embedding(t, 32).to(x.device)  # Ensure tensor is on the same device
         t_embedding = self.time_embedding_layer(t_embedding)  # Map time embedding to latent_dim
         t_embedding = t_embedding.unsqueeze(2).unsqueeze(3).repeat(x.shape[0], 1, 25, 25) # Shape: (batch_size, latent_dim, 1, 1)
+
+        print(t_embedding)
 
         label_embedding = label.view(x.shape[0], 1).expand(-1,512).float()
 
@@ -452,10 +444,10 @@ for epoch in range(num_epochs):
             display_images(generated_images, num_images=5)
        
             sample_images = generate_sample(0, unet, vae_decoder, num_samples=10)
-            plt.imshow(np.transpose(vutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
+            plt.imshow(np.transpose(tvutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
             plt.show()
             sample_images = generate_sample(1, unet, vae_decoder, num_samples=10)
-            plt.imshow(np.transpose(vutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
+            plt.imshow(np.transpose(tvutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
             plt.show()
 
 print("Training completed!")

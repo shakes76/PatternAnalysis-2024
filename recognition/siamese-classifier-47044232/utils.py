@@ -6,6 +6,9 @@ Made by Joshua Deadman
 
 import math
 import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from sklearn.manifold import TSNE
 import pandas as pd
 
 from config import IMAGEPATH, TESTING, VALIDATION
@@ -55,7 +58,7 @@ def generate_loss_plot(training_loss, validation_loss, model, save=False) -> Non
         validation_loss (list): The average loss per epoch while validating.
         model (str): Should be the name of the model relevant to the losses.
             This string should not have any / or other characters relevant to paths.
-        save (bool): True - Save image to path define in config.py.
+        save (bool): True - Save image to path defined in config.py.
                      False - Show plot.
     """
     plt.figure()
@@ -67,5 +70,47 @@ def generate_loss_plot(training_loss, validation_loss, model, save=False) -> Non
     plt.legend()
     if save:
         plt.savefig(IMAGEPATH + "/loss_"+ model.lower().replace(" ","") + ".png")
+    else:
+        plt.show()
+
+def tsne_plot(features, labels, save=False) -> None:
+    """ Plots the t-SNE embeddings to show feature extraction.
+        This method was reworked from the following source:
+        https://github.com/2-Chae/PyTorch-tSNE/blob/main/main.py
+
+    Arguments:
+        features (list): Features extracted from the siamese network. Should be on cpu already.
+        labels (list): labels respective to the features. Should be on cpu already.
+        save (bool): True - Save image to path defined in config.py.
+                     False - Show plot.
+    """
+    plt.figure()
+    features = np.concatenate(features, axis=0).astype(np.float64)
+    labels = np.concatenate(labels, axis=0)
+
+    tsne = TSNE()
+    tsne_output = tsne.fit_transform(features)
+
+    df = pd.DataFrame(tsne_output, columns=['x', 'y'])
+    df['Targets'] = labels
+    df = df.replace({0: "Benign", 1: "Malignant"})
+
+    plt.rcParams['figure.figsize'] = 15, 20
+    sns.scatterplot(
+        x='x', y='y',
+        hue='Targets',
+        palette=sns.color_palette("hls", 2),
+        data=df,
+        marker='o',
+        legend="full",
+        alpha=0.5
+    )
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlabel('')
+    plt.ylabel('')
+    
+    if save:
+        plt.savefig(IMAGEPATH + "/tsne_scatterplot.png")
     else:
         plt.show()

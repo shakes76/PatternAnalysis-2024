@@ -5,10 +5,12 @@ Made by Joshua Deadman
 """
 
 import argparse
+from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.manifold import TSNE
+import seaborn as sns
 import time
-from datetime import datetime
 import torch
 from torch.nn import TripletMarginLoss, CrossEntropyLoss
 from torch.optim.adam import Adam
@@ -18,7 +20,7 @@ from torchvision.transforms import v2
 import config
 from modules import SiameseNetwork, BinaryClassifier
 from dataset import ISICKaggleChallengeSet
-from utils import split_data, generate_loss_plot
+from utils import split_data, generate_loss_plot, tsne_plot
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == "cpu":
@@ -111,6 +113,7 @@ print(f"Training complete! It took {(stop-start)/60} minutes\n")
 
 generate_loss_plot(train_loss, val_loss, "Siamese Network", save=True)
 
+
 # The feature vectors can be stored while testing as the training is done
 testing_features = []
 testing_labels = []
@@ -147,6 +150,15 @@ with torch.no_grad():
         features = model.forward_once(anchor.to(device))
         validation_features.append(features)
         validation_labels.append(label.to(device))
+
+# Generate a t-SNE plot on the training_features
+cpu_features = []
+cpu_labels = []
+for feature in training_features:
+    cpu_features.append(feature.cpu())
+for label in training_labels:
+    cpu_labels.append(label.cpu())
+tsne_plot(cpu_features, cpu_labels, save=True)
 
 """
 Using a binary classifier to learn the feature vectors of the Siame Network.

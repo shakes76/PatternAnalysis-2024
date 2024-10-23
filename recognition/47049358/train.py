@@ -8,7 +8,7 @@ import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 from monai.data import DataLoader, Dataset
 
-NUM_EPOCHS = 3
+NUM_EPOCHS = 300
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
@@ -131,5 +131,5 @@ plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'training_results/unet_dice_coefs_over_epochs_{CRITERION}.png')
+plt.savefig(f'unet_dice_coefs_over_epochs_{CRITERION}.png')
 plt.close()

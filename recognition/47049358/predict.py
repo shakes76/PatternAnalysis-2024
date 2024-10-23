@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from time import time
 from monai.losses import DiceLoss
 from monai.data import DataLoader, Dataset
+from monai.transforms import (AsDiscrete, Compose, CastToType)
 
 # import from local files  
 from train import trained_model, CRITERION, compute_dice_segments
@@ -47,7 +48,7 @@ def visualise_ground_truths(images, ground_truths, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'test_results/ground_truths_{criterion}.png')
+    plt.savefig(f'ground_truths_{criterion}.png')
     plt.close()
     
     return fig, axes
@@ -77,7 +78,7 @@ def visualise_predictions(images, predictions, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'test_results/predictions_{criterion}.png')
+    plt.savefig(f'predictions_{criterion}.png')
     plt.close()
     
     return fig, axes
@@ -99,6 +100,13 @@ def test(model, test_loader, device):
     ground_truths = []
     predictions = []
 
+    output_transform = Compose(
+    [
+        AsDiscrete(to_onehot=6),
+        CastToType(dtype=torch.uint8),
+    ]
+)
+
     with torch.no_grad():
 
         for i, batch_data in enumerate(test_loader):
@@ -107,6 +115,7 @@ def test(model, test_loader, device):
                 batch_data["label"].to(device),
             )
             outputs = model(inputs)
+            outputs = output_transform(torch.argmax(outputs, dim=1))[np.newaxis, : , : , : , :]
             segment_coefs = compute_dice_segments(outputs, labels)
             dice_loss = criterion(outputs, labels).item()
 
@@ -141,22 +150,20 @@ def test(model, test_loader, device):
     Takes an array of dice scores as input. 
 """
 
-def plot_dice(dice_coefs, criterion, segment_coefs):
+def plot_dice(criterion, segment_coefs):
 
-    x_values = np.arange(len(dice_coefs))  # Generate x-values as indices
+    x_values = np.arange(len(segment_coefs))  # Generate x-values as indices
+    bar_width = 0.1  # Width of the bars
+
     # Plot overall dice scores
-    plt.plot(x_values, dice_coefs, label='Overall Dice Coefficient')
-    
-    # Plot segment scores
-    for i, segment_coef in enumerate(segment_coefs):
-        plt.plot(x_values, segment_coef, label=f'Segment {i} Dice Coefficients')
+    plt.bar(x_values, segment_coefs, width=bar_width)
 
-    plt.xlabel("Image Index")
-    plt.ylabel("Dice Coefficient")
-    plt.title("Dice Coefficient across test inputs")
+    plt.xlabel("Segment No.")
+    plt.ylabel("Dice Score")
+    plt.title("Dice Score for Each Segment")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'test_results/dice_coefs_test_{criterion}.png')
+    plt.savefig(f'dice_coefs_test_{criterion}.png')
     plt.close()
 
 
@@ -202,9 +209,10 @@ if __name__ == "__main__":
     average_s5 = np.mean(s5)
     print(f"Segment 5 Dice Coefficient: {average_s5:.4f}")
 
-    segment_coefs = [s0, s1, s2, s3, s4, s5]
+    segment_coefs = np.array([average_s0, average_s1, average_s2, average_s3,
+                      average_s4, average_s5])
 
     # plot dice scores across the dataset.
-    plot_dice(dice_coefs, CRITERION, segment_coefs)
+    plot_dice(CRITERION, segment_coefs)
 
 

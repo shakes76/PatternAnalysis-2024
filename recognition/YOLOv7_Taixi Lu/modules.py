@@ -25,18 +25,8 @@ g_num_anchors = 3
 def get_yolo_model(model_path, device):
     """
     Using a pre-trained YOLOv7 models found in
-    https://github.com/WongKinYiu/yolov7/releases/download/v0.1
+    https://github.com/WongKinYiu/yolov7/releases/tag/v0.1
     use cpu unless specified to enhance stability across platforms
-
-    # Another way to change the detection layer to output 3 classes only
-    for layer in model.model.modules():
-        if isinstance(layer, IDetect):
-            for i, conv_layer in enumerate(layer.m):
-                new_out_channels = g_num_anchors * (g_num_classes + 5)
-                layer.m[i] = torch.nn.Conv2d(conv_layer.in_channels, new_out_channels,
-                                             kernel_size=conv_layer.kernel_size,
-                                             stride=conv_layer.stride,
-                                             padding=conv_layer.padding)
     """
     model = attempt_load(model_path, map_location=device)
     model.to(device)
@@ -52,7 +42,8 @@ def get_yolo_model(model_path, device):
                 nc=g_num_classes, anchors=new_anchors, ch=[layer.in_channels for layer in module.m])
             new_idetect.f = module.f
             new_idetect.i = module.i
-            model.model._modules[name]=new_idetect
+            new_idetect.stride = module.stride
+            model.model._modules[name] = new_idetect
             print(f"\nModified IDetect: \n{model.model._modules[name]}")
             # print(f"\nModified anchors: \n{model.model._modules[name].anchors}")
     # print(f"Model loaded: \n{model}")

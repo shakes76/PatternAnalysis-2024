@@ -78,7 +78,7 @@ def validate_yolo(model, dataloader, ground_truth_path, device):
     all_ious = []
     for batch_idx, (images, labels, img_names) in enumerate(dataloader):
         images = images.to(device)
-        results = model.forward(images)
+        results = model(images)
         for i, res in enumerate(results):
             ground_truth_file = os.path.join(ground_truth_path, f"{img_names[i]}_segmentation.png")
             ground_truth_image = Image.open(ground_truth_file).convert("L")
@@ -108,8 +108,9 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
     loss_function = YOLOLoss()
-    train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=10)
+    train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=2)
 
+    # yolov7 = torch.load("trained model/yolov7_epoch_2.pt", map_location=device)
     validate_yolo(yolov7, dataloader, ground_truth_path='data/train/ISIC-2017_Training_Part1_GroundTruth',
                   device=device)
 

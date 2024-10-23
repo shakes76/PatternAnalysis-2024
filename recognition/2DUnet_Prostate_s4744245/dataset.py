@@ -25,7 +25,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     """
     affines = []
 
-    # Get fixed size from first image
+    # Get fixed size 
     num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
     if len(first_case.shape) == 3:
@@ -62,10 +62,8 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             #print("Unique classes in segmentation mask:", np.unique(inImage), inImage.shape)
             inImage = to_channels(inImage, dtype=dtype)
             images [i ,: ,: ,:] = inImage
-            #images[i, :inImage.shape[0], :inImage.shape[1], :inImage.shape[2]] = inImage  # with pad
         else:
             images [i ,: ,:] = inImage
-            #images[i, :inImage.shape[0], :inImage.shape[1]] = inImage  # with pad
 
         affines.append(affine)
         if i > 20 and early_stop:
@@ -113,6 +111,9 @@ def load_data():
     print(f"Segement Training data shape: {images_seg_train.shape}")
     print(f"Segement Test data shape: {images_seg_test.shape}")
     print(f"Segement Validation data shape: {images_seg_validate.shape}")
+
+
+
 
     return images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate
 

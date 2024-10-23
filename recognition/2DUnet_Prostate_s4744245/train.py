@@ -1,28 +1,22 @@
 import numpy as np
 import random
-from matplotlib import pyplot as plt
+
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras import backend as K
 
-import os
 
 
-from dataset import load_data
-from modules import unet_model
+
+
+# plot the training/validation curves from the history
+import matplotlib.pyplot as plt
 
 #define training variables
-BATCH_SIZE = 32
-EPOCHS = 10
+BATCH_SIZE = 1
+EPOCHS = 1
 n_classes = 5
-
-
-images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
-
-#check if GPU is available
-tf.config.experimental.list_physical_devices('GPU')
-print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -31,21 +25,30 @@ def dice_coefficient(y_true, y_pred, smooth=1e-6):
     intersection = K.sum(y_true_f * y_pred_f)  # Intersection between true and predicted
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+def weighted_dice_loss(class_weights):
+    def loss(y_true, y_pred):
+        dice_scores = []
+        for i in range(n_classes):
+            dice_scores.append(dice_coefficient(y_true[..., i], y_pred[..., i]))
+        dice_scores = K.stack(dice_scores)  # Shape: (n_classes,)
+
+        # Ensure class_weights is a tensor of shape (n_classes, 1) for correct broadcasting
+        class_weights_tensor = K.constant(np.array(class_weights).reshape(-1, 1))  # Shape: (n_classes, 1)
+
+        # Calculate the weighted Dice score
+        weighted_dice = K.dot(class_weights_tensor, K.reshape(dice_scores, (-1, 1)))  # Shape: (1, 1)
+
+        return 1 - K.flatten(weighted_dice)  # Return as a scalar
+    return loss
+
 # Define the Dice loss 
 def dice_loss(y_true, y_pred):
     return 1 - dice_coefficient(y_true, y_pred)
 
-# Initialize the U-Net model
-model = unet_model(n_classes, input_size=(256, 128, 1))
 
-from sklearn.utils import class_weight
-class_weights = class_weight.compute_class_weight('balanced', np.unique(images_seg_train), images_seg_train)
-print("Class weights:", class_weights)
-
-def train_unet_model(model, 
-                     train_images, train_labels, 
+def train_unet_model(model, train_images, train_labels, 
                      val_images, val_labels, 
-                     batch_size=8, epochs=50, model_save_path="unet_model.h5"):
+                     batch_size=BATCH_SIZE, epochs=EPOCHS, model_save_path="unet_model.h5", class_weights=[1, 1, 1, 1, 1]):
     """
     Trains the U-Net model with the given training and validation data.
 
@@ -62,6 +65,7 @@ def train_unet_model(model,
     Returns:
         history: Training history, useful for plotting and analyzing the performance
     """
+
     
     # Callbacks
     # ModelCheckpoint: Save the best model based on validation Dice coefficient
@@ -78,11 +82,11 @@ def train_unet_model(model,
                                    verbose=1)
     
     # Compile the model (ensure it's compiled with the desired loss and metric)
-    model.compile(optimizer='adam', loss=dice_loss, metrics=[dice_coefficient])
+    model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=[dice_coefficient])
 
     # Print the model summary to verify the architecture
     model.summary()
-    
+
     # Train the model
     history = model.fit(train_images, train_labels,
                         validation_data=(val_images, val_labels),
@@ -90,80 +94,20 @@ def train_unet_model(model,
                         epochs=epochs,
                         callbacks=[checkpoint, early_stopping])
     
+    #plot_training(history)
+
     return history
 
 
-# Train the U-Net model
-history = train_unet_model(model, 
-                           images_train, images_seg_train, 
-                           images_validate, images_seg_validate, 
-                           batch_size=BATCH_SIZE, 
-                           epochs=EPOCHS, 
-                           model_save_path="best_unet_model.h5",
-                           class_weight=class_weights)
 
-# Optionally, you can plot the training/validation curves from the history
-import matplotlib.pyplot as plt
-
-plt.plot(history.history['dice_coefficient'])
-plt.plot(history.history['val_dice_coefficient'])
-plt.title('Model Dice Coefficient')
-plt.ylabel('Dice Coefficient')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc='upper left')
-plt.show()
-
-# Function to save a validation image
-def save_validation_image(image, mask, prediction, index):
-    """Saves the original image, mask, and prediction."""
-    
-    # If the mask has more than one channel, convert it back to a single channel
-    if len(mask.shape) == 3:
-        mask = mask[:, :, 0]
-    
-    # Similarly, for predictions
-    if len(prediction.shape) == 4:
-        prediction = prediction[:, :, :, 0]
-
-    # Create a figure
-    plt.figure(figsize=(12, 4))
-    
-    # Original image
-    plt.subplot(1, 3, 1)
-    plt.imshow(image.squeeze())  
-    plt.title('Original Image')
-    plt.axis('off')
-    
-    # Ground truth mask
-    plt.subplot(1, 3, 2)
-    plt.imshow(mask)  
-    plt.title('Ground Truth Mask')
-    plt.axis('off')
-    
-    # Predicted mask
-    plt.subplot(1, 3, 3)
-    plt.imshow(prediction.squeeze())  
-    plt.title('Predicted Mask')
-    plt.axis('off')
-    
-    # Save the figure
-    plt.savefig(f'validation_image_{index}.png')
+def plot_training(history):
+    plt.plot(history.history['dice_coefficient'])
+    plt.plot(history.history['val_dice_coefficient'])
+    plt.title('Model Dice Coefficient')
+    plt.ylabel('Dice Coefficient')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+        # Save the figure
+    plt.savefig('training_curve.png')
     plt.close()
 
-index = 0
-image = images_validate[index]  # Shape (256, 128, 1)
-mask = images_seg_validate[index]   # Shape (256, 128, 5)
-
-
-
-# Get prediction from the model
-prediction = model.predict(image[np.newaxis, ..., np.newaxis])  # shape of input (1, 256, 128, 1)
-
-# Convert prediction to class labels (argmax along the last axis)
-predicted_labels = np.argmax(prediction[0], axis=-1)  # Shape (256, 128), per-pixel class
-
-# Convert one-hot encoded mask to class labels for comparison/visualization
-true_labels = np.argmax(mask, axis=-1)  # Shape (256, 128), per-pixel class
-
-# Save the images (modify this function to handle the labels as needed)
-save_validation_image(image, true_labels, predicted_labels, index)

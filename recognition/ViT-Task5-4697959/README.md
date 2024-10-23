@@ -109,6 +109,18 @@ matplotlib 3.5+
 numpy 1.21+
 ```
 
+## Usage
+
+To train the model, run:
+
+```python train.py```
+
+To evaluate the model, run:
+
+```python predict.py```
+
+Look at `.sh` file to run it on the HPC at UQ
+
 ## Training Process
 
 ### Initial Training Process and Parameters 
@@ -211,13 +223,13 @@ Some example of **worst plots** from inapporiate hyperparameters:
 
 Following this, we present the best-case plots, which demonstrate the improvements and stability achieved after further fine-tuning. 
 
-### Best Parameters and Plots
+### Best Hyperparameters and Plots
 
 After hyperparameter fine-tuning, the best parameters were determined as follows:
 
 **epochs = 80, learning rate = 3e-4, batch size = 32, dropout = 0.1, weight decay = 1e-5**
 
-The results of training using these parameters are illustrated in the following plots. 
+The results of training using these hyperparameters are illustrated in the following plots. 
 
 **Best Accuracy Curve**:
 
@@ -242,7 +254,7 @@ To evaluate the model's performance visually, the script displays a **confusion 
 
 Here are some **inference results** from the best model:
 
-<img src="Results/res_7_80epoch/confusion_matrix.png" alt="inference plot 1" width="500" height="400"/>
+<img src="Results/res_7_80epoch/confusion_matrix.png" alt="inference plot 1" width="400" height="400"/>
 <img src="Results/res_7_80epoch/prediction_visualization.png" alt="inference plot 2" width="500" height="400"/>
 
 ## References

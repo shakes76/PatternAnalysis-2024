@@ -17,6 +17,7 @@ from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import torch.fft
 from torch.nn.modules.container import Sequential
+import cv2
 _logger = logging.getLogger(__name__)
 
 import torch.optim as optim
@@ -111,7 +112,7 @@ class PatchEmbed(nn.Module):
 class GFNet(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, num_classes=2, embed_dim=768, depth=12,
                  mlp_ratio=4., representation_size=None, uniform_drop=False,
-                 drop_rate=0., drop_path_rate=0., norm_layer=None,
+                 drop_rate=0., drop_path_rate=0.1, norm_layer=None,
                  dropcls=0):
 
         super().__init__()
@@ -206,28 +207,39 @@ class GFNet(nn.Module):
         return x
 
 
+class CropBrainRegion:
+    def __call__(self, img):
+        img = np.array(img)
+        _, binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        coords = cv2.findNonZero(binary)
+        x, y, w, h = cv2.boundingRect(coords)
+        cropped_img = img[y:y + h, x:x + w]
+        return Image.fromarray(cropped_img)
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 data_transforms = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
+    CropBrainRegion(),
     transforms.Resize((224, 224)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
-    transforms.RandomRotation(10),
+    transforms.RandomRotation(30),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     transforms.ToTensor(),
-    transforms.Normalize([0.485], [0.229])
+    transforms.Normalize(mean=[0.1174], std=[0.2163])
 ])
-
 
 train_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=data_transforms)
 test_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=data_transforms)
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False)
+# train_dataset = datasets.ImageFolder(root='/Users/yt/Documents/uni/3710/3710_pycharm/data/AD_NC/train', transform=data_transforms)
+# test_dataset = datasets.ImageFolder(root='/Users/yt/Documents/uni/3710/3710_pycharm/data/AD_NC/test', transform=data_transforms)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2)
 model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
 
 def train(model, train_loader, criterion, optimizer, device):
@@ -287,7 +299,7 @@ def load_model(model, optimizer, filepath):
     print(f"Loaded model and optimizer from {filepath}")
 
 
-num_epochs = 50
+num_epochs = 4
 
 if os.path.exists('gfnet_model_latest.pth'):
     load_model(model, optimizer, 'gfnet_model_latest.pth')
@@ -297,9 +309,8 @@ for epoch in range(num_epochs):
     test_loss, test_acc = validate(model, test_loader, criterion, device)
 
     print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. test Loss: {test_loss:.4f}, test Acc: {test_acc:.4f}")
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-    }, 'gfnet_model_latest.pth')
-
+torch.save({
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+}, 'gfnet_model_latest.pth')
 

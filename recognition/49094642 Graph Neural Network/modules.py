@@ -1,8 +1,8 @@
 class GNN(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
+    def __init__(self, in_channels, hidden_channels, out_channels):
         super(GNN, self).__init__()
-        self.conv1 = GCNConv(input_dim, hidden_dim)
-        self.conv2 = GCNConv(hidden_dim, output_dim)
+        self.conv1 = GCNConv(in_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, out_channels)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index 

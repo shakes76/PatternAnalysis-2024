@@ -30,7 +30,12 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     # get fixed size
     num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching="unchanged")
-    first_case = sk.resize(first_case, (256,256))
+    if categorical:
+        #neareat-neigboor interpolation
+        first_case = sk.resize(first_case, (256,256), order=0, anti_aliasing=False, preserve_range=True)
+    else:
+        #bi-linear
+        first_case = sk.resize(first_case, (256, 256), order=1, anti_aliasing=True, preserve_range=True)
     if len(first_case.shape) == 3:
         first_case = first_case [: ,: ,0] # sometimes extra dims , remove
     if categorical:
@@ -40,11 +45,17 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     else:
         rows, cols = first_case.shape
         images = np.zeros((num, rows, cols), dtype = dtype)
-
-    for i, inName in enumerate (tqdm(imageNames)):
+    for i, inName in enumerate (tqdm(imageNames)):   
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching ="unchanged") # read disk only
-        inImage = sk.resize(inImage, (256,256))
+
+        if categorical:
+            #neareat-neigboor interpolation
+            inImage = sk.resize(inImage, (256,256), order=0, anti_aliasing=False, preserve_range=True)
+        else:
+            #bi-linear
+            inImage = sk.resize(inImage, (256, 256), order=1, anti_aliasing=True, preserve_range=True)
+
         affine = niftiImage.affine
         if len (inImage.shape ) == 3:
             inImage = inImage[: ,: ,0] # sometimes extra dims in HipMRI_study data
@@ -56,13 +67,13 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
         if categorical:
             inImage = to_channels(inImage, dtype = dtype)
             images[i ,: ,: ,:] = inImage
-        else:
+        else: 
             images[i ,: ,:] = inImage
 
         affines.append(affine)
         if i > 20 and early_stop:
             break
-
+    print("H")
     if getAffines:
         return images, affines
     else:
@@ -76,13 +87,11 @@ def load(path, label=False):
     train_set = load_data_2D(image_list, normImage=False, categorical=label)
     return train_set
 
+def process_data(data_set):
+  # the method normalizes training images and adds 4th dimention 
 
-X_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_"
-train_X = load(X_path + "train")
-validate_X = load(X_path + "validate")
-test_X = load(X_path + "test")
-
-seg_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_"
-train_Y = load(seg_path + "train", label=True)
-validate_Y = load(seg_path + "validate", label=True)
-test_Y = load(seg_path + "test", label=True)
+  train_set = data_set
+  train_set = (train_set - np.mean(train_set))/ np.std(train_set)
+  train_set= (train_set- np.amin(train_set))/ np.amax(train_set- np.amin(train_set))
+  train_set = train_set[...,np.newaxis]
+  return train_set

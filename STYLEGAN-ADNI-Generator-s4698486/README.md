@@ -6,11 +6,24 @@
 
 ## Project Overview
 
-This project implements a StyleGAN model for generating brain MRI images, specifically trained on the ADNI dataset. 
-This projects goal is to create a Generator/Discriminator complex which yields a generative model capable of producing realistic looking brain MRI images.
-This project has deep-rooted real-world connections, as the ability to generate MRI images could be used in classification (owing to the
-relatively small sample set of real Alzheimer's brain scans), or in another similar applications.
+### Description: 
+This project implements a StyleGAN-based generative model to produce synthetic brain MRI images using the ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset. The goal is to create a GAN that can generate realistic-looking brain scans, which could be valuable for medical research, particularly in the study of Alzheimer's Disease, where real samples are limited.
 
+### How it Works: 
+The StyleGAN architecture consists of three main components: a Mapping Network, a Generator, and a Discriminator. The Mapping Network transforms a latent vector into a style space, allowing better control over generated features. The Generator then uses this style vector and progressively learns to create images through a series of convolutional layers, starting from a learned constant. The Discriminator, meanwhile, distinguishes between real and generated images, providing feedback to improve the Generator's output over time. A Cyclic Learning Rate and additional regularization techniques, like Path Length Penalty and Gradient Penalty, ensure stable training.
+
+### Visualisation: 
+Below is a visual representation of the generated images' progression throughout different training epochs, illustrating the improvement in quality and realism.
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch2/epoch2_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch6/epoch6_img_1.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch40/epoch40_img_3.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch75/epoch75_img_5.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch150/epoch150_img_7.png" alt="Image 5" width="19%" />
+    <br>
+    Generated Images after 2, 6, 40, 75 and 150 epochs - shows progression of training.
+</p>
 ## Table of Contents
 
 1. [Project Structure](#project-structure)

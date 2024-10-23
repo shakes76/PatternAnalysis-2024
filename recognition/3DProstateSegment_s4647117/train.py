@@ -21,15 +21,17 @@ import glob
 import random
 import torch
 import numpy as np
-import torchio as tio
 import torch.optim as optim
 import torch.nn.functional as F
 import nibabel as nib
-from modules import UNet3D
-from dataset import NiftiDataset
-from utils import per_class_dice_loss, weighted_dice_loss
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import OneCycleLR
+
+# Import custom components from other files
+from modules import UNet3D
+from dataset import NiftiDataset
+from utils import weighted_dice_loss, per_class_dice_components
+
 
 
 def train_loop():
@@ -106,12 +108,6 @@ def train_loop():
     print(f"Validation samples: {len(val_image_filenames)}")
     print(f"Test samples: {len(test_image_filenames)}")
 
-    # Define transforms
-    training_transform = tio.Compose([
-        tio.RandomAffine(),
-        tio.RandomFlip(axes=(0, 1, 2)),
-    ])
-
     # Training dataset
     train_dataset = NiftiDataset(
         image_filenames=train_image_filenames,
@@ -160,35 +156,9 @@ def train_loop():
         num_workers=num_workers
     )
 
-    def dice_loss(pred, target, epsilon=1e-6):
-        """
-        Computes the Dice Loss, which measures the overlap between predicted and target masks.
-
-        Args:
-            pred (torch.Tensor): Predicted logits with shape (batch_size, num_classes, D, H, W).
-            target (torch.Tensor): Ground truth labels with shape (batch_size, D, H, W).
-            epsilon (float): Small constant to avoid division by zero.
-
-        Returns:
-            torch.Tensor: Dice loss value.
-        """
-        pred_probs = F.softmax(pred, dim=1)
-        num_classes = pred.shape[1]
-        target_one_hot = F.one_hot(target, num_classes=num_classes)
-        target_one_hot = target_one_hot.permute(0, 4, 1, 2, 3)
-        target_one_hot = target_one_hot.type(pred.dtype)
-        pred_flat = pred_probs.view(pred_probs.shape[0], pred_probs.shape[1], -1)
-        target_flat = target_one_hot.view(target_one_hot.shape[0], target_one_hot.shape[1], -1)
-        intersection = (pred_flat * target_flat).sum(-1)
-        union = pred_flat.sum(-1) + target_flat.sum(-1)
-        dice_score = (2 * intersection + epsilon) / (union + epsilon)
-        dice_loss = 1 - dice_score.mean()
-        return dice_loss
-    
-
 
     model = UNet3D().to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-4) # TODO learning scheduler?
+    optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
     num_epochs = 20
 
@@ -253,9 +223,17 @@ def train_loop():
         print(f"Validation Loss: {epoch_val_loss:.4f}")
 
     # Save the trained model
-    # torch.save(model.state_dict(), 'unet_model.pth')
-    # print('Training complete and model saved.')
-    print('Training Complete.')
+    torch.save(model.state_dict(), 'unet_model.pth')
+    print('Training complete and model saved.')
+    # print('Training Complete.')
+
+    # Initialize accumulators
+    total_intersection = torch.zeros(6)
+    total_union = torch.zeros(6)
+
+    # Move accumulators to the appropriate device
+    total_intersection = total_intersection.to(device)
+    total_union = total_union.to(device)
 
     # Testing phase
     is_first = True
@@ -288,35 +266,22 @@ def train_loop():
             loss = weighted_dice_loss(outputs, batch_labels)
             test_loss += loss.item() * batch_images.size(0)
 
-            # Compute per-class Dice loss and accumulate, note that the Dice Score = 1 - Dice Loss
-            per_class_scores = per_class_dice_loss(outputs, batch_labels).cpu().numpy()  # Shape: (num_classes,)
-            # Get Dice scores from Dice loss
-            dice_score += np.ones(6) - per_class_scores
+            # Get intersection and union for the batch
+            intersection, union = per_class_dice_components(outputs, batch_labels, num_classes=6)
+
+            # Accumulate
+            total_intersection += intersection
+            total_union += union
 
     # Calculate average loss
     avg_test_loss = test_loss / len(test_dataset)
     print(f"Test Loss: {avg_test_loss:.4f}")
 
-    # Calculate average Dice score per class
-    avg_dice_score = dice_score / len(test_dataset)
-    # Print average Dice scores for each class
-    for class_idx, score in enumerate(avg_dice_score):
-        print(f"Class {class_idx}: Average Dice Score: {score:.4f}")
+    # Compute per-class Dice scores
+    epsilon = 1e-6
+    dice_scores = (2 * total_intersection + epsilon) / (total_union + epsilon)
+
+    print("Per-class Dice scores over the test set:", dice_scores.cpu().numpy())
 
 if __name__ == "__main__":
     train_loop()
-
-
-"""
-#TODO:
-- Add header blocks (@author tag) - recheck, otherwise done
-- Add references in the ReadMe (Dice Loss?, 3DUnet paper?)
-- Add Comments throughout and deleted uneeded comments
-- Check if you need to use softmax in the model
-- Generate plots with TensorBoard for the ReadMe
-- ReadMe:
-    - File structure
-    - Example input/labels
-    - Explaining the usage
-    - Declare hyperparameters
-"""

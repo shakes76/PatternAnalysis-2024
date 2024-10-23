@@ -60,7 +60,8 @@ On predict.py, use the following terminal command to test the model and perform 
 
 Examples:
 
-Assuming there were no changes in model architecture (i.e defaults were used for train.py), then the below command will work.
+Assuming there were no changes in model architecture (i.e defaults were used for train.py), 
+then to **drive** a model and use it for prediction on batches, use the following: 
 ```bash
 python predict.py --model_path models/best_model.pth
 ```
@@ -87,7 +88,9 @@ Example output.
 ## Vision Transformer Architecture
 {INFO ABOUT VIT; CITE THE REFERENCES HERE. ADD IMAGES. YAY.}
 
-
+Initially developed for natural language processing tasks, transformers have now been successfully applied to vision tasks by treating image patches as tokens, similar to words in a sentence. 
+They are competitive against CNNs as transformers have no inductive bias and can learn from patches due to their attention mechanism, although this makes them
+data hungry (Ballal, 2023). 
 ## Preprocessing: Dataset Loading + Augmentation
 To ensure optimal performance and prevent data leakage, the dataset is split into training, validation, and test sets. The following preprocessing steps are applied:
 
@@ -122,8 +125,6 @@ Data augmentation techniques were applied to the training dataset to improve the
 All these were applied before normalisation. The aggressive data augmentation was also applied on the test set, although whether to do this or only apply normalisation is subject to debate (Edstem #427, Google, Eureka Labs). For our case, we will apply the transformations onto the test set, as this more resembles the data trained on and thus the model should perform better. Ideally, this would not need to be applied as augmentation is meant to help the model generalise but this only occurs if the models are trained for enough epochs (which may not be the case due to resource constraints).
 
 ## Experiments and Results
-{table of experiment names, and the mlp size, num transformer la
-yers, epochs trained etc... (default usually unless otherwise specified).}
 
 The following experiments were conducted using different configurations of the Vision Transformer (ViT) architecture, varying parameters such as the number of transformer layers, embedding dimensions, MLP size, and other settings. The test accuracy results were recorded for each configuration, however some experiments were not mentioned as they had a model error, ran out of time, or were accidentally overwritten.
 
@@ -185,8 +186,6 @@ v14: Seeing as 13 performed well with reducing the complexity of the model, v13 
 </p>
 
 
-{Show v0, v6/v7, and then v14; do loss and acc} Explain that v15 is v14 but more epochs, but it just didn't scale enough, likely because the learning rate wsa too high and we didnt save ethe scheduler so it had restarted at the high LR}
-
 ### Best Model Results
 From the test accuracy, we see that our best model was v14 with a test accuracy of 67.93%. When running predict.py for both `predict` and `brain-viz`, we see:
 
@@ -207,7 +206,7 @@ weighted avg     0.6754    0.6732    0.6718      8992
 
 
 ### Future Extensions
-For future research, trying out other transformer architectures and different data augmentation styles may lead to better results. GFNets are a promising area, but also, based on some of the loss plots certain models were not actually trained to the asymptote line (see v13 plot below)). This suggests that longer training times may result in better accuracies.
+For future research, trying out other transformer architectures and different data augmentation styles may lead to better results. GFNets are a promising area, but also, based on some of the loss plots certain models were not actually trained to the asymptote line (see v13 plot below). This suggests that longer training times may result in better accuracies.
 ![alt text](plots/v13_loss_plot.png)
 ## References
 

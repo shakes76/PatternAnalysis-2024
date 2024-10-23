@@ -1,7 +1,9 @@
+import torch
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset, SubsetRandomSampler
 from torchdata.datapipes.iter import BucketBatcher, FileLister
 from PIL import Image
+import os
 import os.path as osP
 
 ## Using dataset path from rangpur, assuming this will be used for assessing as well
@@ -13,7 +15,9 @@ import os.path as osP
     ## - train/
         ##  - AD/ (contains 10400 images)
         ##  - NC/ (contains 11120 images)
-DATASET_PATH = '/home/groups/comp3710/ADNI/AD_NC'
+DATASET_PATH_RANG = '/home/groups/comp3710/ADNI/AD_NC'
+DATASET_PATH = '/Users/rorymacleod/Desktop/Uni/sem 2 24/COMP3710/Report/AD_NC'
+
 ## Start with generic batch size of 32, can change depending on model training procedure & results
 BATCH_SIZE = 32
 ## Images naming convention is PatientID__MRISliceID.jpeg total of 20 images per patient
@@ -29,10 +33,32 @@ IMAGE_SIZE = 224
 DATASET_TRANSFORM = transforms.Compose([
     transforms.Resize(IMAGE_SIZE),
     transforms.CenterCrop(IMAGE_SIZE),
-    transforms.Grayscale(num_output_channels=1),
     transforms.Normalize((0.5, 0.5, 0.5, 0.5), (0.5, 0.5, 0.5, 0.5)),
     transforms.ToTensor()
     ])
+
+RESIZE_TRANSFORM = transforms.Compose([
+    transforms.Resize(IMAGE_SIZE),
+    transforms.CenterCrop(IMAGE_SIZE),
+    transforms.ToTensor()
+])
+
+"""
+Calculate mean and standard deviation for transform
+"""
+def calc_mean_std(dataloader):
+    mean = 0.0
+    mean_sqr = 0.0
+    x = 0
+    for data, _ in dataloader:
+        x += data.size(0)
+        mean += data.sum(dim=(0,2,3))
+        mean_sqr += (data ** 2).sum(dim=(0,2,3))
+
+    mean /= x * data.size(2) * data.size(3)
+    mean_sqr /= x * data.size(2) * data.size(3)
+    std = (mean_sqr - mean ** 2).sqrt()
+    return mean, std
 
 """
 Method to apply transform to single image
@@ -81,6 +107,28 @@ Returns:
 def sort_patients(bucket):
     return sorted(bucket)
 
+def get_ids(path):
+    files = [osP.basename(file) for _, _, filenames in os.walk(path) for file in filenames]
+    ids = list(set([files.split('_')[0] for file in files]))
+    return ids
+
+def create_dataloaders(batch_size=BATCH_SIZE, path=DATASET_PATH):
+    sampler_dataset = datasets.ImageFolder(root=path+"/train", transform=RESIZE_TRANSFORM)
+    sampler = SubsetRandomSampler(torch.randperm(len(sampler_dataset))[:1000])
+    sample_loader = DataLoader(sampler_dataset, batch_size=batch_size, sampler=sampler)
+
+    mean, std = calc_mean_std(sample_loader)
+
+    train_transform = transforms.Compose([
+        transforms.Resize(IMAGE_SIZE),
+        transforms.CenterCrop(IMAGE_SIZE),
+        transforms.RandomVerticalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std),
+    ])
+
+
+
 def load_data(path=DATASET_PATH, transform=DATASET_TRANSFORM, batch_size=BATCH_SIZE,
                imgs_per_patient=IMAGES_PER_PATIENT, testing=False):
     if testing:
@@ -88,9 +136,9 @@ def load_data(path=DATASET_PATH, transform=DATASET_TRANSFORM, batch_size=BATCH_S
         return test_images, len(list(test_images)), None
 
     # create training datasets including lables with their respective class
-    AD_files = FileLister(root=osP.join(path, "train", "AD"), 
+    AD_files = FileLister(root=osP.join(path, "AD", "train"), 
                           masks="*.jpeg", recusive=False).map(label_file)
-    NC_files = FileLister(root=osP.join(path, "train", "NC"), 
+    NC_files = FileLister(root=osP.join(path, "NC", "train"), 
                           masks="*.jpeg", recusive=False).map(label_file)
 
     # batch data, grouped by patient ID 
@@ -126,12 +174,3 @@ def load_data(path=DATASET_PATH, transform=DATASET_TRANSFORM, batch_size=BATCH_S
     val_images = val_data.sharding_filter().map(open_image).map(apply_tf)
 
     return train_images, num_train_datapoints, val_images
-
-"""
-Main method to ensure multiprocessing doesn't break on Windows devices
-"""
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()

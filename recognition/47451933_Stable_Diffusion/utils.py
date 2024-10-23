@@ -91,33 +91,58 @@ def display_images(images, num_images=5, title="Images"):
     plt.show()
 
 def generate_sample(label, model, vae_decoder, vae_encoder, latent_dim, num_timesteps, nosie_schedular, num_samples=1):
+    '''
+        generats random noise in the size of the latent space
+        then iterates throuhg all time steps denoising it at eachs step
+        using the unet then decodes it using the unet
+        this produces a completly new image conditioned
+        by the unet 
+    '''
     model.eval()
     vae_decoder.eval()
     output_images = torch.tensor(())
+
+    #genete a tensor with the given label for the number fo samples
     label = torch.tensor([label] * num_samples).to(device)
     
     with torch.no_grad():
+        #generate ranom latent
         x = torch.randn(num_samples, latent_dim).to(device)
+        #turn increae form the 2 dim to 3 dim version
         x = vae_encoder.decode(x)
         for t in reversed(range(num_timesteps)):
+            #predict noise for the timestep
             predicted_noise, _ = model(x, label, t)
+            #remove noise for rhe timestep
             x = reverse_diffusion(x, predicted_noise, t, nosie_schedular)
+            #decode into actual image
             output_image = vae_decoder(x)
+            #time steps to give outputs for (all of them for 10 time steps)
             if t in [0,1,2,3,4,5,6,7,9,10]:
                 output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)
 
     return output_images
 
 def generate_sample_latent(label, model, vae_decoder, vae_encoder, latent_dim, num_timesteps, num_samples=1):
+    '''
+        generats random noise in the size of the latent space
+        then iterates throuhg all time steps getting the state
+        of the data at the bottlenet after the cross attention step
+    '''
     model.eval()
     vae_decoder.eval()
     output_images = torch.tensor(())
+
+    #genete a tensor with the given label for the number fo samples
     label = torch.tensor([label] * num_samples).to(device)
     
     with torch.no_grad():
+        #generate ranom latent
         x = torch.randn(num_samples, latent_dim).to(device)
         x = vae_encoder.decode(x)
+        #turn increae form the 2 dim to 3 dim version
         for t in reversed(range(num_timesteps)):
+            # get the latent tensor for the output of the bottleneck of the unet
             predicted_noise, y = model(x, label, t)
             output_image = y
             output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)

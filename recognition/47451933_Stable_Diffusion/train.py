@@ -134,64 +134,107 @@ def train_vae(encoder, decoder, intermediate_outputs = True, save_model = True):
     if save_model:
         torch.save(vae_encoder, "models/encoder.model")
         torch.save(vae_decoder, "models/decoder.model")
+    
+    return vae_losses, vae_val_losses
 
 def train_unet(unet, intermediate_outputs = True, save_model = True):
     diffusion_losses = []
+    diffusion_losses_val = []
+
+    unet.train()
+
+    #epochs
     for epoch in range(epochs):
         losses = []
+        losses_val = []
+
+        #train
         for images, labels in tqdm(data_loader):
+
             images = images.to(device)
             labels = labels.to(device)
-            
-            unet.train()
-            vae_encoder.eval()
-            vae_decoder.eval()
             
             z, _, _ = vae_encoder(images)
             z = z.view(-1, latent_dim, 25, 25)
 
-            # Select a random time step for noise addition
+            # select random timestep of which noise to add
             t = torch.randint(0, num_timesteps, (1,)).item()
 
-            # Add noise to latent space
+            # add noise
             noisy_latent, noise = add_noise(z, t, noise_scheduler)
 
-            # Predict the noise using the UNet
+            # Predict the noise
             predicted_noise, _ = unet(noisy_latent, labels, t)
 
-            # Compute diffusion loss
+            # caculate the loss
             diffusion_loss = diffusion_criterion(predicted_noise, noise)
             losses.append(diffusion_loss.item())
             
-            # Backpropagation for UNet
+            # Bwakwards step
             unet_optimizer.zero_grad()
             diffusion_loss.backward()
             unet_optimizer.step()
 
+        #validate
+        for images, labels in tqdm(data_loader_val):
+
+            images = images.to(device)
+            labels = labels.to(device)
+            
+            z, _, _ = vae_encoder(images)
+            z = z.view(-1, latent_dim, 25, 25)
+
+            # select random timestep of which noise to add
+            t = torch.randint(0, num_timesteps, (1,)).item()
+
+            # add noise
+            noisy_latent, noise = add_noise(z, t, noise_scheduler)
+
+            # Predict the noise
+            predicted_noise, _ = unet(noisy_latent, labels, t)
+
+            # Caculate the loss
+            diffusion_loss = diffusion_criterion(predicted_noise, noise)
+            losses_val.append(diffusion_loss.item())
+
+        #print losses
         unet_scheduler.step()
-        print(f"Epoch [{epoch+1}/{epochs}], Diffusion Loss: {np.mean(losses)}")
+        print(f"Epoch [{epoch+1}/{epochs}], Diffusion Loss: {np.mean(losses)}, Diffusion Loss Val: {np.mean(losses_val)}")
+
+        #step lr schedular
         diffusion_losses.append(np.mean(losses))
+        diffusion_losses_val.append(np.mean(losses_val))
         
+        #show intermedit image generation
         if (epoch+1) % 1 == 0 and intermediate_outputs:
             with torch.no_grad():
+                #display images from las denoised latent should give iteal model
                 denoised_latent = reverse_diffusion(noisy_latent, predicted_noise, t, noise_scheduler)
                 generated_images = vae_decoder(denoised_latent).clamp(-1, 1)
-                display_images(generated_images, num_images=5)
+                display_images(generated_images, num_images=4, title="ideal images")
         
+                #generate new images from random noise for 0 class
                 sample_images = generate_sample(0, unet, vae_decoder, vae_encoder, latent_dim, num_timesteps, noise_scheduler, num_samples=10)
                 plt.imshow(np.transpose(tvutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
                 plt.title("Generate Images Label: 0")
                 plt.show()
 
+                #generate new images from random noise for 1 class
                 sample_images = generate_sample(1, unet, vae_decoder, vae_encoder, latent_dim, num_timesteps, noise_scheduler, num_samples=10)
                 plt.imshow(np.transpose(tvutils.make_grid(sample_images.to(device)[:100], nrow=10, padding=2, normalize=True).cpu(),(1,2,0)))
                 plt.title("Generate Images Label: 1")
                 plt.show()
+    
+    if save_model:
+        torch.save(unet, "models/unet.model")
+
+    return diffusion_losses, diffusion_losses_val
 
 
 if __name__ == '__main__':
     if TRAIN_VAE:
         train_vae(vae_encoder, vae_decoder, False, False)
+        vae_encoder.eval()
     else:
         vae_encoder = torch.load("models/encoder.model", weights_only=False)
         vae_encoder.eval()
@@ -201,3 +244,7 @@ if __name__ == '__main__':
     
     if TRAIN_UNET:
         train_unet(unet, True, False)
+        vae_decoder.eval()
+    else:
+        unet = torch.load("models/unet.model", weights_only=False)
+        unet.eval()

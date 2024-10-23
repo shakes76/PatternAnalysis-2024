@@ -13,11 +13,12 @@ if __name__ == '__main__':
 
     ###################################################################################
     #Loading Data
+    batch_size = 4
     data_train = "C:/Users/msi/Desktop/AD_NC/train" 
     data_test = "C:/Users/msi/Desktop/AD_NC/test" 
     #data_train = "/home/groups/comp3710/ADNI/AD_NC/train"
     #data_test = "/home/groups/comp3710/ADNI/AD_NC/test"
-    dataloader = load_data(data_train, data_test)
+    dataloader = load_data(data_train, data_test, batch_size)
 
     ###################################################################################
     #Training VQVAE

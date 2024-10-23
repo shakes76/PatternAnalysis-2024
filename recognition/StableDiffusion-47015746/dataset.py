@@ -1,23 +1,22 @@
-import torch
+#s4701574
+
+#CHATGPT was used to assist with writing some of this code
+
 import torch.utils.data as data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
 
-def load_data(root_Train, root_Test):
+def load_data(root_Train, root_Test, batch):
     # Root directory for dataset
     data_Train = root_Train
     data_Test = root_Test
-
-
-    # Spatial size of training images
-    image_size = 64
 
     # Number of workers for dataloader
     workers = 2
 
     # Batch size during training
-    batch_size = 4
+    batch_size = batch
 
 
     transform = transforms.Compose([

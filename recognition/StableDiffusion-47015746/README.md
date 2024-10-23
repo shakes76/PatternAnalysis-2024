@@ -22,37 +22,28 @@ The main idea behind stable diffusion is to make all calculations in the latent 
 
 ## Architecture 
 
-The architecture of a conditional stable diffusion model is very similar to the unconditional one (the only difference being the extra embedding and attention), hence why the conditional (and more general) version of the model is shown. 
+The architecture of a conditional stable diffusion model is very similar to the unconditional one (the only difference being the extra embedding and attention), hence why the conditional (and more general) version of the model is shown below: 
 
-A simple autoencoder was used to turn the images from pixel space to latent space. The encoder and decoder have three convolutional layers and three transpose convolutional layers respectively, and the chosen latent dimension is 128 channels. 
+A VQ-VAE (vector quantized variational autoencoders) was used to turn the images from pixel space to latent space. Based on general reading on the topic of Stable Diffusion, having a VQ-VAE over a vanilla VAE doesn't ultimately matter in the results of the overall model. However, having a simple autoencoder drastically worsens the generated images; when starting the project, I used a basic autoencoder for stable diffusion model, and because noise addition/removal is highly senstitive during image generation , the decoder wasn't able to translate that process well to pixel space. Below is an example of the generated images I obtained with the simple autoencoder:
 
-The UNET was initially inspired from, and many modifications have been made for it to fit general structure of the stable diffusion model. The UNET contained three encoder blocks and three decoder blocks with a resnet block as the bottleneck. The timestep (a number which indicates the level of noise) was embedded in each block. 
+
+As a result, I resorted to a VQ-VAE, which encodes images to normal distributions in the latent space and then quantizes them to discrete vectors. The latent space in the model I used was 32x32 and had 4 channels. Below is the main architecture I used for the VQ-VAE:
+
+The Unet was initially inspired from, and some modifications have been made for it to fit general structure of the stable diffusion model (for example, I modified the input and output dimensions so that it works in the latent space). The UNET contained four encoder blocks and four decoder blocks with a resnet block as the bottleneck. The timestep (a number which indicates the level of noise) was embedded in each block. Below is the Unet's diagram inspired:
 
 # Training
 
-The autoencoder and the UNET were trained separately. This was done because it was more efficient and it was easier to maximize the potential of each of them. MSE (mean squared error) used to calculate the loss of the autoencoder, and smooth l1 loss was used for the UNET. Since the UNET is the most essential and significant part of the stable diffusion model, only the UNET loss plot will be shown:
+The VQ-VAE and the Unet were trained separately. This was done because it was more efficient and it was easier to maximize the potential of each of them. MSE was used to calculate the reconstruction loss of the VQ-VAE (commitment and codebook losses were also added), and smooth l1 loss was used for the UNET. Below are their individual loss plots:
 
 
 
 
 
-# Results
+# Results and Discussion
 
-## Autoencoder
+Below is a gif showing the image generation process:
 
-Below are images that have been encoded and then decoded by the autoencoder:
-
-The high similarity between the original image and the final decoded image shows that the latent space accurately represents the original data. This is vital because it helps the UNET identify the added noise better.  
-
-## UNET
-
-To visualize the perfomance of the UNET, images had noise added to them, the UNET was then used to extract the noise, which was then subtracted from the original image. Below are the results:
-
-When there is a lot of noise added, it may seem that the model isn't doing a good job because the resultant image is blurry, however that is expected because the task of removing that much noise and output a clear image all in one go is an extremely difficult job for any model to do. This is why, when generating images with a diffusion model, small and gradual denoising steps are taken repeatedly instead of it all being done at once. Moreover, we can see that when only a little noise is added, the model returns a perfectly clear image. 
-
-In conclusion, the UNET is doing the job it's expected to do reasonably well, and that is to extract noise from images. 
-
-## Image Generation
+There were 1000 timesteps in the noise scheduler of this model. During the image generation, noise removal and addition occurred incrementally at every timestep starting from 1000. With other Stable Diffusion models, the image resembling the dataset it was trained on begins to show early on in the noise addition/removal process; however, with this model, it only clearly begins to show at the very end (so at very low timesteps). As a result, the images don't fully resemble the ones from the original dataset. I mitigated this by having the last 30 timesteps repeated 5 times after all timesteps have been iterated; this gave the model a better chance of generating a clear image. In addition, in those repeated timesteps, I inserted an extra layer of noise removal for each frame of the gif to give more clarity (this layer of noise removal is a simpler version of the one used when generating the images). The main issue, however, still persisted, and it is that the final images don't fully resemble the original data (the generated images capture the general shape and texture of the brain, but miss out on the interior details and sometimes get the shape wrong). To identify the root cause of this, I separately tested the VQ-VAE and the Unet, but both were working properly. My main guess is that the problem lies within the image generation process itself; it is possible that the the amount of noise removed and the amount added isn't balanced in the correct way (I attempted to fix this by scaling some values by certain constants, and it did indeed make the results slightly better but the issue still largely remained). Due to time constraints, I haven't been able to resolve the issue, but I believe it should be one of the main things to be tackled for future development. 
 
 # Dependencies
 
@@ -78,4 +69,6 @@ math
   - predict.py
   - driver.py
 
+# Usage
 
+# References

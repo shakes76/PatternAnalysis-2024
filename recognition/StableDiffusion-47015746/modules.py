@@ -1,6 +1,9 @@
+#s4701574
+
 #CHATGPT was used to assist with writing some of this code
 #UNET: https://arxiv.org/pdf/1505.04597
-
+#VQVAE: https://github.com/explainingai-code/StableDiffusion-PyTorch/tree/main
+#Sinosoidal Embedding: https://huggingface.co/blog/annotated-diffusion
 
 import torch
 import torch.nn as nn
@@ -14,13 +17,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 #Source: https://github.com/explainingai-code/StableDiffusion-PyTorch/tree/main
-
-
-import torch
-import torch.nn as nn
-
-
-
 
 
 class DownBlock(nn.Module):
@@ -574,7 +570,7 @@ class NoiseScheduler:
         return x
     
 
-
+#Source: https://arxiv.org/pdf/1505.04597
 class ResNetBlock(nn.Module):
     def __init__(self, in_channels, out_channels, time_emb=32):
         super(ResNetBlock, self).__init__()
@@ -705,56 +701,7 @@ class UNet(nn.Module):
         return self.out(x)
         
 
-
-# Encoder: reduces the image to a latent representation
-class Encoder(nn.Module):
-    def __init__(self, in_channels=3, latent_dim=128):
-        super(Encoder, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Conv2d(in_channels, 64, 4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 128, 4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(128, latent_dim, 4, stride=2, padding=1)
-        )
-
-    def forward(self, x):
-        return self.layers(x)
-
-# Decoder: reconstructs the image from the latent representation
-class Decoder(nn.Module):
-    def __init__(self, latent_dim=128, out_channels=3):
-        super(Decoder, self).__init__()
-        self.layers = nn.Sequential(
-            nn.ConvTranspose2d(latent_dim, 128, 4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, out_channels, 4, stride=2, padding=1),
-            nn.Tanh()  # To keep the output within [-1, 1] range
-        )
-
-    def forward(self, x):
-        return self.layers(x)
-    
-class VAE(nn.Module):
-    def __init__(self, in_channels=3, latent_dim=128, out_channels=3):
-        super(VAE, self).__init__()
-        self.encoder = Encoder(in_channels=in_channels, latent_dim=latent_dim).to(device)
-        self.decoder = Decoder(latent_dim=latent_dim, out_channels=out_channels).to(device)
-
-    def forward(self, x):
-        latent = self.encoder(x)
-        reconstructed = self.decoder(latent)
-        return reconstructed, latent
-    
-def check_grad(tensor, name):
-    if tensor.requires_grad:
-        print(f"{name}: requires_grad=True, grad_fn={tensor.grad_fn}")
-    else:
-        print(f"{name}: requires_grad=False")
-
-
+#Combination of Unet and VQVAE
 class DiffusionModel(nn.Module):
     def __init__(self, vqvae, unet, noise_scheduler):
         super(DiffusionModel, self).__init__()
@@ -762,7 +709,6 @@ class DiffusionModel(nn.Module):
         self.unet = unet
         self.noise_scheduler = noise_scheduler
 
-        # Set requires_grad=False for all decoder parameters
         for param in self.vqvae.parameters():
             param.requires_grad = False
 

@@ -96,7 +96,7 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
     plt.close()
 
     # Reset the alpha and step counters
-    alpha = 0.0
+    alpha = hp.ALPHA_START
     total_steps = 0
     total_steps_per_resolution = (len(train_loader) * hp.EPOCHS_PER_RESOLUTION[current_depth])
     fade_in_steps = int(total_steps_per_resolution * hp.FADE_IN_PERCENTAGE)
@@ -193,7 +193,7 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
 
             # Update the discriminator based on gradients and losses
             tot_loss_disc.backward()
-            torch.nn.utils.clip_grad_norm_(disc.parameters(), max_norm=hp.DISC_GRAD_CLIP) # Gradient clipping used to decrease strength of discriminator
+            # torch.nn.utils.clip_grad_norm_(disc.parameters(), max_norm=hp.DISC_GRAD_CLIP) # Gradient clipping used to decrease strength of discriminator
             grad_norm_disc = torch.nn.utils.clip_grad_norm_(disc.parameters(), max_norm=hp.DISC_GRAD_CLIP)
             disc_opt.step()
 
@@ -232,7 +232,7 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
 
             # Update the generator based on gradients and losses
             tot_loss_gen.backward()
-            torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP) # Gradient clipping
+            # torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP) # Gradient clipping
             grad_norm_gen = torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP)
             gen_opt.step()
 
@@ -244,7 +244,7 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             if total_steps % 100 == 0:
                 print(f"[Resolution: {current_resolution}x{current_resolution}][Epoch: {epoch + 1}/{hp.EPOCHS_PER_RESOLUTION[current_depth]}][Step: {total_steps}/{total_steps_per_resolution}]\t"
                       f"Loss_D: {tot_loss_disc.item():.4f} | Loss_G: {tot_loss_gen.item():.4f} | Real Pred: {real_disc_avg:.4f} | Real Class Acc: {real_class_disc_acc:.4f} | Alpha: {alpha:.4f} "
-                      f"| Disc Gradient: {grad_norm_disc:.4f} | Gen Gradient: {grad_norm_gen:.4f}")
+                      f"| Disc Gradient: {grad_norm_disc:.4f} | Gen Gradient: {grad_norm_gen:.4f} | Disc Learning Rate {disc_scheduler.get_last_lr()[0]:.6f} | Gen Learning Rate {gen_scheduler.get_last_lr()[0]:.6f}")
 
             # Save Losses for plotting later
             G_losses.append(tot_loss_gen.item())
@@ -277,8 +277,8 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
         epoch_duration = ((time.time() - epoch_start_time) / 60) # In minutes
         print(f"Epoch [{epoch + 1}/{hp.EPOCHS_PER_RESOLUTION[current_depth]}] completed in {epoch_duration:.2f} minutes")
 
-    # End of a resolution stage so save the images and models
-    save_resolution(disc, gen, current_resolution, current_depth, device)
+    # End of a resolution stage so save the images, loss plot and models
+    save_resolution(disc, gen, D_losses, G_losses, current_resolution, current_depth, device)
 
 
 # Total training time 

@@ -37,15 +37,18 @@ EMBED_DIMENSIONS = 8
 GEN_FEATURE_SIZE = 512
 
 # Used to clip the generator's gradient to a certain size
-GEN_GRAD_CLIP = 10
+GEN_GRAD_CLIP = 40
 
 # The amount of features used within the discriminator
-DISC_FEATURE_SIZE = 256
+DISC_FEATURE_SIZE = 128
 
 # Used to clip the discriminator's gradient to a certain size
-DISC_GRAD_CLIP = 10
+DISC_GRAD_CLIP = 20
 
 ################################## Progressive Growing ###########################
+
+# The initial value of alpha for fade-in blending at the start of each resolution 
+ALPHA_START = 1e-5
 
 # The starting depth indicating the lowest resolution (8x8)
 START_DEPTH = 0
@@ -54,13 +57,13 @@ START_DEPTH = 0
 MAX_DEPTH = 5
 
 # Fade-In percentage used in blending old and new resolutions
-FADE_IN_PERCENTAGE = 0.5
+FADE_IN_PERCENTAGE = 0.65
 
 # The amount of steps per resolution
 STEPS_PER_RESOLUTION = 5000
 
 # The amount of epochs per image resolution
-EPOCHS_PER_RESOLUTION = [30, 30, 40, 40, 50, 80]
+EPOCHS_PER_RESOLUTION = [25, 30, 40, 40, 50, 80]
 
 # Different batch sizes required for different image resolutions
 BATCH_SIZES = [128, 128, 128, 64, 64, 32, 32]
@@ -82,7 +85,7 @@ RANDOM_SEED = 999
 
 # The learning rates used by Adam optimisers
 GEN_LEARNING_RATE = 0.001
-DISC_LEARNING_RATE = 0.0005
+DISC_LEARNING_RATE = 0.001
 
 ################################## Helper Functions and Classes ##################
 

@@ -418,8 +418,8 @@ class DiscLayer(nn.Module):
         super(DiscLayer, self).__init__()
 
         # Model both convolutions needed with a 3x3 kernel
-        self.conv1 = Conv2dLayer(in_channels, out_channels, kernel_size=3, padding=1, s_norm=False)
-        # self.conv2 = Conv2dLayer(out_channels, out_channels, kernel_size=3, padding=1, s_norm=False)
+        self.conv1 = Conv2dLayer(in_channels, out_channels, kernel_size=3, padding=1, s_norm=True)
+        self.conv2 = Conv2dLayer(out_channels, out_channels, kernel_size=3, padding=1, s_norm=True)
 
         # Need to perform a non-linear activation after each convolution
         self.lrelu = nn.LeakyReLU(hp.LRELU_SLOPE_ANGLE)
@@ -439,7 +439,7 @@ class DiscLayer(nn.Module):
         """
         # Apply feature extractions
         x = self.lrelu(self.conv1(x))
-        # x = self.lrelu(self.conv2(x))
+        x = self.lrelu(self.conv2(x))
 
         # Downscale the feature map
         x = self.downscale(x)

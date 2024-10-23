@@ -1,3 +1,4 @@
+
 import math
 import logging
 from functools import partial
@@ -11,7 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
@@ -218,22 +219,39 @@ class CropBrainRegion:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-data_transforms = transforms.Compose([
+train_transforms = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
+    transforms.RandomRotation(25),
     CropBrainRegion(),
     transforms.Resize((224, 224)),
-    transforms.RandomRotation(30),
     transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.1174], std=[0.2163])
 ])
 
-train_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=data_transforms)
-test_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=data_transforms)
+test_transforms = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),
+    CropBrainRegion(),
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.1174], std=[0.2163])
+])
+
+seed = 0
+torch.manual_seed(seed)
+
+full_train_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=train_transforms)
+train_size = int(0.8 * len(full_train_dataset))  # 80% train
+val_size = len(full_train_dataset) - train_size   # 20% val
+train_dataset, val_dataset = random_split(full_train_dataset, [train_size, val_size])
+test_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=test_transforms)
 # train_dataset = datasets.ImageFolder(root='/Users/yt/Documents/uni/3710/3710_pycharm/data/AD_NC/train', transform=data_transforms)
 # test_dataset = datasets.ImageFolder(root='/Users/yt/Documents/uni/3710/3710_pycharm/data/AD_NC/test', transform=data_transforms)
+val_dataset.dataset.transform = test_transforms
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
 
 model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2)
 model = model.to(device)
@@ -306,11 +324,14 @@ if os.path.exists('gfnet_model_latest.pth'):
 
 for epoch in range(num_epochs):
     train_loss, train_acc = train(model, train_loader, criterion, optimizer, device)
-    test_loss, test_acc = validate(model, test_loader, criterion, device)
+    val_loss, val_acc = validate(model, val_loader, criterion, device)
 
-    print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. test Loss: {test_loss:.4f}, test Acc: {test_acc:.4f}")
+    print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. val Loss: {val_loss:.4f}, val Acc: {val_acc:.4f}")
 torch.save({
     'model_state_dict': model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),
 }, 'gfnet_model_latest.pth')
-
+print("finish save")
+test_loss, test_acc = validate(model, test_loader, criterion, device)
+print(f"test Loss: {test_loss:.4f}, test Acc: {test_acc:.4f}")
+print("finish")

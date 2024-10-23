@@ -43,9 +43,11 @@ def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     """
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
+
     for c in channels:
         c = int(c)
         res[..., c:c + 1][arr == c] = 1
+    
     return res
 
 
@@ -70,7 +72,8 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     
     # Load the first image to get the shape
     first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
-    
+
+    # If the image has 3D data, take only the first 2D slice
     if len(first_case.shape) == 3:
         first_case = first_case[:, :, 0]
 
@@ -78,19 +81,26 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     if target_shape is None:
         target_shape = first_case.shape
 
+    # Initialize the output image array based on whether categorical is True or False
     if categorical:
+        # Convert the first image to one-hot encoding and determine the number of channels
         first_case = to_channels(first_case, dtype = dtype)
         rows, cols, channels = target_shape[0], target_shape[1], first_case.shape[-1]
+        # Create an empty array to store all images with an additional dimension for channels
         images = np.zeros((num, rows, cols, channels), dtype = dtype)
     else:
+        # Create an empty array without channels
         rows, cols = target_shape
         images = np.zeros((num, rows, cols), dtype = dtype)
 
+    # Iterate over the list of image file names
     for i, inName in enumerate(tqdm(imageNames)):
+        # Load each image
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching = 'unchanged')
         affine = niftiImage.affine
 
+        # Take only the first slice if the image is 3D
         if len(inImage.shape) == 3:
             inImage = inImage[:, :, 0]
         inImage = inImage.astype(dtype)

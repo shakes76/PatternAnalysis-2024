@@ -21,8 +21,7 @@ class StandardModule(nn.Module):
         return x
     
 class ContextModule(nn.Module):
-    def __init__(self, in_channels, out_channels,
-                 kernel_size = 3, stride = 1, padding = 1):
+    def __init__(self, in_channels, out_channels):
         super(ContextModule, self).__init__()
         self.block1 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
         self.dropout = nn.Dropout(DROP_PROB) # Drop description uncertain, replace it with Dropout3d when poor performance
@@ -189,4 +188,5 @@ class ImprovedUnet(nn.Module):
         final_sum = upscale_out_2 + segment_out_3
         
         output =  torch.softmax(final_sum, dim = 1)
+        
         return output

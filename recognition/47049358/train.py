@@ -19,13 +19,13 @@ CRITERION = DiceLoss(include_background=False, batch=True).to(DEVICE)
 # CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2).to(DEVICE) # Based on Thyroid Tumor Segmentation Report
 # CRITERION = DiceFocalLoss(include_background=False, batch = True).to(DEVICE) # Default gamma = 2
 
-def compute_dice_segments(predictions, ground_truths):
+def compute_dice_segments(predictions, ground_truths, device):
 
-    criterion = DiceLoss(reduction='none', batch=True)
+    criterion = DiceLoss(reduction='none', batch=True).to(device)
 
     num_masks = predictions.size(1)
 
-    segment_coefs = torch.zeros(num_masks).to(DEVICE)
+    segment_coefs = torch.zeros(num_masks).to(device)
 
     segment_losses = criterion(predictions, ground_truths)
 
@@ -70,7 +70,7 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
                 outputs = model(inputs)
                 loss = criterion(outputs, labels) 
 
-            segment_coefs = compute_dice_segments(outputs, labels)
+            segment_coefs = compute_dice_segments(outputs, labels, device)
             total_segment_coefs += segment_coefs
             scaler.scale(loss).backward()
 

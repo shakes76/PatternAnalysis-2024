@@ -117,7 +117,7 @@ def test(model, test_loader, device):
             )
             outputs = model(inputs)
             outputs = output_transform(torch.argmax(outputs, dim=1))[np.newaxis, : , : , : , :]
-            segment_coefs = compute_dice_segments(outputs, labels)
+            segment_coefs = compute_dice_segments(outputs, labels, device)
             dice_loss = criterion(outputs, labels).item()
 
             test_dice = 1 - dice_loss

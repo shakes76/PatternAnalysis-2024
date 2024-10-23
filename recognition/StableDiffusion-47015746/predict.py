@@ -99,7 +99,7 @@ def reverse_diffusion(model, x, t, t_index):
 
 
 
-def create_gif(model, num_samples=1, gif_name="results.gif", shape=(1, 4, 32, 32), row = 2, column = 2):
+def create_gif(model, num_samples=1, gif_name="results.gif", shape=(1, 4, 32, 32), row = 3, column = 3):
     """Creates a gif of a grid of images being denoised (basically generates images)"""
    
     stepsize = int(10)

@@ -19,10 +19,34 @@ else:
 print('Device:', device)
 
 NUM_EPOCHS = 100
-EARLY_STOPPING_PATIENCE = 5
+EARLY_STOPPING_PATIENCE = 10
 OPTIMIZER_LEARNING_RATE = 1e-3
 SCHEDULER_STEP_SIZE = 10
 SCHEDULER_GAMMA = 0.1
+
+def evaluate_model_accuracy(model, data_loader):
+    """Evaluates the model on a given DataLoader.
+
+    Args:
+        model : The PyTorch model to evaluate.
+        data_loader : The DataLoader for evaluation data.
+
+    Returns:
+        tuple: Average accuracy of the model on the provided dataset.
+    """
+
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in data_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    accuracy = 100 * correct / total
+    return accuracy
 
 def evaluate_model_on_loader(model, data_loader):
     """Evaluates the model on a given DataLoader.

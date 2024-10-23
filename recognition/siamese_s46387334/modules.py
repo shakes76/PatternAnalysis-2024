@@ -118,8 +118,8 @@ def get_config() -> dict:
     #     # Set to: None to use the full dataset.
     #     # Smaller numbers will speed up training but may reduce final model performance.
     #     'data_subset': 16000,
-    #     'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-    #     'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+    #     'metadata_path': './data/train-metadata.csv',
+    #     'image_dir': './data/train-image/image/',
     #     'batch_size': 32,
     #     'embedding_dims': 128,
     #     'learning_rate': 0.0001,
@@ -129,13 +129,13 @@ def get_config() -> dict:
         # If we wish to only use a subset of the data to training
         # Set to: None to use the full dataset.
         # Smaller numbers will speed up training but may reduce final model performance.
-        'data_subset': 100,
-        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
-        'batch_size': 32,
+        'data_subset': 300,
+        'metadata_path': './data/train-metadata.csv',
+        'image_dir': './data/train-image/image/',
+        'batch_size': 8,
         'embedding_dims': 2,
         'learning_rate': 0.0001,
-        'epochs': 5,
+        'epochs': 2,
     }
     return config
 

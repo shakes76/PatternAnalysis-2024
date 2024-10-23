@@ -53,6 +53,12 @@ PatternAnalysis-2024/recognition/siamese_s46387334/
 ```
 
 ## Environment Setup
+First you will need to ensure you are in the `siamese_s46387334` folder, if you are starting in the repo root folder `PatternAnalysis-2024`. Run the following command:
+
+```
+cd recognition/siamese_s46387334/
+```
+
 ### Downloading the data
 1. Visit this page to download the data: https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized (REF)
 

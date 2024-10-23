@@ -1,3 +1,4 @@
-**/data
-**/models
-**/.venv
+**/data/
+**/models/
+**/.venv/
+**/__pycache__/

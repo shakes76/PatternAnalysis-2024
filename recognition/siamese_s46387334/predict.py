@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 
 from dataset import get_isic2020_data, get_isic2020_data_loaders
-from modules import SiameseNet, set_seed
+from modules import SiameseNet, set_seed, get_config
 
 
 ###############################################################################

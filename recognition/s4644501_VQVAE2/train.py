@@ -1,3 +1,9 @@
+"""
+Training script for VQVAE model on HIPMRI prostate
+cancer dataset.
+
+@author George Reid-Smith
+"""
 import logging
 import argparse
 
@@ -8,7 +14,7 @@ from torch import optim
 
 from dataset import MRIDataloader
 from modules import VQVAE
-from metrics import calculate_ssim
+from metrics import avg_ssim, avg_loss, batch_ssim
 from utils import load_config, setup_logging, save_samples, plot_results, save_model
 
 class VQVAETrainer:
@@ -19,6 +25,12 @@ class VQVAETrainer:
         self.model = VQVAE().to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
+        self.max_ssim = 0
+        self.iterations = []
+        self.training_losses = []
+        self.training_ssims = []
+        self.validation_losses = []
+        self.validation_ssims = []
 
         self._setup_data_loaders()
     
@@ -56,93 +68,111 @@ class VQVAETrainer:
             torch.device: the training device
         """
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        logging.info(f'Using device: {torch.cuda.get_device_name(0)}' if torch.cuda.is_available() else 'Using CPU')
+        logging.info(f'Using Device: {torch.cuda.get_device_name(0)}' if torch.cuda.is_available() else 'Using CPU')
         
         return device
 
     def _setup_data_loaders(self):
-        """Build the train, test, and validation dataloaders.
+        """Build the train and validation dataloaders.
         """
-        self.train_loader = MRIDataloader.load(self.train_path, self.batch_size, shuffle=True)
-        self.test_loader = MRIDataloader.load(self.test_path, self.batch_size, shuffle=False)
-        self.validate_loader = MRIDataloader.load(self.validate_path, self.batch_size, shuffle=False)
+        self.train_loader = MRIDataloader(self.train_path, self.batch_size, shuffle=True).load()
+        self.validate_loader = MRIDataloader(self.validate_path, self.batch_size, shuffle=False).load()
   
-        logging.info('Dataloaders initialized')
+        logging.info('Dataloaders Initialized')
+    
+    def _save_results(self, images, outputs, training_loss, training_ssim, total_iterations, epoch):
+        """Helper function to log and output training results at 
+        specified intervals.
+
+        Args:
+            images (torch.Tensor): batch image tensors
+            outputs (torch.Tensor): reconstructed image tensors
+            training_loss (float): training reconstruction loss
+            training_ssim (float): training ssim
+            total_iterations (int): total iterations elapsed in training
+            epoch (int): current training epoch
+        """
+        self.iterations.append(total_iterations)
+
+        # Average training loss and ssim
+        avg_training_loss = sum(training_loss) / len(training_loss)
+        avg_training_ssim = sum(training_ssim) / len(training_ssim)
+        self.training_losses.append(avg_training_loss)
+        self.training_ssims.append(avg_training_ssim)
+
+        # Average validation loss and ssim
+        avg_validation_loss = avg_loss(self.device, self.model, self.criterion, self.llw, self.validate_loader)
+        avg_validation_ssim = avg_ssim(self.device, self.model, self.validate_loader)
+        self.validation_losses.append(avg_validation_loss)
+        self.validation_ssims.append(avg_validation_ssim)
+
+        logging.info(f'Epoch: {epoch}/{self.epochs} Training Loss: {avg_training_loss:.4f} Validation Loss: {avg_validation_loss:.4f} Training SSIM: {avg_training_ssim:.4f} Validation SSIM: {avg_validation_ssim:.4f}')
+
+        # Save model if best performance
+        if avg_validation_ssim > self.max_ssim:
+            save_model(epoch, avg_validation_ssim, self.model, self.optimizer, self.model_dir)
+            
+            logging.info(f'Saved Model')
+
+        # Save training samples
+        save_samples(images, outputs, self.sample_size, self.sample_dir, title=f'epoch_{epoch}_iter_{total_iterations}')
+
+        logging.info('Saved Training Samples')
+
+    def _training_step(self, images):
+        """Forward pass and back-propogation for a single training batch.
+
+        Args:
+            images (torch.Tensor): input image tensor
+
+        Returns:
+            _type_: _description_
+        """
+        self.optimizer.zero_grad()
         
+        # Forward pass
+        outputs, latent_loss = self.model(images)
+
+        # Calculate batch loss
+        recon_loss = self.criterion(outputs, images)
+        latent_loss = latent_loss.mean()
+        loss = recon_loss + self.llw * latent_loss
+    
+        # Calculate batch SSIM
+        ssim = batch_ssim(images, outputs, self.device)
+
+        # Back propagate
+        loss.backward()
+        self.optimizer.step()
+
+        return outputs, loss, ssim
+
     def train(self):
         """Training loop for the VQVAE.
         """
-        logging.info('Training')
+        logging.info('Training VQVAE')
 
         # Training metrics
         total_iterations = 0
-        max_ssim = 0
-        ssim_scores = []
-        losses = []
-        iterations = []
         
         for epoch in range(self.epochs):
             self.model.train()
 
+            interval_training_losses = []
+            interval_training_ssims = []
+
             for i, images in enumerate(self.train_loader):
                 total_iterations += 1
-
                 images = images.to(self.device)
-                self.optimizer.zero_grad()
-                
-                # Forward pass
-                outputs, latent_loss = self.model(images)
 
-                # Calculate loss
-                recon_loss = self.criterion(outputs, images)
-                latent_loss = latent_loss.mean()
-                loss = recon_loss + self.llw * latent_loss
-
-                # Back propogation
-                loss.backward()
-                self.optimizer.step()
+                outputs, loss, ssim = self._training_step(images)
+                interval_training_losses.append(loss.item())
+                interval_training_ssims.append(ssim.item())
 
                 if i % self.interval  == 0:
-                    ssim = self.validate(epoch, loss)
-                    ssim_scores.append(ssim)
-                    losses.append(loss.cpu())
-                    iterations.append(total_iterations)
-
-                    # Save best model
-                    if ssim > max_ssim:
-                        max_ssim = ssim
-                        save_model(epoch, ssim, self.model, self.optimizer, self.model_dir)
-                    
-                    # Save forward passed samples from current model
-                    save_samples(images, self.sample_size, self.device, self.model, self.sample_dir, title=f'epoch_{epoch}_iter_{i}')
-
-        plot_results(iterations, ssim_scores, losses, self.visual_dir)
-
-    def validate(self, epoch, loss):
-        """Executes SSIM calculation on the the validation set.
-
-        Args:
-            epoch (int): current epoch 
-            loss (float): current reconstruction loss
-
-        Returns:
-            float: average SSIM over the validation set
-        """
-        self.model.eval()
-        avg_ssim = calculate_ssim(self.device, self.model, self.validate_loader)
-        logging.info(f'Epoch {epoch+1}/{self.epochs}\t Average SSIM on validation: {avg_ssim:.4f}\t Current Model Loss: {loss:.2f}')
-
-        return avg_ssim
-
-    def test(self):
-        """Executes SSIM calculation on the the test set.
-
-        Returns:
-            float: average SSIM over the test set
-        """
-        self.model.eval()
-        avg_ssim = calculate_ssim(self.device, self.model, self.test_loader)
-        logging.info(f'Average SSIM on test: {avg_ssim:.4f}')
+                    self._save_results(images, outputs, interval_training_losses, interval_training_ssims, total_iterations, epoch+1)
+        
+        plot_results(self.iterations, self.training_losses, self.training_ssims, self.validation_losses, self.validation_ssims, self.visual_dir)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -151,11 +181,10 @@ def main():
 
     # Load configuration yaml into a dictionary
     config = load_config(args.config)
-    setup_logging(config['output']['log_dir'])
+    setup_logging(config['output']['log_dir'], 'training.log')
 
     trainer = VQVAETrainer(config)
     trainer.train()
-    trainer.test()
 
 if __name__ == '__main__':
     main()

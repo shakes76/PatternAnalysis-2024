@@ -30,18 +30,67 @@ IMAGE_SIZE = 224
 ### basic resize & crop for convolutions
 ### basic normalisation for RGB inesity values per channel 
 #### use 0.5 to place intensity values between [-1, 1]
-DATASET_TRANSFORM = transforms.Compose([
-    transforms.Resize(IMAGE_SIZE),
-    transforms.CenterCrop(IMAGE_SIZE),
-    transforms.Normalize((0.5, 0.5, 0.5, 0.5), (0.5, 0.5, 0.5, 0.5)),
-    transforms.ToTensor()
-    ])
+# DATASET_TRANSFORM = transforms.Compose([
+#     transforms.Resize(IMAGE_SIZE),
+#     transforms.CenterCrop(IMAGE_SIZE),
+#     transforms.Normalize((0.5, 0.5, 0.5, 0.5), (0.5, 0.5, 0.5, 0.5)),
+#     transforms.ToTensor()
+#     ])
 
 RESIZE_TRANSFORM = transforms.Compose([
     transforms.Resize(IMAGE_SIZE),
     transforms.CenterCrop(IMAGE_SIZE),
     transforms.ToTensor()
 ])
+
+
+# """
+# Method to apply transform to single image
+# """
+# def apply_tf(image_data, tf=DATASET_TRANSFORM):
+#     image, class_name = image_data
+#     return tf(image), class_name
+
+# def open_image(data):
+#     filename, class_name = data
+#     return Image.open(filename).convert("RGB"), class_name
+
+# """
+# Method to determine the class label for the given file based on its filename.
+
+# Params:
+#     filename (str): file name for given input image
+# Returns:
+#     filename (str): file name for given input image
+#     class_name (int): the class for the image, 0 = AD, 1 = NC
+# Throws an exception if the class label cannot be determined from provided filename
+# """
+# def label_file(filename):
+#     split = filename.split("AD_NC")
+#     if split[-1].find("AD") != -1:
+#         class_name = 0
+#     elif split[-1].find("NC") != -1:
+#         class_name = 1
+#     else:
+#         return Exception()
+#     return filename, class_name
+
+# """
+# Sorts the provided selection (bucket) of images based on filenames, such that 
+# images of the same patient are grouped in the same batch
+
+# Assumes all image filenames within a bucket are from the same directory, to ensure
+# correct lexicographical sorting order. Grouping is on patient ID.
+
+# Params:
+#     bucket (torch object): a collection (bucket) of images, including filenames
+# Returns:
+#     bucket (torch object): the bucket after having been sorted by filename, in 
+#     lexicographical order   
+# """
+# def sort_patients(bucket):
+#     return sorted(bucket)
+
 
 """
 Calculate mean and standard deviation for transform
@@ -59,53 +108,6 @@ def calc_mean_std(dataloader):
     mean_sqr /= x * data.size(2) * data.size(3)
     std = (mean_sqr - mean ** 2).sqrt()
     return mean, std
-
-"""
-Method to apply transform to single image
-"""
-def apply_tf(image_data, tf=DATASET_TRANSFORM):
-    image, class_name = image_data
-    return tf(image), class_name
-
-def open_image(data):
-    filename, class_name = data
-    return Image.open(filename).convert("RGB"), class_name
-
-"""
-Method to determine the class label for the given file based on its filename.
-
-Params:
-    filename (str): file name for given input image
-Returns:
-    filename (str): file name for given input image
-    class_name (int): the class for the image, 0 = AD, 1 = NC
-Throws an exception if the class label cannot be determined from provided filename
-"""
-def label_file(filename):
-    split = filename.split("AD_NC")
-    if split[-1].find("AD") != -1:
-        class_name = 0
-    elif split[-1].find("NC") != -1:
-        class_name = 1
-    else:
-        return Exception()
-    return filename, class_name
-
-"""
-Sorts the provided selection (bucket) of images based on filenames, such that 
-images of the same patient are grouped in the same batch
-
-Assumes all image filenames within a bucket are from the same directory, to ensure
-correct lexicographical sorting order. Grouping is on patient ID.
-
-Params:
-    bucket (torch object): a collection (bucket) of images, including filenames
-Returns:
-    bucket (torch object): the bucket after having been sorted by filename, in 
-    lexicographical order   
-"""
-def sort_patients(bucket):
-    return sorted(bucket)
 
 def get_ids(path):
     files = [osP.basename(file) for _, _, filenames in os.walk(path) for file in filenames]
@@ -127,50 +129,68 @@ def create_dataloaders(batch_size=BATCH_SIZE, path=DATASET_PATH):
         transforms.Normalize(mean=mean, std=std),
     ])
 
+    test_transform = transforms([
+        transforms.Resize(IMAGE_SIZE),
+        transforms.CenterCrop(IMAGE_SIZE),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std)
+    ])
+
+    train = datasets.ImageFolder(root=path+"/train", transform=train_transform)
+    test = datasets.ImageFolder(root=path+"/test", transform=test_transform)
+
+    ids = get_ids(path+"/train")
+    train_indices = [i for i, (_path, _) in enumerate(train.samples) if _path.split('\\')[-1].split('_')[0] in ids]
+    train_subset = Subset(train, train_indices)
+
+    train_dataloader = DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True)
+    test_dataload = DataLoader(test, batch_size=BATCH_SIZE, shuffle=False)
+    return train_dataloader, test_dataload
 
 
-def load_data(path=DATASET_PATH, transform=DATASET_TRANSFORM, batch_size=BATCH_SIZE,
-               imgs_per_patient=IMAGES_PER_PATIENT, testing=False):
-    if testing:
-        test_images = datasets.ImageFolder(root=osP.join(path, "test"), transform=DATASET_TRANSFORM)
-        return test_images, len(list(test_images)), None
 
-    # create training datasets including lables with their respective class
-    AD_files = FileLister(root=osP.join(path, "AD", "train"), 
-                          masks="*.jpeg", recusive=False).map(label_file)
-    NC_files = FileLister(root=osP.join(path, "NC", "train"), 
-                          masks="*.jpeg", recusive=False).map(label_file)
+# def load_data(path=DATASET_PATH, transform=DATASET_TRANSFORM, batch_size=BATCH_SIZE,
+#                imgs_per_patient=IMAGES_PER_PATIENT, testing=False):
+#     if testing:
+#         test_images = datasets.ImageFolder(root=osP.join(path, "test"), transform=DATASET_TRANSFORM)
+#         return test_images, len(list(test_images)), None
 
-    # batch data, grouped by patient ID 
-    # buffer shuffle used to shuffle batches corresponding to patient within entire bucket
-    AD_batch = AD_files.bucketbatch(use_in_batch_shuffle=False, 
-                                    batch_size=imgs_per_patient, sort_key=sort_patients)
-    NC_batch = NC_files.bucketbatch(use_in_batch_shuffle=False, 
-                                    batch_size=imgs_per_patient, sort_key=sort_patients)
+#     # create training datasets including lables with their respective class
+#     AD_files = FileLister(root=osP.join(path, "AD", "train"), 
+#                           masks="*.jpeg", recusive=False).map(label_file)
+#     NC_files = FileLister(root=osP.join(path, "NC", "train"), 
+#                           masks="*.jpeg", recusive=False).map(label_file)
+
+#     # batch data, grouped by patient ID 
+#     # buffer shuffle used to shuffle batches corresponding to patient within entire bucket
+#     AD_batch = AD_files.bucketbatch(use_in_batch_shuffle=False, 
+#                                     batch_size=imgs_per_patient, sort_key=sort_patients)
+#     NC_batch = NC_files.bucketbatch(use_in_batch_shuffle=False, 
+#                                     batch_size=imgs_per_patient, sort_key=sort_patients)
     
-    # stratified split of AD & NC images to get validation data
-    val_size = 0.2
-    AD_train, AD_val = AD_batch.random_split(weights={
-                                                "train": 0.8,
-                                                "validation": 0.2},
-                                                total_length=len(list(AD_batch)),
-                                                seed=1)
-    NC_train, NC_val = NC_batch.random_split(weights={
-                                                "train": 0.8,
-                                                "validation": 0.2},
-                                                total_length=len(list(NC_batch)),
-                                                seed=2)
+#     # stratified split of AD & NC images to get validation data
+#     val_size = 0.2
+#     AD_train, AD_val = AD_batch.random_split(weights={
+#                                                 "train": 0.8,
+#                                                 "validation": 0.2},
+#                                                 total_length=len(list(AD_batch)),
+#                                                 seed=1)
+#     NC_train, NC_val = NC_batch.random_split(weights={
+#                                                 "train": 0.8,
+#                                                 "validation": 0.2},
+#                                                 total_length=len(list(NC_batch)),
+#                                                 seed=2)
 
-    # combine AD & NC class splits
-    # unbatch data 
-    # shuffle data
-    train_data = AD_train.concat(NC_train).unbatch().shuffle()
-    val_data = AD_val.concat(NC_val).unbatch().shuffle()
-    num_train_datapoints = len(list(train_data))
+#     # combine AD & NC class splits
+#     # unbatch data 
+#     # shuffle data
+#     train_data = AD_train.concat(NC_train).unbatch().shuffle()
+#     val_data = AD_val.concat(NC_val).unbatch().shuffle()
+#     num_train_datapoints = len(list(train_data))
 
-    # apply sharing filter to data 
-    # open images and apply transforms to images
-    train_images = train_data.sharding_filter().map(open_image).map(apply_tf)
-    val_images = val_data.sharding_filter().map(open_image).map(apply_tf)
+#     # apply sharing filter to data 
+#     # open images and apply transforms to images
+#     train_images = train_data.sharding_filter().map(open_image).map(apply_tf)
+#     val_images = val_data.sharding_filter().map(open_image).map(apply_tf)
 
-    return train_images, num_train_datapoints, val_images
+#     return train_images, num_train_datapoints, val_images

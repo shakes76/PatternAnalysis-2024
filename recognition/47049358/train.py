@@ -60,6 +60,7 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
         running_dice = 0.0
         total_segment_coefs = torch.zeros(6, device=device)
         for i, batch_data in enumerate(train_loader):
+
             inputs, labels = (
                 batch_data["image"].to(device),
                 batch_data["label"].to(device),
@@ -69,6 +70,8 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
                 optimiser.zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, labels) 
+
+            torch.cuda.empty_cache()
 
             segment_coefs = compute_dice_segments(outputs, labels, device)
             total_segment_coefs += segment_coefs

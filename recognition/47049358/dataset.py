@@ -12,8 +12,11 @@ import torch
 # Constants
 # ==========================
 
-IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
-LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
+IMAGE_FILE_NAME = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs'
+LABEL_FILE_NAME = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only'
+
+# IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon')
+# LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
 
 rawImageNames = sorted(os.listdir(IMAGE_FILE_NAME))
 rawLabelNames = sorted(os.listdir(LABEL_FILE_NAME))

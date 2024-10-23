@@ -11,8 +11,8 @@ def main():
     print(f"Using device: {device}")
 
     # Hyperparameters
-    num_epochs = 5
-    batch_size = 32
+    num_epochs = 30
+    batch_size = 128
     learning_rate = 1e-4
     weight_decay = 1e-5
 

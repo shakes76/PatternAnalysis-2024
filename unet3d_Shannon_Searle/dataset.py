@@ -5,7 +5,7 @@ import nibabel as nib
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-
+from scipy.ndimage import zoom
 # Function to convert labels to one-hot encoded channels
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     # Get unique values (assuming categorical data)
@@ -74,15 +74,15 @@ class Resize3D:
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
         
-        # Resize each dimension of the 3D input
-        depth, height, width = self.size
-        image = np.resize(image, (image.shape[0], depth, height, width))
-        label = np.resize(label, (label.shape[0], depth, height, width))
+        # Calculate zoom factors
+        zoom_factors = [s / o for s, o in zip(self.size, image.shape[1:])]
+        image = zoom(image, (1, *zoom_factors), order=1)  # Use bilinear interpolation
+        label = zoom(label, (1, *zoom_factors), order=0)  # Nearest-neighbor for labels
         
         return {'image': image, 'label': label}
 
 # Normalize the image (assuming image is already resized)
-class Normalize3D:
+class Normalize3D: #!Instead of normalizing the entire image for each sample, you can compute the mean and standard deviation over the dataset and apply them consistently.
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
 

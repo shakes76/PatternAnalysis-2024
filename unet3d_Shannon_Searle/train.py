@@ -4,6 +4,9 @@ import torch.nn as nn
 from modules import UNet3D
 from tqdm import tqdm
 import time 
+import os
+
+os.environ['TQDM_DISABLE'] = 'True'
 
 # Define Dice Loss function
 class DiceLoss(nn.Module):

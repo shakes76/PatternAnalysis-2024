@@ -68,3 +68,11 @@ class UNet(nn.Module):
             nn.ReLU()
         )
 
+def dice_loss(preds, targets, smooth=1e-6):
+    preds_flat = preds.view(-1)
+    targets_flat = targets.view(-1)
+    
+    intersection = (preds_flat * targets_flat).sum()
+    dice_loss_value = 1 - (2.0 * intersection + smooth) / (preds_flat.sum() + targets_flat.sum() + smooth)
+    
+    return dice_loss_value

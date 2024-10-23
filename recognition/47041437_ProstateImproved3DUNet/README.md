@@ -33,6 +33,43 @@ This report specifically looks at a 3D prostate dataset and attempts to extract 
 
 
 ## Parameters and Results
+The dataset consisted of prostate 3D MRI data for 3D tasks of 38 patients with 211 3D MRI volumes. The body outline, bone, bladder, rectum and prostate regions are segmented in 3D by a MR physicist with more than 10 years of experience. Thus, a total of 6 labels are present and expected in the output. A batch size of 1 was employed because of the small dataset and to lessen the load on the GPU. An epoch number of 40 was used for the 3D U-Net and 45 for the improved 3D U-Net. 181, 15, 15 images were used for training, validating and testing, respectively. 
+
+The below was inserted into the runner file in Rangpur:
+
+```python
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+```
+
+With the 3D U-Net model, all labels achieved a DSC of at least 0.75. The plots for the 6 labels can be found below. 
+<table>
+  <tr>
+    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="200"/></td>
+  </tr>
+  <tr>
+    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="200"/></td>
+  </tr>
+</table>
+
+
+With the improved 3D U-Net model, all labels achieved a DSC of at least 0.8. The plots for the 6 labels can be found below. 
+<table>
+  <tr>
+    <td><img src="images/improvedunet3d/dsc_plot_label_Label 0.png" width="200"/></td>
+    <td><img src="images/improvedunet3d/dsc_plot_label_Label 1.png" width="200"/></td>
+    <td><img src="images/improvedunet3d/dsc_plot_label_Label 2.png" width="200"/></td>
+  </tr>
+  <tr>
+    <td><img src="images/improvedunet3d/dsc_plot_label_Label 3.png" width="200"/></td>
+    <td><img src="images/improvedunet3d/dsc_plot_label_Label 4.png" width="200"/></td>
+    <td><img src="images/improvedunet3d/dsc_plot_label_Label 4.png" width="200"/></td>
+  </tr>
+</table>
+
 
 ## Dependencies
 

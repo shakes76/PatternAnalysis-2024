@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 from PIL import Image
-from dataset import scan_directory, get_newest_item
+from dataset import scan_directory, get_newest_item, iou_torch
 
 modified_filepath = "./datasets/ISIC"
 
@@ -24,6 +24,7 @@ def visualise_testcase(file, true_bbox, pred_bbox):
     ax.add_patch(rect2)
     ax.legend()
     plt.show()
+
 
 def run_test(run_number=-1):
     """

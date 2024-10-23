@@ -166,10 +166,14 @@ class StyleBlock(nn.Module):
             x = x + self.scale_noise[None, :, None, None] * noise
         return self.activation(x + self.bias[None, :, None, None])
 
-'''
-Generates an RGB image from a feature map using 1x1 convolution.
-Uses the style vector from the mapping network through the Equalized Linear layer
-'''    
+
+"""
+ This function is taken from the NVIDIA labs code (reference provided in README.md file)
+ and is required as this code works with the images in the RGB space (even though they are grayscale).
+
+ Attempts to modify to a grayscale only approach just resulted in worse quality images, so 
+ this was left.
+""" 
 class ToRGB(nn.Module):
 
     def __init__(self, W_DIM, features):
@@ -187,9 +191,10 @@ class ToRGB(nn.Module):
         x = self.conv(x, style)
         return self.activation(x + self.bias[None, :, None, None])
 
-'''
-This layer scales the convolution weights by the style vector and demodulates by normalizing it.    
-'''
+"""
+ Defines a custom 2D convolution layer with weight modulation that allows the weights of the convolution to be 
+ modulated by style vectors and optionally demodulated.
+"""
 class Conv2dWeightModulate(nn.Module):
 
     def __init__(self, in_features, out_features, kernel_size,

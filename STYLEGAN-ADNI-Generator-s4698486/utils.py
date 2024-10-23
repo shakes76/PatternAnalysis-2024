@@ -1,3 +1,4 @@
+# utils.py
 import torch
 from constants import w_dim, log_resolution
 import torch.nn as nn
@@ -58,14 +59,19 @@ def generator_loss(fake_output):
     return criterion(fake_output, torch.ones_like(fake_output))
 
 
-def gradient_penalty(critic, real, fake,device="cpu"):
+
+"""
+ Gradient penalty to decrease discriminator's overconfidence by offsetting its loss
+ with gradient of its predictions
+"""
+def gradient_penalty(discriminator, real, fake, device="cpu"):
     BATCH_SIZE, C, H, W = real.shape
     beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
     interpolated_images = real * beta + fake.detach() * (1 - beta)
     interpolated_images.requires_grad_(True)
 
     # Calculate critic scores
-    mixed_scores = critic(interpolated_images)
+    mixed_scores = discriminator(interpolated_images)
  
     # Calculates the gradient of scores with respect to the images
     # and we need to create and retain graph since we have to compute gradients
@@ -77,6 +83,7 @@ def gradient_penalty(critic, real, fake,device="cpu"):
         create_graph=True,
         retain_graph=True,
     )[0]
+
     # Reshape gradients to calculate the norm
     gradient = gradient.view(gradient.shape[0], -1)
     # Calculate the norm and then the loss

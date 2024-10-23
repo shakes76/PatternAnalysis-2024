@@ -1,8 +1,3 @@
-'''
-The module reads and loads data.
-The data is augmented and transformed during import for faster training.
-'''
-
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
@@ -10,11 +5,10 @@ import matplotlib.pyplot as plt
 
 from constants import image_height, image_width
 
-'''
- Saves 5 images after the data transformation/augmentation and loading is complete and wrapped using dataloader.
-
- This is just a test to ensure that the images are being loaded as expected.
-'''
+"""
+ Saves 5 images after the data transformation/augmentation is complete in order to assess the effects of the 
+ augmentation.
+"""
 def generate_sample_images(loader):    
     
     for i in range(5):
@@ -23,14 +17,14 @@ def generate_sample_images(loader):
         plt.imshow(img, cmap="gray")
         save_image(img*0.5+0.5, f"aug_img_{i}.png") # Making sure to rescale image from [-1, 1] to [0, 1] for output.
 
-'''
+"""
  Data Loader
 
  Data is the filepath for the data, provided in constants.py. This is the path to the folder containing both
  cognitive normal and alzheimer's disease brain scans for both the test and train scan.
 
- batchSize specifies the batches that we will 
-'''
+ batchSize specifies the size of the batches of images that will be trained on.
+"""
 def get_data(data, batchSize):
 
     transform = transforms.Compose([
@@ -46,10 +40,10 @@ def get_data(data, batchSize):
                                                          # to run more smoothly.                                 
         )
 
-    dataset = datasets.ImageFolder(root=data, transform=transform)
+    dataset = datasets.ImageFolder(root=data, transform=transform) # load in from our combined image folder
 
     loader = DataLoader(dataset, batchSize, shuffle=True) # shuffle to minimise overfitting to certain patterns in data order.
 
-    generate_sample_images(loader) 
+    generate_sample_images(loader) # generate augmented training images.
         
     return loader

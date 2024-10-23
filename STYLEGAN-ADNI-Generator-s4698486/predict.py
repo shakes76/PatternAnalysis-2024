@@ -8,11 +8,9 @@ from constants import save, image_height, image_width, w_dim, log_resolution, z_
 from modules import Generator, MappingNetwork
 
 
-
-
-'''
-Plot a 10x5 graph of the Generator and Discriminator loss during training over iteration
-'''
+"""
+ Plot loss graph for both generator and discriminator
+"""
 def plot_loss(G_Loss, D_Loss):
     plt.figure(figsize=(10, 5))
     plt.title("Generator Loss During Training")
@@ -32,12 +30,9 @@ def plot_loss(G_Loss, D_Loss):
     plt.savefig('disc_loss.png')
 
 
-
-
-'''
-Generate Images using the generator.
-n=10 Images are saved for the epoch interval as defined in the parameter
-'''
+"""
+ Generate 10 example images from the generator.
+"""
 def generate_examples(gen, mapping_network, epoch, device):
     n = 10
     for i in range(n):
@@ -77,7 +72,9 @@ mapping_network.eval()
 generate_examples(gen=generator, mapping_network=mapping_network, epoch=0, device=device)
 
 
-# Step 1: Extract Style Vectors for t-SNE
+"""
+ Just convert latent vectors to style vectors.
+"""
 def extract_style_vectors(mapping_network, z_samples):
     with torch.no_grad():
         w_vectors = mapping_network(z_samples)
@@ -91,7 +88,7 @@ w_vectors = extract_style_vectors(mapping_network, z_samples)
 
 
 # Step 2: Apply t-SNE to the extracted style vectors
-tsne = TSNE(n_components=2, perplexity=30, random_state=46984863)
+tsne = TSNE(n_components=2, perplexity=30, random_state=46984863) # I have decreased the perplexity to 2 as this doesn't preserve global structures
 w_2d = tsne.fit_transform(w_vectors)
 
 

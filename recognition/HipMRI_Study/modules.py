@@ -66,3 +66,9 @@ class UNet(nn.Module):
         d1 = self.decoder1(d1)
 
         return self.output(d1)
+
+def dice_coefficient(pred, target, smooth=1e-5):
+    pred = torch.sigmoid(pred)
+    pred = (pred > 0.5).float()  # Convert predictions to binary (0 or 1)
+    intersection = (pred * target).sum()
+    return (2.0 * intersection + smooth) / (pred.sum() + target.sum() + smooth)

@@ -7,7 +7,8 @@ import time
 from modules import improved_3d_unet_model
 from dataset import DOWNSIZE_FACTOR, load_mri_data
 
-#Path for MRI data
+#Paths for saved results and MRI data
+SAVED_RESULTS_PATH = "C:/Users/nk200/Downloads/" #This is my path, please change when using
 DATA_PATH = "C:/Users/nk200/Downloads/HipMRI_study_complete_release_v1/" #This is my path, please change when using
 
 BATCH_LENGTH = 2
@@ -50,6 +51,9 @@ def train_model():
     
     #Evaluate the model on the test set
     mri_improved_3d_unet_model.evaluate(test_batches)
+    
+    #Save the trained model to use for predictions
+    mri_improved_3d_unet_model.save(SAVED_RESULTS_PATH + "improved_3d_unet_model.keras")
 
 if __name__ == "__main__":
     

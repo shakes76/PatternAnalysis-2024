@@ -28,6 +28,17 @@ class BrainDataset(Dataset):
 
         print(f"Loaded {len(self.image_paths)} images from {root_dir}")
 
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image = Image.open(self.image_paths[idx]).convert("RGB")
+        label = self.labels[idx]
+        if self.transform:
+            image = self.transform(image)
+        return image, label
+
+
     def get_dataloader(root_dir, batch_size=32):
         transform = transforms.Compose([
             transforms.Resize(128),

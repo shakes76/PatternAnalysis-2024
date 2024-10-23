@@ -215,13 +215,13 @@ def prepare_train():
                 height = image.height
                 
                 # Convert to normalized coordinates
-                center_x = (x_min + x_max) / 2 / width
-                center_y = (y_min + y_max) / 2 / height
+                centre_x = (x_min + x_max) / 2 / width
+                centre_y = (y_min + y_max) / 2 / height
                 norm_width = (x_max - x_min) / width
                 norm_height = (y_max - y_min) / height
                     
                 # Write the label to the file
-                f.write(f"{class_id} {center_x} {center_y} {norm_width} {norm_height}\n")
+                f.write(f"{class_id} {centre_x} {centre_y} {norm_width} {norm_height}\n")
 
         if (i % 100) == 0:
             print(str(i) + " images processed of " + str(train_dataset.__len__()))
@@ -266,13 +266,13 @@ def prepare_val():
                     height = image.height
                     
                     # Convert to normalized coordinates
-                    center_x = (x_min + x_max) / 2 / width
-                    center_y = (y_min + y_max) / 2 / height
+                    centre_x = (x_min + x_max) / 2 / width
+                    centre_y = (y_min + y_max) / 2 / height
                     norm_width = (x_max - x_min) / width
                     norm_height = (y_max - y_min) / height
                     
                     # Write the label to the file
-                    f.write(f"{class_id} {center_x} {center_y} {norm_width} {norm_height}\n")
+                    f.write(f"{class_id} {centre_x} {centre_y} {norm_width} {norm_height}\n")
 
         if (i % 100) == 0:
             print(str(i) + " images processed of " + str(val_dataset.__len__()))
@@ -316,13 +316,13 @@ def prepare_test():
                     height = image.height
                     
                     # Convert to normalized coordinates
-                    center_x = (x_min + x_max) / 2 / width
-                    center_y = (y_min + y_max) / 2 / height
+                    centre_x = (x_min + x_max) / 2 / width
+                    centre_y = (y_min + y_max) / 2 / height
                     norm_width = (x_max - x_min) / width
                     norm_height = (y_max - y_min) / height
                     
                     # Write the label to the file
-                    f.write(f"{class_id} {center_x} {center_y} {norm_width} {norm_height}\n")
+                    f.write(f"{class_id} {centre_x} {centre_y} {norm_width} {norm_height}\n")
 
         if (i % 100) == 0:
             print(str(i) + " images processed of " + str(test_dataset.__len__()))
@@ -338,7 +338,6 @@ def install_dataset(datasets):
     if 'test' in datasets:
         prepare_test()
     print("All data processing finished")
-
 
 
 def main():

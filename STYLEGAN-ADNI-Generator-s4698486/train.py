@@ -4,7 +4,7 @@ import torch
 from torch import optim
 from tqdm import tqdm
 
-import generate_images
+import predict
 from constants import *
 from dataset import get_data
 from modules import *
@@ -54,7 +54,7 @@ def train_fn():
         noise = utils.get_noise(cur_batch_size, device)
 
         # Use cuda AMP for accelerated training
-        with torch.amp.autocast(device_type=device):
+        with torch.amp.autocast(device_type=str(device)):
             generated_images = generator(style_vector, noise)
             discriminator_fake_output = discriminator(generated_images.detach()) # Will be our predicted labels for each of the fake images.
             
@@ -79,7 +79,7 @@ def train_fn():
 
         # Backpropagate discriminator - letting it learn.
         discriminator.zero_grad()
-        discriminator_loss.backward()
+        discriminator_loss.backward(retain_graph=True)
         discriminator_optimiser.step()
         discriminator_scheduler.step()
 
@@ -97,7 +97,7 @@ def train_fn():
         # Learning for generator and mapping network.
         mapping_network.zero_grad()
         generator.zero_grad()
-        generator_loss.backward()
+        generator_loss.backward(retain_graph=True)
         generator_optimiser.step()
         generator_scheduler.step()
         mapping_network_optimiser.step()
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
         # Save generator's fake image every 2nd epoch
         if epoch % 2 == 0:
-            generate_images.generate_examples(generator, mapping_network, epoch, device)
+            predict.generate_examples(generator, mapping_network, epoch, device)
 
 	    # Save model every 4 epochs
         if epoch % 4 == 0:
@@ -143,4 +143,4 @@ if __name__ == "__main__":
 
 
     # Once training complete, plot lifetime generator and discriminator losses.
-    generate_images.plot_loss(lifetime_generator_losses, lifetime_discriminator_losses)
+    predict.plot_loss(lifetime_generator_losses, lifetime_discriminator_losses)

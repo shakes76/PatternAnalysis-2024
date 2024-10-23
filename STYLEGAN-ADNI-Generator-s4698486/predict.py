@@ -3,7 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
-from utils import get_w, get_noise
+from utils import get_style_vector, get_noise
 from constants import save, image_height, image_width
 
 '''
@@ -37,7 +37,7 @@ def generate_examples(gen, mapping_network, epoch, device):
     n = 10
     for i in range(n):
         with torch.no_grad():
-            w     = get_w(1, mapping_network, device)
+            w     = get_style_vector(1, mapping_network, device)
             noise = get_noise(1, device)
             img = gen(w, noise)
             if not os.path.exists(f'saved_examples'):

@@ -78,7 +78,8 @@ Another optimisation implemented was the use of a learning rate scheduler. Speci
 - **div_factor**: Initial learning rate calculated as `max_lr` divided by this factor, resulting in \(0.001 / 25 = 0.00004\).
 - **final_div_factor**: Final learning rate, which is the initial rate divided by this factor, leading to around \(4 x 10^{-9}\).
 
-####
+#### Batch size:
+The batch size was kept at 2, since the model is quite memory intensive, and large batch sizes are not viable as a result. It showed a slight improvement in performance over a batch size of 1.
 
 ## Project info:
 

@@ -104,3 +104,33 @@ def upsampling_layer(localisation, addition, filters):
     concatenation = layers.Concatenate()([upsample, addition])
     
     return concatenation
+
+def segmentation_layer(localisation, upscale, lower_segmentation, add, filters):
+    """
+    The segmentation layer segments the previous localisation module output.
+    Reference [https://arxiv.org/pdf/1802.10508v1]
+    input: localisation - previous localisation
+           upscale - whether to upscale
+           lower_segmentation - previous segmentation layer
+           add: whether to add to lower_segmentation
+           filters - number of filters to output
+    output: segmentation - produced segmentation
+    """
+    
+    #1 x 1 x 1 Stride-1 Convolution
+    segmentation = layers.Conv3D(filters, (1, 1, 1), padding="same")(localisation)
+    
+    #Leaky ReLU Activation
+    #segmentation = layers.LeakyReLU(negative_slope=0.01)(segmentation)
+    
+    if add == True:
+    
+        #Element-wise Addition
+        segmentation = layers.Add()([lower_segmentation, segmentation])
+    
+    if upscale == True:
+        
+        #2 x 2 x 2 Upsampling 
+        segmentation = layers.UpSampling3D((2, 2, 2))(segmentation)
+    
+    return segmentation

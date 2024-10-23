@@ -12,49 +12,6 @@ The Vision Transformer model is utilized to process brain images and make predic
 
 
 ## Usage 
-### Install
-**Set up your environment**:
-- Create a virtual environment using venv or conda.
-- Install the necessary dependencies:
-```bash
-pip install -r requirements.txt
-```
-### Training
-
-Run the following command to train the model, adjusting the hyperparameters and dataset path as needed:
-
-```bash
-python train.py --transformer_layers 8 --num_epochs 50 --embedding_dims 256 --mlp_size 1024 --num_heads 8 --exp_name "your_experiment_name" --path "/path/to/dataset"
-```
-After training, the model, logs, and plots will be saved in the respective directories (`models/`, `logs/`, `plots/`).
-
-### Testing
-Use the following terminal command to test the model and perform one of two actions:
-
-- `--run predict`: Get the test loss/accuracy of the trained model. (Default if --run is not specified).
-- `--run brain-viz`: Visualize model predictions and display image grids with predicted labels and probabilities.
-
-Examples:
-
-Assuming there were no changes in model architecture (i.e defaults were used for train.py), then the below command will work.
-```bash
-python predict.py --model_path models/best_model.pth
-```
-
-If the trained model used different architectures (via --arg lines), the same changes must be put for the prediction.
-
-```bash
-python predict.py --model_path models/v10best_model.pth --run predict --num_transformer_layers 16
-```
-This command loads a model saved as v10best_model.pth (which was trained with 16 transformer layers) and outputs the test loss and accuracy.
-
-For image visualisation:
-```bash
-python predict.py --model_path models/v10best_model.pth --run brain-viz --num_transformer_layers 16
-```
-This visualizes the predictions for a batch of test images, displaying both true labels and predicted probabilities (using softmax). 
-
-
 ### Repository Structure
 
 - `predict.py`: Contains the code for making predictions using the trained ViT model. Softmax is applied externally for generating probability distributions for predictions. Can either generate classification report, or a  
@@ -72,6 +29,55 @@ This visualizes the predictions for a batch of test images, displaying both true
 ├── models/
 ├── plots/
 ```
+
+### Install
+**Set up your environment**:
+- Create a virtual environment using venv or conda.
+- Install the necessary dependencies:
+```bash
+pip install -r requirements.txt
+```
+### Training
+
+Run the following command to train the model, adjusting the hyperparameters and dataset path as needed:
+
+```bash
+python train.py --transformer_layers 8 --num_epochs 50 --embedding_dims 256 --mlp_size 1024 --num_heads 8 --exp_name "your_experiment_name" --path "/path/to/dataset"
+```
+Or a simpler command to use transformer defaults:
+```bash
+python train.py --exp_name "your_experiment_name" --path "/path/to/dataset"
+```
+
+After training, the model, logs, and plots will be saved in the respective directories (`models/`, `logs/`, `plots/`), with names with respect to `--exp_name`.
+
+### Testing
+On predict.py, use the following terminal command to test the model and perform one of two actions:
+
+- `--run predict`: Get the test loss/accuracy of the trained model. (Default if --run is not specified).
+- `--run brain-viz`: Visualize model predictions and display image grids with predicted labels and probabilities.
+
+Examples:
+
+Assuming there were no changes in model architecture (i.e defaults were used for train.py), then the below command will work.
+```bash
+python predict.py --model_path models/best_model.pth
+```
+
+If the trained model used different architectures (via --arg lines), the same changes must be put for the prediction.
+
+```bash
+python predict.py --model_path models/v10best_model.pth --run predict --num_transformer_layers 16
+```
+This command loads a model saved as v10best_model.pth (which was trained with 16 transformer layers, and the rest as transformer defaults) and outputs the test loss and accuracy as well as a classification report saved under `/plots`.
+
+For image visualisation:
+```bash
+python predict.py --model_path models/v10best_model.pth --run brain-viz --num_transformer_layers 16
+```
+This visualizes the predictions for a batch of test images, displaying both true labels and predicted probabilities (using softmax). 
+
+
 
 ## Vision Transformer Architecture
 {INFO ABOUT VIT; CITE THE REFERENCES HERE. ADD IMAGES. YAY.}

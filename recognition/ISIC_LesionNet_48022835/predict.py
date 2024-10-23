@@ -53,21 +53,27 @@ def bbox_to_corners(bbox):
 def inference_on_testset(model):
     testset = dataset.test_dataset
     prediction_array = []
-    for i in range(0, testset.__len__()):
-        prediction_array.append(testset.get_image_path(i))
-
-    results = model(prediction_array, max_det = 1) # run batched inference on the test dataset
-
     IoUTotal = 0
     confTotal = 0
     index = 0
-    for result in results:
-        IoUTotal += IoUTotalUpdate(LabelReader(index), result.boxes.xywhn.tolist())
-        if result.boxes.conf.size(0) > 0:
-            confTotal += result.boxes.conf.item()
-        if (index % 50) == 1:
-            result.show()  # Display the results of running inference on every 50th image | Adjustable
-        index += 1
+
+    for i in range(0, testset.__len__()):
+        if (i % 50) == 49:  # Broken into segments to prevent RAM allocation issues
+            print("Running inference on 50 images.")
+            results = model(prediction_array, max_det = 1) # run batched inference on the test dataset
+            index = 0
+            for result in results:
+                IoUTotal += IoUTotalUpdate(LabelReader(index), result.boxes.xywhn.tolist())
+                if result.boxes.conf.size(0) > 0:
+                    confTotal += result.boxes.conf.item()
+                if index == 1:
+                    result.show()  # Display the results of running inference on every 50th image 
+                index += 1
+            prediction_array = []
+
+        else:
+            prediction_array.append(testset.get_image_path(i))
+
     print("Average IoU across all predicted images is: " + str(IoUTotal / index))
     print("Average confidence score across all predicted images is: " + str(confTotal / index))
 

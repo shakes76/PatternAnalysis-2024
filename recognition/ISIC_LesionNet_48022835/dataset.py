@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from skimage import color
 from skimage import img_as_float
 import argparse
+import yaml
+import utils
 
 class ISICDataset(Dataset):
     def __init__(self, img_dir, mask_dir, transform=None):
@@ -85,17 +87,6 @@ class SegmentationTransform:
             image = F.normalize(image, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
 
         return image, mask
-
-# Instantiate the dataset with transforms
-transform = SegmentationTransform()
-train_dataset = ISICDataset(img_dir='Data/training/ISIC2018_Task1-2_Training_Input_x2', 
-                                mask_dir='Data/training/ISIC2018_Task1_Training_GroundTruth_x2', transform=transform)
-
-val_dataset = ISICDataset(img_dir='Data/Validation/ISIC2018_Task1-2_Validation_Input', 
-                                mask_dir='Data/Validation/ISIC2018_Task1_Validation_GroundTruth', transform=transform)
-
-test_dataset = ISICDataset(img_dir='Data/Testing/ISIC2018_Task1-2_Test_Input', 
-                                mask_dir='Data/Testing/ISIC2018_Task1_Test_GroundTruth', transform=transform)
 
 def get_bounding_box(mask):
     """
@@ -339,6 +330,42 @@ def install_dataset(datasets):
         prepare_test()
     print("All data processing finished")
 
+def create_folder(name, path):
+    print("Preparing " + name + " folder...")
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print(f'Folder "{name}" created.')
+        if name in ('Training', 'Testing', 'Validation'):
+            os.makedirs(path + "/images")
+            os.makedirs(path + "/labels")
+    else:
+        print(f'Folder "{name}" already exists.')
+
+
+def prepare_directories():
+    create_folder('Data', 'Data')
+    create_folder('Training', 'Data/Training')
+    create_folder('Validation', 'Data/Validation')
+    create_folder('Testing', 'Data/Testing')
+    create_folder('yolo', 'yolo')
+
+    data = {
+        'path': '../Data',  # dataset root directory
+        'train': 'Training/images',  # relative path for training images
+        'val': 'Validation/images',  # relative path for validation images
+        'test': 'Testing/images',  # relative path for testing images
+        'names': {
+            0: 'Lesion'  # class name for lesions
+        }
+    }
+
+    # Write the YAML file
+    with open("Data/lesion_detection.yaml", 'w') as yaml_file:
+        yaml.dump(data, yaml_file, default_flow_style=False, sort_keys=False)
+        print(f"YAML file created at Data/lesion_detection.yaml")
+
+    
+
 
 def main():
     # Initialize the argument parser
@@ -356,10 +383,31 @@ def main():
     options=['train', 'val', 'test']
     # Parse the arguments
     args = parser.parse_args()
-    datasets_to_install = [d for d in options if d not in args.datasets]
-    for i in datasets_to_install:
-    # Loop through the datasets not passed by the user and install them
-        install_dataset(datasets_to_install)
+    if args.datasets:
+        datasets_to_install = [d for d in options if d not in args.datasets]
+        for i in datasets_to_install:
+        # Loop through the datasets not passed by the user and install them
+            install_dataset(i)
+    else:
+        for i in options:
+            install_dataset(i)
+
+
+if not os.path.exists('Data') or not os.path.exists('yolo'):
+    prepare_directories()
+
+# Instantiate the dataset with transforms
+# Adjust paths for directories to raw inputs and raw masks in utils.py instead of in command line arguements.
+transform = SegmentationTransform()
+if os.path.exists(utils.raw_training_images_path) and os.path.exists(utils.raw_training_masks_path):
+    train_dataset = ISICDataset(img_dir=utils.raw_training_images_path, mask_dir=utils.raw_training_masks_path, transform=transform)
+
+if os.path.exists(utils.raw_validation_images_path) and os.path.exists(utils.raw_validation_masks_path):
+    val_dataset = ISICDataset(img_dir=utils.raw_validation_images_path, mask_dir=utils.raw_validation_masks_path, transform=transform)
+
+if os.path.exists(utils.raw_testing_images_path) and os.path.exists(utils.raw_testing_masks_path):
+    test_dataset = ISICDataset(img_dir=utils.raw_testing_images_path, mask_dir=utils.raw_testing_masks_path, transform=transform)
+
 
 if __name__ == "__main__":
-    main()
+    main()  

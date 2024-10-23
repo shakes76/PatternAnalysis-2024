@@ -49,7 +49,6 @@ class BinaryClassifier(nn.Module):
         self._layer2 = nn.Linear(500, 100)
         self._layer3 = nn.Linear(100, 2)
         self._reLU = nn.ReLU()
-        self._activation = nn.Sigmoid()
 
     def forward(self, features) -> torch.Tensor:
         """ Performs a forward processing of the features. 
@@ -63,8 +62,4 @@ class BinaryClassifier(nn.Module):
         x = self._reLU(x)
         x = self._layer2(x)
         x = self._reLU(x)
-        x = self._layer3(x)
-        return self._activation(x)
-
-
-
+        return self._layer3(x)

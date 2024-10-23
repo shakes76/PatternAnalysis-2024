@@ -56,6 +56,7 @@ def load_data_2D(
         norm_image: bool, 
         one_hot: bool, 
         resized: bool,
+        resizing_masks: bool,
         dtype: np.dtype, 
         early_stop: bool
         ) -> np.ndarray:
@@ -68,6 +69,7 @@ def load_data_2D(
         norm_image (bool): Boolean flag to normalise images (mean=0, std=1)
         one_hot (bool): Boolean flag to one hot encode images
         resized (bool): Boolean flag to resize images to (IMG_SIZE, IMG_SIZE)
+        resizing_masks (bool): Boolean flag to resize masks with order=0
         dtype (np.dtype): Type and size of the data to be returned as an array
         early_stop (bool): Boolean flag to prematurely stop loading files
 
@@ -96,7 +98,10 @@ def load_data_2D(
         image = nifti_image.get_fdata(caching = 'unchanged') # Read disk only
         if len(image.shape) == 3: # Remove extra dimensions, if any
             image = image[:, :, 0]
-        image = resize(image, (rows, cols), order=1, preserve_range=True)
+        if resizing_masks: # Make order=0 to keep 6 unique entries
+            image = resize(image, (rows, cols), order=0, preserve_range=True)
+        else:
+            image = resize(image, (rows, cols), order=1, preserve_range=True)
         image = image.astype(dtype)
         if norm_image: # Normalise the image
             image = (image - image.mean()) / image.std()
@@ -117,6 +122,7 @@ def load_data_2D_from_directory(
         norm_image = True, 
         one_hot = False, 
         resized = True,
+        resizing_masks = False,
         dtype: np.dtype = np.float32, 
         early_stop = False
         ) -> np.ndarray:
@@ -131,6 +137,7 @@ def load_data_2D_from_directory(
         norm_image (bool): Boolean flag to normalise images (mean=0, std=1)
         one_hot (bool): Boolean flag to one hot encode images
         resized (bool): Boolean flag to resize images to (IMG_SIZE, IMG_SIZE)
+        resizing_masks (bool): Boolean flag to resize masks with order=0
         dtype (np.dtype): Type and size of the data to be returned as an array
         early_stop (bool): Boolean flag to prematurely stop loading files
     
@@ -141,4 +148,4 @@ def load_data_2D_from_directory(
     image_names = []
     for file in sorted(os.listdir(image_folder_path)):
         image_names.append(os.path.join(image_folder_path, file))
-    return load_data_2D(image_names, norm_image, one_hot, resized, dtype, early_stop)
+    return load_data_2D(image_names, norm_image, one_hot, resized, resizing_masks, dtype, early_stop)

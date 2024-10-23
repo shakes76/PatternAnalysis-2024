@@ -14,6 +14,7 @@ Dependencies:
     numpy
     pytorch
     matplotlib
+    scikit-learn
 """
 
 import os
@@ -22,6 +23,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
+from sklearn.utils.class_weight import compute_class_weight
 
 import utils
 
@@ -41,6 +43,7 @@ class ProstateDataset(Dataset):
     
     Methods:
         img_show: Plot 6 of the images and their masks
+        calculate_class_weights: Returns weights based on label frequency
     """
 
     def __init__(self, 
@@ -50,11 +53,14 @@ class ProstateDataset(Dataset):
             plotting = False
             ):
 
+        self.img_dir = img_dir
+        self.mask_dir = mask_dir
         # Load images and masks
         self.imgs = utils.load_data_2D_from_directory(
-            img_dir, norm_image=True, resized=True, early_stop=early_stop)
+            img_dir, norm_image=True, resized=True, resizing_masks=False, early_stop=early_stop)
         self.masks = utils.load_data_2D_from_directory(
-            mask_dir, norm_image=False, resized=True, one_hot=True, early_stop=early_stop, dtype=np.float16)
+            mask_dir, norm_image=False, resized=True, resizing_masks=True,
+            one_hot=True, early_stop=early_stop, dtype=np.float16)
         # Plotting requires segment data that is not one hot encoded
         if plotting:
             self.masks_plot = utils.load_data_2D_from_directory(
@@ -104,6 +110,30 @@ class ProstateDataset(Dataset):
             plt.axis("off")
         plt.show()
 
+    def calculate_class_weights(self) -> np.ndarray:
+        """
+        Calculates weights to be used in the loss criterion based on
+        the appearance of each label using a subsample of the masks
+
+        Parameters:
+            None
+
+        Returns:
+            np.ndarray: Weights for each label
+        """
+
+        # Must load mask data that has been resized but not one hot encoded
+        self.masks_single_channel = utils.load_data_2D_from_directory(
+                self.mask_dir, norm_image=False, resized=True, resizing_masks=True, one_hot=False, early_stop=False)
+        # Slice the big array randomly to calculate the weights
+        np.random.shuffle(self.masks_single_channel)
+        sliced = self.masks_single_channel[:1000]
+        # Calculate class weights for criterion
+        unique_classes = np.unique(sliced)
+        weights = compute_class_weight(class_weight="balanced", classes=unique_classes, y=sliced.flatten())
+        return weights
+
+
 # For testing purposes
 if __name__ == "__main__":
     # Image directories
@@ -119,9 +149,15 @@ if __name__ == "__main__":
     
     # Print statements for debugging and improving understanding
     print(len(train_dataset))
-    print(type(train_dataset[1][1]))
-    print(train_dataset[1][0].shape)
-    print(train_dataset[1][1].shape)
+    print(type(train_dataset.imgs))
+    print(train_dataset.imgs.shape)
+    print(train_dataset.masks.shape)
+    print(type(train_dataset[0][1]))
+    print(train_dataset[0][0].shape)
+    print(train_dataset[0][1].shape)
 
     # Plot the training images from index 15-20 inclusive
     train_dataset.img_show(15)
+
+    # Calculate class weights
+    print(train_dataset.calculate_class_weights())

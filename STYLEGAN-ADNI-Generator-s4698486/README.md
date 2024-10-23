@@ -470,7 +470,32 @@ Structural Accuracy: The shapes and textures in later epoch images closely align
 The observed progression illustrates the generator's learning curve in capturing complex structures through the adversarial training process. The transition from noisy, poorly-defined images to realistic MRI representations highlights the success of using a StyleGAN-based approach for generating synthetic medical images. It underscores the importance of sufficient training epochs and balanced training dynamics between the generator and discriminator for achieving high-quality outputs.
 
 ## Performance Metrics
+<p align="center">
+    <img src="images_for_readme/Results/OtherImages/disc_loss.png" alt="Image 1" width="49%" />
+    <img src="images_for_readme/Results/OtherImages/gen_loss.png" alt="Image 2" width="49%" />
+    <br>
+    Loss plots for Discriminator and Generator
+</p>
+
+## Analysis of Performance Metrics
+The provided loss plots for the generator and discriminator offer insight into the training dynamics:
+
+### Discriminator Loss:
+
+Initially, the discriminator loss fluctuates significantly, with large negative values indicating the discriminator's confidence in distinguishing real from generated images.
+Around Epoch 10-20, the discriminator loss becomes less negative, indicating a more balanced learning process as the generator starts producing more convincing samples.
+The later oscillations suggest an ongoing struggle between the generator and discriminator, where neither dominates for long, indicating stable adversarial training.
+However, the negative loss values might also point to the discriminator being relatively strong, which aligns with the need to balance training so that the generator can keep improving.
+
+### Generator Loss:
+
+The generator loss initially spikes, which is common as it tries to generate images that can fool the discriminator.
+As training progresses (after Epoch 20), the generator loss significantly decreases and stabilizes around lower values.
+This suggests that the generator starts producing images that are increasingly similar to real samples, effectively reducing the discriminator's ability to distinguish between real and fake.
+The minor fluctuations towards later epochs show ongoing improvements and adjustments in generating finer details.
 
 
+The combination of these observations points to a well-trained GAN where the generator gradually learns to produce realistic samples, and the discriminator remains competitive, helping refine the generator's output. The images improve over time, correlating with the stable, yet dynamic, loss trends seen in the plots. Adjustments to the discriminator strength or regularization techniques might further fine-tune this balance for even better results.
 
+Additionally, these losses align well with the provided images - as the image quality substantially increased at 10 and then 20 epochs, before having relatively steady improvement beyond 20 epochs.
 ## References

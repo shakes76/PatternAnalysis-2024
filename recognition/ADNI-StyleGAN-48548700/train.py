@@ -8,7 +8,7 @@ from torch import optim
 import matplotlib.pyplot as plt
 
 # Define constants and hyperparameters
-DATASET                 = "./ADNI_AD_NC_2D/"  # Path to the dataset
+DATASET                 = "C:/Users/baibh/dev/comp3710/PatternAnalysis-2024/recognition/ADNI_AD_NC_2D/AD_NC/train/AD"  # Path to the dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
 EPOCHS                  = 301 # Number of training epochs
 LEARNING_RATE           = 1e-3  # Learning rate for optimization
@@ -137,7 +137,7 @@ mapping_network     = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)  # Initialize mapp
 gen                 = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)  # Initialize generator
 critic              = Discriminator(LOG_RESOLUTION).to(DEVICE)  # Initialize critic
 
-loader = get_data_loader(DATASET, LOG_RESOLUTION, BATCH_SIZE)
+loader = get_loader(DATASET, LOG_RESOLUTION, BATCH_SIZE)
 
 gen                 = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)
 

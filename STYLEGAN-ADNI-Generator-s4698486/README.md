@@ -524,14 +524,20 @@ Additionally, these losses align well with the provided images - as the image qu
 
 ## Style Space
 <p align="center">
-    <img src="images_for_readme/OtherImages/TSNE.png" alt="Image 1" width="90%" />
+    <img src="images_for_readme/OtherImages/TSNE.png" alt="Image 1" width="48%" />
+    <img src="images_for_readme/OtherImages/TSNE_low_perplexity.png" alt="Image 2" width="48%" />
     <br>
     TSNE Style Space Plot at 50 epochs.
 </p>
 
-The plot shown above highlights the style space for the mapping network having been trained for 50 epochs. The style space is not clearly split into AD and NC spaces, as the model was not trained distinctly on AD and NC data (rather, trained on them combined). However, there is still a clear break of the style space vector around the bottom of the image, which is interpreted to be the distinction in the style space between the normal control and alzheimer's disease images. 
+The plot shown above highlights the style space for the mapping network having been trained for 50 epochs. The style space is not clearly split into AD and NC spaces, as the model was not trained distinctly on AD and NC data (rather, trained on them combined) - meaning that generating ground truth labels was impossible (I was assured by multiple tutors that this was okay). 
 
-Had the model been trained distinctly on the two different types of brain scans (not explicitly required by the task) - being a conditional model, then there may be a much more clear separation in the style space.
+The above right image shows the TSNE graph with extremely low perplexity - which does not preserve any global structres and, hence, 
+looks like somewhat randomly distributed points. If this plot was generated conditionally, then there should be two clearly distinct sections
+in this plot - representing each of the different types of brain scan.
+
+The above left image shows the TSNE graph with very high perplexity - meaning that it attempts to heavily preserve global structures of the data. With this in mind, having almost all data points fully connected makes sense, given that there is no conditional separation into AD and 
+NC. However, there is a clear break of the style space vector around the bottom of the image, which is interpreted to be the distinction in the style space between the normal control and alzheimer's disease images - which has been learned by the mapping network, even without being explicitly labelled. Had the model been trained distinctly on the two different types of brain scans (not explicitly required by the task) - being a conditional model, then there may be a much more clear separation in the style space.
 
 ## References
 T. Karras, S. Laine, and T. Aila, “A Style-Based Generator Architecture for Generative Adversarial

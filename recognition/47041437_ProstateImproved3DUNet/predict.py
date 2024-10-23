@@ -17,7 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Load Model
 #model = UNet3D().to(device)
 model = UNet3D(1,6).to(device)
-model.load_state_dict(torch.load('UNET3DsegmentationModel.pth', map_location=device))
+model.load_state_dict(torch.load('improved_UNet3D.pth', map_location=device))
 model.eval()
 
 # Uncomment other path for implementation on personal device

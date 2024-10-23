@@ -6,7 +6,6 @@ where applicable
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
 from time import time
 from monai.losses import DiceLoss
 from monai.data import DataLoader, Dataset

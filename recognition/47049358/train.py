@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 from monai.data import DataLoader, Dataset
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 
 NUM_EPOCHS = 300
 BATCH_SIZE = 2
@@ -66,7 +66,7 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
                 batch_data["label"].to(device),
             )
             
-            with autocast():
+            with autocast(device_type=DEVICE.type):
                 optimiser.zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, labels) 

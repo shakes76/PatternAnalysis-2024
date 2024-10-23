@@ -43,7 +43,6 @@ def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
     Returns:
         np.ndarray: Array that has been one hot encoded
     """
-
     channels = IMG_LABELS
     result = np.zeros(arr.shape + (channels,), dtype = dtype)
     for c in range(channels):
@@ -61,8 +60,7 @@ def load_data_2D(
         early_stop: bool
         ) -> np.ndarray:
     """
-    Load 2D Nifti images and masks, possibly resized.
-    Masks will be one-hot encoded.
+    Load 2D Nifti files, with optional resizing, normalising, one hot.
     
     Parameters:
         image_names (list[str]): List of Nifti image file paths
@@ -76,7 +74,6 @@ def load_data_2D(
     Returns:
         np.ndarray: Array containing the data from the Nifti files
     """
-
     # Get the number of images in the list
     num = len(image_names)
     # Get desired image shape
@@ -130,7 +127,7 @@ def load_data_2D_from_directory(
     Returns np array of all Nifti images in the specified image folder.
     
     Creates a list of all image path names in a folder, then feeds 
-    that into load_data_2D() to return a np arrary of those images.
+    that into load_data_2D to return a np arrary of those images.
     
     Parameters:
         image_folder_path (str): Path to folder with Nifti images
@@ -144,7 +141,6 @@ def load_data_2D_from_directory(
     Returns:
         np.ndarray: Array containing the data from the Nifti files
     """
-
     image_names = []
     for file in sorted(os.listdir(image_folder_path)):
         image_names.append(os.path.join(image_folder_path, file))

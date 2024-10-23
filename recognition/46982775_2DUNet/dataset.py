@@ -1,8 +1,9 @@
 """ 
-This file handles the dataset used for the Prostate data.
-A custom PyTorch dataset class called ProstateDataset has been made
-and uses utils.py to load 2D Nifti image files from the specified
-directory. It can also visualise those images.
+Custom dataset used for the Prostate data.
+
+Uses utils.py to load 2D Nifti image files from the specified
+directory. It can also visualise those images, as well as calculate
+the weights for the loss function based on the occurence of each label.
 
 Author: 
     Joseph Reid
@@ -93,7 +94,6 @@ class ProstateDataset(Dataset):
         Returns:
             None, plots the images and masks
         """
-
         fig = plt.figure(figsize=(8, 8))
         cols, rows = 4, 3
         count = 0 # Variable to move through subplots
@@ -121,7 +121,6 @@ class ProstateDataset(Dataset):
         Returns:
             np.ndarray: Weights for each label
         """
-
         # Must load mask data that has been resized but not one hot encoded
         self.masks_single_channel = utils.load_data_2D_from_directory(
                 self.mask_dir, norm_image=False, resized=True, resizing_masks=True, one_hot=False, early_stop=False)

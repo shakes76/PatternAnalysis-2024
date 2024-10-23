@@ -35,12 +35,12 @@ A VQ-VAE (vector quantized variational autoencoders) was used to turn the images
 ![alt text](resources/generation_with_simple_AE.gif)
 
 
-As a result, I resorted to a VQ-VAE, which encodes images to normal distributions in the latent space and then quantizes them to discrete vectors. The latent space in the model I used was 32x32 and had 4 channels. Below is the main architecture I used for the VQ-VAE [2]:
+As a result, I resorted to a VQ-VAE, which encodes images to normal distributions in the latent space and then quantizes them to discrete vectors. The latent space in the model I used was 32x32 and had 4 channels. Below is an image from the initial paper of the VQ-VAE showing the main architecture [2], this architecture was used in the VQ-VAE for the Stable Diffusion model:
 
 ![alt text](resources/VQ-VAE-arch.png)
 
 The U-Net was initially inspired from "U-Net: Convolutional Networks for Biomedical
-Image Segmentation", and some modifications have been made for it to fit general structure of the stable diffusion model (for example, I modified the input and output dimensions so that it works in the latent space). The U-Net contained four encoder blocks and four decoder blocks with a resnet block as the bottleneck. The timestep (a number which indicates the level of noise) was embedded in each block. Below is the diagram the U-Net is inspired from [3]:
+Image Segmentation", and some modifications have been made so that it fits the general structure of the stable diffusion model (for example, I modified the input and output dimensions so that it works in the latent space). The U-Net contained four encoder blocks and four decoder blocks with a resnet block as the bottleneck. The timestep (a number which indicates the level of noise) was embedded in each block. Below is the diagram the U-Net is inspired from [3]:
 
 ![alt text](resources/u-net-architecture.png)
 
@@ -52,6 +52,8 @@ The VQ-VAE and the Unet were trained separately. This was done because it was mo
 
 ![alt text](resources/unet_loss.png)
 
+It is worth noting that a batch size of 4 was used for both. The VQ-VAE had a learning rate of 0.00001 and the U-Net had a learning rate of 0.0001
+
 ## Results and Discussion
 
 Below is a gif showing the image generation process:
@@ -60,7 +62,7 @@ Below is a gif showing the image generation process:
 
 There were 1000 timesteps in the noise scheduler of this model. During the image generation, noise removal and addition occurred incrementally at every timestep starting from 1000. With other Stable Diffusion models, the image resembling the dataset it was trained on begins to show early on in the noise addition/removal process; however, with this model, it only clearly begins to show at the very end (so at very low timesteps). As a result, the images don't fully resemble the ones from the original dataset. I mitigated this by having the last 30 timesteps repeated 5 times after all timesteps have been iterated; this gave the model a better chance of generating a clear image. In addition, in those repeated timesteps, I inserted an extra layer of noise removal for each frame of the gif to give more clarity (this layer of noise removal is a simpler version of the one used when generating the images). The main issue, however, still persisted, and it is that the final images don't fully resemble the original data (the generated images capture the general shape and texture of the brain, but miss out on the interior details and sometimes get the shape wrong). To identify the root cause of this, I separately tested the VQ-VAE and the Unet, but both were working properly. My main guess is that the problem lies within the image generation process itself; it is possible that the the amount of noise removed and the amount added isn't balanced in the correct way (I attempted to fix this by scaling some values by certain constants, and it did indeed make the results slightly better but the issue still largely remained). Due to time constraints, I haven't been able to resolve the issue, but I believe it should be one of the main things to be tackled for future development. 
 
-Due the generated images not fully resembling the brains in the original dataset, I did not plot a UMAP. The purpose of the UMAP would have been to make sure the generated images are separated into two classes (with Alzheimer's and without) as that would ensure the model is generating the images correctly. Therefore, I leave this for future development. 
+Due to the generated images not fully resembling the brains in the original dataset, I did not plot a UMAP. The purpose of the UMAP would have been to make sure the generated images are separated into two classes (with Alzheimer's and without) as that would ensure the model is generating the images correctly. Therefore, I leave this for future development. 
 
 ## Dependencies
 

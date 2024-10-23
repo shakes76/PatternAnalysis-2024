@@ -3,7 +3,7 @@ class Trainer:
         model.train()
         optimizer.zero_grad()
         out = model(data)
-        loss = F.nll_loss()
+        loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
         loss.backward()
         optimizer.step()
 
@@ -23,7 +23,6 @@ class Tester:
     def test(model,data):
         model.eval()
         with torch.no_grad():  
-            out = self.model(self.data)  
             pred = model(data).argmax(dim=1) 
             correct = (pred[self.data.test_mask] == self.data.y[self.data.test_mask]).sum() 
             acc = int(correct) / int(self.data.test_mask.sum())  

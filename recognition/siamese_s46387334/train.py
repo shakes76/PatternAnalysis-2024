@@ -20,43 +20,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score, accuracy_score
 
 from dataset import get_isic2020_data, get_isic2020_data_loaders
-from modules import TripletLoss, SiameseNet, set_seed
+from modules import TripletLoss, SiameseNet, set_seed, get_config
 from predict import predict_siamese_net, results_siamese_net
-
-
-###############################################################################
-### Config Settings
-def get_config() -> dict:
-    """
-    Get the config used to train and evaluate SiameseNet on the ISIC 2020 data.
-
-    Returns: the current config settings
-    """
-    # config = {
-    #     # If we wish to only use a subset of the data to training
-    #     # Set to: None to use the full dataset.
-    #     # Smaller numbers will speed up training but may reduce final model performance.
-    #     'data_subset': 16000,
-    #     'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-    #     'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
-    #     'batch_size': 32,
-    #     'embedding_dims': 128,
-    #     'learning_rate': 0.0001,
-    #     'epochs': 20,
-    # }
-    config = {
-        # If we wish to only use a subset of the data to training
-        # Set to: None to use the full dataset.
-        # Smaller numbers will speed up training but may reduce final model performance.
-        'data_subset': 16000,
-        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
-        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
-        'batch_size': 32,
-        'embedding_dims': 128,
-        'learning_rate': 0.0001,
-        'epochs': 20,
-    }
-    return config
 
 
 ###############################################################################

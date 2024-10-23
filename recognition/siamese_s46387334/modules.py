@@ -104,6 +104,44 @@ class TripletLoss(nn.Module):
         losses = torch.relu(distance_positive - distance_negative + self.margin)
         return losses.mean()
 
+
+###############################################################################
+### Config Settings
+def get_config() -> dict:
+    """
+    Get the config used to train and evaluate SiameseNet on the ISIC 2020 data.
+
+    Returns: the current config settings
+    """
+    # config = {
+    #     # If we wish to only use a subset of the data to training
+    #     # Set to: None to use the full dataset.
+    #     # Smaller numbers will speed up training but may reduce final model performance.
+    #     'data_subset': 16000,
+    #     'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
+    #     'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+    #     'batch_size': 32,
+    #     'embedding_dims': 128,
+    #     'learning_rate': 0.0001,
+    #     'epochs': 20,
+    # }
+    config = {
+        # If we wish to only use a subset of the data to training
+        # Set to: None to use the full dataset.
+        # Smaller numbers will speed up training but may reduce final model performance.
+        'data_subset': 100,
+        'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
+        'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
+        'batch_size': 32,
+        'embedding_dims': 2,
+        'learning_rate': 0.0001,
+        'epochs': 5,
+    }
+    return config
+
+
+###############################################################################
+### Set Seed Helper
 def set_seed(seed: int=42) -> None:
     """
     Sets the seed for a number of random number generators that will be used

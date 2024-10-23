@@ -232,20 +232,39 @@ After running training and prediction as listed above, these were the results pr
 
 ### Evaluation Metrics
 1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
+```
+Testing AUR ROC: 0.867
+```
 
 2. Testing Specificity (true negative rate)
+```
+Testing Specificity: 0.761
+```
 
 3. Testing Sensitivity (true positive rate)
-
+```
+Testing Sensitivity: 0.828
+```
 
 ### Evaluation Figures
 1. Training / Validation loss, accuracy and AUR ROC over the training epochs
 
+![alt text](readme_figures/train_val_train_progress.png)
+
+
 2. Testing ROC Curve
+
+![alt text](readme_figures/testing_roc_curve.png)
+
 
 3. Testing Confusion Matrix
 
+![alt text](readme_figures/testing_confusion_matrix.png)
+
+
 4. Testing t-SNE Embedding Visualization
+
+![alt text](readme_figures/testing_tsne_embeddings.png)
 
 
 ## Reproduction of Results

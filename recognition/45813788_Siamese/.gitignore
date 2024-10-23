@@ -10,5 +10,6 @@
 !utils.py
 !hyper.py
 !README.md
+!/images/**
 !/images/
 !.gitignore

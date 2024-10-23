@@ -68,6 +68,14 @@ class UNet(nn.Module):
             nn.ReLU()
         )
 
+'''
+Measure the overlap between predicted segmentation masks and ground truth masks
+
+parameters:
+preds = predicted segmentation mask
+targets = actual segmentation mask
+smooth = constant to prevent division by 0
+'''
 def dice_loss(preds, targets, smooth=1e-6):
     preds_flat = preds.view(-1)
     targets_flat = targets.view(-1)

@@ -27,3 +27,12 @@ class BrainDataset(Dataset):
                     self.labels.append(1)
 
         print(f"Loaded {len(self.image_paths)} images from {root_dir}")
+
+    def get_dataloader(root_dir, batch_size=32):
+        transform = transforms.Compose([
+            transforms.Resize(128),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+        ])
+        dataset = BrainDataset(root_dir, transform=transform)
+        return DataLoader(dataset, batch_size=batch_size, shuffle=True)

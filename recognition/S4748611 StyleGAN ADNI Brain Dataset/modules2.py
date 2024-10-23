@@ -7,7 +7,7 @@ import numpy as np
 LATENT_DIM = 512
 INITIAL_SIZE = 4
 NUM_CHANNELS = 1
-FINAL_SIZE = 128
+FINAL_SIZE = 64
 
 class WeightDemod(Layer):
     def __init__(self, filters, **kwargs):
@@ -59,8 +59,8 @@ def build_synthesis_network():
     x = WeightDemod(512)([x, style_input])
     x = LeakyReLU(0.2)(x)
 
-    # Upsampling blocks with increased complexity
-    for filters in [512, 256, 128, 64, 32]:
+    # Upsampling blocks with increased complexity, stopping at 64x64
+    for filters, size in zip([512, 256, 128, 64], [8, 16, 32, 64]):  # Adjusted to stop at 64x64
         x = UpSampling2D()(x)
         x = Conv2D(filters, 3, padding='same')(x)
         x = apply_noise(x)
@@ -72,10 +72,11 @@ def build_synthesis_network():
         x = apply_noise(x)
         x = LeakyReLU(0.2)(x)
 
-    # Final convolution to get the desired number of channels (RGB output)
+    # Final convolution to get the desired number of channels (NUM_CHANNELS)
     x = Conv2D(NUM_CHANNELS, 1, activation='tanh')(x)
 
     return Model([constant_input, style_input], x, name="synthesis_network")
+
 
 
 def build_generator():
@@ -104,7 +105,7 @@ def build_discriminator():
     x = Dense(256)(x)
     x = LeakyReLU(0.2)(x)
 
-    x = Dense(1)(x)  # No sigmoid activation as it's typically used with hinge loss in GANs
+    x = Dense(1)(x)
 
     return Model(input_image, x, name="discriminator")
 
@@ -133,18 +134,3 @@ discriminator.summary()
 
 print("\nStyleGAN2 Summary:")
 stylegan2.summary()
-
-# Test the models with random inputs
-# Test generator
-latent_vector = np.random.normal(0, 1, (1, LATENT_DIM))
-constant_input = np.random.normal(0, 1, (1, INITIAL_SIZE, INITIAL_SIZE, LATENT_DIM))
-generated_image = generator.predict([latent_vector, constant_input])
-print(f"\nGenerated image shape: {generated_image.shape}")
-
-# Test discriminator
-discriminator_output = discriminator.predict(generated_image)
-print(f"Discriminator output: {discriminator_output}")
-
-# Test full StyleGAN2
-stylegan2_output = stylegan2.predict([latent_vector, constant_input])
-print(f"StyleGAN2 output: {stylegan2_output}")

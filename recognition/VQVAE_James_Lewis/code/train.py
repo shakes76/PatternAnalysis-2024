@@ -116,6 +116,38 @@ def validate(model, val_loader, device, ssim_metric):
     avg_val_ssim = total_val_ssim / len(val_loader)
     print(f'Validation SSIM: {avg_val_ssim:.4f}')
 
+def test_model(model, test_loader, device, ssim_metric):
+    """
+    Test the model on the test set.
+
+    @param model: VQVAE, the model being tested
+    @param test_loader: DataLoader, test data
+    @param device: torch.device, the device for computations
+    @param ssim_metric: torchmetrics.Metric, SSIM metric instance
+    """
+    model.eval()  # Set the model to evaluation mode
+    total_test_ssim = 0  # Track total SSIM for test
+
+    with torch.no_grad():
+        for data in test_loader:
+            # Convert the numpy array to a PyTorch tensor
+            data = torch.tensor(data).float()  # Ensure the data is a float tensor
+            data = data.unsqueeze(1)  # Add channel dimension for grayscale [batch_size, 1, height, width]
+            data = data.to(device)  # Move the data to the appropriate device (e.g., GPU)
+
+            # Forward pass through the model
+            reconstructed_data, _ = model(data)
+
+            # Compute SSIM between reconstructed and original data
+            ssim_score = ssim_metric(reconstructed_data, data)
+
+            # Accumulate SSIM score
+            total_test_ssim += ssim_score.item()
+
+    # Return average SSIM over test set
+    avg_test_ssim = total_test_ssim / len(test_loader)
+    print(f'Test SSIM: {avg_test_ssim:.4f}')
+
 
 if __name__ == "__main__":
     # Hyperparameters
@@ -127,7 +159,7 @@ if __name__ == "__main__":
     n_embed = 256
     embedding_dims = 128
     commitment_cost = 0.25
-    num_epochs = 25
+    num_epochs = 20
     learning_rate = 0.0003
     batch_size = 32
 
@@ -139,7 +171,6 @@ if __name__ == "__main__":
     val_names= [os.path.join(val_image_directory, img) for img in os.listdir(val_image_directory) if img.endswith(('.nii', '.nii.gz'))]
     test_names= [os.path.join(test_image_directory, img) for img in os.listdir(test_image_directory) if img.endswith(('.nii', '.nii.gz'))]
 
-
     train_images = load_data_2D(train_names, normImage=True)
     val_images = load_data_2D(val_names, normImage=True)
     test_images = load_data_2D(test_names, normImage=True)
@@ -150,6 +181,26 @@ if __name__ == "__main__":
 
     # Specify the device (CPU or GPU)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    ssim_metric = torchmetrics.StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
 
-    # Train the model
     train_vqvae(model, train_images, val_images, test_images, num_epochs, learning_rate, device, batch_size)
+
+    # Save the model parameters after training
+    torch.save(model.state_dict(), 'vqvae_model.pth')
+    print("Model parameters saved as 'vqvae_model.pth'.")
+
+    # Create a new VQVAE model instance for testing
+    test_model_instance = VQVAE(input_dim, out_dim, n_res_block, n_res_channel, stride, n_embed, commitment_cost,
+                                embedding_dims)
+    test_model_instance.to(device)  # Move to the appropriate device
+
+    # Load the saved model parameters
+    test_model_instance.load_state_dict(torch.load('vqvae_model.pth'))
+    print("Model parameters loaded.")
+
+    # Create test DataLoader
+    test_loader = DataLoader(test_images, batch_size=batch_size, shuffle=False)
+
+    # Test the model on the test set
+    test_model(test_model_instance, test_loader, device, ssim_metric)
+

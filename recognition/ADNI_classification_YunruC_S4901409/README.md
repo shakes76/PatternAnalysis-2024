@@ -93,10 +93,9 @@ class Mlp(nn.Module):
         x = self.drop(x)
         return x
 ```
-In MLP, the fully connected layers `self.fc1` and `self.fc2` map the input features to a hidden layer of size `hidden_features`, and then the `out_features`. The `nn.layer` applies a linear transformation in the form of `y = xW+b` with weight matrix w and bias b. The activation function `GELU` by default applies a non-linear transformation to the output of the fc1, which helps the model to learn complex patterns. Moreover, the `self.drop` is a regularization technique that randomly sets a fraction of elements to zero during training to prevent overfitting. 
-Furthermore, the `Block` class represents a building block used in GFNet
+In MLP, the fully connected layers `self.fc1` and `self.fc2` map the input features to a hidden layer of size `hidden_features`, and then the `out_features`. The `nn.layer` applies a linear transformation in the form of `y = xW+b` with weight matrix w and bias b. The activation function `GELU` by default applies a non-linear transformation to the output of the fc1, which helps the model to learn complex patterns. Moreover, the `self.drop` is a regularization technique that randomly sets a fraction of elements to zero during training to prevent overfitting.
 
-Essentially, the GFNet is built using the three classes mentioned above with a single processing block `Block`.
+Furthermore, the `Block` class represents a building block used in GFNet.
 
 ```python
 class Block(nn.Module):
@@ -116,7 +115,7 @@ class Block(nn.Module):
 ```
 
 The layer normalization is used both before and after the filter, as shown in Figure 2. Additionally, an advanced technique known as stochastic depth (drop path) is applied to Mlp output, allowing some blocks to be skipped during training to reduce overfitting. If `drop_path = 0`, no operation will perform on the input due to `nn.Identity()`. 
-Another point worth noting in `GFNet` is that the position embeddings are added to the patch embeddings to encode spatial information in `GFNet` class, and dropout is applied for regularization.
+Essentially, the GFNet is built using the four classes mentioned above. Another point worth noting in `GFNet` is that the position embeddings are added to the patch embeddings to encode spatial information in `GFNet` class, and dropout is applied for regularization.
 
 ```python
 self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))

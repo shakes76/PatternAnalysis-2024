@@ -77,7 +77,9 @@ The StyleGAN model consists of the following components:
 - **AdaIN Layer**: Adaptive Instance Normalization layer used in the generator to control the style of the generated images.
 
 Figure 1: GAN Model Compared to StyleGAN Model
+<br/>
 ![Model Architecture](images/model_architecture.png)
+<br/>
 Figure 1 shows the differences between the model architecture of a basic Generative Adversarial Network (GAN) compared with a StyleGAN.
 
 The model is built using TensorFlow and Keras, and the architecture is defined in the `modules.py` file.

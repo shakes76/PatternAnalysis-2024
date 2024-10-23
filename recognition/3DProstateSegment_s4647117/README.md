@@ -72,7 +72,17 @@ Another optimisation implemented was the use of a learning rate scheduler. Speci
 * Numpy 1.26.3
 * NiBabel 5.2.1
 
-## Example input:
+## Input:
+Input images have dimensions [256, 256, 128]. Some of the data the model was trained on had dimensions [256, 256, 144], these were trimmed down to [256, 256, 128] to keep resolution consistent.
+Here is an example input image:
+<div align="left">
+    <img src="https://github.com/JosephSav/Markdown/blob/main/input_image.png" alt="Overlayed comparison gif"width="50%">
+</div>
+For training, each input image has a corresponding label image:
+
+<div align="left">
+    <img src="https://github.com/JosephSav/Markdown/blob/main/input_label.png" alt="Overlayed comparison gif"width="50%">
+</div>
 
 ## Example outputs and Comparison with true labels:
 Left is Actual label (ground truth), and right is the predicted label
@@ -108,12 +118,12 @@ As above, colored are the predicted labels, and greyscale is actual label
     <img src="https://github.com/JosephSav/Markdown/blob/main/learning_rate.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
 </div>
 
-## Justify train/val/test splits and any preprocessing:
+## Preprocessing and data splits:
 
 The dataset is divided into training, validation, and test sets to ensure that the model can generalise well to unseen data. The splits are typically chosen based on the size of the dataset and ensuring that each set represents a diverse range of cases. We chose an 70-15-15 split, where 70% of the data is used for training, 15% for validation, and 15% for testing.
 
 * Preprocessing: Common preprocessing steps included normalisation (scaling pixel intensities) and resizing images to a consistent resolution.
-* Transforms: We did not use any transforms. This could be a potential point of improvement to explore in the future.
+* Transforms: We did not use any transforms or data augmentation. This could be a potential point of improvement to explore in the future.
   
 These decisions are critical for improving the model's ability to segment the prostate accurately across different patients.
 

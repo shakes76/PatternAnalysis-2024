@@ -1,8 +1,13 @@
-# containing the source code for training, validating, testing and saving your model. The model
-# should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
-# sure to plot the losses and metrics during training
-
 """ 
+Train and test a 2D UNet model.
+
+The performance of the model is evaluated by computing and plotting the
+dice scores and similar.
+
+Creates a folder for the model, which contains the saved checkpoint,
+the training and testing dice scores, and a log file with periodic
+messages from the training and testing.
+
 Modified from Shekhar "Shakes" Chandra:
 https://colab.research.google.com/drive/1K2kiAJSCa6IiahKxfAIv4SQ4BFq7YDYO?usp=sharing#scrollTo=w2QhUgaco7Sp
 
@@ -14,8 +19,11 @@ Functions:
     write_log_file: Write train/test messages to log file
     train_model: Train UNet on training data
     test_model: Test trained UNet on testing data
+    main: Perform the training and testing and plot the results
 
 Dependencies:
+    numpy
+    matplotlib
     pytorch
     torchmetrics
 """
@@ -23,6 +31,8 @@ Dependencies:
 import os
 import time
 
+import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -47,21 +57,24 @@ NUM_EPOCHS = 24
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 12
 
-# Model name - Change for each training to save model and scores
-MODEL_NAME = "2d_unet_initial"
+# Model name - Change name for each training
+MODEL_NAME = "2D_UNet"
+
+# Model, dice score and log file directories
 MODEL_DIR = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "trained_models", MODEL_NAME)
-MODEL_CHECKPOINT1 = os.path.join(MODEL_DIR, "checkpoint1.pth")
-MODEL_CHECKPOINT2 = os.path.join(MODEL_DIR, "checkpoint2.pth")
-MODEL_CHECKPOINT3 = os.path.join(MODEL_DIR, "checkpoint3.pth")
-MODEL_CHECKPOINT4 = os.path.join(MODEL_DIR, "checkpoint4.pth")
+MODEL_CHECKPOINT_DIR = os.path.join(MODEL_DIR, "checkpoint.pth")
 TRAIN_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "training_dice_score.pth")
 TEST_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "testing_dice_score.pth")
-
-# Log file directory to save a log of messages
 LOG_DIR = os.path.join(MODEL_DIR, "log.txt")
-
 # Also print messages when they are written to the log file
 VERBOSE = True
+
+# Image directories - Change if data is stored differently
+MAIN_IMG_DIR = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "HipMRI_study_keras_slices_data")
+TRAIN_IMG_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_train")
+TRAIN_MASK_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_seg_train")
+TEST_IMG_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_test")
+TEST_MASK_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_seg_test")
 
 
 def create_log_file():
@@ -104,7 +117,6 @@ def train_model(
         list[float]: Cross entropy training losses per epoch
         list[list[float]]: Average dice scores of all classes per epoch
     """
-
     start_time = time.time()
 
     # Storage for plotting Cross Entropy Loss and Dice Score per epoch
@@ -142,7 +154,7 @@ def train_model(
             train_dice_scores[epoch] = torch.add(train_dice_scores[epoch], dice_score)
             
             # Write losses and dice scores to log periodically
-            if (i+1) % 50 == 0:
+            if (i+1) % 100 == 0:
                 write_log_file(f"Step: {i+1}/{len(loader)}, Loss: {loss.item()}")
                 write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(train_dice_scores / (i+1))}")
 
@@ -150,29 +162,17 @@ def train_model(
         epoch_loss = epoch_running_loss / len(loader)
         write_log_file(f"Epoch: {epoch+1}/{NUM_EPOCHS}, Epoch Loss: {epoch_loss}")
         train_losses.append(epoch_loss)
-
-        # Save models
-        if epoch + 1 == NUM_EPOCHS / 4:
-            write_log_file("Saving first checkpoint")
-            torch.save(model.state_dict(), MODEL_CHECKPOINT1)
-        if epoch + 1 == NUM_EPOCHS / 2:
-            write_log_file("Saving second checkpoint")
-            torch.save(model.state_dict(), MODEL_CHECKPOINT2)
-        if epoch + 1 == (3 * NUM_EPOCHS / 4):
-            write_log_file("Saving third checkpoint")
-            torch.save(model.state_dict(), MODEL_CHECKPOINT3)
-        if epoch + 1 == NUM_EPOCHS:
-            write_log_file("Saving fourth checkpoint (final model)")
-            torch.save(model.state_dict(), MODEL_CHECKPOINT4)
-
-    # Training finished. Convert dice scores from tensor to list
+    
+    # Training finished
+    write_log_file("Saving the model")
+    torch.save(model.state_dict(), MODEL_CHECKPOINT_DIR)
     average_train_dice_scores = train_dice_scores / len(loader)
     torch.save(average_train_dice_scores, TRAIN_DICE_SCORE_DIR)
     average_train_dice_scores = average_train_dice_scores.tolist()
+    write_log_file(f"Training Cross Entropy Losses:\n{train_losses}")
 
     end_time = time.time()
     write_log_file(f"Training took {(end_time - start_time)/60:.1f} minutes")
-
     return (train_losses, average_train_dice_scores)
 
 
@@ -194,7 +194,6 @@ def test_model(
     Returns:
         list[float]: Final dice scores of all classes
     """
-
     start_time = time.time()
     
     # Storage for plotting Cross Entropy Loss and Dice Score
@@ -220,10 +219,6 @@ def test_model(
             dice_score = gds(predicted, labels)
             test_dice_scores = torch.add(test_dice_scores, dice_score)
 
-            # Write dice scores to log periodically
-            if (i+1) % 50 == 0:
-                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(test_dice_scores / (i+1))}")
-
         # Testing finished. Compute and print final average dice scores
         average_test_dice_scores = test_dice_scores / len(loader)
         torch.save(test_dice_scores, TEST_DICE_SCORE_DIR)
@@ -233,13 +228,22 @@ def test_model(
 
     end_time = time.time()
     write_log_file(f"Testing took {(end_time - start_time)/60:.1f} minutes")
-
     return average_test_dice_scores
 
 
-# For testing purposes
-if __name__ == "__main__":
-    # Initialise log file
+def main():
+    """ 
+    Perform training and testing and plot the results.
+    
+    Initialises the datasets, dataloaders, loss function and optimiser.
+    Also creates the log file and writes to it. Finally, plots the
+    training metrics and final dice scores.
+
+    Note that global constants are defined at the top of the script.
+    Specifically, directories might need to be changed, and the model
+    has to be renamed each time as to not overwrite the previous one.
+    """
+    # Initialise log file and checks if model has been renamed
     create_log_file()
 
     # Device config
@@ -247,42 +251,53 @@ if __name__ == "__main__":
     if not torch.cuda.is_available():
         write_log_file("Warning CUDA not Found. Using CPU")
 
-    # Image directories
-    main_dir = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "HipMRI_study_keras_slices_data")
-    train_image_path = os.path.join(main_dir, "keras_slices_train")
-    train_mask_path = os.path.join(main_dir, "keras_slices_seg_train")
-    test_image_path = os.path.join(main_dir, "keras_slices_test")
-    test_mask_path = os.path.join(main_dir, "keras_slices_seg_test")
-
-    # Training and testing datasets
-    train_dataset = ProstateDataset(train_image_path, train_mask_path, early_stop=False)
-    test_dataset = ProstateDataset(test_image_path, test_mask_path, early_stop=False)
-
-    # Training and testing dataloaders
+    # Training and testing datasets and dataloaders
+    train_dataset = ProstateDataset(TRAIN_IMG_DIR, TRAIN_MASK_DIR, early_stop=False)
+    test_dataset = ProstateDataset(TEST_IMG_DIR, TEST_MASK_DIR, early_stop=False)
     train_loader = DataLoader(train_dataset, BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, BATCH_SIZE, shuffle=True)
 
     # UNet model
     model = UNet()
     model = model.to(device)
-
+    
+    # Weights for loss function from calculate_class_weights in dataset.py
+    weights = torch.tensor([0.9679, 0.2466, 1.3312, 8.9319, 44.2907, 39.6628])
     # Loss function and optimiser algorithm
-    # weights = train_dataset.calculate_class_weights()
-    weights = torch.tensor([0.96584141, 0.24800861, 1.30525178, 8.34059394, 47.83551869, 39.09455447])
     criterion = nn.CrossEntropyLoss(weight=weights)
     optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    
+
     # Dice score class to calculate class dice scores
     gds = GeneralizedDiceScore(
         num_classes = len(CLASSES_DICT), 
         per_class = True, 
         weight_type = "linear"
         ).to(device)
+    
+    # Training and testing
+    train_losses, train_dice_scores = train_model(model, train_loader, criterion, optimiser, gds, device)
+    test_model(model, test_loader, gds, device)
+    
+    # Plotting
+    # Training loss
+    plt.plot(train_losses)
+    plt.title('Cross Entropy Training Loss vs Epoch')
+    plt.ylabel('Training Loss')
+    plt.xlabel('Epoch')
+    plt.xticks(np.arange(1, NUM_EPOCHS))
+    plt.show()
+    # Training prostate dice similarity coefficient
+    prostate_dice_scores = []
+    for epoch_dice_score in train_dice_scores:
+        prostate_dice_scores.append(epoch_dice_score[5])
+    plt.plot(prostate_dice_scores, label='Training Dice Score')
+    plt.axhline(0.75, label='Target Dice Score')
+    plt.title('Prostate Dice Score vs Epoch')
+    plt.ylabel('Dice Score')
+    plt.xlabel('Epoch')
+    plt.xticks(np.arange(1, NUM_EPOCHS))
+    plt.show()
 
-    # Training
-    train_losses, average_train_dice_scores = train_model(model, train_loader, criterion, optimiser, gds, device)
-    write_log_file(f"Training Cross Entropy Losses:\n{train_losses}")
 
-    # Testing
-    average_test_dice_scores = test_model(model, test_loader, gds, device)
-    write_log_file(f"Average Test Dice Scores:\n{average_test_dice_scores}")
+if __name__ == "__main__":
+    main()

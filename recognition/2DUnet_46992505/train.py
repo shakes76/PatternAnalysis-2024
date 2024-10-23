@@ -108,8 +108,8 @@ def train_generator(image_datagen, mask_datagen, X_train, y_train, batch_size):
     mask_gen = mask_datagen.flow(y_train, batch_size=batch_size, seed=1)
     
     while True:
-        X_batch = image_gen.next()
-        y_batch = mask_gen.next()
+        X_batch = next(image_gen)
+        y_batch = next(mask_gen)
         yield (X_batch, y_batch)
 
 batch_size = 8

@@ -25,7 +25,9 @@ def train_vqvae(model, train_images, val_images, test_images, num_epochs, learni
     val_loader = DataLoader(val_images, batch_size=batch_size, shuffle=False)
 
     ssim_vals = []
+    ssim_vals_valid = []
     # Training loop
+    save_original(train_loader)
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
         total_loss = 0  # Track total loss for the epoch
@@ -39,7 +41,7 @@ def train_vqvae(model, train_images, val_images, test_images, num_epochs, learni
             data = data.to(device)  # Move to device
 
             # Forward pass through the model
-            reconstructed_data, commitment_loss = model(data)
+            reconstructed_data, commitment_loss, embeddings = model(data)
 
 
             # Calculate reconstruction loss (Mean Squared Error)
@@ -77,10 +79,14 @@ def train_vqvae(model, train_images, val_images, test_images, num_epochs, learni
         print(f'Epoch [{epoch + 1}/{num_epochs}], Average Loss: {avg_loss:.4f}, Average SSIM: {avg_ssim:.4f}')
 
         # Validate the model on the validation set
-        validate(model, val_loader, device, ssim_metric)
-    return ssim_vals
+        ssim_valid = validate(model, val_loader, device, ssim_metric, ssim_vals_valid)
+        ssim_vals_valid.append(ssim_valid)
 
-def validate(model, val_loader, device, ssim_metric):
+        construct_images(data, reconstructed_data, embeddings, epoch, section = 'train')
+
+    return ssim_vals, ssim_vals_valid
+
+def validate(model, val_loader, device, ssim_metric, ssim_vals_valid):
     """
     Validate the model on validation data.
 
@@ -105,13 +111,13 @@ def validate(model, val_loader, device, ssim_metric):
 
             # Compute SSIM between reconstructed and original data
             ssim_score = ssim_metric(reconstructed_data, data)
-
             # Accumulate SSIM score
             total_val_ssim += ssim_score.item()
 
     # Return average SSIM over validation set
     avg_val_ssim = total_val_ssim / len(val_loader)
     print(f'Validation SSIM: {avg_val_ssim:.4f}')
+    return ssim_score
 
 def test_model(model, test_loader, device, ssim_metric):
     """
@@ -128,7 +134,6 @@ def test_model(model, test_loader, device, ssim_metric):
     with torch.no_grad():
         for data in test_loader:
             # Convert the numpy array to a PyTorch tensor
-            data = torch.tensor(data).float()  # Ensure the data is a float tensor
             data = data.unsqueeze(1)  # Add channel dimension for grayscale [batch_size, 1, height, width]
             data = data.to(device)  # Move the data to the appropriate device (e.g., GPU)
 
@@ -145,23 +150,60 @@ def test_model(model, test_loader, device, ssim_metric):
     avg_test_ssim = total_test_ssim / len(test_loader)
     print(f'Test SSIM: {avg_test_ssim:.4f}')
 
-def plot_ssims(ssim_vals):
-    """
-    Plot the SSIM values over training epochs.
 
-    @param ssim_vals: list, SSIM values
+def plot_ssims(ssim_vals_train, ssim_vals_val, num_epochs, save_path='average_ssim_over_epochs.png'):
     """
+    Plot the SSIM values over training epochs for both training and validation.
 
+    @param ssim_vals_train: list, SSIM values for training
+    @param ssim_vals_val: list, SSIM values for validation
+    @param num_epochs: int, total number of epochs
+    @param save_path: str, optional, path to save the plot image
+    """
 
     plt.figure(figsize=(10, 5))
-    plt.plot(range(1, num_epochs + 1), ssim_vals, marker='o')
-    plt.title('Average SSIM over Epochs')
+
+    # Plot training SSIM values (line-only)
+    plt.plot(range(1, num_epochs + 1), ssim_vals_train, label='Training SSIM', color='blue', linewidth=2)
+
+    # Plot validation SSIM values (line-only)
+    plt.plot(range(1, num_epochs + 1), ssim_vals_val, marker='x', label='Validation SSIM', color='orange')
+
+    # Add titles and labels
+    plt.title('Average SSIM over Epochs (Training vs Validation)')
     plt.xlabel('Epoch')
     plt.ylabel('Average SSIM')
     plt.grid()
-    plt.xticks(range(1, num_epochs + 1))  # Ensure all epochs are shown on x-axis
-    plt.savefig('average_ssim_over_epochs.png')  # Save the figure if needed
+
+    # Ensure all epochs are shown on x-axis
+    plt.xticks(range(1, num_epochs + 1))
+
+    # Add a legend to distinguish training and validation SSIM values
+    plt.legend()
+
+    # Save the figure to a file
+    plt.savefig(save_path)
+    print(f'Plot saved to {save_path}')
+
+    # Display the plot
     plt.show()
+
+def save_original(train_loader):
+
+def construct_images(data, reconstructed_data, embeddings, epoch, section = 'train'):
+    """
+    Construct and save the original and reconstructed images for visualization.
+
+    @param data: torch.Tensor, the original images
+    @param reconstructed_data: torch.Tensor, the reconstructed images
+    @param embeddings: torch.Tensor, the embeddings
+    @param epoch: int, the current epoch
+    @param section: str, the section of the dataset (e.g., 'train', 'val', 'test')
+    """
+    if not os.path.exists('reconstructed_images'):
+        os.makedirs('reconstructed_images')
+
+
 
 if __name__ == "__main__":
     # Hyperparameters
@@ -197,7 +239,7 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     ssim_metric = torchmetrics.StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
 
-    ssim_vals = train_vqvae(model, train_images, val_images, test_images, num_epochs, learning_rate, device, batch_size)
+    ssim_vals, ssim_vals_valid = train_vqvae(model, train_images, val_images, test_images, num_epochs, learning_rate, device, batch_size)
 
 
     # Save the model parameters after training
@@ -219,4 +261,4 @@ if __name__ == "__main__":
     # Test the model on the test set
     test_model(test_model_instance, test_loader, device, ssim_metric)
 
-    plot_ssims(ssim_vals)
+    plot_ssims(ssim_vals, ssim_vals_valid, num_epochs, save_path='average_ssim_over_epochs.png')

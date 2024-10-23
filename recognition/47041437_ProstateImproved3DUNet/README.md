@@ -13,9 +13,24 @@ The original U-Net architecture is a powerful convolutional neural network, feat
 
 The improved U-Net is a more complex and modern model that enhances the foundational design of the original U-Net. Improved 3D U-Net uses a deeper architecture with multiple convolutional layers, which enables the model to learn intricate pattern and relationships in the data more effectively. Furthermore, the inclusion of batch normalisation, improved skip connections and up-sampling aid in the stabilisation, generalisation, and the transfer of finer details. Therefore, these enhancements in the improved U-Net model leads to more sophisticated, accurate and high-quality segmentations compared to the original U-Net.
 
-INCLUDE IMAGE
+![U-Net architecture diagram](images/UNet%20architecture.jpg)
 
 ## Algorithm (pre-processing, training and inference)
+This report specifically looks at a 3D prostate dataset and attempts to extract the images, train them using both models with the appropriate loss functions (cross-entropy and dice loss) and run inferences from the saved model. 
+
+**dataset.py:** This file includes a class that loads NIfTI images and labels using the nibabel library. .nii.gz files are converted into tensors and are reshaped for the network input [3]. It also includes image augmentation, which includes random cropping, flipping, and applying random bias fields, blurs, or spikes to introduce variability and improve model robustness.
+
+**module_unet3D.py:** Includes a 3D U-Net model[4]
+
+
+**module_improvedunet3D.py:** Includes an improved 3D U-Net model[3]
+
+
+**train.py:** The training loop uses the Adam optimiser as well as cross-entropy and dice loss functions for measuring the segmentation accuracy across the 6 labels. The model is trained for 40/45 epochs (U-Net vs improved), where each epoch processes augmented images. After each training epoch, the model's performance is evaluated on a validation set, calculating the Dice Similarity Coefficient (DSC) for each label. The model is saved, and statistics like DSC per label is printed after each epoch, providing insights into the model's performance.
+
+
+**predict.py:** The saved model is loaded and is used to produce axial 2D images (slices of the 3D image) of the input dataset as well as its segmented output.  
+
 
 ## Parameters and Results
 

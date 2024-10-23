@@ -12,4 +12,5 @@
 !README.md
 !/images/**
 !/images/
+!environment.yml
 !.gitignore

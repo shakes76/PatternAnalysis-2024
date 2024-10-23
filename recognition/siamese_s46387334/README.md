@@ -65,15 +65,20 @@ PatternAnalysis-2024/recognition/siamese_s46387334/
 
 2. Install the following Python packages (This can be done in a virtual enviroment if desired)
     ```
-    pip install pytorch torchvision matplotlib pandas numpy seaborn
+    pip install matplotlib==3.7.5 numpy==1.26.4 pandas==2.2.2 scikit-learn==1.2.2 seaborn==0.12.2   
+    pip install torch==2.4.0 torchvision==0.19.0
     ```
 
-The environment should be setup as follows:
+The environment should be setup with the follow versions:
 - Python - 3.10.14
+- matplotlib - 3.7.5
+- numpy - 1.26.4 
+- pandas - 2.2.2
+- scikit-learn - 1.2.2
+- seaborn - 0.12.2 
+- torch - 2.4.0
+- torchvision - 0.19.0
 
-
-
-(TODO FINISH - add all moduals nad == for vresions)
 
 
 ## Dataset Details
@@ -231,44 +236,57 @@ This section will contain details that pertain mainly to `predict.py`
 After running training and prediction as listed above, these were the results produced when predicting on the unseen testing set.
 
 ### Evaluation Metrics
-1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
+#### 1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
 ```
 Testing AUR ROC: 0.867
 ```
+- This is the primary metric for evaluation of the model and we can see it has achieved the desired score of greater that 0.8.
+- This indicates that the model is effective at predicting both classes even in the case of the class imbalance seen in the dataset
 
-2. Testing Specificity (true negative rate)
+#### 2. Testing Specificity (true negative rate)
 ```
 Testing Specificity: 0.761
 ```
+- Indicates that the model preforms reasonably well at predicting true normal skin as normal.
 
-3. Testing Sensitivity (true positive rate)
+#### 3. Testing Sensitivity (true positive rate)
 ```
 Testing Sensitivity: 0.828
 ```
+- Indicates the the model preforms very well at predicting true melanomas as melanomas.
+- It is widely accepted that for medical screening tests - such as this model - Sensitivity should be prioritised (REF)
+- This is because it is much better to have a healthy person undergo more tests then be ruled out than have an unhealthy person think they are fine and never do more tests (REF).
+- Thus the fact that this model favours Sensitivity over Specificity is ideal for this situation.
+
 
 ### Evaluation Figures
-1. Training / Validation loss, accuracy and AUR ROC over the training epochs
-
+#### 1. Training / Validation loss, accuracy and AUR ROC over the training epochs
 ![alt text](readme_figures/train_val_train_progress.png)
+- Training curve does not pull away from validation, and validation does not plateau. This indicates little to no overfitting.
+- Neither set plateau's this could indicate that the model could be run for longer to further improve results. However we can see the rates slowing down - and due to hardware compute limitations running it for too long was infeasible. Since the model was able to reach the desired AUR ROC ('accuracy metric' of 0.8) further training was not required.
+- Validation set metrics over train are erratic, this is because the model does not train on the validation data. This could be exacerbated by the fact that only the training data is augmented. A possible solution for this is discussed in the 'improvements' section.
+- We can see that as 'overall' accuracy had a lot of movement - but AUR ROC steadily improved. This makes sense as at the start the model was getting the high accuracy by just predicting a majority of the images as normal (as this is the majority class) however as training progressed it was able to form a more balanced way to predict - successfully predicting both classes (minority and majority).
 
 
-2. Testing ROC Curve
-
+#### 2. Testing ROC Curve
 ![alt text](readme_figures/testing_roc_curve.png)
+- As mentioned in the metrics section preforms well in high sensitivity regions, but less so in the high specificity regions. This is preferred vs the other way around (REF), however to improve the model its specificity should be the focus of improvement.
 
 
-3. Testing Confusion Matrix
-
+#### 3. Testing Confusion Matrix
 ![alt text](readme_figures/testing_confusion_matrix.png)
+- Details were covered in the Metric Section
 
 
-4. Testing t-SNE Embedding Visualization
-
+#### 4. Testing t-SNE Embedding Visualization
 ![alt text](readme_figures/testing_tsne_embeddings.png)
+- We can very clearly see via the embeddings that the Feature Extractor model has successfully seperated the two classes.
+- We can see that the melanoma samples (class 1) as been grouped around the bottom right of the 2D embedding. we can see partial overlap - this is mainly due to trying to condense the 128 dimension embedding into 2D - however these overlapping points could be miss classifications by the model.
+- This shows the implementation of metric learning utilised by TripletLoss to minimize the distance between similar pairs and maximize the distance between dissimilar pairs.
 
 
 ## Reproduction of Results
-Note that due to the inescapable randomness of GPUs (REF) there may be some variation between runs.
+Note that due to the inescapable randomness of GPUs (REF) there may be some variation between runs. However due to the `set_seed()` function within the `train.py` script the results should be generally reproducible if the following steps are followed.
 
 1. Follow steps above for downloading data
 2. Follow steps above for setting up environment
@@ -277,7 +295,7 @@ Note that due to the inescapable randomness of GPUs (REF) there may be some vari
 
 
 ## Future Work and Improvements
-
+-augemnation test predictions
 
 
 ## References

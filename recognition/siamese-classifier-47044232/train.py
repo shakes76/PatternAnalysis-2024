@@ -120,7 +120,7 @@ with torch.no_grad(): # Reduces memory usage
         # Evaluate images
         anchor_result, positive_result, negative_result = model(anchor, positive, negative)
         testing_features.append(anchor_result)
-        testing_labels.append(label)
+        testing_labels.append(label.to(device))
 
         loss = tripletloss(anchor_result, positive_result, negative_result)
         test_loss.append(loss)
@@ -136,7 +136,7 @@ with torch.no_grad():
     for anchor, _, _, label in train_loader:
         features = model.forward_once(anchor.to(device))
         training_features.append(features)
-        training_labels.append(label)
+        training_labels.append(label.to(device))
 
 """
 Using a binary classifier to learn the feature vectors of the Siame Network.
@@ -145,10 +145,10 @@ model = BinaryClassifier().to(device)
 loss = CrossEntropyLoss()
 optimiser = Adam(model.parameters(), 0.001, (0.9, 0.999))
 for epoch in range(config.EPOCHS):
-    for feature, label in zip(training_features, training_labels):
+    for features, labels in zip(training_features, training_labels):
         optimiser.zero_grad()
-        out = model(feature)
-        loss(out, label.to(device)).backward()
+        out = model(features)
+        loss(out, labels).backward()
         optimiser.step()
 
 # Testing the classifier
@@ -158,10 +158,9 @@ with torch.no_grad():
     total = 0
     for features, labels in zip(testing_features, testing_labels):
         out = model(features)
-        _, predicted = torch.max(out.data, 1)
-        print(predicted)
+        predicted = torch.argmax(out, dim=1)
         total += labels.size(0)
-        correct += (predicted == labels.to(device)).sum().item()
+        correct += (predicted == labels).sum().item()
 
     print('Test Accuracy: {} %'.format(100 * correct / total))
 

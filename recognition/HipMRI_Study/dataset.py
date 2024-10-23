@@ -1,6 +1,7 @@
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+import skimage.transform as skTrans
 
 def to_channels ( arr : np.ndarray , dtype = np.uint8 ) -> np.ndarray :
     channels = np.unique ( arr )
@@ -27,7 +28,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
 
     # get fixed size
     num = len( imageNames )
-    first_case = nib.load( imageNames [0]).get_fdata( caching = 'unchanged ')
+    first_case = nib.load( imageNames [0]).get_fdata( caching = 'unchanged')
     if len( first_case.shape ) == 3:
         first_case = first_case[:, :, 0]  # sometimes extra dims , remove
     if categorical:
@@ -39,7 +40,8 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
         images = np.zeros((num, rows, cols), dtype=dtype)
     for i, inName in enumerate(tqdm(imageNames)):
         niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged ')  # read disk only
+        inImage = niftiImage.get_fdata(caching='unchanged')  # read disk only
+        inImage = skTrans.resize(inImage, (256, 128), order=1, preserve_range=True)
         affine = niftiImage.affine
         if len(inImage.shape) == 3:
             inImage = inImage[:, :, 0]  # sometimes extra dims in HipMRI_study data

@@ -29,7 +29,7 @@ image_transforms = transforms.Compose([
 
 # Create the dataset and DataLoader
 train_dataset = ImageDataset(image_dir=DATASET, transform=image_transforms)
-loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
 
 # Function to compute the gradient penalty for the discriminator
 def gradient_penalty(critic, real, fake, device="cpu"):
@@ -88,7 +88,9 @@ def train_fn(
     opt_mapping_network,
 ):
     loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
-    
+
+    scaler = torch.cuda.amp.GradScaler()  # GradScaler for AMP
+
     G_losses = []
     D_losses = []
     
@@ -128,15 +130,15 @@ def train_fn(
 
         # Update critic
         critic.zero_grad()  # Reset gradients for the critic
-        loss_critic.backward()  # Backpropagate the critic loss
-
-        # Apply gradient clipping to stabilize training
+        scaler.scale(loss_critic).backward()  # Use scaled backward for AMP
         torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=1.0)
-        opt_critic.step()  # Update critic's weights
+        scaler.step(opt_critic)  # Use scaled step
+        scaler.update()  # Update the scaler
 
         # Generator loss calculation and update
-        gen_fake = critic(fake)  # Get critic scores for fake images
-        loss_gen = -torch.mean(gen_fake)  # Generator loss
+        with torch.amp.autocast('cuda'):
+            gen_fake = critic(fake)  # Get critic scores for fake images
+            loss_gen = -torch.mean(gen_fake)  # Generator loss
 
         # Apply path length penalty every 16 batches
         if batch_idx % 16 == 0:
@@ -149,8 +151,9 @@ def train_fn(
         # Reset gradients for the mapping network and generator
         mapping_network.zero_grad()  # Reset gradients for the mapping network
         gen.zero_grad()  # Reset gradients for the generator
-        loss_gen.backward()  # Backpropagate the generator loss
-        opt_gen.step()  # Update generator's weights
+        scaler.scale(loss_gen).backward()  # Backpropagate the generator loss with AMP
+        scaler.step(opt_gen)  # Use scaled step
+        scaler.update()  # Update the scaler
         opt_mapping_network.step()  # Update mapping network's weights
 
         # Optionally, log progress
@@ -161,11 +164,6 @@ def train_fn(
     
     return (D_losses, G_losses)
 
-
-cuda_available = torch.cuda.is_available()
-cuda_device_name = torch.cuda.get_device_name(0) if cuda_available else "CUDA is not available"
-
-print(cuda_available, cuda_device_name)
 
 # Initialize the mapping network, generator, and critic on the specified device
 mapping_network     = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)  # Initialize mapping network
@@ -206,14 +204,3 @@ plt.figure(figsize=(10,5))
 plt.title("Generator Loss During Training")
 plt.plot(Total_G_Losses, label="G", color="blue")
 plt.xlabel("iterations")
-plt.ylabel("Loss")
-plt.legend()
-plt.savefig('gen_loss.png')
-
-plt.figure(figsize=(10,5))
-plt.title("Discriminator Loss During Training")
-plt.plot(Total_D_Losses, label="D", color="orange")
-plt.xlabel("iterations")
-plt.ylabel("Loss")
-plt.legend()
-plt.savefig('dis_loss.png')

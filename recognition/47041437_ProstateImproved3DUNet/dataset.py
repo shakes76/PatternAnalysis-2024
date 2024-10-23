@@ -2,13 +2,13 @@ import nibabel as nib
 import numpy as np
 import glob
 import torchio as tio
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 import random
 
 
 
-class load_data_3D(DataLoader) :
+class load_data_3D(Dataset) :
     '''
     Load medical image data from specified paths.
     This class inherits from DataLoader and is designed to handle 3D medical images

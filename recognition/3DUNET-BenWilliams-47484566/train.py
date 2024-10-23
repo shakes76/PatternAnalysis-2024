@@ -56,13 +56,13 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cud
             epoch_dice += dice_score.item() * inputs.size(0)
             total_samples += inputs.size(0)
 
-
+            dice_scores = dice_coefficient_per_label(outputs, labels, num_classes=6)  # Change num_classes if needed
+            dice_scores.append(dice_scores)
+        
         epoch_loss = running_loss / total_samples
-        avg_dice = epoch_dice / total_samples
         all_losses.append(epoch_loss)
-        dice_scores.append(avg_dice)
         #torch.save(model.state_dict(), f'model_weights_epoch_{epoch + 1}.pth')
-
+        avg_dice = {label: sum(dice[label] for dice in dice_scores_overall) / len(dice_scores_overall) for label in range(6)}
         print(f'Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, Dice: {avg_dice:.4f}')
     torch.save(model.state_dict(), f'model_weights_epoch_{epoch + 1}.pth')
     plot_loss(all_losses, 'PatternAnalysis-2024/recognition/3DUNET-BenWilliams-47484566/images')

@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from dataset import load_data
 from train import dice_coefficient, train_unet_model, n_classes
-from modules import unet_model
+from modules import unet_model, unet_model1
 
 
 images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
@@ -80,7 +80,7 @@ def save_validation_image(image, mask, prediction, index):
 
 
 # Initialize the U-Net model
-model = unet_model(n_classes, input_size=(256, 128, 1))
+model = unet_model1(n_classes, input_size=(256, 128, 1))
 
 # Train the U-Net model
 history = train_unet_model(model, images_train, images_seg_train, 
@@ -111,8 +111,9 @@ save_validation_image(image, true_labels, predicted_labels, index)
 
 
 
+images_test_predict = np.expand_dims(images_test, axis=-1)  # Adds the channel dimension if missing
 # Make predictions on the test set
-predictions = model.predict(images_test)
+predictions = model.predict(images_test_predict)
 
 # Convert predictions to class labels (argmax along the last axis)
 predicted_labels = np.argmax(predictions, axis=-1)  # Shape (num_samples, height, width)
@@ -121,8 +122,7 @@ predicted_labels = np.argmax(predictions, axis=-1)  # Shape (num_samples, height
 true_labels = np.argmax(images_seg_test, axis=-1)  # Shape (num_samples, height, width)
 
 # Calculate Dice coefficients for each class
-num_classes = 5  # Update according to your number of classes
-dice_scores = calculate_dice_per_class(true_labels, predicted_labels, num_classes)
+dice_scores = calculate_dice_per_class(true_labels, predicted_labels, n_classes)
 
 # Print the Dice coefficients for each class
 for class_id, score in enumerate(dice_scores):

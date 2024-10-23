@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 #define training variables
 BATCH_SIZE = 1
 EPOCHS = 1
-n_classes = 5
+n_classes = 6
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -82,7 +82,7 @@ def train_unet_model(model, train_images, train_labels,
                                    verbose=1)
     
     # Compile the model (ensure it's compiled with the desired loss and metric)
-    model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=[dice_coefficient])
+    model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=['accuracy'])
 
     # Print the model summary to verify the architecture
     model.summary()

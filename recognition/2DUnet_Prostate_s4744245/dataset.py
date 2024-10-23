@@ -7,7 +7,7 @@ import glob
 
 def to_channels(arr: np.ndarray , dtype = np.uint8) -> np.ndarray :
     channels = np.unique(arr)
-    res = np.zeros(arr.shape + (5,), dtype = dtype)
+    res = np.zeros(arr.shape + (6,), dtype = dtype)
     for c in channels:
         c1 = int(c)
         res[..., c1:c1+1][arr == c] = 1

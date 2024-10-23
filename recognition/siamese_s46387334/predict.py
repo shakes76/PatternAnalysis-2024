@@ -24,9 +24,9 @@ from train import get_config
 ###############################################################################
 ### Functions
 def produce_evaluation_metrics(
-    test_y_pred,
-    test_y_probs,
-    test_y_true
+    test_y_pred: list,
+    test_y_probs: list,
+    test_y_true: list
 ) -> None:
     """
     Given the true, predicted and probabilities for the y values (class predictions).
@@ -57,10 +57,10 @@ def produce_evaluation_metrics(
     print(f"Testing Specificity: {specificity:.3f}")
 
 def produce_evaluation_figures(
-    test_y_pred,
-    test_y_probs,
-    test_y_true,
-    test_embeddings
+    test_y_pred: list,
+    test_y_probs: list,
+    test_y_true: list,
+    test_embeddings: list
 ) -> None:
     """
     Given the true, predicted and probabilities for the y values (class predictions) plus
@@ -127,11 +127,13 @@ def produce_evaluation_figures(
     plt.close()
 
 def results_siamese_net(
-    test_loader,
+    test_loader: DataLoader,
     model: SiameseNet,
-    device
+    device: str
 ) -> None:
     """
+    Produce evaluation metrics and figures based on the prediction results gained
+    when running the test data (from test_loader) though the SiameseNet model.
     """
     model.eval()
     with torch.no_grad():    
@@ -156,9 +158,15 @@ def results_siamese_net(
 def predict_siamese_net(
     model: SiameseNet,
     data_loader: DataLoader,
-    device
-) -> tuple[list, list, list]:
+    device: str
+) -> tuple[list]:
     """
+    Preforms predictions on the data in 'data_loader' using a SiameseNet 'model'.
+    These predictions will include determining the predicting y values (classification predictions).
+    the y probabilities (probability of predicting each class) and the embeddings of the data
+    if we just run the data through the feature extractor.
+
+    Returns: all_y_pred, all_y_prob, all_y_true, all_embeddings
     """
     all_y_pred = []
     all_y_prob = []
@@ -188,10 +196,14 @@ def predict_siamese_net(
 
 ###############################################################################
 ### Main Function
-def main():
+def main() -> None:
     """
+    Preforms prediction and evaluation on a test set of the ISIC 2020 dataset
+    using the saved 'best' SiameseNet model 'siamese_net_model.pt'. Evaluation
+    metrics and figures will be produced.
 
-    
+    train.py will need to be run first (or model will need to be imported from
+    another source).
     """
     # Set Seed
     set_seed()
@@ -219,5 +231,5 @@ def main():
     # Determine results of best model on test set
     results_siamese_net(test_loader, model,  device)
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()

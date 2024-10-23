@@ -178,13 +178,13 @@ def train_siamese_net(
     )
 
 def plot_training_graphs(
-    train_loss_per_epoch,
-    val_loss_per_epoch,
-    train_acc_per_epoch,
-    val_acc_per_epoch,
-    train_aucroc_per_epoch,
-    val_aucroc_per_epoch,
-    epochs
+    train_loss_per_epoch: list,
+    val_loss_per_epoch: list,
+    train_acc_per_epoch: list,
+    val_acc_per_epoch: list,
+    train_aucroc_per_epoch: list,
+    val_aucroc_per_epoch: list,
+    epochs: int
 ) -> None:    
     """
     Plot graphs for the train and validation: loss, accuracy and AUR ROC over

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import ResNet18_Weights, ResNet50_Weights
+from torchvision.models import ResNet18_Weights
 
 
 class SiameseNetwork(nn.Module):
@@ -16,8 +16,6 @@ class SiameseNetwork(nn.Module):
 
         super().__init__()
 
-        self.dropout_rate = 0.1
-
         if backbone not in models.__dict__:
             raise Exception("No model named {} exists in torchvision.models.".format(backbone))
 
@@ -25,31 +23,19 @@ class SiameseNetwork(nn.Module):
         self.backbone = models.__dict__[backbone](weights=ResNet18_Weights.DEFAULT, progress=True)
 
         # Get the number of features that are outputted by the last layer of feature extractor network
-        out_features = list(self.backbone.modules())[-1].out_features  # if not removing last layer
+        out_features = list(self.backbone.modules())[-1].out_features
 
         # Our classification head with be an MLP with dense layers.
         # The classification head classifies if the given combined feature vector represents both malignant
         # or both benign (same class of image) -> will return a value close to 1,
         # else if the images are of different classes, we want the head to return a value close to 0.
         self.cls_head = nn.Sequential(
-
-            #nn.Dropout(p=self.dropout_rate),
-            #nn.Linear(3*out_features, 512),
-            #nn.BatchNorm1d(512),
-            #nn.ReLU(),
-
-            #nn.Dropout(p=self.dropout_rate),
-
             nn.Linear(3 * out_features, 64),
-            #nn.Linear(512, 64),
             nn.BatchNorm1d(64, momentum=0.25),
-            #nn.Sigmoid(),
             nn.LeakyReLU(),
-            nn.AlphaDropout(p=0.5),
-
+            nn.AlphaDropout(p=0.6),
             nn.Linear(64, 1),
             nn.Sigmoid(),
-
         )
 
     def forward(self, img1, img2):

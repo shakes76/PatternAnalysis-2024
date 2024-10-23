@@ -46,13 +46,10 @@ class PredictData:
         self.losses = []
         self.correct = 0
         self.total = 0
-        self.print_image_frequency = 1000
+        self.print_frequency = 100
 
     def predict(self):
-        # Will have to change the format of the data to fit this for-loop structure
         for i, ((img1, img2), target, (class1, class2)) in enumerate(self.test_data):
-            print("[{} / {}]".format(i, len(self.test_data)))
-
             img1, img2, target = map(lambda x: x.to(self.device), [img1, img2, target])
             class1 = class1[0]
             class2 = class2[0]
@@ -64,27 +61,32 @@ class PredictData:
             self.correct += torch.count_nonzero(target == (similarity > 0.5)).item()
             self.total += len(target)
 
+            if (i % self.print_frequency) == 0:
+                print("[{} / {}]".format(i, len(self.test_data)))
+
             fig = plt.figure("class1={}\tclass2={}".format(class1, class2), figsize=(4, 2))
             plt.suptitle("cls1={}  conf={:.2f}  cls2={}".format(class1, similarity[0][0].item(), class2))
 
             # Show the images being compared if we want -> only show some with the frequency parameter
-            if self.show_images and (i % self.print_image_frequency == 0):
+            if (i % self.print_frequency) == 0:
                 # Apply inverse transform (denormalization) on the images to retrieve original images.
                 img1 = self.inv_transform(img1).cpu().numpy()[0]
                 img2 = self.inv_transform(img2).cpu().numpy()[0]
                 # show first image
                 ax = fig.add_subplot(1, 2, 1)
-                plt.imshow(img1[0], cmap=plt.cm.gray)
+                #plt.imshow(img1[0], cmap=plt.cm.gray)
+                plt.imshow(np.transpose(img1, (1, 2, 0)))
                 plt.axis("off")
 
                 # show the second image
                 ax = fig.add_subplot(1, 2, 2)
-                plt.imshow(img2[0], cmap=plt.cm.gray)
+                #plt.imshow(img2[0], cmap=plt.cm.gray)
+                plt.imshow(np.transpose(img2, (1, 2, 0)))
                 plt.axis("off")
 
-            # save the plot
-            save_path = os.path.join(self.results_path, 'prediction_results.png')
-            fig.savefig(save_path, format='png')
+                # save the plot
+                save_path = os.path.join(self.results_path, f'prediction_results_{i}.png')
+                fig.savefig(save_path, format='png')
 
         print("Validation: Loss={:.2f}\t Accuracy={:.2f}\t".format(sum(self.losses) / len(self.losses),
                                                                    self.correct / self.total))

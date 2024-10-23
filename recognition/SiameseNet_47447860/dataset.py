@@ -9,7 +9,6 @@ import random
 
 import torch
 from torchvision import transforms
-from torchvision.transforms import v2
 
 
 class Dataset(torch.utils.data.IterableDataset):
@@ -31,8 +30,8 @@ class Dataset(torch.utils.data.IterableDataset):
 
         # Define transform
         self.transform = transforms.Compose([
-            transforms.RandomAffine(degrees=90, translate=(0.3, 0.3), shear=0.3),
-            transforms.RandomResizedCrop(size=(224, 224), scale=(0.8, 1.2)),
+            transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), shear=0.2),
+            transforms.RandomResizedCrop(size=(224, 224), scale=(0.7, 1.0)),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),

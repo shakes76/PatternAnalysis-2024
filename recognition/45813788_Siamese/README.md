@@ -49,10 +49,14 @@ contrasitive loss using `Lp` distance (Euclidean as p=2):
 
 [5]
 
-
 Thus it effectively improves the embeddings by minimising distnace whilst also having guidance from a classification perspective, this feature was something I did not see in other papers and lead to good perfomance as can be seen below.
 
 ## Model Perfomance
+the model was trained for 15 epochs and lead to the following results:
+![ModelLoss](./images/newmodloss.png) 
+![ModelAccuracy](./images/newmodacc.png) 
+![trainAuroc](./images/newmodauroc.png)
+![Embeddings](
 
 ## Dependencies
 

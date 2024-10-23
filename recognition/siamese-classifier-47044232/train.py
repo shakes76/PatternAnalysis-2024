@@ -35,21 +35,18 @@ transforms = v2.Compose([
     v2.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
 ])
 
+# Form datsets and load them
 train_set = ISICKaggleChallengeSet(config.DATAPATH+"/image/", train, transforms=transforms)
 test_set = ISICKaggleChallengeSet(config.DATAPATH+"/image/", test, transforms=transforms)
 val_set = ISICKaggleChallengeSet(config.DATAPATH+"/image/", val, transforms=transforms)
-
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 val_loader = DataLoader(val_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 
+# Initialise the Siamese Network
 model = SiameseNetwork().to(device)
 tripletloss = TripletMarginLoss(margin=config.LOSS_MARGIN)
 optimiser = Adam(model.parameters(), lr=config.LEARNING_RATE, betas=config.BETAS)
-
-train_loss = []
-val_loss = []
-test_loss = []
 
 def processes_batch(anchor, positive, negative) -> torch.Tensor:
     """ Takes a triplet and returns the calculated loss.
@@ -71,13 +68,20 @@ def processes_batch(anchor, positive, negative) -> torch.Tensor:
 
     return tripletloss(anchor_result, positive_result, negative_result)
 
+"""
+Siamese Network Training
+"""
+train_loss = []
+val_loss = []
+test_loss = []
+
 print("Starting training now...")
 start = time.time()
 # Training cycle
 for epoch in range(config.EPOCHS):
     model.train()
     for i, (anchor, positive, negative, label) in enumerate(train_loader):
-        model.zero_grad()
+        model.zero_grad() # Stops gradients from acumalating across batches
         loss = processes_batch(anchor, positive, negative)
         loss.backward()
         optimiser.step()
@@ -100,7 +104,7 @@ print(f"Training complete! It took {(stop-start)/60} minutes")
 
 # TODO generate some loss plots
 
-# The features can be stored while testing as training is done
+# The feature vectors can be stored while testing as the training is done
 testing_features = []
 testing_labels = []
 
@@ -124,8 +128,7 @@ with torch.no_grad(): # Reduces memory usage
 
 # TODO add saving of model to config.MODELPATH here
 
-""" Taking the feature vectors and using them to train a classifier. """
-# Obtain the training features
+# Obtain the features vectures from the training dataset
 training_features = []
 training_labels = []
 with torch.no_grad():
@@ -134,14 +137,17 @@ with torch.no_grad():
         training_features.append(features)
         training_labels.append(label)
 
+"""
+Using a binary classifier to learn the feature vectors of the Siame Network.
+"""
 model = BinaryClassifier().to(device)
-cross = CrossEntropyLoss()
+loss = CrossEntropyLoss()
 optimiser = Adam(model.parameters(), 0.001, (0.9, 0.999))
 for epoch in range(config.EPOCHS):
     for feature, label in zip(training_features, training_labels):
         optimiser.zero_grad()
         out = model(feature)
-        cross(out, label.to(device)).backward()
+        loss(out, label.to(device)).backward()
         optimiser.step()
 
 # Testing the classifier
@@ -152,6 +158,7 @@ with torch.no_grad():
     for features, labels in zip(testing_features, testing_labels):
         out = model(features)
         _, predicted = torch.max(out.data, 1)
+        print(predicted)
         total += labels.size(0)
         correct += (predicted == labels.to(device)).sum().item()
 

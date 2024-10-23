@@ -22,6 +22,14 @@ from torch.utils.data import Dataset
 
 # Define dataset, loading prostate MRI image data
 class ProstateMRIDataset(Dataset):
+   """ 
+    Custom Dataset for loading and processing Prostate MRI data. 
+    Args:
+        root_dir (str): Directory containing .npy files of MRI slices. 
+    Methods: 
+        __len__(): Returns the number of samples in the dataset. 
+        __getitem__(idx): Loads and returns a sample at the specified index. 
+   """ 
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.file_list = []

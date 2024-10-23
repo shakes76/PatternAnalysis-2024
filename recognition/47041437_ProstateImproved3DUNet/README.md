@@ -1,7 +1,9 @@
 # Prostate 3D data Segmentation with 3D-UNet and Improved 3D-UNet models
 ## Student information
 **Name:** Sara Alaei
+
 **Student number:** 47041437
+
 **Task:** Taks #4 
 
 ## 3D U-Net and Improved 3D U-Net architectures 
@@ -11,6 +13,7 @@ The original U-Net architecture is a powerful convolutional neural network, feat
 
 The improved U-Net is a more complex and modern model that enhances the foundational design of the original U-Net. Improved 3D U-Net uses a deeper architecture with multiple convolutional layers, which enables the model to learn intricate pattern and relationships in the data more effectively. Furthermore, the inclusion of batch normalisation, improved skip connections and up-sampling aid in the stabilisation, generalisation, and the transfer of finer details. Therefore, these enhancements in the improved U-Net model leads to more sophisticated, accurate and high-quality segmentations over the original U-Net.
 
+INCLUDE IMAGE
 
 ## Algorithm (pre-processing, training and inference)
 

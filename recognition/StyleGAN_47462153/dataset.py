@@ -39,11 +39,21 @@ class BrainDataset(Dataset):
         return image, label
 
 
-    def get_dataloader(root_dir, batch_size=32):
-        transform = transforms.Compose([
-            transforms.Resize(128),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-        ])
-        dataset = BrainDataset(root_dir, transform=transform)
-        return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+def get_dataloader(root_dir, batch_size=32):
+    transform = transforms.Compose([
+        transforms.Resize(128),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+    ])
+    dataset = BrainDataset(root_dir, transform=transform)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+if __name__ == "__main__":
+    root_dir = 'D:/Documents/UQsem5subjects/COMP3710/ADNI_AD_NC_2D/AD_NC/train'
+    dataloader = get_dataloader(root_dir, batch_size=32)
+    
+    for images, labels in dataloader:
+        print(f"Batch image shape: {images.shape}")
+        print(f"Batch labels: {labels}")
+        break
+

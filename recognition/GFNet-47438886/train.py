@@ -16,31 +16,32 @@ def main():
     else:
         root_dir = '/home/groups/comp3710/ADNI/AD_NC'
     
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     train_loader, val_loader = load_adni_data(root_dir=root_dir)
 
     # Assuming you already have a model and dataloaders (train_loader, val_loader)
     model = GFNet(
-            patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=0.25,
+            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4, 
             norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
 
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()  # Use the appropriate loss function
-    optimizer = optim.Adam(model.parameters())  # Adam optimizer with initial learning rate 0.01
+    optimizer = optim.Adam(model.parameters(), lr=0.000001, amsgrad=True)  # Adam optimizer with initial learning rate 0.01
 
     # Training loop
-    n_epochs = 200
+    n_epochs = 100
 
     # Cosine Annealing Learning Rate Scheduler with minimum learning rate (eta_min)
-    scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
-    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+    # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
 
     train_loss_list = []
     validation_loss_list = []
     train_accuracy_list = []
     validation_accuracy_list = [] 
 
+    best_validation_accuracy = 0
 
     start_time = time.time()
     for epoch in range(n_epochs):
@@ -105,14 +106,32 @@ def main():
         validation_loss_list.append(validation_loss)
         validation_accuracy_list.append(validation_accuracy)
 
-        # Step the scheduler based on validation loss
-        scheduler.step(validation_loss)
+        # Step the scheduler
+        scheduler.step()
 
         # Print epoch statistics
         print(f'Epoch [{epoch + 1}/{n_epochs}], '
               f'Train Loss: {training_loss:.4f}, Train Accuracy: {training_accuracy:.2f}%, '
               f'Val Loss: {validation_loss:.4f}, Val Accuracy: {validation_accuracy:.2f}%'
               f'Learning Rate: {optimizer.param_groups[0]["lr"]:.6f}')
+        
+        # Checkpoint based on best validation accuracy
+        if validation_accuracy > best_validation_accuracy:
+            best_validation_accuracy = validation_accuracy
+            
+            checkpoint = {
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'epoch': epoch,
+                'validation_accuracy': validation_accuracy_list,
+                'validation_loss': validation_loss_list,
+                'training_accuracy': train_accuracy_list,
+                'training_loss': train_loss_list
+            }
+
+            torch.save(checkpoint, 'model_checkpoint.pth')
+
         
     training_time = time.time() - start_time
     print(f"Training took {training_time} seconds or {training_time / 60} minutes")
@@ -143,8 +162,6 @@ def main():
     print("Validation loss:", validation_loss_list)
     print("Training accuracy:", train_accuracy_list)
     print("Training loss:", train_loss_list)
-    torch.save(model.state_dict(), "trained_model_weights.pth")
-
 
         
 if __name__ == "__main__":

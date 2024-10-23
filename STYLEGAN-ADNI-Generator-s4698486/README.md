@@ -152,11 +152,11 @@ saved_examples/
 
 Here are some image samples before augmentation.
 <p align="center">
-    <img src="images_for_readme/1011824_83.jpeg" alt="Image 1" width="19%" />
-    <img src="images_for_readme/1011824_84.jpeg" alt="Image 2" width="19%" />
-    <img src="images_for_readme/1011824_85.jpeg" alt="Image 3" width="19%" />
-    <img src="images_for_readme/1011824_86.jpeg" alt="Image 4" width="19%" />
-    <img src="images_for_readme/1011824_87.jpeg" alt="Image 5" width="19%" />
+    <img src="images_for_readme/InitialImages/1011824_83.jpeg" alt="Image 1" width="19%" />
+    <img src="images_for_readme/InitialImages/999708_102.jpeg" alt="Image 2" width="19%" />
+    <img src="images_for_readme/InitialImages/1011824_85.jpeg" alt="Image 3" width="19%" />
+    <img src="images_for_readme/InitialImages/999708_105.jpeg" alt="Image 4" width="19%" />
+    <img src="images_for_readme/InitialImages/1011824_87.jpeg" alt="Image 5" width="19%" />
     <br>
     Images before Augmentation
 </p>
@@ -170,11 +170,11 @@ Here are some image samples before augmentation.
 Few examples of images after augmentation is shown in the figure below.
 
 <p align="center">
-    <img src="images_for_readme/999708_102.jpeg" alt="Image 1" width="19%" />
-    <img src="images_for_readme/999708_103.jpeg" alt="Image 2" width="19%" />
-    <img src="images_for_readme/999708_104.jpeg" alt="Image 3" width="19%" />
-    <img src="images_for_readme/999708_105.jpeg" alt="Image 4" width="19%" />
-    <img src="images_for_readme/999708_106.jpeg" alt="Image 5" width="19%" />
+    <img src="images_for_readme/InitialImages/1011824_84.jpeg" alt="Image 1" width="19%" />
+    <img src="images_for_readme/InitialImages/999708_103.jpeg" alt="Image 2" width="19%" />
+    <img src="images_for_readme/InitialImages/1011824_86.jpeg" alt="Image 3" width="19%" />
+    <img src="images_for_readme/InitialImages/999708_104.jpeg" alt="Image 4" width="19%" />
+    <img src="images_for_readme/InitialImages/1011824_83.jpeg" alt="Image 5" width="19%" />
     <br>
     Images after Augmentation
 </p>
@@ -270,3 +270,209 @@ Improves the stability of the discriminator, by ensuring that it doesn't become 
 - Computing the gradient penalty as the squared difference between the gradient norm and 1 and then adding this penalty to the discriminator loss, penalizing deviations from the target gradient norm - and ensuring that its loss never reaches a point of total overconfidence.
 
 Without this gradient penalty, mode collapse is much more likely to occur - as the discriminator will become too good for the generator to learn from, lead to its losses becoming NaN.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Training Process
+
+The training process for this StyleGAN implementation involves iteratively refining a generator and a discriminator network to synthesize realistic images and distinguish them from real ones, respectively. The key components of the training process include a mapping network, a generator, a discriminator, and various loss functions. Here's a breakdown of the steps involved:
+
+### Data Loading and Preprocessing:
+
+The training data is loaded using a data loader and processed through transformations such as resizing, normalization, and augmentation to ensure uniformity in input sizes and distributions.
+The ADNI dataset, consisting of 256x256 grayscale brain MRI images, is utilized for training.
+
+### Network Initialization:
+
+The model comprises a Generator, Discriminator, and Mapping Network, all initialized based on the defined architecture in modules.py.
+The generator starts with a learnable constant, progressively refined through style blocks and upsampling layers, generating high-resolution images. The mapping network transforms random latent vectors into style vectors, adding control over the generated images' features.
+The discriminator processes both real and fake images, predicting whether each input is real or generated, and is responsible for guiding the generator to improve.
+
+### Optimization Setup:
+
+Adam optimizers are used for the generator, discriminator, and mapping network, with learning rates and β parameters as recommended by the StyleGAN2 paper.
+A cyclic learning rate (CyclicLR) scheduler is applied to the generator and discriminator optimizers to dynamically adjust their learning rates, promoting more effective training by cyclically increasing and decreasing the learning rate during training.
+
+### Training Loop:
+
+The training process runs over a set number of epochs, each consisting of multiple iterations over the dataset.
+For each batch of training images:
+
+**1. Forward Pass:**
+The generator creates synthetic images from random latent vectors (generated using the mapping network) combined with noise. These generated images aim to mimic the real images.
+The discriminator evaluates both real images and the generated images, producing scores representing their authenticity.
+A gradient penalty is applied to ensure smooth gradients for better training stability, enhancing the discriminator's performance.
+
+**2. Loss Calculation:**
+The discriminator loss is calculated based on its ability to distinguish real images from generated ones, incorporating the gradient penalty for regularization.
+The generator loss aims to improve the realism of generated images, encouraging them to be classified as real by the discriminator.
+Path Length Penalty (PLP) is applied every 16 batches to ensure that changes in the latent space translate smoothly into changes in the generated images, promoting better latent space exploration and disentanglement.
+Regularization terms are also applied to stabilize training and prevent overfitting.
+
+**3: Backward Pass:**
+Gradients are computed and used to update the weights of the generator, discriminator, and mapping network through backpropagation.
+Optimizers are updated using the cyclic learning rate schedules for smoother convergence.
+
+
+### Model Saving and Image Generation:
+
+Sample images are generated and saved every 2 epochs using the generator, enabling tracking of its progress and improvements over time.
+Model checkpoints for the generator, discriminator, and mapping network are saved every 4 epochs to allow resuming training from specific points and preventing loss of progress in case of interruptions.
+
+### Logging and Monitoring:
+
+During each epoch, the training progress is displayed using a progress bar (via tqdm), showing metrics like the generator loss, discriminator loss, gradient penalty, and path length penalty.
+A lifetime log of generator and discriminator losses is maintained, enabling visualization of the training process and evaluation of model stability.
+
+### Visualizing Training Progress:
+
+After completing training, loss plots are generated to visualize the trends in generator and discriminator losses over time. This helps analyze the stability of training and the improvements in the model's ability to generate realistic images.
+By following this process, the StyleGAN model learns to generate high-quality synthetic brain MRI images that are increasingly indistinguishable from real data, providing valuable insights and potential applications in medical image analysis.
+
+
+## Results
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch2_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch2_img_2.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch2_img_4.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch2_img_6.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch2_img_8.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 2 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch4/epoch4_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch4/epoch4_img_1.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch4/epoch4_img_2.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch4/epoch4_img_3.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch4/epoch4_img_4.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 4 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch6/epoch6_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch6/epoch6_img_1.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch6/epoch6_img_4.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch6/epoch6_img_5.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch6/epoch6_img_6.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 6 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch8/epoch8_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch8/epoch8_img_2.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch8/epoch8_img_3.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch8/epoch8_img_8.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch8/epoch8_img_9.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 8 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch10/epoch10_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch10/epoch10_img_4.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch10/epoch10_img_6.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch10/epoch10_img_8.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch10/epoch10_img_9.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 10 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch20/epoch20_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch20/epoch20_img_2.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch20/epoch20_img_4.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch20/epoch20_img_5.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch20/epoch20_img_9.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 20 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch30/epoch30_img_2.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch30/epoch30_img_3.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch30/epoch30_img_5.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch30/epoch30_img_6.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch30/epoch30_img_7.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 30 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch50/epoch50_img_2.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch50/epoch50_img_3.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch50/epoch50_img_4.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch50/epoch50_img_7.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch50/epoch50_img_9.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 50 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch75/epoch75_img_1.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch75/epoch75_img_2.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch75/epoch75_img_3.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch75/epoch75_img_5.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch75/epoch75_img_8.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 75 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch100/epoch100_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch100/epoch100_img_2.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch100/epoch100_img_3.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch100/epoch100_img_7.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch100/epoch100_img_9.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 100 Generated Images
+</p>
+
+<p align="center">
+    <img src="images_for_readme/Results/epoch150/epoch150_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch150/epoch150_img_3.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch150/epoch150_img_4.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch150/epoch150_img_6.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch150/epoch150_img_7.png" alt="Image 5" width="19%" />
+    <br>
+    Epoch 150 Generated Images
+</p>

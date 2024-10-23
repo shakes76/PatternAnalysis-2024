@@ -257,7 +257,7 @@ model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2)
 model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-3)
 
 
 def train(model, train_loader, criterion, optimizer, device):

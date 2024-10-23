@@ -1,15 +1,11 @@
 import torch
 import os
-import torchvision.transforms as transforms
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import numpy as np
-from modules import Encoder, Decoder, VectorQuantizer, VQVAE
+from modules import VQVAE
 from dataset import load_data_2D, DataLoader
 import torchmetrics.image
 import torch.optim as optim
-
+import matplotlib.pyplot as plt
 import torchmetrics
 
 
@@ -27,8 +23,8 @@ def train_vqvae(model, train_images, val_images, test_images, num_epochs, learni
     # Create DataLoaders
     train_loader = DataLoader(train_images, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_images, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_images, batch_size=batch_size, shuffle=False)
 
+    ssim_vals = []
     # Training loop
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
@@ -51,7 +47,7 @@ def train_vqvae(model, train_images, val_images, test_images, num_epochs, learni
 
             # Compute SSIM between the reconstructed images and original images
             ssim_score = ssim_metric(reconstructed_data, data)
-
+            ssim_vals.append(ssim_score.item())
 
             total_loss_value = reconstruction_loss + commitment_loss * commitment_cost
             total_loss_value.backward()  # Backpropagate the loss
@@ -82,7 +78,7 @@ def train_vqvae(model, train_images, val_images, test_images, num_epochs, learni
 
         # Validate the model on the validation set
         validate(model, val_loader, device, ssim_metric)
-
+    return ssim_vals
 
 def validate(model, val_loader, device, ssim_metric):
     """
@@ -96,12 +92,13 @@ def validate(model, val_loader, device, ssim_metric):
     model.eval()  # Set the model to evaluation mode
     total_val_ssim = 0  # Track total SSIM for validation
 
+
     with torch.no_grad():
         for data in val_loader:
             # Convert the numpy array to a PyTorch tensor
-            data = torch.tensor(data).float()  # Ensure the data is a float tensor
-            data = data.unsqueeze(1)  # Add channel dimension for grayscale [batch_size, 1, height, width]
-            data = data.to(device)  # Move the data to the appropriate device (e.g., GPU)
+            data = data.unsqueeze(1)
+            # Add a channel dimension for grayscale [batch_size, 1, height, width]
+            data = data.to(device) # Move the data to the appropriate device (e.g., GPU)
 
             # Forward pass through the model
             reconstructed_data, _ = model(data)
@@ -148,6 +145,23 @@ def test_model(model, test_loader, device, ssim_metric):
     avg_test_ssim = total_test_ssim / len(test_loader)
     print(f'Test SSIM: {avg_test_ssim:.4f}')
 
+def plot_ssims(ssim_vals):
+    """
+    Plot the SSIM values over training epochs.
+
+    @param ssim_vals: list, SSIM values
+    """
+
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, num_epochs + 1), ssim_vals, marker='o')
+    plt.title('Average SSIM over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Average SSIM')
+    plt.grid()
+    plt.xticks(range(1, num_epochs + 1))  # Ensure all epochs are shown on x-axis
+    plt.savefig('average_ssim_over_epochs.png')  # Save the figure if needed
+    plt.show()
 
 if __name__ == "__main__":
     # Hyperparameters
@@ -183,7 +197,8 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     ssim_metric = torchmetrics.StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
 
-    train_vqvae(model, train_images, val_images, test_images, num_epochs, learning_rate, device, batch_size)
+    ssim_vals = train_vqvae(model, train_images, val_images, test_images, num_epochs, learning_rate, device, batch_size)
+
 
     # Save the model parameters after training
     torch.save(model.state_dict(), 'vqvae_model.pth')
@@ -204,3 +219,4 @@ if __name__ == "__main__":
     # Test the model on the test set
     test_model(test_model_instance, test_loader, device, ssim_metric)
 
+    plot_ssims(ssim_vals)

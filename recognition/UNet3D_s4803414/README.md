@@ -43,7 +43,7 @@ showing
 how the model processes input volumes and generates segmentation 
 masks:
 
-![3D U-Net Architecture](./Content/UNET_model.png)
+![3D U-Net Architecture](content/UNET_model.png)
 
 ### Visualization
 Below is an example visualization of the segmentation process for a given slice from an MRI scan:
@@ -51,7 +51,7 @@ Below is an example visualization of the segmentation process for a given slice 
 - **Center**: Ground truth segmentation mask
 - **Right**: Model prediction
 
-![Sample Visualization](./COntent/visualization_sample.png)
+![Prediction Image](./content/prediction.png)
 
 
 ## Dependencies
@@ -95,10 +95,7 @@ assigned a class label corresponding to the target structure.
 Below is a sample input MRI slice and the corresponding 
 segmentation output.
 
-- **Original Slice:**
-![Original Image](./visuals/visualization_original.png)
-- **Prediction:**
-![Prediction Mask](./visuals/visualization_pred.png)
+![Output Image](./content/prediction2.png)
 
 
 ## Pre-processing
@@ -154,4 +151,8 @@ Class-specific Dice Scores: [0.98168078 0.91843471 0.05575329 0.44867237 0.00546
 
 
 ## References
-- Isensee, F., et al. "nnU-Net: a self-adapting framework for U-Net-based medical image segmentation." Nature Methods 18.2 (2021): 203-211.
+- F. Isensee, P. Kickingereder, W. Wick, M. Bendszus, and K. H. Maier-Hein, “Brain Tumor Segmentation
+and Radiomics Survival Prediction: Contribution to the BRATS 2017 Challenge,” Feb. 2018. [Online].
+Available: https://arxiv.org/abs/1802.10508v1- 
+- Dowling, Jason; & Greer, Peter (2021): Labelled weekly MR images of the male pelvis. v2. CSIRO. Data Collection. https://doi.org/10.25919/45t8-p065
+- 

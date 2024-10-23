@@ -31,19 +31,28 @@ def main():
     # Create dataset
     dataset= CustomDataset(image_filenames, img_dir, labels_dir, transform = transform)
     
-    # Split into training and test sets
-    train_size = int(0.7 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+    # Define proportions
+    train_ratio = 0.7
+    val_ratio = 0.15  # 15% for validation
+    test_ratio = 0.15  # 15% for testing
 
+    # Split into training, validation, and test sets
+    train_size = int(train_ratio * len(dataset))
+    val_size = int(val_ratio * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+    
+    # Perform the splits
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
+    
     # DataLoader for batching
-    batch_size = 2
+    batch_size = 1
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    
     # Train the model
     print("Starting model training...")
-    trainer = Trainer(train_loader)
+    trainer = Trainer(train_loader, val_loader)
     trained_model = trainer.train(n_epochs=1)
     
     # Test the model

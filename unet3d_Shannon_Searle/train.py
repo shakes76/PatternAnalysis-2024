@@ -28,7 +28,7 @@ class DiceLoss(nn.Module):
         return 1 - dice_score  # Return Dice Loss (1 - Dice coefficient)
     
 class Trainer:
-    def __init__(self, train_loader):
+    def __init__(self, train_loader, val_loader):
         # Initialize the 3D U-Net model
         self.model = UNet3D(in_channels=4, out_channels=6, init_features=32)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -38,26 +38,44 @@ class Trainer:
         self.criterion = DiceLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
 
-        # Set the training data loader
+        # Set the training and validation data loaders
         self.train_loader = train_loader
+        self.val_loader = val_loader
 
     def train(self, n_epochs=1):
         for epoch in range(n_epochs):
             start_time = time.time()
             print(f"\nEpoch {epoch + 1}/{n_epochs}:")
+            
+            # Training phase
             self.model.train()
             running_loss = 0.0
-            for images, labels in tqdm(self.train_loader, disable = True):
+            for images, labels in tqdm(self.train_loader, disable=True):
                 images = images.to(self.device)
                 labels = labels.to(self.device)
                 outputs = self.model(images)
                 loss = self.criterion(outputs, labels)
+
                 # Zero the gradients
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                epoch_time = time.time() - start_time
+                
                 running_loss += loss.item()
-            print(f"Epoch {epoch + 1} completed - Loss: {running_loss:.4f}, Time Taken: {epoch_time:.2f} seconds")
+
+            # Validation phase
+            self.model.eval()  # Set the model to evaluation mode
+            val_running_loss = 0.0
+            with torch.no_grad():  # Disable gradient computation for validation
+                for val_images, val_labels in tqdm(self.val_loader, disable=True):
+                    val_images = val_images.to(self.device)
+                    val_labels = val_labels.to(self.device)
+                    val_outputs = self.model(val_images)
+                    val_loss = self.criterion(val_outputs, val_labels)
+                    val_running_loss += val_loss.item()
+
+            # Calculate average validation loss
+            avg_val_loss = val_running_loss / len(self.val_loader)
+            print(f"Validation Loss: {avg_val_loss:.4f}, Time Taken: {time.time() - start_time:.2f} seconds")
         
         return self.model

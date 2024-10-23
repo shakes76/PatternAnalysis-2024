@@ -50,8 +50,8 @@ returning data in the expected [channels, depth, height, width] format for the m
 Transformations include resizing and normalization.
 
 ## Training, Validation, and Testing Splits
-The dataset is divided into training, and test sets with a split ratio 
-of 70%/30%. The training set is used for optimizing model parameters and 
+The dataset is divided into training, test and validation sets with a split ratio 
+of 70%/15%15%. The training and validation sets are used for optimizing model parameters and 
 the test set for evaluating model performance.
 
 ## File Structure

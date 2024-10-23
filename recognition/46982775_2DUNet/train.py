@@ -79,8 +79,8 @@ def train_model(
         loader: DataLoader, 
         criterion: nn.CrossEntropyLoss, 
         optimiser: optim.Optimizer,
-        device: torch.device,
-        gds: GeneralizedDiceScore
+        gds: GeneralizedDiceScore,
+        device: torch.device
         ) -> tuple[list[float], list[list[float]]]:
     """ 
     Train the model on the training data. 
@@ -90,8 +90,8 @@ def train_model(
         loader: Training dataloader
         criterion: Loss function to be optimised
         optimiser: Optimisation algorithm
-        device: Device to perform the computations
         gds: Class to calculate dice scores
+        device: Device to perform the computations
 
     Returns:
         list[float]: Cross entropy training losses per epoch
@@ -127,6 +127,10 @@ def train_model(
 
             epoch_running_loss += loss.item()
 
+            # Undo one hot encoding to get dice score (B, H, W)
+            _, predicted = torch.max(predicted, 1)
+            _, labels = torch.max(labels, 1)
+
             # Compute Dice Score per class and add to sum
             dice_score = gds(predicted, labels)
             train_dice_scores[epoch] = torch.add(train_dice_scores[epoch], dice_score)
@@ -138,7 +142,7 @@ def train_model(
 
         # Epoch finished. Record average loss for that epoch
         epoch_loss = epoch_running_loss / len(loader)
-        write_log_file(f"Epoch: {epoch}/{NUM_EPOCHS}, Epoch Loss: {epoch_loss}")
+        write_log_file(f"Epoch: {epoch+1}/{NUM_EPOCHS}, Epoch Loss: {epoch_loss}")
         train_losses.append(epoch_loss)
 
         # Save models
@@ -168,8 +172,8 @@ def train_model(
 def test_model(
         model: UNet, 
         loader: DataLoader, 
-        device: torch.device,
-        gds: GeneralizedDiceScore
+        gds: GeneralizedDiceScore,
+        device: torch.device
         ) -> list[float]:
     """ 
     Test the model on the testing data. 
@@ -177,8 +181,8 @@ def test_model(
     Parameters:
         model: UNet model to test with
         loader: Testing dataloader
-        device: Device to perform the computations
         gds: Class to calculate dice scores
+        device: Device to perform the computations
 
     Returns:
         list[float]: Final dice scores of all classes
@@ -201,7 +205,7 @@ def test_model(
             images = torch.unsqueeze(images, dim=1) # (B, 1, H, W)
             predicted = model(images) # (B, C, H, W) 
 
-            # Undo one hot encoding (B, C, H, W) -> (B, H, W)
+            # Undo one hot encoding to get dice score (B, H, W)
             _, predicted = torch.max(predicted, 1)
             _, labels = torch.max(labels, 1)
 

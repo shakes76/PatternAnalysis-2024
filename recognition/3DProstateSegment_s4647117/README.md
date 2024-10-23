@@ -51,17 +51,20 @@ The decoder path is responsible for reconstructing the segmentation map from the
 * Skip Connections: One of the key innovations of U-Net is the use of skip connections. At each stage of the decoder, the upsampled feature maps are concatenated with the corresponding feature maps from the encoder path. These skip connections allow the decoder to leverage both low-level features (from early layers of the encoder) and high-level features (from later layers). This helps the model retain fine-grained spatial details, such as boundaries and textures, which are essential for accurate segmentation.
 
 #### Final Output: 
-The final layer of the decoder typically uses a 1x1x1 convolution to output a segmentation map with the same spatial dimensions as the input but with the number of channels corresponding to the number of classes in the segmentation task (e.g., prostate, background, bladder).
+The final layer of the decoder typically uses a 1x1x1 convolution to produce an output with the same spatial dimensions as the input, but with a number of channels corresponding to the segmentation task. In this case, the model outputs six channels, providing more flexibility in handling the logits during post-processing. For tasks like prostate segmentation, where the model is trained on 3D medical scans with manually labeled prostate regions, the model predicts pixel-wise classifications for each 3D scan, generating a segmented map of the prostate and other relevant structures (e.g., background, bladder).
 
-In the case of prostate segmentation, the model is trained on 3D medical scans where the prostate has been manually labeled. During inference, the trained model predicts the pixel-wise classification of the prostate for each 3D scan, effectively creating a segmented map of the prostate gland.
+### Optimisations:
 
-### Optimisation:
-
+#### Loss function:
 In this task, a custom loss function, Weighted Dice Loss, was implemented to improve segmentation performance. Initially, the standard unweighted Dice Loss was tested, but it resulted in poor Dice scores for under-represented classes, such as the bladder or the prostate. These smaller classes had a diminished impact on the overall loss due to their lower representation in the dataset.
 
 To address this imbalance, the Dice loss for each class was computed individually and then scaled by a weighting factor, a hyperparameter that determines the relative contribution of each class to the overall loss. The final loss function is the sum of these weighted Dice losses, giving more influence to under-represented classes in the optimisation process.
 
 This approach significantly improved segmentation performance, especially for smaller, less-represented classes.
+
+#### Learning rate scheduler:
+
+Another optimisation implemented was the use of a learning rate scheduler. Specifically, PyTorch's OneCycleLR scheduler was employed. Throughout the epochs, this scheduler gradually increases the learning rate to a peak value, then slowly reduces it. This approach helps improve model performance, reduces training time, and increases the likelihood of finding a global minimum.
 
 ## Dependencies:
 * Python 3.12.4
@@ -69,18 +72,31 @@ This approach significantly improved segmentation performance, especially for sm
 * Numpy 1.26.3
 * NiBabel 5.2.1
 
-## Example input, outputs, and training plots:
-### Example input:
+## Example input:
 
-### Example output:
-
-### Comparison:
-#### Side by side gif:
+## Example outputs and Comparison with true labels:
 Left is Actual label (ground truth), and right is the predicted label
+
+### Side by side gif:
 <div style="display: flex; justify-content: space-around;">
-  <img src="https://github.com/JosephSav/Markdown/blob/main/actual-ezgif.com-speed.gif" alt="GIF 1" width="45%" style="margin-right: 10px;">
-  <img src="https://github.com/JosephSav/Markdown/blob/main/pred-ezgif.com-speed.gif" alt="GIF 2" width="45%">
+  <img src="https://github.com/JosephSav/Markdown/blob/main/actual-ezgif.com.gif" alt="GIF 1" width="45%" style="margin-right: 10px;">
+  <img src="https://github.com/JosephSav/Markdown/blob/main/pred-ezgif.com.gif" alt="GIF 2" width="45%">
 </div>
+
+### Side by side slice:
+<div style="display: flex; justify-content: space-around;">
+  <img src="https://github.com/JosephSav/Markdown/blob/main/actual_seperate.png" alt="Actual label" width="45%" style="margin-right: 10px;">
+  <img src="https://github.com/JosephSav/Markdown/blob/main/pred_seperate.png" alt="Predicted label" width="45%">
+</div>
+
+### Overlayed gif:
+As above, colored are the predicted labels, and greyscale is actual label
+<div align="left">
+    <img src="https://github.com/JosephSav/Markdown/blob/main/comparison.gif" alt="Overlayed comparison gif"width="50%">
+</div>
+
+
+## Plots:
 
 ### Training and Validation loss:
 <div align="left">
@@ -96,7 +112,7 @@ Left is Actual label (ground truth), and right is the predicted label
 
 The dataset is divided into training, validation, and test sets to ensure that the model can generalise well to unseen data. The splits are typically chosen based on the size of the dataset and ensuring that each set represents a diverse range of cases. We chose an 70-15-15 split, where 70% of the data is used for training, 15% for validation, and 15% for testing.
 
-* Preprocessing: Common preprocessing steps include normalisation (scaling pixel intensities), resizing images to a consistent resolution.
+* Preprocessing: Common preprocessing steps included normalisation (scaling pixel intensities) and resizing images to a consistent resolution.
 * Transforms: We did not use any transforms. This could be a potential point of improvement to explore in the future.
   
 These decisions are critical for improving the model's ability to segment the prostate accurately across different patients.

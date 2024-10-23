@@ -1,24 +1,28 @@
+"""
+Contains the VQ-VAE training loop with image generation and metric plotting.
+
+Author: Kirra Fletcher s4745168
+"""
 import numpy as np 
 import os
-from datetime import datetime
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import time
 import math
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from torch.optim import Adam
-from dataset import get_dataloaders
+from datetime import datetime
+from dataset import *
 from modules import *
 from utils import *
-import matplotlib.pyplot as plt
 from predict import *
 
+# Directories for Nifti files:
 train_file_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 test_file_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 
-# Default Hyperparameters
+# Default Hyperparameters:
 n_hiddens = 128
 n_residual_hiddens = 32
 embedding_dim = 64
@@ -26,7 +30,7 @@ n_embeddings = 512
 beta = 0.25
 learning_rate = 3e-4
 
-# Hyperparameters chaned from default:
+# Hyperparameters changed from default:
 batch_size = 8
 n_epochs = 15
 n_residual_layers = 5
@@ -39,7 +43,7 @@ if not os.path.exists(directory):
 else:
     os.makedirs(f'{directory}_{datetime.now().microsecond}')
 
-# Model setup
+# Model setup:
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 train_loader, test_loader, val_loader = get_dataloaders(batch_size, train_file_path, test_file_path)
 model = VQVAE(n_hiddens, n_residual_hiddens, n_residual_layers, n_embeddings, embedding_dim, beta).to(device)
@@ -55,6 +59,10 @@ ssim_scores = []
 best_ssim_epoch = 0
 
 def train():
+    """
+    Trains the VQ-VAE model for `n_epochs` epochs, using the training data. Each epoch the model is
+    tested using the validation data, using the SSIM score. The average log(loss) of an epoch is recorded.
+    """
     for epoch in range(n_epochs):
         epoch_losses = []
 
@@ -81,9 +89,14 @@ def train():
         model.train()    
         
         
-
 def epoch_ssim(epoch):
-    model.eval()
+    """
+    Calculates the SSIM score of the model using the validation dataset.
+
+    Parameters:
+        epoch: Current epoch at which the model is being evaluated.
+    """
+    model.eval()  # Eval mode to not train on the validation set
 
     batch_ssims = []
     with torch.no_grad():
@@ -94,7 +107,7 @@ def epoch_ssim(epoch):
     
     average_ssim = np.mean(batch_ssims)
     ssim_scores.append(average_ssim)
-    if average_ssim == max(ssim_scores):
+    if average_ssim == max(ssim_scores):  # New best model! Save the model and generate images
         best_ssim_epoch = epoch
         generate(best_ssim_epoch, model, val_loader, directory, average_ssim)
         torch.save(model.state_dict(), f'{directory}/best_model.pt')
@@ -102,7 +115,11 @@ def epoch_ssim(epoch):
 
 
 def final_ssim():
-    model.load_state_dict(torch.load(f'{directory}/best_model.pt'))
+    """
+    Calculates the SSIM score of the final model - i.e. the best model after all epochs are complete. 
+    Final SSIM score is calculated using the test data set (to ensure model generalises well).
+    """
+    model.load_state_dict(torch.load(f'{directory}/best_model.pt')) 
     model.eval()
 
     batch_ssims = []
@@ -117,7 +134,14 @@ def final_ssim():
 
 
 def plot_loss(losses, directory, epoch):
-    print(f"---Graphing Loss---")
+    """
+    Plots the log(loss) of the model training. 
+
+    Parameters:
+        losses: log(loss) of each epoch (on y-axis)
+        directory: Directory to save the plot in
+        epoch: Current epoch that is being plotted (Allows for continuous update of loss through long training)
+    """
     plt.figure(figsize=(10, 5))
     plt.plot(range(0, epoch + 1), losses)
     plt.xlabel('Epoch')
@@ -127,7 +151,14 @@ def plot_loss(losses, directory, epoch):
     plt.close()
 
 def plot_ssim(ssim_scores, directory, epoch):
-    print(f"---Graphing SSIM Scores---")
+    """
+    Plots the SSIM scores of the model up to the current epoch.
+
+    Parameters:
+        ssim_scores: SSIM of each epoch (on y-axis)
+        directory: Directory to save the plot in
+        epoch: Current epoch that is being plotted (Allows for continuous update of loss through long training)
+    """
     plt.figure(figsize=(10, 5))
     plt.plot(range(0, epoch + 1), ssim_scores)
     plt.xlabel('Epoch')
@@ -138,6 +169,9 @@ def plot_ssim(ssim_scores, directory, epoch):
 
 
 if __name__ == "__main__":
+    """
+    Main function which completes model training, plotting of results, and generation of images.
+    """
     start = time.time()
     print(f"Time: {current_time}")
     train()

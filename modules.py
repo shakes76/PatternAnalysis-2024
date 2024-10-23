@@ -1,3 +1,8 @@
+"""
+Contains the VQ-VAE Model class with contributing sub-models: the Encoder, Vector Quantiser and Decoder.
+
+Author: Kirra Fletcher s4745168
+"""
 import numpy as np 
 import os
 import torch
@@ -9,10 +14,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ResidualLayer(nn.Module):
     """
-    One residual layer inputs:
-    - in_dim : the input dimension
-    - h_dim : the hidden layer dimension
-    - res_h_dim : the hidden dimension of the residual block
+    A residual neural network layer employing skip connections. See ResNet paper.
+    
+    Parameters:
+        in_dim : the input dimension
+        h_dim : the hidden layer dimension
+        res_h_dim : the hidden dimension of the residual block
     """
 
     def __init__(self, in_dim, h_dim, res_h_dim):
@@ -31,11 +38,13 @@ class ResidualLayer(nn.Module):
 
 class ResidualStack(nn.Module):
     """
-    A stack of residual layers inputs:
-    - in_dim : the input dimension
-    - h_dim : the hidden layer dimension
-    - res_h_dim : the hidden dimension of the residual block
-    - n_res_layers : number of layers to stack
+    A stack of residual layers inputs.
+    
+    Parameters:
+        in_dim : the input dimension
+        h_dim : the hidden layer dimension
+        res_h_dim : the hidden dimension of the residual block
+        n_res_layers : number of layers to stack
     """
 
     def __init__(self, in_dim, h_dim, res_h_dim, n_res_layers):
@@ -51,16 +60,13 @@ class ResidualStack(nn.Module):
 
 class Encoder(nn.Module):
     """
-    This is the q_theta (z|x) network. Given a data sample x q_theta 
-    maps to the latent space x -> z.
+    The Encoder model is a CNN that takes a data sample x and maps it to the latent space.
 
-    For a VQ VAE, q_theta outputs parameters of a categorical distribution.
-
-    Inputs:
-    - in_dim : the input dimension
-    - h_dim : the hidden layer dimension
-    - res_h_dim : the hidden dimension of the residual block
-    - n_res_layers : number of layers to stack
+    Parameters:
+        in_dim : the input dimension
+        h_dim : the hidden layer dimension
+        res_h_dim : the hidden dimension of the residual block
+        n_res_layers : number of layers to stack
 
     """
 
@@ -83,14 +89,14 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     """
-    This is the p_phi (x|z) network. Given a latent sample z p_phi 
-    maps back to the original space z -> x.
+    The Decoder model is an inverse CNN that takes a sample from the latent space and
+    maps it back to the data space.
 
-    Inputs:
-    - in_dim : the input dimension
-    - h_dim : the hidden layer dimension
-    - res_h_dim : the hidden dimension of the residual block
-    - n_res_layers : number of layers to stack
+    Parameters:
+        in_dim : the input dimension
+        h_dim : the hidden layer dimension
+        res_h_dim : the hidden dimension of the residual block
+        n_res_layers : number of layers to stack
 
     """
 
@@ -113,12 +119,13 @@ class Decoder(nn.Module):
 
 class VectorQuantizer(nn.Module):
     """
-    Discretization bottleneck part of the VQ-VAE.
+    The Vector Quantiser discretises the latent space output of the Encoder to a one-hot vector of
+    the index the closest embedding vector.
 
-    Inputs:
-    - n_e : number of embeddings
-    - e_dim : dimension of embedding
-    - beta : commitment cost used in loss term, beta * ||z_e(x)-sg[e]||^2
+    Parameters:
+        n_e : number of embeddings
+        e_dim : dimension of embedding
+        beta : commitment cost used in loss term, beta * ||z_e(x)-sg[e]||^2
     """
 
     def __init__(self, n_e, e_dim, beta):
@@ -128,7 +135,7 @@ class VectorQuantizer(nn.Module):
         self.beta = beta
 
         self.embedding = nn.Embedding(self.n_e, self.e_dim)
-        self.embedding.weight.data.uniform_(-1.0 / self.n_e, 1.0 / self.n_e)
+        self.embedding.weight.data.uniform_(-1.0 / self.n_e, 1.0 / self.n_e)  # Initialise weightings
 
     def forward(self, z):
         """
@@ -162,7 +169,7 @@ class VectorQuantizer(nn.Module):
         # get quantized latent vectors
         z_q = torch.matmul(min_encodings, self.embedding.weight).view(z.shape)
 
-        # compute loss for embedding
+        # compute embedding loss
         loss = torch.mean((z_q.detach()-z)**2) + \
             self.beta * torch.mean((z_q - z.detach()) ** 2)
 
@@ -180,35 +187,33 @@ class VectorQuantizer(nn.Module):
 
 
 class VQVAE(nn.Module):
-    def __init__(self, h_dim, res_h_dim, n_res_layers,
-                 n_embeddings, embedding_dim, beta, save_img_embedding_map=False):
+    """
+    The complete VQ-VAE model, implementing the Encoder, Vector Quantisation, and Decoder.
+
+    Parameters:
+        h_dim : the hidden layer dimension
+        res_h_dim : the hidden dimension of the residual block
+        n_res_layers : number of layers to stack
+        n_embeddings : number of embeddings
+        embedding_dim : dimension of embedding
+        beta : commitment cost used in embedding loss term
+    """
+    def __init__(self, h_dim, res_h_dim, n_res_layers, n_embeddings, embedding_dim, beta):
         super(VQVAE, self).__init__()
-        # encode image into continuous latent space
+        
+        # Grey-scale image: in_dim of encoder = 1
         self.encoder = Encoder(1, h_dim, n_res_layers, res_h_dim)
+        
         self.pre_quantization_conv = nn.Conv2d(h_dim, embedding_dim, kernel_size=1, stride=1)
-        # pass continuous latent vector through discretization bottleneck
         self.vector_quantization = VectorQuantizer(n_embeddings, embedding_dim, beta)
-        # decode the discrete latent representation
+        
         self.decoder = Decoder(embedding_dim, h_dim, n_res_layers, res_h_dim)
 
-        if save_img_embedding_map:
-            self.img_to_embedding_map = {i: [] for i in range(n_embeddings)}
-        else:
-            self.img_to_embedding_map = None
-
-    def forward(self, x, verbose=False):
+    def forward(self, x):
         z_e = self.encoder(x)
-
         z_e = self.pre_quantization_conv(z_e)
         embedding_loss, z_q, perplexity, _, _ = self.vector_quantization(z_e)
         x_hat = self.decoder(z_q)
-
-        if verbose:
-            print('original data shape:', x.shape)
-            print('encoded data shape:', z_e.shape)
-            print('recon data shape:', x_hat.shape)
-            assert False
-
         return embedding_loss, x_hat, perplexity
 
 

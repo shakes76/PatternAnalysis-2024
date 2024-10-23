@@ -1,5 +1,10 @@
+"""
+Contains functions to initialise the DataLoaders for the train, test, and validation data sets.
+Plots a set of images from a Dataloader. 
+
+Author: Kirra Fletcher s4745168
+"""
 import random
-import torch.utils.data
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from utils import *
@@ -11,7 +16,7 @@ def get_dataloaders(batch_size, train_file_path, test_file_path):
     Creates dataloaders for the training, test, and validation datasets with the desired batch size.
     All three datasets are normalised. Training data is shuffled, test and validation data are not shuffled.
 
-    Params:
+    Parameters:
         batch_size: Batch size for the dataloaders
         train_file_path: Directory to the training Nifti files
         test_file_path: Directory to the test Nifti files

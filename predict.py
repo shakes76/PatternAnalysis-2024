@@ -1,3 +1,8 @@
+"""
+Contains functions to plot outputs of the VQ-VAE and plot them alongside the inputs.
+
+Author: Kirra Fletcher s4745168
+"""
 import torch
 import matplotlib.pyplot as plt
 
@@ -6,9 +11,15 @@ device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 def generate(epoch, model, dataloader, directory, ssim_score, final=False):
     """ 
     Plots test images against generated images.
+
+    Parameters:
+        epoch: Current epoch of the model
+        model: Model used to generate images
+        dataloader: Data to feed into model
+        directory: Directory to save the image plot
+        ssim_score: Current epoch's SSIM score
+        final: Boolean, True if training has finished 
     """
-    print("---Generating Images---")
-    
     model.eval()
 
     # Collect images from validation set

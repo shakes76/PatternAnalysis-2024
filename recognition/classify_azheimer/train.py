@@ -11,14 +11,14 @@ from dataset import get_dataloaders
 from tqdm import tqdm
 from modules import GFNetPyramid
 import os
-from torch.optim.lr_scheduler import ExponentialLR
-from sklearn.metrics import classification_report
-
+from torch.optim.lr_scheduler import StepLR
+import matplotlib.pyplot as plt 
 
 def train_model(epochs=10):
     if os.path.exists("recognition/classify_azheimer/AD_NC"):
         data_dir = "recognition/classify_azheimer/AD_NC"
     else:
+        os.environ['MPLCONFIGDIR'] = './.matplotlib_cache'
         data_dir = "/home/groups/comp3710/ADNI/AD_NC/"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GFNetPyramid(num_classes=2)  # 2 classes: AD and NC
@@ -26,15 +26,18 @@ def train_model(epochs=10):
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-    scheduler = ExponentialLR(optimizer, gamma=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.975)
+    scheduler = StepLR(optimizer, step_size=2, gamma=0.3)
 
-    train_loader, test_loader = get_dataloaders(data_dir)
+    train_loader, test_loader = get_dataloaders(data_dir,128)
     bar = tqdm(range(epochs * len(train_loader)))
     model.train()
-
+    epoch_losses = []
+    epoch_accuracies = []
     for epoch in range(epochs):
         running_loss = 0.0
+        correct = 0
+        total = 0
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
@@ -43,8 +46,35 @@ def train_model(epochs=10):
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
+            
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
             bar.update(1)
         scheduler.step()  # Update the learning rate
         print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
-    torch.save(model.state_dict(), "alzheimer_classifier.pth")
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = correct / total
+
+        epoch_losses.append(epoch_loss)
+        epoch_accuracies.append(epoch_acc)
+    plt.figure(figsize=(10,5))
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(range(1, epochs + 1), epoch_losses, label="Loss")
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
+    plt.grid(True)
+
+    plt.subplot(1, 2, 2)
+    plt.plot(range(1, epochs + 1), epoch_accuracies, label="Accuracy")
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Training Accuracy')
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("training_plot.png")
+    torch.save(model.state_dict(), "./alzheimer_classifier.pth")
     return model

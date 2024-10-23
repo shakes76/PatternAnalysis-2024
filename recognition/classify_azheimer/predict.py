@@ -5,7 +5,7 @@ from sklearn.metrics import classification_report
 from dataset import get_dataloaders
 from train import train_model
 import argparse
-
+import os
 
 def evaluate_model(model, test_loader, device):
     model.eval()

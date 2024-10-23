@@ -13,7 +13,7 @@ from monai.data import DataLoader, Dataset
 from monai.transforms import (AsDiscrete, Compose, CastToType)
 
 # import from local files  
-from train import trained_model, CRITERION, compute_dice_segments
+from train import trained_model, CRITERION, compute_dice_segments, DEVICE
 from dataset import test_dict, test_transforms
 
 def visualise_ground_truths(images, ground_truths, criterion):
@@ -84,6 +84,7 @@ def visualise_predictions(images, predictions, criterion):
     return fig, axes
 
 def test(model, test_loader, device):
+    model.to(device)
     model.eval()  # Set the model to evaluation mode
 
     criterion = DiceLoss(batch = True)
@@ -168,7 +169,6 @@ def plot_dice(criterion, segment_coefs):
 
 if __name__ == "__main__":
     # connect to gpu
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     test_set = Dataset(test_dict, test_transforms)
     test_loader = DataLoader(dataset = test_set, batch_size = 1)
@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     # perform predictions
     dice_coefs, s0, s1, s2, s3, s4, s5 = test(model = trained_model, test_loader = test_loader,
-                                               device = device)
+                                               device = DEVICE)
     
     end = time()
 

@@ -7,15 +7,17 @@ from time import time
 import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 from monai.data import DataLoader, Dataset
+from torch.cuda.amp import autocast, GradScaler
 
 NUM_EPOCHS = 300
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
-CRITERION = DiceLoss(include_background=False, batch=True)
-# CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2) # Based on Thyroid Tumor Segmentation Report
-# CRITERION = DiceFocalLoss(include_background=False, batch = True) # Default gamma = 2
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+CRITERION = DiceLoss(include_background=False, batch=True).to(DEVICE)
+# CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2).to(DEVICE) # Based on Thyroid Tumor Segmentation Report
+# CRITERION = DiceFocalLoss(include_background=False, batch = True).to(DEVICE) # Default gamma = 2
 
 def compute_dice_segments(predictions, ground_truths):
 
@@ -23,7 +25,7 @@ def compute_dice_segments(predictions, ground_truths):
 
     num_masks = predictions.size(1)
 
-    segment_coefs = torch.zeros(num_masks, device=ground_truths.device)
+    segment_coefs = torch.zeros(num_masks, DEVICE)
 
     segment_losses = criterion(predictions, ground_truths)
 
@@ -50,27 +52,31 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
     seg_4_dice_coefs = np.zeros(NUM_EPOCHS)
     seg_5_dice_coefs = np.zeros(NUM_EPOCHS)
 
+    scaler = GradScaler()
+
+    accumuldation_steps = 2
+
     for epoch in range(num_epochs):
         running_dice = 0.0
         total_segment_coefs = torch.zeros(6, device=device)
-        for batch_data in train_loader:
+        for i, batch_data in enumerate(train_loader):
             inputs, labels = (
                 batch_data["image"].to(device),
                 batch_data["label"].to(device),
             )
-
-            optimiser.zero_grad()
-            outputs = model(inputs)
-
-            loss = criterion(outputs, labels) 
+            
+            with autocast():
+                optimiser.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels) 
 
             segment_coefs = compute_dice_segments(outputs, labels)
-
             total_segment_coefs += segment_coefs
+            scaler.scale(loss).backward()
 
-            loss.backward()
-
-            optimiser.step()
+            if (i + 1) % accumuldation_steps == 0: # Gradient Accumulation
+                scaler.step(optimiser)
+                scaler.update()
 
             running_dice += 1 - loss.item()
 
@@ -92,9 +98,6 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
     return (model, training_dice_coefs, seg_0_dice_coefs, seg_1_dice_coefs,
              seg_2_dice_coefs, seg_3_dice_coefs, seg_4_dice_coefs, seg_5_dice_coefs)
 
-# connect to gpu
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 if not torch.cuda.is_available():
     print("Warning CUDA not Found. Using CPU")
 
@@ -110,7 +113,7 @@ train_loader = DataLoader(train_set, batch_size=BATCH_SIZE)
 
 # train improved unet
 trained_model, training_dice_coefs, seg0, seg1, seg2, seg3, seg4, seg5 = train(model, train_loader, criterion = CRITERION,
-                                                            device=device, num_epochs=NUM_EPOCHS)
+                                                            device=DEVICE, num_epochs=NUM_EPOCHS)
 
 end = time()
 

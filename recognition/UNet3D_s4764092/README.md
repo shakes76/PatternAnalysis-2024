@@ -100,5 +100,54 @@ I chose **α=0.5** and **β=0.5**. The goal of this combination is to address cl
 
 As the results show, **Dice Loss** performs best in addressing class imbalance, particularly for improving segmentation in small-volume classes. Compared to weighted cross-entropy loss and the combined loss, Dice Loss better captures the characteristics of small-volume targets such as the prostate. This is mainly because Dice Loss focuses on the overlap between predictions and ground truth, making it particularly suitable for segmenting small, blurry-edged targets. Unlike weighted cross-entropy, which relies on pixel counts, Dice Loss directly optimizes the overlap region, reducing the impact of class imbalance and better handling the segmentation of small-volume classes.
 
+## About the Training Hyperparameters and Functions
+
+As mentioned earlier, I selected the model that performed the best during validation for the final training and testing. I chose the **UNet3D model with an initial feature size of 32 (init_features = 32)** and **without data augmentation**, and I used **Dice Loss** as the loss function. For training, the optimizer used is **Adam**, and I employed gradient scaling, gradient accumulation, and automatic mixed precision to optimize memory usage and improve efficiency.
+
+### Training Hyperparameters:
+- **Number of epochs**: 100  
+- **Learning rate**: 1e-3
+- **Accumulation Steps**: 4
+
 ## Result
-### Hyperparameters and Functions
+
+
+
+
+## Dependencies
+
+This project requires the following Python libraries:
+
+- **numpy**
+- **nibabel**
+- **tqdm**
+- **scipy**
+- **matplotlib**
+- **torch**
+- **torchio**
+
+## Files and Usage
+
+### Files:
+
+- **dataset.py**: Handles the loading, preprocessing, and splitting of 3D MRI data into training, validation, and test sets.
+
+- **modules.py**: Contains the implementation of the **UNet3D** model for 3D medical image segmentation.
+
+- **loss.py**: Defines custom loss functions, including **DiceLoss**, **Weighted Cross-Entropy Loss**, and **Combined Loss**.
+
+- **train.py**: The main script for training the model. Records training and validation loss, as well as Dice scores across multiple epochs. Saves the best-trained model weights to **final.pth**.
+
+- **final.pth**: Contains the weights of the best-trained model, based on the highest validation performance during training. This model is used in the testing and evaluation phases.
+
+- **predict.py**: Contains the script for testing and evaluating the trained model using the weights from **final.pth**. It computes per-class and overall Dice scores, and visualizes the best and worst segmentation predictions for each class, saving these as PNG files.
+
+### Usage:
+
+To train and test the model, run `train.py`. To test an already trained model, run `predict.py`.
+
+By default, `dataset.py` loads 3D MRI data from the specified directories. Make sure to adjust the paths in `dataset.py` to point to your data. Additionally, if you want to use an existing `final.pth` for predictions, you need to modify the path to `final.pth` in `predict.py` according to your working directory to ensure it loads correctly.
+
+For reproducibility, please note that the test set is **randomly split** each time the script is run, which may result in slight variations in the results between runs.
+
+

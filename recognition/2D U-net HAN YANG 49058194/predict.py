@@ -24,6 +24,16 @@ import matplotlib.pyplot as plt
 
 # Dice_score
 def dice_score(pred, target, threshold=0.5, eps=1e-6):
+    """    
+    Computes the Dice Similarity Coefficient (DSC) for evaluation. 
+    Args: 
+        pred (torch.Tensor): Predicted segmentation. 
+        target (torch.Tensor): Ground truth segmentation. 
+        threshold (float): Threshold to binarize predictions. 
+        eps (float): Small value to avoid division by zero. 
+    Returns: 
+        float: Calculated Dice score.
+    """
     # Compute the Dice Similarity Coefficient (DSC).
     pred = (pred > threshold).float()  # Binarize predictions
     target = target.float()  # Ensure target is also float
@@ -35,6 +45,13 @@ def dice_score(pred, target, threshold=0.5, eps=1e-6):
 
 # Predicting images and evaluating model performance
 def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
+    """    
+    Loads the model and performs predictions on the test dataset. 
+    Args: 
+        root_dir (str): Directory containing the test dataset. 
+        model_path (str): Path to the trained model weights. 
+        threshold (float): Threshold for binarizing predictions.
+    """
     # Load dataset
     dataset = ProstateMRIDataset(root_dir)
     model = UNet(n_channels=1, n_classes=1)

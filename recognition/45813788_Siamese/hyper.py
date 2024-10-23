@@ -1,0 +1,4 @@
+#Hyper params
+BATCH_SIZE = 64
+LEARNING_RATE = 1e-4
+EPOHCS = 15

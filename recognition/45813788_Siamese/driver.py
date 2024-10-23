@@ -8,7 +8,9 @@ from torch.utils.data import DataLoader
 from predict import test
 from pytorch_metric_learning.samplers import MPerClassSampler
 from dataset import load_data, split_data, ISICDataset, train_aug
-from constants import LEARNING_RATE, EPOHCS, BATCH_SIZE
+from hyper import *
+import argparse
+
 
 
 def main():
@@ -16,11 +18,11 @@ def main():
     '''
     function that runs the whole thing, training and testing
     '''
-
-    #HYPER PARAMS
-    batch_size = BATCH_SIZE
-    learning_rate = LEARNING_RATE
-    epochs = EPOHCS
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Train or Test a Siamese Neural Network")
+    parser.add_argument('-m', choices=['train', 'test','both'], default='both', required=True, help="Choose whether to train or test the model, you must train before testing")
+    parser.add_argument('-p', type=bool, default=False, help="Enable or disable plotting during training (True/False)")
+    args = parser.parse_args()
 
     # Paths
     current_dir = os.getcwd()
@@ -62,13 +64,13 @@ def main():
 
     #balance samples
     labels = train_dataset.labels
-    sampler = MPerClassSampler(labels, m=(batch_size/2), batch_size=batch_size)
+    sampler = MPerClassSampler(labels, m=(BATCH_SIZE/2), batch_size=BATCH_SIZE)
 
 
     # Initialize DataLoaders
     train_loader = DataLoader(
         train_dataset, 
-        batch_size=batch_size,
+        batch_size=BATCH_SIZE,
         sampler=sampler, 
         num_workers=4,
         pin_memory=True
@@ -76,7 +78,7 @@ def main():
     
     val_loader = DataLoader(
         val_dataset, 
-        batch_size=batch_size,
+        batch_size=BATCH_SIZE,
         shuffle=True, 
         num_workers=4,
         pin_memory=True
@@ -84,21 +86,23 @@ def main():
     
     test_loader = DataLoader(
         test_dataset, 
-        batch_size=batch_size,
+        batch_size=BATCH_SIZE,
         shuffle=False, 
         num_workers=4,
         pin_memory=True
     )
- 
-    #Train the siamese
-    siamese_train(current_dir, train_loader, val_loader, epochs=epochs, lr=learning_rate, plots=True)
+    
+    if args.m == 'train' or args.m == 'both':
+        #Train the siamese
+        siamese_train(current_dir, train_loader, val_loader, epochs=EPOHCS, lr=LEARNING_RATE, plots=args.p)
 
-    #Test it
-    siamese_net = SiameseNN()
-    siamese_dict = os.path.join(current_dir, 'models', 'siamese_best.pth')
-    siamese_net.load_state_dict(torch.load(siamese_dict))
+    if args.m == 'test' or args.m == 'both':
+        #Test it
+        siamese_net = SiameseNN()
+        siamese_dict = os.path.join(current_dir, 'models', 'siamese_best.pth')
+        siamese_net.load_state_dict(torch.load(siamese_dict))
 
-    test(siamese_net, test_loader, current_dir)
+        test(siamese_net, test_loader, current_dir)
 
 
 if __name__ == "__main__":

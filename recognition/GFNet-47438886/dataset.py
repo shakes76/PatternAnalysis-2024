@@ -8,6 +8,7 @@ import re
 import platform
 import torch
 from torchvision import datasets, transforms
+from torchvision.transforms import v2
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 from PIL import Image
@@ -42,21 +43,6 @@ class ADNIDataset(Dataset):
             image = self.transform(image)
 
         return image, label
-    
-# Custom Transform to add Gaussian Noise
-class AddGaussianNoise(object):
-    def __init__(self, mean=0.0, std=1.0):
-        self.mean = mean
-        self.std = std
-
-    def __call__(self, tensor):
-        noise = torch.randn(tensor.size()) * self.std + self.mean
-        noisy_tensor = tensor + noise
-        # Clip the tensor to ensure values remain in [0, 1] range
-        return torch.clamp(noisy_tensor, 0., 1.)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
     
 
 def load_adni_data(root_dir, valid_size=0.2, batch_size=32, testing=False):
@@ -112,35 +98,34 @@ def load_adni_data(root_dir, valid_size=0.2, batch_size=32, testing=False):
     # Define image transformations
     # ! Check the correct transforms are used
     if not testing:
-        transform = transforms.Compose([
-            transforms.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
-            transforms.RandomVerticalFlip(p=0.5),
-            transforms.ToTensor(),  # Convert image to PyTorch tensor
-            transforms.Normalize(mean=[mean], std=[std]) 
+        transform = v2.Compose([
+            v2.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
+            v2.RandomVerticalFlip(p=0.5),
+            v2.ToTensor(),  # Convert image to PyTorch tensor
+            v2.GaussianNoise(),
+            v2.Normalize(mean=[mean], std=[std])
         ])
 
     else:  # Testing
-        transform = transforms.Compose([
-        transforms.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
-        transforms.ToTensor(),  # Convert image to PyTorch tensor
-        transforms.Normalize(mean=[mean], std=[std]) 
+        transform = v2.Compose([
+        v2.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
+        v2.ToTensor(),  # Convert image to PyTorch tensor
+        v2.Normalize(mean=[mean], std=[std]) 
     ])
 
     if not testing:
         # Create ADNIDataset instances for training and validation
         train_dataset = ADNIDataset(train_image_paths, train_labels, transform=transform)
         val_dataset = ADNIDataset(val_image_paths, val_labels, transform=transform)
-    else:
-        train_dataset = ADNIDataset(image_paths, labels, transform=transform)
-
-    # Create DataLoaders for batching and parallel data loading
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
-
-    if not testing:
+        # Create DataLoaders for batching and parallel data loading
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         return train_loader, val_loader
 
-    return train_loader  # No validation
+    else:
+        test_dataset = ADNIDataset(image_paths, labels, transform=transform)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        return test_loader
 
 #if platform.system() == "Windows":
 #    root_dir = 'ADNI_AD_NC_2D/AD_NC'

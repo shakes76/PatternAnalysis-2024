@@ -66,6 +66,7 @@ python predict.py NC
 <br/>
 
 3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images, saved as `t-SNE_visualization.png`.
+<br/>
 Alzheimer's Disease Brains:
 <br/>
 ![AD T-SNE](images/tsne_AD.png)

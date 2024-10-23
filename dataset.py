@@ -86,3 +86,22 @@ class DataSetProcessorTrainingVal():
         labels = torch.tensor(labels, dtype=torch.float32, requires_grad=True)
         
         return image, labels
+    
+
+class DataSetProcessorTest():
+    def __init__(self, Test_data_path, transform=None):
+        self.test_folder = Test_data_path
+        self.test_files = os.listdir(Test_data_path)
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+    
+    def __getitem__(self, index):
+        image_path = os.path.join(self.training_data, self.images[index])
+        image = Image.open(image_path).convert("RGB")
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image

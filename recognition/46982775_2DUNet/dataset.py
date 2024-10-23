@@ -31,10 +31,10 @@ class ProstateDataset(Dataset):
     https://pytorch.org/tutorials/beginner/basics/data_tutorial.html 
 
     Attributes:
-        img_dir: Directory containing the images (keras_slices)
-        mask_dir: Directory containing the masks (keras_slices_seg)
-        early_stop: Boolean flag to only load some of the images
-        plotting: Boolean flag to visualise the images and masks
+        img_dir (str): Directory containing the images (keras_slices)
+        mask_dir (str): Directory with the masks (keras_slices_seg)
+        early_stop (bool): Boolean flag to only load some of the images
+        plotting (bool): Boolean flag to visualise the images and masks
     
     Methods:
         img_show: Plot 6 of the images and their masks
@@ -75,7 +75,7 @@ class ProstateDataset(Dataset):
         https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
 
         Parameters:
-            start_idx: Image index that should be plotted from
+            start_idx (int): Image index that should be plotted from
 
         Returns:
             None

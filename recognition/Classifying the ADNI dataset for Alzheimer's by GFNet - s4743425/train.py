@@ -5,20 +5,21 @@ the model itself from modules.py is imported and is trained with the data from d
 
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import os
 import time
 from modules import *
 from dataset import *
 from sklearn import metrics
+from timm.scheduler import create_scheduler
+from types import SimpleNamespace
 
 # Set Hyperparameters
-num_epochs = 1
+num_epochs = 300
 
-learning_rate = 0.001
+learning_rate = 0.0005
 
-batch_size = 64
+batch_size = 32
 
 def initialise():
     # Set up thee device 
@@ -31,7 +32,7 @@ def initialise():
 
 # train the model
 ### inlcude 
-def train(device, asset_dir, model, criterion, optimizer, train_loader, val_loader):
+def train(device, asset_dir, model, criterion, optimizer, scheduler, train_loader, val_loader):
     print("Start Training ...")
      # Start timer for training
     start_time = time.time()
@@ -65,6 +66,9 @@ def train(device, asset_dir, model, criterion, optimizer, train_loader, val_load
         val_loss, val_acc = validate(device, model, criterion, val_loader)
         val_losses.append(val_loss)
         val_accuracies.append(val_acc)
+
+        # Step the scheduler at the end of each epoch and update
+        scheduler.step(epoch)
         
         # Print loss and accuracy for each epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
@@ -191,21 +195,32 @@ def main():
     model = GFNet(
         img_size=256,
         patch_size= 16,
-        embed_dim=1000,
+        embed_dim=512,
         num_classes=2,
         in_channels=1,
         drop_rate=0.5,
-        depth=10,
+        depth=19,
         mlp_ratio=4.,
-        drop_path_rate=0.15,
+        drop_path_rate=0.25,
         norm_layer=partial(nn.LayerNorm, eps=1e-6)
         ).to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
+
+    # Ceate a learning rate scheduler
+    args = SimpleNamespace()
+    args.sched = 'cosine'
+    args.num_epochs=num_epochs
+    args.decay_epochs=30
+    args.min_lr=1e-6
+    args.warmup_lr=1e-5
+    args.cooldown_epochs=10
+
+    scheduler, _ = create_scheduler(args, optimizer)
 
     #train the model and produce training results
-    train(device, asset_dir, model, criterion, optimizer, train_loader, val_loader)
+    train(device, asset_dir, model, criterion, optimizer, scheduler, train_loader, val_loader)
 
     # Save the model after training
     model_save_path = "trained_model.pth"

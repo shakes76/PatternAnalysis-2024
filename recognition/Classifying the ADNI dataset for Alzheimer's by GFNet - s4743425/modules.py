@@ -7,6 +7,9 @@ these sources:
     3D Global Fourier Network for Alzheimer’s Disease Diagnosis using Structural MRI. MICCAI 2022
     Accepted Papers and Reviews. https://conferences.miccai.org/2022/papers/002-Paper1233.html
 
+-   Rao, Y., & Zhao, W. (2021). Global Filter Networks for Image Classification. GitHub.
+    https://github.com/raoyongming/GFNet/tree/master
+
 """
 
 #### include a learning rate schduler
@@ -15,7 +18,6 @@ import torch
 import torch.nn as nn
 import torch.fft
 from functools import partial
-from collections import OrderedDict
 import math
 from timm.models.layers import DropPath, trunc_normal_ # extra library for improving training
 
@@ -37,6 +39,7 @@ class MLP(nn.Module):
         x = self.act(x)
         x = self.drop(x)
         x = self.fc2(x)
+        x = self.act(x) #one more
         x = self.drop(x)
         return x
     
@@ -70,7 +73,7 @@ class Global_Filter(nn.Module):
 
 # Block with Global Filter and MLP
 class Block(nn.Module):
-    def __init__(self, dim, mlp_ratio=4., drop=0.5, drop_path=0.6, act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
+    def __init__(self, dim, mlp_ratio=2., drop=0.5, drop_path=0.6, act_layer=nn.GELU, norm_layer=nn.LayerNorm, h=14, w=8):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.filter = Global_Filter(dim=dim, h=h, w=w)
@@ -90,7 +93,7 @@ class Block(nn.Module):
 
 # Patch embedding from image to flattened patches
 class PatchEmbed(nn.Module):
-    def __init__(self, img_size=256, patch_size=16, in_channels=1, embed_dim=1536):
+    def __init__(self, img_size=256, patch_size=16, in_channels=1, embed_dim=512):
         super().__init__()
         self.img_size = (img_size, img_size)
         self.patch_size = (patch_size, patch_size)
@@ -107,7 +110,7 @@ class PatchEmbed(nn.Module):
 # GFNet main, follows block stacking with dropout
 class GFNet(nn.Module):
     #images are set 256 x 256 with RGB # change depth ect
-    def __init__(self, img_size=256, patch_size= 16, embed_dim=1000, num_classes=2, in_channels=1, drop_rate=0.5, depth=8, mlp_ratio=4., drop_path_rate=0.15, norm_layer=None):
+    def __init__(self, img_size=256, patch_size= 16, embed_dim=512, num_classes=2, in_channels=1, drop_rate=0.5, depth=8, mlp_ratio=4., drop_path_rate=0.15, norm_layer=None):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim

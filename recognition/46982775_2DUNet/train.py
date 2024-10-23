@@ -6,6 +6,15 @@
 Modified from Shekhar "Shakes" Chandra:
 https://colab.research.google.com/drive/1K2kiAJSCa6IiahKxfAIv4SQ4BFq7YDYO?usp=sharing#scrollTo=w2QhUgaco7Sp
 
+Author:
+    Joseph Reid
+
+Functions:
+
+
+Dependencies:
+    pytorch
+    torchmetrics
 """
 
 import os
@@ -30,9 +39,9 @@ CLASSES_DICT = {
 }
 
 # Hyper-params
-NUM_EPOCHS = 8
+NUM_EPOCHS = 24
 LEARNING_RATE = 1e-3
-BATCH_SIZE = 2
+BATCH_SIZE = 12
 
 # Model name - Change for each training to save model
 MODEL_NAME = "2d_unet_initial"
@@ -41,6 +50,8 @@ MODEL_CHECKPOINT1 = os.path.join(MODEL_DIR, "checkpoint1.pth")
 MODEL_CHECKPOINT2 = os.path.join(MODEL_DIR, "checkpoint2.pth")
 MODEL_CHECKPOINT3 = os.path.join(MODEL_DIR, "checkpoint3.pth")
 MODEL_CHECKPOINT4 = os.path.join(MODEL_DIR, "checkpoint4.pth")
+TRAIN_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "training_dice_score.pth")
+TEST_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "testing_dice_score.pth")
 
 # Log file directory to save a log of messages
 LOG_DIR = os.path.join(MODEL_DIR, "log.txt")
@@ -63,22 +74,51 @@ def write_log_file(msg: str):
     if VERBOSE:
         print(msg)
 
-def train_model(model, loader, criterion, optimiser, device):
-    """ Train the model on the train data."""
+def train_model(
+        model: UNet, 
+        loader: DataLoader, 
+        criterion: nn.CrossEntropyLoss, 
+        optimiser: optim.Optimizer,
+        device: torch.device,
+        gds: GeneralizedDiceScore
+        ) -> tuple[list[float], list[list[float]]]:
+    """ 
+    Train the model on the training data. 
+    
+    Parameters:
+        model: UNet model to be trained
+        loader: Training dataloader
+        criterion: Loss function to be optimised
+        optimiser: Optimisation algorithm
+        device: Device to perform the computations
+        gds: Class to calculate dice scores
+
+    Returns:
+        list[float]: Cross entropy training losses per epoch
+        list[list[float]]: Average dice scores of all classes per epoch
+    """
+
     start_time = time.time()
-    # List to store training loss
+
+    # Storage for plotting Cross Entropy Loss and Dice Score per epoch
     train_losses = []
+    train_dice_scores = torch.zeros([NUM_EPOCHS, len(CLASSES_DICT)])
+    train_dice_scores = train_dice_scores.to(device)
+
     model.train()
+
     for epoch in range(NUM_EPOCHS):
-        epoch_running_loss = 0
+        epoch_running_loss = 0 # Sum of losses for that epoch
         for i, (images, labels) in enumerate(loader):
-            images = torch.unsqueeze(images, dim=1)
-            images = images.to(device)
-            labels = labels.to(device)
+            # Note: B=batches, C=classes, H=height, W=width
+            images = images.to(device) # Size (B, H, W)
+            labels = labels.to(device) # (B, C, H, W)
+
+            images = torch.unsqueeze(images, dim=1) # (B, 1, H, W)
 
             # Forward pass
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            predicted = model(images) # (B, C, H, W)
+            loss = criterion(predicted, labels)
 
             # Backward and optimize
             optimiser.zero_grad()
@@ -86,44 +126,77 @@ def train_model(model, loader, criterion, optimiser, device):
             optimiser.step()
 
             epoch_running_loss += loss.item()
+
+            # Compute Dice Score per class and add to sum
+            dice_score = gds(predicted, labels)
+            train_dice_scores[epoch] = torch.add(train_dice_scores[epoch], dice_score)
             
-            if (i+1) % 10 == 0:
-                print(f" Step: {i+1}/{len(loader)}, Loss: {loss.item()}")
+            # Write losses and dice scores to log periodically
+            if (i+1) % 50 == 0:
+                write_log_file(f"Step: {i+1}/{len(loader)}, Loss: {loss.item()}")
+                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(train_dice_scores / (i+1))}")
+
+        # Epoch finished. Record average loss for that epoch
         epoch_loss = epoch_running_loss / len(loader)
-        print(f" Epoch: {epoch}/{NUM_EPOCHS}, Epoch Loss: {epoch_loss}")
+        write_log_file(f"Epoch: {epoch}/{NUM_EPOCHS}, Epoch Loss: {epoch_loss}")
         train_losses.append(epoch_loss)
 
         # Save models
         if epoch + 1 == NUM_EPOCHS / 4:
-            print("Saving first checkpoint")
+            write_log_file("Saving first checkpoint")
             torch.save(model.state_dict(), MODEL_CHECKPOINT1)
         if epoch + 1 == NUM_EPOCHS / 2:
-            print("Saving second checkpoint")
+            write_log_file("Saving second checkpoint")
             torch.save(model.state_dict(), MODEL_CHECKPOINT2)
         if epoch + 1 == (3 * NUM_EPOCHS / 4):
-            print("Saving third checkpoint")
+            write_log_file("Saving third checkpoint")
             torch.save(model.state_dict(), MODEL_CHECKPOINT3)
         if epoch + 1 == NUM_EPOCHS:
-            print("Saving fourth checkpoint (final model)")
+            write_log_file("Saving fourth checkpoint (final model)")
             torch.save(model.state_dict(), MODEL_CHECKPOINT4)
 
-    end_time = time.time()
-    print(f"Training took {(start_time - end_time)/60:.1f} minutes")
+    # Training finished. Convert dice scores from tensor to list
+    average_train_dice_scores = train_dice_scores / len(loader)
+    torch.save(average_train_dice_scores, TRAIN_DICE_SCORE_DIR)
+    average_train_dice_scores = average_train_dice_scores.tolist()
 
-def test_model(model, loader, device):
-    """ Test the model on the test data."""
+    end_time = time.time()
+    write_log_file(f"Training took {(start_time - end_time)/60:.1f} minutes")
+
+    return (train_losses, average_train_dice_scores)
+
+def test_model(
+        model: UNet, 
+        loader: DataLoader, 
+        device: torch.device,
+        gds: GeneralizedDiceScore
+        ) -> list[float]:
+    """ 
+    Test the model on the testing data. 
+    
+    Parameters:
+        model: UNet model to test with
+        loader: Testing dataloader
+        device: Device to perform the computations
+        gds: Class to calculate dice scores
+
+    Returns:
+        list[float]: Final dice scores of all classes
+    """
+
     start_time = time.time()
-    # Store sum of individual dice scores
-    test_dice_score = torch.zeros(len(CLASSES_DICT)).to(device)
-    # Class to calculate dice score for each class
-    gds = GeneralizedDiceScore(num_classes=len(CLASSES_DICT), per_class=True, 
-                                weight_type="linear").to(device)
+    
+    # Storage for plotting Cross Entropy Loss and Dice Score
+    test_dice_scores = torch.zeros(len(CLASSES_DICT))
+    test_dice_scores = test_dice_scores.to(device)
+    
     model.eval()
+
     with torch.no_grad():
         for i, (images, labels) in enumerate(loader):
-            # Note: B=batch, C=classes, H=height, W=width
-            images = images.to(device) # (B, H, W)
-            labels = labels.to(device) # (B, C, H, W) - One hot encoding
+            # Note: B=batches, C=classes, H=height, W=width
+            images = images.to(device) # Size (B, H, W)
+            labels = labels.to(device) # (B, C, H, W)
 
             images = torch.unsqueeze(images, dim=1) # (B, 1, H, W)
             predicted = model(images) # (B, C, H, W) 
@@ -134,49 +207,67 @@ def test_model(model, loader, device):
 
             # Compute Dice Score per class and add to sum
             dice_score = gds(predicted, labels)
-            test_dice_score = torch.add(test_dice_score, dice_score)
+            test_dice_scores = torch.add(test_dice_scores, dice_score)
 
-            if (i+1) % 10 == 0:
-                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(test_dice_score / (i+1))}")
+            # Write dice scores to log periodically
+            if (i+1) % 50 == 0:
+                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(test_dice_scores / (i+1))}")
 
         # Testing finished. Compute and print final average dice scores
-        average_test_dice_score = test_dice_score / len(loader)
+        average_test_dice_scores = test_dice_scores / len(loader)
+        torch.save(test_dice_scores, TEST_DICE_SCORE_DIR)
+        average_test_dice_scores = average_test_dice_scores.tolist()
         for key, label in CLASSES_DICT.items():
-            print(f" Dice score for {label} is {average_test_dice_score[key]:.4f}")
+            write_log_file(f"Dice score for {label} is {average_test_dice_scores[key]:.4f}")
 
     end_time = time.time()
-    print(f"Testing took {(start_time - end_time)/60:.1f} minutes")
+    write_log_file(f"Testing took {(start_time - end_time)/60:.1f} minutes")
+
+    return average_test_dice_scores
 
 # For testing purposes
 if __name__ == "__main__":
+    # Initialise log file
+    create_log_file()
+
     # Device config
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not torch.cuda.is_available():
-        print("Warning CUDA not Found. Using CPU")
+        write_log_file("Warning CUDA not Found. Using CPU")
 
-    # File paths
+    # Image directories
     main_dir = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "HipMRI_study_keras_slices_data")
     train_image_path = os.path.join(main_dir, "keras_slices_train")
     train_mask_path = os.path.join(main_dir, "keras_slices_seg_train")
     test_image_path = os.path.join(main_dir, "keras_slices_test")
     test_mask_path = os.path.join(main_dir, "keras_slices_seg_test")
 
-    # Datasets
-    train_dataset = ProstateDataset(train_image_path, train_mask_path)
-    test_dataset = ProstateDataset(test_image_path, test_mask_path)
+    # Training and testing datasets
+    train_dataset = ProstateDataset(train_image_path, train_mask_path, early_stop=False)
+    test_dataset = ProstateDataset(test_image_path, test_mask_path, early_stop=False)
 
-    # Dataloaders
-    train_loader = DataLoader(train_dataset, BATCH_SIZE, shuffle=False)
-    test_loader = DataLoader(test_dataset, BATCH_SIZE, shuffle=False)
+    # Training and testing dataloaders
+    train_loader = DataLoader(train_dataset, BATCH_SIZE, shuffle=True)
+    test_loader = DataLoader(test_dataset, BATCH_SIZE, shuffle=True)
 
-    # Model
-    model = UNet(in_channels=1, out_channels=6, n_features=64)
+    # UNet model
+    model = UNet()
     model = model.to(device)
 
-    # Loss Function and Optimiser
+    # Loss function and optimiser algorithm
     criterion = nn.CrossEntropyLoss()
     optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    
+    # Dice score class to calculate class dice scores
+    gds = GeneralizedDiceScore(
+        num_classes = len(CLASSES_DICT), 
+        per_class = True, 
+        weight_type = "linear"
+        ).to(device)
 
-    create_log_file()
-    # train_model(model, train_loader, criterion, optimiser, device)
-    test_model(model, test_loader, device)
+    # Training
+    train_losses, average_train_dice_scores = train_model(model, train_loader, criterion, optimiser, gds, device)
+    print(train_losses)
+
+    # Testing
+    average_test_dice_scores = test_model(model, test_loader, gds, device)

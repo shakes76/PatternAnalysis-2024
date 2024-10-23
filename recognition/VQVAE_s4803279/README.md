@@ -3,6 +3,9 @@
 ## Background
 The purpose of this of this model is to learn from historical data and be able to create new images through the use of machine learning. The model I am using is a Vector Quantised Variational Auto Encoder (VQVAE2). This model has 3 main parts, and encoder, a latent vector embedding space and a decoder. The training data is processed through the encoder to match the dimensions of the embedding space where a codebook will map each feature to a matching vector and then the decoder will essentially build back up to the original size of the image.
 
+## Purpose
+The purpose of a using a generative model in the medical imaging field has one major benefit, this is that there is not a lot of historical data available or due to the ethics, the data may not be accessible. This make the generation of new and 'fake' imaged helpful. Although the images are fake, they can serve as strong learning tools for students and professionals in the field.
+
 ## Model Description
 The 3 parts of the model are the Encoder, Vector Quantiser and Decoder. The VQVAE2 model is an generative learning model that learns by compressing images and uses a discrete mapping to reconstruct the images as close to the original. This allows it to eventually generate new images by learning how the features are mapped to the latent embedding space.
 
@@ -10,7 +13,10 @@ The 3 parts of the model are the Encoder, Vector Quantiser and Decoder. The VQVA
 <p align="center">
   <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae_struct_0.PNG" alt="VQVAE Pipiline">
 </p>
+
 Input Image -> Encoder -> Vector Quaniser -> Decoder -> Generated Image
+
+&nbsp;
 
 <p align="center">
   <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/vqvae2_struct_0.PNG" alt="VQVAE2 Top and Bottom Level Encoding">
@@ -24,6 +30,13 @@ The vector quantiser sits after the encoder and takes the features from the enco
 
 ### Decoder
 The decoder is the final part of the VQVAE pipeline. This work the opposite way of the encoder. The decoder is responsible for taking the output from the vector quantised layer and applying transposed convolutional layers to build them back up to the original image. The decoder also has a top and bottom layer like the enocoder and they funtion the same way where the top layer is used to decode high level features and teh bottom level is to decode lower level features.
+
+### Loss
+<p align="center">
+  <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_eq.PNG" alt="Loss Equation">
+</p>
+
+The loss funtion is the sum of the reconstruction loss of the image, the codebook loss ie. how well the discrete representation is to the original value and the commitment loss which is the penalty for the encoder if the encoded item is too far from the discrete values in the vector quantiser codebook. The beta or commitment loss value controls how much the encoder is penalised.
 
 ### Preprocessing
 I did not apply any preprocessing or augment the images as the images were already partitioned into the correct train, validate and test folder. Although I did check that each image was 256x128 and if not then I applied an augmentation to meet the dimensions.
@@ -76,14 +89,31 @@ This is where the training hyper parameters are set up and the training and vali
 ### predict.py
 This is where the test dataset is loaded and the train model is loaded. The SSIM is also calsulated during the testing loop and then the original and reconstructed images are then saved as png files that can be viewed to see the similaity.
 
+### driver.py
+You can run this file as long as all the other files are there to support it and it will run the training loop and the test loop and return the results.
+
 # Version Requirments
 Python 3.12.3
+&nbsp;
+
 Pytorch 2.4.1
+&nbsp;
+
 TQDM 4.66.5
+&nbsp;
+
 Matplotlib 3.9.1
+&nbsp;
+
 Nibael 5.3.1
+&nbsp;
+
 Numpy 1.26.4
+&nbsp;
+
 SkImage 0.24.0
+&nbsp;
+
 
 ## References
 

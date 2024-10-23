@@ -1,9 +1,10 @@
 """
-showing example usage of your trained model. Print out any results and / or provide visualisations
-where applicable
+The file contains a method to visualise and/or measure the performance of the trained model
+on unseen data.
 """
 # libraries 
 import torch
+import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
@@ -15,7 +16,25 @@ from monai.transforms import (AsDiscrete, Compose, CastToType)
 from train import trained_model, CRITERION, compute_dice_segments, DEVICE
 from dataset import test_dict, test_transforms
 
-def visualise_ground_truths(images, ground_truths, criterion):
+__author__ = "Ryuto Hisamoto"
+
+__license__ = "Apache"
+__version__ = "1.0.0"
+__maintainer__ = "Ryuto Hisamoto"
+__email__ = "s4704935@student.uq.edu.au"
+__status__ = "Committed"
+
+def visualise_ground_truths(images: list, ground_truths: list, criterion):
+    """ Visualises the ground truths and their images by overlaying them on the same 3 x 3 plot.
+
+    Args:
+        images (list): Images to overlay labels on.
+        ground_truths (list): Labels to overlay on top of images.
+        criterion (callable): Loss function used during the training to name the plot.
+
+    Returns:
+        None: The function only plots, so it does not return any value.
+    """
 
     # Create a 3x3 grid of subplots
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
@@ -49,10 +68,18 @@ def visualise_ground_truths(images, ground_truths, criterion):
     plt.tight_layout()
     plt.savefig(f'ground_truths_{criterion}.png')
     plt.close()
-    
-    return fig, axes
 
-def visualise_predictions(images, predictions, criterion):
+def visualise_predictions(images: list, predictions: list, criterion):
+    """Visualises the predictions and their images by overlaying them on the same 3 x 3 plot.
+
+    Args:
+        images (list): A list of images to lay predicted labels on
+        predictions (list): A list of predicted labels proeuced by the model
+        criterion (callable): Loss function used during the training to name the plot.
+
+    Returns:
+        None: The function only plots, so it does not return any value.
+    """
 
     # Create a 3x3 grid of subplots
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
@@ -79,10 +106,27 @@ def visualise_predictions(images, predictions, criterion):
     plt.tight_layout()
     plt.savefig(f'predictions_{criterion}.png')
     plt.close()
-    
-    return fig, axes
 
-def test(model, test_loader, device):
+def test(model: nn.Module, test_loader: DataLoader, device: torch.device | str):
+    """The function which tests the model on unseen data stored in a DataLoader
+
+    Args:
+        model (nn.Module): A trained model that is to be tested.
+        test_loader (DataLoader): DataLoader instance which contains image data and their labels for the model
+        to compare its performance against.
+        device (torch.device | str): A device the training is based on. 
+
+    Returns:
+        tuple: A tuple containing:
+            - np.array: An array of overall dice score for each test image and labels
+            - np.array: An array of segment 0 dice score for each test image and labels
+            - np.array: An array of segment 1 dice score for each test image and labels
+            - np.array: An array of segment 2 dice score for each test image and labels
+            - np.array: An array of segment 3 dice score for each test image and labels
+            - np.array: An array of segment 4 dice score for each test image and labels
+            - np.array: An array of segment 5 dice score for each test image and labels
+    """
+
     model.to(device)
     model.eval()  # Set the model to evaluation mode
 
@@ -145,12 +189,15 @@ def test(model, test_loader, device):
 
     return test_dice_coefs, seg_0_dice_coef, seg_1_dice_coef, seg_2_dice_coef, seg_3_dice_coef, seg_4_dice_coef, seg_5_dice_coef
 
-"""
-    Plots dice coefficients of the whole test dataset.
-    Takes an array of dice scores as input. 
-"""
+def plot_dice(criterion, segment_coefs: np.array):
+    """ A method that plots a bar chart to visualise the performance of model on unseen data
+    for each label. It is meant to demonstrated how accurately the model produces segmentations
+    for each lebel.
 
-def plot_dice(criterion, segment_coefs):
+    Args:
+        criterion (callable): Loss function used during the training to name the plot.
+        segment_coefs (np.array): an array containing dice scores for each segment at corresponding indices.
+    """
 
     x_values = np.arange(len(segment_coefs))  # Generate x-values as indices
 
@@ -212,5 +259,3 @@ if __name__ == "__main__":
 
     # plot dice scores across the dataset.
     plot_dice(CRITERION, segment_coefs)
-
-

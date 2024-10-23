@@ -1,13 +1,31 @@
+#!/usr/bin/env python
+""" A collection of methods and tools to train the model.
+
+train.py has methods and tools which are related to the training of model,
+some sections are commented out, and are to be enabled to change the training method.
+For example, there are a few CRITERIONs, and one of preference is to be enabled to utilise
+the loss function of preference.
+"""
+
 from dataset import train_dict, train_transforms
 from modules import ImprovedUnet
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
+import torch.nn as nn
 from time import time
 import numpy as np
 from monai.losses import DiceLoss, DiceCELoss, DiceFocalLoss
 from monai.data import DataLoader, Dataset
 from torch.amp import autocast, GradScaler
+
+__author__ = "Ryuto Hisamoto"
+
+__license__ = "Apache"
+__version__ = "1.0.0"
+__maintainer__ = "Ryuto Hisamoto"
+__email__ = "s4704935@student.uq.edu.au"
+__status__ = "Committed"
 
 NUM_EPOCHS = 300
 BATCH_SIZE = 2
@@ -19,7 +37,21 @@ CRITERION = DiceLoss(include_background=False, batch=True).to(DEVICE)
 # CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2).to(DEVICE) # Based on Thyroid Tumor Segmentation Report
 # CRITERION = DiceFocalLoss(include_background=False, batch = True).to(DEVICE) # Default gamma = 2
 
-def compute_dice_segments(predictions, ground_truths, device):
+def compute_dice_segments(predictions: torch.Tensor, ground_truths: torch.Tensor, device: torch.device | str):
+    """The method calculates the dice scores for each segment. The score computed
+    inside of the method is independent from the loss used to train the model, hence
+    its scores are purely dice coefficients for different segments. Both predictions and 
+    ground_truths are required to have the same shape.
+
+    Args:
+        predictions (torch.Tensor): Softmax/one-hot encoded predictions from the model.
+        ground_truths (torch.Tensor): One-hot encoded labels for an image.
+        device (torch.device | str): A device the process is based on, 'cuda' or 'cpu'
+
+    Returns:
+        torch.Tensor: _A 0 dimensional tensor in which dice coefficient of a corresponding
+        label is stored in its index.
+    """
 
     criterion = DiceLoss(reduction='none', batch=True).to(device)
 
@@ -35,9 +67,30 @@ def compute_dice_segments(predictions, ground_truths, device):
 
     return segment_coefs
 
-def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
+def train(model: nn.Module, train_loader: DataLoader, criterion, num_epochs: int, device: torch.device | str):
+    """The training method that trains the model with given resources and parameters.
 
-    # set up criterion, optimiser, and scheduler for learning rate. 
+    Args:
+        model (nn.Module): A model to train.
+        train_loader (DataLoader): DataLoader instance which contains image data and their labels for the model
+        to compare its performance against.
+        criterion (callable): A loss function the model uses to optimise its performance
+        num_epochs (int): The number of epochs to train the model on.
+        device (torch.device | str): A device the training is based on. It is highly recommended to use 'cuda' for training.
+
+    Returns:
+        tuple: A tuple containing:
+            - nn.Module: A trained model
+            - np.array: An array of overall dice score for each epoch
+            - np.array: An array of segment 0 dice score for each epoch
+            - np.array: An array of segment 1 dice score for each epoch
+            - np.array: An array of segment 2 dice score for each epoch
+            - np.array: An array of segment 3 dice score for each epoch
+            - np.array: An array of segment 4 dice score for each epoch
+            - np.array: An array of segment 5 dice score for each epoch
+    """
+    
+    # Adam is used as an optimiser
     optimiser = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay = WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma = LR_INITIAL)
 
@@ -71,13 +124,11 @@ def train(model, train_loader, criterion, num_epochs=NUM_EPOCHS, device="cuda"):
                 outputs = model(inputs)
                 loss = criterion(outputs, labels) 
 
-            torch.cuda.empty_cache()
-
             segment_coefs = compute_dice_segments(outputs, labels, device)
             total_segment_coefs += segment_coefs
             scaler.scale(loss).backward()
 
-            if (i + 1) % accumuldation_steps == 0: # Gradient Accumulation
+            if (i + 1) % accumuldation_steps == 0 or i + 1 == len(train_loader): # Gradient Accumulation
                 scaler.step(optimiser)
                 scaler.update()
 
@@ -125,6 +176,7 @@ print(f"> Training completed in {elapsed_time:.2f} seconds")
 
 epochs = range(1, NUM_EPOCHS + 1)
 
+# Plots the model's performance during the training.
 plt.plot(epochs, training_dice_coefs, label='Training Dice Coefficient')
 plt.plot(epochs, seg0, label='Segment 0 Dice Coefficient')
 plt.plot(epochs, seg1, label='Segment 1 Dice Coefficient')

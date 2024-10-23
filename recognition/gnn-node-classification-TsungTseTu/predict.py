@@ -85,7 +85,7 @@ def predict():
         plt.figure(figsize=(8, 6))
 
         # Keeping the original colormap and format
-        scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=y_test.cpu().numpy(), cmap='viridis', s=10)
+        scatter = plt.scatter(embeddings[:, 0], embeddings[:, 1], c=y_test.cpu().numpy(), cmap=mcolors.ListedColormap(['blue', 'red', 'green', 'yellow']), s=10)
 
         # Change color bar to distinct categories
         cbar = plt.colorbar(scatter, ticks=[0, 1, 2, 3])

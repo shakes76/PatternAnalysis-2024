@@ -22,7 +22,7 @@ TRAIN_VAE = True
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
 #number of timesteps for diffusion
-num_timesteps = 10
+num_timesteps = 100
 noise_scheduler = NoiseScheduler(num_timesteps=num_timesteps)
 alphas_cumprod = noise_scheduler.get_alphas_cumprod()
 
@@ -117,7 +117,7 @@ def train_vae(encoder, decoder, intermediate_outputs = True, save_model = True):
         vae_losses.append(np.mean(vae_it_loss))
         vae_val_losses.append(np.mean(vae_val_loss))
 
-        if (epoch + 1) % 1 == 0 and intermediate_outputs:
+        if (epoch + 1) % 20 == 0 and intermediate_outputs:
             with torch.no_grad():
                 # using output from last val it to give ideal outpout
                 generated_images = vae_decoder(z)
@@ -206,7 +206,7 @@ def train_unet(unet, intermediate_outputs = True, save_model = True):
         diffusion_losses_val.append(np.mean(losses_val))
         
         #show intermedit image generation
-        if (epoch+1) % 1 == 0 and intermediate_outputs:
+        if (epoch+1) % 20 == 0 and intermediate_outputs:
             with torch.no_grad():
                 #display images from las denoised latent should give iteal model
                 denoised_latent = reverse_diffusion(noisy_latent, predicted_noise, t, noise_scheduler)
@@ -233,7 +233,7 @@ def train_unet(unet, intermediate_outputs = True, save_model = True):
 
 if __name__ == '__main__':
     if TRAIN_VAE:
-        train_vae(vae_encoder, vae_decoder, False, False)
+        train_vae(vae_encoder, vae_decoder, False, True)
         vae_encoder.eval()
     else:
         vae_encoder = torch.load("models/encoder.model", weights_only=False)
@@ -243,7 +243,7 @@ if __name__ == '__main__':
         vae_decoder.eval()
     
     if TRAIN_UNET:
-        train_unet(unet, True, False)
+        train_unet(unet, False, True)
         vae_decoder.eval()
     else:
         unet = torch.load("models/unet.model", weights_only=False)

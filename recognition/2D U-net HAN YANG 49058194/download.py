@@ -19,12 +19,25 @@ import numpy as np
 
 # Download and extract data
 def download_and_extract(url, extract_to='HipMRI_project_data'):
+    """ 
+    Downloads the dataset from the specified URL and extracts it to the given directory. 
+    Args: 
+        url (str): The URL to download the dataset from. 
+        save_dir (str): Directory to save the downloaded files. 
+    """ 
     response = requests.get(url)
     zip_file = zipfile.ZipFile(io.BytesIO(response.content))
     zip_file.extractall(extract_to)
 
 # Process nii files in npy format
 def load_and_process_nii_files(root_dir, save_dir, target_size=(128, 128)):
+    """ 
+    Loads NIfTI files, processes them, and saves as .npy files. 
+    Args:
+        root_dir (str): Directory containing NIfTI files. 
+        save_dir (str): Directory to save processed .npy files. 
+        target_size (tuple): Target size for resizing images. 
+    """
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 

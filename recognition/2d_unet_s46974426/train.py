@@ -111,6 +111,9 @@ plt.legend()
 plt.title('Training and Validation Dice Score')
 plt.show()
 
+# save the trained model for later use by test.py
+torch.save(model.state_dict(), 'unet_prostate.pth')
+
 # create confusion matrix
 all_preds = []
 all_labels = []

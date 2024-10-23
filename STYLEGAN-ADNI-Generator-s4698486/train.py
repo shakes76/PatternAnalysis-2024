@@ -104,8 +104,10 @@ def train_fn():
 
         # Updates progress whilst training.
         loop.set_postfix(
-            loss_critic=discriminator_loss.item(),
-            loss_gen=generator_loss.item(),
+            gp = gp.item(),
+            discrim_loss=discriminator_loss.item(),
+            gen_loss=generator_loss.item(),
+            plp = plp.item()
         )
 
     return (current_discriminator_loss, current_gen_loss)

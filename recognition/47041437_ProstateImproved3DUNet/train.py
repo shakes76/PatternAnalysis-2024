@@ -78,6 +78,7 @@ def main():
 
     # Check GPU availability
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
     torch.cuda.empty_cache()
 
     # Call model and initialise loss and optimiser parameters

@@ -114,5 +114,39 @@ def get_newest_item(directory):
     newest_item = max(items, key=os.path.getmtime) # Find the newest item (file or folder) by modification time
     return newest_item
 
+def iou_torch(true_bbox, pred_bbox):
+    """
+    Parameters:
+        true_bbox=torch([[center x, center y, width, height]]) 
+        pred_bbox=torch([[center x, center y, width, height]]) 
+
+    Returns:
+        float=IoU (0-1) of the boxes
+    """
+    print(pred_bbox)
+    print(true_bbox)
+    x1, y1, w1, h1 = true_bbox[0] # unpack inputs
+    x2, y2, w2, h2 = pred_bbox[0] 
+    
+    true_bbox_x1, true_bbox_y1 = x1 - w1 / 2, y1 - h1 / 2 # bbox coordinates
+    true_bbox_x2, true_bbox_y2 = x1 + w1 / 2, y1 + h1 / 2
+    pred_bbox_x1, pred_bbox_y1 = x2 - w2 / 2, y2 - h2 / 2
+    pred_bbox_x2, pred_bbox_y2 = x2 + w2 / 2, y2 + h2 / 2
+
+    # coordinates of intersection
+    inter_x1, inter_y1 = torch.max(true_bbox_x1, pred_bbox_x1), torch.max(true_bbox_y1, pred_bbox_y1)
+    inter_x2, inter_y2 = torch.min(true_bbox_x2, pred_bbox_x2), torch.min(true_bbox_y2, pred_bbox_y2)
+    
+    inter_width = torch.clamp(inter_x2 - inter_x1, min=0)
+    inter_height = torch.clamp(inter_y2 - inter_y1, min=0)
+    inter_area = inter_width * inter_height # intersection area
+
+    true_bbox_area = w1 * h1 # area of both boxes
+    pred_bbox_area = w2 * h2
+    union_area = true_bbox_area + pred_bbox_area - inter_area # union area
+
+    iou_value = inter_area / union_area if union_area > 0 else 0 # compute IoU (avoid division by zero)
+    return np.round(iou_value.tolist(), 3)
+
 if __name__ == "__main__":
     process_dataset()

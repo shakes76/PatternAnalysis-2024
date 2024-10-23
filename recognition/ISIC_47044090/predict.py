@@ -5,48 +5,25 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 from PIL import Image
-from dataset import scan_directory
+from dataset import scan_directory, get_newest_item
 
 modified_filepath = "./datasets/ISIC"
 
-def run_train(yaml_path):
-    model = yolo_model("yolov7.pt") # initial weights
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    results = model.train(batch=32, device=device, data=f"{yaml_path}/isic.yaml", epochs=200, imgsz=512)
-
-def iou_torch(true_bbox, pred_bbox):
+def visualise_testcase(file, true_bbox, pred_bbox):
     """
-    Parameters:
-        true_bbox=torch([[center x, center y, width, height]]) 
-        pred_bbox=torch([[center x, center y, width, height]]) 
-
-    Returns:
-        float=IoU (0-1) of the boxes
+    Visualises 
     """
-    print(pred_bbox)
-    print(true_bbox)
-    x1, y1, w1, h1 = true_bbox[0] # unpack inputs
-    x2, y2, w2, h2 = pred_bbox[0] 
-    
-    true_bbox_x1, true_bbox_y1 = x1 - w1 / 2, y1 - h1 / 2 # bbox coordinates
-    true_bbox_x2, true_bbox_y2 = x1 + w1 / 2, y1 + h1 / 2
-    pred_bbox_x1, pred_bbox_y1 = x2 - w2 / 2, y2 - h2 / 2
-    pred_bbox_x2, pred_bbox_y2 = x2 + w2 / 2, y2 + h2 / 2
-
-    # coordinates of intersection
-    inter_x1, inter_y1 = torch.max(true_bbox_x1, pred_bbox_x1), torch.max(true_bbox_y1, pred_bbox_y1)
-    inter_x2, inter_y2 = torch.min(true_bbox_x2, pred_bbox_x2), torch.min(true_bbox_y2, pred_bbox_y2)
-    
-    inter_width = torch.clamp(inter_x2 - inter_x1, min=0)
-    inter_height = torch.clamp(inter_y2 - inter_y1, min=0)
-    inter_area = inter_width * inter_height # intersection area
-
-    true_bbox_area = w1 * h1 # area of both boxes
-    pred_bbox_area = w2 * h2
-    union_area = true_bbox_area + pred_bbox_area - inter_area # union area
-
-    iou_value = inter_area / union_area if union_area > 0 else 0 # compute IoU (avoid division by zero)
-    return np.round(iou_value.tolist(), 3)
+    image = Image.open(f'{modified_filepath}/test/images/ISIC_{file}.jpg')
+    x_center1, y_center1, width1, height1 = true_bbox
+    x_center2, y_center2, width2, height2 = pred_bbox
+    fig, ax = plt.subplots()
+    ax.imshow(image)
+    rect1 = patches.Rectangle(((x_center1) - (width1)/2, (y_center1) - (height1)/2), (width1), (height1), linewidth=1, edgecolor='r', facecolor='none', label='true_bbox')
+    rect2 = patches.Rectangle(((x_center2) - (width2)/2, (y_center2) - (height2)/2), (width2), (height2), linewidth=1, edgecolor='blue', facecolor='none', label='test_bbox')
+    ax.add_patch(rect1)
+    ax.add_patch(rect2)
+    ax.legend()
+    plt.show()
 
 def run_test(run_number=-1):
     """
@@ -83,19 +60,3 @@ def run_test(run_number=-1):
             ious.append(iou)
 
     print(np.array(ious).mean())
-
-def visualise_testcase(file, true_bbox, pred_bbox):
-    """
-    Visualises 
-    """
-    image = Image.open(f'{modified_filepath}/test/images/ISIC_{file}.jpg')
-    x_center1, y_center1, width1, height1 = true_bbox
-    x_center2, y_center2, width2, height2 = pred_bbox
-    fig, ax = plt.subplots()
-    ax.imshow(image)
-    rect1 = patches.Rectangle(((x_center1) - (width1)/2, (y_center1) - (height1)/2), (width1), (height1), linewidth=1, edgecolor='r', facecolor='none', label='true_bbox')
-    rect2 = patches.Rectangle(((x_center2) - (width2)/2, (y_center2) - (height2)/2), (width2), (height2), linewidth=1, edgecolor='blue', facecolor='none', label='test_bbox')
-    ax.add_patch(rect1)
-    ax.add_patch(rect2)
-    ax.legend()
-    plt.show()

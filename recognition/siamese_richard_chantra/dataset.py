@@ -19,16 +19,31 @@ class DataManager:
 
     def load_data(self):
         """
-        Loading metadata from the CSV file.
+        Loading metadata from the CSV file
         """
         self.data = pd.read_csv(self.csv_path)
 
+    def balance_dataset(self, data):
+        """
+        Balance dataset by undersampling the majority (benign) class
+        """
+        # Separate majority and minority classes
+        malignant = data[data['target'] == 1]
+        benign = data[data['target'] == 0]
+
+        n_samples = len(malignant)
+        benign_undersampled = benign.sample(n=n_samples, random_state=42) # random sample
+        balanced_data = pd.concat([malignant, benign_undersampled]) # combine
+        return balanced_data.sample(frac=1, random_state=42).reset_index(drop=True) # shuffle
+
     def split_data(self):
         """
-        Split the data into training and testing sets
+        Split the data into training and testing sets then balance
         """
         train_data, test_data = train_test_split(self.data, test_size=0.2, random_state=42, stratify=self.data['target'])
-        return train_data, test_data
+        balanced_train_data = self.balance_dataset(train_data)
+        
+        return balanced_train_data, test_data
 
     def create_dataloaders(self, batch_size=32):
         """
@@ -56,12 +71,20 @@ class DataManager:
         )
 
     def print_statistics(self):
-        # Statistics
+        """
+        Print dataset statistics before and after balancing
+        """
+        print("Original dataset statistics:")
         print(f"Total images: {len(self.data)}")
         print(f"Classes distribution: \n{self.data['target'].value_counts()}")
+        
+        train_data, test_data = self.split_data()
+        print("\nAfter balancing training data:")
+        print(f"Training set distribution: \n{train_data['target'].value_counts()}")
+        print(f"Test set distribution: \n{test_data['target'].value_counts()}")
         print("\nNote: 0 = benign, 1 = malignant")
 
-
+# Rest of the code remains unchanged
 class SiameseDataset(Dataset):
     """
     Dataset for Siamese Network training and melanoma classification
@@ -73,9 +96,6 @@ class SiameseDataset(Dataset):
         self.image_ids = data['isic_id'].values
 
     def __len__(self):
-        """
-        Returns the length of the dataset
-        """
         return len(self.data)
 
     def __getitem__(self, idx):
@@ -87,7 +107,7 @@ class SiameseDataset(Dataset):
         should_get_same_class = np.random.random() > 0.5
         
         if should_get_same_class:
-            # Get another image with same diagnosis (both benign or both malignant)
+            # Get another image with same diagnosis
             same_class_indices = np.where(self.diagnosis_labels == img1_diagnosis)[0]
             second_idx = np.random.choice(same_class_indices)
             while second_idx == idx:  # Avoid picking the same image

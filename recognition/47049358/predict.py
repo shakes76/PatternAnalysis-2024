@@ -153,10 +153,9 @@ def test(model, test_loader, device):
 def plot_dice(criterion, segment_coefs):
 
     x_values = np.arange(len(segment_coefs))  # Generate x-values as indices
-    bar_width = 0.1  # Width of the bars
 
     # Plot overall dice scores
-    plt.bar(x_values, segment_coefs, width=bar_width)
+    plt.bar(x_values, segment_coefs)
 
     plt.xlabel("Segment No.")
     plt.ylabel("Dice Score")

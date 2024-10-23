@@ -7,3 +7,4 @@ debug.py
 *.nii*
 *saves*/
 runner.sh
+out.txt

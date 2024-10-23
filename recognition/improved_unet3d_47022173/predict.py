@@ -1,5 +1,7 @@
 """
 This file contains code to load a trained model and run predictions on the test set. 
+
+Abdullah Badat (47022173), abdullahbadat27@gmail.com
 """
 
 import torch

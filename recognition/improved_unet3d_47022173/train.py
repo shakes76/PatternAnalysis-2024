@@ -2,6 +2,8 @@
 This file contains the code to train the 3D U-Net model on the training set and validate on the 
 validation set. The training loops contains validation and saving of the model every few epochs.
 A final trained version of the model is saved at the end of training.
+
+Abdullah Badat (47022173), abdullahbadat27@gmail.com
 """
 
 from dataset import *

@@ -2,6 +2,8 @@
 This file contains the model class for the 3D U-Net model and the function for initialising the 
 weights. The model was proposed in https://arxiv.org/abs/1802.10508v1 and the implementation is 
 from https://github.com/pykao/Modified-3D-UNet-Pytorch?utm_source=catalyzex.com.
+
+Abdullah Badat (47022173), abdullahbadat27@gmail.com
 """
 import torch.nn as nn
 import torch

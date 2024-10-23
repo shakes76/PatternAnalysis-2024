@@ -88,8 +88,9 @@ The project requires the following dependencies[^4]:
     ```bash
     root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
     model_path = 'unet_model.pth'
+    threshold = 0.5
 
-    predict_and_evaluate(root_dir, model_path=model_path, threshold=0.5)
+    predict_and_evaluate(root_dir, model_path=model_path, threshold=threshold)
     ```
   - **Example output**: The generated predicted image will be saved as a specified Nifti format file. <br /> <br />
 

@@ -58,6 +58,7 @@ def generate_loss_plot(training_loss, validation_loss, model, save=False) -> Non
         save (bool): True - Save image to path define in config.py.
                      False - Show plot.
     """
+    plt.figure()
     plt.title("Loss of the " + model)
     plt.plot(training_loss, label="Training")
     plt.plot(validation_loss, label="Validation")

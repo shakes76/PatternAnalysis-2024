@@ -3,12 +3,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from modules import VQVAE  # import VQVAE module
 from dataset import get_data_loader  # import data loader
-from torchvision import models, transforms
+from torchvision import models
 import torch.nn as nn
 
 batch_size = 32
 learning_rate = 1e-4
-num_epochs = 100
+num_epochs = 50
 perceptual_loss_weight = 0.1
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

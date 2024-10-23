@@ -52,7 +52,9 @@ for epoch in range(EPOCHS):
 
     scheduler.step()
     dice_losses.append(loss.item())
-    print (f'Epoch [{epoch+1}/{EPOCHS}], Dice Loss: {loss.item()}, Dice Loss per class: {loss_per_class}')
+    loss_per_class_values = [l.item() for l in loss_per_class]
+
+    print (f'Epoch [{epoch+1}/{EPOCHS}], Dice Loss: {loss.item()}, Dice Loss per class: {loss_per_class_values}')
 
 # Save the model
 torch.save(model.state_dict(), MODEL_PATH)

@@ -41,35 +41,57 @@ The below was inserted into the runner file in Rangpur:
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 ```
 
-With the 3D U-Net model, all labels achieved a DSC of at least 0.75. The plots for the 6 labels can be found below. 
+With the 3D U-Net model, all labels achieved a **DSC of at least 0.75.** The plots for the 6 labels can be found below. 
+
 <table>
   <tr>
-    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="400"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="400"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="400"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="400" height="300"/></td>
   </tr>
   <tr>
-    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="400"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
   </tr>
 </table>
 
 
-With the improved 3D U-Net model, all labels achieved a DSC of at least 0.8. The plots for the 6 labels can be found below. 
+With the improved 3D U-Net model, all labels achieved a **DSC of at least 0.8.** The plots for the 6 labels can be found below. 
+
 <table>
   <tr>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 0.png" width="400"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 1.png" width="400"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 2.png" width="400"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 0.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 1.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 2.png" width="400" height="300"/></td>
   </tr>
   <tr>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 3.png" width="400"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 3.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
   </tr>
 </table>
 
+Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the image and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. The higher quality segmentation of the improved 3D U-Net can be observed. 
+
+<table>
+  <tr>
+    <td><img src="images/unet3d/wk0_image_slice_73.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/wk0_image_slice_97.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/wk5_image_slice_75.png" width="400" height="300"/></td>
+  </tr>
+   <tr>
+    <td><img src="images/unet3d/wk0_pred_slice_73.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/wk0_pred_slice_97.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/wk5_pred_slice_75.png" width="400" height="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="images/Improvedunet3d/wk0_pred_slice_73.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/wk0_pred_slice_97.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/wk5_pred_slice_75.png" width="400" height="300"/></td>
+  </tr>
+<table>
+<table>
 
 ## Dependencies
 

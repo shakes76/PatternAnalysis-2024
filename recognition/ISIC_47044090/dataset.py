@@ -102,6 +102,17 @@ def test_extraction(mask):
     ax.add_patch(rect)
     plt.show()
 
+def get_newest_item(directory):
+    # Get the full paths of all files and folders in the directory
+    items = [os.path.join(directory, f) for f in os.listdir(directory)]
+
+    if not items:
+        return None  # Handle empty directories
+    if './runs/detect/.DS_Store' in items:
+        items.remove('./runs/detect/.DS_Store')
+    
+    newest_item = max(items, key=os.path.getmtime) # Find the newest item (file or folder) by modification time
+    return newest_item
 
 if __name__ == "__main__":
     process_dataset()

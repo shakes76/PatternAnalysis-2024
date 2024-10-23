@@ -55,17 +55,19 @@ def load_data_2D(
         image_names: list[str], 
         norm_image: bool, 
         one_hot: bool, 
+        resized: bool,
         dtype: np.dtype, 
         early_stop: bool
         ) -> np.ndarray:
     """
-    Load 2D Nifti images and masks, both resized to (IMG_SIZE, IMG_SIZE).
-    Masks will be one-hot encoded as: (IMG_SIZE, IMG_SIZE, IMG_LABELS).
+    Load 2D Nifti images and masks, possibly resized.
+    Masks will be one-hot encoded.
     
     Parameters:
         image_names (list[str]): List of Nifti image file paths
         norm_image (bool): Boolean flag to normalise images (mean=0, std=1)
         one_hot (bool): Boolean flag to one hot encode images
+        resized (bool): Boolean flag to resize images to (IMG_SIZE, IMG_SIZE)
         dtype (np.dtype): Type and size of the data to be returned as an array
         early_stop (bool): Boolean flag to prematurely stop loading files
 
@@ -76,8 +78,12 @@ def load_data_2D(
     # Get the number of images in the list
     num = len(image_names)
     # Get desired image shape
-    rows = IMG_SIZE
-    cols = IMG_SIZE
+    if resized:
+        rows = IMG_SIZE
+        cols = IMG_SIZE
+    else:
+        rows = 256
+        cols = 128
     channels = IMG_LABELS
 
     if one_hot: # Save images as (N, H, W, C)
@@ -88,13 +94,13 @@ def load_data_2D(
     for idx, image_name in enumerate(tqdm(image_names)):
         nifti_image = nib.load(image_name)
         image = nifti_image.get_fdata(caching = 'unchanged') # Read disk only
-        if len(image.shape) == 3:
-            image = image[:, :, 0] # Remove extra dimensions, if any
+        if len(image.shape) == 3: # Remove extra dimensions, if any
+            image = image[:, :, 0]
         image = resize(image, (rows, cols), order=1, preserve_range=True)
         image = image.astype(dtype)
-        if norm_image:
+        if norm_image: # Normalise the image
             image = (image - image.mean()) / image.std()
-        if one_hot:
+        if one_hot: # One hot encode the image (should be a mask)
             image = to_channels(image, dtype = dtype)
             images[idx, : , : , :] = image
         else:
@@ -110,6 +116,7 @@ def load_data_2D_from_directory(
         image_folder_path: str, 
         norm_image = True, 
         one_hot = False, 
+        resized = True,
         dtype: np.dtype = np.float32, 
         early_stop = False
         ) -> np.ndarray:
@@ -123,6 +130,7 @@ def load_data_2D_from_directory(
         image_folder_path (str): Path to folder with Nifti images
         norm_image (bool): Boolean flag to normalise images (mean=0, std=1)
         one_hot (bool): Boolean flag to one hot encode images
+        resized (bool): Boolean flag to resize images to (IMG_SIZE, IMG_SIZE)
         dtype (np.dtype): Type and size of the data to be returned as an array
         early_stop (bool): Boolean flag to prematurely stop loading files
     
@@ -133,4 +141,4 @@ def load_data_2D_from_directory(
     image_names = []
     for file in sorted(os.listdir(image_folder_path)):
         image_names.append(os.path.join(image_folder_path, file))
-    return load_data_2D(image_names, norm_image, one_hot, dtype, early_stop)
+    return load_data_2D(image_names, norm_image, one_hot, resized, dtype, early_stop)

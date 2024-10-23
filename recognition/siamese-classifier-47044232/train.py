@@ -7,9 +7,7 @@ Made by Joshua Deadman
 import argparse
 from datetime import datetime
 import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.manifold import TSNE
-import seaborn as sns
+from sklearn.metrics import ConfusionMatrixDisplay
 import time
 import torch
 from torch.nn import TripletMarginLoss, CrossEntropyLoss
@@ -201,13 +199,23 @@ model.eval()
 with torch.no_grad():
     correct = 0
     total = 0
+    labelss = []
+    predicteds = []
     for features, labels in zip(testing_features, testing_labels):
         out = model(features)
         predicted = torch.argmax(out, dim=1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
+        
+        labelss.extend(labels.data.cpu())
+        predicteds.extend(predicted.cpu())
 
     print('Test Accuracy: {} %'.format(100 * correct / total))
+    plt.close() # As it makes it's own figure
+    cm_display = ConfusionMatrixDisplay.from_predictions(labelss, predicteds, display_labels=["Benign", "Malignant"])
+    cm_display.plot(colorbar=False)
+    # TODO change the saving behaviour
+    plt.savefig("./images/confusion_matrix.png", dpi=80)
 
 generate_loss_plot(train_loss, val_loss, "Binary Classifier", save=True)
 

@@ -2,7 +2,7 @@
 
 ## Author
 
-Abdullah Badat (47022173)
+Abdullah Badat (47022173), abdullahbadat27@gmail.com
 
 ## Project Overview
 
@@ -67,6 +67,22 @@ The model follows a UNet architecture with a context aggregation downsampling pa
 
 ![unet_architecture](assets/unet_architecture.png)
 
+### Convolution equation
+
+The equation for a 3D convolution operation is:
+
+$$
+\text{Y(i,j,k)} = \sum_{m=0}^{M-1} \sum_{n=0}^{N-1} \sum_{p=0}^{P-1} X(i+m, j+n, k+p) \cdot K(m,n,p)
+$$
+
+Where:
+
+- \( Y(i,j,k) \) is the output at position \( (i,j,k) \) in the 3D feature map.
+- \( X(i+m, j+n, k+p) \) is the input value at position \( (i+m, j+n, k+p) \) in the input volume or previous layer.
+- \( K(m,n,p) \) is the kernel value at position \( (m,n,p) \).
+- \( M \times N \times P \) is the size of the kernel in three dimensions.
+- The summation iterates over all positions within the kernel.
+
 ## Training and hyperparameters
 
 The model was trained for 100 epochs with a batch size of 5. A small batch size was used as memory was limited. The optimizer used was AdamW with a learning rate of 1e-3 and a weight decay of 1e-2. A learning rate scheduler was used with a step size of 10 and gamma of 0.1. A dice loss function was used for loss.
@@ -78,6 +94,12 @@ DiceLoss was used for the loss function during training.
 $$
 \text{DiceLoss} = 1 - \frac{2 \cdot |A \cap B|}{|A| + |B|}
 $$
+
+where:
+
+- \( A \) is the predicted set of segmented pixels,
+- \( B \) is the ground truth set of segmented pixels,
+- \( |A \cap B| \) is the number of overlapping pixels between the predicted and ground truth segments.
 
 ## Dependencies
 
@@ -168,13 +190,22 @@ y = 0.7, the minimum required dice score.
 
 ## Discussion
 
-The model achieved the desired dice scores across all labels. The model predictions are visually 'fuzzy'
-compared to the ground truths, which indicate that the predictions are not as accurate as they should be
+The model trained very quickly with the dice scores, training loss and
+validation loss all plateauing at approximately 20 epochs. This may indicate that the training set is quite limited.
+Visually, the model predictions are 'fuzzy' compared to the ground truths, which indicate that the predictions are not as accurate as they should be
 ideally. To improve a larger dataset should be used, only 195 images were used to train the model (out of a
 total of 211). A larger dataset and more augmentations e.g., [RandomMotion](https://torchio.readthedocs.io/transforms/augmentation.html), may result in better performance. The lowest dice score accuracy
 was for the rectum. This body part is quite small compared to the rest so a better loss function may help e.g., [DiceCELoss](https://docs.monai.io/en/stable/losses.html#diceceloss), improve this performance.
 
+Another consideration was that the model was downsampled from 256 x 256 x 128 to 128 x 128 x 64. This downsampling in the resolution
+reduced the total information of an image by a factor 8. This will definitely have reduced the accuracy of the model. The decision to
+downsample the images made to reduce the memory demand and speed up training. Using the original image dimensions in training instead of
+downsampling will likely improve performance.
+
 ## Conclusion
+
+This project explored using the 3D Improved UNet for segmenting MRI scans of male hips. The model successfully achieved the required dice scores
+of 0.7 across all labels: background, body, bone, bladder, rectum, prostate.
 
 ## References
 
@@ -183,6 +214,3 @@ was for the rectum. This body part is quite small compared to the rest so a bett
 [2] W. Dai, B. Woo, S. Liu, M. Marques, C. B. Engstrom, P. B. Greer, S. Crozier, J. A. Dowling, and S. S. Chandra, "CAN3D: Fast 3D medical image segmentation via compact context aggregation," _arXiv preprint arXiv:2109.05443v2_, Sep. 2021. [Online]. Available: https://arxiv.org/pdf/2109.05443
 
 [3] pykao, "Modified 3D U-Net Pytorch," GitHub repository, 2018. [Online]. Available: https://github.com/pykao/Modified-3D-UNet-Pytorch
-
-$$
-$$

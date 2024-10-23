@@ -77,7 +77,21 @@ def load_data_3D(imageNames, normImage=False, dtype=np.float32,
 
 
 class ProstateDataset3D(Dataset):
+	"""
+	Dataset class for 3D U-Net model. Loads images and masks from the specified 
+	path and applies the specified transforms. Used to create dataloaders for the train,
+	validate, and test splits.
+	"""
 	def __init__(self, images_path, masks_path, mode, transforms):
+		"""
+		Initialize the dataset class by loading the images and masks from the specified path.
+
+		Parameters:
+		images_path (str): Path to the images
+		masks_path (str): Path to the masks
+		mode (str): Mode to load the dataset (train, valid, test, debug)
+		transform (torchio.transforms): Transforms to apply to the images and masks
+		"""
 		image_names = [f.name for f in Path(images_path).iterdir() if f.is_file() and
 				  'nii' in f.name]
 		mask_names = [f.name for f in Path(masks_path).iterdir() if f.is_file() and
@@ -90,6 +104,7 @@ class ProstateDataset3D(Dataset):
 		image_names = list(map(lambda x: images_path + x, image_names))
 		mask_names = list(map(lambda x: masks_path + x, mask_names))
 
+		# Train, validate, test split
 		match mode:
 			case "train":
 				self.image_names = image_names[:VALID_START]

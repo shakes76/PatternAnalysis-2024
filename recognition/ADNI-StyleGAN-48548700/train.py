@@ -12,7 +12,7 @@ from torchvision import transforms
 DATASET                 = "./AD/train"  # Path to the training dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
 EPOCHS                  = 100  # Number of training epochs
-LEARNING_RATE           = 1e-3  # Learning rate for optimization
+LEARNING_RATE           = 1e-4  # Learning rate for optimization
 BATCH_SIZE              = 32  # Batch size for training
 LOG_RESOLUTION          = 7  # Logarithmic resolution used for 128*128 images
 Z_DIM                   = 256  # Dimension of the latent space
@@ -88,84 +88,86 @@ def train_fn(
     opt_critic,
     opt_gen,
     opt_mapping_network,
+    epoch,  # Add epoch as a parameter
 ):
-    loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
+    loop = tqdm(loader, leave=True)
 
-    scaler = torch.amp.GradScaler('cuda')  # GradScaler for AMP
+    scaler = torch.amp.GradScaler('cuda')
 
     G_losses = []
     D_losses = []
-    
+
+    # Print the current epoch number at the start of the epoch
+    print(f"Starting Epoch {epoch}...")
+
     for batch_idx, real in enumerate(loop):
-        real = real.to(DEVICE)  # Move real data to the specified device
+        real = real.to(DEVICE)
         cur_batch_size = real.shape[0]
 
-        # Ensure real images have requires_grad=True for R1 regularization
         real.requires_grad_(True)
 
-        w = get_w(cur_batch_size)  # Generate 'w' from random noise
-        noise = get_noise(cur_batch_size)  # Generate noise inputs for the generator
+        w = get_w(cur_batch_size)
+        noise = get_noise(cur_batch_size)
 
-        # Using updated AMP handling for faster training
-        with torch.amp.autocast('cuda'):  # Use automatic mixed-precision (AMP)
-            fake = gen(w, noise)  # Generate fake images
-            critic_fake = critic(fake.detach())  # Get critic scores for fake images
-            critic_real = critic(real)  # Get critic scores for real images
+        with torch.amp.autocast('cuda'):
+            fake = gen(w, noise)
+            critic_fake = critic(fake.detach())
+            critic_real = critic(real)
 
-            # R1 regularization for real data (StyleGAN specific)
             r1_penalty = torch.autograd.grad(
                 outputs=critic_real.sum(),
                 inputs=real,
                 create_graph=True
             )[0].pow(2).view(real.size(0), -1).sum(1).mean()
 
-            # Critic loss calculation with R1 regularization
             loss_critic = (
-                -(torch.mean(critic_real) - torch.mean(critic_fake))  # Standard loss
-                + (GAMMA / 2) * r1_penalty  # R1 penalty
-                + (0.001 * torch.mean(critic_real ** 2))  # Regularization term
+                -(torch.mean(critic_real) - torch.mean(critic_fake))
+                + (GAMMA / 2) * r1_penalty
+                + (0.001 * torch.mean(critic_real ** 2))
             )
+        
+        if torch.isnan(loss_critic):
+            print(f"Stopping training: loss_critic is NaN at Epoch {epoch}, Batch {batch_idx}")
+            raise ValueError("NaN detected in loss_critic, stopping training...")
+        
+        # Log values every 10 batches
+        if batch_idx % 10 == 0:
+            print(f"Epoch {epoch}, Batch {batch_idx}: critic_real: {critic_real.mean().item()}, critic_fake: {critic_fake.mean().item()}")
+            print(f"Epoch {epoch}, Batch {batch_idx}: r1_penalty: {r1_penalty.item()}, loss_critic: {loss_critic.item()}")
 
-        print(f"critic_real: {critic_real.mean().item()}, critic_fake: {critic_fake.mean().item()}")
-        print(f"r1_penalty: {r1_penalty.item()}, loss_critic: {loss_critic.item()}")
-
-        # Store the critic loss
         D_losses.append(loss_critic.item())
 
-        # Update critic
-        critic.zero_grad()  # Reset gradients for the critic
-        scaler.scale(loss_critic).backward()  # Use scaled backward for AMP
+        critic.zero_grad()
+        scaler.scale(loss_critic).backward()
         torch.nn.utils.clip_grad_norm_(critic.parameters(), MAX_NORM)
-        scaler.step(opt_critic)  # Use scaled step
-        scaler.update()  # Update the scaler
+        scaler.step(opt_critic)
+        scaler.update()
 
-        # Generator loss calculation and update
         with torch.amp.autocast('cuda'):
-            gen_fake = critic(fake)  # Get critic scores for fake images
-            loss_gen = -torch.mean(gen_fake)  # Generator loss
+            gen_fake = critic(fake)
+            loss_gen = -torch.mean(gen_fake)
 
-        # Apply path length penalty every 16 batches
         if batch_idx % 16 == 0:
             plp = path_length_penalty(w, fake)
-            loss_gen = loss_gen + plp  # Update generator loss with path length penalty
+            loss_gen = loss_gen + plp
 
-        G_losses.append(loss_gen.item())  # Store the generator loss
+        G_losses.append(loss_gen.item())
 
-        # Reset gradients for the mapping network and generator
-        mapping_network.zero_grad()  # Reset gradients for the mapping network
-        gen.zero_grad()  # Reset gradients for the generator
-        scaler.scale(loss_gen).backward()  # Backpropagate the generator loss with AMP
-        scaler.step(opt_gen)  # Use scaled step for generator
-        scaler.update()  # Update the scaler
-        opt_mapping_network.step()  # Update mapping network's weights
+        mapping_network.zero_grad()
+        gen.zero_grad()
+        scaler.scale(loss_gen).backward()
+        scaler.step(opt_gen)
+        scaler.update()
+        opt_mapping_network.step()
 
-        # Optionally, log progress
         loop.set_postfix(
+            epoch=epoch,  # Add epoch to the tqdm progress bar
             r1_penalty=r1_penalty.item(),
             loss_critic=loss_critic.item(),
         )
-    
+
     return (D_losses, G_losses)
+
 
 
 
@@ -196,6 +198,7 @@ for epoch in range(EPOCHS):
         opt_critic,
         opt_gen,
         opt_mapping_network,
+        epoch,
     )
     
     Total_G_Losses.extend(G_Losses)

@@ -1,86 +1,48 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-'''
-PyTorch UNet initialiser to be called in other python scripts
-Initialisation done for common medical image segmentation
-'''
 class UNet(nn.Module):
     def __init__(self, in_channels=1, out_channels=1):
         super(UNet, self).__init__()
-        # reduce spatial dimensions, increases channels
-        # aims to learn more complex features at higher resolutions
-        self.enc1 = self.contract_block(in_channels, 64)
-        self.enc2 = self.contract_block(64, 128)
-        self.enc3 = self.contract_block(128, 256)
-        self.enc4 = self.contract_block(256, 512)
-        
-        # deepest abstract level of UNet (bottleneck)
-        self.bottleneck = self.contract_block(512, 1024)
-        
-        # decoder to mirror contractin path above
-        self.upconv4 = self.expand_block(1024, 512)
-        self.upconv3 = self.expand_block(512, 256)
-        self.upconv2 = self.expand_block(256, 128)
-        self.upconv1 = self.expand_block(128, 64)
-        
-        # final layer kernal size of 1 because binary segmentation
-        self.final = nn.Conv2d(64, out_channels, kernel_size=1)
-    
-    def __call__(self, x):
-        # contracting path
-        enc1 = self.enc1(x)
-        enc2 = self.enc2(enc1)
-        enc3 = self.enc3(enc2)
-        enc4 = self.enc4(enc3)
-        
-        # bottleneck
-        bottleneck = self.bottleneck(enc4)
-        
-        # expanding path
-        upconv4 = self.upconv4(bottleneck, enc4)
-        upconv3 = self.upconv3(upconv4, enc3)
-        upconv2 = self.upconv2(upconv3, enc2)
-        upconv1 = self.upconv1(upconv2, enc1)
-        
-        return torch.sigmoid(self.final(upconv1))
-    
-    '''
-    UNet encoder - reduces the spatial dimensions while increasing the number of feature channels
-    '''
-    def contract_block(self, in_channels, out_channels, kernel_size=3):
+        self.encoder1 = self.conv_block(in_channels, 64)
+        self.encoder2 = self.conv_block(64, 128)
+        self.encoder3 = self.conv_block(128, 256)
+
+        self.bottleneck = self.conv_block(256, 512)
+
+        self.decoder3 = self.upconv_block(512, 256)
+        self.decoder2 = self.upconv_block(256, 128)
+        self.decoder1 = self.upconv_block(128, 64)
+
+        self.final_conv = nn.Conv2d(64, out_channels, kernel_size=1)
+
+    def conv_block(self, in_channels, out_channels):
         return nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size),
-            nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size),
-            nn.ReLU(),
-            nn.MaxPool2d(2)
-        )
-    
-    '''
-    UNet decoder - upsamples the feature maps back to the original image dimensions while reducing the number of channels
-    '''
-    def expand_block(self, in_channels, out_channels, kernel_size=3):
-        return nn.Sequential(
-            nn.ConvTranspose2d(in_channels, out_channels, kernel_size),
-            nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
         )
 
-'''
-Measure the overlap between predicted segmentation masks and ground truth masks
+    def upconv_block(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True)
+        )
 
-parameters:
-preds = predicted segmentation mask
-targets = actual segmentation mask
-smooth = constant to prevent division by 0
-'''
-def dice_loss(preds, targets, smooth=1e-6):
-    preds_flat = preds.view(-1)
-    targets_flat = targets.view(-1)
-    
-    intersection = (preds_flat * targets_flat).sum()
-    dice_loss_value = 1 - (2.0 * intersection + smooth) / (preds_flat.sum() + targets_flat.sum() + smooth)
-    
-    return dice_loss_value
+    def forward(self, x):
+        enc1 = self.encoder1(x)
+        enc2 = self.encoder2(F.max_pool2d(enc1, kernel_size=2))
+        enc3 = self.encoder3(F.max_pool2d(enc2, kernel_size=2))
+
+        bottleneck = self.bottleneck(F.max_pool2d(enc3, kernel_size=2))
+
+        dec3 = self.decoder3(bottleneck)
+        dec3 = torch.cat((dec3, enc3), dim=1)
+        dec2 = self.decoder2(dec3)
+        dec2 = torch.cat((dec2, enc2), dim=1)
+        dec1 = self.decoder1(dec2)
+        dec1 = torch.cat((dec1, enc1), dim=1)
+
+        return self.final_conv(dec1)

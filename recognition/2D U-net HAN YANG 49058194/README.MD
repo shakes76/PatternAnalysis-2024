@@ -206,8 +206,8 @@ class UNet(nn.Module):
     """    
     The 2D U-Net model architecture for image segmentation.    
     Args:
-        in_channels (int): Number of input channels (e.g., 1 for grayscale).  
-        out_channels (int): Number of output channels (e.g., 1 for binary segmentation).    
+        n_channels (int): Number of input channels (e.g., 1 for grayscale). 
+        n_classes (int): Number of output channels (e.g., 1 for binary segmentation).     
     Methods:       
         forward(x): Forward pass through the network.  
     """

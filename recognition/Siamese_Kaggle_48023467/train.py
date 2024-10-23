@@ -5,8 +5,8 @@ from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import numpy as np
 import pandas as pd
-from data import generate_dataloaders
-from model import Siamese
+from dataset import generate_dataloaders
+from modules import Siamese
 from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, accuracy_score
 import matplotlib.pyplot as plt
 import yaml
@@ -103,7 +103,7 @@ def run_validate(model, dataloader_val, loss_triplet, loss_classify, torch_devic
     return avg_loss, acc, auc_roc
 
 def show_metrics(loss_train, loss_val, acc_train, acc_val, auc_train, auc_val):
-    print("Displaying results:")
+    print("Saving training results:")
     
     fig, axs = plt.subplots(3, 2)
     
@@ -132,7 +132,7 @@ def show_metrics(loss_train, loss_val, acc_train, acc_val, auc_train, auc_val):
     axs[2, 1].set_title("Validation AUC-ROC")
 
     plt.tight_layout()
-    plt.savefig("metrics.png")
+    plt.savefig("plots/metrics.png")
     plt.close()
     
 def load_params():

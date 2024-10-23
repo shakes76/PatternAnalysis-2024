@@ -5,8 +5,8 @@ from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import numpy as np
 import pandas as pd
-from data import generate_dataloaders
-from model import Siamese
+from dataset import generate_dataloaders
+from modules import Siamese
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, balanced_accuracy_score, roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
 import yaml
@@ -57,7 +57,7 @@ def plot_confusion_matrix(cm, class_labels):
     plt.title("Confusion Matrix")
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
-    plt.savefig("confusion_matrix.png")
+    plt.savefig("plots/confusion_matrix.png")
     plt.close()
 
 # Display ROC curve
@@ -74,24 +74,16 @@ def plot_roc_curve(y_true, y_prob):
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
     plt.title("ROC Curve")
-    plt.savefig("roc.png")
+    plt.savefig("plots/roc.png")
     plt.close()
 
 def load_params():
     with open("config.yaml", 'r') as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
-
-    data_dir = data["DatasetImageDir"]
-    label_csv = data["LabelCSV"]
+        
     output_dir = data["OutputDir"]
     train_ratio = data["TrainTestRario"]
-    oversample_ratio = data["OversampleRatio"]
-    initial_run = data["FirstRun"]
     batch_size = data["BatchSize"]
-    dropout_rate = data["ModelDropoutRate"]
-    triplet_margin = data["TripletLossMargin"]
-    lr = data["LearningRate"]
-    n_epochs = data["EpochCount"]
     model_path = data["ModelPath"]
     
     return batch_size, output_dir, model_path, train_ratio

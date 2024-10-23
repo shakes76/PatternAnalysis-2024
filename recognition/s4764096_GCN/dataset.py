@@ -5,7 +5,7 @@ import torch as th
 
 def prepare_data():
 
-    data = np.load('/facebook_large/facebook.npz')
+    data = np.load('/Users/lingjieruan/Desktop/3710report/facebook_large/facebook.npz')
 
     edges = data['edges']
     features = data['features']

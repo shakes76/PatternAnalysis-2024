@@ -96,7 +96,7 @@ looking at this precision table it can be seen that the model performs well for 
 | Actual 0   | 2732        | 523         |
 | Actual 1   | 14          | 44          |
 
-Observing the results above we see the same issue as in training this being that the poor f1 score is attributed to false positives and as such is why we see a good recall for class 1. the confusion matrix also alludes to better results showing how the majoirty of malignant samples were correctly classified. 
+Observing the results above we see the same issue as in training this being that the poor f1 score is attributed to false positives. That being said the recall for malignant cases was 76% which is actually very good consideirng the major class imbalance. the confusion matrix also alludes to better results showing how the majoirty of malignant samples were correctly classified. 
 
 Observing the PCA and tSNE embeddings for both the training and test sets we can see that some clustering of malignant poitns is occuring but no evident seperation, this alludes to potentially requirng a deeper network and further hyper parameter tuning but the AUROC scores and accuracy say otherwise. thus it would be worthwhile to first test the network again on a more balanced dataset.
 

@@ -12,7 +12,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
-import matplotlib.pyplot as plt
 
 import dataset
 import modules
@@ -62,7 +61,6 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
     for epoch in range(epochs):
         for i, (img, seg) in enumerate(trainLoader):
             #print(i)
-            #plt.imshow(seg[0].squeeze().numpy())
             img = img.to(dev)
             #seg = nn.functional.one_hot(seg.long())
             #seg = seg.squeeze().long()
@@ -80,7 +78,6 @@ def train(net, dev,channels = 1, outDimension = 64, numEpochs = 8):
             if (i+1) % 100 == 0:
                 print ("Epoch [{}/{}], Loss: {:.5f}"
                         .format(epoch+1, epochs, loss.item()))
-                #plt.imshow(out[0].cpu().detach().squeeze().numpy())
 
     print("Done!")
     print("Testing")

@@ -50,6 +50,7 @@ def predict(net, dev):
             #out = out[:, None, :, :] # reshape back to (batch, chan, h, w)
             diceSimilarity = dice_coeff(out, seg, dev, 6)
             print("current dice: {:.5f}".format(diceSimilarity.cpu().item()))
+            diceLosses.append(diceSimilarity.cpu().item())
     print("Done!")
     avgDice = sum(diceLosses) / len(diceLosses)
     print("average dice from validation: {:.5f}".format(avgDice))

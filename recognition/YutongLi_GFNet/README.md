@@ -36,22 +36,7 @@ AD_NC/
 ```
 ## Model Implementation
 By using the GFnet base code from https://github.com/raoyongming/GFNet. Select the code to build the standard GFnet. Which include MLP, GlobalFilter, Block, PatchEmbed and GFNet classes. Set the following hyperparameter:  
-```img_size (int, tuple): input image size
-            patch_size (int, tuple): patch size
-            in_chans (int): number of input channels
-            num_classes (int): number of classes for classification head
-            embed_dim (int): embedding dimension
-            depth (int): depth of transformer
-            num_heads (int): number of attention heads
-            mlp_ratio (int): ratio of mlp hidden dim to embedding dim
-            qkv_bias (bool): enable bias for qkv if True
-            qk_scale (float): override default qk scale of head_dim ** -0.5 if set
-            representation_size (Optional[int]): enable and set representation layer (pre-logits) to this value if set
-            drop_rate (float): dropout rate
-            attn_drop_rate (float): attention dropout rate
-            drop_path_rate (float): stochastic depth rate
-            hybrid_backbone (nn.Module): CNN backbone to use in-place of PatchEmbed module
-            norm_layer: (nn.Module): normalization layer
+```
 img_size=224    # input image size
 patch_size=16    # patch size
 in_chans=1      # input channel 

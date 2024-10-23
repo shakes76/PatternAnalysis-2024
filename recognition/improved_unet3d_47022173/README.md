@@ -170,25 +170,30 @@ Runs inference on the test with a model loaded from model.pth. Saves prediction 
 Included below are two examples of predictions made by the trained model on the test set.
 
 Example 1:
+
 ![example_1](assets/example_prediction_1.png)
 
 Example 2:
+
 ![example_2](assets/example_prediction_2.png)
 
 ### Loss curve - training
 
 This graph plots the loss curve for 50 epochs. Validation was run every 3 epochs during training.
+
 ![loss_curve](assets/loss_plot.png)
 
 ### Dice scores - training
 
 This graph plots the change in dice scores across each label during training for 50 epochs.
+
 ![dice_scores_training](assets/train_dice_scores.png)
 
 ### Dice scores - test
 
 This graph shows the final dice scores achieved using the test data set. A red line is drawn at
 y = 0.7, the minimum required dice score.
+
 ![dice_scores_test](assets/test_dice_scores.png)
 
 ## Discussion

@@ -27,7 +27,7 @@ An example image is shown below:
 More information on the data and study can be found on the CSIRO website [here](https://data.csiro.au/collection/csiro:51392v2).
 
 ## Dependencies
-This project requires the following to run. These dependencies should be installed with the specified versions or higher.
+This project requires the following to run. These dependencies should be installed with the specified versions.
 - Python: 3.10.14
 - Pytorch: 2.0.1
 - Torchvision: 0.15.2
@@ -58,14 +58,29 @@ The U-shaped architecture comes from the symmetric contracting (encoding) and ex
     - 1x1 convolution to map the features to the number of classes
 
 ## Usage
+
 1. **Clone the repository**
 ```
-git clone -b topic-recognition https://github.com/Woahseph/PatternAnalysis-2024.git
-cd PatternAnalysis-2024
+git clone https://github.com/Woahseph/PatternAnalysis-2024.git -b topic-recognition --single-branch
 ```
 
 2. **OPTIONAL: Use Conda to create a virtual environment**
+```
+conda create -n <env-name>
+```
 
-3. **Install dependencies**
+3. **Install dependencies using Conda**
+```
+conda install python==3.10.14 pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 torchmetrics==1.4.2 pytorch-cuda=11.8 numpy==1.26.4 matplotlib==3.8.4 scikit-image==0.24.0 nibabel==5.3.0 tqdm==4.66.5 -c pytorch -c nvidia -c conda-forge
+```
+
+Note: Different versions of PyTorch and CUDA can be installed as seen on the [PyTorch website](https://pytorch.org/get-started/locally/).
+
+
+4. **Download HipMRI data**
+
+If available, download the data from the [file exchange](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2). 
+
+Otherwise, the data can be downloaded from the CSIRO website [here](https://data.csiro.au/collection/csiro:51392v2). It will need to be separated into training and testing splits.
 
 ## Reproducibility of Results

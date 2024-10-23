@@ -111,7 +111,7 @@ def calc_mean_std(dataloader):
 
 def get_ids(path):
     files = [osP.basename(file) for _, _, filenames in os.walk(path) for file in filenames]
-    ids = list(set([files.split('_')[0] for file in files]))
+    ids = list(set([file.split('_')[0] for file in files]))
     return ids
 
 def create_dataloaders(batch_size=BATCH_SIZE, path=DATASET_PATH):
@@ -122,6 +122,7 @@ def create_dataloaders(batch_size=BATCH_SIZE, path=DATASET_PATH):
     mean, std = calc_mean_std(sample_loader)
 
     train_transform = transforms.Compose([
+        transforms.Grayscale(),
         transforms.Resize(IMAGE_SIZE),
         transforms.CenterCrop(IMAGE_SIZE),
         transforms.RandomVerticalFlip(),
@@ -129,7 +130,8 @@ def create_dataloaders(batch_size=BATCH_SIZE, path=DATASET_PATH):
         transforms.Normalize(mean=mean, std=std),
     ])
 
-    test_transform = transforms([
+    test_transform = transforms.Compose([
+        transforms.Grayscale(),
         transforms.Resize(IMAGE_SIZE),
         transforms.CenterCrop(IMAGE_SIZE),
         transforms.ToTensor(),

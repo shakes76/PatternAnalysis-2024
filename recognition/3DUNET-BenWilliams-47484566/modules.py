@@ -95,20 +95,40 @@ class UNet3D(nn.Module):
         out = F.softmax(out, dim=1)
         return out
         
+#This function was written by Chat GPT
+def dice_coefficient_per_label(preds, targets, num_classes):
+    """
+    Calculate the Dice coefficient for each label.
 
-def dice_coefficient(pred, target, epsilon=1e-6):
-    if pred.size(1) > 1:  # If the model output has more than one class
-        pred = torch.argmax(pred, dim=1)
-    
-    pred = pred.contiguous().view(-1)
-    target = target.contiguous().view(-1)
-    
-    intersection = (pred * target).sum()
-    union = pred.sum() + target.sum()
+    Args:
+        preds (torch.Tensor): Predicted segmentation map (N, C, D, H, W)
+        targets (torch.Tensor): Ground truth segmentation map (N, D, H, W)
+        num_classes (int): Number of classes/labels
 
-    dice = (2.0 * intersection + epsilon) / (union + epsilon)
-    
-    return dice
+    Returns:
+        dice_scores (dict): A dictionary containing Dice scores for each class
+    """
+    # Initialize Dice scores for each class
+    dice_scores = {i: 0.0 for i in range(num_classes)}
+
+    # Flatten the predictions and targets to be 1D
+    preds = torch.argmax(preds, dim=1)  # Convert predictions to class labels
+    targets = targets.view(-1)  # Flatten targets
+
+    for label in range(num_classes):
+        # Create binary masks for the current class
+        pred_mask = (preds == label).view(-1).float()
+        target_mask = (targets == label).view(-1).float()
+
+        # Calculate intersection and union
+        intersection = (pred_mask * target_mask).sum()
+        total = pred_mask.sum() + target_mask.sum()
+
+        # Calculate Dice score for the current class
+        if total > 0:
+            dice_scores[label] = (2. * intersection) / total
+
+    return dice_scores
 
 
 

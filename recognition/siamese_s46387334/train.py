@@ -1,9 +1,11 @@
 """
-Contains the source code for training, validating, testing and saving the model. 
+Contains the source code for training, validating, testing and saving the SiameseNet
+model when applied to the ISIC 2020 data set.
 
 The model is imported from “modules.py” and the data loader is imported from “dataset.py”. 
 Plots of the losses and metrics during training will be produced.
 """
+
 
 ###############################################################################
 ### Imports
@@ -217,9 +219,10 @@ def plot_training_graphs(
     plt.ylabel('AURROC')
     plt.legend()
     
-    # Show the plots
+    # Save the plots
     plt.tight_layout()
-    plt.show()
+    plt.savefig('train_val_progress.png')
+    plt.close()
 
 
 ###############################################################################
@@ -279,7 +282,6 @@ def main() -> None:
     
     # Predict results on the test set
     results_siamese_net(test_loader, model, device)
-
 
 if __name__ == "__main__":
     main()

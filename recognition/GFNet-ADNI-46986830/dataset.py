@@ -107,7 +107,8 @@ def adni_data_load(root_dir, val_size=0.2, batch_size=32, verbose = False, test_
 
 if __name__ == "__main__":
 
-    adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    # adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    adni_dir = "/home/reuben/Documents/datasets/ADNI_AD_NC_2D/AD_NC"
     train_loader, val_loader = adni_data_load(adni_dir, verbose=True) 
 
     classes = ["NC", "AD"]

@@ -14,7 +14,8 @@ from functools import partial
 from visualise import visualize_batch
 
 def main():
-    adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    # adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    adni_dir = "/home/reuben/Documents/datasets/ADNI_AD_NC_2D/AD_NC"
     dataset_val, dataloader_val = adni_data_load(adni_dir, verbose=True, test_set=True) 
 
     # visualize_batch(dataloader_val, ["NC", "AD"])
@@ -26,7 +27,8 @@ def main():
         num_classes=2
     )
 
-    model_path = "/home/reuben/Documents/remote-repos/PatternAnalysis-2024/recognition/GFNet-ADNI-46986830/pretrained/adni_gfnet-xs_10epoch_best.pth"
+    # model_path = "/home/reuben/Documents/remote-repos/PatternAnalysis-2024/recognition/GFNet-ADNI-46986830/pretrained/adni_gfnet-xs_10epoch_best.pth"
+    model_path = "/home/reuben/MEGA/uni/Y4-S2/COMP3710/project/pretrained_models/adni_gfnet-xs_50epoch_best.pth"
     model.default_cfg = _cfg()
 
     checkpoint = torch.load(model_path, map_location="cpu")
@@ -34,13 +36,19 @@ def main():
 
     print('## model has been successfully loaded')
 
-    model = model.cuda()
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if not torch.cuda.is_available():
+        print("Warning CUDA not Found. Using CPU")
+
+    # model = model.cuda()
+    model.to(device=device)
 
     n_parameters = sum(p.numel() for p in model.parameters())
     print('number of params:', n_parameters)
 
     criterion = torch.nn.CrossEntropyLoss().cuda()
-    validate(dataloader_val, model, criterion)
+    validate(dataloader_val, model, criterion, device)
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -100,7 +108,7 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-def validate(val_loader, model, criterion):
+def validate(val_loader, model, criterion, device):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -116,8 +124,10 @@ def validate(val_loader, model, criterion):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
-            images = images.cuda()
-            target = target.cuda()
+            # images = images.cuda()
+            images = images.to(device=device)
+            # target = target.cuda()
+            target = target.to(device=device)
 
             # compute output
             output = model(images)

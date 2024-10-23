@@ -66,9 +66,10 @@ The file defines functions to load the ADNI dataset and split it into training, 
 
 Several image transformations are applied to preprocess the data, including resizing, normalization, and augmentation such as random flips or rotations. Specifically, the dataset is normalized using `ImageNet`'s means and standard deviations and the images are also resized to `224x224` pixels, a typical input size for Vision Transformers [5]. These augmentations are designed to increase data diversity, helping the model generalize better to unseen images.
 
-3. **Class Weights**
-Handling class imbalance is a critical aspect when training machine learning models, especially in medical datasets like ADNI. In medical imaging datasets, it is common for one class (e.g., healthy controls, `NC`) to be overrepresented compared to another (e.g., diseased cases, `AD`). This creates a risk where the model might become biased, performing well on the majority class while failing to correctly identify the minority class. To address this, `dataset.py` computes `class weights` to guide the model during training. It uses `class_weight.compute_class_weight` from `sklearn.utils` to calculate weights for each class based on their frequency. 
- 
+3. **Handling Class Imbalance**:
+
+Handling class imbalance is a critical aspect when training machine learning models, especially in medical datasets like ADNI. In medical imaging datasets, it is common for one class (e.g., healthy controls, `NC`) to be overrepresented compared to another (e.g., diseased cases, `AD`). This creates a risk where the model might become biased, performing well on the majority class while failing to correctly identify the minority class. To address this, `dataset.py` computes `class_weights` to guide the model during training. It uses `class_weight.compute_class_weight` from `sklearn.utils` to calculate weights for each class based on their frequency, helping to balance the influence of each class in training.
+
 4. **Data Pipeline**:
 
 The dataset is split into training (80%) and validation (20%) sets. An independent test set is used to evaluate the final model’s performance. The function `get_data_loaders` returns PyTorch DataLoader objects for training, validation, and testing. It accepts parameters like batch size and validation split ratio.

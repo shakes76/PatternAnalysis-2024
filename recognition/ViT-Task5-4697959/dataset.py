@@ -68,6 +68,7 @@ def get_data_loaders(data_dir, batch_size=32, img_size=224, val_split=0.2, num_w
     class_weights = class_weight.compute_class_weight('balanced',
                                                      classes=np.unique(labels),
                                                      y=labels)
+    # computed class weights are converted to a PyTorch
     class_weights = torch.tensor(class_weights, dtype=torch.float)
 
     return {

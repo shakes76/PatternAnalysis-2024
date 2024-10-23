@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ReZero(nn.Module):
+class ResidualBlock(nn.Module):
     def __init__(self, in_channels, res_channels):
-        super(ReZero, self).__init__()
+        super(ResidualBlock, self).__init__()
         self.layers = nn.Sequential(
             nn.Conv2d(in_channels, res_channels, 3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(res_channels),
@@ -24,7 +24,7 @@ class ReZero(nn.Module):
 class ResidualStack(nn.Module):
     def __init__(self, in_channels, res_channels, nb_layers):
         super(ResidualStack, self).__init__()
-        self.stack = nn.Sequential(*[ReZero(in_channels, res_channels) for _ in range(nb_layers)])
+        self.stack = nn.Sequential(*[ResidualBlock(in_channels, res_channels) for _ in range(nb_layers)])
 
     def forward(self, x):
         return self.stack(x)
@@ -76,9 +76,9 @@ class Decoder(nn.Module):
         return self.layers(x)
 
 
-class CodeLayer(nn.Module):
+class VectorQuantizer(nn.Module):
     def __init__(self, in_channels, embed_dim, nb_entries):
-        super(CodeLayer, self).__init__()
+        super(VectorQuantizer, self).__init__()
         self.conv_in = nn.Conv2d(in_channels, embed_dim, 1)
         self.dim = embed_dim
         self.n_embed = nb_entries
@@ -126,7 +126,7 @@ class VQVAE(nn.Module):
     def __init__(self, in_channels, hidden_channels, res_channels, nb_res_layers, embed_dim, nb_entries, downscale_factor):
         super(VQVAE, self).__init__()
         self.encoder = Encoder(in_channels, hidden_channels, res_channels, nb_res_layers, downscale_factor)
-        self.code_layer = CodeLayer(hidden_channels, embed_dim, nb_entries)
+        self.code_layer = VectorQuantizer(hidden_channels, embed_dim, nb_entries)
         self.decoder = Decoder(embed_dim, hidden_channels, in_channels, res_channels, nb_res_layers, downscale_factor)
 
     def forward(self, x):

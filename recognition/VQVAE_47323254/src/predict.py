@@ -6,7 +6,7 @@ import time
 
 import matplotlib.pyplot as plt
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
@@ -48,19 +48,21 @@ if __name__ == '__main__':
     
     model.load_state_dict(torch.load(pretrained_path, map_location=device))
     
+    criterion = nn.MSELoss()
+    
     # Evaluation
     losses = []
     ssim_values = []
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluation"):
             batch = batch.to(device).float()
-            reconstructed, vq_loss = model(batch)
-            recon_loss = F.mse_loss(reconstructed, batch)
+            reconstructed, commitment_loss = model(batch)
+            recon_loss = criterion(reconstructed, batch)
             
             original_image = batch[0, 0].cpu().detach().numpy()
             reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
             
-            losses.append(recon_loss.item() + vq_loss.item())
+            losses.append(recon_loss.item() + commitment_loss.item())
             ssim_values.append(calculate_ssim(original_image, reconstructed_image))
         
     logging.info(f"Average Loss: {sum(losses) / len(losses)}, Average SSIM: {sum(ssim_values) / len(ssim_values)}")

@@ -27,11 +27,25 @@ def show_plot_accuracy(train_acc, val_acc):
         val_acc: list of validation accuracy
     """
     plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label='Training Accuracy')
-    plt.plot(val_losses, label='Validation Accuracy')
+    plt.plot(train_acc, label='Training Accuracy')
+    plt.plot(val_acc, label='Validation Accuracy')
     plt.title('Training and Validation Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(True)
     plt.savefig("results/train_val_accuracy_001.png", bbox_inches='tight')
+
+def evaluate_prediction(predicted_class, num):
+    """
+    Function to evaluate prediction results
+
+    Args:
+        num: the result of prediction, 0 for NC, 1 for AD
+    """
+    if predicted_class == num:
+        results = "Correct predictions!"
+    else:
+        results = "Incorrect predictions!"
+
+    return results

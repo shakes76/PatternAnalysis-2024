@@ -115,6 +115,7 @@ class Block(nn.Module):
 ```
 
 The layer normalization is used both before and after the filter, as shown in Figure 2. Additionally, an advanced technique known as stochastic depth (drop path) is applied to Mlp output, allowing some blocks to be skipped during training to reduce overfitting. If `drop_path = 0`, no operation will perform on the input due to `nn.Identity()`. 
+
 Essentially, the GFNet is built using the four classes mentioned above. Another point worth noting in `GFNet` is that the position embeddings are added to the patch embeddings to encode spatial information in `GFNet` class, and dropout is applied for regularization.
 
 ```python

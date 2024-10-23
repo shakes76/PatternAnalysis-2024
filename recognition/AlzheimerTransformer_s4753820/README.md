@@ -51,6 +51,7 @@ python train.py --exp_name "your_experiment_name" --path "/path/to/dataset"
 
 After training, the model, logs, and plots will be saved in the respective directories (`models/`, `logs/`, `plots/`), with names with respect to `--exp_name`.
 
+
 ### Testing
 On predict.py, use the following terminal command to test the model and perform one of two actions:
 
@@ -107,15 +108,48 @@ The original vision transformer uses 16x16 image patches, and as our images are 
 Mean and standard deviation are computed only on the training dataset to avoid **data leakage** and are then applied consistently across training, validation, and test sets.
 
 3. Data Augmentation
-Data augmentation techniques are applied to the training dataset to improve the model’s robustness and generalization. These include:
+Data augmentation techniques were applied to the training dataset to improve the model’s robustness and generalization by artifically constructing more data for the model to train from. These include:
 
-Random Horizontal Flip: Randomly flips the image horizontally with a 50% probability.
-Random Rotation: Randomly rotates the image by small angles (up to ±10 degrees).
-Random Resized Crop: Randomly crops the image and resizes it to the target dimensions (224x224), using a scale of 0.8 to 1.0 of the original image size.
-Center Crop: A smaller center crop (224 // 1.2) is applied after resizing.
+- Random Horizontal Flip: Randomly flips the image horizontally with a 50% probability.
+- Random Rotation: Randomly rotates the image by small angles (up to ±10 degrees).
+- Random Resized Crop: Randomly crops the image and resizes it to the target dimensions (224x224), using a scale of 0.8 to 1.0 of the original image size.
+- Center Crop: A smaller center crop (224 // 1.2) is applied after resizing.
 
-## Experiments
+All these were applied before normalisation. The aggressive data augmentation was also applied on the test set, although whether to do this or only apply normalisation is subject to debate (Edstem #427, Google, Eureka Labs). For our case, we will apply the transformations onto the test set, as this more resembles the data trained on and thus the model should perform better. Ideally, this would not need to be applied as augmentation is meant to help the model generalise but this only occurs if the models are trained for enough epochs (which may not be the case due to resource constraints).
 
+## Experiments and Results
+{table of experiment names, and the mlp size, num transformer la
+yers, epochs trained etc... (default usually unless otherwise specified).}
+
+The following experiments were conducted using different configurations of the Vision Transformer (ViT) architecture, varying parameters such as the number of transformer layers, embedding dimensions, MLP size, and other settings. The test accuracy results were recorded for each configuration, however some experiments were not mentioned as they had a model error, ran out of time, or were accidentally overwritten.
+
+{EXPLAIN HERE LIKE.. You used the thing from akshay, found that maybe it wasn't giving super good results and wondered if that was bc dropout + custom Multhihead layers, used pytorch version (see sources) at v3, and it did POOOP so I just went back to akshay and kept the embedding dropout (which was v5 onwards)}
+
+| **Version** | **Transformer Layers** | **Embedding Dims** | **MLP Size** | **Num Heads** | **Epochs** | **Batch Size** | **Learning Rate** | **Scheduler** | **Transforms**        | **Test Accuracy** |
+|-------------|------------------------|--------------------|--------------|---------------|------------|----------------|-------------------|---------------|-----------------------|-------------------|
+| **v0**      | 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-4              | No            | Normalization          | **59.05%**         |
+| **v1**      | 12                     | 768                | 3072         | 12            | 50         | 32             | 3e-4              | No            | Normalization          | **51.69%**         |
+| **v0_noAug**| 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-4              | No            | No Normalisation        | **52.54%**         |
+| **v3**      | 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-4              | No            | Only Normalisation   | **50.40%**         |
+| **v4**      | 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-5              | No            | Only Normalisation                   | **49.60%**         |
+| **v5**      | 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-4              | No            | Only Normalisation           | **65.73%**         |
+| **v6**      | 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-4              | Yes           | Only Normalisation           | **61.54%**         |
+| **v7_Aggro**| 12                     | 768                | 3072         | 12            | 30         | 32             | 3e-4              | Yes           | Aggressive Transforms  | **65.79%**         |
+| **v11**     | 8                      | 768                | 3072         | 8             | 50         | 32             | 3e-4              | No            | Aggressive Transforms          | **66.59%**         |
+| **v13**     | 12                     | 256                | 1024         | 8             | 50         | 32             | 3e-4              | Yes           | Aggressive Transforms           | **66.80%**         |
+| **v14**     | 8                      | 256                | 1024         | 8             | 50         | 32             | 3e-4              | Yes           | Aggressive Transforms           | **67.93%**         |
+| **v15**     | 12                     | 256                | 1024         | 8             | 100        | 32             | 3e-4              | Yes           | Aggressive Transforms           | **67.28%**         |
+
+Aggressive transforms simply means the current transformations within dataset.py (with image rotation, etc...).
+
+![alt text](plots/v0noAugments_accuracy_plot.png) ![alt text](plots/v0noAugments_loss_plot.png)
+
+<p float="left">
+  <img src="plots/v0noAugments_accuracy_plot.png" width="400" />
+  <img src="plots/v0noAugments_loss_plot.png" width="400" />
+</p>
+
+{Show v0, v6/v7, and then v14; do loss and acc} Explain that v15 is v14 but more epochs, but it just didn't scale enough, likely because the learning rate wsa too high and we didnt save ethe scheduler so it had restarted at the high LR}
 
 ## References
 

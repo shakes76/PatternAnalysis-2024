@@ -53,7 +53,7 @@ With the 3D U-Net model, all labels achieved a **DSC of at least 0.75.** The plo
   <tr>
     <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="400" height="200"/></td>
     <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 5.png" width="400" height="200"/></td>
   </tr>
 </table>
 
@@ -70,7 +70,7 @@ With the improved 3D U-Net model, all labels achieved a **DSC of at least 0.8.**
   <tr>
     <td><img src="images/Improvedunet3d/dsc_plot_label_Label 3.png" width="400" height="200"/></td>
     <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 5.png" width="400" height="200"/></td>
   </tr>
 </table>
 

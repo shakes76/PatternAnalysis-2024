@@ -1,4 +1,4 @@
-
+import time
 import math
 import logging
 from functools import partial
@@ -317,16 +317,18 @@ def load_model(model, optimizer, filepath):
     print(f"Loaded model and optimizer from {filepath}")
 
 
-num_epochs = 4
+num_epochs = 6
 
 if os.path.exists('gfnet_model_latest.pth'):
     load_model(model, optimizer, 'gfnet_model_latest.pth')
 
 for epoch in range(num_epochs):
+    start_time = time.time()
     train_loss, train_acc = train(model, train_loader, criterion, optimizer, device)
     val_loss, val_acc = validate(model, val_loader, criterion, device)
-
-    print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. val Loss: {val_loss:.4f}, val Acc: {val_acc:.4f}")
+    end_time = time.time()
+    running_time = end_time - start_time
+    print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. val Loss: {val_loss:.4f}, val Acc: {val_acc:.4f}. running time: {running_time}")
 torch.save({
     'model_state_dict': model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),

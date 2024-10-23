@@ -4,7 +4,7 @@ Provides an entry point to create, train, test, and evaluate the Neural Networks
 @author Kai Graz
 """
 import matplotlib.pyplot as plt
-import torch
+import torch, os
 from train import run_model, MALIGNANT, BENIGN
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, precision_score, recall_score, f1_score
 
@@ -13,6 +13,7 @@ DEFAULT_NUM_OF_EPOCHS = 32
 DEFAULT_LEARNING_RATE = 0.0002
 DEFAULT_THRESHOLD = 0.5
 CLASS_NAMES = ["Benign", "Malignant"]
+DEFAULT_SAVE_LOCATION = os.getcwd()
 
 """
 AI and MT tools used to
@@ -69,7 +70,8 @@ def plot_confusion_matrix(preds, targets, class_names=None):
 
 def main():
     # Model passing (instead of saving and loading) allowed under https://edstem.org/au/courses/18266/discussion/2319727
-    model, device, test_loader_classifier = run_model(DEFAULT_BATCHSIZE, DEFAULT_NUM_OF_EPOCHS, DEFAULT_LEARNING_RATE, save_model=True, test_verbose=True, train_verbose=True)
+    model, device, test_loader_classifier = run_model(DEFAULT_BATCHSIZE, DEFAULT_NUM_OF_EPOCHS, DEFAULT_LEARNING_RATE,
+        save_model=True, test_verbose=True, train_verbose=True, save_location=DEFAULT_SAVE_LOCATION)
 
     evaluate_classifier(model, device, test_loader_classifier)
 

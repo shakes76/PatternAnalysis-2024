@@ -5,11 +5,8 @@ Defines assorted functions used to train and test the Neural Networks defined in
 """
 import torch
 from modules import SiameseNetwork, Classifier
-from dataset import Siamese_DataSet, Classifier_DataSet, read_data, DEFAULT_LOCATION, PROCESSED_DATA, BENIGN, MALIGNANT
+from dataset import Siamese_DataSet, Classifier_DataSet, read_data, PROCESSED_DATA, BENIGN, MALIGNANT
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
-DEFAULT_SAVE_LOCATION = "E:/COMP3710 Project/PatternAnalysis-2024/"
-
 """
 AI and MT tools used to
  - Explain how to best train a Siamese network (with multiple inputs)
@@ -138,7 +135,7 @@ def test_classifier(model: Classifier, device, test_loader, epoch: int, threshol
 
     return accuracy
 
-def run_model(batch_size: int, epochs: int, learning_rate: int, threshold: float = 0.5, save_model: bool = False, test_verbose: bool = True, train_verbose: bool = False):
+def run_model(batch_size: int, epochs: int, learning_rate: int, threshold: float = 0.5, save_model: bool = False, test_verbose: bool = True, train_verbose: bool = False, save_location: str = None):
     print("="*200)
     print(f"Training with: batch_size {batch_size}, epochs {epochs}, learning_rate {learning_rate}")
     # Define assorted training and testing parameters (That remained unchanged during hyperparameter tuning)
@@ -155,7 +152,7 @@ def run_model(batch_size: int, epochs: int, learning_rate: int, threshold: float
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # Load data
-    processed_data: PROCESSED_DATA = read_data(DEFAULT_LOCATION[0], DEFAULT_LOCATION[1])
+    processed_data: PROCESSED_DATA = read_data()
 
     # Create Datasets...
     train_dataset_siamese = Siamese_DataSet(processed_data, train=True)
@@ -184,7 +181,7 @@ def run_model(batch_size: int, epochs: int, learning_rate: int, threshold: float
     # Test and save the model
     accuracy = test_siamese(model, device, test_loader_siamese, epoch, verbose=test_verbose, threshold=threshold)
     if save_model:
-        save_loc = f"{DEFAULT_SAVE_LOCATION}siamese_network_{accuracy:.4f}_{batch_size}_({epoch}.{epochs})_{learning_rate}_{threshold}.pt"
+        save_loc = f"{save_location}/siamese_network_{accuracy:.4f}_{batch_size}_({epoch}.{epochs})_{learning_rate}_{threshold}.pt"
         torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
         print(f"Saved Siamese to {save_loc} with {accuracy}")
     
@@ -206,7 +203,7 @@ def run_model(batch_size: int, epochs: int, learning_rate: int, threshold: float
     # Test and save the model
     accuracy = test_classifier(model, device, test_loader_classifier, epoch, verbose=test_verbose)
     if save_model:
-        save_loc = f"{DEFAULT_SAVE_LOCATION}classifier_network_{accuracy:.4f}_{batch_size}_({epoch}.{epochs})_{learning_rate}.pt"
+        save_loc = f"{save_location}/classifier_network_{accuracy:.4f}_{batch_size}_({epoch}.{epochs})_{learning_rate}.pt"
         torch.save((model.state_dict(), optimizer.state_dict()), save_loc)
         print(f"Saved Classifier to {save_loc} with {accuracy}")
 

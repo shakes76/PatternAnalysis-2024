@@ -142,6 +142,8 @@ python predict.py
 ```
 The result of this will be 2 saved Networks (1 Siamese, 1 Classifier), assorted information printed to pythons standard out, and a confusion matrix window.
 
+Optionally, edit constants in the predict.py file for different hyperparameters. To adjust hyperparameters that were not varied during trainging, adjust them in run_model() in train.py or in the model definition in modules.py.
+
 ## Dependencies
 
 - python (3.12)

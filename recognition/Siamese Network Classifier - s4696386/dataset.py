@@ -11,7 +11,6 @@ MALIGNANT = 1
 SIMILAR = 1.0
 DISSIMILAR = 0.0
 IMG_FILE_TYPE = ".jpg"
-DEFAULT_LOCATION = "E:/COMP3710 Project/Images", "E:/COMP3710 Project/Truths.csv"
 PROCESSED_DATA = tuple[dict, list[str], list[str]] # Used for typehinting
 
 """
@@ -26,7 +25,7 @@ AI and MT tools used to
 
 # Imitating:
 # https://github.com/pytorch/examples/blob/main/siamese_network
-def read_data(file_path_image_folder: str = None,file_path_ground_truth: str = None
+def read_data(file_path_image_folder: str = "",file_path_ground_truth: str = ""
         ) -> tuple[dict[str, str], dict[str, tuple[str, int]], list[str], list[str]]:
     
     # Ensure we have a directory to take data from and a collection of ground truths
@@ -89,7 +88,9 @@ def read_truths(file_path_ground_truth):
     return malignants, benigns
 
 def get_path():
+    print("Please select the Folder containing the dataset Images")
     file_path_image_folder = filedialog.askdirectory()
+    print("Please select the File containing the dataset Ground Truths")
     file_path_ground_truth = filedialog.askopenfile().name
     return file_path_image_folder, file_path_ground_truth
 

@@ -72,7 +72,11 @@ To ensure reproducibility, all random seeds are set explicitly
 within the training script. If you want to reproduce the 
 results exactly, ensure the same dataset splits, 
 hyperparameters, and model initialization are used. The model 
-weights are stored and can be reloaded from `model/new_model.pth`.
+weights are stored and can be reloaded from `model/new_model.pth`. 
+The code relies on personalised paths to data. For personal use, 
+download the data here: https://doi.org/10.25919/45t8-p065 and 
+change the file paths in `train.py` and `predict.py`.
+
 
 ## Example Inputs and Outputs
 
@@ -122,7 +126,7 @@ stopping applied after **Epoch 12**. Below is a summary of
 the key results from the training process:
 
  - Epoch [1/16], Loss: 0.7396
-Class-specific Dice Scores: [0.98168078 0.91843471 0.05575329 0.44867237 0.00546562 0.1901122 ]
+   - Class-specific Dice Scores: [0.98168078 0.91843471 0.05575329 0.44867237 0.00546562 0.1901122 ]
  - Epoch [2/16], Loss: 0.4922
    - Class-specific Dice Scores: [0.98146727 0.77852851 0.3306287  0.07353068 0.00168459 0.01371561]
 - Epoch [3/16], Loss: 0.3613 
@@ -149,10 +153,24 @@ Class-specific Dice Scores: [0.98168078 0.91843471 0.05575329 0.44867237 0.00546
   - Test Loss: 0.1276
   - Test Class-specific Dice Scores: [0.98341535 0.95497757 0.78998656 0.79622618 0.72969815 0.76118778]
 
+## Reflections and Future Work
+Task was very challenging and took time management across 4 weeks 
+to complete. The topic of segmenting MRI imaging was quite 
+interesting and very rewarding once the code was complete. For future 
+work I would improve the prediction output colours as I didn't 
+have time to run the code again to get the image mask and prediction 
+the same colour. It would be interesting to see how much the performance improves
+with an increased number of epochs as well. I would remove the early stopping 
+and train the model for 32 epochs to see how performance changes. I am also curious to see
+how the model performs with more sample data. Collecting more MRI images and feeding the through the model
+to test performance would be very benficial.
 
 ## References
 - F. Isensee, P. Kickingereder, W. Wick, M. Bendszus, and K. H. Maier-Hein, “Brain Tumor Segmentation
 and Radiomics Survival Prediction: Contribution to the BRATS 2017 Challenge,” Feb. 2018. [Online].
 Available: https://arxiv.org/abs/1802.10508v1- 
 - Dowling, Jason; & Greer, Peter (2021): Labelled weekly MR images of the male pelvis. v2. CSIRO. Data Collection. https://doi.org/10.25919/45t8-p065
+- Soleimani, P. and Farezi, N.
+Soleimani, P., & Farezi, N. (2023). Utilizing deep learning via the 3D U-net neural network for the delineation of brain stroke lesions in MRI image. Retrieved from https://www.nature.com/articles/s41598-023-47107-7
+- Wolny. (n.d.). wolny/pytorch-3dunet: 3D U-Net model for volumetric semantic segmentation written in pytorch. Retrieved from https://github.com/wolny/pytorch-3dunet
 - 

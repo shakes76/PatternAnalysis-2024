@@ -32,7 +32,7 @@ learning_rate = 3e-4
 
 # Hyperparameters changed from default:
 batch_size = 8
-n_epochs = 15
+n_epochs = 150
 n_residual_layers = 5
 
 # Set up directory to save Images and Plots

@@ -53,12 +53,14 @@ def plot_from_dataloader(dataloader, directory):
     real_batch = next(iter(dataloader))
     batch_size = len(real_batch)
 
-    fig, axes = plt.subplots(1, batch_size , figsize=(15, 15))
+    fig, axes = plt.subplots(1, batch_size , figsize=(16, 4))
     axes = axes.flatten()
-    plt.title("Original Images")
+    fig.suptitle("HipMRI Sample Images", fontsize=20)
     for i in range(batch_size):
         img = real_batch[i, :, :].cpu().numpy() 
         axes[i].imshow(img, cmap='gray')
         axes[i].axis('off')  
 
+    plt.tight_layout()
     plt.savefig(f"{directory}/training_img_samples.png")
+

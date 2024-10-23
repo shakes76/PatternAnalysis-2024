@@ -446,24 +446,24 @@ class StyleGAN2Generator(nn.Module):
         batch_size = z.shape[0]
         # Generate w from z
         w = self.mapping_network(z, labels)
-        print(f"W stats - min: {w.min():.4f}, max: {w.max():.4f}, mean: {w.mean():.4f}")
+        # print(f"W stats - min: {w.min():.4f}, max: {w.max():.4f}, mean: {w.mean():.4f}")
         # Start with learned constant - repeated for batch
         x = self.const.repeat(batch_size, 1, 1, 1)
-        print(f"Const stats - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
+        # print(f"Const stats - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
         # Apply synthesis blocks
         for i, block in enumerate(self.synthesis_network):
             x = block(x, w)
-            print(f"Block {i} output - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
+            # print(f"Block {i} output - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
     
         # Apply the final convolution to get 1 channel output
         x = self.to_rgb(x)
         # Center the values before scaling and tanh
         x = x - x.mean()
         x = x * 0.5
-        print(f"Pre-tanh stats (after scale down) - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
+        # print(f"Pre-tanh stats (after scale down) - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
         x = torch.tanh(x)  # Force output range [-1, 1]
         
-        print(f"Final output stats - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
+        # print(f"Final output stats - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
         if return_latents:
             return x, w
         return x

@@ -16,7 +16,7 @@ The StyleGAN architecture consists of three main components: a Mapping Network, 
 Below is a visual representation of the generated images' progression throughout different training epochs, illustrating the improvement in quality and realism.
 
 <p align="center">
-    <img src="images_for_readme/Results/epoch2_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch 2/epoch2_img_0.png" alt="Image 1" width="19%" />
     <img src="images_for_readme/Results/epoch6/epoch6_img_1.png" alt="Image 2" width="19%" />
     <img src="images_for_readme/Results/epoch30/epoch30_img_2.png" alt="Image 3" width="19%" />
     <img src="images_for_readme/Results/epoch75/epoch75_img_5.png" alt="Image 4" width="19%" />
@@ -346,11 +346,11 @@ By following this process, the StyleGAN model learns to generate high-quality sy
 ## Results
 
 <p align="center">
-    <img src="images_for_readme/Results/epoch2_img_0.png" alt="Image 1" width="19%" />
-    <img src="images_for_readme/Results/epoch2_img_2.png" alt="Image 2" width="19%" />
-    <img src="images_for_readme/Results/epoch2_img_4.png" alt="Image 3" width="19%" />
-    <img src="images_for_readme/Results/epoch2_img_6.png" alt="Image 4" width="19%" />
-    <img src="images_for_readme/Results/epoch2_img_8.png" alt="Image 5" width="19%" />
+    <img src="images_for_readme/Results/epoch 2/epoch2_img_0.png" alt="Image 1" width="19%" />
+    <img src="images_for_readme/Results/epoch 2/epoch2_img_2.png" alt="Image 2" width="19%" />
+    <img src="images_for_readme/Results/epoch 2/epoch2_img_4.png" alt="Image 3" width="19%" />
+    <img src="images_for_readme/Results/epoch 2/epoch2_img_6.png" alt="Image 4" width="19%" />
+    <img src="images_for_readme/Results/epoch 2/epoch2_img_8.png" alt="Image 5" width="19%" />
     <br>
     Epoch 2 Generated Images
 </p>

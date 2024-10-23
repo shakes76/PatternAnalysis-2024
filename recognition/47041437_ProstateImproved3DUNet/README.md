@@ -15,7 +15,7 @@ The improved U-Net is a more complex and modern model that enhances the foundati
 
 ![U-Net architecture diagram](images/UNet%20architecture.jpg)
 
-## Algorithm (pre-processing, training and inference)
+## Source files (pre-processing, training and inference)
 This report specifically looks at a 3D prostate dataset and attempts to extract the images, train them using both models with the appropriate loss functions (cross-entropy and dice loss) and run inferences from the saved model. 
 
 **dataset.py:** This file includes a class that loads NIfTI images and labels using the nibabel library. .nii.gz files are converted into tensors and are reshaped for the network input [3]. It also includes image augmentation, which includes random cropping, flipping, and applying random bias fields, blurs, or spikes to introduce variability and improve model robustness.

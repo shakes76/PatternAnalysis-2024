@@ -31,13 +31,13 @@ python predict.py
 It will predict the label/class of the 1 inputted image.
 
 ## Convolutional Vision Transformer
-The Convolutional Vision Transformer (CvT) adds two main features to improve the Vision Transformer: Convolutional Token Embedding and Convolutional Projection.
+The Convolutional Vision Transformer (CvT) improves the Vision Transformer by:
 
-- Convolutional Token Embedding: This layer uses convolutions to create overlapping patches from images, which are then turned into tokens. It reduces the number of tokens while increasing their detail, similar to how CNNs work, without needing extra position embeddings.
+- Convolutional Token Embedding: This layer uses convolutions to create detailed, overlapping patches from images, reducing the number of tokens while capturing more detail, similar to CNNs, without needing position embeddings.
 
-- Convolutional Transformer Blocks: In these blocks, the Convolutional Projection uses depth-wise separable convolutions to handle the query, key, and value in the attention mechanism. This is more efficient than the standard linear approach used in earlier transformers.
+- Convolutional Transformer Blocks: These blocks use depth-wise separable convolutions to process queries, keys, and values in the attention mechanism, making it more efficient than traditional transformers.
 
-The model only adds a classification token in the final stage, and a fully connected layer makes the final class prediction. CvT is designed to be more efficient while still capturing rich features for image classification [Wu et al., 2021].
+CvT adds a classification token at the final stage, with a fully connected layer for class prediction, offering efficiency while capturing rich image features. [Wu et al., 2021].
 
 Below is a visualization of the Convolutional Transformer Block, which includes the convolution projection as the first layer.
 

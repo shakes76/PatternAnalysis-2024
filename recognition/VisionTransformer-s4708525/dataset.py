@@ -11,7 +11,7 @@ test_path_server = '/home/groups/comp3710/ADNI/AD_NC/test/'
 
 class ADNI_Dataset(Dataset):
     """
-    Custom Dataset loader for loading ADNI brain data.
+    Dataset loader for loading ADNI brain data.
 
     Args:
         root_dir : Path to the root directory containing image subfolders ('NC' and 'AD').
@@ -52,6 +52,9 @@ class ADNI_Dataset(Dataset):
         return image, label
 
     def get_category_counts(self):
+        """
+        Get the number of each category/classes
+        """
         return self.category_counts
 
 def preprocess_image(image_path):
@@ -62,7 +65,7 @@ def preprocess_image(image_path):
         image_path: String of the image path
     
     Returns:
-        image: Preprocessed image tensor suitable for input to the model.
+        Preprocessed image tensor suitable for input to the model.
     """
     image = Image.open(image_path).convert('RGB')
     transform_test = transforms.Compose([
@@ -114,51 +117,52 @@ train_loader = DataLoader(train_subset, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_subset, batch_size=16, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
-classes = ['NC', 'AD']
+def show_data_statistics():
 
-# save sample of train images augmented
-show_sample_data(train_loader, classes, 'img_training_samples_augmented')
+    classes = ['NC', 'AD']
 
-# save sample of test images augmented
-# shuffle=True for the purpose of showing the samples
-test_loader_augmented = DataLoader(test_dataset, batch_size=16, shuffle=True)
-show_sample_data(test_loader_augmented, classes, 'img_testing_samples_augmented')
+    # save sample of train images augmented
+    show_sample_data(train_loader, classes, 'img_training_samples_augmented')
 
+    # save sample of test images augmented
+    # shuffle=True for the purpose of showing the samples
+    test_loader_augmented = DataLoader(test_dataset, batch_size=16, shuffle=True)
+    show_sample_data(test_loader_augmented, classes, 'img_testing_samples_augmented')
 
-# show sample of original dataset
-train_dataset_no_augmented = ADNI_Dataset(train_path_server, transform=transform_no_augmentation)
-test_dataset_no_augmented = ADNI_Dataset(test_path_server, transform=transform_no_augmentation)
+    # show sample of original dataset
+    train_dataset_no_augmented = ADNI_Dataset(train_path_server, transform=transform_no_augmentation)
+    test_dataset_no_augmented = ADNI_Dataset(test_path_server, transform=transform_no_augmentation)
 
-train_loader_no_augmented = DataLoader(train_dataset_no_augmented, batch_size=16, shuffle=True)
-# shuffle=True for the purpose of showing the samples
-test_loader_no_augmented = DataLoader(test_dataset_no_augmented, batch_size=16, shuffle=True)
+    train_loader_no_augmented = DataLoader(train_dataset_no_augmented, batch_size=16, shuffle=True)
+    # shuffle=True for the purpose of showing the samples
+    test_loader_no_augmented = DataLoader(test_dataset_no_augmented, batch_size=16, shuffle=True)
 
-# save sample of training images no augmented
-show_sample_data(train_loader_no_augmented, classes, 'img_training_samples_original')
-show_sample_data(test_loader_no_augmented, classes, 'img_testing_samples_original')
+    # save sample of training images no augmented
+    show_sample_data(train_loader_no_augmented, classes, 'img_training_samples_original')
+    show_sample_data(test_loader_no_augmented, classes, 'img_testing_samples_original')
 
-# get counts for the training dataset
-train_counts = train_dataset.get_category_counts()
-print(f"Total training data (before splitting): {train_counts}")
+    # get counts for the training dataset
+    train_counts = train_dataset.get_category_counts()
+    print(f"Total training data (before splitting): {train_counts}")
 
-# get counts for the train subset after splitting
-train_subset_counts = {'NC': 0, 'AD': 0}
-for _, label in train_subset:
-    if label == 0:
-        train_subset_counts['NC'] += 1
-    else:
-        train_subset_counts['AD'] += 1
-print(f"Training subset counts: {train_subset_counts}")
+    # get counts for the train subset after splitting
+    train_subset_counts = {'NC': 0, 'AD': 0}
+    for _, label in train_subset:
+        if label == 0:
+            train_subset_counts['NC'] += 1
+        else:
+            train_subset_counts['AD'] += 1
+    print(f"Training subset counts: {train_subset_counts}")
 
-# get counts for the validation subset
-val_subset_counts = {'NC': 0, 'AD': 0}
-for _, label in val_subset:
-    if label == 0:
-        val_subset_counts['NC'] += 1
-    else:
-        val_subset_counts['AD'] += 1
-print(f"Validation subset counts: {val_subset_counts}")
+    # get counts for the validation subset
+    val_subset_counts = {'NC': 0, 'AD': 0}
+    for _, label in val_subset:
+        if label == 0:
+            val_subset_counts['NC'] += 1
+        else:
+            val_subset_counts['AD'] += 1
+    print(f"Validation subset counts: {val_subset_counts}")
 
-# get counts for the test dataset
-test_counts = test_dataset.get_category_counts()
-print(f"Test dataset counts: {test_counts}")
+    # get counts for the test dataset
+    test_counts = test_dataset.get_category_counts()
+    print(f"Test dataset counts: {test_counts}")

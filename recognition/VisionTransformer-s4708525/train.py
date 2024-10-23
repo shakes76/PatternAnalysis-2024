@@ -32,7 +32,7 @@ def evaluate_model_accuracy(model, data_loader):
         data_loader : The DataLoader for evaluation data.
 
     Returns:
-        tuple: Average accuracy of the model on the provided dataset.
+        Average accuracy of the model on the provided dataset.
     """
 
     model.eval()
@@ -56,7 +56,7 @@ def evaluate_model_on_loader(model, data_loader):
         data_loader : The DataLoader for evaluation data.
 
     Returns:
-        tuple: Average loss and accuracy of the model on the provided dataset.
+        Average loss and accuracy of the model on the provided dataset.
     """
 
     model.eval()
@@ -91,7 +91,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         patience: Number of epochs to wait before early stopping (default: 5).
 
     Returns:
-        tuple: Lists of training and validation losses and accuracies for each epoch.
+        Lists of training and validation losses and accuracies for each epoch.
     """
 
     early_stopping = EarlyStopping(patience=patience)

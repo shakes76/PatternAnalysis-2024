@@ -34,9 +34,9 @@ class ConvolutionalEmbedding(nn.Module):
     def __init__(self, in_channels=CONV_EMBEDDING_INPUT_CHANNELS, embed_dim=CONV_EMBEDDING_DIM, kernel_size=CONV_EMBEDDING_KERNEL_SIZE, stride=CONV_EMBEDDING_STRIDE, padding=CONV_EMBEDDING_PADDING_SIZE):
         super(ConvolutionalEmbedding, self).__init__()
         # convolutional layer
-        self.conv = nn.Conv2d(in_channels, embed_dim, kernel_size=kernel_size, stride=stride, padding=padding)
+        self.conv_layer = nn.Conv2d(in_channels, embed_dim, kernel_size=kernel_size, stride=stride, padding=padding)
         # batch normalization
-        self.norm = nn.BatchNorm2d(embed_dim)
+        self.batch_norm = nn.BatchNorm2d(embed_dim)
 
     def forward(self, x):
         """
@@ -46,10 +46,10 @@ class ConvolutionalEmbedding(nn.Module):
             x : Input tensor of shape (batch_size, in_channels, height, width).
 
         Returns:
-            torch.Tensor: Output tensor of shape (batch_size, embed_dim, new_height, new_width).
+            Output tensor of shape (batch_size, embed_dim, new_height, new_width).
         """
-        x = self.conv(x)
-        x = self.norm(x)
+        x = self.conv_layer(x)
+        x = self.batch_norm(x)
         return x
 
 class TransformerBlock(nn.Module):
@@ -65,11 +65,11 @@ class TransformerBlock(nn.Module):
     def __init__(self, embed_dim, num_heads, mlp_dim, dropout=0.1):
         super(TransformerBlock, self).__init__()
         # layer normalization
-        self.norm1 = nn.LayerNorm(embed_dim)
+        self.layer_norm1 = nn.LayerNorm(embed_dim)
         # self-attention
-        self.attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout)
+        self.multihead_attention = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout)
         # layer normalization
-        self.norm2 = nn.LayerNorm(embed_dim)
+        self.layer_norm2 = nn.LayerNorm(embed_dim)
         # multi layer perceptron
         self.mlp = nn.Sequential(
             nn.Linear(embed_dim, mlp_dim),
@@ -87,15 +87,15 @@ class TransformerBlock(nn.Module):
             x : Input tensor of shape (sequence_length, batch_size, embed_dim).
 
         Returns:
-            torch.Tensor: Output tensor of the same shape as input.
+            Output tensor of the same shape as input.
         """
-        attn_output, _ = self.attn(x, x, x)
-        x = x + attn_output 
-        x = self.norm1(x)
+        output, _ = self.multihead_attention(x, x, x)
+        x = x + output 
+        x = self.layer_norm1(x)
         
         mlp_output = self.mlp(x)
         x = x + mlp_output 
-        x = self.norm2(x)
+        x = self.layer_norm2(x)
         return x
 
 class CvT(nn.Module):

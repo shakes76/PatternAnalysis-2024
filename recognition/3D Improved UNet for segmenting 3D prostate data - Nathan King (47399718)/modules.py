@@ -80,3 +80,27 @@ def decreasing_layer(inputs, stride, filters):
     addition = layers.Add()([convolution, context])
 
     return addition
+
+def upsampling_layer(localisation, addition, filters):
+    """
+    The upsampling layer is used to upscale, followed by a halving of the feature maps.
+    Reference [https://arxiv.org/pdf/1802.10508v1]
+    input: localisation - previous localisation
+           addition - previous addition
+           filters - number of filters to output
+    output: concatenation - produced concatenation
+    """
+    
+    #2 x 2 x 2 Upsampling
+    upsample = layers.UpSampling3D((2, 2, 2))(localisation)
+    
+    #3 x 3 x 3 Stride-1 Convolution
+    upsample = layers.Conv3D(filters, (3, 3, 3), padding="same")(upsample)
+    
+    #Leaky ReLU Activation
+    upsample = layers.LeakyReLU(negative_slope=0.01)(upsample)
+    
+    #Concatenation of lower level and context
+    concatenation = layers.Concatenate()([upsample, addition])
+    
+    return concatenation

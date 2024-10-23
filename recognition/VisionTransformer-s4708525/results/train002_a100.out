@@ -1,0 +1,52 @@
+Matplotlib created a temporary cache directory at /scratch/219391/matplotlib-_jv0mr4c because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+Device: cuda
+Start training
+Epochs-[1/100]	Train Loss: 0.6389, 	Train Accuracy: 63.0344%, 	Validation Loss: 0.6563, 	Validation Accuracy: 60.6877%, 	Time: 59.27 seconds
+Epochs-[2/100]	Train Loss: 0.6065, 	Train Accuracy: 67.3443%, 	Validation Loss: 0.5950, 	Validation Accuracy: 68.2853%, 	Time: 57.06 seconds
+Epochs-[3/100]	Train Loss: 0.5975, 	Train Accuracy: 67.6289%, 	Validation Loss: 0.6136, 	Validation Accuracy: 65.3578%, 	Time: 56.57 seconds
+Epochs-[4/100]	Train Loss: 0.5928, 	Train Accuracy: 68.1111%, 	Validation Loss: 0.5761, 	Validation Accuracy: 69.4470%, 	Time: 56.89 seconds
+Epochs-[5/100]	Train Loss: 0.5915, 	Train Accuracy: 68.4770%, 	Validation Loss: 0.5983, 	Validation Accuracy: 68.1459%, 	Time: 57.06 seconds
+Epochs-[6/100]	Train Loss: 0.5883, 	Train Accuracy: 68.5990%, 	Validation Loss: 0.5716, 	Validation Accuracy: 70.1673%, 	Time: 56.83 seconds
+Epochs-[7/100]	Train Loss: 0.5834, 	Train Accuracy: 68.9475%, 	Validation Loss: 0.5706, 	Validation Accuracy: 69.8652%, 	Time: 56.43 seconds
+Epochs-[8/100]	Train Loss: 0.5837, 	Train Accuracy: 68.7965%, 	Validation Loss: 0.5650, 	Validation Accuracy: 69.9117%, 	Time: 56.22 seconds
+Epochs-[9/100]	Train Loss: 0.5810, 	Train Accuracy: 69.0404%, 	Validation Loss: 0.5602, 	Validation Accuracy: 70.8178%, 	Time: 56.56 seconds
+Epochs-[10/100]	Train Loss: 0.5756, 	Train Accuracy: 69.6678%, 	Validation Loss: 0.5694, 	Validation Accuracy: 70.1441%, 	Time: 56.43 seconds
+Epochs-[11/100]	Train Loss: 0.5577, 	Train Accuracy: 71.4974%, 	Validation Loss: 0.5407, 	Validation Accuracy: 72.6069%, 	Time: 56.76 seconds
+Epochs-[12/100]	Train Loss: 0.5541, 	Train Accuracy: 71.6485%, 	Validation Loss: 0.5383, 	Validation Accuracy: 73.1413%, 	Time: 56.87 seconds
+Epochs-[13/100]	Train Loss: 0.5488, 	Train Accuracy: 71.9621%, 	Validation Loss: 0.5380, 	Validation Accuracy: 72.5372%, 	Time: 56.70 seconds
+Epochs-[14/100]	Train Loss: 0.5483, 	Train Accuracy: 71.7821%, 	Validation Loss: 0.5428, 	Validation Accuracy: 72.6301%, 	Time: 57.08 seconds
+Epochs-[15/100]	Train Loss: 0.5428, 	Train Accuracy: 72.0841%, 	Validation Loss: 0.5355, 	Validation Accuracy: 73.1645%, 	Time: 57.08 seconds
+Epochs-[16/100]	Train Loss: 0.5423, 	Train Accuracy: 72.4907%, 	Validation Loss: 0.5326, 	Validation Accuracy: 73.1413%, 	Time: 56.73 seconds
+Epochs-[17/100]	Train Loss: 0.5428, 	Train Accuracy: 72.3862%, 	Validation Loss: 0.5296, 	Validation Accuracy: 74.0474%, 	Time: 57.05 seconds
+Epochs-[18/100]	Train Loss: 0.5397, 	Train Accuracy: 72.6592%, 	Validation Loss: 0.5234, 	Validation Accuracy: 73.5595%, 	Time: 56.97 seconds
+Epochs-[19/100]	Train Loss: 0.5370, 	Train Accuracy: 72.6824%, 	Validation Loss: 0.5308, 	Validation Accuracy: 72.8392%, 	Time: 56.71 seconds
+Epochs-[20/100]	Train Loss: 0.5380, 	Train Accuracy: 72.3571%, 	Validation Loss: 0.5267, 	Validation Accuracy: 73.6757%, 	Time: 56.91 seconds
+Epochs-[21/100]	Train Loss: 0.5319, 	Train Accuracy: 72.9961%, 	Validation Loss: 0.5247, 	Validation Accuracy: 73.6292%, 	Time: 57.10 seconds
+Epochs-[22/100]	Train Loss: 0.5325, 	Train Accuracy: 73.0716%, 	Validation Loss: 0.5208, 	Validation Accuracy: 74.3727%, 	Time: 57.03 seconds
+Epochs-[23/100]	Train Loss: 0.5349, 	Train Accuracy: 72.7289%, 	Validation Loss: 0.5186, 	Validation Accuracy: 74.0009%, 	Time: 57.01 seconds
+Epochs-[24/100]	Train Loss: 0.5329, 	Train Accuracy: 73.1645%, 	Validation Loss: 0.5278, 	Validation Accuracy: 73.7918%, 	Time: 56.50 seconds
+Epochs-[25/100]	Train Loss: 0.5302, 	Train Accuracy: 73.2110%, 	Validation Loss: 0.5230, 	Validation Accuracy: 74.5121%, 	Time: 56.24 seconds
+Epochs-[26/100]	Train Loss: 0.5336, 	Train Accuracy: 72.9902%, 	Validation Loss: 0.5209, 	Validation Accuracy: 73.8151%, 	Time: 56.93 seconds
+Epochs-[27/100]	Train Loss: 0.5312, 	Train Accuracy: 72.8334%, 	Validation Loss: 0.5237, 	Validation Accuracy: 73.5362%, 	Time: 56.92 seconds
+Epochs-[28/100]	Train Loss: 0.5329, 	Train Accuracy: 73.0541%, 	Validation Loss: 0.5235, 	Validation Accuracy: 74.0009%, 	Time: 57.34 seconds
+Epochs-[29/100]	Train Loss: 0.5293, 	Train Accuracy: 73.1471%, 	Validation Loss: 0.5192, 	Validation Accuracy: 74.4191%, 	Time: 57.41 seconds
+Epochs-[30/100]	Train Loss: 0.5296, 	Train Accuracy: 73.4026%, 	Validation Loss: 0.5192, 	Validation Accuracy: 74.2797%, 	Time: 57.05 seconds
+Epochs-[31/100]	Train Loss: 0.5254, 	Train Accuracy: 73.5421%, 	Validation Loss: 0.5193, 	Validation Accuracy: 74.3030%, 	Time: 57.33 seconds
+Epochs-[32/100]	Train Loss: 0.5307, 	Train Accuracy: 73.0716%, 	Validation Loss: 0.5186, 	Validation Accuracy: 74.9535%, 	Time: 56.91 seconds
+Epochs-[33/100]	Train Loss: 0.5299, 	Train Accuracy: 72.9786%, 	Validation Loss: 0.5157, 	Validation Accuracy: 74.5353%, 	Time: 57.78 seconds
+Epochs-[34/100]	Train Loss: 0.5273, 	Train Accuracy: 73.2110%, 	Validation Loss: 0.5181, 	Validation Accuracy: 73.9080%, 	Time: 57.53 seconds
+Epochs-[35/100]	Train Loss: 0.5292, 	Train Accuracy: 73.1122%, 	Validation Loss: 0.5211, 	Validation Accuracy: 74.0939%, 	Time: 56.94 seconds
+Epochs-[36/100]	Train Loss: 0.5279, 	Train Accuracy: 73.2749%, 	Validation Loss: 0.5178, 	Validation Accuracy: 74.3959%, 	Time: 56.78 seconds
+Epochs-[37/100]	Train Loss: 0.5303, 	Train Accuracy: 73.0658%, 	Validation Loss: 0.5192, 	Validation Accuracy: 74.2100%, 	Time: 56.82 seconds
+Epochs-[38/100]	Train Loss: 0.5269, 	Train Accuracy: 73.6873%, 	Validation Loss: 0.5215, 	Validation Accuracy: 74.0939%, 	Time: 56.92 seconds
+Epochs-[39/100]	Train Loss: 0.5271, 	Train Accuracy: 73.5595%, 	Validation Loss: 0.5196, 	Validation Accuracy: 74.1868%, 	Time: 57.08 seconds
+Epochs-[40/100]	Train Loss: 0.5265, 	Train Accuracy: 73.7744%, 	Validation Loss: 0.5169, 	Validation Accuracy: 73.6292%, 	Time: 56.46 seconds
+Epochs-[41/100]	Train Loss: 0.5247, 	Train Accuracy: 73.6466%, 	Validation Loss: 0.5202, 	Validation Accuracy: 74.5818%, 	Time: 56.62 seconds
+Epochs-[42/100]	Train Loss: 0.5263, 	Train Accuracy: 73.5188%, 	Validation Loss: 0.5207, 	Validation Accuracy: 74.0939%, 	Time: 57.34 seconds
+Epochs-[43/100]	Train Loss: 0.5282, 	Train Accuracy: 73.3794%, 	Validation Loss: 0.5231, 	Validation Accuracy: 74.1171%, 	Time: 57.08 seconds
+Early stopping triggered
+Training time: 40.0 minutes, 49.310131788253784 seconds
+End training
+Eval start!
+Test accuracy: 66.25555555555556
+Eval end!

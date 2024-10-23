@@ -96,7 +96,7 @@ assigned a class label corresponding to the target structure.
 **Example Output:**
 - Segmentation mask: A 3D array of dimensions `(depth, height, width)` with integer values representing class labels.
 
-Below is a sample input MRI slice and the corresponding 
+Below is a sample input MRI slice and mask, with the corresponding 
 segmentation output.
 
 ![Output Image](./Content/prediction2.png)
@@ -152,6 +152,12 @@ the key results from the training process:
 - Early stopping at epoch 12, all classes have Dice scores ≥ 0.7
   - Test Loss: 0.1276
   - Test Class-specific Dice Scores: [0.98341535 0.95497757 0.78998656 0.79622618 0.72969815 0.76118778]
+
+
+  Evident above, the model achieves >0.7 dice similarity score 
+  for each class. Initially, the performance of the last two classes 
+was poor due to smaller and/or more complex regions. Weighting was introduced
+to ensure that smaller, potentially clinically relevant structures are well-learned by the model.
 
 ## Reflections and Future Work
 Task was very challenging and took time management across 4 weeks 

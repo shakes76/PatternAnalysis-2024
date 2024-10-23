@@ -76,7 +76,8 @@ With the improved 3D U-Net model, all labels achieved a **DSC of at least 0.8.**
 
 
 
-Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the image and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. The higher quality segmentation of the improved 3D U-Net can be observed. 
+Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the original image and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. Both the original and improved 3D U-Net models produce great results, with the improved 3D U-Net producing comparatively higher quality segmentations (last row).
+
 
 
 

@@ -1,6 +1,6 @@
 # StyleGAN for ADNI Brain Dataset
 
-This project implements a StyleGAN model to generate synthetic brain images using the ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset. The model is designed to learn the distribution of brain images and generate new samples that resemble the training data. The model has been trained on both the AD and NC classes within the dataset to generate images of brains with "Alzheimers Disease" and images of brains considered "Normal Cognition" respectively.
+This project implements a StyleGAN model to generate synthetic brain images using the ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset. The model is designed to learn the distribution of brain images and generate new samples that resemble the training data. The model has been trained on both the AD and NC classes within the dataset to generate images of brains with "Alzheimer's Disease" and images of brains considered "Normal Cognition" respectively.
 
 ## Table of Contents
 
@@ -66,6 +66,16 @@ python predict.py NC
 <br/>
 
 3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images, saved as `t-SNE_visualization.png`.
+Alzheimer's Disease Brains:
+<br/>
+![AD T-SNE](images/tsne_AD.png)
+<br/>
+<br/>
+Normal Cognition Brains:
+<br/>
+![NC T-SNE](images/tsne_NC.png)
+<br/>
+<br/>
 
 
 ## Model Architecture
@@ -88,19 +98,30 @@ The model is built using TensorFlow and Keras, and the architecture is defined i
 
 After training, the model generates synthetic brain images that resemble the training data. The quality of the generated images can be evaluated visually and through the discriminator's output.
 
-Images During Training produced the following results
+Images during training produced the following results
 
-###########################################################################################################
-Insert AD training GIF Here
-###########################################################################################################
+Alzheimer's Disease Brains:
+<br/>
+![AD Training](images/AD_images.gif)
+<br/>
+<br/>
+Normal Cognition Brains:
+<br/>
+![NC Training](images/NC_images.gif)
+<br/>
+<br/>
 
-###########################################################################################################
-Insert NC training GIF Here
-###########################################################################################################
-
-###########################################################################################################
-Show final Generated Images Here
-###########################################################################################################
+Images generated from the final models produced the following results 
+Alzheimer's Disease Brains:
+<br/>
+![AD Predict](images/AD_image.png)
+<br/>
+<br/>
+Normal Cognition Brains:
+<br/>
+![NC Predict](images/NC_image.png)
+<br/>
+<br/>
 
 
 ## License

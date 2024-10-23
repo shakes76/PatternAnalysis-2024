@@ -1,0 +1,24 @@
+input:
+  train_dir: /path/to/training_dataset
+  validate_dir: /path/to/validate_dataset
+  test_dir: /path/to/test_dataset
+  load_model_dir: /path/to/trained_model
+
+output:
+  log_dir: ~/logging
+  sample_dir: ~/samples
+  visual_dir: ~/visuals
+  model_dir: ~/models
+
+training:
+  epochs: 10
+  batch_size: 10
+  lr: 0.00003 # advised lr without scheduler
+  latent_loss_weight: 0.25 # advised latent loss weight
+  sample_size: 10
+  interval: 250
+
+predict:
+  batch_size: 10
+  sample_size: 10
+  samples: 3

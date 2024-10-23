@@ -1,13 +1,17 @@
 import torch
 import torch.nn as nn
 
+# hyperparameter for the convolutional embedding class
 CONV_EMBEDDING_INPUT_CHANNELS=3
 CONV_EMBEDDING_DIM=64
 CONV_EMBEDDING_KERNEL_SIZE=7
 CONV_EMBEDDING_STRIDE=4
 CONV_EMBEDDING_PADDING_SIZE=2
+
+# hyperparameter for the transformer block
 TRANSFORMER_BLOCK_DROPOUT=0.1
 
+# hyperparameter for the CvT model
 CVT_INPUT_CHANNELS=3
 CVT_CLASS_COUNT=2
 CVT_EMBEDDING_DIM=32
@@ -29,7 +33,9 @@ class ConvolutionalEmbedding(nn.Module):
     """
     def __init__(self, in_channels=CONV_EMBEDDING_INPUT_CHANNELS, embed_dim=CONV_EMBEDDING_DIM, kernel_size=CONV_EMBEDDING_KERNEL_SIZE, stride=CONV_EMBEDDING_STRIDE, padding=CONV_EMBEDDING_PADDING_SIZE):
         super(ConvolutionalEmbedding, self).__init__()
+        # convolutional layer
         self.conv = nn.Conv2d(in_channels, embed_dim, kernel_size=kernel_size, stride=stride, padding=padding)
+        # batch normalization
         self.norm = nn.BatchNorm2d(embed_dim)
 
     def forward(self, x):
@@ -58,9 +64,13 @@ class TransformerBlock(nn.Module):
     """
     def __init__(self, embed_dim, num_heads, mlp_dim, dropout=0.1):
         super(TransformerBlock, self).__init__()
+        # layer normalization
         self.norm1 = nn.LayerNorm(embed_dim)
+        # self-attention
         self.attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout)
+        # layer normalization
         self.norm2 = nn.LayerNorm(embed_dim)
+        # multi layer perceptron
         self.mlp = nn.Sequential(
             nn.Linear(embed_dim, mlp_dim),
             nn.GELU(),
@@ -104,13 +114,16 @@ class CvT(nn.Module):
     def __init__(self, in_channels=CVT_INPUT_CHANNELS, num_classes=CVT_CLASS_COUNT, embed_dim=CVT_EMBEDDING_DIM, num_heads=CVT_HEAD_COUNT, mlp_dim=CVT_HIDDEN_DIM, num_transformer_blocks=CVT_TRANSFORMER_BLOCK_COUNT, dropout=CVT_DROPOUT):
         super(CvT, self).__init__()
         
+        # convolutional embedding
         self.conv_embedding = ConvolutionalEmbedding(in_channels, embed_dim)
         
+        # transformer blocks
         self.transformer_blocks = nn.ModuleList([
             TransformerBlock(embed_dim, num_heads, mlp_dim, dropout)
             for _ in range(num_transformer_blocks)
         ])
         
+        # multilayer perceptron 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(embed_dim),
             nn.Linear(embed_dim, num_classes)

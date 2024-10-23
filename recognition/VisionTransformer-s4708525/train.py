@@ -18,11 +18,11 @@ else:
 
 print('Device:', device)
 
-NUM_EPOCHS = 100
-EARLY_STOPPING_PATIENCE = 10
-OPTIMIZER_LEARNING_RATE = 1e-3
-SCHEDULER_STEP_SIZE = 10
-SCHEDULER_GAMMA = 0.1
+NUM_EPOCHS = 100 # number of training epochs
+EARLY_STOPPING_PATIENCE = 10 # value of early stopping patience
+OPTIMIZER_LEARNING_RATE = 1e-3 # value of learning rate for optimizer
+SCHEDULER_STEP_SIZE = 10 # value of step size on scheduler
+SCHEDULER_GAMMA = 0.1 # value of gamma for the scheduler
 
 def evaluate_model_accuracy(model, data_loader):
     """Evaluates the model on a given DataLoader.

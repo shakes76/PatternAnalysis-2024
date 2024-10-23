@@ -54,6 +54,9 @@ def evaluate_prediction(predicted_class, num):
 def imshow(img):
     """
     Function to unnormalize and convert tensor to numpy array for display
+
+    Args:
+        img: image on the tensor format
     """
     img = img.numpy().transpose((1, 2, 0)) 
     mean = np.array([0.1155, 0.1155, 0.1155]) 
@@ -66,6 +69,11 @@ def imshow(img):
 def show_sample_data(train_loader, classes, file_name):
     """
     Visualize a batch of images from the DataLoader
+
+    Args:
+        train_loader: the data loader to be visualized
+        classes: the class/label of the dataset
+        file_name: name of the file to be saved
     """
     # Get a batch of training images
     dataiter = iter(train_loader)

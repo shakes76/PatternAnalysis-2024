@@ -24,6 +24,7 @@ if __name__ == "__main__":
     model.eval()
 
     # path image to be predicted
+    # take 1 sample image from the AD classes (test data)
     image_path_server = f'{test_path_server}/AD/1254307_109.jpeg'
     input_image = preprocess_image(image_path_server) 
     input_image = input_image.to(device) 

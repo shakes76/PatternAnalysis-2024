@@ -77,7 +77,28 @@ def train_one_epoch():
 
 
 def validate():
-    return None
+    model.eval()
+    running_loss = 0
+    i = 0
+    with torch.no_grad():
+        for image, label in validation_dataset:
+            #print(image, "kk")
+            print("Validation loop", i)
+            # if image is None or label is None:
+            #     print("jjkj")
+            #     continue
+            image = image.to(device)
+            label = label.to(device)
+            prediction = model(image)
+            #print("Prediction shape:", prediction)
+            
+            loss, loss_image = loss_function(prediction[1], label)
+            running_loss += loss.item()
+            i += 1
+    avg_val_loss = running_loss / len(validation_dataset)
+    print(f"Validation Loss: {avg_val_loss:.4f}")
+    
+    return avg_val_loss
 
 
 for epoch in range(epochs):

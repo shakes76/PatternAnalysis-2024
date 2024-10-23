@@ -189,7 +189,7 @@ def improved_3d_unet_model():
     concatenation_1 = upsampling_layer(localisation_layer_2, context_layer_1, 16)
 
     #Localisation Pathway 5
-    localisation_layer_1 = layers.Conv3D(32, (3, 3, 3), padding="same")(concatenation_2)
+    localisation_layer_1 = layers.Conv3D(32, (3, 3, 3), padding="same")(concatenation_1)
 
     #Segmentation Layer 3
     segmentation_1 = segmentation_layer(localisation_layer_1, False, segmentation_2, True, 6)

@@ -50,7 +50,7 @@ Below is an example of a mask that distinguishes the 6 categories.
 
 ### Processing
 
-All input data was resized from 256 x 256 x 128 to 128 x 128 x 6 to reduce the memory demand. The intensity of the images was scaled to be between [0,1] and normalisation was applied.
+All input data was resized from 256 x 256 x 128 to 128 x 128 x 64 to reduce the memory demand. The intensity of the images was scaled to be between [0,1] and normalisation was applied.
 
 Data augmentation was performed on the input training data. The augmentatinos included [random flips](https://torchio.readthedocs.io/transforms/augmentation.html#torchio.transforms.RandomFlip),
 [random elastic deformation](https://torchio.readthedocs.io/transforms/augmentation.html#torchio.transforms.RandomElasticDeformation) and [random affine](https://torchio.readthedocs.io/transforms/augmentation.html#torchio.transforms.RandomAffine) changes.

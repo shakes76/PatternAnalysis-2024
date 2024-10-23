@@ -8,21 +8,9 @@ s4784738
 
 import datetime
 import os
-from typing import Optional
-import numpy as np
 from matplotlib import pyplot as plt
 import time
 import torch
-import torch.backends.cudnn as cudnn
-
-from timm.data import Mixup
-from timm.models import create_model
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-from timm.scheduler import create_scheduler
-from timm.optim import create_optimizer
-from timm.utils import NativeScaler, accuracy, ModelEma
-from functools import partial
-import torch.nn as nn
 
 from dataset import get_data_loader
 from modules import GFNet
@@ -106,30 +94,49 @@ def plot_data(train_acc, train_loss, val_acc, val_loss):
     # Create images directory if it doesn't exist
     os.makedirs('./assets', exist_ok=True)
 
-    # Plot training accuracy.loss
+    # Plot training accuracy
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
     plt.plot(train_acc, label='Training Accuracy', color='blue')
-    plt.plot(train_loss, label='Training Loss', color='orange')
-    plt.title('Training at each Epoch')
+    plt.title('Training Accuracy')
     plt.xlabel('Epoch')
-    plt.ylabel('Accuracy/Loss')
+    plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(True)
-    plt.savefig('./assets/train_plot.png')
-    #plt.close() 
+    plt.savefig('./assets/training_accuracy.png')
+
+    # Plot training loss
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(train_loss, label='Training Loss', color='blue')
+    plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('./assets/training_loss.png')
 
     # Plot validation accuracy/loss
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 2)
     plt.plot(val_acc, label='Validation Accuracy', color='blue')
-    plt.plot(val_loss, label='Validation Loss', color='orange')
-    plt.title('Validation at each Epoch')
+    plt.title('Validation Accuracy')
     plt.xlabel('Epoch')
-    plt.ylabel('Accuracy/loss')
+    plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(True)
-    plt.savefig('./assets/validate_plot.png')
+    plt.savefig('./assets/validation_accuracy.png')
+
+    # Plot validation loss
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 2)
+    plt.plot(val_loss, label='Validation Loss', color='blue')
+    plt.title('Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('./assets/validation_loss.png')
     plt.show()
     
 
@@ -145,7 +152,6 @@ def train_GFNet(dataloaders):
     drop_path_rate,
     weight_decay,
     t_max,
-    eta_min
     ) = get_parameters()
 
     start_time = time.time()
@@ -209,7 +215,7 @@ def train_GFNet(dataloaders):
     test_acc, test_loss = evaluate(data_loader_test, model, criterion, device)
     print(f'Accuracy on test set: {test_acc:.1f}, and loss: {test_loss:.1f}\n')
     
-    plot_data(train_loss, val_loss, train_acc, val_acc)
+    plot_data(train_acc, train_loss, val_acc, val_loss)
     print('Saved loss and accuracy plots in ./assets/')
 
     print('Saving model...')
@@ -223,10 +229,8 @@ if __name__ == "__main__":
     # Paths to the training and validation datasets
     train_path, test_path = get_path_to_images()
     dataloaders = {
-        #'train': get_data_loader(train_path, 'train', batch_size = 32, shuffle = True, split=0.2),
-        #'test': get_data_loader(test_path, 'test', batch_size = 32, shuffle = False, split=0.2)
-        'train': get_data_loader(train_path, 'train', batch_size = 32, shuffle = True, split=0.2),
-        'test': get_data_loader(test_path, 'test', batch_size = 32, shuffle = False, split=0.2)
+        'train': get_data_loader(train_path, 'train', batch_size = 16, shuffle = True, split=0.2),
+        'test': get_data_loader(test_path, 'test', batch_size = 16, shuffle = False, split=0.2)
     }
 
     train_GFNet(dataloaders)

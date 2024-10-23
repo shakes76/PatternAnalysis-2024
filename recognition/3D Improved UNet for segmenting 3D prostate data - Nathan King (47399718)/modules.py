@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+from dataset import DOWNSIZE_FACTOR
+
 def context_module(convolution, filters):
     """
     The context module is defined as a pre-activation residual block with two 3 x 3 x 3 convolutional layers with a dropout layer between.
@@ -134,3 +136,58 @@ def segmentation_layer(localisation, upscale, lower_segmentation, add, filters):
         segmentation = layers.UpSampling3D((2, 2, 2))(segmentation)
     
     return segmentation
+
+def improved_3d_unet_model():
+    """
+    Create the 3D Improved UNet model.
+    Reference [https://arxiv.org/pdf/1802.10508v1]
+    """
+    
+    inputs = tf.keras.layers.Input((256 // DOWNSIZE_FACTOR, 256 // DOWNSIZE_FACTOR, 128 // DOWNSIZE_FACTOR, 1))
+
+    #Context Pathway 1
+    context_layer_1 = decreasing_layer(inputs, 1, 16)
+
+    #Context Pathway 2
+    context_layer_2 = decreasing_layer(context_layer_1, 2, 32)
+
+    #Context Pathway 3
+    context_layer_3 = decreasing_layer(context_layer_2, 2, 64)
+
+    #Context Pathway 4
+    context_layer_4 = decreasing_layer(context_layer_3, 2, 128)
+
+    #Context Pathway 5
+    context_layer_5 = decreasing_layer(context_layer_4, 2, 256)
+
+    #Localisation Pathway 1
+    concatenation_4 = upsampling_layer(context_layer_5, context_layer_4, 128)
+    localisation_layer_4 = localisation_module(concatenation_4, 128)
+
+    #Localisation Pathway 2
+    concatenation_3 = upsampling_layer(localisation_layer_4, context_layer_3, 64)
+    localisation_layer_3 = localisation_module(concatenation_3, 64)
+
+    #Segmentation Layer 1
+    segmentation_3 = segmentation_layer(localisation_layer_3, True, None, False, 6)
+
+    #Localisation Pathway 3
+    concatenation_2 = upsampling_layer(localisation_layer_3, context_layer_2, 32)
+    localisation_layer_2 = localisation_module(concatenation_2, 32)
+
+    #Segmentation Layer 2
+    segmentation_2 = segmentation_layer(localisation_layer_2, True, segmentation_3, True, 6)
+
+    #Localisation Pathway 4
+    concatenation_1 = upsampling_layer(localisation_layer_2, context_layer_1, 16)
+
+    #Localisation Pathway 5
+    localisation_layer_1 = layers.Conv3D(32, (3, 3, 3), padding="same")(concatenation_2)
+
+    #Segmentation Layer 3
+    segmentation_1 = segmentation_layer(localisation_layer_1, False, segmentation_2, True, 6)
+
+    outputs = layers.Conv3D(6, (1, 1, 1), activation="softmax")(segmentation_1)
+    model = tf.keras.Model(inputs, outputs)
+
+    return model

@@ -8,21 +8,28 @@ Plots of the losses and metrics during training will be produced.
 ###############################################################################
 ### Imports
 from time import gmtime, strftime
-import torch.optim as optim
-import torch
 import numpy as np
+import torch
 import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score, accuracy_score
 
-#from dataset import get_isic2020_data, get_isic2020_data_loaders
-#from modules import TripletLoss, SiameseNet
+from dataset import get_isic2020_data, get_isic2020_data_loaders
+from modules import TripletLoss, SiameseNet, set_seed
+from predict import predict_siamese_net, results_siamese_net
 
 
 ###############################################################################
 ### Config Settings
 def get_config() -> dict:
+    """
+    Get the config used to train and evaluate SiameseNet on the ISIC 2020 data.
+
+    Returns: the current config settings
+    """
     config = {
         'data_subset': 1300,
         'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
@@ -40,78 +47,86 @@ def train_siamese_net(
     train_loader: DataLoader,
     val_loader: DataLoader,
     model: SiameseNet,
-    optimizer,
-    scheduler,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler,
     triplet_loss: TripletLoss,
-    classifier_loss,
+    classifier_loss: nn.Module,
     epochs: int,
-    device
+    device: str
 ) -> None:
     """
+    Runs the siamese net model through a training loop using the given optimiser, losses etc.
+    The model will be trained using data from the train_loader and will be evaluated throughout training
+    based on data from the val_loader.
+
+    The model with the best AUR ROC on the validation set will be saved as siamese_net_model.pt 
+
+    At the end of the training loop, graphs for the train and validation: loss, accuracy and AUR ROC over
+    the epochs of training will be produced and saved to the folder.
     """
     best_val_aurroc = 0
-    
+
     train_loss_per_epoch = []
     train_acc_per_epoch = []
     train_aucroc_per_epoch = []
-    
+
     val_loss_per_epoch = []
     val_acc_per_epoch = []
     val_aucroc_per_epoch = []
-    
+
     model.train()
     for epoch in range(epochs):
         model.train()  # Set model to training mode
         running_loss = []
-        
-        for step, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(train_loader):
+
+        for _, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(train_loader):
             # Move the data to the device (GPU or CPU)
             anchor_img = anchor_img.to(device).float()
             positive_img = positive_img.to(device).float()
             negative_img = negative_img.to(device).float()
             anchor_label = anchor_label.to(device)
-            
+
             optimizer.zero_grad()
-            # Foward pass of net
+            # Forward pass of net
             anchor_out = model(anchor_img)
             positive_out = model(positive_img)
             negative_out = model(negative_img)
             curr_trip_loss = triplet_loss(anchor_out, positive_out, negative_out)
-    
-            # Foward pass of classifer
+
+            # Forward pass of classifier
             classifier_out = model.classify(anchor_img)
             curr_classifier_loss = classifier_loss(classifier_out, anchor_label)
-            
+
             # Calculate loss
             loss = curr_trip_loss + curr_classifier_loss
-            
+
             # Backward pass and optimization
             loss.backward()
             optimizer.step()
             running_loss.append(loss.cpu().detach().numpy())
-        
+
         # Calculate and print training loss
         avg_train_loss = np.mean(running_loss)
 
         # Validation phase (testing)
         model.eval()  # Set model to evaluation model
         with torch.no_grad():  # Disable gradient computation for validation/testing
-    
+
             # Calculate Validation Loss
             val_running_loss = []
-            for step, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(val_loader):
+            for _, (anchor_img, positive_img, negative_img, anchor_label) in enumerate(val_loader):
                 anchor_img = anchor_img.to(device).float()
                 positive_img = positive_img.to(device).float()
                 negative_img = negative_img.to(device).float()
                 anchor_label = anchor_label.to(device)
     
-                # Loss from Foward pass of net
+                # Loss from Forward pass of net
                 anchor_out = model(anchor_img)
                 positive_out = model(positive_img)
                 negative_out = model(negative_img)
                 curr_trip_loss = triplet_loss(anchor_out, positive_out, negative_out)
         
-                # Loss from Foward pass of classifer
+                # Loss from Forward pass of classifier
                 classifier_out = model.classify(anchor_img)
                 curr_classifier_loss = classifier_loss(classifier_out, anchor_label)
                 
@@ -168,8 +183,10 @@ def plot_training_graphs(
     train_aucroc_per_epoch,
     val_aucroc_per_epoch,
     epochs
-):    
+) -> None:    
     """
+    Plot graphs for the train and validation: loss, accuracy and AUR ROC over
+    the epochs of training and save the plots to the folder.
     """
     # Plot Loss
     plt.figure(figsize=(15, 8))
@@ -205,12 +222,12 @@ def plot_training_graphs(
     plt.show()
 
 
-
-
 ###############################################################################
 ### Main Function
-def main():
+def main() -> None:
     """
+    Run Training on SiameseNet for classification of ISIC 2020 data.
+    Training will be preformed and then evaluation results on the trained model will be produced.
     """   
     # Set Seed
     set_seed()
@@ -234,7 +251,7 @@ def main():
     # Initalise Model
     model = SiameseNet(config['embedding_dims']).to(device)
 
-    # Initialise loss fucnctions
+    # Initialise loss functions
     triplet_loss = TripletLoss().to(device)
     classifier_loss = nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
 

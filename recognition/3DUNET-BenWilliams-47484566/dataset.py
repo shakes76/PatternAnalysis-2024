@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+import torch.nn.functional as F
 
 
 #image = load_data_3D('semantic_MRs_anon', normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False)
@@ -152,9 +153,13 @@ class MRI3DDataset(Dataset):
     def __len__(self):
         return len(self.image_filenames)
     def pad_to_shape(self, tensor, target_shape):
-        # Pad the tensor to the target shape
-        diff = [target_shape[i] - tensor.shape[i] for i in range(len(target_shape))]
+        # Calculate the difference between target and current shape
+        diff = [max(target_shape[i] - tensor.shape[i], 0) for i in range(len(target_shape))]
+    
+        # Pad only where necessary, set padding to 0 otherwise
         padding = [(0, diff[i]) for i in range(len(diff))]
+    
+        # Pad the tensor using F.pad, ensuring no negative padding
         return F.pad(tensor, tuple(pad for pair in reversed(padding) for pad in pair))
 
 

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 def show_plot_loss(train_losses, val_losses):
     """
@@ -49,3 +50,37 @@ def evaluate_prediction(predicted_class, num):
         results = "Incorrect predictions!"
 
     return results
+
+def imshow(img):
+    """
+    Function to unnormalize and convert tensor to numpy array for display
+    """
+    img = img.numpy().transpose((1, 2, 0)) 
+    mean = np.array([0.1155, 0.1155, 0.1155]) 
+    std = np.array([0.2224, 0.2224, 0.2224]) 
+    img = std * img + mean 
+    img = np.clip(img, 0, 1)
+    return img
+
+
+def show_sample_data(train_loader, classes, file_name):
+    """
+    Visualize a batch of images from the DataLoader
+    """
+    # Get a batch of training images
+    dataiter = iter(train_loader)
+    images, labels = next(dataiter)
+
+    # Create a 2x8 grid for 16 images
+    fig, axes = plt.subplots(2, 8, figsize=(20, 6))
+
+    for i, ax in enumerate(axes.flat):
+        img = images[i]
+        label = labels[i].item()
+
+        ax.imshow(imshow(img))
+        ax.set_title(f"Label: {classes[label]}")
+        ax.axis('off') 
+
+    plt.tight_layout() 
+    plt.savefig(f"results/{file_name}.png", bbox_inches='tight')

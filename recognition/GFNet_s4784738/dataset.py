@@ -79,23 +79,34 @@ def get_data_loader(root_dir, dataset='train', batch_size=32, shuffle=True, spli
             # Resize to 224x224 from the default size of 256x240 pixels
             transforms.Resize((224, 224)),
             transforms.Grayscale(),
-            transforms.RandomHorizontalFlip(),
+            #transforms.RandomHorizontalFlip(),
             #transforms.RandomVerticalFlip(),
-            #transforms.RandomRotation(35),
+            #transforms.RandomRotation(10),
+
+            #60%
+            transforms.ColorJitter(brightness=0.3, contrast=0.3),
+            #64
+            transforms.RandomAffine(degrees=10, translate=(0.15, 0.15), scale=(0.9, 1.1)),
+            #60
+            transforms.RandomResizedCrop(size=(224, 224), scale=(0.9, 1.1)),
+            #58
+            transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.15, 3)),
+            #60
+
+            #transforms.RandomAffine(degrees=10, translate=(0.15, 0.15), scale=(0.9, 1.1)),
+            #transforms.RandomResizedCrop(size=(224, 224), scale=(0.9, 1.1)),
+            #transforms.ColorJitter(brightness=0.4, contrast=0.4),
+            #transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.15, 2.0)),
+
             transforms.ToTensor(),
-            #transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-            # Pre-calculated mean and standard deviation pixel values
-            #transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
-            #transforms.Normalize([0.1155], [0.2224]),
+            transforms.Normalize([0.5], [0.5]),
         ])
     else:
         transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.Grayscale(),
         transforms.ToTensor(),
-        #transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-        #transforms.Normalize(mean=[0.1155, 0.1155, 0.1155], std=[0.2224, 0.2224, 0.2224])
-        #transforms.Normalize([0.1155], [0.2224]),
+        transforms.Normalize([0.5], [0.5]),
     ])
 
     adni_dataset = ADNIDataset(root_dir=root_dir, transform=transform)

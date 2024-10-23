@@ -119,12 +119,7 @@ class NiftiDataset(Dataset):
 #val_dir = os.path.join(base_dir, val_dir)
 #test_dir = os.path.join(base_dir, test_dir)
 
-# Transforms (optional)
-data_transforms = transforms.Compose([
-    transforms.ToTensor(),  # Convert to PyTorch tensor
-])
 
-# Get the DataLoaders
 def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, transform=None, normImage=True):
     # List of paths for each set
     train_images = [os.path.join(train_dir, f) for f in os.listdir(train_dir) if f.endswith('.nii.gz')]

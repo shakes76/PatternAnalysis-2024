@@ -2,6 +2,34 @@
 
 This project aims to classify Alzheimer's disease (normal vs. AD) using the Convolutional Vision Transformer (CvT) on ADNI brain data.
 
+## Reproducibility
+To reproduce this results used in this README.md file, this is the library that should be installed:
+
+```
+Python : 3.12.4
+torch : 2.4.0+cu118
+torchvision : 0.19.0+cu118
+numpy : 1.26.3
+matplotlib : 3.9.2
+```
+
+Then, open the dataset.py and change the path of the dataset if needed, currently it is:
+```Python
+# server path
+train_path_server = '/home/groups/comp3710/ADNI/AD_NC/train/'
+test_path_server = '/home/groups/comp3710/ADNI/AD_NC/test/'
+```
+The next step, from the terminal:
+```
+python train.py
+```
+It will reproduce all of the results related to the training model.
+Moreover, to use the model created from the training model, from the terminal:
+```
+python predict.py
+```
+It will predict the label/class of the 1 inputted image.
+
 ## Convolutional Vision Transformer
 The Convolutional Vision Transformer (CvT) adds two main features to improve the Vision Transformer: Convolutional Token Embedding and Convolutional Projection.
 
@@ -48,7 +76,7 @@ Testing data:
 This is the sample of the training dataset:
 ![Training data samples](results/img_training_samples_original.png)
 
-This is the sample of the training dataset:
+This is the sample of the testing dataset:
 ![Testing data samples](results/img_testing_samples_original.png)
 
 Furthermore, the training and validation data is augmented to expand and diversify a dataset by applying different transformations to the original data. This technique enhances the performance and generalization ability of models. This is the process of data augmentaion applied:
@@ -75,12 +103,12 @@ transform_test = transforms.Compose([
 The value of mean and the standard deviation for normalization is got from the direct calculation on the dataset. In addition, the center crop is applied to the test data because of to make the image clearer when inputting to the model. These are the data after data augmentation:
 
 This is the sample of the training dataset after augmentation:
-![Training data samples](results/img_training_samples_augmented.png)
+![Training data samples after augmentation](results/img_training_samples_augmented.png)
 
-This is the sample of the training dataset after augmentation:
-![Testing data samples](results/img_testing_samples_augmented.png)
+This is the sample of the testing dataset after augmentation:
+![Testing data samples after augmentation](results/img_testing_samples_augmented.png)
 
-## Hyperparameter
+## Hyperparameter and Training Processes
 In the modules.py, this is the hyperparameter used for the model:
 ```Python
 CONV_EMBEDDING_INPUT_CHANNELS=3
@@ -111,6 +139,54 @@ Where the details are:
 - Loss Function: Cross Entropy
 - Optimizer: ADAM (Adaptive Moment Estimation)
 - Scheduler: StepLR
+
+It uses early stopping mechanism, hence during the training, if the validation loss keep not improving after 10 epochs, it will stop the training. 
+
+## Results
+After training for the number of epochs = 100, the early stopping mechanism is triggered at the 43th epochs by resulting:
+```
+Training loss: 0.5282
+Validation loss: 0.5231
+Training accuracy: 73.3794%
+Validation accuracy: 74.1171%
+```
+Full output can be accesed on the path of this repository:
+```
+results/train002_a100.out
+```
+These are the visualization of the loss and accuracy from the training and validation data:
+![Training and validation loss](results/train_val_loss_001.png)
+
+![Training and validation accuracy](results/train_val_accuracy_001.png)
+
+From the results, it looks like the model is learning shown by the decrease of the training and validation loss and end up convergence to certain value. Moreover, the training and validation accuracy also increase as the number of epochs increase showing the positive trends of the training processes.
+
+After that, it uses test data to evaluate the accuracy, and the results is:
+```
+Test accuracy: 66.25555555555556
+```
+
+Surprisingly, the accuracy of the test data is only 66.26% which is lower than the accuracy from the validation data indicating that the model is slightly overfitting.
+
+After saving the model as:
+```
+cvt_model.pth
+```
+The process of prediction is by picking one of the image from the test data and the class of AD which is:
+```
+AD/1254307_109.jpeg
+```
+It results:
+```
+Labels corresponding to the images (0 for NC, 1 for AD)
+Ground truth class: AD
+Predicted class: 1
+Correct predictions!
+```
+
+## Conclusion
+Convolutional Vision Transformer can be used to perform the image classification on the ADNI brain data. However, it needs improvement in this architecture to improve the generalization and robustness of the model because the accuracy of the test data (66.26%) is lower than the accuracy of the validation (74.1%) data indicating slight overfitting.
+
 
 ## References
 - Alzheimer's Disease Neuroimaging Initiative. (n.d.). ADNI data. Retrieved October 22, 2024, from https://adni.loni.usc.edu/data-samples/adni-data/

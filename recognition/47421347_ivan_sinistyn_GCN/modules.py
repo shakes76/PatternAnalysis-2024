@@ -31,7 +31,8 @@ class GCN(torch.nn.Module):
         self.gnn2 = GNNLayer(out_features, out_features // 2)
         self.norm2 = torch.nn.BatchNorm1d(out_features // 2)
         self.gnn3 = GNNLayer(out_features // 2, num_classes)
-        self.norm3 = torch.nn.BatchNorm1d(num_classes)
+        # self.norm3 = torch.nn.BatchNorm1d(num_classes)
+
 
     def forward(self, data):
         x, adj = data.x, data.adjacency_matrix
@@ -46,8 +47,7 @@ class GCN(torch.nn.Module):
         x = self.norm2(x)
         x = torch.relu(x)
 
-        x = self.gnn3(x, adj)
-        x = self.norm3(x)
-
-        return x
+        x = self.gnn3(x, adj)        
+        predict = F.softmax(x, dim=1)
+        return predict
 

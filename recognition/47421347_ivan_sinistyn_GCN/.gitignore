@@ -1,1 +1,3 @@
 facebook.npz
+__pycache__/
+*.pth

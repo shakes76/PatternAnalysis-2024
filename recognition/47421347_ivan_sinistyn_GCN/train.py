@@ -1,12 +1,11 @@
 from modules import GCN
 from dataset import FacebookPagePageLargeNetwork
 from sklearn.metrics import accuracy_score
-from utils import save_plot
+from utils import save_plot, SEED
 import torch
 
 
 FILE_PATH = "./facebook.npz"
-SEED = 31
 VALIDATION_RATIO = 0.1
 TEST_RATIO= 0.1
 
@@ -31,9 +30,6 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
     for i in range(EPOCHS):
         gcn.train()
 
-        e_loss = 0
-        e_accuracy = 0
-        
         # Have to pass the whole dataset since spliting the adjacency matrix into train/test/validation can be problematic
         outputs = gcn(dataset)
 
@@ -75,9 +71,10 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
         print(f"Epoch: {i + 1}/{EPOCHS}\nTRAIN: Loss: {loss.item()}, Accuracy: {accuracy}\nVALIDATION: Loss: {validation_loss.item()}, Accuracy: {validation_accuracy}\n")
 
     # Plot and save the loss and accuracy
-    save_plot(total_train_accuracy, total_validation_accuracy, EPOCHS, "./images/accuracy.png")
-    save_plot(total_train_loss, total_validation_loss, EPOCHS, "./images/loss.png")
+    save_plot(total_train_accuracy, total_validation_accuracy, EPOCHS, "./images/accuracy.png", "Accuracy", (0, 1))
+    save_plot(total_train_loss, total_validation_loss, EPOCHS, "./images/loss.png", "Loss", (0, 3))
     
+    torch.save(gcn, "./GCN_model.pth")
 
 
 
@@ -85,7 +82,7 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
 if __name__ == "__main__":
 
     device = torch.device('cpu')
-    print(device)
+    print(f"Device: {device}")
 
     # Create the dataset and transfer it to device
     dataset = FacebookPagePageLargeNetwork(FILE_PATH, TEST_RATIO, VALIDATION_RATIO, SEED)

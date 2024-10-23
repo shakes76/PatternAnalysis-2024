@@ -117,11 +117,14 @@ The interesting modules used were:
 - dataset.py - Contains the ProstateDataset3D class to load and process the images and masks for a dataloader.
 - driver.py - The driver code to run training or inference using the command line.
 - modules.py - Contains the Modified3DUNet class which is the model for this task. It also has a function to init weights for the model.
-- predict.py - Contains the predict function to run inference using the test set (can be changed) with a trained model.
+- predict.py - Contains example useage of the code and visualisations.
 - train.py - Contains the validate and train loops (as functions) and a function to save predictions for checkpoints.
 - utils.py - Contains various constants used throughout the code e.g., default hyperparameters, model dimensions.
 
 ## Usage
+
+The predict folder shows an example of how to use the code to run training and testing. This should not be used
+in practice unless you want to make changes to the code, instead use the driver.py file as listed below.
 
 ```
 usage: driver.py [-h] -m MODE -s SYSTEM [-sp SAVE_PATH] [-p MODEL_PATH] [-lr LEARNING_RATE] [-bs BATCH_SIZE] [-e EPOCHS] [-wd WEIGHT_DECAY] [-ss STEP_SIZE] [-g GAMMA]
@@ -156,7 +159,7 @@ options:
 Trains the model with rangpur setup. Runs for 150 epochs and uses a batch size of 4.
 Saves the prediction checkpoints in folder saves_150_4.
 
-`python3 driver.py -m predict -s local -sp saves_predict -p model.pth`
+`python3 driver.py -m test -s local -sp saves_predict -p model.pth`
 
 Runs inference on the test with a model loaded from model.pth. Saves prediction images to a folder called saves_predict.
 

@@ -1,7 +1,7 @@
 """
 This file contains the dataset class for the 3D U-Net model. The dataset class loads the images 
 and masks from the specified path and applies the specified transforms.
-The dataset class is used in the predict.py and train.py files to load the data and create the 
+The dataset class is used in train.py to load the data and create the 
 dataloaders.The train, validate, and test split is done manually per constants.
 
 Abdullah Badat (47022173), abdullahbadat27@gmail.com

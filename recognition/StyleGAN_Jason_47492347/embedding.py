@@ -18,13 +18,29 @@ def generate_dataset(path):
     return np.array(dataset)
 
 
+def generate_dataset_from_adni(path):
+    """
+    Generate dataset using random selection from ADNI dataset.
+    """
+    files = [f for f in os.listdir(path) if f.endswith(('.jpeg'))]
+    random_subset = random.sample(files, 1000)
+    dataset = [np.array(Image.open(os.path.join(path, img_file))).flatten() for img_file in random_subset]
+    return np.array(dataset)
+
+
 def perform_UMAP():
     """
     Plot UMAP embeddings for the model generations.
+    
+    https://umap-learn.readthedocs.io/en/latest/basic_usage.html
     """
     # load datasets into one big array
-    ad_dataset = generate_dataset(f"{SRC}/generated_images/12 Epoch AD/images")
-    nc_dataset = generate_dataset(f"{SRC}/generated_images/12 Epoch NC/images")
+    #ad_dataset = generate_dataset(f"{SRC}/generated_images/12 Epoch AD")
+    #nc_dataset = generate_dataset(f"{SRC}/generated_images/12 Epoch NC")
+    ad_dataset = generate_dataset_from_adni("../ADNI_AD_NC_2D_Combined/AD/train")
+    nc_dataset = generate_dataset_from_adni("../ADNI_AD_NC_2D_Combined/NC/train")
+    ad_dataset = ad_dataset[:1000]
+    nc_dataset = nc_dataset[:1000]
     all_dataset = np.concatenate((ad_dataset, nc_dataset))
 
     reducer = umap.UMAP(random_state=42)
@@ -42,7 +58,7 @@ def perform_UMAP():
     plt.scatter(embedding[:, 0], embedding[:, 1], c=labels, cmap='Spectral', s=5)
     plt.gca().set_aspect('equal', 'datalim')
     plt.colorbar(boundaries=np.arange(3)-0.5).set_ticks(np.arange(2))
-    plt.title('UMAP projection', fontsize=24)
+    plt.title('UMAP Projection ADNI', fontsize=20)
     plt.show()
 
 

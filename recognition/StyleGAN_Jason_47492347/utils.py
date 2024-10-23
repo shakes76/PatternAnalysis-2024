@@ -16,6 +16,7 @@ import torchvision.utils as vutils
 import numpy as np
 import matplotlib.pyplot as plt
 import umap
+import random
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset, random_split
 from PIL import Image

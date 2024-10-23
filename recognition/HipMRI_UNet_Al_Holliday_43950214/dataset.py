@@ -69,7 +69,7 @@ class HipMRI2d(torch.utils.data.Dataset):
         img = img[np.newaxis,:,:]
         seg = seg[np.newaxis,:,:]
         img = img.astype(np.float32)
-        seg = seg.astype(np.float32)
+        seg = seg.astype(np.int64)
         imgTensor = torch.tensor(img)
         segTensor = torch.tensor(seg)
         if self.applyTrans:

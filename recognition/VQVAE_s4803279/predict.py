@@ -14,6 +14,7 @@ from torchvision.utils import save_image
 from modules import VQVAE2
 from dataset import create_nifti_data_loaders
 from skimage.metrics import structural_similarity as ssim
+from tqdm import tqdm
 
 
 def load_model(model_path, in_channels, hidden_dims, num_embeddings, embedding_dims, commitment_cost, device):
@@ -84,7 +85,7 @@ def test_vqvae(data_loader, model, device, output_dir, num_samples = 5):
 
     # Testing loop
     with torch.no_grad():  # Disable gradient calculations for testing
-        for i, images in enumerate(data_loader):
+        for i, images in enumerate(tqdm(data_loader)):
             # Move the input images to the GPU if available
             images = images.to(device)
 

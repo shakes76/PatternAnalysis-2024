@@ -21,6 +21,7 @@ class SiameseNetwork(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(2048, 256),  # Output of ResNet50 is a 2048 dim feature vector
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(256, 128)    # Final embedding size of 128 for Euclidean distance calc
         )
 
@@ -46,9 +47,10 @@ class MLPClassifier(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(embedding_dim, 64),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.7),
             nn.Linear(64, 32),
             nn.ReLU(),
+            nn.Dropout(0.5),
             nn.Linear(32, 1),
             nn.Sigmoid()
         )
@@ -188,8 +190,8 @@ if __name__ == "__main__":
     mlp_classifier = MLPClassifier().to(device)
     
     # Initialize optimizers
-    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001)
-    optimizer_mlp = optim.Adam(mlp_classifier.parameters(), lr=0.001)
+    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer_mlp = optim.Adam(mlp_classifier.parameters(), lr=0.001, weight_decay=1e-4)
 
     if SKIP_SIAMESE_TRAINING:
         # Load Siamese Network checkpoint
@@ -200,8 +202,8 @@ if __name__ == "__main__":
     else:
         # Train Siamese network from scratch
         print("Training Siamese Network to learn embeddings from images:")
-        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=5)
+        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=10)
     
     # Train classifier
     print("\nTraining MLPClassifier using learned embeddings:")
-    train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=5)
+    train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=10)

@@ -242,8 +242,8 @@ To evaluate the model's performance visually, the script displays a **confusion 
 
 Here are some **inference results** from the best model:
 
-<img src="Results/res_7_80epoch/confusion_matrix.png" alt="inference plot 1" width="400" height="400"/>
-<img src="Results/res_7_80epoch/prediction_visualization.png" alt="inference plot 2" width="400" height="400"/>
+<img src="Results/res_7_80epoch/confusion_matrix.png" alt="inference plot 1" width="500" height="400"/>
+<img src="Results/res_7_80epoch/prediction_visualization.png" alt="inference plot 2" width="500" height="400"/>
 
 ## References
 

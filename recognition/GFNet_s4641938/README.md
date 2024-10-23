@@ -90,7 +90,7 @@ MIT License
 ### Acknowledgments
 Many thanks to the Alzheimer's Disease Neuroimaging Initiative for creating the dataset used in this project.
 
-An additional thanks to Chandar Shakes [https://github.com/shakes76] to providing the cleaned ADNI brain dataset used in training this model. 
+An additional thanks to [Chandar Shakes](https://github.com/shakes76) to providing the cleaned ADNI brain dataset used in training this model. 
 
 The file modules.py contains the GFNet implemented as desribed in the paper [Global Filter Networks for Image Classification](https://arxiv.org/abs/2107.00645) by Yongming Rao, Wenliang Zhao, Zheng Zhu, Jiwen Lu, and Jie Zhou ([GitHub](https://github.com/raoyongming/GFNet))
 

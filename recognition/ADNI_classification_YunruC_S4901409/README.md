@@ -21,7 +21,7 @@ Figure 2: The Overall Architecture of GFNet (Zhao et al., 2021)
 ## Description of the Algorithm
 The GFNet model is implemented across four Python files: `dataset.py`, `modules.py`, `train.py` and `predict.py` The purpose of each file and the explanation of the code is described below: 
 ### 1. dataset.py
-The original ADNI brain data was preprocessed into training and testing datasets and has two classes: Alzheimer’s disease and Normal Cognitive (NC). The input images are 2D brain slices in grayscale and have a size of 256 pixels in width and 240 pixels in height. The first 10 input images from the training dataset are shown below:
+The original ADNI brain data was preprocessed into training and testing datasets and has two classes: Alzheimer’s disease and Normal Cognitive (NC). The input images are 2D brain slices in grayscale (converted into 'RGB' during loading as required the input channels for GFNet are 3) and have a size of 256 pixels in width and 240 pixels in height. The first 10 input images from the training dataset are shown below:
 
 <img width="974" alt="image" src="https://github.com/user-attachments/assets/5701db24-826a-4ccf-a295-1bb5d51369e9">
 
@@ -136,7 +136,7 @@ def forward_features(self, x):
         return x
 ```
 ### 3. train.py
-There are three functions contained in `train.py`. The first is the `plot_metrics` whcih generates the graphs for training and validation losses, as well as accuracy over the epochs, and saves the graph to `save_path` if provided. The other two functions, `train` and `validate`, are responsible for training and validating the model, calculating the average loss, accuracy, and confusion matrix. To maintain repeatability, set seeds during training. Since hyperparameters in training GFNet are significant on its performance, an Optuna study is employed to identify the optimal values for the learning rate, weight decay rate and drop path rate within the provided range.
+There are three functions contained in `train.py`. The first is the `plot_metrics` whcih generates the graphs for training and validation losses, as well as accuracy over the epochs, and saves the graph to `save_path` if provided. The other two functions, `train` and `validate`, are responsible for training and validating the model, calculating the average loss, accuracy, and confusion matrix. To maintain repeatability, set seeds during training. Since hyperparameters in training GFNet are significant on its performance, an Optuna study is employed to identify the optimal values for the learning rate, weight decay rate and drop path rate within the provided range. A total of 10 trials are conducted, with 30 epochs run for each trial.The best model (model with the highest val accuracy) from each trial is also saved.
 
 ```python
 learning_rate = trial.suggest_loguniform('lr', 1e-5, 1e-3)
@@ -155,7 +155,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 model.to(device)
 ```
-Once the optimization is completed, graphs of the optimization history and parameters will be plotted. Finally, the best hyperparameters obtained will then be used to train the model for 100 epochs, with the best model (model with the highest validation accuracy) saved to `model.pth`, and the losses and accuracy visualized.
+Once the optimization is completed, graphs of the optimization history and parameters will be plotted. Finally, the best hyperparameters obtained will then be used to train the model for 70 epochs, with the best model saved to `model.pth`, and the losses and accuracy visualized.
 
 ### 4. predict.py
 The best model identified during training is used to evaluate the performance on the test dataset, and the resulting confusion matrix is displayed.

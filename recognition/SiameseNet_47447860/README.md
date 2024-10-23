@@ -174,7 +174,7 @@ conda env create -f environment.yml
 The entrypoint to the project is [train.py](train.py). This assumes you are in the PatternAnalysis-2024 root directory. To train and test the model, run the following command:
 
 ```bash
-python3 python3 recognition/SiameseNet_47447860/train.py --project <path to output location> --data <path to data>
+python3 recognition/SiameseNet_47447860/train.py --project <path to output location> --data <path to data>
 ```
 
 The data used for the project was a resolution reduced version of the original ISIC2020 dataset. The data can be found on Kaggle at the link [ISIC 2020 JPG 256x256 RESIZED](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data?select=train-metadata.csv), it was downloaded then split into subdirectories for Malignant and Benign images before being manually split into training, validation and test subdirectories.

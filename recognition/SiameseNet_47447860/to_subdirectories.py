@@ -3,8 +3,7 @@ import shutil
 import pandas as pd
 
 # Paths
-# base_dir = '~/.kaggle'
-base_dir = r'C:\Users\sebas\archive'
+base_dir = r'' # Enter path to dataset
 csv_file = os.path.join(base_dir, 'train-metadata.csv')
 image_dir = os.path.join(base_dir, 'train-image', 'image')
 
@@ -19,8 +18,6 @@ os.makedirs(classification1_dir, exist_ok=True)
 # Read the CSV file
 metadata = pd.read_csv(csv_file)
 
-# Assuming the CSV has columns 'image_name' and 'classification'
-# Adjust these column names according to your actual CSV structure
 for _, row in metadata.iterrows():
     image_name = row['isic_id']
     classification = row['target']

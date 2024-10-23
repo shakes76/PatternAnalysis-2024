@@ -1,17 +1,10 @@
-# The source code for training, validating, testing and saving your model. The model
-# should be imported from “modules.py” and the data loader should be imported from “dataset.py”.
-# Make sure to plot the losses and metrics during training
-
 import os
-import numpy as np
-
 import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from modules import SiameseNetwork
 from dataset import Dataset
 from predict import PredictData
-
 import argparse
 
 if __name__ == "__main__":
@@ -40,9 +33,7 @@ if __name__ == "__main__":
 
     # General Path
     general_path = args.project
-    general_path = r'C:\Users\sebas\project'
     data_path = args.data
-    data_path = r'C:\Users\sebas\archive'
 
     # path to write things to - includes checkpoints
     out_path = os.path.join(general_path, "outputs")
@@ -51,15 +42,15 @@ if __name__ == "__main__":
     test_data_path = os.path.join(data_path, "test_data")
     val_data_path = os.path.join(data_path, "validation_data")
 
-    train_data = Dataset(train_data_path, dataset_size=4000)
+    train_data = Dataset(train_data_path)
     train_data_loader = torch.utils.data.DataLoader(train_data, batch_size=128, num_workers=0)
     print("Got training data")
     ############################################################
-    test_data = Dataset(test_data_path, dataset_size=1000)
+    test_data = Dataset(test_data_path)
     test_data_loader = torch.utils.data.DataLoader(test_data, batch_size=1, num_workers=0)
     print("Got test data")
     ############################################################
-    val_data = Dataset(val_data_path, dataset_size=1000)
+    val_data = Dataset(val_data_path)
     val_data_loader = torch.utils.data.DataLoader(val_data, batch_size=16, num_workers=0)
     print("Got validation data")
     ############################################################

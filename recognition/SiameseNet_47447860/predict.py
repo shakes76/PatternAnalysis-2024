@@ -1,16 +1,9 @@
 import os
-import argparse
-
-#import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
 import torch
-from torch.utils.data import DataLoader
 from torchvision import transforms
-
 from modules import SiameseNetwork
-from dataset import Dataset
 
 class PredictData:
     def __init__(self, test_data, path, show_images=False):
@@ -50,6 +43,7 @@ class PredictData:
 
     def predict(self):
         for i, ((img1, img2), target, (class1, class2)) in enumerate(self.test_data):
+            # Moving the data to the GPU
             img1, img2, target = map(lambda x: x.to(self.device), [img1, img2, target])
             class1 = class1[0]
             class2 = class2[0]
@@ -69,7 +63,7 @@ class PredictData:
 
             # Show the images being compared if we want -> only show some with the frequency parameter
             if (i % self.print_frequency) == 0:
-                # Apply inverse transform (denormalization) on the images to retrieve original images.
+                # Apply inverse transform (de-normalization) on the images to retrieve original images.
                 img1 = self.inv_transform(img1).cpu().numpy()[0]
                 img2 = self.inv_transform(img2).cpu().numpy()[0]
                 # show first image

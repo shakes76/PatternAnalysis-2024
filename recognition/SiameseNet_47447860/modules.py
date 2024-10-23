@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from torchvision import models
@@ -52,7 +51,7 @@ class SiameseNetwork(nn.Module):
                     output (torch.Tensor): shape=[b, 1], Similarity of each pair of images
         '''
 
-        # Pass the both images through the backbone network to get their separate feature vectors
+        # Pass both images through the backbone network to get their separate feature vectors
         feat1 = self.backbone(img1)
         feat2 = self.backbone(img2)
 

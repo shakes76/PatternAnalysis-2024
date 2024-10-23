@@ -182,7 +182,7 @@ class StyleBlock(nn.Module):
         super().__init__()
         
         # Get style vector from equalized linear layer
-        self.to_style = F.linear(W_DIM, in_features, bias=1.0)
+        self.to_style = EqualizedLinear(W_DIM, in_features, bias=1.0)
         # Weight Modulated conv layer 
         self.conv = Conv2dWeightModulate(in_features, out_features, kernel_size=3)
         # Noise and bias
@@ -207,7 +207,7 @@ class ToRGB(nn.Module):
     def __init__(self, W_DIM, features):
 
         super().__init__()
-        self.to_style = F.linear(W_DIM, features, bias=1.0)
+        self.to_style = EqualizedLinear(W_DIM, features, bias=1.0)
         # Weight modulated conv layer without demodulation
         self.conv = Conv2dWeightModulate(features, channels, kernel_size=1, demodulate=False)
         self.bias = nn.Parameter(torch.zeros(channels))

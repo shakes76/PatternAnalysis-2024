@@ -54,16 +54,16 @@ python train.py
 ```
 python predict.py AD
 ```
-
-- If you wish to generate images of a brain considered Normal Cognitive, run.
-
+<br/>
+If you wish to generate images of a brain considered Normal Cognitive, run.
+<br/>
 ```
 python predict.py NC
 ```
+<br/>
 - 5 images of the brain of the type you want to see will be saved as png files.
-
-
-
+<br/>
+<br/>
 
 3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images, saved as `t-SNE_visualization.png`.
 
@@ -77,8 +77,7 @@ The StyleGAN model consists of the following components:
 - **AdaIN Layer**: Adaptive Instance Normalization layer used in the generator to control the style of the generated images.
 
 Figure 1: GAN Model Compared to StyleGAN Model
-
-
+![Alt text]("C:\Users\sam\OneDrive\Pictures\Screenshots\Screenshot 2024-10-23 115202.png")
 Figure 1 shows the differences between the model architecture of a basic Generative Adversarial Network (GAN) compared with a StyleGAN.
 
 The model is built using TensorFlow and Keras, and the architecture is defined in the `modules.py` file.

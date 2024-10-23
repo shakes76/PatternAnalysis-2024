@@ -1,8 +1,5 @@
 import argparse
-import logging
 import os
-import shutil
-import time
 
 import matplotlib.pyplot as plt
 import torch
@@ -16,7 +13,7 @@ from utils import calculate_ssim, read_yaml_file, combine_images
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Test VQVAE model.')
+    parser = argparse.ArgumentParser(description='Predict using VQVAE model.')
     parser.add_argument('--config', type=str, required=True, 
                         help='Path to the configuration YAML file.')
     config_path = parser.parse_args().config
@@ -26,82 +23,41 @@ if __name__ == '__main__':
     
     model_parameters = config['model_parameters']
     pretrained_path = config['pretrained_path']
+    dataset_dir = config['dataset_dir']
+    save_dir = config['save_dir']
     
-    dataset_dir = config['test_dataset_dir']
-    num_samples = config['num_samples']
+    os.makedirs(save_dir, exist_ok=True)
     
-    log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
-        os.path.join(config['logs_root'], f"{time.strftime('%Y%m%d_%H%M%S')}")
-    
-    os.makedirs(log_dir, exist_ok=True)
-    logging.basicConfig(filename=os.path.join(log_dir, 'evaluation.log'), level=logging.INFO, 
-                        format='%(asctime)s - %(levelname)s - %(message)s')
-    shutil.copy(config_path, log_dir)
-    
-    transforms = get_transforms(config['test_transforms'])
-    
-    data_loader = get_dataloader(dataset_dir, 1, transforms, num_samples, shuffle=False)
+    transforms = get_transforms(config['transforms'])
+    data_loader = get_dataloader(dataset_dir, 1, transforms, num_samples=None, shuffle=False)
     
     model = VQVAE(**model_parameters).to(device)
-    
     model.load_state_dict(torch.load(pretrained_path, map_location=device))
     
     criterion = nn.MSELoss()
     
-    # Evaluation
-    losses = []
-    ssim_values = []
+    # Prediction
+    model.eval()
+    image_count = 1
     with torch.no_grad():
-        for batch in tqdm(data_loader, desc="Evaluation"):
+        for batch in tqdm(data_loader, desc="Predicting"):
             batch = batch.to(device).float()
             reconstructed, commitment_loss = model(batch)
             recon_loss = criterion(reconstructed, batch)
+            loss = recon_loss + commitment_loss
             
             original_image = batch[0, 0].cpu().detach().numpy()
             reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
             
-            losses.append(recon_loss.item() + commitment_loss.item())
-            ssim_values.append(calculate_ssim(original_image, reconstructed_image))
-        
-    logging.info(f"Average Loss: {sum(losses) / len(losses)}, Average SSIM: {sum(ssim_values) / len(ssim_values)}")
-    
-    # Display distribution of scores
-    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-    axs = axs.flatten()
-    
-    axs[0].hist(losses, bins=20, color='blue', alpha=0.7)
-    axs[0].set_title("Loss Distribution")
-    axs[0].set_xlabel("Loss")
-    axs[0].set_ylabel("Frequency")
-    
-    axs[1].hist(ssim_values, bins=20, color='green', alpha=0.7)
-    axs[1].set_title("SSIM Distribution")
-    axs[1].set_xlabel("SSIM")
-    axs[1].set_ylabel("Frequency")
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, f'evaluation_metrics.png'))
-    plt.close()
-    
-    # Display some images
-    fig, axs = plt.subplots(2, 3, figsize=(12, 8))
-    axs = axs.flatten()
-    with torch.no_grad():
-        for i, batch in enumerate(data_loader):
-            if i == 6:
-                break
-            batch = batch.to(device).float()
-            reconstructed, _ = model(batch)
-            original_image = batch[0, 0].cpu().detach().numpy()
-            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            ssim = calculate_ssim(original_image, reconstructed_image)
             
             combined_image = combine_images(original_image, reconstructed_image)
-
-            axs[i].imshow(combined_image, cmap='gray')
-            axs[i].set_title(f"Image {i + 1}")
-            axs[i].axis('off')
-        
-    plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, f'images.png'))
-    plt.close()
-    
+            
+            plt.imshow(combined_image, cmap='gray')
+            plt.title(f"Loss: {loss.item():.4f}, SSIM: {ssim:.4f}")
+            plt.axis('off')
+            plt.tight_layout()
+            plt.savefig(os.path.join(save_dir, f'image_{image_count}.png'))
+            plt.close()
+            
+            image_count += 1

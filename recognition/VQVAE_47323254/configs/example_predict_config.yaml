@@ -1,0 +1,28 @@
+# Model
+model_parameters:
+  in_channels: 1 
+  hidden_channels: 128
+  res_channels: 32
+  nb_res_layers: 2
+  embed_dim: 64
+  nb_entries: 512
+  downscale_factor: 4
+
+pretrained_path: path/to/model/path.pth
+
+# Dataset 
+dataset_dir: path/to/dataset/dir
+
+# Save
+save_dir: path/to/save/dir
+
+# Augmentation
+transforms:
+  - name: CenterCrop
+    params: 
+      size: [256, 128]
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: [0.5]
+      std: [0.5]

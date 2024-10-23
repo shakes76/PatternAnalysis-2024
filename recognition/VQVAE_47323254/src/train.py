@@ -37,10 +37,13 @@ if __name__ == '__main__':
     
     train_dataset_dir = config['train_dataset_dir']
     val_dataset_dir = config['val_dataset_dir']
-    num_samples = config['num_samples']
+    test_dataset_dir = config['test_dataset_dir']
+    train_num_samples = config['train_num_samples']
+    val_num_samples = config['val_num_samples']
+    test_num_samples = config['test_num_samples']
     
     train_transforms = config['train_transforms']
-    val_transforms = config['val_transforms']
+    val_test_transforms = config['val_test_transforms']
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -56,11 +59,12 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
     
     train_transform = get_transforms(train_transforms)
-    val_transform = get_transforms(val_transforms)
+    val_test_transform = get_transforms(val_test_transforms)
     
     # Dataset loaders
-    train_loader = get_dataloader(train_dataset_dir, batch_size, train_transform, num_samples, shuffle=True)
-    val_loader = get_dataloader(val_dataset_dir, batch_size, val_transform, num_samples, shuffle=False)
+    train_loader = get_dataloader(train_dataset_dir, batch_size, train_transform, train_num_samples, shuffle=True)
+    val_loader = get_dataloader(val_dataset_dir, batch_size, val_test_transform, val_num_samples, shuffle=False)
+    test_loader = get_dataloader(test_dataset_dir, 1, val_test_transform, test_num_samples, shuffle=False)
     
     # Training Loop
     train_commitment_losses = []
@@ -161,7 +165,7 @@ if __name__ == '__main__':
             best_val_loss = val_loss
     
     end_time = time.time()
-    logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes")
+    logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes\n")
         
     train_metrics = [
         train_commitment_losses, 
@@ -194,8 +198,65 @@ if __name__ == '__main__':
         axs[i].legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, 'metrics_plot.png'))
+    plt.savefig(os.path.join(log_dir, 'train_metrics.png'))
     plt.close()
     
     # Save model
     torch.save(model.state_dict(), os.path.join(log_dir, 'latest_model.pth'))
+    
+    # Evaluation
+    model.eval()
+    losses = []
+    ssim_values = []
+    with torch.no_grad():
+        for batch in tqdm(test_loader, desc="Evaluation"):
+            batch = batch.to(device).float()
+            reconstructed, commitment_loss = model(batch)
+            recon_loss = criterion(reconstructed, batch)
+            
+            original_image = batch[0, 0].cpu().detach().numpy()
+            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            
+            losses.append(recon_loss.item() + commitment_loss.item())
+            ssim_values.append(calculate_ssim(original_image, reconstructed_image))
+        
+    logging.info(f"Test Loss: {sum(losses) / len(losses)}, Test SSIM: {sum(ssim_values) / len(ssim_values)}")
+    
+    # Display distribution of scores
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs = axs.flatten()
+    
+    axs[0].hist(losses, bins=20, color='blue', alpha=0.7)
+    axs[0].set_title("Loss Distribution")
+    axs[0].set_xlabel("Loss")
+    axs[0].set_ylabel("Frequency")
+    
+    axs[1].hist(ssim_values, bins=20, color='green', alpha=0.7)
+    axs[1].set_title("SSIM Distribution")
+    axs[1].set_xlabel("SSIM")
+    axs[1].set_ylabel("Frequency")
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, f'evaluation_metrics.png'))
+    plt.close()
+    
+    # Display some images
+    fig, axs = plt.subplots(2, 3, figsize=(12, 8))
+    axs = axs.flatten()
+    with torch.no_grad():
+        for i, batch in enumerate(test_loader):
+            if i == 6:
+                break
+            batch = batch.to(device).float()
+            reconstructed, _ = model(batch)
+            original_image = batch[0, 0].cpu().detach().numpy()
+            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            
+            combined_image = combine_images(original_image, reconstructed_image)
+
+            axs[i].imshow(combined_image, cmap='gray')
+            axs[i].axis('off')
+        
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, f'test_images.png'))
+    plt.close()

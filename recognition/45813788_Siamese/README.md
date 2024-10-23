@@ -14,11 +14,13 @@ To handle the imbalanced dataset the following methods were used:
 - importing the excel and dropping the `unamed` and `patient id` columns (We will use ISIC as it is unique and images named by this)
 - data augmentation
 - normalisd pixel values between `0` and `1`
-- using a sampler for each batch to ensure even amounts of both classes (effectively resampling the smaller class several times).
+- using a sampler for each batch to ensure even amounts of both classes in training (effectively resampling the smaller class several times).
+- validation and testing sets had shuffing applied
+
 
 Once this was complete the dataset was split into a `75/15/10` split between training/validation/testing. In addition stratification was used based on class so that subsets have similar proprotions to further balance classes.
 
-As the contrastive loss in pytorch metric learning was used there was no need to to create pairs manually as the method creates these paris internally.Because of this no additional data processing outside of what was done above needed to be done. It should be mentioned that these pairs also help to combat imbalance as the combinations of pariings increases the data the model has to work with.
+As the contrastive loss in pytorch metric learning was used there was no need to to create pairs manually as the method creates these paris internally.Because of this no additional data processing outside of what was done above needed to be done. It should be mentioned that these pairs also help to combat imbalance as the combinations of pairings increases the data the model has to work with.
 
 ## Architecture
 The final model architecture is based on the [“Vocal Cord Leukoplakia Classification Using Siamese Network Under Small Samples of White Light Endoscopy Images,”](https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/abs/10.1002/ohn.591) by You et al and can be seen below:
@@ -27,7 +29,7 @@ The final model architecture is based on the [“Vocal Cord Leukoplakia Classifi
 
 Figure 1: Siamese Netowrk Architecure [2]
 
-Some modifications have been made such as using Binary Cross Entropy (BCE) Loss using logits. this decision was made as the problem space is binary compared to the multiclassification problem in the report. In additon to this the siamese backbone was implemented using `resnet50` [3]. this approach was taken due to the realtive sucess that was attained in 
+Some modifications have been made such as using Binary Cross Entropy (BCE) Loss using logits with a sigmoid in training and testing whenever probabilities needed to be obtained (BCE with logits does sigmoid internally so you don't add that layer to the model architecture itself). this decision was made as the problem space is binary compared to the multiclassification problem in the report, that being said the same could be done with Cross Entropy using 2 classes. In additon to this the siamese backbone was implemented using `resnet50` this approach was taken due to the realtive sucess that was attained in  “Identifying Partial Mouse Brain Microscopy Images from the Allen Reference Atlas Using a Contrastively Learned Semantic Space,” [3].
 
 ## Loss Functions
 The key feature this network proposed was in how it computes the loss for the network, instead of treating the classification head and embedded network seperately the network instead computes the loss as follows:
@@ -148,7 +150,20 @@ NOTE: the python scripts create the models and images directory internally but i
 
 Hyperparameters can be edited inside the file named `hyper.py`, currently only batch_size, learning rate and epochs were modified (m size for sampler was left as batch_size/2)
 
-# Addtional 
+## Additional Remarks
+- when attempting earlier iterations with split classifier and siamese i was getting significantly worse results. i managed to reach an auroc score of 0.8 but my actual accuracy was quite low at 37%. that being said that run did not miss classify any malignant images but had more false positives then false negatives the truth table for this run is as follows:
+
+
+|            | Predicted 0 | Predicted 1 |
+|------------|-------------|-------------|
+| Actual 0   | 1173        | 2082         |
+| Actual 1   | 0          | 58          |
+
+
+
+- it's important to augment both classes and not just the minority class. when i did this the performance scores for training and validation were good but come testing the model had 98% accuracy by having correctly classfied all benign images and no malignant images correctly. the embeddings looked good to with great distinctions but what had happened here is the model had just learnt how to distinguish the augmentations.
+- For all testing purposes i chose not to augment images as i wanted it to perform on unseen images that you would expect in this format. there's actually quite a bit of debate as to whether to test on augmented images so its worth trying to see if the model performs better if all sets have augmentation as this may show some memorization of augmentation vs actual distinctions.
+- In additon i intially had coluor jitter for my augmentation but for this dataset i felt that it didnt make sense since melanoma that is cancerous would have changes in its color so it didnt make sense to colour jitter to me.
 
 # References
 

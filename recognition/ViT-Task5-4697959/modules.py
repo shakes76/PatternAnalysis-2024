@@ -42,7 +42,7 @@ class MultiHeadSelfAttention(nn.Module):
         energy = torch.matmul(queries, keys.transpose(-2, -1))  # (batch_size, num_heads, num_tokens, num_tokens)
         scaling = float(self.head_dim) ** -0.5
         energy = energy * scaling
-        attention = torch.softmax(energy, dim=-1)  # (batch_size, num_heads, num_tokens, num_tokens)
+        attention = torch.softmax(energy, dim=-1) 
         attention = self.dropout(attention)
 
         out = torch.matmul(attention, values)  # (batch_size, num_heads, num_tokens, head_dim)

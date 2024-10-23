@@ -122,3 +122,46 @@ Below are an example of an image from the Alzheimer's and Normal classes of the 
 
 ## Results
 
+Through multiple attempts at fixes the training has been unable to be stabilised. After only one batch of the first epoch the discriminator reduces its loss to close to 0 while the generators loss sits in the 8-12 range. This then continues through the rest of training, with the generator only producing black images. Below is an example of the loss plot from a failed training (note discriminator is only being updated once for every three generator updates - this was an attempt to prevent it overpowering the generator).
+
+<p align="center">
+    <img src="images/failed_loss_plot.png" width="80%">
+    <br>
+    Loss plot of failed training
+</p>
+
+A number of fixes have been attempted. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the number of convolution layers in the residual blocks. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
+
+- W stats - min: -0.5029, max: 2.3184, mean: 0.3291
+- Const stats - min: -4.3558, max: 3.9382, mean: -0.0023
+- Block 0 output - min: -0.5824, max: 2.7969, mean: 0.1913
+- Block 1 output - min: -0.2088, max: 1.0293, mean: 0.0760
+- Block 2 output - min: -0.0412, max: 0.1953, mean: 0.0196
+- Block 3 output - min: -0.0028, max: 0.0141, mean: 0.0010
+- Block 4 output - min: -0.0001, max: 0.0005, mean: 0.0000
+- Pre-tanh stats - min: -0.0000, max: 0.0000, mean: 0.0000
+- Final output stats - min: -0.0000, max: 0.0000, mean: 0.0000
+
+Initially in training the values are getting progressively smaller through each block. By Block 4, values are tiny (around 0.0001-0.0005) and then the final output is essentially zero which explains the black images. Initially vanishing gradients are the issue through the synthesis blocks.
+
+Looking later in that same epoch shows: 
+
+- W stats - min: -0.5317, max: 2.6328, mean: 0.3171
+- Const stats - min: -4.3432, max: 3.9339, mean: -0.0031
+- Block 0 output - min: -0.7678, max: 11.4550, mean: 0.2891
+- Block 1 output - min: -4.8118, max: 54.6300, mean: 1.4092
+- Block 2 output - min: -10.8681, max: 83.7554, mean: 4.2039
+- Block 3 output - min: -13.6976, max: 66.3221, mean: 4.9582
+- Block 4 output - min: -6.7009, max: 40.4881, mean: 1.8513
+- Pre-tanh stats - min: -28.8438, max: 0.0753, mean: -8.8984
+- Final output stats - min: -1.0000, max: 0.0752, mean: -0.5737
+
+So later in the epoch the network starts producing larger values with significant growth across the blocks. The pre-tanh values are very large (e.g. -28.8438 to 0.0753) indicating the tanh activation is being saturated by exploding gradients, causing most values to be -1 (black) with occasional small positive values. 
+
+The final attempt at fixing this issue was to implement group normalisation after each convolution layer in the generator synthesis blocks. Group normalisation will divide the channels into 8 groups and calculate the mean and standard deviation across the channels in each group. It then normalises to have mean 0 and stddev of 1. The goal was to have group normalisation ensure each block's output maintains a consistent scale to help backwards flow of gradients. 
+
+GroupNorm is particularly useful here because:
+1. Independent of batch size (unlike BatchNorm)
+2. Preserves spatial information (unlike LayerNorm)
+3. Provides stable statistics even when spatial dimensions change due to upsampling
+4. Grouping helps maintain feature relationships while still normalising

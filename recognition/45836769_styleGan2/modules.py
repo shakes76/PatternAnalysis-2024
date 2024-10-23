@@ -319,8 +319,14 @@ class SynthesisBlock(nn.Module):
         super().__init__()
         self.up = up
         self.final_resolution = final_resolution
+        # First conv and its normalisation (input size)
         self.conv1 = ModulatedConv2d(in_channels, out_channels, style_dim, kernel_size=kernel_size)
+        # LayerNorm expects (batch, channels, height, width)
+        # Will be applied after first conv, so use out_channels
+        self.norm1 = nn.GroupNorm(8, out_channels)  # Using GroupNorm instead of LayerNorm as more stable for conv
+        # Second conv and its normalisation (upsampled size)
         self.conv2 = ModulatedConv2d(out_channels, out_channels, style_dim, kernel_size=kernel_size, up=up)
+        self.norm2 = nn.GroupNorm(8, out_channels)
         self.noise1 = NoiseInjection(out_channels)
         self.noise2 = NoiseInjection(out_channels)
         self.activate = nn.LeakyReLU(0.2)
@@ -329,10 +335,12 @@ class SynthesisBlock(nn.Module):
         """Forward pass of the Synthesis block."""
         # Decerease channel num first - transform features first, then upsample
         x = self.conv1(x, style)
+        x = self.norm1(x)  # Normalise after conv
         x = self.noise1(x, noise=noise)
         x = self.activate(x)
         # Upsampling handled in ModulatedConv2d
         x = self.conv2(x, style)  
+        x = self.norm2(x)  # Normalise after conv and upsample
         x = self.noise2(x, noise=noise)
         x = self.activate(x)
         
@@ -408,7 +416,7 @@ class StyleGAN2Generator(nn.Module):
             
         # Add a final convolution layer to reduce to 1 channel
         self.to_rgb = nn.Conv2d(int(self.ngf * channel_multipliers[-1]), 1, kernel_size=1)
-        nn.init.normal_(self.to_rgb.weight, mean=0.0, std=0.02)
+        nn.init.normal_(self.to_rgb.weight, mean=0.0, std=0.01)
         nn.init.constant_(self.to_rgb.bias, 0.0)
 
 
@@ -440,7 +448,8 @@ class StyleGAN2Generator(nn.Module):
     
         # Apply the final convolution to get 1 channel output
         x = self.to_rgb(x)
-        print(f"Pre-tanh stats - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
+        x = x * 0.2  # Scale down before tanh to prevent saturation
+        print(f"Pre-tanh stats (after scale down) - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
         x = torch.tanh(x)  # Force output range [-1, 1]
         
         print(f"Final output stats - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")

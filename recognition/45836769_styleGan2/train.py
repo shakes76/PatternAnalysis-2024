@@ -188,7 +188,7 @@ fixed_labels = torch.cat([torch.zeros(8), torch.ones(8)], dim=0).long().to(devic
 d_losses = []
 g_losses = []
 ada_stats = ADAStats(ada_start_p)
-d_update_freq = 3 # Update D every 3 G updates 
+d_update_freq = 1 # Update D every x G updates 
 
 for epoch in range(num_epochs):
     clear_cache() # Free up GPU mem

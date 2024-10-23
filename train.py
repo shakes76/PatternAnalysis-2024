@@ -40,6 +40,32 @@ model = Yolov7()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 model = model.to(device)
 
+# Define and attach hyperparameters
+hyp = {
+    'box': 0.05,  # box loss gain
+    'cls': 0.5,  # cls loss gain
+    'cls_pw': 1.0,  # cls BCELoss positive weight
+    'obj': 1.0,  # obj loss gain (scale with pixels)
+    'obj_pw': 1.0,  # obj BCELoss positive weight
+    'iou_t': 0.20,  # IoU training threshold
+    'anchor_t': 4.0,  # anchor-multiple threshold
+    'fl_gamma': 0.0,  # focal loss gamma (efficientDet default gamma is 1.5)
+    'hsv_h': 0.015,  # image HSV-Hue augmentation (fraction)
+    'hsv_s': 0.7,  # image HSV-Saturation augmentation (fraction)
+    'hsv_v': 0.4,  # image HSV-Value augmentation (fraction)
+    'degrees': 0.0,  # image rotation (+/- deg)
+    'translate': 0.1,  # image translation (+/- fraction)
+    'scale': 0.5,  # image scale (+/- gain)
+    'shear': 0.0  # image shear (+/- deg)
+}
+
+yolo_model = model.model
+
+if hasattr(yolo_model, 'model'):
+    yolo_model = yolo_model.model
+yolo_model.hyp = hyp
+yolo_model.gr = 1.0
+loss_function = ComputeLoss(yolo_model)  # Initialize loss
 
 def train_one_epoch(model, training_dataset, optimizer, loss_function, device):
     model.train()
@@ -102,8 +128,8 @@ def validate(model, validation_dataset, loss_function, device):
 
 
 for epoch in range(epochs):
-    train_one_epoch()
-    validate()
+    train_one_epoch(model, training_dataset, optimizer, loss_function, device)
+    validate(model, validation_dataset, loss_function, device)
 
 
 

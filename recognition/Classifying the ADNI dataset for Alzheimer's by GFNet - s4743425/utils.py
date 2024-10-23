@@ -8,10 +8,9 @@ has been hardcoded into the model.
 import torch
 import os
 import torchvision.transforms as transforms
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from dataset import *
-import torchvision
-from torchvision.datasets import ImageFolder
+
 
 image_size = 256
 batch_size = 64

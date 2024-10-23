@@ -8,10 +8,9 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from PIL import Image
 from torchvision.utils import make_grid
 
-# The path when running locally
-data_directory = '../../../AD_NC'
+
 #the path to the directory on Rangpur
-#data_directory = '/home/groups/comp3710/ADNI/AD_NC'
+data_directory = '/home/groups/comp3710/ADNI/AD_NC'
 
 #Set Hyperparameters
 image_size = (256, 256) # image size (length and width)

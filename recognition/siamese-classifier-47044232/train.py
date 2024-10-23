@@ -79,7 +79,7 @@ test_loss = []
 print("Starting training now...")
 start = time.time()
 # Training cycle
-for epoch in range(config.EPOCHS):
+for epoch in range(config.EPOCHS_SIAMESE):
     model.train()
     for i, (anchor, positive, negative, label) in enumerate(train_loader):
         model.zero_grad() # Stops gradients from acumalating across batches
@@ -144,7 +144,7 @@ Using a binary classifier to learn the feature vectors of the Siame Network.
 model = BinaryClassifier().to(device)
 loss = CrossEntropyLoss()
 optimiser = Adam(model.parameters(), 0.001, (0.9, 0.999))
-for epoch in range(config.EPOCHS):
+for epoch in range(config.EPOCHS_CLASSIFIER):
     for features, labels in zip(training_features, training_labels):
         optimiser.zero_grad()
         out = model(features)

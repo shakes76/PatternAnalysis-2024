@@ -4,7 +4,7 @@ The all in one place to modify hyperparameters and other key variables such as t
 Made by Joshua Deadman
 """
 # Datapath should be of structure:
-# ./data/
+# ./data
 #       train-metadata.csv
 #       /train-image
 #           /images
@@ -20,7 +20,8 @@ VALIDATION = 0.1
 # Hyperparameters
 BATCH_SIZE = 32
 WORKERS = 4
-EPOCHS = 64
+EPOCHS_SIAMESE = 140
+EPOCHS_CLASSIFIER = 64
 LEARNING_RATE = 0.0002
 BETAS = (0.9,0.999)
 LOSS_MARGIN = 1

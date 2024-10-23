@@ -267,7 +267,8 @@ if __name__ == "__main__":
 
     # Training
     train_losses, average_train_dice_scores = train_model(model, train_loader, criterion, optimiser, gds, device)
-    print(train_losses)
+    write_log_file(f"Training Cross Entropy Losses:\n{train_losses}")
 
     # Testing
     average_test_dice_scores = test_model(model, test_loader, gds, device)
+    write_log_file(f"Average Test Dice Scores:\n{average_test_dice_scores}")

@@ -6,7 +6,7 @@ This repository contains code to train computer vision neural network designed t
 
 ## About the Model
 
-[GFNet](https://ieeexplore.ieee.org/document/10091201) is a cutting-edge vision NN that prizes itself on efficiently capturing spatial interactions through its use of the fast fourier transform. GFNet adapts the well-known ViT Transformer models by replacing the self-attention layer with a global filter layer. 
+[GFNet](https://ieeexplore.ieee.org/document/10091201) is a cutting-edge vision transformer neural network that prizes itself on efficiently capturing spatial interactions through its use of the fast fourier transform. GFNet adapts the well-known ViT Transformer models by replacing the self-attention layer with a global filter layer. 
 
 ### Model Architecture
 - **Base Model**: GFNet

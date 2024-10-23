@@ -13,6 +13,8 @@ import random
 import argparse
 from functools import partial
 
+#### make it specific for 1 image form arg parser (if left blank generate a random 4 from testset)
+
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,16 +23,16 @@ def load_model(model_path):
     model = GFNet(
         img_size=256,
         patch_size= 16,
-        embed_dim=1000,
+        embed_dim=512,
         num_classes=2,
         in_channels=1,
         drop_rate=0.5,
-        depth=1,
+        depth=19,
         mlp_ratio=4.,
         drop_path_rate=0.15,
         norm_layer=partial(nn.LayerNorm, eps=1e-6)
         ).to(device)
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path), strict=False)
     model.eval()  # Set the model to evaluation mode
     print("Model Loaded.\n")
     return model

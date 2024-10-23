@@ -6,10 +6,6 @@ import os
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader, random_split
 from PIL import Image
-import matplotlib.pyplot as plt
-import torchvision
-from torchvision.datasets import ImageFolder
-import numpy
 from torchvision.utils import make_grid
 
 # The path when running locally
@@ -64,7 +60,7 @@ class ADNIDataset(Dataset):
         img_name, label = self.image_filenames[idx]
         img_path = os.path.join(self.data_dir, img_name)
 
-     #   # Open the image and check all same
+       # Open the image and check all same
         image = Image.open(img_path)
 
         # Apply the transformation based on the mode (train, test)
@@ -81,16 +77,12 @@ class ADNIDataset(Dataset):
 def train_dataloader(batch_size, train_size=0.8):
     print("Start DataLoading ...")
     # Create the complete dataset for training (includes validation)
-    complete_train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=None)
+    complete_train_dataset = ADNIDataset(data_dir=os.path.join(data_directory, 'train'), transform=transform['train'])
 
     # Split the training dataset: 80% training, 20% validation
     train_size = int(train_size * len(complete_train_dataset))
     val_size = len(complete_train_dataset) - train_size
     train_dataset, val_dataset = random_split(complete_train_dataset, [train_size, val_size])
-
-    # Apply transformations after the split
-    train_dataset.dataset.transform = transform['train']
-    val_dataset.dataset.transform = transform['test']
     
     # DataLoader for batching
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)

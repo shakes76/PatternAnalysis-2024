@@ -98,15 +98,57 @@ looking at this precision table it can be seen that the model performs well for 
 
 Observing the results above we see the same issue as in training this being that the poor f1 score is attributed to false positives. That being said the recall for malignant cases was 76% which is actually very good consideirng the major class imbalance. the confusion matrix also alludes to better results showing how the majoirty of malignant samples were correctly classified. 
 
-Observing the PCA and tSNE embeddings for both the training and test sets we can see that some clustering of malignant poitns is occuring but no evident seperation, this alludes to potentially requirng a deeper network and further hyper parameter tuning but the AUROC scores and accuracy say otherwise. thus it would be worthwhile to first test the network again on a more balanced dataset.
+Observing the PCA and tSNE embeddings for both the training and test sets we can see that some clustering of malignant poitns is occuring but no evident seperation, this alludes to potentially requirng a deeper network and further hyper parameter tuning but the AUROC scores and accuracy say otherwise. thus it would be worthwhile to first test the network again on a more balanced dataset and see if it performs well there. For those that want to continue using the dataset in this problem it is reccomended to try a deeper resnet to see if more meaningful feature extractions can be made. If hardware and time permits reduce the learning rate and increase epochs to see if the resnet architecture can create more distinctions between the classes in the embedding space, this would in turn lead to a stronger classifier.
 
 
 ## Dependencies
-
+All work was done using conda to manage virtual environments and package. the environment can be intialised by doing the following
+```
+conda env create –f environment.yml
+```
+for those not using conda the primary packages were as follows:
+```
+  - python=3.11.10
+  - pytorch=2.4.1=py3.11_cuda11.8_cudnn9_0
+  - torchvision==0.19.1
+  - pytorch-metric-learning=2.6.0
+  - matplotlib=3.9.2
+  - pillow=10.4.0
+```
 ## Training and Testing
-All training and testing of the model is done by one script: 'driver.py'
+All training and testing of the model is done by one script: `driver.py`. to run the script the following can be specified:
+```
+python driver.py -m {train/test/both} -p {True/False}
+```
+where:
+- `m` specifies the mode between training testing or both
+- `p` specifies if you want the training plots
 
+NOTE: You must train first as testing requiresa saved model to use.
 
+##Repository Structure
+The file tree must be as follows
+```
+root
+├── dataset
+│   ├── train-image
+│   │   ├── ISIC--.jpg
+│   │   ├── ...
+│   │   └── ISIC--.jpg
+│   └── train-metadata.csv
+│       
+└── images
+│   │   ├── epoch1.jpg
+│   │   ├── ...
+│   │   └── epochTest.jpg
+└── models
+      └── siamese_best.pth
+```
+NOTE: the python scripts create the models and images directory internally but it is safer to make them before hand incase there are conflicts with permissions.
+
+Hyperparameters can be edited inside the file named `hyper.py`, currently only batch_size, learning rate and epochs were modified (m size for sampler was left as batch_size/2)
+
+# Addtional 
 
 # References
 

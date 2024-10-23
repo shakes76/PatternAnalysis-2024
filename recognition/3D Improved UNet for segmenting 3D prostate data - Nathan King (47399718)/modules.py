@@ -1,3 +1,10 @@
+"""
+This script constructs the individual modules of the 3D Improved UNet Model. Additionally,
+the individual modules are combined to build the entire model.
+
+@author Nathan King
+"""
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers

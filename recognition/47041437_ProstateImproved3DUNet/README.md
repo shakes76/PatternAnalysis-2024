@@ -44,14 +44,14 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 With the 3D U-Net model, all labels achieved a DSC of at least 0.75. The plots for the 6 labels can be found below. 
 <table>
   <tr>
-    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="200"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="200"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="400"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="400"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="400"/></td>
   </tr>
   <tr>
-    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="200"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="200"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="400"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400"/></td>
   </tr>
 </table>
 
@@ -59,14 +59,14 @@ With the 3D U-Net model, all labels achieved a DSC of at least 0.75. The plots f
 With the improved 3D U-Net model, all labels achieved a DSC of at least 0.8. The plots for the 6 labels can be found below. 
 <table>
   <tr>
-    <td><img src="images/improvedunet3d/dsc_plot_label_Label 0.png" width="200"/></td>
-    <td><img src="images/improvedunet3d/dsc_plot_label_Label 1.png" width="200"/></td>
-    <td><img src="images/improvedunet3d/dsc_plot_label_Label 2.png" width="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 0.png" width="400"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 1.png" width="400"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 2.png" width="400"/></td>
   </tr>
   <tr>
-    <td><img src="images/improvedunet3d/dsc_plot_label_Label 3.png" width="200"/></td>
-    <td><img src="images/improvedunet3d/dsc_plot_label_Label 4.png" width="200"/></td>
-    <td><img src="images/improvedunet3d/dsc_plot_label_Label 4.png" width="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 3.png" width="400"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400"/></td>
   </tr>
 </table>
 

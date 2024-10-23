@@ -115,7 +115,7 @@ def unet_model ():
     uconv3 = tf.keras.layers.LeakyReLU(alpha=.01)(uconv3)
 
 # segmentation layer 1
-    seg3 = tf.keras.layers.Conv2D(6, (3,3),  activation="softmax", padding='same')(uconv3)
+    seg3 = tf.keras.layers.Conv2D(4, (3,3),  activation="softmax", padding='same')(uconv3)
 # upscale segmented layer 1
     seg3 = tf.keras.layers.UpSampling2D(size=(2,2) , interpolation='bilinear')(seg3)
 
@@ -139,7 +139,7 @@ def unet_model ():
     uconv2 = tf.keras.layers.LeakyReLU(alpha=.01)(uconv2)
 
 # segmentation layer 2
-    seg2 = tf.keras.layers.Conv2D(6, (3,3),  activation="softmax", padding='same')(uconv2)
+    seg2 = tf.keras.layers.Conv2D(4, (3,3),  activation="softmax", padding='same')(uconv2)
 
 # add segmentation layer 1 and 2
     seg_32 = tf.keras.layers.Add()([seg3,seg2])
@@ -162,7 +162,7 @@ def unet_model ():
     uconv1 = tf.keras.layers.LeakyReLU(alpha=.01)(uconv1)
     
 # final segmentation layer   
-    seg1 = tf.keras.layers.Conv2D(6, (3,3),  activation="softmax", padding='same' )(uconv1)
+    seg1 = tf.keras.layers.Conv2D(4, (3,3),  activation="softmax", padding='same' )(uconv1)
 
 # sum all segmentation layers 
     seg_sum = tf.keras.layers.Add()([seg1,seg_32])

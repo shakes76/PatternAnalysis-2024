@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from modules import Yolov7
 from dataset import DataSetProcessorTrainingVal, DataSetProcessorTest
 from torchvision import transforms
+from yolov7.utils.loss import ComputeLoss
 
 # Varibles
 BATCH_SIZE = 16 
@@ -41,7 +42,38 @@ model = model.to(device)
 
 
 def train_one_epoch():
-    return None
+    model.train()
+    print("one epoch")
+    i = 0
+    running_loss = 0
+    for image, label in training_dataset:
+        # print(image)
+        # if image is None or label is None:
+        #     print("jjkj")
+        #     continue
+        print("training loop", i)
+        image = image.to(device)
+        label = label.to(device)
+        # print(image)
+        # print(label)
+        prediction = model(image)
+        #print("Prediction shape:", prediction.shape)
+        
+        loss, loss_items = loss_function(prediction, label)
+        print(loss.requires_grad, "lossss")
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        # Accumulate loss for this batch
+        running_loss = running_loss + loss.item()
+        print(running_loss, loss.item())
+        i+=1
+    # Calculate average loss for the epoch
+    avg_loss = running_loss / len(training_dataset)
+    print(f"Training Loss: {avg_loss:.4f}")
+    
+    return avg_loss
 
 
 def validate():

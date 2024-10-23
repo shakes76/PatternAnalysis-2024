@@ -39,7 +39,8 @@ Below is a visual representation of the generated images' progression throughout
 10. [Analysis of Results](#Analysis-of-Results)
 11. [Performance Metrics](#performance-metrics)
 12. [Analysis of Performance Metrics](#Analysis-of-Performance-Metrics)
-13. [References](#references)
+13. [Style Space Plot and Discussion](#Style-space)
+14. [References](#references)
 
 ## Project Structure
 
@@ -520,6 +521,17 @@ The minor fluctuations towards later epochs show ongoing improvements and adjust
 The combination of these observations points to a well-trained GAN where the generator gradually learns to produce realistic samples, and the discriminator remains competitive, helping refine the generator's output. The images improve over time, correlating with the stable, yet dynamic, loss trends seen in the plots. Adjustments to the discriminator strength or regularization techniques might further fine-tune this balance for even better results.
 
 Additionally, these losses align well with the provided images - as the image quality substantially increased at 10 and then 20 epochs, before having relatively steady improvement beyond 20 epochs.
+
+## Style Space
+<p align="center">
+    <img src="images_for_readme/OtherImages/TSNE.png" alt="Image 1" width="90%" />
+    <br>
+    TSNE Style Space Plot at 50 epochs.
+</p>
+
+The plot shown above highlights the style space for the mapping network having been trained for 50 epochs. The style space is not clearly split into AD and NC spaces, as the model was not trained distinctly on AD and NC data (rather, trained on them combined). However, there is still a clear break of the style space vector around the bottom of the image, which is interpreted to be the distinction in the style space between the normal control and alzheimer's disease images. 
+
+Had the model been trained distinctly on the two different types of brain scans (not explicitly required by the task) - being a conditional model, then there may be a much more clear separation in the style space.
 
 ## References
 T. Karras, S. Laine, and T. Aila, “A Style-Based Generator Architecture for Generative Adversarial

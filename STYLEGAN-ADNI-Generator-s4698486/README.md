@@ -31,7 +31,7 @@ relatively small sample set of real Alzheimer's brain scans), or in another simi
 The project consists of several key files:
 
 - [`train.py`](train.py): Main training script for the Stable Diffusion model
-- [`generate_images.py`](generate_images.py): Script for generating new images from trained model, alongside loss plots.
+- [`predict.py`](predict.py): Script for generating new images from trained model, alongside loss plots.
 - [`modules.py`](modules.py): Contains Generator, Discriminator, MappingNetwork and other models.
 - [`utils.py`](utils.py): Utility functions for getting noise, converting latent space to style space etc
 - [`dataset.py`](dataset.py): Loads ADNI data.

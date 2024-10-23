@@ -1,5 +1,7 @@
 """
-Contains the data loader for loading and preprocessing the ISIC 2020 Data
+Contains the data loaders for loading and preprocessing the ISIC 2020 Dataset.
+This module will help prepare training, validation and testing data to be used 
+by a siamese network using triplet loss.
 """
 
 ###############################################################################
@@ -20,25 +22,46 @@ from torchvision import transforms
 ### Classes
 class TripletDataGenerator(torch.utils.data.Dataset):
     """
+    Dataset Generator designed to group data (a list of labels and images)
+    into triplets (if required) for use in a triplet loss function.
+
+    The 'images' should be supplied as a list of image paths, this class will read them into
+    images when get item is called.
+
+    Additionally if any  transform is specified - the data will be run through said
+    transform before returning them.
     """
-    def __init__(self, images, labels=None, train=True, transform=None):
+    def __init__(self, images: list, labels: list=None, train: bool=True, transform: callable=None) -> None:
         self.is_train = train
         self.transform = transform
-        self.images = images     
+        self.images = images
         self.labels = labels
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """
+        Returns the number of images in the data set
+        """
         return len(self.images)
 
-    def __getitem__(self, anchor_idx):
+    def __getitem__(self, anchor_idx: int) -> tuple[torch.tensor, torch.tensor, torch.tensor, int]:
+        """
+        Returns the next triplet in the data set.
+
+        Each triplet is made up of an anchor data point, a positive data point (point of the same
+        class as the anchor) and a negative data point (point of the opposite class to the anchor).
+        The class of the anchor will also be returned
+        """
         anchor_img = cv2.imread(self.images[anchor_idx]) / 255.0
         anchor_label = self.labels[anchor_idx]
 
+        # If we are training we want the full triplet
         if self.is_train:
+            # All images that are of the same class as anchor but not anchor
             positive_list = [idx for idx, label in enumerate(self.labels) if label == anchor_label and idx != anchor_idx]
             positive_idx = random.choice(positive_list)
             positive_img = cv2.imread(self.images[positive_idx]) / 255.0
 
+            # All images that are of the different class then anchor and not anchor (This check is not required, but nice for consistancy)
             negative_list = [idx for idx, label in enumerate(self.labels) if label != anchor_label and idx != anchor_idx]
             negative_idx = random.choice(negative_list)
             negative_img = cv2.imread(self.images[negative_idx]) / 255.0
@@ -47,9 +70,10 @@ class TripletDataGenerator(torch.utils.data.Dataset):
                 anchor_img = self.transform(anchor_img)
                 positive_img = self.transform(positive_img)
                 negative_img = self.transform(negative_img)
-
             return anchor_img, positive_img, negative_img, anchor_label
 
+        # If we are testing, we only care about the anchor image, the other images
+        # can can returned as empty tensors
         else:
             if self.transform:
                 anchor_img = self.transform(anchor_img)

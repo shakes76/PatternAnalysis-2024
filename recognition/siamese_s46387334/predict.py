@@ -1,9 +1,21 @@
+"""
+Showing example usage of your trained model by using the model to predict on a testing set.
+
+Evaluation metrics will be printed and evaluation figures will be saved to the current folder.
+"""
+
+###############################################################################
+### Imports
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 from sklearn.manifold import TSNE
 from sklearn.metrics import roc_curve
 
+
+###############################################################################
+### Functions
 def produce_evaluation_metrics(
     test_y_pred,
     test_y_probs,

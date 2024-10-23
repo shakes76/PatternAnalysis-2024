@@ -243,3 +243,30 @@ Additionally, there is a residual path to bypass this main convolutional pathway
 
 **2: Minibatch Standard Deviation:**
 An invention in StyleGAN2, minibatch standard deviation generates the standard deviation across a batch of input samples, and essentially rejects a sample range where there is very minimal standard deviation. This ensures that the generator must generate diverse images, rather than just finding a niche of one particularly discriminator-fooling image, and sticking with this.
+
+### Equalised Weight
+Normalises the weights/parameters of the convolutional/linear layers in the Generator, Discriminator and Mapping network to maintain constant variance across them.
+
+This ensures that each layer contributes more evenly to the overall learning process - as opposed to some layers with different input dimensions having significantly more or less impact on the learning process.
+Overall, this stabilises training significantly.
+
+### Equalised Linear
+Replaces the standard fully connected layer (which maps all inputs to outputs) with one that ensures weights are normalised, using Equalised Weight. This increases stability of training.
+
+### Path Length Penalty
+The Path Length Penalty is a regularization technique used specifically in the generator of StyleGAN2. It aims to ensure that a small change in the input latent vector w results in a proportionate change in the generated image.
+
+It does this by computing the gradient of the generator's output wrt its input latent vector, and then uses this to adjust generator weights in such a way that minimises the gradient norm's deviation.
+
+Overall, the goal of path length penalty is to heighten the interpretability of the latent space, allowing for the generator to better manipulate it in order to generate expected changes in images - as opposed to more random changes in images when this is not implemented.
+
+
+### Gradient Penalty
+Improves the stability of the discriminator, by ensuring that it doesn't become too overconfident and being more general in its feedback. Specifically, it does this by:
+
+- Taking real and generated (fake) images as inputs, and creates interpolated images between them, which are fed into the discriminator to compute the mixed scores.
+- Using torch.autograd.grad to compute the gradients of the discriminator scores with respect to the interpolated images.
+- Reshaping the gradients and calculating their L2 norm.
+- Computing the gradient penalty as the squared difference between the gradient norm and 1 and then adding this penalty to the discriminator loss, penalizing deviations from the target gradient norm - and ensuring that its loss never reaches a point of total overconfidence.
+
+Without this gradient penalty, mode collapse is much more likely to occur - as the discriminator will become too good for the generator to learn from, lead to its losses becoming NaN.

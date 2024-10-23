@@ -15,12 +15,13 @@ classification1_dir = os.path.join(base_dir, '1')
 os.makedirs(classification0_dir, exist_ok=True)
 os.makedirs(classification1_dir, exist_ok=True)
 
-# Read the CSV file
+# Read the CSV file containing metadata
 metadata = pd.read_csv(csv_file)
 
+# Iterate through each row in the metadata CSV to classify images
 for _, row in metadata.iterrows():
-    image_name = row['isic_id']
-    classification = row['target']
+    image_name = row['isic_id']  # Extract image name from the CSV
+    classification = row['target']  # Extract classification (0 or 1) from the CSV
 
     # Add .jpg extension to the image name
     img_filename = f"{image_name}.jpg"

@@ -7,25 +7,25 @@ import random
 import torch
 from torchvision import transforms
 
-
 class Dataset(torch.utils.data.IterableDataset):
     def __init__(self, path, shuffle_pairs=True, dataset_size=None, augment=False):
         '''
-        Returns:
-                output (torch.Tensor): shape=[b, 1], Similarity of each pair of images,
-                where b = batch size
+        Initialize the dataset class.
+
+        Args:
+            path (str): Path to the dataset directory.
+            shuffle_pairs (bool): Whether to shuffle pairs of images.
+            dataset_size (int, optional): Number of samples to use from the dataset.
+            augment (bool): Whether to perform data augmentation.
         '''
         self.path = path
         self.dataset_size = dataset_size
-
         self.shuffle_pairs = shuffle_pairs
+        self.malignant = '1'  # Class label for malignant images
+        self.benign = '0'  # Class label for benign images
+        self.feed_shape = [3, 224, 224]  # Image dimensions (channels, height, width)
 
-        self.malignant = '1'
-        self.benign = '0'
-
-        self.feed_shape = [3, 224, 224]
-
-        # Define transform
+        # Define transformation pipeline for data augmentation
         self.transform = transforms.Compose([
             transforms.RandomAffine(degrees=20, translate=(0.2, 0.2), shear=0.2),
             transforms.RandomResizedCrop(size=(224, 224), scale=(0.7, 1.0)),
@@ -35,27 +35,35 @@ class Dataset(torch.utils.data.IterableDataset):
             transforms.Resize(self.feed_shape[1:], antialias=True)
         ])
 
+        # Load dataset information
         self.image_paths, self.image_classes, self.class_indices = self.load_data()
-        # re-balance the classes if needed
+        # Perform data augmentation if required
         if augment:
             self.augment_data()
             self.image_paths, self.image_classes, self.class_indices = self.load_data()
 
+        # Create pairs of image indices for training
         self.indices1, self.indices2 = self.create_pairs()
 
     def load_data(self):
-        # load in the benign data
+        '''
+        Load image paths and classes from the dataset.
+
+        Returns:
+            tuple: Lists of image paths, image classes, and class indices.
+        '''
+        # Load benign image paths
         image_paths = glob.glob(os.path.join(self.path, "0/*.jpg"))
-        # check how much of the benign data we want to use
+        # Select a subset of benign data if dataset_size is specified
         if self.dataset_size and self.dataset_size <= len(image_paths):
             image_paths = random.sample(image_paths, self.dataset_size)
-        # load in the malignant data
+        # Load malignant image paths and combine with benign images
         image_paths = image_paths + (glob.glob(os.path.join(self.path, "1/*.jpg")))
-        # shuffle the data together
+        # Shuffle all images
         random.shuffle(image_paths)
 
-        image_classes = []  # holds the class of every image (length = total num images)
-        class_indices = {}  # mapping of class to every image (using the image's index) in the class
+        image_classes = []  # Holds the class of every image
+        class_indices = {}  # Maps each class to indices of images belonging to that class
 
         for image_path in image_paths:
             image_class = image_path.split(os.path.sep)[-2]
@@ -68,6 +76,9 @@ class Dataset(torch.utils.data.IterableDataset):
         return image_paths, image_classes, class_indices
 
     def augment_data(self):
+        '''
+        Perform data augmentation on malignant images to balance class distribution.
+        '''
         num_images_to_generate = len(self.class_indices[self.benign])
 
         # Set up the augmentation transform (without normalizing)
@@ -80,13 +91,13 @@ class Dataset(torch.utils.data.IterableDataset):
         # Load the existing malignant images
         existing_images_count = len(self.class_indices[self.malignant])
 
-        # Check how many more images are needed
+        # Check how many more images are needed to balance the dataset
         needed_images = num_images_to_generate - existing_images_count
 
         if needed_images > 0:
             print(f"Need to generate {needed_images} images.")
 
-            # put all the used image names into a set
+            # Track used image names to avoid duplicates
             used_numbers = set()
             for filename in os.listdir(os.path.join(self.path, self.malignant)):
                 if filename.startswith('ISIC_') and filename.endswith('.jpg'):
@@ -94,7 +105,7 @@ class Dataset(torch.utils.data.IterableDataset):
                     number = filename.split('_')[1].split('.')[0]
                     used_numbers.add(number)
 
-            # Loop to generate additional images
+            # Generate additional augmented images
             for i in range(needed_images):
                 # Randomly choose an existing image to augment
                 img_index = np.random.choice(self.class_indices[self.malignant])
@@ -104,16 +115,17 @@ class Dataset(torch.utils.data.IterableDataset):
                 # Apply augmentation transform to the image
                 augmented_img = augment_transform(img)
 
-                # Save the augmented image back to the same directory with a new name
+                # Generate a unique filename for the augmented image
                 while True:
                     # Generate a random 7-digit number
                     random_number = '{:07d}'.format(random.randint(0, 9999999))
 
                     if random_number not in used_numbers:
-                        # If the number is not used, return the new unique name
+                        # If the number is not used, create the new unique name
                         img_name = f'ISIC_{random_number}.jpg'
                         break
 
+                # Save the augmented image to the malignant directory
                 augmented_img.save(os.path.join(self.path, self.malignant, img_name))
             print("Done Augmenting")
         else:
@@ -122,44 +134,49 @@ class Dataset(torch.utils.data.IterableDataset):
     def create_pairs(self):
         '''
         Creates two lists of indices that will form the pairs, to be fed for training or evaluation.
+
+        Returns:
+            tuple: Two lists of indices representing pairs of images.
         '''
-        # indices1 is the index for number of total images there are (0, 1, ..., n)
+        # indices1 is the list of indices for all images
         indices1 = np.arange(len(self.image_paths))
 
+        # Shuffle pairs if shuffle_pairs is True
         if self.shuffle_pairs:
             np.random.seed(int(time.time()))
             np.random.shuffle(indices1)
         else:
-            # If shuffling is set to off, set the random seed to 1, to make it deterministic.
+            # Set the seed to make shuffling deterministic
             np.random.seed(1)
 
-        # make an array of random true/false values with length = the total number of images
+        # Randomly select if pairs should have matching classes or not
         select_pos_pair = np.random.rand(len(self.image_paths)) < 0.5
 
         indices2 = []
 
-        # iterate through every image index and its corresponding random true/false value
+        # Iterate through image indices and generate pairs
         for i, pos in zip(indices1, select_pos_pair):
             class1 = self.image_classes[i]
             if pos:
-                # we want a matching image, make classes the same
+                # If true, select another image from the same class
                 class2 = class1
             else:
-                # else we want a different class of image, randomly pick other class after removing class 1
+                # Else, select an image from a different class
                 class2 = np.random.choice(list(set(self.class_indices.keys()) - {class1}))
-            # randomly pick an image from this class
+            # Randomly pick an image from the selected class
             idx2 = np.random.choice(self.class_indices[class2])
-            # add this image to the indices2, its corresponding pair and whether they match
-            # are saved in image_paths and select_pos_pair
             indices2.append(idx2)
 
-        # vectorise so we can turn it to a tensor
+        # Return the pair indices as numpy arrays
         return indices1, np.array(indices2)
 
     def __iter__(self):
         '''
-                    Iterates through the dataset split and yields pairs of images and similarity labels.
-                    '''
+        Iterate through the dataset and yield pairs of images along with similarity labels.
+
+        Yields:
+            tuple: A tuple containing a pair of images, similarity label, and their respective classes.
+        '''
         for idx, idx2 in zip(self.indices1, self.indices2):
             image_path1 = self.image_paths[idx]
             image_path2 = self.image_paths[idx2]
@@ -167,14 +184,23 @@ class Dataset(torch.utils.data.IterableDataset):
             class1 = self.image_classes[idx]
             class2 = self.image_classes[idx2]
 
+            # Load and convert images to RGB
             image1 = Image.open(image_path1).convert("RGB")
             image2 = Image.open(image_path2).convert("RGB")
 
+            # Apply transformations if available
             if self.transform:
                 image1 = self.transform(image1).float()
                 image2 = self.transform(image2).float()
 
+            # Yield the image pair, similarity label, and class information
             yield (image1, image2), torch.FloatTensor([class1 == class2]), (class1, class2)
 
     def __len__(self):
+        '''
+        Return the total number of images in the dataset.
+
+        Returns:
+            int: The total number of images.
+        '''
         return len(self.image_paths)

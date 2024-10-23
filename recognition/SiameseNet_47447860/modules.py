@@ -3,14 +3,13 @@ import torch.nn as nn
 from torchvision import models
 from torchvision.models import ResNet18_Weights
 
-
 class SiameseNetwork(nn.Module):
     def __init__(self, backbone="resnet18"):
         '''
-        Creates a siamese network with a network from torchvision.models as backbone -> our featrue extractor
+        Creates a siamese network with a network from torchvision.models as backbone -> our feature extractor
 
-            Parameters:
-                    backbone (str): Networks from https://pytorch.org/vision/stable/models.html
+        Args:
+            backbone (str): Networks from https://pytorch.org/vision/stable/models.html
         '''
 
         super().__init__()
@@ -24,7 +23,7 @@ class SiameseNetwork(nn.Module):
         # Get the number of features that are outputted by the last layer of feature extractor network
         out_features = list(self.backbone.modules())[-1].out_features
 
-        # Our classification head with be an MLP with dense layers.
+        # Our classification head will be an MLP with dense layers.
         # The classification head classifies if the given combined feature vector represents both malignant
         # or both benign (same class of image) -> will return a value close to 1,
         # else if the images are of different classes, we want the head to return a value close to 0.
@@ -41,14 +40,14 @@ class SiameseNetwork(nn.Module):
         '''
         Returns the similarity value between two images.
 
-            Parameters:
-                    img1 (torch.Tensor): shape=[b, 3, 224, 224]
-                    img2 (torch.Tensor): shape=[b, 3, 224, 224]
+        Args:
+            img1 (torch.Tensor): shape=[b, 3, 224, 224] - First image in the pair.
+            img2 (torch.Tensor): shape=[b, 3, 224, 224] - Second image in the pair.
 
-            where b = batch size
+        where b = batch size
 
-            Returns:
-                    output (torch.Tensor): shape=[b, 1], Similarity of each pair of images
+        Returns:
+            torch.Tensor: shape=[b, 1], Similarity of each pair of images.
         '''
 
         # Pass both images through the backbone network to get their separate feature vectors

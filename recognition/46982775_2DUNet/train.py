@@ -10,7 +10,10 @@ Author:
     Joseph Reid
 
 Functions:
-
+    create_log_file: Create log file to track train/test messages
+    write_log_file: Write train/test messages to log file
+    train_model: Train UNet on training data
+    test_model: Test trained UNet on testing data
 
 Dependencies:
     pytorch
@@ -19,6 +22,7 @@ Dependencies:
 
 import os
 import time
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -43,7 +47,7 @@ NUM_EPOCHS = 24
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 12
 
-# Model name - Change for each training to save model
+# Model name - Change for each training to save model and scores
 MODEL_NAME = "2d_unet_initial"
 MODEL_DIR = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "trained_models", MODEL_NAME)
 MODEL_CHECKPOINT1 = os.path.join(MODEL_DIR, "checkpoint1.pth")
@@ -59,12 +63,14 @@ LOG_DIR = os.path.join(MODEL_DIR, "log.txt")
 # Also print messages when they are written to the log file
 VERBOSE = True
 
+
 def create_log_file():
     """ Create log.txt in MODEL_DIR to save a log of messages."""
     os.makedirs(MODEL_DIR)
     # Use "x" to verify that MODEL_NAME has been changed
     f = open(LOG_DIR, "x")
     f.close()
+
 
 def write_log_file(msg: str):
     """ Write msg to new line of log.txt."""
@@ -73,6 +79,7 @@ def write_log_file(msg: str):
     f.close
     if VERBOSE:
         print(msg)
+
 
 def train_model(
         model: UNet, 
@@ -115,12 +122,11 @@ def train_model(
             labels = labels.to(device) # (B, C, H, W)
 
             images = torch.unsqueeze(images, dim=1) # (B, 1, H, W)
-
-            # Forward pass
+            # Predict and calculate loss
             predicted = model(images) # (B, C, H, W)
             loss = criterion(predicted, labels)
-
-            # Backward and optimize
+            
+            # Optimise model
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
@@ -165,9 +171,10 @@ def train_model(
     average_train_dice_scores = average_train_dice_scores.tolist()
 
     end_time = time.time()
-    write_log_file(f"Training took {(start_time - end_time)/60:.1f} minutes")
+    write_log_file(f"Training took {(end_time - start_time)/60:.1f} minutes")
 
     return (train_losses, average_train_dice_scores)
+
 
 def test_model(
         model: UNet, 
@@ -225,9 +232,10 @@ def test_model(
             write_log_file(f"Dice score for {label} is {average_test_dice_scores[key]:.4f}")
 
     end_time = time.time()
-    write_log_file(f"Testing took {(start_time - end_time)/60:.1f} minutes")
+    write_log_file(f"Testing took {(end_time - start_time)/60:.1f} minutes")
 
     return average_test_dice_scores
+
 
 # For testing purposes
 if __name__ == "__main__":
@@ -259,7 +267,9 @@ if __name__ == "__main__":
     model = model.to(device)
 
     # Loss function and optimiser algorithm
-    criterion = nn.CrossEntropyLoss()
+    # weights = train_dataset.calculate_class_weights()
+    weights = torch.tensor([0.96584141, 0.24800861, 1.30525178, 8.34059394, 47.83551869, 39.09455447])
+    criterion = nn.CrossEntropyLoss(weight=weights)
     optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     # Dice score class to calculate class dice scores

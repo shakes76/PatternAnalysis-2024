@@ -72,6 +72,7 @@ modules.py
 predict.py
 train.py
 utils.py
+config.py
 ```
 
 To use pre-trained models instead of training new models, please set the `load_models` hyperparameter in `utils.py` to `True`.

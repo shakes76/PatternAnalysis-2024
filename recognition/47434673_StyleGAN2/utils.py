@@ -28,6 +28,7 @@ import train
 import predict
 import modules
 import dataset
+from config import *
 
 
 ##################################################
@@ -66,9 +67,9 @@ def get_noise(batch_size, device):
     return noise
 
 
-def gradient_penalty(critic, real, fake,device="cpu"):
+def gradient_penalty(discrim, real, fake,device="cpu"):
     """
-    Reduces the l^2 norm of the gradients of the 
+    Reduces the L2 norm of the gradients of the 
     discriminator with respect to the images.
     """
     BATCH_SIZE, C, H, W = real.shape
@@ -77,7 +78,7 @@ def gradient_penalty(critic, real, fake,device="cpu"):
     interpolated_images.requires_grad_(True)
 
     # Calculate discriminator scores
-    mixed_scores = critic(interpolated_images)
+    mixed_scores = discrim(interpolated_images)
 
     # Calculates the gradient of scores of images
     gradient = torch.autograd.grad(

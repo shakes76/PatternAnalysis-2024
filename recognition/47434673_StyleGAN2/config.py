@@ -1,3 +1,11 @@
+import random
+import torch
+
+# Hyperparameters
+
+# UPDATE HERE to the file path to your data
+data_root = "C:\Users\kylie\OneDrive\Documents\keras_png_slices_data\keras_png_slices_data\keras_png_slices_seg_train"
+
 workers = 2 # Number of workers for dataloader
 nz = 100 # Size of z latent vector (i.e. size of generator input)
 ngf = 64 # Size of feature maps in generator

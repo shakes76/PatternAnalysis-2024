@@ -7,9 +7,9 @@ import torch.utils.data
 import numpy as np
 import torch.nn.functional as F
 from math import sqrt
-from tqdm import tqdm
 
 import utils
+from config import *
 
 
 ##################################################
@@ -58,9 +58,9 @@ class EqualizedLinear(nn.Module):
         # Linear transformation
         return F.linear(x, self.weight(), bias=self.bias)
 
-# Weight equalization layer
 
 class EqualizedWeight(nn.Module):
+    """Weight equalisation layer"""
     def __init__(self, shape):
         super().__init__()
         self.c = 1 / sqrt(np.prod(shape[1:]))
@@ -71,7 +71,7 @@ class EqualizedWeight(nn.Module):
 
 
 class Generator(nn.Module):
-    """The Generator class"""
+    """The Generator"""
     def __init__(self, log_resolution, W_DIM, n_features = 32, max_features = 256):
         super().__init__()
 
@@ -241,13 +241,14 @@ class Discriminator(nn.Module):
         # Final Equalized linear layer for classification
         self.final = EqualizedLinear(2 * 2 * final_features, 1)
 
-    '''
-    Mini-batch standard deviation calculates the standard deviation
-    across a mini-batch (or a subgroups within the mini-batch)
-    for each feature in the feature map. Then it takes the mean of all
-    the standard deviations and appends it to the feature map as one extra feature.
-    '''
+    
     def minibatch_std(self, x):
+        """
+        Mini-batch standard deviation calculates the standard deviation
+        across a mini-batch (or a subgroups within the mini-batch)
+        for each feature in the feature map. Then it takes the mean of all
+        the standard deviations and appends it to the feature map as one extra feature.
+        """
         batch_statistics = (
             torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
         )
@@ -307,11 +308,11 @@ class EqualizedConv2d(nn.Module):
     def forward(self, x: torch.Tensor):
         return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
     
-'''
-This regularization encourages a fixed-size step in $w$ to result in a fixed-magnitude change in the image.
-'''
-class PathLengthPenalty(nn.Module):
 
+class PathLengthPenalty(nn.Module):
+    """
+    This regularization encourages a fixed-size step in $w$ to result in a fixed-magnitude change in the image.
+    """
     def __init__(self, beta):
         super().__init__()
 

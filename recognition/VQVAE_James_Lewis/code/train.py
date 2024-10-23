@@ -1,6 +1,8 @@
 import torch
 import os
 import torch.nn as nn
+from torchvision.utils import make_grid, save_image
+
 from modules import VQVAE
 from dataset import load_data_2D, DataLoader
 import torchmetrics.image
@@ -187,10 +189,48 @@ def plot_ssims(ssim_vals_train, ssim_vals_val, num_epochs, save_path='average_ss
 
     # Display the plot
     plt.show()
+def plot_losses(losses, num_epochs, save_path='loss_over_epochs.png'):
+    """
+    Plot the losses over training epochs.
+
+    @param losses: list, loss values over epochs
+    @param num_epochs: int, total number of epochs
+    @param save_path: str, optional, path to save the plot image
+    """
+
+    plt.figure(figsize=(10, 5))
+
+    # Plot the losses (line-only)
+    plt.plot(range(1, num_epochs + 1), losses, label='Loss', color='blue', linewidth=2)
+
+    # Add titles and labels
+    plt.title('Loss over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid()
+
+    # Ensure all epochs are shown on x-axis
+    plt.xticks(range(1, num_epochs + 1))
+
+    # Save the figure to a file
+    plt.savefig(save_path)
+    print(f'Plot saved to {save_path}')
+
+    # Display the plot
+    plt.show()
 
 def save_original(train_loader):
+    original_imgs = next(iter(train_loader))
+    original_imgs = (original_imgs*0.5) + 0.5
 
-def construct_images(data, reconstructed_data, embeddings, epoch, section = 'train'):
+    grid =make_grid(original_imgs, nrow=8)
+
+    os.makedirs('original_images', exist_ok=True)
+    save_image(grid, 'original_images/original_images.png')
+
+
+    return
+def construct_images(original_imag, reconstructed_data, embeddings, epoch, section):
     """
     Construct and save the original and reconstructed images for visualization.
 
@@ -200,8 +240,42 @@ def construct_images(data, reconstructed_data, embeddings, epoch, section = 'tra
     @param epoch: int, the current epoch
     @param section: str, the section of the dataset (e.g., 'train', 'val', 'test')
     """
-    if not os.path.exists('reconstructed_images'):
-        os.makedirs('reconstructed_images')
+    save_dir = f'reconstructed_images/{section}'
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    original_imag = original_imag.detach().cpu()
+    reconstructed_data = reconstructed_data.detach().cpu()
+    embeddings = embeddings.detach().cpu()
+
+    num_images = min(5, original_imag.size(0))  # Limit to first 5 images for clarity
+    fig, axes = plt.subplots(nrows=3, ncols=num_images, figsize=(num_images * 3, 9))
+
+    for i in range(num_images):
+        # Original Image
+        axes[0, i].imshow(original_imag[i].squeeze().numpy(), cmap='gray')
+        axes[0, i].axis('off')
+        axes[0, i].set_title(f'Original {i + 1}')
+
+        # Reconstructed Image
+        axes[1, i].imshow(reconstructed_data[i].squeeze().numpy(), cmap='gray')
+        axes[1, i].axis('off')
+        axes[1, i].set_title(f'Reconstructed {i + 1}')
+
+        # Embedding Visual (flatten embeddings to visualize if necessary)
+        embedding_img = embeddings[i].view(8, 8).numpy()  # Assuming embedding size is 64 for visualization
+        axes[2, i].imshow(embedding_img, cmap='gray')
+        axes[2, i].axis('off')
+        axes[2, i].set_title(f'Embedding {i + 1}')
+
+    plt.suptitle(f'{section.capitalize()} Images - Epoch {epoch}')
+
+    # Save the image grid to a file
+    save_path = os.path.join(save_dir, f'epoch_{epoch}.png')
+    plt.savefig(save_path)
+    plt.close()
+
+    print(f'Saved images for epoch {epoch} in section {section} at {save_path}')
 
 
 

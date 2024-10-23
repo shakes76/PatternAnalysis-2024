@@ -205,9 +205,9 @@ and architectural components, including weight demodulation. It improves image q
 realistic and diverse outputs with enhanced control over style attributes and better detail consistency.
 
 <p align="center">
-    <img src="Original-StyleGAN-architecture-a-The-latent-vector-z-introduced-b-eight-fully.png" alt="augmented images" width="35%">
+    <img src="images_for_readme/OtherImages/StyleGANArchitecture.png" alt="Overall StyleGAN architecture" width="60%">
     <br>
-    Discriminator's architecture
+    Overall StyleGAN architecture
 </p>
 
 
@@ -344,6 +344,11 @@ By following this process, the StyleGAN model learns to generate high-quality sy
 
 
 ## Results
+
+Note that the input into this is noise with 256 dimensions (for the mapping network), style vectors and noise (with 256 dimensions) for the generator, and then the real images / generator-generated images (of size 256x256) for the discriminator. 
+
+Also note that these results may not totally be reproduced, as all models directly or indirectly take in Gaussian noise - and this cannot be
+fixed with a random seed otherwise the generated images aren't realistic. 
 
 <p align="center">
     <img src="images_for_readme/Results/epoch 2/epoch2_img_0.png" alt="Image 1" width="19%" />
@@ -485,8 +490,8 @@ The observed progression illustrates the generator's learning curve in capturing
 
 ## Performance Metrics
 <p align="center">
-    <img src="images_for_readme/Results/OtherImages/disc_loss.png" alt="Image 1" width="49%" />
-    <img src="images_for_readme/Results/OtherImages/gen_loss.png" alt="Image 2" width="49%" />
+    <img src="images_for_readme/OtherImages/disc_loss.png" alt="Image 1" width="49%" />
+    <img src="images_for_readme/OtherImages/gen_loss.png" alt="Image 2" width="49%" />
     <br>
     Loss plots for Discriminator and Generator
 </p>

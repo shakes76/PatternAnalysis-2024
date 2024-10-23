@@ -22,9 +22,9 @@ relatively small sample set of real Alzheimer's brain scans), or in another simi
 7. [Model Architecture](#model-architecture)
 8. [Training Process](#training-process)
 9. [Results](#results)
-10. [Analysis of Results](#analysis)
-11. [Visualisations](#visualisations)
-12. [Performance Metrics](#performance-metrics)
+10. [Analysis of Results](#Analysis-of-Results)
+11. [Performance Metrics](#performance-metrics)
+12. [Analysis of Performance Metrics](#Analysis-of-Performance-Metrics)
 13. [References](#references)
 
 ## Project Structure
@@ -272,42 +272,6 @@ Improves the stability of the discriminator, by ensuring that it doesn't become 
 Without this gradient penalty, mode collapse is much more likely to occur - as the discriminator will become too good for the generator to learn from, lead to its losses becoming NaN.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Training Process
 
 The training process for this StyleGAN implementation involves iteratively refining a generator and a discriminator network to synthesize realistic images and distinguish them from real ones, respectively. The key components of the training process include a mapping network, a generator, a discriminator, and various loss functions. Here's a breakdown of the steps involved:
@@ -476,3 +440,37 @@ By following this process, the StyleGAN model learns to generate high-quality sy
     <br>
     Epoch 150 Generated Images
 </p>
+
+## Analysis of Results
+The progression of the generated brain images across different epochs showcases a clear improvement in the quality and realism of the generated samples as the training progresses. Diving into specific regions of the epochs uncovers more information.
+
+### Early Epochs (Epochs 2 - 10):
+Visual Quality: At the very early stages, such as Epochs 2 and 4, the generated images appear to be noisy and lack clear structural definition. The anatomical structures of the brain are indistinguishable, with patterns resembling random noise in the general shape of a brain. As the epochs push towards 10, the noise around these images decreases, and the images start resembling brains moreso.
+
+Model Behavior: This phase is characterized by the generator and discriminator still learning fundamental differences between real and generated images. The generator is effectively exploring the latent space but lacks direction, leading to fuzzy outputs.
+
+### Mid Epochs (Epochs 20 - 50):
+Visual Quality: From Epoch 20 onwards, the images begin to exhibit more recognizable features of brain anatomy. The generator starts forming the overall shape of brain structures, including more defined edges and contrast variations.
+
+Model Behavior: The discriminator has improved its ability to critique generated samples, which in turn guides the generator towards producing images with better-defined structural features. However, some regions may still display artifacts or blurry sections.
+
+### Later Epochs (Epochs 75 - 150):
+Visual Quality: By Epochs 75, 100, and especially 150, the generated images demonstrate significantly improved realism. The brain structures become more accurate and closely resemble the actual MRI images, with intricate details and textures becoming visible.
+
+Model Behavior: At this stage, the generator effectively captures the complexity of brain features, while the discriminator has become adept at identifying the subtleties in the generated images. The generator now produces samples that are difficult for the discriminator to differentiate from real images, indicating a better convergence.
+
+### Overall Improvements:
+Consistency: As training progresses, the images become more consistent in terms of quality across different samples. This suggests that the generator has learned to generalize features rather than producing highly variable outputs.
+
+Reduction in Artifacts: The presence of artifacts, such as noise and irregularities, decreases as the epochs advance. This indicates that the generator is learning to produce smooth transitions and coherent structures, which is particularly important for medical imaging like MRI scans.
+
+Structural Accuracy: The shapes and textures in later epoch images closely align with typical brain structures. This is especially important for datasets like ADNI, where structural details can be indicative of different cognitive conditions.
+
+### Conclusion:
+The observed progression illustrates the generator's learning curve in capturing complex structures through the adversarial training process. The transition from noisy, poorly-defined images to realistic MRI representations highlights the success of using a StyleGAN-based approach for generating synthetic medical images. It underscores the importance of sufficient training epochs and balanced training dynamics between the generator and discriminator for achieving high-quality outputs.
+
+## Performance Metrics
+
+
+
+## References

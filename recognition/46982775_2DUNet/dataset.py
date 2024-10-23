@@ -17,11 +17,14 @@ Dependencies:
 """
 
 import os
+
 import numpy as np
-import utils
 import torch
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
+
+import utils
+
 
 class ProstateDataset(Dataset):
     """ 
@@ -33,24 +36,29 @@ class ProstateDataset(Dataset):
     Attributes:
         img_dir (str): Directory containing the images (keras_slices)
         mask_dir (str): Directory with the masks (keras_slices_seg)
-        early_stop (bool): Boolean flag to only load some of the images
+        early_stop (bool): Boolean flag to prematurely stop loading files
         plotting (bool): Boolean flag to visualise the images and masks
     
     Methods:
         img_show: Plot 6 of the images and their masks
     """
 
-    def __init__(self, img_dir: str, mask_dir: str, early_stop = True, plotting = False):
-        self.img_dir = img_dir
-        self.mask_dir = mask_dir
+    def __init__(self, 
+            img_dir: str, 
+            mask_dir: str, 
+            early_stop = False, 
+            plotting = False
+            ):
 
         # Load images and masks
-        self.imgs = utils.load_data_2D_from_directory(self.img_dir, early_stop=early_stop)
-        self.masks = utils.load_data_2D_from_directory(self.mask_dir, early_stop=early_stop, categorical=True)
-
+        self.imgs = utils.load_data_2D_from_directory(
+            img_dir, norm_image=True, resized=True, early_stop=early_stop)
+        self.masks = utils.load_data_2D_from_directory(
+            mask_dir, norm_image=False, resized=True, one_hot=True, early_stop=early_stop, dtype=np.float16)
         # Plotting requires segment data that is not one hot encoded
         if plotting:
-            self.masks_for_plotting = utils.load_data_2D_from_directory(self.mask_dir, early_stop=early_stop, categorical=False)
+            self.masks_plot = utils.load_data_2D_from_directory(
+                mask_dir, norm_image=False, resized=False, one_hot=False, early_stop=early_stop)
 
     def __len__(self):
         return len(self.imgs)
@@ -60,10 +68,9 @@ class ProstateDataset(Dataset):
         mask = self.masks[idx]
 
         # Move channels to 0th index and convert np to tensor
-        mask = np.moveaxis(mask, 2, 0)
+        mask = np.moveaxis(mask, 2, 0) # (H, W, C) to (C, H, W)
         img = torch.from_numpy(img)
         mask = torch.from_numpy(mask)
-    
         return (img, mask)
     
     def img_show(self, start_idx: int = 0):
@@ -78,7 +85,7 @@ class ProstateDataset(Dataset):
             start_idx (int): Image index that should be plotted from
 
         Returns:
-            None
+            None, plots the images and masks
         """
 
         fig = plt.figure(figsize=(8, 8))
@@ -86,7 +93,7 @@ class ProstateDataset(Dataset):
         count = 0 # Variable to move through subplots
         for idx in range(start_idx, start_idx + (cols * rows) // 2):
             img = self.imgs[idx]
-            mask = self.masks_for_plotting[idx]
+            mask = self.masks_plot[idx]
             count += 1
             fig.add_subplot(rows, cols, count)
             plt.imshow(img.squeeze(), cmap='gray')
@@ -107,7 +114,8 @@ if __name__ == "__main__":
     test_mask_path = os.path.join(main_dir, 'keras_slices_seg_test')
 
     # Creating training dataset that can plot some of the data
-    train_dataset = ProstateDataset(train_image_path, train_mask_path, plotting=True)
+    train_dataset = ProstateDataset(
+        train_image_path, train_mask_path, early_stop=True, plotting=True)
     
     # Print statements for debugging and improving understanding
     print(len(train_dataset))

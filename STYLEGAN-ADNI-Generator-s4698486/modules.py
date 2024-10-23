@@ -8,34 +8,6 @@ import numpy as np
 
 from constants import channels, interpolation
 
-# modules.py
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LeakyReLU, Reshape, Conv2DTranspose, Conv2D, BatchNormalization, Dropout, Flatten
-
-# Define the discriminator model
-def define_discriminator(input_shape=(256, 256, 1)):
-    model = tf.keras.Sequential()
-    
-    model.add(Conv2D(32, (4, 4), strides=(2, 2), padding='same', input_shape=input_shape))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(alpha=0.2))
-    model.add(Dropout(0.4))
-    
-    model.add(Conv2D(64, (4, 4), strides=(2, 2), padding='same'))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(alpha=0.2))
-    model.add(Dropout(0.4))
-
-    model.add(Conv2D(128, (4, 4), strides=(2, 2), padding='same'))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(alpha=0.2))
-    model.add(Dropout(0.4))
-    
-    model.add(Flatten())
-    model.add(Dense(1))
-    return model
-
 
 """
  Mapping network with 8 Linear layers
@@ -259,6 +231,89 @@ class Conv2dWeightModulate(nn.Module):
         # return x in shape of [batch_size, out_features, height, width]
         return x.reshape(-1, self.out_features, h, w)
     
+"""
+ Discriminator first transforms the image to a feature map of the same resolution and then
+ runs it through a series of blocks with residual connections.
+ The resolution is down-sampled by 2x at each block while doubling the number of features.
+"""
+class Discriminator(nn.Module):
+
+    def __init__(self, log_resolution, n_features = 64, max_features = 256):
+        super().__init__()
+
+        # Calculate the number of features for each block.
+        features = [min(max_features, n_features * (2 ** i)) for i in range(log_resolution - 1)]
+
+        # Layer to convert RGB image to a feature map with `n_features`.
+        self.from_rgb = nn.Sequential(
+            EqualizedConv2d(channels, n_features, 1),
+            nn.LeakyReLU(0.2, True),
+        )
+        n_blocks = len(features) - 1
+
+        # A sequential container for Discriminator blocks
+        blocks = [DiscriminatorBlock(features[i], features[i + 1]) for i in range(n_blocks)]
+        self.blocks = nn.Sequential(*blocks)
+
+        final_features = features[-1] + 1
+        # Final conv layer with 3x3 kernel
+        self.conv = EqualizedConv2d(final_features, final_features, 3)
+        # Final Equalized linear layer for classification
+        self.final = EqualizedLinear(2 * 2 * final_features, 1)
+
+    """
+     Mini-batch standard deviation calculates the standard deviation
+     across a mini-batch for each feature in the feature map. This is used to prevent
+     against the generator generating images with very minimal standard deviation (the same images)
+    """
+    def minibatch_std(self, x):
+        batch_statistics = (
+            torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
+        )
+        return torch.cat([x, batch_statistics], dim=1)
+
+    def forward(self, x):
+
+        x = self.from_rgb(x)
+        x = self.blocks(x)
+
+        x = self.minibatch_std(x)
+        x = self.conv(x)
+        x = x.reshape(x.shape[0], -1)
+        return self.final(x)
+    
+# Discriminator block consists of two $3 \times 3$ convolutions with a residual connection.
+class DiscriminatorBlock(nn.Module):
+
+    def __init__(self, in_features, out_features):
+        super().__init__()
+
+        # Down-sampling with AvgPool with 2x2 kernel and 1x1 convolution layer for the residual connection
+        self.residual = nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2), # down sampling using avg pool
+                                      EqualizedConv2d(in_features, out_features, kernel_size=1))
+
+        # 2 conv layer with 3x3 kernel
+        self.block = nn.Sequential(
+            EqualizedConv2d(in_features, in_features, kernel_size=3, padding=1),
+            nn.LeakyReLU(0.2, True),
+            EqualizedConv2d(in_features, out_features, kernel_size=3, padding=1),
+            nn.LeakyReLU(0.2, True),
+        )
+
+        # down sampling using avg pool
+        self.down_sample = nn.AvgPool2d( kernel_size=2, stride=2)  
+
+        # Scaling factor after adding the residual
+        self.scale = 1 / sqrt(2)
+
+    def forward(self, x):
+        residual = self.residual(x)
+
+        x = self.block(x)
+        x = self.down_sample(x)
+
+        return (x + residual) * self.scale
+
 
 """
  Adds weight equalisation to conv2d block, in order to enhance stabilisation of training

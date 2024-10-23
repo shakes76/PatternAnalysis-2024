@@ -3,7 +3,12 @@ The all in one place to modify hyperparameters and other key variables such as t
 
 Made by Joshua Deadman
 """
-
+# Datapath should be of structure:
+# ./data/
+#       train-metadata.csv
+#       /train-image
+#           /images
+#               all images
 DATAPATH = "./data"
 MODELPATH = "./models"
 

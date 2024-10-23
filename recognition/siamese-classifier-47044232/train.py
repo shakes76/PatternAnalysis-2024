@@ -36,9 +36,9 @@ transforms = v2.Compose([
 ])
 
 # Form datsets and load them
-train_set = ISICKaggleChallengeSet(config.DATAPATH+"/image/", train, transforms=transforms)
-test_set = ISICKaggleChallengeSet(config.DATAPATH+"/image/", test, transforms=transforms)
-val_set = ISICKaggleChallengeSet(config.DATAPATH+"/image/", val, transforms=transforms)
+train_set = ISICKaggleChallengeSet(config.DATAPATH+"/train-image/image/", train, transforms=transforms)
+test_set = ISICKaggleChallengeSet(config.DATAPATH+"/train-image/image/", test, transforms=transforms)
+val_set = ISICKaggleChallengeSet(config.DATAPATH+"/train-image/image/", val, transforms=transforms)
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 val_loader = DataLoader(val_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)

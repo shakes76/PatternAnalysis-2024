@@ -60,12 +60,14 @@ class Block(nn.Module):
 
 # GFNet Model
 class GFNet(nn.Module):
-    def __init__(self, embed_dim=768, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth=12, drop_rate=0., num_classes=1000):
+    def __init__(self, embed_dim=768, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth=12, drop_rate=0.1, num_classes=1000):
         super().__init__()
 
         # Patch embedding
-        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
-        
+        num_patches = (img_size // patch_size) ** 2
+        self.patch_embed = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_rate)
 
         h = img_size // patch_size
@@ -75,7 +77,7 @@ class GFNet(nn.Module):
         self.blocks = nn.ModuleList([
             Block(
                 embed_dim, mlp_ratio, drop_rate, h=h, w=w)
-            for i in range(depth)
+            for _ in range(depth)
         ])
 
         self.norm = nn.LayerNorm(embed_dim)
@@ -85,7 +87,8 @@ class GFNet(nn.Module):
 
     def forward(self, x):
         # Patch embedding
-        x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.patch_embed(x).flatten(2).transpose(1, 2)
+        x = x + self.pos_embed
         x = self.pos_drop(x)
 
         for block in self.blocks:

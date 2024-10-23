@@ -49,7 +49,7 @@ def get_dataloaders(batch_size=32, image_size=224, path="recognition/GFNet-47428
     # Normalised transformations for training
     train_transforms = transforms.Compose([
         transforms.Resize((image_size, image_size)),
-        transforms.RandomRotation(5),
+        transforms.RandomRotation(10),
         transforms.RandomResizedCrop(image_size, scale=(0.9, 1.1)),
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)

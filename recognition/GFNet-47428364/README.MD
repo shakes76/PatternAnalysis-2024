@@ -19,6 +19,7 @@ The following dependencies are required: m
 ## Example Model - Training
 
 ### Inputs
+To train the model, run `train.py`
 These are the parameters specified for the model:
 ```
 GFNet(embed_dim=768, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth=12, drop_rate=0., num_classes=1000)
@@ -34,6 +35,7 @@ GFNet(embed_dim=768, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth
 ## Example Model - Prediction
 
 ### Inputs
+Once you have a trained model, to predict on the mode, run `predict.py`
 This is how the model is being loaded:
 ```
 model = GFNet()
@@ -42,7 +44,7 @@ model.load_state_dict(torch.load("GFNet-Model.pth"))
 
 ### Outputs
 ```
-Test - Loss: 0.6506, Accuracy: 67.28%
+Test - Loss: 0.7239, Accuracy: 67.44%
 ```
 
 ## Pre-Processing

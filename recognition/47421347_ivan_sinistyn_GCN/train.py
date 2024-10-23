@@ -1,14 +1,16 @@
 from modules import GCN
 from dataset import FacebookPagePageLargeNetwork
 from sklearn.metrics import accuracy_score
+from utils import save_plot
 import torch
+
 
 FILE_PATH = "./facebook.npz"
 SEED = 31
 VALIDATION_RATIO = 0.1
 TEST_RATIO= 0.1
 
-EPOCHS = 200
+EPOCHS = 20
 LEARING_RATE = 0.01
 
 OUT_CHANNELS = 64
@@ -20,11 +22,11 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
     # Define optimizer and Loss criterion
     optimizer = torch.optim.Adam(gcn.parameters(), lr=LEARING_RATE)
     criterion = torch.nn.CrossEntropyLoss()
-    train_accuracy = []
-    train_loss = []
+    total_train_accuracy = []
+    total_train_loss = []
 
-    validation_accuracy = []
-    validation_loss = []
+    total_validation_accuracy = []
+    total_validation_loss = []
 
     for i in range(EPOCHS):
         gcn.train()
@@ -48,8 +50,8 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
         optimizer.step()
 
         optimizer.zero_grad()
-        train_loss.append(loss.item())
-        train_accuracy.append(accuracy)
+        total_train_loss.append(loss.item())
+        total_train_accuracy.append(accuracy)
         
 
 
@@ -66,11 +68,16 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
 
         validation_accuracy = accuracy_score(dataset.y_val.cpu().numpy(), predicted)
 
-        train_loss.append(validation_loss.item())
-        train_accuracy.append(validation_accuracy)
+        total_validation_loss.append(validation_loss.item())
+        total_validation_accuracy.append(validation_accuracy)
 
         
         print(f"Epoch: {i + 1}/{EPOCHS}\nTRAIN: Loss: {loss.item()}, Accuracy: {accuracy}\nVALIDATION: Loss: {validation_loss.item()}, Accuracy: {validation_accuracy}\n")
+
+    # Plot and save the loss and accuracy
+    save_plot(total_train_accuracy, total_validation_accuracy, EPOCHS, "./images/accuracy.png")
+    save_plot(total_train_loss, total_validation_loss, EPOCHS, "./images/loss.png")
+    
 
 
 

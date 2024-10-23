@@ -53,7 +53,7 @@ The decoder path is responsible for reconstructing the segmentation map from the
 #### Final Output: 
 The final layer of the decoder typically uses a 1x1x1 convolution to produce an output with the same spatial dimensions as the input, but with a number of channels corresponding to the segmentation task. In this case, the model outputs six channels, providing more flexibility in handling the logits during post-processing. For tasks like prostate segmentation, where the model is trained on 3D medical scans with manually labeled prostate regions, the model predicts pixel-wise classifications for each 3D scan, generating a segmented map of the prostate and other relevant structures (e.g., background, bladder).
 
-### Optimisations:
+### Optimisations / hyperparameters:
 
 #### Loss function:
 In this task, a custom loss function, Weighted Dice Loss, was implemented to improve segmentation performance. Initially, the standard unweighted Dice Loss was tested, but it resulted in poor Dice scores for under-represented classes, such as the bladder or the prostate. These smaller classes had a diminished impact on the overall loss due to their lower representation in the dataset.
@@ -62,9 +62,23 @@ To address this imbalance, the Dice loss for each class was computed individuall
 
 This approach significantly improved segmentation performance, especially for smaller, less-represented classes.
 
+#### Dice loss class weighting:
+After testing more sophisticated methods of obtaining these weights (for example calculating them based on the total number of pixels each class has in the entire dataset), the best performance was found by using the follwing weights: [1, 2, 3, 4, 5, 6]. This way, the less a given class appears, the more weighting it has on the overall loss. Again, this allows smaller classes to not be overlooked in training.
+
 #### Learning rate scheduler:
 
 Another optimisation implemented was the use of a learning rate scheduler. Specifically, PyTorch's OneCycleLR scheduler was employed. Throughout the epochs, this scheduler gradually increases the learning rate to a peak value, then slowly reduces it. This approach helps improve model performance, reduces training time, and increases the likelihood of finding a global minimum.
+
+#### Learning rate scheduler parameters:
+- **optimizer**: The optimizer (Adam) whose learning rate will be modified.
+- **max_lr**: The maximum learning rate, set to \(1 \times 10^{-3}\) (0.001).
+- **total_steps**: Total number of training steps used to schedule the learning rate.
+- **pct_start**: Percentage of total steps spent increasing the learning rate, here set to 30%.
+- **anneal_strategy**: Decay method after reaching the max learning rate; 'cos' means cosine annealing.
+- **div_factor**: Initial learning rate calculated as `max_lr` divided by this factor, resulting in \(0.001 / 25 = 0.00004\).
+- **final_div_factor**: Final learning rate, which is the initial rate divided by this factor, leading to around \(4 x 10^{-9}\).
+
+####
 
 ## Project info:
 

@@ -8,5 +8,6 @@
 !predict.py
 !train.py
 !utils.py
+!constants.py
 !README.md
 !.gitignore

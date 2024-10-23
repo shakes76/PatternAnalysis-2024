@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from predict import test
 from pytorch_metric_learning.samplers import MPerClassSampler
 from dataset import load_data, split_data, ISICDataset, train_aug
+from constants import LEARNING_RATE, EPOHCS, BATCH_SIZE
 
 
 def main():
@@ -17,9 +18,9 @@ def main():
     '''
 
     #HYPER PARAMS
-    batch_size = 64
-    learning_rate = 1e-4
-    epochs = 15
+    batch_size = BATCH_SIZE
+    learning_rate = LEARNING_RATE
+    epochs = EPOHCS
 
     # Paths
     current_dir = os.getcwd()

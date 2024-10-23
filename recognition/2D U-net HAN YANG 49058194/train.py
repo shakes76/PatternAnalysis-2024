@@ -31,6 +31,13 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Training model
 def train_model(root_dir, num_epochs=30, lr=0.001):
+    """ 
+    Trains the U-Net model using the provided training and validation data loaders. 
+    Args: 
+         root_dir (str): Directory containing the training dataset. 
+         num_epochs (int): Number of epochs for training. 
+         lr (float): Learning rate for the optimizer.
+    """ 
     # Load dataset
     dataset = ProstateMRIDataset(root_dir)
     dataloader = DataLoader(dataset, batch_size=128, shuffle=True)

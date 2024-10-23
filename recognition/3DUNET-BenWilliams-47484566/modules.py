@@ -49,6 +49,15 @@ class UNet3D(nn.Module):
         # Transposed convolution for upsampling
         return nn.ConvTranspose3d(in_channels, out_channels, kernel_size=2, stride=2)
 
+    def crop_tensor(self, source, target):
+        """Crop source tensor to the shape of target tensor."""
+        diff_depth = (source.size(2) - target.size(2)) // 2
+        diff_height = (source.size(3) - target.size(3)) // 2
+        diff_width = (source.size(4) - target.size(4)) // 2
+        return source[:, :, diff_depth:diff_depth + target.size(2), 
+                         diff_height:diff_height + target.size(3), 
+                         diff_width:diff_width + target.size(4)]
+
 
 
     def forward(self, x):
@@ -64,19 +73,21 @@ class UNet3D(nn.Module):
 
         #Upsampling step, with concatenations between each upsample, downsample pair
         dec4 = self.upconv4(bridge)
-        dec4 = torch.cat((dec4, enc4), dim=1)
+        if dec4.shape[1] != enc4.shape[1]:
+            dec4 = nn.Conv3d(dec4.shape[1], enc4.shape[1], kernel_size=1)(dec4)
+        dec4 = torch.cat((self.crop_tensor(dec4, enc4), enc4), dim=1)
         dec4 = self.decoder4(dec4)
 
         dec3 = self.upconv3(dec4)
-        dec3 = torch.cat((dec3, enc3), dim=1)
+        dec3 = torch.cat((self.crop_tensor(dec3, enc3), enc3), dim=1)
         dec3 = self.decoder3(dec3)
 
         dec2 = self.upconv2(dec3)
-        dec2 = torch.cat((dec2, enc2), dim=1)
+        dec2 = torch.cat((self.crop_tensor(dec2, enc2), enc2), dim=1)
         dec2 = self.decoder2(dec2)
 
         dec1 = self.upconv1(dec2)
-        dec1 = torch.cat((dec1, enc1), dim=1)  
+        dec1 = torch.cat((self.crop_tensor(dec1, enc1), enc1), dim=1)
         dec1 = self.decoder1(dec1)
 
         #final convolution

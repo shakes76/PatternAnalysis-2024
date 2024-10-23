@@ -701,7 +701,6 @@ class UNet(nn.Module):
         return self.out(x)
         
 
-#Combination of Unet and VQVAE
 class DiffusionModel(nn.Module):
     def __init__(self, vqvae, unet, noise_scheduler):
         super(DiffusionModel, self).__init__()

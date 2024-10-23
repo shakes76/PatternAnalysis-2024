@@ -22,8 +22,6 @@ from timm.utils import accuracy
 from timm.utils import NativeScaler, get_state_dict
 from timm.scheduler import create_scheduler
 from timm.optim import create_optimizer
-from functools import partial
-import torch.nn as nn
 
 import utils
 from modules import GFNet
@@ -266,8 +264,7 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(None, batch_size=args.batch_size)
     epoch = 0
 
-    model = GFNet(num_classes=2, in_chans=1, drop_rate=args.drop, patch_size=16, embed_dim=384, depth=19, mlp_ratio=4, drop_path_rate=0.15,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6))
+    model = GFNet(num_classes=2, in_chans=1, drop_rate=args.drop)
     model.to(device)
 
     optimizer = create_optimizer(args, model)

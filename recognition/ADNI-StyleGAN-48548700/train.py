@@ -86,10 +86,11 @@ def train_fn(
     opt_critic,
     opt_gen,
     opt_mapping_network,
+    gamma=20,  # R1 regularization weight, typically 10
 ):
     loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
 
-    scaler = torch.cuda.amp.GradScaler()  # GradScaler for AMP
+    scaler = torch.amp.GradScaler('cuda')  # GradScaler for AMP
 
     G_losses = []
     D_losses = []
@@ -98,32 +99,34 @@ def train_fn(
         real = real.to(DEVICE)  # Move real data to the specified device
         cur_batch_size = real.shape[0]
 
+        # Ensure real images have requires_grad=True for R1 regularization
+        real.requires_grad_(True)
+
         w = get_w(cur_batch_size)  # Generate 'w' from random noise
         noise = get_noise(cur_batch_size)  # Generate noise inputs for the generator
 
-        # Using updated AMP handling to avoid deprecation warnings
-        with torch.amp.autocast('cuda'):  # Use automatic mixed-precision (AMP) for faster training
+        # Using updated AMP handling for faster training
+        with torch.amp.autocast('cuda'):  # Use automatic mixed-precision (AMP)
             fake = gen(w, noise)  # Generate fake images
             critic_fake = critic(fake.detach())  # Get critic scores for fake images
             critic_real = critic(real)  # Get critic scores for real images
 
-            # Compute gradient penalty
-            gp = gradient_penalty(critic, real, fake, device=DEVICE)
+            # R1 regularization for real data (StyleGAN specific)
+            r1_penalty = torch.autograd.grad(
+                outputs=critic_real.sum(),
+                inputs=real,
+                create_graph=True
+            )[0].pow(2).view(real.size(0), -1).sum(1).mean()
 
-            # NaN handling for gradient penalty
-            if torch.isnan(gp):
-                gp = torch.tensor(0.0).to(DEVICE)
-
-            # Critic loss calculation
+            # Critic loss calculation with R1 regularization
             loss_critic = (
-                -(torch.mean(critic_real) - torch.mean(critic_fake))  # Critic loss
-                + LAMBDA_GP * gp  # Gradient penalty term
+                -(torch.mean(critic_real) - torch.mean(critic_fake))  # Standard loss
+                + (gamma / 2) * r1_penalty  # R1 penalty
                 + (0.001 * torch.mean(critic_real ** 2))  # Regularization term
             )
 
-            # NaN handling for critic loss
-            if torch.isnan(loss_critic):
-                loss_critic = torch.tensor(0.0).to(DEVICE)
+        print(f"critic_real: {critic_real.mean().item()}, critic_fake: {critic_fake.mean().item()}")
+        print(f"r1_penalty: {r1_penalty.item()}, loss_critic: {loss_critic.item()}")
 
         # Store the critic loss
         D_losses.append(loss_critic.item())
@@ -143,8 +146,7 @@ def train_fn(
         # Apply path length penalty every 16 batches
         if batch_idx % 16 == 0:
             plp = path_length_penalty(w, fake)
-            if not torch.isnan(plp):
-                loss_gen = loss_gen + plp  # Update generator loss with path length penalty
+            loss_gen = loss_gen + plp  # Update generator loss with path length penalty
 
         G_losses.append(loss_gen.item())  # Store the generator loss
 
@@ -152,17 +154,18 @@ def train_fn(
         mapping_network.zero_grad()  # Reset gradients for the mapping network
         gen.zero_grad()  # Reset gradients for the generator
         scaler.scale(loss_gen).backward()  # Backpropagate the generator loss with AMP
-        scaler.step(opt_gen)  # Use scaled step
+        scaler.step(opt_gen)  # Use scaled step for generator
         scaler.update()  # Update the scaler
         opt_mapping_network.step()  # Update mapping network's weights
 
         # Optionally, log progress
         loop.set_postfix(
-            gp=gp.item(),
+            r1_penalty=r1_penalty.item(),
             loss_critic=loss_critic.item(),
         )
     
     return (D_losses, G_losses)
+
 
 
 # Initialize the mapping network, generator, and critic on the specified device

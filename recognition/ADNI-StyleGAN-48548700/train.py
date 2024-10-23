@@ -12,7 +12,7 @@ from torchvision import transforms
 DATASET                 = "./AD/train"  # Path to the training dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
 EPOCHS                  = 100  # Number of training epochs
-LEARNING_RATE           = 1e-4  # Learning rate for optimization
+LEARNING_RATE           = 1e-3  # Learning rate for optimization
 BATCH_SIZE              = 64  # Batch size for training
 LOG_RESOLUTION          = 7  # Logarithmic resolution used for 128*128 images
 Z_DIM                   = 256  # Dimension of the latent space
@@ -89,7 +89,7 @@ def train_fn(
 ):
     loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
 
-    scaler = torch.cuda.amp.GradScaler()  # GradScaler for AMP
+    scaler = torch.cuda.amp.GradScaler('cuda')  # GradScaler for AMP
 
     G_losses = []
     D_losses = []

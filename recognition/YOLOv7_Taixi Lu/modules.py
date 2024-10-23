@@ -27,12 +27,8 @@ def get_yolo_model(model_path, device):
     Using a pre-trained YOLOv7 models found in
     https://github.com/WongKinYiu/yolov7/releases/download/v0.1
     use cpu unless specified to enhance stability across platforms
-    """
-    model = attempt_load(model_path, map_location=device)
-    model.to(device)
-    # model.requires_grad_(True)
-'''
-    # Change the detection layer to output 3 classes only
+
+    # Another way to change the detection layer to output 3 classes only
     for layer in model.model.modules():
         if isinstance(layer, IDetect):
             for i, conv_layer in enumerate(layer.m):
@@ -41,7 +37,10 @@ def get_yolo_model(model_path, device):
                                              kernel_size=conv_layer.kernel_size,
                                              stride=conv_layer.stride,
                                              padding=conv_layer.padding)
-'''
+    """
+    model = attempt_load(model_path, map_location=device)
+    model.to(device)
+    # model.requires_grad_(True)
 
     # Change the detection layer to output 3 classes only
     for name, module in model.model._modules.items():

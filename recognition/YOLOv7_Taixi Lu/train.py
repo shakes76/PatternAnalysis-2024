@@ -1,3 +1,4 @@
+import time
 import torch.optim as optim
 from modules import *
 from dataset import get_dataloader
@@ -9,6 +10,8 @@ import os
 def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=10):
     model.train()
     for epoch in range(num_epochs):
+        print(f"\nEpoch [{epoch + 1}/{num_epochs}]:")
+        epoch_start_time = time.time()
         epoch_loss = 0.0
         for batch_idx, (images, labels, img_names) in enumerate(dataloader):
             images = images.to(device)
@@ -45,7 +48,17 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
             optimizer.step()
 
         avg_loss = epoch_loss / len(dataloader)
-        print(f"Epoch [{epoch + 1}/{num_epochs}], YOLO Training Loss: {avg_loss:.4f}")
+        epoch_end_time = time.time()
+        epoch_duration = epoch_end_time - epoch_start_time
+        time_left = epoch_duration * (num_epochs - (epoch + 1))
+        print(f"    YOLO Training Loss: {avg_loss:.4f}")
+        print(f"    Time taken for epoch: {epoch_duration:.2f} seconds")
+        print(f"    Estimated time left: {time_left / 60:.2f} minutes")
+
+        # Save the model after each epoch
+        model_save_path = f"yolov7_epoch_{epoch + 1}.pth"
+        torch.save(model.state_dict(), model_save_path)
+        print(f"    Model saved to {model_save_path}")
 
 
 def validate_yolo(model, dataloader, ground_truth_path, device):

@@ -1,6 +1,6 @@
 import torch
 from torchvision import transforms
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 from tqdm import tqdm
 from dataset import getDataLoader
 from modules import SiameseNetwork
@@ -56,6 +56,11 @@ def predict(model, test_loader):
     print(f"Precision: {precision * 100:.2f}")
     print(f"Recall: {recall * 100:.2f}")
     print(f"F1-score: {f1 * 100:.2f}")
+
+    # Show confusion matrix
+    conf_matrix = confusion_matrix(label_list, prediction_list)
+    print("\nConfusion Matrix:")
+    print(conf_matrix)
 
 
 # Load test dataset

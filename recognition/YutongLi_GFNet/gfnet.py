@@ -112,7 +112,7 @@ class PatchEmbed(nn.Module):
 
 class GFNet(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, num_classes=2, embed_dim=768, depth=12,
-                 mlp_ratio=4., representation_size=None, uniform_drop=False,
+                 mlp_ratio=3., representation_size=None, uniform_drop=False,
                  drop_rate=0., drop_path_rate=0.1, norm_layer=None,
                  dropcls=0):
 
@@ -241,8 +241,8 @@ seed = 0
 torch.manual_seed(seed)
 
 full_train_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/train', transform=train_transforms)
-train_size = int(0.8 * len(full_train_dataset))  # 80% train
-val_size = len(full_train_dataset) - train_size   # 20% val
+train_size = int(0.9 * len(full_train_dataset))  # 80% train
+val_size = len(full_train_dataset) - train_size   # 10% val
 train_dataset, val_dataset = random_split(full_train_dataset, [train_size, val_size])
 test_dataset = datasets.ImageFolder(root='/home/groups/comp3710/ADNI/AD_NC/test', transform=test_transforms)
 # train_dataset = datasets.ImageFolder(root='/Users/yt/Documents/uni/3710/3710_pycharm/data/AD_NC/train', transform=data_transforms)

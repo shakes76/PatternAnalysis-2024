@@ -18,6 +18,8 @@ LOG_RESOLUTION          = 7  # Logarithmic resolution used for 128*128 images
 Z_DIM                   = 256  # Dimension of the latent space
 W_DIM                   = 256  # Dimension of the mapping network output
 LAMBDA_GP               = 15  # Weight for the gradient penalty term
+GAMMA                   = 20
+MAX_NORM                = 0.5
 
 # Define transformations for the dataset (resize to 128x128, normalize to [-1, 1])
 image_transforms = transforms.Compose([
@@ -86,7 +88,6 @@ def train_fn(
     opt_critic,
     opt_gen,
     opt_mapping_network,
-    gamma=20,  # R1 regularization weight, typically 10
 ):
     loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
 
@@ -121,7 +122,7 @@ def train_fn(
             # Critic loss calculation with R1 regularization
             loss_critic = (
                 -(torch.mean(critic_real) - torch.mean(critic_fake))  # Standard loss
-                + (gamma / 2) * r1_penalty  # R1 penalty
+                + (GAMMA / 2) * r1_penalty  # R1 penalty
                 + (0.001 * torch.mean(critic_real ** 2))  # Regularization term
             )
 
@@ -134,7 +135,7 @@ def train_fn(
         # Update critic
         critic.zero_grad()  # Reset gradients for the critic
         scaler.scale(loss_critic).backward()  # Use scaled backward for AMP
-        torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(critic.parameters(), MAX_NORM)
         scaler.step(opt_critic)  # Use scaled step
         scaler.update()  # Update the scaler
 

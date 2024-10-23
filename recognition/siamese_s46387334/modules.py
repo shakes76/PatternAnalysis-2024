@@ -5,9 +5,11 @@ Additionally contains the TripletLoss function that should be used to train the 
 
 ###############################################################################
 ### Imports
+import os
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50
+import numpy as np
 
 
 ###############################################################################
@@ -68,26 +70,43 @@ class SiameseNet(nn.Module):
 
 class TripletLoss(nn.Module):
     """
+    Will take the triplets (in embedded form) and will calculate the loss via the following function.
+
+    loss=max(0,D(A,P)-D(A,N)+margin)
+
+    Where D represents Euclidean distance, A, P and N represent the output embeddings of the Anchor,
+    Positive and Negative images from the triplet respectively, and margin is a hyper parameter to
+    enforce a minimum separation between classes.
+
+    i.e. this loss function will penalise data points of different classes being close
+    to each other in the embedded space.
     """
-    def __init__(self, margin: float=1.0):
+    def __init__(self, margin: float=1.0) -> None:
         super(TripletLoss, self).__init__()
         self.margin = margin
-        
+
     def euclidean_dist(self, x1: torch.Tensor, x2: torch.Tensor) -> float:
         """
+        Returns: euclidean distance between x1 and x2
         """
         return (x1 - x2).pow(2).sum(1)
-    
+
     def forward(self, anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor) -> torch.Tensor:
         """
+        Calculates triplet loss via the function mentioned in the TripletLoss class
+        doc string.
+
+        Returns: triplet loss
         """
         distance_positive = self.euclidean_dist(anchor, positive)
         distance_negative = self.euclidean_dist(anchor, negative)
         losses = torch.relu(distance_positive - distance_negative + self.margin)
         return losses.mean()
 
-def set_seed(seed: int=42):
+def set_seed(seed: int=42) -> None:
     """
+    Sets the seed for a number of random number generators that will be used
+    This helps to ensure reproducibility between runs
     """
     np.random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)

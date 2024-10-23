@@ -10,9 +10,10 @@ For more details on the architecture, please refer to the original paper: [A Sty
 ## Table of Contents
 - [Data Set](#data-set)
 - [File Structure](#file-structure)
+- [Project Goal](#project-goal)
 - [Model Architecture](#model-architecture)
-- [StyleGAN Advantages](#stylegan-advantages)
-- [StyleGAN Disadvantages](#stylegan-disadvantages)
+  - [StyleGAN Advantages](#stylegan-advantages)
+  - [StyleGAN Disadvantages](#stylegan-disadvantages)
 - [Data Augmentation](#data-augmentation)
 - [Training Process](#training)
   - [Test Run 1](#test-run-1)
@@ -44,6 +45,12 @@ For this training, the **Alzheimer's Disease Neuroimaging Initiative (ADNI)** da
 
 The dataset contains approximately **30,000 images** in total, with **20,000** images allocated for training and **10,000** for testing. For the training of my StyleGAN, I exclusively used the training images, and they were sufficient to generate clear MRI brain scans.
 
+## Project Goal 
+
+The goal of the project is to generate sythetic brain MRI scans for AD and NC MRI classes from the ADNI data set using a StyleGAN. By doing so, the StyleGAN should become informed regarding the distinct image styles that exist within the dataset. We should then be able to highlight this through created a t-SNE plot of the StyleGAN's latent space (W/style codes).  
+
+Some applications of this project could be to supliment for real brain MRI scans in scenarios where patient confidentiality is important. 
+
 ## File Structure
 
 This repository consists of the following five major files:
@@ -52,6 +59,7 @@ This repository consists of the following five major files:
 - **`params.py`**: Contains important parameters for the model.
 - **`train.py`**: Defines the training loop and training function.
 - **`predict.py`**: Implements a class for loading models and generating images.
+
 
 ## Model Architecture
 

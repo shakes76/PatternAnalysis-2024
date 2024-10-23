@@ -183,9 +183,10 @@ Ground truth class: AD
 Predicted class: 1
 Correct predictions!
 ```
+From the prediction results above, it shows that the model is capable to classify the sample AD image.
 
 ## Conclusion
-Convolutional Vision Transformer can be used to perform the image classification on the ADNI brain data. However, it needs improvement in this architecture to improve the generalization and robustness of the model because the accuracy of the test data (66.26%) is lower than the accuracy of the validation (74.1%) data indicating slight overfitting.
+Convolutional Vision Transformer can be used to perform the image classification on the ADNI brain data. However, it needs further improvement in this architecture to improve the generalization and robustness of the model because the accuracy of the test data (66.26%) is lower than the accuracy of the validation (74.1%) data indicating slight overfitting from this experiment.
 
 
 ## References

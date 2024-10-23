@@ -9,14 +9,14 @@
  UNet is an architecture for convolutional neural networks specifically for segmentation tasks. The model takes advantage of skip connections and tensor concatenations to preserve input details and its structure while learning appropriate segmentations. The basic structure of UNet involves the downsampling and upsampling of original images with skip connections in between corresponding pair of downsampling and upsampling layers. Skip connection is a technique used to (1) preserve features of the image and (2) prevent diminishing gradients over deep layers of network.\
  
 
- || Role                                     |
+ |Labels|Segment|
 | --------------- | ---------------------------------------- |
-| William Mercado | Team Leader                              |
-| Brian Zhang     | Machine Learning Developer               |
-| Hongyingzi Lu   | Design Coordinator / Front-End Developer |
-| Shan Liu        | Design Coordinator / Front-End Developer |
-| Yang Xiao       | Back-End Developer                       |
-| Ryuto Hisamoto  | Back-End Developer                       |
+|0| Background |
+|1| Body |
+|2| Bones |
+|3| Bladder |
+|4| Rectum |
+|5| Prostate |
 
  ### Training
 

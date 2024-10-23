@@ -2,7 +2,7 @@
 import os
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
-import torch
+#import torchvision
 import skimage.transform as skTrans
 
 import numpy as np
@@ -118,9 +118,12 @@ class ProstateCancerDataset(Dataset):
         segImage = self.segImages[idx]
 
         # Apply any transformations (if any)
-        if self.transform:
-            image = self.transform(image)
-            segImage = self.transform(segImage)
+        if self.transform is not None:
+            #image = self.transform(image)
+            #segImage = self.transform(segImage)
+            augmentations = self.transform(image=image, mask=segImage)
+            image = augmentations["image"]
+            segImage = augmentations["mask"]
 
         # Convert to PyTorch tensors (adding a channel dimension if necessary)
         #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension

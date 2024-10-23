@@ -17,9 +17,9 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
     
-
+#[64, 128, 256, 512]
 class UNET(nn.Module):
-    def __init__(self, in_channels=1, out_channels=5, features=[64, 128, 256, 512],):
+    def __init__(self, in_channels=1, out_channels=5, features=[16, 32, 64],):
         super(UNET, self).__init__()
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()
@@ -71,7 +71,7 @@ def test():
     #assert preds.shape == x.shape
 
 if __name__ == "__main__":
-    test()
+    pass
 
 def dice_loss(pred, target):
     pass

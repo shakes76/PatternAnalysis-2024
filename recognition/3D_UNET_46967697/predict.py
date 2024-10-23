@@ -25,7 +25,7 @@ def test_model(device, model, test_loader, criterion):
     """
     model.eval()
     dice_score = 0.0
-    cumulative_class_losses = torch.zeros(NUM_CLASSES).to(device)
+    cumulative_loss_per_class = torch.zeros(NUM_CLASSES).to(device)
 
     with torch.no_grad():
         for images, labels in test_loader:
@@ -38,16 +38,18 @@ def test_model(device, model, test_loader, criterion):
             labels = F.one_hot(labels, num_classes=NUM_CLASSES)
 
             # Compute loss
-            loss, class_losses = criterion(outputs, labels)
+            loss, loss_per_class = criterion(outputs, labels)
             dice_score += loss.item()
-            cumulative_class_losses += class_losses
+
+            loss_per_class = torch.tensor(loss_per_class).to(device)
+            cumulative_loss_per_class += loss_per_class
 
     # Compute the average test loss and Dice score
     avg_dice_score = dice_score / len(test_loader)
-    avg_class_losses = cumulative_class_losses / len(test_loader)
+    avg_loss_per_class = cumulative_loss_per_class / len(test_loader)
 
     print(f'Average Dice Score: {avg_dice_score}')
-    print(f'Average Class Losses: {avg_class_losses}')
+    print(f'Average Class Losses: {avg_loss_per_class.tolist()}')
 
 
 def save_dice_loss_graph(dice_losses):
@@ -112,4 +114,5 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(MODEL_PATH))
 
     # Test the model
-    test_model(device, model, test_loader, DiceLoss(mode='multiclass', from_logits=False, smooth=SMOOTH))
+    test_model(device, model, test_loader, DiceLoss())
+    

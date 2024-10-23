@@ -143,20 +143,52 @@ In this **t-SNE Visualization**:
   - The inherent difficulty and possible noise in the task.
   - The model’s architecture, which could be further optimized.
 
-## 8. Drawbacks and Future Improvement
+## 8. Drawbacks and Future Improvements
 
-### 8.1. Model Performance and Scalability
-- **Accuracy Ceiling**: 59.95% was the highest accuracy achieved despite extensive hyperparameter tuning.
+### 8.1. Attempts that did not improve accuracy:
 
-- **Training Time**: Adding more layers increased training time without significantly improving accuracy.
+- **Increased Number of Layers**:  
+  Tried increasing the number of GCN, GAT, and GraphSAGE layers beyond the original 2 layers.  
+  **Result**: Increasing the depth of the model led to diminishing returns and sometimes worsened accuracy due to overfitting.
 
-### 8.2. Future Imrpovement
-- **Ensemble Learning**: Try ensembling multiple models for higher accuracy..
+- **Dropout Adjustments**:  
+  Dropout rates were changed from 0.2 to 0.3, 0.35, and 0.4.  
+  **Result**: Dropout above 0.3 led to a drop in performance, and accuracy fell below the baseline.
 
-- **Additional Layers**: Explore adding more attention heads or hidden layers with suitable hyperparameter settings.
+- **Optimizer Tuning (Lookahead)**:  
+  Used Lookahead with the AdamW optimizer.  
+  **Result**: The accuracy fell to 59.48% from the baseline.
 
+- **Advanced Optimizers**:  
+  Tried using different learning rates (e.g., 0.0009, 0.0012) and weight decay values.  
+  **Result**: These did not yield any accuracy improvement.
+
+- **Learning Rate Scheduler Adjustments**:  
+  Tweaked the scheduler patience and learning rate decay factor.  
+  **Result**: Adjustments to the learning rate scheduler did not improve the overall test accuracy.
+
+- **Added GradScaler**:  
+  Implemented mixed-precision training using `torch.cuda.amp.GradScaler`.  
+  **Result**: The training became slower, and there was no noticeable improvement in accuracy, especially in non-CUDA environments.
+
+- **Feature Scaling**:  
+  Applied feature scaling to the dataset before training.  
+  **Result**: There was no significant change in the final accuracy, and it remained at the previous baseline.
+
+- **Removed Mixed GNN Model**:  
+  Tried using only GCN layers for training to compare against GAT/GraphSAGE.  
+  **Result**: Accuracy did not significantly improve.
+
+- **Changed Dataset Splitting Strategy**:  
+  Adjusted data split ratios (from 80/20 to other configurations).  
+  **Result**: Altering the split ratios had little to no impact on accuracy.
+
+### 8.2. Future Improvements
+
+- **Ensemble Learning**: Try ensembling multiple models for higher accuracy.
 - **Hyperparameter Search**: Search (random, grid...) for more optimal learning rates or dropout rates could improve performance.
 
+But these would likely increase the computational resources needed to a certain degree.
 
 ## 9. Reference
 1. Kipf, T. N., & Welling, M. (2016). Semi-Supervised Classification with Graph Convolutional Networks. arXiv preprint arXiv:1609.02907.

@@ -192,7 +192,7 @@ _Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-
 | 0.3     | 64.5                        | 63.6              | Yes            |
 | 0.5     | 60.8                        | 58.9              | Yes            |
 
-4. B**atch Size Tuning**
+4. **Batch Size Tuning**
 
 _Parameters kept constant: epochs = 80, learning rate = 3e-4, weight decay = 1e-5, dropout = 0.1._
 

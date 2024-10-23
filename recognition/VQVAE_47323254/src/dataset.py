@@ -2,7 +2,9 @@ import os
 import nibabel as nib
 import numpy as np
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+from torchvision.transforms import Compose
 
 
 class HipMRIDataset(Dataset):
@@ -31,4 +33,19 @@ class HipMRIDataset(Dataset):
         image_data = self.transform(image_data)
 
         return image_data
-        
+    
+
+def get_dataloader(data_dir, batch_size, transform, num_samples, shuffle):
+    dataset = HipMRIDataset(data_dir, transform, num_samples)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return dataloader
+
+
+def get_transforms(transform_config: list) -> Compose:
+    transform_list = []
+    for transform in transform_config:
+        transform_name = transform.get('name')
+        transform_params = transform.get('params', {})
+        transform_fn = getattr(transforms, transform_name)
+        transform_list.append(transform_fn(**transform_params))
+    return Compose(transform_list)

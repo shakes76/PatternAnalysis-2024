@@ -7,12 +7,11 @@ import matplotlib.pyplot as plt
 import shutil
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dataset import HipMRIDataset
+from dataset import get_dataloader, get_transforms
 from modules import VQVAE
-from utils import calculate_ssim, read_yaml_file, get_transforms, combine_images
+from utils import calculate_ssim, read_yaml_file, combine_images
     
  
 if __name__ == '__main__':
@@ -57,13 +56,11 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
     
     train_transform = get_transforms(train_transforms)
-    val_test_transform = get_transforms(val_transforms)
+    val_transform = get_transforms(val_transforms)
     
-    # Dataset loader
-    train_dataset = HipMRIDataset(train_dataset_dir, train_transform, num_samples=num_samples)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_dataset = HipMRIDataset(val_dataset_dir, val_test_transform, num_samples=num_samples)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    # Dataset loaders
+    train_loader = get_dataloader(train_dataset_dir, batch_size, train_transform, num_samples, shuffle=True)
+    val_loader = get_dataloader(val_dataset_dir, batch_size, val_transform, num_samples, shuffle=False)
     
     # Training Loop
     train_commitment_losses = []

@@ -7,13 +7,12 @@ import time
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 
-from dataset import HipMRIDataset
+from dataset import get_dataloader, get_transforms
 from modules import VQVAE
-from utils import calculate_ssim, read_yaml_file, get_transforms, combine_images
+from utils import calculate_ssim, read_yaml_file, combine_images
 
 
 if __name__ == '__main__':
@@ -34,15 +33,14 @@ if __name__ == '__main__':
     log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
         os.path.join(config['logs_root'], f"{time.strftime('%Y%m%d_%H%M%S')}")
     
-    transforms = get_transforms(config['test_transforms'])
-    
     os.makedirs(log_dir, exist_ok=True)
     logging.basicConfig(filename=os.path.join(log_dir, 'evaluation.log'), level=logging.INFO, 
                         format='%(asctime)s - %(levelname)s - %(message)s')
     shutil.copy(config_path, log_dir)
     
-    dataset = HipMRIDataset(dataset_dir, transforms, num_samples=num_samples)
-    data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
+    transforms = get_transforms(config['test_transforms'])
+    
+    data_loader = get_dataloader(dataset_dir, 1, transforms, num_samples, shuffle=False)
     
     model = VQVAE(**model_parameters).to(device)
     

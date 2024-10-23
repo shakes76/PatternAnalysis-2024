@@ -2,8 +2,6 @@ import numpy as np
 import yaml
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
-from torchvision import transforms
-from torchvision.transforms import Compose
 
 
 def calculate_ssim(original, reconstructed):
@@ -18,16 +16,6 @@ def read_yaml_file(file_path: str) -> dict:
             return data
         except:
             raise Exception("Invalid YAML file")
-        
-
-def get_transforms(transform_config: list) -> Compose:
-    transform_list = []
-    for transform in transform_config:
-        transform_name = transform.get('name')
-        transform_params = transform.get('params', {})
-        transform_fn = getattr(transforms, transform_name)
-        transform_list.append(transform_fn(**transform_params))
-    return Compose(transform_list)
 
 
 def combine_images(image1, image2):

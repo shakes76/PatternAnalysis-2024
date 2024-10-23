@@ -323,13 +323,22 @@ class SynthesisBlock(nn.Module):
         self.conv1 = ModulatedConv2d(in_channels, out_channels, style_dim, kernel_size=kernel_size)
         # LayerNorm expects (batch, channels, height, width)
         # Will be applied after first conv, so use out_channels
-        self.norm1 = nn.GroupNorm(8, out_channels)  # Using GroupNorm instead of LayerNorm as more stable for conv
+        num_groups = min(8, out_channels)
+        self.norm1 = nn.GroupNorm(num_groups, out_channels, eps=1e-6)  # Using GroupNorm instead of LayerNorm as more stable for conv
         # Second conv and its normalisation (upsampled size)
         self.conv2 = ModulatedConv2d(out_channels, out_channels, style_dim, kernel_size=kernel_size, up=up)
-        self.norm2 = nn.GroupNorm(8, out_channels)
+        self.norm2 = nn.GroupNorm(num_groups, out_channels, eps=1e-6)
         self.noise1 = NoiseInjection(out_channels)
         self.noise2 = NoiseInjection(out_channels)
         self.activate = nn.LeakyReLU(0.2)
+        
+        # Initialise norm parameters to help center the outputs
+        if hasattr(self.norm1, 'weight'):
+            nn.init.constant_(self.norm1.weight, 1.0)
+            nn.init.constant_(self.norm1.bias, 0.0)
+        if hasattr(self.norm2, 'weight'):
+            nn.init.constant_(self.norm2.weight, 1.0)
+            nn.init.constant_(self.norm2.bias, 0.0)
 
     def forward(self, x, style, noise=None):
         """Forward pass of the Synthesis block."""
@@ -448,7 +457,9 @@ class StyleGAN2Generator(nn.Module):
     
         # Apply the final convolution to get 1 channel output
         x = self.to_rgb(x)
-        x = x * 0.2  # Scale down before tanh to prevent saturation
+        # Center the values before scaling and tanh
+        x = x - x.mean()
+        x = x * 0.5
         print(f"Pre-tanh stats (after scale down) - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")
         x = torch.tanh(x)  # Force output range [-1, 1]
         

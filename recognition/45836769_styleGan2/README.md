@@ -122,7 +122,7 @@ Below are an example of an image from the Alzheimer's and Normal classes of the 
 
 ## Results
 
-Through multiple attempts at fixes the training has been unable to be stabilised. After only one batch of the first epoch the discriminator reduces its loss to close to 0 while the generators loss sits in the 8-12 range. This then continues through the rest of training, with the generator only producing black images. Below is an example of the loss plot from a failed training (note discriminator is only being updated once for every three generator updates - this was an attempt to prevent it overpowering the generator).
+Through multiple attempts at fixes the training was unable to be stabilised. After only one batch of the first epoch the discriminator reduced its loss to close to 0 while the generators loss sat in the 8-12 range. This then continued through the rest of training, with the generator only producing black images. Below is an example of the loss plot from a failed training (note discriminator is only being updated once for every three generator updates - this was an attempt to prevent it overpowering the generator).
 
 <p align="center">
     <img src="images/failed_loss_plot.png" width="80%">
@@ -130,7 +130,7 @@ Through multiple attempts at fixes the training has been unable to be stabilised
     Loss plot of failed training
 </p>
 
-A number of fixes have been attempted. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the number of convolution layers in the residual blocks. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
+A number of fixes were attempted. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the number of convolution layers in the residual blocks. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
 
 - W stats - min: -0.5029, max: 2.3184, mean: 0.3291
 - Const stats - min: -4.3558, max: 3.9382, mean: -0.0023

@@ -82,7 +82,7 @@ class Resize3D:
         return {'image': image, 'label': label}
 
 # Normalize the image (assuming image is already resized)
-class Normalize3D: #!Instead of normalizing the entire image for each sample, you can compute the mean and standard deviation over the dataset and apply them consistently.
+class Normalize3D: 
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
 

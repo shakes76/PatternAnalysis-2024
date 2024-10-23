@@ -5,9 +5,10 @@ Made by Joshua Deadman
 """
 
 import math
+import matplotlib.pyplot as plt
 import pandas as pd
 
-from config import TESTING, VALIDATION
+from config import IMAGEPATH, TESTING, VALIDATION
 
 def split_data(label_path) -> tuple[list, list, list]:
     """ Splits the labels into a training, testing and validation set.
@@ -45,3 +46,25 @@ def split_data(label_path) -> tuple[list, list, list]:
     val = pd.concat([val_m, val_b]).sample(frac=1)
 
     return train.to_dict(orient="records"), test.to_dict(orient="records"), val.to_dict(orient="records")
+
+def generate_loss_plot(training_loss, validation_loss, model, save=False) -> None:
+    """ Plots the training loss against the validation_loss.
+
+    Arguments:
+        training_loss (list): The average loss per epoch while training.
+        validation_loss (list): The average loss per epoch while validating.
+        model (str): Should be the name of the model relevant to the losses.
+            This string should not have any / or other characters relevant to paths.
+        save (bool): True - Save image to path define in config.py.
+                     False - Show plot.
+    """
+    plt.title("Loss of the " + model)
+    plt.plot(training_loss, label="Training")
+    plt.plot(validation_loss, label="Validation")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+    if save:
+        plt.savefig(IMAGEPATH + "/loss_"+ model.lower().replace(" ","") + ".png")
+    else:
+        plt.show()

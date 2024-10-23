@@ -55,11 +55,13 @@ python train.py
 python predict.py AD
 ```
 
-If you wish to generate images of a brain considered Normal Cognitive, run.
+
+    If you wish to generate images of a brain considered Normal Cognitive, run.
 ```
 python predict.py NC
 ```
-5 images of the brain of the type you want to see will be saved as png files.
+    5 images of the brain of the type you want to see will be saved as png files.
+
 
 
 3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images, saved as `t-SNE_visualization.png`.

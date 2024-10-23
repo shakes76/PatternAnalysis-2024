@@ -1,10 +1,15 @@
-# Recognition Tasks
-Various recognition tasks solved in deep learning frameworks.
+FORMAT:
 
-Tasks may include:
-* Image Segmentation
-* Object detection
-* Graph node classification
-* Image super resolution
-* Disease classification
-* Generative modelling with StyleGAN and Stable Diffusion
+Introduction to YOLO
+
+Obtaining dataset
+
+Processing dataset
+
+Training
+
+Testing (in train set)
+
+predict
+
+evaluation

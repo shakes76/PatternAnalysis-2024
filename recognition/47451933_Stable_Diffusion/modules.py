@@ -47,7 +47,7 @@ class VAEEncoder(nn.Module):
         
         self.latent_dim = latent_dim
         self.encoder_size = 64
-        self.output_image_size = image_size/8
+        self.output_image_size = image_size//8
         
         self.encoder = nn.Sequential(
             nn.Conv2d(channels, self.encoder_size//2, kernel_size=4, stride=2, padding=1),
@@ -75,7 +75,7 @@ class VAEEncoder(nn.Module):
         logvar = self.fc_logvar(h)
 
         # get sample
-        z = self.reparameterize(mu, logvar)
+        z = self.sample_latent(mu, logvar)
         h = self.decode(z)
 
         return h, mu, logvar
@@ -217,7 +217,7 @@ class UNet(nn.Module):
             forwards pass through the unet
         '''
         # Time step embedding
-        t_embedding = self.sinusodial_timestep_embedding(t, self.time_step_embedding_size).to(x.device)
+        t_embedding = self.sinusodial_timestep_encoding(t, self.time_step_embedding_size).to(x.device)
         t_embedding = self.time_embedding_layer(t_embedding)  # Map time embedding to latent_dim
         t_embedding = t_embedding.unsqueeze(2).unsqueeze(3).repeat(x.shape[0], 1, self.image_size, self.image_size)
 
@@ -247,6 +247,14 @@ class UNet(nn.Module):
         '''
         upsampled_cropped = self.crop(current, skip_connection)
         return upsampled_cropped + skip_connection
+    
+    def crop(self, sample_i, sample_j):
+        '''
+            crop sample_i to match size of sample_j
+        '''
+        _, _, h, w = sample_j.size()
+        sample_i = sample_i[:, :, :h, :w]
+        return sample_i
     
     def sinusodial_timestep_encoding(self, time_step, embedding_dim):
         '''

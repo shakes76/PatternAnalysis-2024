@@ -1,4 +1,6 @@
 import torch
+import matplotlib.pyplot as plt
+import numpy as np
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
 class NoiseScheduler:
@@ -34,26 +36,90 @@ class NoiseScheduler:
         return torch.cumprod(self.get_alphas(), dim=0)
     
 def add_noise(x, t, nosie_schedular):
+    '''
+        add noise to the images for timestep t
+        where the noise is deterined by the nosie_schedular
+    '''
+    #create noise
     noise = torch.randn_like(x).to(device)
+
+    #get data and calculate how much noise should be added to the images
     alpha_t = nosie_schedular.get_alphas_cumprod()[t].to(x.device)
-    return torch.sqrt(alpha_t) * x + torch.sqrt(1 - alpha_t) * noise, noise
+    sqrt_alpha_t = torch.sqrt(alpha_t)
+    sqrt_beta_t = torch.sqrt(1 - alpha_t)
+
+    #add the noise to the image
+    return sqrt_alpha_t * x + sqrt_beta_t * noise, noise
 
 def reverse_diffusion(noisy_latent, predicted_noise, t, nosie_schedular):
     '''
         reversese the noise in noisy_letent at timestep t using the predicted noise
     '''
-    
+
     # get the details about the noise at timestep t from the nosie_schedular
     alpha_t = nosie_schedular.get_alphas_cumprod()[t].to(noisy_latent.device)
     beta_t = nosie_schedular.get_beta(t).to(noisy_latent.device)
     alpha_prev = nosie_schedular.get_alphas_cumprod()[t - 1].to(noisy_latent.device) if t > 0 else torch.tensor(1.0).to(noisy_latent.device)
 
-    # Predicted noise should be subtracted
-    mean = (noisy_latent - beta_t * predicted_noise / torch.sqrt(1 - alpha_t)) / torch.sqrt(alpha_t)
+    # Remove the predicted noise from the noisy latent with respect to the given timestep
+    denoised = (noisy_latent - beta_t * predicted_noise / torch.sqrt(1 - alpha_t)) / torch.sqrt(alpha_t)
 
     if t > 0:
+        # calculate variance so that it can be added back to the image
+        # onyl when timestep is not zero since at 0 it needs to preocude a final
+        # image
         variance = beta_t * (1 - alpha_prev) / (1 - alpha_t)
         z = torch.randn_like(noisy_latent)
-        return mean + torch.sqrt(variance) * z
+        # return denoised image with noise scaled by varince added back
+        return denoised + torch.sqrt(variance) * z
     else:
-        return mean
+        #r eutrn denoised image
+        return denoised
+    
+def display_images(images, num_images=5, title="Images"):
+    '''
+        simple function to plot num_images images from images
+    '''
+    images = images[:num_images].detach().cpu().numpy() 
+
+    fig, axs = plt.subplots(1, num_images, figsize=(15, 5))
+    for i in range(num_images):
+        img = np.transpose(images[i], (1, 2, 0))
+        axs[i].imshow(img, cmap = 'gray')
+        axs[i].axis('off')
+    fig.suptitle(title)
+    plt.show()
+
+def generate_sample(label, model, vae_decoder, vae_encoder, latent_dim, num_timesteps, nosie_schedular, num_samples=1):
+    model.eval()
+    vae_decoder.eval()
+    output_images = torch.tensor(())
+    label = torch.tensor([label] * num_samples).to(device)
+    
+    with torch.no_grad():
+        x = torch.randn(num_samples, latent_dim).to(device)
+        x = vae_encoder.decode(x)
+        for t in reversed(range(num_timesteps)):
+            predicted_noise, _ = model(x, label, t)
+            x = reverse_diffusion(x, predicted_noise, t, nosie_schedular)
+            output_image = vae_decoder(x)
+            if t in [0,1,2,3,4,5,6,7,9,10]:
+                output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)
+
+    return output_images
+
+def generate_sample_latent(label, model, vae_decoder, vae_encoder, latent_dim, num_timesteps, num_samples=1):
+    model.eval()
+    vae_decoder.eval()
+    output_images = torch.tensor(())
+    label = torch.tensor([label] * num_samples).to(device)
+    
+    with torch.no_grad():
+        x = torch.randn(num_samples, latent_dim).to(device)
+        x = vae_encoder.decode(x)
+        for t in reversed(range(num_timesteps)):
+            predicted_noise, y = model(x, label, t)
+            output_image = y
+            output_images = torch.cat((output_images.to(device), output_image.to(device)), 0)
+
+    return output_images

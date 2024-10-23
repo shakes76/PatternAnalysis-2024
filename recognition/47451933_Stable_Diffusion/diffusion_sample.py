@@ -302,7 +302,7 @@ vae_losses = []
 
 # Assume you have a DataLoader `data_loader` that provides (images, labels)
 num_epochs = 10
-'''for epoch in range(num_epochs):
+for epoch in range(num_epochs):
     vae_it_loss = []
     for images, labels in tqdm(data_loader):
         images = images.to(device)
@@ -340,7 +340,7 @@ num_epochs = 10
     #        display_images(generated_images, num_images=5)
 
 torch.save(vae_encoder, "models/encoder.model")
-torch.save(vae_decoder, "models/decoder.model")'''
+torch.save(vae_decoder, "models/decoder.model")
 
 vae_encoder = torch.load("models/encoder.model", weights_only=False)
 vae_encoder.eval()

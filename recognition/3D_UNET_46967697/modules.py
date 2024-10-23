@@ -141,7 +141,7 @@ class Unet3D(nn.Module):
 
 class DiceLoss(nn.Module):
     """
-    Dice loss function
+    Dice loss function. Returns the Dice loss for each class.
 
     smooth (float): Smoothing factor to avoid division by zero.
     """
@@ -157,12 +157,18 @@ class DiceLoss(nn.Module):
         targets: Actual segmentation maps.
         """
         inputs = torch.softmax(inputs, dim=1)
+
+        targets_one_hot = nn.functional.one_hot(targets, num_classes=NUM_CLASSES).permute(0, 4, 1, 2, 3).float()
+
+        dice_losses = []
+
+        for c in range(NUM_CLASSES):
+            input_flat = inputs[:, c].contiguous().view(-1)
+            target_flat = targets_one_hot[:, c].contiguous().view(-1)
+
+            intersection = (input_flat * target_flat).sum()
+            dice_coefficient = (2. * intersection + self.smooth) / (input_flat.sum() + target_flat.sum() + self.smooth)
+
+            dice_losses.append(1 - dice_coefficient)
         
-        inputs = inputs.contiguous().view(-1)
-        targets = targets.contiguous().view(-1)
-        
-        intersection = (inputs * targets).sum()
-        
-        dice_coefficient = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)
-        
-        return 1 - dice_coefficient
+        return sum(dice_losses)/NUM_CLASSES, dice_losses

@@ -43,7 +43,7 @@ for epoch in range(EPOCHS):
         labels = labels.long().view(-1)
         labels = F.one_hot(labels, num_classes=NUM_CLASSES)
 
-        loss = criterion(outputs, labels)
+        loss, loss_per_class = criterion(outputs, labels)
 
         # Backward and optimize
         optimizer.zero_grad()
@@ -52,7 +52,7 @@ for epoch in range(EPOCHS):
 
     scheduler.step()
     dice_losses.append(loss.item())
-    print (f'Epoch [{epoch+1}/{EPOCHS}], Loss: {loss.item()}')
+    print (f'Epoch [{epoch+1}/{EPOCHS}], Dice Loss: {loss.item()}, Dice Loss per class: {loss_per_class}')
 
 # Save the model
 torch.save(model.state_dict(), MODEL_PATH)

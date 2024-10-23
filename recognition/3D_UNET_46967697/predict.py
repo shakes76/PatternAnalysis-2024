@@ -25,6 +25,7 @@ def test_model(device, model, test_loader, criterion):
     """
     model.eval()
     dice_score = 0.0
+    cumulative_class_losses = torch.zeros(NUM_CLASSES).to(device)
 
     with torch.no_grad():
         for images, labels in test_loader:
@@ -37,13 +38,16 @@ def test_model(device, model, test_loader, criterion):
             labels = F.one_hot(labels, num_classes=NUM_CLASSES)
 
             # Compute loss
-            loss = criterion(outputs, labels)
+            loss, class_losses = criterion(outputs, labels)
             dice_score += loss.item()
+            cumulative_class_losses += class_losses
 
     # Compute the average test loss and Dice score
     avg_dice_score = dice_score / len(test_loader)
+    avg_class_losses = cumulative_class_losses / len(test_loader)
 
     print(f'Average Dice Score: {avg_dice_score}')
+    print(f'Average Class Losses: {avg_class_losses}')
 
 
 def save_dice_loss_graph(dice_losses):
@@ -58,7 +62,7 @@ def save_dice_loss_graph(dice_losses):
     plt.title('Dice Loss vs Epoch')
     plt.savefig(DICE_LOSS_GRAPH_PATH)
 
-def save_prediction_images(device, model, test_loader):
+def save_prediction_images(device, model, test_loader, num_images=5):
     """
     Saves input images, actual labels, and model predictions from the test dataset.
     
@@ -67,21 +71,24 @@ def save_prediction_images(device, model, test_loader):
     test_loader (DataLoader): DataLoader for the test dataset.
     """
     model.eval()
+    total_saved_images = 0
     
     with torch.no_grad():
-        for idx, (image, label) in enumerate(test_loader):
-            image = image.to(device)
-            label = label.to(device)
+        for idx, (images, labels) in enumerate(test_loader):
+            if total_saved_images >= num_images:
+                break
+            images = images.to(device)
+            labels = labels.to(device)
 
             # Prediction
-            output = torch.softmax(model(image), dim=1)
+            output = torch.softmax(model(images), dim=1)
             predicted = torch.argmax(output, dim=1)
 
             # Select the middle slice
-            slice_idx = image.shape[2] // 2  
+            slice_idx = images.shape[2] // 2  
 
-            image_slice = image[0, 0, slice_idx, :, :] 
-            label_slice = label[0, 0, slice_idx, :, :]  
+            image_slice = images[0, 0, slice_idx, :, :] 
+            label_slice = labels[0, 0, slice_idx, :, :]  
             predicted_slice = predicted[0, slice_idx, :, :] 
 
             # Save the images

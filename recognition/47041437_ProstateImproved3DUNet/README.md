@@ -35,44 +35,50 @@ This report specifically looks at a 3D prostate dataset and attempts to extract 
 ## Parameters and Results
 The dataset consisted of prostate 3D MRI data for 3D tasks of 38 patients with 211 3D MRI volumes. The body outline, bone, bladder, rectum and prostate regions are segmented in 3D by a MR physicist with more than 10 years of experience. Thus, a total of 6 labels are present and expected in the output. A batch size of 1 was employed because of the small dataset and to lessen the load on the GPU. An epoch number of 40 was used for the 3D U-Net and 45 for the improved 3D U-Net. 181, 15, 15 images were used for training, validating and testing, respectively. 
 
-The below was inserted into the runner file in Rangpur:
+The below was inserted into the Rangpur runner file:
 
 ```python
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 ```
 
-With the 3D U-Net model, all labels achieved a **DSC of at least 0.75.** The plots for the 6 labels can be found below. 
+With the 3D U-Net model, all labels achieved a **DSC of at least 0.75.** The plots for the 6 labels can be found below.
+
 
 <table>
   <tr>
-    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="400" height="300"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="400" height="300"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 0.png" width="400" height="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 1.png" width="400" height="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 2.png" width="400" height="200"/></td>
   </tr>
   <tr>
-    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="400" height="300"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
-    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 3.png" width="400" height="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
+    <td><img src="images/unet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
   </tr>
 </table>
 
 
 With the improved 3D U-Net model, all labels achieved a **DSC of at least 0.8.** The plots for the 6 labels can be found below. 
 
+
 <table>
   <tr>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 0.png" width="400" height="300"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 1.png" width="400" height="300"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 2.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 0.png" width="400" height="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 1.png" width="400" height="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 2.png" width="400" height="200"/></td>
   </tr>
   <tr>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 3.png" width="400" height="300"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
-    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="300"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 3.png" width="400" height="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
+    <td><img src="images/Improvedunet3d/dsc_plot_label_Label 4.png" width="400" height="200"/></td>
   </tr>
 </table>
 
+
+
 Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the image and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. The higher quality segmentation of the improved 3D U-Net can be observed. 
+
+
 
 <table>
   <tr>
@@ -94,6 +100,18 @@ Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to g
 <table>
 
 ## Dependencies
+The name and version of the packages used are included below.
+
+```python
+torch = 2.4.0
+torchio = 0.20.1
+torchvision = 0.19.0+cu118
+nibabel = 5.3.0
+numpy = 1.26.3
+matplotlib = 3.9.2
+pillow = 10.2.0
+
+```
 
 
 ## References

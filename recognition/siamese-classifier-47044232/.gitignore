@@ -1,3 +1,5 @@
 # Don't want local data or models committed
 models/
 data/
+# Ignore chached files from python
+__pycache__/

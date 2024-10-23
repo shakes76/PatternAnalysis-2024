@@ -26,6 +26,27 @@ def train_model():
     train_batches = train_batches.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     validation_batches = validate_dataset.batch(BATCH_LENGTH)
     test_batches = test_dataset.batch(BATCH_LENGTH)
+    
+    #Build model and print summary of the model
+    mri_improved_3d_unet_model = improved_3d_unet_model()
+    tf.config.list_physical_devices("GPU")
+    mri_improved_3d_unet_model.summary()
+
+    #Compile the model so it calulates dice similarity coefficients during training
+    mri_improved_3d_unet_model.compile(optimizer = tf.keras.optimizers.Adam(),
+                       loss = "categorical_crossentropy",
+                       metrics = ["accuracy"])
+
+    EPOCH_STEPS = len(list(train_dataset)) // BATCH_LENGTH
+    VALIDATION_STEPS = (len(list(validate_dataset)) // BATCH_LENGTH) // 5
+    
+    #Train model
+    history = mri_improved_3d_unet_model.fit(train_batches,
+                                   epochs = EPOCHS,
+                                   steps_per_epoch = EPOCH_STEPS,
+                                   validation_steps = VALIDATION_STEPS,
+                                   validation_data = validation_batches,
+                                   verbose = True)
 
 if __name__ == "__main__":
     

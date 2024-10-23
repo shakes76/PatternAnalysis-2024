@@ -33,12 +33,12 @@ def get_config() -> dict:
     Returns: the current config settings
     """
     config = {
-        'data_subset': 1300,
+        'data_subset': 16000,
         'metadata_path': '/kaggle/input/isic-2020-jpg-256x256-resized/train-metadata.csv',
         'image_dir': '/kaggle/input/isic-2020-jpg-256x256-resized/train-image/image/',
         'embedding_dims': 128,
         'learning_rate': 0.0001,
-        'epochs': 2,
+        'epochs': 20,
     }
     return config
 

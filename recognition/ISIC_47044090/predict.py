@@ -1,32 +1,28 @@
 from modules import yolo_model
-import torch
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 from PIL import Image
-from dataset import scan_directory, get_newest_item, iou_torch
+from dataset import scan_directory
 
 modified_filepath = "./datasets/ISIC"
 
-def visualise_testcase(file, true_bbox, pred_bbox):
+def visualise_testcase(ax, file, true_bbox, pred_bbox):
     """
     Visualises 
     """
     image = Image.open(f'{modified_filepath}/test/images/ISIC_{file}.jpg')
     x_center1, y_center1, width1, height1 = true_bbox
     x_center2, y_center2, width2, height2 = pred_bbox
-    fig, ax = plt.subplots()
     ax.imshow(image)
-    rect1 = patches.Rectangle(((x_center1) - (width1)/2, (y_center1) - (height1)/2), (width1), (height1), linewidth=1, edgecolor='r', facecolor='none', label='true_bbox')
-    rect2 = patches.Rectangle(((x_center2) - (width2)/2, (y_center2) - (height2)/2), (width2), (height2), linewidth=1, edgecolor='blue', facecolor='none', label='test_bbox')
+    rect1 = patches.Rectangle(((x_center1) - (width1)/2, (y_center1) - (height1)/2), (width1), (height1), linewidth=1, edgecolor='r', facecolor='none', label='true')
+    rect2 = patches.Rectangle(((x_center2) - (width2)/2, (y_center2) - (height2)/2), (width2), (height2), linewidth=1, edgecolor='blue', facecolor='none', label='pred')
     ax.add_patch(rect1)
     ax.add_patch(rect2)
-    ax.legend()
-    plt.show()
+    
 
-
-def run_test(run_number=-1):
+def run_predict(run_number=-1, n_rows=3, partition='test'):
     """
     Parameters:
         trained_model: path to the trained model .pt file
@@ -41,23 +37,20 @@ def run_test(run_number=-1):
     model = yolo_model(path)
     print(f"\bWeights used for test: {path}\n_______________________________________\n")
     
-    ious = []
-    for file in scan_directory("test"): # first hundred to test
-        results = model([f"{modified_filepath}/test/images/ISIC_{file}.jpg"]) 
+    fig, axs = plt.subplots(n_rows, 3)
+    plt.suptitle("Random prediction examples")
+    for i, (file, ax) in enumerate(zip(np.random.choice(scan_directory(partition), n_rows*3), axs.flat)): # first hundred to test
+        results = model.predict(f"{modified_filepath}/{partition}/images/ISIC_{file}.jpg", imgsz=512, conf=0.1) 
         for result in results:
-            pred_bbox = result.boxes.xywh
-            if pred_bbox.size()==torch.Size([0, 4]):
-                iou = 0
-            else:
-                if pred_bbox.size() != torch.Size([1, 4]):
-                    pred_bbox = [pred_bbox[0]] # takes the most confident classification if multiple exist
-                pred_bbox = pred_bbox 
-                true_xywh = [float(i)*512 for i in open(f"{modified_filepath}/test/labels/ISIC_{file}.txt").read().split(" ")[1:]]
-                # visualise_testcase(file, label_xywh, pred_bbox.tolist()[0])
-                true_xywh=torch.tensor([true_xywh])
-                iou = iou_torch(pred_bbox, true_xywh)
+            pred_xywh = result.boxes.xywh
+            true_xywh = [float(i)*512 for i in open(f"{modified_filepath}/{partition}/labels/ISIC_{file}.txt").read().split(" ")[1:]]
+            visualise_testcase(ax, file, true_xywh, pred_xywh.tolist()[0])
+            ax.set_title(f"{partition}_sample_{file}")
+            if i==0:
+                ax.legend()
+    fig.tight_layout()
+    plt.show()
 
-            print(iou)
-            ious.append(iou)
 
-    print(np.array(ious).mean())
+if __name__ == '__main__':
+    run_predict()

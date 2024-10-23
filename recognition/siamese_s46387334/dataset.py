@@ -39,7 +39,7 @@ class TripletDataGenerator(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         """
-        Returns the number of images in the data set
+        Returns: the number of images in the data set
         """
         return len(self.images)
 
@@ -50,6 +50,8 @@ class TripletDataGenerator(torch.utils.data.Dataset):
         Each triplet is made up of an anchor data point, a positive data point (point of the same
         class as the anchor) and a negative data point (point of the opposite class to the anchor).
         The class of the anchor will also be returned
+
+        Returns: anchor_img, positive_img, negative_img, anchor_label
         """
         anchor_img = cv2.imread(self.images[anchor_idx]) / 255.0
         anchor_label = self.labels[anchor_idx]
@@ -82,8 +84,10 @@ class TripletDataGenerator(torch.utils.data.Dataset):
 
 ###############################################################################
 ### Functions
-def get_isic2020_data(metadata_path, image_dir, data_subset: int | None=None):
+def get_isic2020_data(metadata_path: str, image_dir: str, data_subset: int | None=None) -> tuple[list]:
     """
+    Returns the images and associated labels for the isic 2020 data set.
+
     Returns: images, labels
     """
     metadata = pd.read_csv(metadata_path)
@@ -105,14 +109,12 @@ def get_isic2020_data(metadata_path, image_dir, data_subset: int | None=None):
     labels = [image_to_label[os.path.basename(path)] for path in image_paths]
     return np.array(image_paths), np.array(labels)
 
-def train_val_test_split(images, labels):
+def train_val_test_split(images: list, labels: list) -> tuple[list]:
     """
-    0.8 0.1 0.1 split
+    Preform a 0.8 train, 0.1 validation, 0.1 test split on the given data set.
+    Oversampling will be performed on the training set to ensure equal number of 
+    samples for each class.
 
-    Stratified sampling
-    With oversampling of the training data to ensure that the
-    classes are balanced in training.
-    
     Returns: train_images, val_images, test_images, train_labels, val_labels, test_labels
     """
     train_images, other_images, train_labels, other_labels = train_test_split(images, labels, test_size=0.2, stratify=labels)
@@ -129,7 +131,7 @@ def train_val_test_split(images, labels):
     num_class_0 = len(class_0_images)
     num_class_1 = len(class_1_images)
     
-    # If class 1 has fewer samples, oversample it
+    # If class 1 (the minority class) has fewer samples, oversample it
     if num_class_1 < num_class_0:
         # Randomly choose from class_1_images to oversample it
         oversample_indices = np.random.choice(np.arange(num_class_1), size=num_class_0 - num_class_1, replace=True)
@@ -148,6 +150,11 @@ def train_val_test_split(images, labels):
 
 def get_isic2020_data_loaders(images, labels, train_bs=32, test_val_bs=320, aug_factor=1):
     """
+    Returns train, validation and testing dataloaders for the ISIC 2020 data set. Given
+    the images and labels for the ISIC 2020 data set.
+
+    All three sets will be normalised and converted to tensors and augmentation is applied to the train set.
+
     Returns: train_loader, val_loader, test_loader
     """
     # Preform the data split

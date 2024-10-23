@@ -2,7 +2,8 @@ import time
 import torch.optim as optim
 from matplotlib import pyplot as plt
 from modules import *
-from dataset import get_dataloader
+from utils.general import non_max_suppression
+from dataset import *
 from PIL import Image
 import numpy as np
 import os
@@ -23,8 +24,9 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
                 try:
                     ground_truth_image = Image.open(os.path.join('data/train/ISIC-2017_Training_Part1_GroundTruth',
                                                                  f"{img_name}_segmentation.png")).convert("L")
-                    ground_truth_image = ground_truth_image.resize((images.shape[3], images.shape[2]))
+                    ground_truth_image = ground_truth_image.resize(g_image_size)
                     ground_truth_arrays.append(np.array(ground_truth_image))
+                    ground_truth_image.close()
                 except FileNotFoundError:
                     print(f"Warning: Ground truth image for {img_name} not found.")
                     continue
@@ -73,44 +75,87 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
     plt.savefig('training_loss.png')
     plt.show()
 
+
 def validate_yolo(model, dataloader, ground_truth_path, device):
     model.eval()
     all_ious = []
-    for batch_idx, (images, labels, img_names) in enumerate(dataloader):
-        images = images.to(device)
-        results = model(images)
-        for i, res in enumerate(results):
-            ground_truth_file = os.path.join(ground_truth_path, f"{img_names[i]}_segmentation.png")
-            ground_truth_image = Image.open(ground_truth_file).convert("L")
-            ground_truth_array = np.array(ground_truth_image)
 
-            if res is not None and len(res) > 0:
-                iou = calculate_iou(res, ground_truth_array)
-                all_ious.append(iou)
+    with torch.no_grad():
+        for batch_idx, (images, labels, img_names) in enumerate(dataloader):
+            images = images.to(device)
+            results = model(images)[0].cpu()
+            results_NMS = non_max_suppression(results, conf_thres=0.5, iou_thres=0.5)
 
+            del results
+            torch.cuda.empty_cache()
+
+            for i in range(len(results_NMS)):  # Iterate over each image in the batch
+                try:
+                    ground_truth_image = Image.open(os.path.join(ground_truth_path,
+                                                                 f"{img_names[i]}_segmentation.png")).convert("L")
+                    ground_truth_image = ground_truth_image.resize(g_image_size)
+                    ground_truth_array = np.array(ground_truth_image)
+                    ground_truth_image.close()
+                except FileNotFoundError:
+                    print(f"Warning: Ground truth image for {img_names[i]} not found.")
+                    continue
+
+                # print(f"img name: {img_names[i]}")
+                gt_x_center, gt_y_center, gt_width, gt_height = get_YOLO_box(ground_truth_array)
+                # print(f"gt_width: {gt_width}, gt_height: {gt_height}")
+                gt_x1 = gt_x_center - (gt_width / 2)
+                gt_y1 = gt_y_center - (gt_height / 2)
+                gt_x2 = gt_x_center + (gt_width / 2)
+                gt_y2 = gt_y_center + (gt_height / 2)
+
+                # Extract predictions for the current image
+                image_predictions = results_NMS[i]
+
+                if len(image_predictions) > 0:
+                    # check the one with max confidence for every image
+                    max_conf_idx = torch.argmax(image_predictions[:, 4])
+                    pred = image_predictions[max_conf_idx]
+                    # confid = pred[4]
+                    # if confid < 0.5:  # Object confidence
+                    #     continue
+
+                    pred_box = pred[:4]  # tx, ty, tw, th (center x, center y, width, height)
+                    yolo_x_center, yolo_y_center, yolo_width, yolo_height = pred_box.detach().cpu().numpy()
+                    yolo_x1 = yolo_x_center - (yolo_width / 2)
+                    yolo_y1 = yolo_y_center - (yolo_height / 2)
+                    yolo_x2 = yolo_x_center + (yolo_width / 2)
+                    yolo_y2 = yolo_y_center + (yolo_height / 2)
+
+                    # Calculate IoU with the ground truth
+                    iou = calculate_iou([yolo_x1, yolo_y1, yolo_x2, yolo_y2],
+                                        [gt_x1, gt_y1, gt_x2, gt_y2], len(all_ious) % 70 == 0)
+                    all_ious.append(iou)
+            del results_NMS
+            torch.cuda.empty_cache()
+
+    # Calculate average and maximum IoU
     avg_iou = np.mean(all_ious) if len(all_ious) > 0 else 0
-    max_iou = np.max(all_ious) if len(all_ious) > 0 else 0
     print(f"Average Intersection Over Union (IoU): {avg_iou:.4f}")
+    max_iou = np.max(all_ious) if len(all_ious) > 0 else 0
     print(f"Maximum Intersection Over Union (IoU): {max_iou:.4f}")
 
 
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataloader = get_dataloader(csv_file='data/train/ISIC-2017_Training_Part3_GroundTruth.csv', root_dir='data/train',
-                                batch_size=8)
+                                batch_size=4)
     print(f"Number of batches: {len(dataloader)}")
     print(f"Batch size: {dataloader.batch_size}")
     print(f"Number of samples: {len(dataloader.dataset)}")
     print(f"Image dimensions: {dataloader.dataset[0][0].shape}")
 
-    yolov7 = get_yolo_model(model_path='yolov7_training.pt', device=device)
-    # print(f"Model loaded: \n{yolov7}")
+    # yolov7 = get_yolo_model(model_path='yolov7_training.pt', device=device)
+    #
+    # # yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)
+    # optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
+    # loss_function = YOLOLoss()
+    # train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=20)
 
-    optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
-    loss_function = YOLOLoss()
-    train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=2)
-
-    # yolov7 = torch.load("trained model/yolov7_epoch_2.pt", map_location=device)
+    yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)
     validate_yolo(yolov7, dataloader, ground_truth_path='data/train/ISIC-2017_Training_Part1_GroundTruth',
                   device=device)
-

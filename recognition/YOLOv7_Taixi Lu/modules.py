@@ -36,8 +36,14 @@ def get_yolo_model(model_path, device):
     for name, module in model.model._modules.items():
         if isinstance(module, IDetect):
             print(f"Original IDetect: \n{module}")
-            # print(f"\nOriginal anchors: \n{module.anchors}")
-            new_anchors = module.anchors.view(3, 6)  # flatten to suit the yolo config file (yaml) format
+            print(f"\nOriginal anchors: \n{module.anchors}")
+            # new_anchors = module.anchors
+            new_anchors = torch.tensor([
+                [136.0, 86.0], [125.0, 95.0], [170.0, 116.0],  # Small Anchors
+                [222.0, 157.0], [226.0, 170.0], [314.0, 237.0],  # Medium Anchors
+                [366.0, 221.0], [571.0, 386.0], [616.0, 612.0]   # Large Anchors
+            ]).to(device)
+            new_anchors=new_anchors.view(3, 6)  # flatten to suit the yolo config file (yaml) format
             new_idetect = IDetect(
                 nc=g_num_classes, anchors=new_anchors, ch=[layer.in_channels for layer in module.m])
             new_idetect.f = module.f
@@ -45,37 +51,37 @@ def get_yolo_model(model_path, device):
             new_idetect.stride = module.stride
             model.model._modules[name] = new_idetect
             print(f"\nModified IDetect: \n{model.model._modules[name]}")
-            # print(f"\nModified anchors: \n{model.model._modules[name].anchors}")
+            print(f"\nModified anchors: \n{model.model._modules[name].anchors}")
     # print(f"Model loaded: \n{model}")
     model.to(device)
     return model
 
 
-def calculate_iou(yolo_output, ground_truth):
+def calculate_iou(yolo_box_vertex, ground_truth_vertex, print_log=False):
     # Calculate Intersection Over Union (IoU) between YOLO output and ground truth mask
-    ious = []
-    for yolo_box in yolo_output:
-        yolo_x1, yolo_y1, yolo_x2, yolo_y2 = yolo_box[:4]
-        gt_indices = np.argwhere(ground_truth > 0)
-        if len(gt_indices) == 0:
-            continue
-        gt_x1, gt_y1 = gt_indices.min(axis=0)
-        gt_x2, gt_y2 = gt_indices.max(axis=0)
+    gt_x1, gt_y1, gt_x2, gt_y2 = ground_truth_vertex[:4]
+    gt_area = (gt_x2 - gt_x1) * (gt_y2 - gt_y1)
 
-        inter_x1 = max(yolo_x1, gt_x1)
-        inter_y1 = max(yolo_y1, gt_y1)
-        inter_x2 = min(yolo_x2, gt_x2)
-        inter_y2 = min(yolo_y2, gt_y2)
+    yolo_x1, yolo_y1, yolo_x2, yolo_y2 = yolo_box_vertex[:4]
+    inter_x1 = max(yolo_x1, gt_x1)
+    inter_y1 = max(yolo_y1, gt_y1)
+    inter_x2 = min(yolo_x2, gt_x2)
+    inter_y2 = min(yolo_y2, gt_y2)
 
-        inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
-        yolo_area = (yolo_x2 - yolo_x1) * (yolo_y2 - yolo_y1)
-        gt_area = (gt_x2 - gt_x1) * (gt_y2 - gt_y1)
+    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
+    yolo_area = (yolo_x2 - yolo_x1) * (yolo_y2 - yolo_y1)
 
-        union_area = yolo_area + gt_area - inter_area
-        iou = inter_area / union_area if union_area > 0 else 0
-        ious.append(iou)
+    union_area = yolo_area + gt_area - inter_area
+    if union_area > 0:
+        if print_log:
+            if inter_area > 0:
+                print(f"inter_area: {inter_area:.1f}, iou: {inter_area / union_area:.4f}")
+            else:
+                print(f"gt_w: {(gt_x2 - gt_x1):.1f}, gt_h: {(gt_y2 - gt_y1):.1f}, gt_area: {gt_area:.2f}, ratio: {yolo_area/gt_area:.3f}")
 
-    return np.mean(ious) if len(ious) > 0 else 0
+        return inter_area / union_area
+    else:
+        return 0
 
 
 def get_YOLO_box(ground_truth):
@@ -140,7 +146,7 @@ class YOLOLoss(nn.Module):
     def forward(self, predictions, targets):
         """
         predictions: list of tensors, each with shape [batch_size, num_anchors, grid_size, grid_size, 5 + num_classes]
-                     Contains [tx, ty, tw, th, object_confidence, class_probs...]
+                     5 + num_classes Contains [tx, ty, tw, th, object_confidence, class_probs...]
         targets: list of tensors, similar structure to predictions but with ground-truth labels.
         """
         total_loss = 0
@@ -160,17 +166,18 @@ class YOLOLoss(nn.Module):
             # Bounding box loss (using Mean Squared Error)
             box_loss = func.mse_loss(pred_boxes, target_boxes, reduction='sum')
 
-            # Objectness loss (using Binary Cross-Entropy)
-            obj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj, reduction='sum')
-
-            # No-object loss
-            noobj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj,
-                                                               reduction='sum') * self.lambda_noobj
+            # # Objectness loss (using Binary Cross-Entropy)
+            # obj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj, reduction='sum')
+            #
+            # # No-object loss
+            # noobj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj,
+            #                                                    reduction='sum') * self.lambda_noobj
 
             # Classification loss (using Cross-Entropy)
             class_loss = func.cross_entropy(pred_class, target_class.long(), reduction='sum')
 
             # Combine the losses
-            total_loss += (self.lambda_coord * box_loss) + obj_loss + noobj_loss + class_loss
+            # total_loss += (self.lambda_coord * box_loss) + obj_loss + noobj_loss + class_loss
+            total_loss += (self.lambda_coord * box_loss) + class_loss
 
         return total_loss

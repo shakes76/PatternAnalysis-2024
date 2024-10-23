@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from utils.general import non_max_suppression
 
 
 def predict_yolo(model, dataloader, ground_truth_path, device):
@@ -13,8 +14,12 @@ def predict_yolo(model, dataloader, ground_truth_path, device):
         for batch_idx, (images, labels, img_names) in enumerate(dataloader):
             images = images.to(device)
             preds = model(images)
+            preds_NMS = non_max_suppression(preds, conf_thres=0.5, iou_thres=0.5)
 
-            for i, pred in enumerate(preds):
+            del preds
+            torch.cuda.empty_cache()
+
+            for i, pred in enumerate(preds_NMS):
                 image = images[i].cpu().numpy().transpose(1, 2, 0)  # Convert to HWC format
                 image = (image * 255).astype(np.uint8)
                 image_pil = Image.fromarray(image)
@@ -32,6 +37,7 @@ def predict_yolo(model, dataloader, ground_truth_path, device):
                 try:
                     ground_truth_image = Image.open(ground_truth_file).convert("L")
                     ground_truth_array = np.array(ground_truth_image)
+                    ground_truth_image.close()
                     gt_indices = np.argwhere(ground_truth_array > 0)
                     if len(gt_indices) > 0:
                         gt_x1, gt_y1 = gt_indices.min(axis=0)

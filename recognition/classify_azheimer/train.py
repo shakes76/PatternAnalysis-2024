@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from dataset import get_dataloaders
 from tqdm import tqdm
-from modules import TransformerNet
+from modules import GFNetPyramid
 import os
 from torch.optim.lr_scheduler import ExponentialLR
 from sklearn.metrics import classification_report
@@ -21,7 +21,8 @@ def train_model(epochs=10):
     else:
         data_dir = "/home/groups/comp3710/ADNI/AD_NC/"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = TransformerNet(num_classes=2) # 2 classes: AD and NC
+    model = GFNetPyramid(num_classes=2)  # 2 classes: AD and NC
+    # model = torch.load("alzheimer_classifier.pth")
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()

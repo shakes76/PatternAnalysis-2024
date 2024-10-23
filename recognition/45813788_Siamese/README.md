@@ -22,12 +22,26 @@ As the contrastive loss in pytorch metric learning was used there was no need to
 
 ## Architecture
 The final model architecture is based on the [“Vocal Cord Leukoplakia Classification Using Siamese Network Under Small Samples of White Light Endoscopy Images,”](https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/abs/10.1002/ohn.591) by You et al and can be seen below:
+![Siamese Model Architecture](./images/MODELARCHITECTURE.jpg) 
 
 
-Some modifications have been made such as using Binary Cross Entropy (BCE) Loss using logits. this decision was made as the problem space is binary compared to the multiclassification problem in the report. 
+Figure 1: Siamese Netowrk Architecure [1]
+
+Some modifications have been made such as using Binary Cross Entropy (BCE) Loss using logits. this decision was made as the problem space is binary compared to the multiclassification problem in the report. In additon to this the siamese backbone was implemented using `resnet50`. this approach was taken due to the realtive sucess that was attained in 
 
 ## Loss Functions
-The key feature this network proposed was in how it computes the loss for the network, instead of treating the classification head and embedded network seperately the network instead computes the loss as the sum of the contrasitive loss and the cross entropy. Thus it effectively improves the embeddings by minimising distnace whilst also having guidance from a classification perspective, this feature was something I did not see in other papers and lead to good perfomance as can be seen below.
+The key feature this network proposed was in how it computes the loss for the network, instead of treating the classification head and embedded network seperately the network instead computes the loss as follows:
+
+
+$L = L_CE + L_LP$
+
+where
+
+the sum of the contrasitive loss using `Lp` distance (Euclidean as p=2) and the cross entropy as follows:
+
+
+
+Thus it effectively improves the embeddings by minimising distnace whilst also having guidance from a classification perspective, this feature was something I did not see in other papers and lead to good perfomance as can be seen below.
 
 ## Model Perfomance
 

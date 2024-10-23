@@ -6,38 +6,65 @@ from sklearn.model_selection import train_test_split
 import torchvision.transforms as transforms
 import numpy as np
 
-# File paths
-csv_path = 'archive/train-metadata.csv'
-img_dir = 'archive/train-image/image/'
+class DataManager:
+    """
+    Managing the data flows and processing for the ISIC-2020 dataset
+    """
+    def __init__(self, csv_path, img_dir):
+        self.csv_path = csv_path
+        self.img_dir = img_dir
+        self.data = None
+        self.train_loader = None
+        self.test_loader = None
 
-# Load metadata
-data = pd.read_csv(csv_path)
+    def load_data(self):
+        """
+        Loading metadata from the CSV file.
+        """
+        self.data = pd.read_csv(self.csv_path)
 
-# Statistics
-print(f"Total images: {len(data)}")
-print(f"Classes distribution: \n{data['target'].value_counts()}")
-print("\nNote: 0 = benign, 1 = malignant")
+    def split_data(self):
+        """
+        Split the data into training and testing sets
+        """
+        train_data, test_data = train_test_split(self.data, test_size=0.2, random_state=42, stratify=self.data['target'])
+        return train_data, test_data
 
-def preprocess_image(image):
-    """Preprocess image for ResNet50 input"""
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # ResNet50 expected input size
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                           std=[0.229, 0.224, 0.225])  # ImageNet normalization
-    ])
-    return transform(image)
+    def create_dataloaders(self, batch_size=32):
+        """
+        Creating torch DataLoader objects for training and testing
+        """
+        train_data, test_data = self.split_data()
+        
+        # Create DataLoader
+        train_dataset = SiameseDataset(train_data, self.img_dir)
+        test_dataset = SiameseDataset(test_data, self.img_dir)
 
-def load_image(image_id):
-    img_path = f'{img_dir}{image_id}.jpg'
-    image = Image.open(img_path).convert('RGB')
-    return preprocess_image(image)
+        self.train_loader = DataLoader(
+            train_dataset, 
+            batch_size=batch_size, 
+            shuffle=True, 
+            pin_memory=True,
+            num_workers=4
+        )
+        self.test_loader = DataLoader(
+            test_dataset, 
+            batch_size=batch_size, 
+            shuffle=False, 
+            pin_memory=True,
+            num_workers=4
+        )
 
-# Train test split
-train_data, test_data = train_test_split(data, test_size=0.2, random_state=42, stratify=data['target'])
+    def print_statistics(self):
+        # Statistics
+        print(f"Total images: {len(self.data)}")
+        print(f"Classes distribution: \n{self.data['target'].value_counts()}")
+        print("\nNote: 0 = benign, 1 = malignant")
+
 
 class SiameseDataset(Dataset):
-    """Dataset for Siamese Network training and melanoma classification
+    """
+    Dataset for Siamese Network training and melanoma classification
     """
     def __init__(self, data, img_dir):
         self.data = data
@@ -46,6 +73,9 @@ class SiameseDataset(Dataset):
         self.image_ids = data['isic_id'].values
 
     def __len__(self):
+        """
+        Returns the length of the dataset
+        """
         return len(self.data)
 
     def __getitem__(self, idx):
@@ -75,8 +105,8 @@ class SiameseDataset(Dataset):
         img2_diagnosis = self.diagnosis_labels[second_idx]
         
         # Load and preprocess images
-        img1 = load_image(img1_id)
-        img2 = load_image(img2_id)
+        img1 = load_image(img1_id, self.img_dir)
+        img2 = load_image(img2_id, self.img_dir)
         
         return {
             'img1': img1,
@@ -86,12 +116,33 @@ class SiameseDataset(Dataset):
             'diagnosis2': torch.tensor(img2_diagnosis, dtype=torch.float32)
         }
 
-# Create DataLoader
-train_dataset = SiameseDataset(train_data, img_dir)
-test_dataset = SiameseDataset(test_data, img_dir)
+def preprocess_image(image):
+    """
+    Preprocess image for ResNet50 input
+    """
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),  # ResNet50 expected input size
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225])  # ImageNet normalization
+    ])
+    return transform(image)
 
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+def load_image(image_id, img_dir):
+    """
+    Takes an image from the ISIC-2020 dataset and preprocesses it for the models
+    """
+    img_path = f'{img_dir}{image_id}.jpg'
+    image = Image.open(img_path).convert('RGB')
+    return preprocess_image(image)
+
 
 if __name__ == "__main__":
-    pass
+    # File paths
+    csv_path = 'archive/train-metadata.csv'
+    img_dir = 'archive/train-image/image/'
+
+    data_manager = DataManager(csv_path, img_dir)
+    data_manager.load_data()
+    data_manager.create_dataloaders()
+    data_manager.print_statistics()

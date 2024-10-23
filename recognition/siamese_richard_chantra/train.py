@@ -1,16 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from dataset import train_loader, test_loader
+from dataset import DataManager
 from tqdm import tqdm
-import math
 import torchvision.models as models
+from torchvision.models import ResNet50_Weights
 
-# Set device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
-
-# Original Siamese Network (unchanged)
 class SiameseNetwork(nn.Module):
     """
     Siamese Network for learning image embeddings of benign and malignant melanomas.
@@ -19,49 +14,35 @@ class SiameseNetwork(nn.Module):
         super(SiameseNetwork, self).__init__()
 
         # ResNet50 Feature Extractor
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         self.features = nn.Sequential(*list(resnet.children())[:-1])
 
         # Fully Connected Layer
         self.fc = nn.Sequential(
-            nn.Linear(2048, 256), # Output of ResNet50 is a 2048 dim feature vector
+            nn.Linear(2048, 256),  # Output of ResNet50 is a 2048 dim feature vector
             nn.ReLU(),
-            nn.Linear(256, 128) # Final embedding size of 128 for Euclidean distance calc
+            nn.Linear(256, 128)    # Final embedding size of 128 for Euclidean distance calc
         )
 
     def forward(self, x1, x2):
-        """
-        The forward pass to compute embeddings for a pair of images
-        """
-        # Process inputs through ResNet50
-        out1 = self.features(x1)
-        out2 = self.features(x2)
-
-        # Flatten outputs
-        out1 = out1.view(out1.size(0), -1)
-        out2 = out2.view(out2.size(0), -1)
-
-        # Generate embeddings
-        out1 = self.fc(out1)
-        out2 = self.fc(out2)
+        """Forward pass to compute embeddings for a pair of images"""
+        # Get embeddings for both images
+        out1 = self.get_embedding(x1)
+        out2 = self.get_embedding(x2)
         return out1, out2
     
     def get_embedding(self, x):
-        """
-        Computing the embeddings for a single image
-        """
+        """Computing embeddings for a single image"""
         features = self.features(x)
         features = features.view(features.size(0), -1)
-        embedding = self.embedding_network(features)
-        return embedding
+        return self.fc(features)
 
-# Separate MLP Classifier
 class MLPClassifier(nn.Module):
     """
-    Using a Multi-layer Perceptron using Siamese Network embeddings to predict malignant melanoma
+    MLP Classifier using Siamese Network embeddings to predict melanoma
     """
     def __init__(self, embedding_dim=128):
-        super(MelanomaClassifier, self).__init__()
+        super(MLPClassifier, self).__init__()
         self.classifier = nn.Sequential(
             nn.Linear(embedding_dim, 64),
             nn.ReLU(),
@@ -69,28 +50,30 @@ class MLPClassifier(nn.Module):
             nn.Linear(64, 32),
             nn.ReLU(),
             nn.Linear(32, 1),
-            nn.Sigmoid() 
+            nn.Sigmoid()
         )
 
     def forward(self, embedding):
         """
         Input: embedding from Siamese network
-        Output: probability of image being malignant (0 = benign, 1 = malignant)
+        Output: probability of being malignant (0 = benign, 1 = malignant)
         """
         return self.classifier(embedding)
 
-# Contrastive Loss Function
 def contrastive_loss(output1, output2, label, margin=1.0):
     """
-    Contrastive loss used in the training of Siamese Network
+    Contrastive loss for Siamese Network training
     """
-    euclidean_distance = torch.sqrt(torch.sum((output1 - output2) ** 2, dim=1))
-    loss = torch.mean((1 - label) * 0.5 * euclidean_distance ** 2 +
-                      label * 0.5 * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2))
+    # Calculate euclidean distance
+    euclidean_distance = torch.sqrt(torch.sum((output1 - output2) ** 2, dim=1) + 1e-6)
+    
+    # Calculate contrastive loss
+    loss = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
+                     label * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2))
+    
     return loss
 
-# Training Siamese Network
-def train_siamese_network(siamese_network, train_loader, epochs=5, margin=1.0):
+def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, margin=1.0):
     """
     Train Siamese Network to learn embeddings from images
     """
@@ -106,34 +89,39 @@ def train_siamese_network(siamese_network, train_loader, epochs=5, margin=1.0):
             img2 = batch['img2'].to(device)
             similarity_label = batch['similarity_label'].to(device)
             
-            # Compute embeddings and loss
-            siamese_network_optimizer.zero_grad()
-            embedding1, embedding2 = model(img1, img2)
+            # Forward pass
+            optimizer.zero_grad()
+            embedding1, embedding2 = siamese_network(img1, img2)
+            
+            # Calculate loss
             loss = contrastive_loss(embedding1, embedding2, similarity_label, margin)
+            
+            # Backward pass
             loss.backward()
-            siamese_network_optimizer.step()
-
+            torch.nn.utils.clip_grad_norm_(siamese_network.parameters(), 1.0)  # Gradient clipping
+            optimizer.step()
+            
             running_loss += loss.item()
 
         epoch_loss = running_loss / len(train_loader)
-        print(f"Siamese Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss}")
+        print(f"Siamese Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}")
 
-        # Save checkpoint for the best model
+        # Save best model
         if epoch_loss < best_loss:
             best_loss = epoch_loss
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': siamese_network.state_dict(),
-                'optimizer_state_dict': siamese_network_optimizer.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
                 'loss': best_loss,
             }, 'best_siamese_network.pth')
 
-# Train MLP Classifier using Siamese Network embeddings
-def train_mlp_classifier(siamese_network, mlp_classifier, train_loader, epochs=5):
+def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loader, epochs=5):
     """
-    Train MLP classifier to diagnose melanoma using learned embeddings
+    Train MLP classifier using Siamese Network embeddings
     """
-    classifier.train()
+    mlp_classifier.train()
+    siamese_network.eval()  # Freeze Siamese network
     criterion = nn.BCELoss()
     best_acc = 0.0
     
@@ -143,27 +131,29 @@ def train_mlp_classifier(siamese_network, mlp_classifier, train_loader, epochs=5
         total = 0
         
         for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} - Classifier"):
-            # Get first image and its diagnosis from batch
+            # Get image and its label
             img1 = batch['img1'].to(device)
-            diagnosis_label = batch['diagnosis1'].to(device)  # 0 = benign, 1 = malignant
+            diagnosis_label = batch['diagnosis1'].to(device).unsqueeze(1)
             
-            # Get embeddings from Siamese Network
+            # Get embeddings without gradient tracking
             with torch.no_grad():
                 embeddings = siamese_network.get_embedding(img1)
             
-            # Classify embeddings
-            optimizer_classifier.zero_grad()
-            outputs = classifier(embeddings)
-            loss = criterion(outputs, binary_labels)
+            # Forward pass
+            optimizer.zero_grad()
+            outputs = mlp_classifier(embeddings)
+            loss = criterion(outputs, diagnosis_label)
+            
+            # Backward pass
             loss.backward()
-            optimizer_classifier.step()
+            optimizer.step()
             
             running_loss += loss.item()
             
             # Calculate accuracy
             predicted = (outputs > 0.5).float()
-            total += binary_labels.size(0)
-            correct += (predicted == binary_labels).sum().item()
+            total += diagnosis_label.size(0)
+            correct += (predicted == diagnosis_label).sum().item()
         
         epoch_loss = running_loss / len(train_loader)
         accuracy = 100 * correct / total
@@ -174,25 +164,44 @@ def train_mlp_classifier(siamese_network, mlp_classifier, train_loader, epochs=5
             best_acc = accuracy
             torch.save({
                 'epoch': epoch,
-                'model_state_dict': classifier.state_dict(),
-                'optimizer_state_dict': optimizer_classifier.state_dict(),
+                'model_state_dict': mlp_classifier.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
                 'accuracy': best_acc,
             }, 'best_mlp_classifier.pth')
 
 if __name__ == "__main__":
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    SKIP_SIAMESE_TRAINING = 1  # 0: Begin training, 1: Skip training (use checkpoint)
+
+    # Setup data
+    data_manager = DataManager('archive/train-metadata.csv', 'archive/train-image/image/')
+    data_manager.load_data()
+    data_manager.create_dataloaders()
+    train_loader = data_manager.train_loader
+    test_loader = data_manager.test_loader
+
     # Initialize models
     siamese_network = SiameseNetwork().to(device)
     mlp_classifier = MLPClassifier().to(device)
     
     # Initialize optimizers
-    optimizer_siamese_network = optim.Adam(siamese_network.parameters(), lr=0.001)
-    optimizer_mlp_classifier = optim.Adam(mlp_classifier.parameters(), lr=0.001)
+    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001)
+    optimizer_mlp = optim.Adam(mlp_classifier.parameters(), lr=0.001)
 
-    # First train Siamese network
-    print("Training Siamese Network to learn embeddings from images:")
-    train_siamese_network(siamese_network, train_loader, epochs=5)
+    if SKIP_SIAMESE_TRAINING:
+        # Load Siamese Network checkpoint
+        print("Loading Siamese Network checkpoint...")
+        checkpoint = torch.load('best_siamese_network.pth')
+        siamese_network.load_state_dict(checkpoint['model_state_dict'])
+        print(f"Loaded Siamese Network checkpoint with loss: {checkpoint['loss']:.4f}")
+    else:
+        # Train Siamese network from scratch
+        print("Training Siamese Network to learn embeddings from images:")
+        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=5)
     
-    # Then train classifier
+    # Train classifier
     print("\nTraining MLPClassifier using learned embeddings:")
-    siamese_network.eval() # Using the embeddings only
-    train_classifier(siamese_network, mlp_classifier, train_loader, epochs=5)
+    train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=5)

@@ -31,19 +31,8 @@ import predict
 import train
 
 
-
-
-# Set random seed for reproducibility
-manualSeed = 999
-#manualSeed = random.randint(1, 10000) # use if you want new results
-print("Random Seed: ", manualSeed)
-random.seed(manualSeed)
-torch.manual_seed(manualSeed)
-
-
+# UPDATE THIS to the file path to your data
 DATA = "C:\Users\kylie\OneDrive\Documents\keras_png_slices_data\keras_png_slices_data\keras_png_slices_seg_train"
-
-
 
 
 #############################################
@@ -53,12 +42,12 @@ DATA = "C:\Users\kylie\OneDrive\Documents\keras_png_slices_data\keras_png_slices
 Saves 5 images after the data transformation/augmentation and loading is complete and wrapped using dataloader.
 '''
 def show_imgs(loader):
-    # for i in range(5):
-    #     features, _ = next(iter(loader))
-    #     print(f"Feature batch shape: {features.size()}")
-    #     img = features[0].squeeze()
-    #     plt.imshow(img, cmap="gray")
-    #     save_image(img*0.5+0.5, f"aug_img_{i}.png")
+    for i in range(5):
+        features, _ = next(iter(loader))
+        print(f"Feature batch shape: {features.size()}")
+        img = features[0].squeeze()
+        plt.imshow(img, cmap="gray")
+        save_image(img*0.5+0.5, f"aug_img_{i}.png")
 
     real_batch = next(iter(loader))
     plt.figure(figsize=(8,8))
@@ -76,7 +65,7 @@ ToTensor: Convert images to PyTorch Tensors
 Normalize: Normalize pixel value to have a mean and standard deviation of 0.5
 '''
 def get_data(data, log_res, batchSize):
-    # Create the dataset
+    # Create dataset
     dataset = dset.ImageFolder(root=DATA,
                               transform=transforms.Compose([
                                   transforms.ToTensor(),
@@ -86,9 +75,9 @@ def get_data(data, log_res, batchSize):
                                   transforms.RandomVerticalFlip(p=0.5),
                                   transforms.Normalize(mean=[0.5], std=[0.5])]
                               ))
-    # Create the dataloader
+    # Create dataloader
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=utils.batch_size,
                                             shuffle=True)
-    show_imgs(dataloader)
-        
+    show_imgs(dataloader) # Display the training images
+
     return dataloader

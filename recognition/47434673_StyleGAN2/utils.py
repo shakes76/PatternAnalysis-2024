@@ -30,27 +30,6 @@ import modules
 import dataset
 
 
-workers = 2 # Number of workers for dataloader
-nz = 100 # Size of z latent vector (i.e. size of generator input)
-ngf = 64 # Size of feature maps in generator
-ndf = 64 # Size of feature maps in discriminator
-beta1 = 0.5 # Beta1 hyperparameter for Adam optimizers
-ngpu = 1 # Number of GPUs available. Use 0 for CPU mode.
-epochs = 300 # Number of epochs
-learning_rate = 0.001 # Learning rate
-channels = 1 # 1 Channel for greyscale images, 3 for RGB.
-batch_size = 32 # Number of images per training batch
-image_size = 64 # Image size is 64 x 64 pixels
-log_resolution = 7 # Log of resolution
-image_height = 2**log_resolution # asdf
-image_width = 2**log_resolution # asdf
-z_dim = 256 # asdf
-w_dim = 256 # asdf
-lambda_gp = 10 # asdf
-interpolation = "bilinear" # asdf
-save = "save" # asdf
-
-
 ##################################################
 # Data augmentation and optimisation
 
@@ -88,29 +67,28 @@ def get_noise(batch_size, device):
 
 
 def gradient_penalty(critic, real, fake,device="cpu"):
-    """Attempts to reduce the l^2 norm of the gradients of the discriminator with respect to the images. Regularisation penalty"""
+    """
+    Reduces the l^2 norm of the gradients of the 
+    discriminator with respect to the images.
+    """
     BATCH_SIZE, C, H, W = real.shape
     beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
     interpolated_images = real * beta + fake.detach() * (1 - beta)
     interpolated_images.requires_grad_(True)
 
-    # Calculate critic scores
+    # Calculate discriminator scores
     mixed_scores = critic(interpolated_images)
 
-    # Calculates the gradient of scores with respect to the images
-    # and we need to create and retain graph since we have to compute gradients
-    # with respect to weight on this loss.
+    # Calculates the gradient of scores of images
     gradient = torch.autograd.grad(
         inputs=interpolated_images,
         outputs=mixed_scores,
         grad_outputs=torch.ones_like(mixed_scores),
         create_graph=True,
-        retain_graph=True,
+        retain_graph=True, # For the gradient computation based on the weight of this loss
     )[0]
-    # Reshape gradients to calculate the norm
-    gradient = gradient.view(gradient.shape[0], -1)
-    # Calculate the norm and then the loss
-    gradient_norm = gradient.norm(2, dim=1)
-    gradient_penalty = torch.mean((gradient_norm - 1) ** 2)
+    gradient = gradient.view(gradient.shape[0], -1) # Reshape gradients
+    gradient_norm = gradient.norm(2, dim=1) # Calculate norm
+    gradient_penalty = torch.mean((gradient_norm - 1) ** 2) # Calculate loss
 
     return gradient_penalty

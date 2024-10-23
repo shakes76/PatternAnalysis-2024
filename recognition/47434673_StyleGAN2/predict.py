@@ -7,18 +7,14 @@ import torch.utils.data
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
 
-
-
-import modules
 import utils
-import dataset
-import train
 
 ###################################################
-# Loss visualisation and Generated images plotting
+# Loss visualisation and generated images plotting
 
 def plot_loss(G_Loss, D_Loss):
-    """Plots Graphs of Discriminator and Generator Loss over iterations"""
+    """Plot Graphs of Discriminator and Generator Loss over iterations"""
+    # Generator loss vs iterations graph
     plt.figure(figsize=(10,5))
     plt.title("Generator Loss During Training")
     plt.plot(G_Loss, label="G", color="blue")
@@ -27,9 +23,10 @@ def plot_loss(G_Loss, D_Loss):
     plt.legend()
     plt.savefig('gen_loss.png')
 
+    # Discriminator loss vs iterations graph
     plt.figure(figsize=(10,5))
     plt.title("Discriminator Loss During Training")
-    plt.plot(D_Loss, label="D", color="red")
+    plt.plot(D_Loss, label="D", color="orange")
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()

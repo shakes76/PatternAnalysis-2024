@@ -33,8 +33,11 @@ import train
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
+
+
 #####################################################
 # Training
+
 
 def train_fn(critic, gen, path_length_penalty, loader, opt_critic, opt_gen, opt_mapping_network,):
     """The training cycle of the StyleGAN2"""
@@ -111,6 +114,7 @@ def train_fn(critic, gen, path_length_penalty, loader, opt_critic, opt_gen, opt_
 ####################################################
 # Main function
 
+
 # Device Config
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Device: ', device)
@@ -176,7 +180,7 @@ for epoch in range(utils.epochs):
 
 
 # Save the models after training
-torch.save(gen.state_dict(), '/assets/.pth')
+torch.save(gen.state_dict(), '/assets/netG.pth')
 torch.save(critic.state_dict(), '/assets/netD.pth')
 torch.save(mapping_network.state_dict(), '/assets/netM.pth')
 print("Saved models.")
@@ -199,7 +203,6 @@ fig = plt.figure(figsize=(8,8))
 plt.axis("off")
 ims = [[plt.imshow(np.transpose(i,(1,2,0)), animated=True)] for i in img_list]
 ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-
 HTML(ani.to_jshtml())
 
 

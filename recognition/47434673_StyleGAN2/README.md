@@ -34,7 +34,17 @@ stuff
 ## Data
 The dataset that this model is trained on is the publicly available OASIS brain dataset. This dataset contains 2D MRI image slices of brains. The directory structure of this dataset is the following:
 
-This model trains on images taken from all the folders, i.e. it does not discriminate between images in the train, test, or validate directories. This is so that this model can train on more diverse images. 
+```
+└───keras_png_slices_data
+    ├───keras_png_slices_seg_test
+    ├───keras_png_slices_seg_train
+    ├───keras_png_slices_seg_validate
+    ├───keras_png_slices_test
+    ├───keras_png_slices_train
+    └───keras_png_slices_validate
+```
+
+This model trains on images taken from all the folders, i.e. the dataloader does not discriminate between images in the train, test, or validate directories. This is so that this model can train on more diverse images.
 
 ## Requirements
 
@@ -82,6 +92,7 @@ The graphs below show the loss of the generator and discriminator during their t
 ![Gen_loss](assets/Gen_loss.png)
 
 ![Comb_loss](assets/Combined_loss.png)
+
 
 
 

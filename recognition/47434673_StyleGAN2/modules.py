@@ -9,14 +9,15 @@ import torch.nn.functional as F
 from math import sqrt
 from tqdm import tqdm
 
-
 import utils
 
 
 ##################################################
 # Modules
 
+
 class MappingNetwork(nn.Module):
+    """The Mapping Network Class"""
     def __init__(self, z_dim, w_dim):
         super().__init__()
 
@@ -70,7 +71,7 @@ class EqualizedWeight(nn.Module):
 
 
 class Generator(nn.Module):
-
+    """The Generator class"""
     def __init__(self, log_resolution, W_DIM, n_features = 32, max_features = 256):
         super().__init__()
 
@@ -216,7 +217,7 @@ class Conv2dWeightModulate(nn.Module):
 
 
 class Discriminator(nn.Module):
-
+    """The Discriminator Class"""
     def __init__(self, log_resolution, n_features = 64, max_features = 256):
         super().__init__()
 
@@ -350,5 +351,5 @@ class PathLengthPenalty(nn.Module):
         self.exp_sum_a.mul_(self.beta).add_(mean, alpha=1 - self.beta)
         self.steps.add_(1.)
 
-        # return the penalty
+        # Return penalty
         return loss

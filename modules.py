@@ -22,4 +22,11 @@ class Yolov7(nn.Module):
             results = self.model(images)
         return results
     
+class DetectionHead(nn.Module):
+    def __init__(self, channel, un_anchors, num_classes):
+        super(DetectionHead, self).__init__()
+    
+    def forward(self, x):
+         return None
+    
 model = Yolov7()

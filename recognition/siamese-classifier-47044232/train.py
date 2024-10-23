@@ -8,6 +8,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+from datetime import datetime
 import torch
 from torch.nn import TripletMarginLoss, CrossEntropyLoss
 from torch.optim.adam import Adam
@@ -126,7 +127,7 @@ with torch.no_grad(): # Reduces memory usage
         if i % (len(test_loader)//2) == 0 and i != len(test_loader)-1:
             print(f"Testing: Batch: {i}, Loss: {loss.item()}")
 
-# TODO add saving of model to config.MODELPATH here
+torch.save(model.state_dict(), config.MODELPATH + "/siamese_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
 
 # Obtain the features vectures from the training dataset
 training_features = []
@@ -164,4 +165,4 @@ with torch.no_grad():
 
     print('Test Accuracy: {} %'.format(100 * correct / total))
 
-# TODO add saving of model to config.MODELPATH here
+torch.save(model.state_dict(), config.MODELPATH + "/classifier_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))

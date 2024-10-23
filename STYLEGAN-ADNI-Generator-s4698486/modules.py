@@ -1,8 +1,4 @@
-'''
-Source code of the StyleGAN components
-Implements the Mapping Network, Generator, Discriminator and Path Length Penalty. 
-Underlying components such as convolution layer, styleblocks and such are grouped under their respective class.
-'''
+#modules.py
 
 import torch
 from torch import nn
@@ -262,3 +258,52 @@ class Conv2dWeightModulate(nn.Module):
 
         # return x in shape of [batch_size, out_features, height, width]
         return x.reshape(-1, self.out_features, h, w)
+    
+
+"""
+ Path length penalty regularisation, which ensures that a change in the latent vector corresponds to a proportional
+ change to the generated image. The intention of this is to disentangle features in the style space further.
+"""
+class PathLengthPenalty(nn.Module):
+
+    def __init__(self, beta):
+        super().__init__()
+
+        self.beta = beta
+        self.steps = nn.Parameter(torch.tensor(0.), requires_grad=False)
+
+        self.exp_sum_a = nn.Parameter(torch.tensor(0.), requires_grad=False)
+
+    def forward(self, w, x):
+
+        device = x.device
+        image_size = x.shape[2] * x.shape[3]
+        y = torch.randn(x.shape, device=device)
+
+        # Scaling
+        output = (x * y).sum() / sqrt(image_size)
+        sqrt(image_size)
+
+        # Computes gradient
+        gradients, *_ = torch.autograd.grad(outputs=output,
+                                            inputs=w,
+                                            grad_outputs=torch.ones(output.shape, device=device),
+                                            create_graph=True)
+
+        # Calculated L2-norm
+        norm = (gradients ** 2).sum(dim=2).mean(dim=1).sqrt()
+
+        # Regulatrise after first step
+        if self.steps > 0:
+            a = self.exp_sum_a / (1 - self.beta ** self.steps)
+            loss = torch.mean((norm - a) ** 2)
+        else:
+            # Return a dummpy loss tensor if computation fails
+            loss = norm.new_tensor(0)
+
+        mean = norm.mean().detach()
+        self.exp_sum_a.mul_(self.beta).add_(mean, alpha=1 - self.beta)
+        self.steps.add_(1.)
+
+        # return the penalty
+        return loss

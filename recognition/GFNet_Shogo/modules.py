@@ -1,8 +1,10 @@
 """
-containing the source code of the components of your model. Each component must be implementated as a class or a function
+containing the source code of the components of GFNet model. 
 
 Created by: Shogo Terashima
-
+Created by:     Shogo Terashima
+ID:             S47779628
+Last update:    24/10/2024
 Reference:
 @inproceedings{rao2021global,
   title={Global Filter Networks for Image Classification},
@@ -19,7 +21,9 @@ from timm.layers import DropPath
 
 class GlobalFilterLayer(nn.Module):
     '''
-    Implemeted based on the pseudocode of Global Filter Layer from the paper.
+    GlobalFilterLayer is a layer that applies a learnable global filter in the frequency domain.
+    Implemented based on the pseudocode of Global Filter Layer from the paper.
+    It consists of Layer Normalisation, 2D FFT, Element-wise multiplication, and 2D IFFT.
     '''
     def __init__(self, height, width, dimension):
         super().__init__()
@@ -45,7 +49,7 @@ class GlobalFilterLayer(nn.Module):
         return x_filtered 
 class FeedForwardLayer(nn.Module):
     '''
-    two layers with a non-linear activation function in between
+    It consists of Layer normalisation,  two layers of MLP with a non-linear activation function, with dropout.
     '''
     def __init__(self, input_dim, drop=0.1):
         super().__init__()
@@ -65,24 +69,6 @@ class FeedForwardLayer(nn.Module):
         x = self.dropout(x)
         return x
 
-# class DropPath(nn.Module):
-#     '''
-#     Reference: https://stackoverflow.com/questions/69175642/droppath-in-timm-seems-like-a-dropout
-#     '''
-#     def __init__(self, drop_prob=0.0):
-#         super().__init__()
-#         self.drop_prob = drop_prob
-
-#     def forward(self, x):
-#         if self.drop_prob == 0. or not self.training:
-#             return x
-#         keep_prob = 1 - self.drop_prob
-#         shape = (x.shape[0],) + (1,) * (x.ndim - 1)
-#         random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
-#         random_tensor.floor_()
-#         output = x / keep_prob * random_tensor
-#         return output
-    
 class Block(nn.Module):
     '''
     Block to consist Global Filter Layer and Feed Forward Network
@@ -131,6 +117,11 @@ class DownSamplingLayer(nn.Module):
         return x
     
 class GFNet(nn.Module):
+    '''
+    Here, we implemented a hierarchical version of the GFNet model.
+    Each stage starts with a Patch Embedding or DownSampling Layer, followed by a sequence of Blocks.
+    After the last stage, the model performs global average pooling and outputs the final classification result through a linear layer.
+    '''
     def __init__(self, image_size=224, num_classes=1, blocks_per_stage=[3, 3, 10, 3], 
                  stage_dims=[64, 128, 256, 512], drop_rate=0.1, drop_path_rate=0.1, init_values=0.001, dropcls=0.0):
         super().__init__()
@@ -142,7 +133,6 @@ class GFNet(nn.Module):
         num_patches = (image_size // 4) * (image_size // 4)
         self.patch_embedding.append(patch_embedding)
         self.position_embedding.append(nn.Parameter(torch.zeros(1, num_patches, stage_dims[0])))
-        #self.position_drop = nn.Dropout(drop_rate)
 
         # Define DownSamplingLayers and patch embedding
         sizes = [56*image_size//224, 28*image_size//224, 14*image_size//224, 7*image_size//224] # Generally speaking, we can start from a large feature map (e.g., 56 × 56) and gradually perform downsampling after a few blocks. 
@@ -177,7 +167,7 @@ class GFNet(nn.Module):
             self.blocks.append(nn.Sequential(*blocks_for_current_stage)) 
             current_block_index += num_blocks
         
-        self.norm = nn.LayerNorm(stage_dims[-1]) #? dim?
+        self.norm = nn.LayerNorm(stage_dims[-1])
         self.head = nn.Linear(stage_dims[-1], num_classes)  # Linear head
   
     def forward(self, x):

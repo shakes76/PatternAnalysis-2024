@@ -1,9 +1,10 @@
 '''
-Containing the source code for training, validating, testing and saving your model. The model
-should be imported from “modules.py” and the data loader should be imported from “dataset.py”. 
-Make sure to plot the losses and metrics during training
+Containing the source code for training, validating, testing and saving trained model. 
 
 Created by: Shogo Terashima
+Created by:     Shogo Terashima
+ID:             S47779628
+Last update:    24/10/2024
 '''
 
 import torch
@@ -20,6 +21,9 @@ from optuna.terminator import EMMREvaluator, MedianErrorEvaluator, Terminator, T
 import gc
 
 def train_one_epoch(model, train_loader, criterion, optimiser, device):
+    '''
+    Train model one epoch with using train set and calculate train loss.
+    '''
     model.train()
     running_loss = 0.0 
     for inputs, labels in train_loader:
@@ -36,6 +40,9 @@ def train_one_epoch(model, train_loader, criterion, optimiser, device):
     return epoch_loss
 
 def validate(model, val_loader, criterion, device):
+    '''
+    Use validation set and calculate loss (BCEWithLogitsLoss)
+    '''
     model.eval()
     running_loss = 0.0
     with torch.no_grad():
@@ -70,18 +77,14 @@ def objective(trial):
     warmup_epochs = 5
 
 
-    # Create folder based on hyperparameters
+    # Create folder based on hyperparameters to store model and csv file 
     folder_name = f"lr_{learning_rate}_wd_{weight_decay}_drop_{drop_rate}_droppath_{drop_path_rate}_bs_{batch_size}"
     output_dir = os.path.join("experiments4", folder_name) 
     os.makedirs(output_dir, exist_ok=True)
 
     # Load train and validation data
     train_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/train"
-    test_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/test"
-
-    # train_dataset_path = "../dataset/AD_NC/train"
-    # test_dataset_path =  "../dataset/AD_NC/train"
-    
+    test_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/test"    
     seed = 20
     data_preprocessor = CombinedPreprocessing(
         train_path=train_dataset_path,
@@ -114,6 +117,8 @@ def objective(trial):
     warmup_scheduler = LambdaLR(optimiser, lr_lambda=lambda epoch: linear_warmup(epoch, warmup_epochs))
     cosine_scheduler = CosineAnnealingLR(optimiser, T_max=t_max - warmup_epochs)
     checkpoint_path = os.path.join(output_dir, 'best_model.pt') 
+
+    # scheduler settings. We perform warmup first, then apply cosine_scheduler
     scheduler = SequentialLR(
         optimiser, 
         schedulers=[warmup_scheduler, cosine_scheduler], 
@@ -178,6 +183,7 @@ def objective(trial):
 
 if __name__ == "__main__":
     # Set up optuna
+    # early trial stopping settings
     emmr_improvement_evaluator = EMMREvaluator()
     median_error_evaluator = MedianErrorEvaluator(emmr_improvement_evaluator)
     terminator = Terminator(
@@ -186,36 +192,18 @@ if __name__ == "__main__":
     )
     terminator_callback = TerminatorCallback(terminator)
 
+    # create and initialies optuna study
     study = optuna.create_study(
         direction='minimize', # I want to minimse the loss
         study_name='gfnet_study',
         storage='sqlite:///gfnet_study.db',
-        load_if_exists=True
+        load_if_exists=False
     )
     study.optimize(objective, n_trials=15, callbacks=[terminator_callback])
 
     print(f"Best Trial: {study.best_trial }")
     print(f"Best hyperparameters: {study.best_params}")
     print(f"Best validation loss: {study.best_value}")
-
-    # Save study plots
-    fig = optuna.visualization.plot_contour(study)
-    fig.write_image('image/contour.png')
-
-    fig = optuna.visualization.plot_edf(study)
-    fig.write_image('image/edf.png')
-
-    fig = optuna.visualization.plot_optimization_history(study)
-    fig.write_image('image/optimization_history.png')
-
-    fig = optuna.visualization.plot_parallel_coordinate(study)
-    fig.write_image('image/parallel_coordinate.png')
-
-    fig = optuna.visualization.plot_param_importances(study)
-    fig.write_image('image/param_importance.png')
-
-    fig = optuna.visualization.plot_slice(study)
-    fig.write_image('image/slice.png') 
 
     # Clear Cache
     del emmr_improvement_evaluator, median_error_evaluator, terminator, terminator_callback, study

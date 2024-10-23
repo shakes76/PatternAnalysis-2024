@@ -1,7 +1,12 @@
 '''
-To define helper method
+To define helper method.
+
+Class list: EarlyStopping
 
 Created by: Shogo Terashima
+Created by:     Shogo Terashima
+ID:             S47779628
+Last update:    24/10/2024
 '''
 import numpy as np
 import torch
@@ -9,6 +14,9 @@ import torch.nn as nn
 
 
 class EarlyStopping:
+    '''
+    Define early stopping use while training model.
+    '''
     def __init__(self, path='checkpoint.pt', min_delta=0.0, patience=5):
         '''
         Initialize the early stopping class.

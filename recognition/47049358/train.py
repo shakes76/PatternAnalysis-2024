@@ -25,7 +25,7 @@ def compute_dice_segments(predictions, ground_truths):
 
     num_masks = predictions.size(1)
 
-    segment_coefs = torch.zeros(num_masks, DEVICE)
+    segment_coefs = torch.zeros(num_masks).to(DEVICE)
 
     segment_losses = criterion(predictions, ground_truths)
 

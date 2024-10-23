@@ -55,21 +55,16 @@ of 70%/30%. The training set is used for optimizing model parameters and
 the test set for evaluating model performance.
 
 ## File Structure
-/unet3d_shannon_searle
-  ├── dataset.py                 # Manages dataset loading and transformations
-  ├── model.py                   # Implements the 3D U-Net model architecture
-  ├── train.py                   # Script for training the 3D U-Net model
-  ├── predict.py                 # Evaluates the accuracy of the trained model
-  ├── test_driver.py             # Executes the full model pipeline
-  ├── /Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/
-      ├── /data/
-         ├── /semantic_labels_anon/    # Contains anonymized semantic labels
-         ├── /semantic_MRs_anon/       # Contains anonymized semantic MR images
+- dataset.py                 # Manages dataset loading and transformations
+- model.py                   # Implements the 3D U-Net model architecture
+- train.py                   # Script for training the 3D U-Net model
+- predict.py                 # Evaluates the accuracy of the trained model
+- test_driver.py             # Executes the full model pipeline
 
 ## Results
 The model successfully segments the prostate and achieves a minimum Dice 
 similarity coefficient of 0.7 on all test labels. 
 
 ## References
-CSIRO Data Collection (2023). "Prostate-MRI-Histopathology". CSIRO Data Access Portal. https://data.csiro.au/collection/csiro:51392v2
-OpenAI's ChatGPT (2024). "Code support and writing guidance provided by ChatGPT."
+- CSIRO Data Collection (2023). "Prostate-MRI-Histopathology". CSIRO Data Access Portal. https://data.csiro.au/collection/csiro:51392v2
+- OpenAI's ChatGPT (2024). "Code support and writing guidance provided by ChatGPT."

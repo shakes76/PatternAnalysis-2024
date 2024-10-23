@@ -78,6 +78,14 @@ math
 ## File Structure
 
 - StableDiffusion-47015746
+  - resources
+    - generation_with_simple_AE.gif
+    - results2.gif
+    - stablediffusion_overview.jpg
+    - u-net-architecture.png
+    - unet_loss.png
+    - VQ-VAE-arch.png
+    - vqvae_loss.png
   - README.md
   - dataset.py
   - modules.py
@@ -103,6 +111,8 @@ A driver file was made to facilitate the use of this model. The file trains the 
     vqvae_trained = False #Change if you already have trained model
     diffusion_model_trained = False #Change if you already have trained model
 ```
+
+Hyperparameters such as number of epochs and learning rate can be modified in driver.py. Currently, the VQ-VAE has 20 epochs and a learning rate of 0.00001, and the U-Net has 23 epochs and a learning rate of 0.0001.
 
 ## References
 

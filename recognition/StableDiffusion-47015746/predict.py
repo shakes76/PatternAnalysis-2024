@@ -5,7 +5,6 @@
 
 from modules import *
 from dataset import *
-import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image as Image
 
@@ -25,32 +24,7 @@ def visualize_images(original_images,  step):
 
 
 
-def visualize_images_step(original_images):
-    """Takes in a batch of images and shows one of them"""
-
-    # Move images back to CPU and detach
-    original_images = original_images.cpu().detach()
-
-
-    # Unnormalize images to bring them from [-1, 1] to [0, 1] for visualization
-    def unnormalize(imgs):
-        return imgs * 0.5 + 0.5
-    
-    original_images = unnormalize(original_images)
-
-    num_images = 1
-    fig, axes = plt.subplots(1, num_images, figsize=(5, 5))
-
-    axes.imshow(np.transpose(original_images[0].numpy(), (1, 2, 0)))
-    axes.axis('off')
-    axes.set_title("Original")
-
-    plt.show()
-
-
-
 #Source for "extract" and part of "reverse_diffusion": https://huggingface.co/blog/annotated-diffusion
-
 timesteps = 1000
 def extract(array, t, shape):
     """gets index "t" in array and reshapes it to shape"""

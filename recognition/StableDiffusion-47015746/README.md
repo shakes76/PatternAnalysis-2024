@@ -70,7 +70,6 @@ python
 torch
 torchvision
 numpy
-matplotlib 
 PIL
 math
 ```

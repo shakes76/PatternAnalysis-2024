@@ -1,3 +1,13 @@
+'''
+[desc]
+contains eveything need to
+train the stable diffusion model
+
+@author Jamie Westerhout
+@project Stable Diffusion
+@date 2024
+'''
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -22,12 +32,9 @@ TRAIN_VAE = True
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 
 #number of timesteps for diffusion
-num_timesteps = 100
+num_timesteps = 10
 noise_scheduler = NoiseScheduler(num_timesteps=num_timesteps)
 alphas_cumprod = noise_scheduler.get_alphas_cumprod()
-
-#umap to plot the latent space
-reducer = umap.UMAP(min_dist=0, n_neighbors=35)
 
 #get data
 data = Dataset()
@@ -39,7 +46,7 @@ data_loader_test = data.get_test()
 latent_dim = 128
 num_classes = 2 #AD and NC
 image_size = data.image_size
-epochs = 2
+epochs = 100
 base_lr = 1e-3
 
 # creating models and putting them on device

@@ -1,16 +1,14 @@
-#######################################################
-# Project Setup
-#######################################################
-# script to setup the project directories
-# and validate that the data is supplied
-#######################################################
-# Authur: Jamie Westerhout, 2024
-#######################################################
-# Imports
-#######################################################
+'''
+[desc]
+script to setup the project directories
+and validate that the data is supplied
+
+@author Jamie Westerhout
+@project Stable Diffusion
+@date 2024
+'''
 import os
 import zipfile
-#######################################################
 
 def create_paths():
     '''

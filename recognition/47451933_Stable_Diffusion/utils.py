@@ -1,3 +1,16 @@
+'''
+[desc]
+contains some utility functions and class
+for stable diffusion like noise schedular
+and forward, backwards diffusion and sampling
+for new image generation.
+
+also contains image drawing function 
+
+@author Jamie Westerhout
+@project Stable Diffusion
+@date 2024
+'''
 import torch
 import matplotlib.pyplot as plt
 import numpy as np

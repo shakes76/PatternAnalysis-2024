@@ -1,3 +1,16 @@
+'''
+[desc]
+contains a class to represent the dataset
+to be used to get all the dataloaders
+and datasets for the data 
+
+also handles loading in the data
+and train, test and validation splits
+
+@author Jamie Westerhout
+@project Stable Diffusion
+@date 2024
+'''
 import torch
 import torchvision
 import torch.utils.data.dataloader as dataloader

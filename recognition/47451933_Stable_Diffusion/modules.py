@@ -2,8 +2,11 @@
 [desc]
 contains all the model for stable diffusion
 
+Unet and VAE
+
 @author Jamie Westerhout
 @project Stable Diffusion
+@date 2024
 '''
 import torch
 import torch.nn as nn

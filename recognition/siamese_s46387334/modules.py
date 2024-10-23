@@ -1,7 +1,6 @@
 """
-Contains the source code for the components of the Siamese Net and Classifier.
-
-Each component is implementated as a class or a function.
+Contains the source code for the components of the Siamese Net (Feature Extractor and Classifier).
+Additionally contains the TripletLoss function that should be used to train the Siamese Net.
 """
 
 ###############################################################################
@@ -9,22 +8,27 @@ Each component is implementated as a class or a function.
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50
-from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 ###############################################################################
 ### Classes
 class SiameseNet(nn.Module):
+    """
+    Siamese Net model designed for classification of the ISIC 2020 data set.
+    Split up into two components the Feature Extractor to creating embeddings of the data
+    and Classifier to convert the embeddings into a class prediction.
+    
+    The embedding space will be of dimension 'emb_dim'.
+    The Feature Extractor section of the model should ideally be trained with TripletLoss.
+    """
     def __init__(self, emb_dim=128):
-        """
-        """
         super(SiameseNet, self).__init__()
 
         # Load ResNet50 model
-        resnet = resnet50() 
+        resnet = resnet50()
         
         # Slice out last fully connected layer so we can replace with our custom layers
-        # Since we are not predicing 1000 classes here - we need our own custom Feature Extractor Head
+        # Since we are not predicting 1000 classes here - we need our own custom Feature Extractor Head
         self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
                
         # Feature Extractor Head
@@ -43,14 +47,22 @@ class SiameseNet(nn.Module):
         # Used to convert embeddings into classification
         self.classifier = nn.Linear(emb_dim, 2)
         
-    def forward(self, img):
+    def forward(self, img: torch.tensor) -> torch.tensor:
         """
+        Pass image through the Feature Extractor and return
+        the embedding of the image.
+
+        Returns: embedding of image
         """
         out = self.feature_extractor(img)
         return self.fc_layers(out.view(out.size(0), -1))
     
-    def classify(self, img):
+    def classify(self, img: torch.tensor) -> torch.tensor:
         """
+        Pass the image through the Feature Extractor and then the
+        Classifier to produce a classification of the image (class prediction)
+
+        Returns: classification prediction of image
         """
         return self.classifier(self(img))
 

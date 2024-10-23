@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import torch
 import cv2
-
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torchvision import transforms

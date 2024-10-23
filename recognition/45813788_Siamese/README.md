@@ -52,11 +52,54 @@ contrasitive loss using `Lp` distance (Euclidean as p=2):
 Thus it effectively improves the embeddings by minimising distnace whilst also having guidance from a classification perspective, this feature was something I did not see in other papers and lead to good perfomance as can be seen below.
 
 ## Model Perfomance
+### Training and validation
 the model was trained for 15 epochs and lead to the following results:
 ![ModelLoss](./images/newmodloss.png) 
 ![ModelAccuracy](./images/newmodacc.png) 
 ![trainAuroc](./images/newmodauroc.png)
-![Embeddings](
+
+Observing above it can be seen that there was some overfitting past epoch 5. as per kaggle the AUROC was used as the basis of determining the best performing model to use for testing which was epoch 5, observing it's embeddings and classification scores:
+![Embeddings](./images/epoch5.jpg)
+
+Classification on the validation set of epoch 5:
+
+| Class    | Precision | Recall | F1-Score | Support |
+|----------|-----------|--------|----------|---------|
+| 0.0      | 0.99      | 0.86   | 0.92     | 4881    |
+| 1.0      | 0.07      | 0.58   | 0.12     | 88      |
+| **Accuracy**   |           |        | 0.85     | 4969    |
+| **Macro Avg**  | 0.53      | 0.72   | 0.52     | 4969    |
+| **Weighted Avg**| 0.97     | 0.85   | 0.91     | 4969    |
+
+looking at this precision table it can be seen that the model performs well for class 1 overall with a high F1 score but still struggles to to identify class 1 with a low precision but when observing recall it becomes more apparent that this is due to the model predicting a large amount of false positives.
+
+### Testing
+![trainAuroc](./images/newmodtestauroc.png)
+![testembed](./images/epochTest.jpg)
+
+### Testing Classification Report:
+
+| Class | Precision | Recall | F1-Score | Support |
+|-------|-----------|--------|----------|---------|
+| 0     | 0.99      | 0.84   | 0.91     | 3255    |
+| 1     | 0.08      | 0.76   | 0.14     | 58      |
+| **Accuracy**   |           |        | 0.84     | 3313    |
+| **Macro Avg**  | 0.54      | 0.80   | 0.53     | 3313    |
+| **Weighted Avg**| 0.98     | 0.84   | 0.90     | 3313    |
+
+### Overall Test Accuracy: **81.73%**
+
+### Confusion Matrix:
+
+|            | Predicted 0 | Predicted 1 |
+|------------|-------------|-------------|
+| Actual 0   | 2732        | 523         |
+| Actual 1   | 14          | 44          |
+
+Observing the results above we see the same issue as in training this being that the poor f1 score is attributed to false positives and as such is why we see a good recall for class 1. the confusion matrix also alludes to better results showing how the majoirty of malignant samples were correctly classified. 
+
+Observing the PCA and tSNE embeddings for both the training and test sets we can see that some clustering of malignant poitns is occuring but no evident seperation, this alludes to potentially requirng a deeper network and further hyper parameter tuning but the AUROC scores and accuracy say otherwise. thus it would be worthwhile to first test the network again on a more balanced dataset.
+
 
 ## Dependencies
 

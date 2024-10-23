@@ -1,29 +1,21 @@
 from keras.optimizers import Adam
-from dataset import get_training_data, data_loader
-from modules import unet_2d, dice_loss
 import matplotlib.pyplot as plt
-import tensorflow as tf
+
+from dataset import get_training_data, data_loader
+from modules import unet_2d, dice_coef_prostate, total_loss
 
 def train(model, train_generator, test_generator, steps_per_epoch, val_steps_per_epoch, epochs):
 
     opt = Adam(learning_rate=0.0001)
-    model.compile(optimizer=opt, loss=[dice_loss], metrics=['accuracy'])
+    model.compile(optimizer=opt, loss=[total_loss], metrics=['accuracy', dice_coef_prostate])
     model.summary()
-
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath='models/checkpoints/saved-model-{epoch:02d}-{val_loss:.2f}.hdf5',
-        verbose=1,
-        save_weights_only=False,
-        save_best_only=False,
-    )
 
     history = model.fit(train_generator,
                         validation_data=test_generator,
                         epochs=epochs, steps_per_epoch=steps_per_epoch,
-                        validation_steps=val_steps_per_epoch,
-                        callbacks=[cp_callback])
+                        validation_steps=val_steps_per_epoch)
 
-    model.save('models/model2.h5')
+    model.save('models/model.h5')
 
     # plot training and validation loss
     loss = history.history['loss']
@@ -32,9 +24,21 @@ def train(model, train_generator, test_generator, steps_per_epoch, val_steps_per
     plt.plot(epochs, loss, 'y', label='Training loss')
     plt.plot(epochs, val_loss, 'r', label='Validation loss')
     plt.xlabel('Epochs')
-    plt.ylabel('Loss')
+    plt.ylabel('Dice loss + focal loss')
     plt.legend()
-    plt.savefig('plots/dice loss.png')
+    plt.savefig('plots/dice_loss.png')
+    plt.show()
+
+    # plot prostate training and validation loss
+    loss = history.history['dice_coef_prostate']
+    val_loss = history.history['val_dice_coef_prostate']
+    epochs = range(1, len(loss) + 1)
+    plt.plot(epochs, loss, 'y', label='Training coef prostate')
+    plt.plot(epochs, val_loss, 'r', label='Validation coef prostate')
+    plt.xlabel('Epochs')
+    plt.ylabel('Dice similarity')
+    plt.legend()
+    plt.savefig('plots/dice_coef_prostate.png')
     plt.show()
 
     # plot training and validation accuracy
@@ -57,7 +61,7 @@ if __name__ == '__main__':
     train_data, test_data = get_training_data(image_limit=None)
 
     BATCH_SIZE = 4
-    EPOCHS = 1
+    EPOCHS = 15
     STEPS_PER_EPOCH = len(train_data[0])//BATCH_SIZE
     VAL_STEPS_PER_EPOCH = len(test_data[0])//BATCH_SIZE
 

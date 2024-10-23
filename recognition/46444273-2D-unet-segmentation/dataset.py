@@ -1,17 +1,12 @@
+import pathlib
+
 import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nib
-import pathlib
 import tensorflow as tf
 from tqdm import tqdm
 
-# ensure these contain relative paths to data files from root dir
-TRAIN_IMG_PATH = 'HipMRI_study_complete_release_v1/keras_slices_train'
-TRAIN_LABEL_PATH = 'HipMRI_study_complete_release_v1/keras_slices_seg_train'
-VAL_IMG_PATH = 'HipMRI_study_complete_release_v1/keras_slices_validate'
-VAL_LABEL_PATH = 'HipMRI_study_complete_release_v1/keras_slices_seg_validate'
-TEST_IMG_PATH = 'HipMRI_study_complete_release_v1/keras_slices_test'
-TEST_LABEL_PATH = 'HipMRI_study_complete_release_v1/keras_slices_seg_test'
+import paths
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -83,19 +78,19 @@ def get_training_data(image_limit=None):
     early_stop = False
 
     # training images
-    train_data_dir = pathlib.Path(TRAIN_IMG_PATH).with_suffix('')
+    train_data_dir = pathlib.Path(paths.TRAIN_IMG_PATH).with_suffix('')
     train_image_count = len(list(train_data_dir.glob('*.nii')))
     print(f"test image count: {train_image_count}")
     # training masks
-    seg_train_data_dir = pathlib.Path(TRAIN_LABEL_PATH).with_suffix('')
+    seg_train_data_dir = pathlib.Path(paths.TRAIN_LABEL_PATH).with_suffix('')
     seg_train_image_count = len(list(seg_train_data_dir.glob('*.nii')))
     print(f"seg test image count: {seg_train_image_count}")
     # testing images
-    test_data_dir = pathlib.Path(TEST_IMG_PATH).with_suffix('')
+    test_data_dir = pathlib.Path(paths.TEST_IMG_PATH).with_suffix('')
     test_image_count = len(list(test_data_dir.glob('*.nii')))
     print(f"test image count: {test_image_count}")
     # testing masks
-    seg_test_data_dir = pathlib.Path(TEST_LABEL_PATH).with_suffix('')
+    seg_test_data_dir = pathlib.Path(paths.TEST_LABEL_PATH).with_suffix('')
     seg_test_image_count = len(list(seg_test_data_dir.glob('*.nii')))
     print(f"seg test image count: {seg_test_image_count}")
 
@@ -148,7 +143,7 @@ def batch_loader(data, batch_size):
 
     L = len(data[0])
 
-    # keras requires infinite generator
+    # supply data in batches
     while True:
 
         batch_start = 0

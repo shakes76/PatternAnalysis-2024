@@ -71,5 +71,35 @@ def dice_similarity(y_true, y_pred):
     intersection = K.sum(y_true_f * y_pred_f)
     return (2.0 * intersection + 1) / (K.sum(y_true_f) + K.sum(y_pred_f) + 1)
 
-def dice_loss(y_true, y_pred):
-    return 1 - dice_similarity(y_true, y_pred)
+def dice_coef_prostate(y_true, y_pred):
+   return dice_similarity(y_true[:,:,:,5], y_pred[:,:,:,5])
+
+def focal_loss(y_true, y_pred):
+   
+   gamma = 2.0
+   alpha = 0.25
+   y_pred = K.clip(y_pred, K.epsilon(), 1.0 - K.epsilon())
+   loss = -y_true * (alpha * K.pow((1 - y_pred), gamma) * K.log(y_pred))
+   
+   return K.mean(loss)
+
+def f_score(y_true, y_pred, beta=1, smooth=1e-5):
+
+    axes = [1, 2]
+    axes.insert(0, 0)
+
+    tp = K.sum(y_true * y_pred, axis=axes)
+    fp = K.sum(y_pred, axis=axes) - tp
+    fn = K.sum(y_true, axis=axes) - tp
+
+    score = ((1 + beta ** 2) * tp + smooth) \
+            / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + smooth)
+    score = K.mean(score)
+
+    return score
+
+def dice(y_true, y_pred):
+   return 1 - f_score(y_true, y_pred)
+
+def total_loss(y_true, y_pred):
+   return dice(y_true, y_pred) + focal_loss(y_true, y_pred)

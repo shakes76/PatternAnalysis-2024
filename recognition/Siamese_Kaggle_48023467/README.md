@@ -48,6 +48,8 @@ The Siamese network architecture consists of a pair of neural networks with shar
 ### 3.2.1 Network Explanation
 For the neural network pair, the ResNet50 network is used. This network was selected for its ability to extract fine details from image data while maintaining a relatively high level of performance (convergency rate) as well as accuracy through its skip connections. A model with pretrained parameters for image recognition was deployed. A visual layout of the network is present below:
 ![Image of architectural layout of ResNet50](https://cdn.prod.website-files.com/645cec60ffb18d5ebb37da4b/65eb303c9ee4b67135628e9a_archi.jpg)
+*ResNet50 Architecture, image retrieved from https://www.ikomia.ai/blog/mastering-resnet-deep-learning-image-recognition*
+
 The ResNet outputs a 2048-dimensional vector.
 An additional sequence of fully-connected (FC) layers followed by a classifier output is applied to the output of the ResNet. The series of FC layers is implemented for finer control in feature extraction and simplification for classification. Each layer halves the number of features, from 2048 down to 256. The classifier is a singular FC layer with features 256 -> 2, producing the binary output for class label predictions.
 ### 3.2.2 Loss Evaluation
@@ -78,10 +80,12 @@ Numerous performance metrics were used for the analysis of training as well as c
 ## 4.2 Results Analysis
 ### 4.2.1 Training and Validation Plots
 ![Training and Validation plots for 16 epochs](plots/metrics.png?raw=true)
+
 Above is the training, validation, and AUC-ROC plots over 16 epochs of training and validation.
 All training plots show relatively stable trends over epochs. The loss value decreases gradually, while both accuracy and AUC-ROC increases over time. Validation loss and accuracy showed similar trends, however is significantly more unstable, with noticeable spikes/dips at epoch 2 and 11. Validation AUC-ROC is much more stable, increasing over time with small fluctuations towards the end of training. Some signs of plateuing is also present in the validation AUC-ROC plot, suggesting that additional training will likely be detremental to the model and lead to overfitting.
 ### 4.2.2 Confusion Matrix
 ![Confusion matrix for validation data](plots/confusion_matrix.png?raw=true)
+
 Above is the confusion matrix for the validation dataset. A general numerical analysis of the results is as follows:
 | Category | Percentage |
 | -------- | ---------- |
@@ -93,5 +97,7 @@ Above is the confusion matrix for the validation dataset. A general numerical an
 Within the context of this dataset, the main category of interest is True Negative, where malignant cases are misclassified as benign. This causes the main concern as it is the category with the most detrimental impact in practice, as misdiagnosed patients would be wrongly informed of their health and potentially miss important medical treatment. The value of 72.65% is considerably lower than the 80% goal, indicating the necessity of further improvements on the model.
 ### 4.2.3 ROC Curve
 ![ROC curve for validation data](plots/roc.png?raw=true)
+
 A final AUC-ROC score of 0.85 was reached on validation data. The blue ROC curve shows the model is highly capable of identifying dissimilarities between classes, though some instabilities are still present, demonstrated by the parts of the curve that do not follow the overall contour.
 # 5. References
+Mastering ResNet: Deep Learning Breakthrough in Image Recognition. (n.d.). Www.ikomia.ai. https://www.ikomia.ai/blog/mastering-resnet-deep-learning-image-recognition

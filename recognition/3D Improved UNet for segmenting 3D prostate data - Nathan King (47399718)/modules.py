@@ -56,3 +56,27 @@ def localisation_module(concatenation, filters):
     localisation = layers.LeakyReLU(negative_slope=0.01)(localisation)
     
     return localisation
+
+def decreasing_layer(inputs, stride, filters):
+    """
+    The decreasing layer represents a level of the UNet that is decreasing.
+    Reference [https://arxiv.org/pdf/1802.10508v1]
+    input: inputs - model input or previous decreasing layer output
+           stride - stride size
+           filters - number of filters to output
+    output: addition - element-wise addition of convolution and context
+    """
+    
+    #3 x 3 x 3 Convolution
+    convolution = layers.Conv3D(filters, (3, 3, 3), strides=stride, padding="same")(inputs)
+    
+    #Leaky ReLU Activation
+    convolution = layers.LeakyReLU(negative_slope=0.01)(convolution)
+
+    #Context Module
+    context = context_module(convolution, filters)
+
+    #Element-wise Addition
+    addition = layers.Add()([convolution, context])
+
+    return addition

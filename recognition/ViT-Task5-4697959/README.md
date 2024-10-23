@@ -119,7 +119,7 @@ To evaluate the model, run:
 
 ```python predict.py```
 
-Look at `.sh` file to run it on the HPC at UQ
+Look at `.sh` file to run it on the HPC 
 
 ## Training Process
 
@@ -234,7 +234,6 @@ The results of training using these hyperparameters are illustrated in the follo
 **Best Accuracy Curve**:
 
 ![best plot 1](Results/res_7_80epoch/accuracy_curve.png)
-
 
 The training and validation accuracies are relatively close together, indicating that the model is learning effectively and generalizing well within these parameters. While the training accuracy shows less fluctuation, the validation accuracy exhibits wider variations, suggesting that the model is somewhat sensitive to different validation batches.  At around the 11th epoch, both the training and validation accuracies sharply increase, indicating a significant learning point where the model adjusts its parameters effectively. It shows that the model found a good set of features early on but needed further epochs to refine the accuracy.
 

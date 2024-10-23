@@ -41,7 +41,7 @@ optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 model = model.to(device)
 
 
-def train_one_epoch():
+def train_one_epoch(model, training_dataset, optimizer, loss_function, device):
     model.train()
     print("one epoch")
     i = 0
@@ -76,7 +76,7 @@ def train_one_epoch():
     return avg_loss
 
 
-def validate():
+def validate(model, validation_dataset, loss_function, device):
     model.eval()
     running_loss = 0
     i = 0

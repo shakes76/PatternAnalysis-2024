@@ -173,4 +173,3 @@ Available: https://arxiv.org/abs/1802.10508v1-
 - Soleimani, P. and Farezi, N.
 Soleimani, P., & Farezi, N. (2023). Utilizing deep learning via the 3D U-net neural network for the delineation of brain stroke lesions in MRI image. Retrieved from https://www.nature.com/articles/s41598-023-47107-7
 - Wolny. (n.d.). wolny/pytorch-3dunet: 3D U-Net model for volumetric semantic segmentation written in pytorch. Retrieved from https://github.com/wolny/pytorch-3dunet
-- 

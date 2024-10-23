@@ -59,8 +59,8 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
         print(f"    Estimated time left: {time_left / 60:.2f} minutes")
 
         # Save the model after each epoch
-        model_save_path = f"yolov7_epoch_{epoch + 1}.pth"
-        torch.save(model.state_dict(), model_save_path)
+        model_save_path = f"trained model/yolov7_epoch_{epoch + 1}.pt"
+        torch.save(model, model_save_path)
         print(f"    Model saved to {model_save_path}")
 
     # Plot the training losses

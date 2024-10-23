@@ -45,7 +45,7 @@ def get_yolo_model(model_path, device):
     # Change the detection layer to output 3 classes only
     for name, module in model.model._modules.items():
         if isinstance(module, IDetect):
-            # print(f"Original IDetect: \n{module}")
+            print(f"Original IDetect: \n{module}")
             # print(f"\nOriginal anchors: \n{module.anchors}")
             new_anchors = module.anchors.view(3, 6)  # flatten to suit the yolo config file (yaml) format
             new_idetect = IDetect(

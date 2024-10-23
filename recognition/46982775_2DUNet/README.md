@@ -4,10 +4,12 @@
 Joseph Reid - 46982775
 
 ## Contents
-- [The Task](#The-Task)
-- [Dependencies](#Dependencies)
-- [U-Net Algorithm](#U-Net-Algorithm)
-- [Usage](#Usage)
+- [The Task](#the-task)
+- [Dependencies](#dependencies)
+- [U-Net Algorithm](#u-net-algorithm)
+- [Training Details](#training-details)
+- [Results](#results)
+- [Usage](#usage)
 
 ## The Task
 This project involves implementing a 2D UNet model to perform segmentation on images of the male pelvis before and during prostate cancer radiation therapy. The aim is to achieve a minimum [Dice similarity coefficient](https://en.wikipedia.org/wiki/Dice-S%C3%B8rensen_coefficient) of 0.75 for all labels, but primarily the prostate label. 
@@ -35,6 +37,7 @@ This project requires the following to run. These dependencies should be install
 - Numpy: 1.26.4
 - Matplotlib: 3.8.4
 - scikit-image: 0.24.0
+- scikit-learn: 1.5.1
 - NiBabel: 5.3.0
 - tqdm: 4.66.5
 
@@ -57,21 +60,30 @@ The U-shaped architecture comes from the symmetric contracting (encoding) and ex
 - **Final output layer involves:**
     - 1x1 convolution to map the features to the number of classes
 
+## Training Details
+
+## Results
+
+_@End_: To reproduce these results, please see: [Reproducing the results](#reproducing-the-results).
+
 ## Usage
+
+### Getting Started with Installation
 
 1. **Clone the repository**
 ```
 git clone https://github.com/Woahseph/PatternAnalysis-2024.git -b topic-recognition --single-branch
 ```
 
-2. **OPTIONAL: Use Conda to create a virtual environment**
+2. **OPTIONAL: Use Conda to create and use a virtual environment**
 ```
 conda create -n <env-name>
+conda activate <env-name>
 ```
 
 3. **Install dependencies using Conda**
 ```
-conda install python==3.10.14 pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 torchmetrics==1.4.2 pytorch-cuda=11.8 numpy==1.26.4 matplotlib==3.8.4 scikit-image==0.24.0 nibabel==5.3.0 tqdm==4.66.5 -c pytorch -c nvidia -c conda-forge
+conda install python=3.10.14 pytorch=2.0.1 torchvision=0.15.2 torchaudio=2.0.2 torchmetrics=1.4.2 pytorch-cuda=11.8 numpy=1.26.4 matplotlib=3.8.4 scikit-image=0.24.0 scikit-learn=1.5.1 nibabel=5.3.0 tqdm=4.66.5 -c pytorch -c nvidia -c conda-forge
 ```
 
 Note: Different versions of PyTorch and CUDA can be installed as seen on the [PyTorch website](https://pytorch.org/get-started/locally/).
@@ -83,4 +95,8 @@ If available, download the data from the [file exchange](https://filesender.aarn
 
 Otherwise, the data can be downloaded from the CSIRO website [here](https://data.csiro.au/collection/csiro:51392v2). It will need to be separated into training and testing splits.
 
-## Reproducibility of Results
+### Using the Scripts
+
+1. **Training**
+
+#### Reproducing the results

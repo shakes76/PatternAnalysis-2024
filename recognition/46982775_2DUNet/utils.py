@@ -8,8 +8,8 @@ Authors:
 
 Functions:
     to_channels: One hot encode segment data
-    load_data_2D: Load 2D Nifti image files from iterable
-    load_data_2D_from_directory: Create and pass in above iterable
+    load_data_2D: Load 2D Nifti image files from a list
+    load_data_2D_from_directory: Create and pass in the above list
 
 Dependencies: 
     numpy 
@@ -19,82 +19,118 @@ Dependencies:
 """
 
 import os
+
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 from skimage.transform import resize
 
-# Apply one hot encoding to segments
-IMG_LABELS = 6 # To transform segments to correct size (6, 256, 128) instead of (256, 128)
+IMG_LABELS = 6 # To apply one hot encoding to segments 
+IMG_SIZE = 256 # Convert all images from (256, 128) or (256, 144) to (256, 256)
+
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
-    """ One hot encode segment data."""
-    # channels = np.unique(arr)
+    """
+    One hot encode segment data.
+
+    Converts size (H, W) to (H, W, C) where:
+    H is height, W is width, and C is the number of labels.
+    
+    Parameters:
+        arr (np.ndarray): Array to be one hot encoded
+        dtype (np.dtype): Type and size of the data in the array
+
+    Returns:
+        np.ndarray: Array that has been one hot encoded
+    """
+
     channels = IMG_LABELS
-    # res = np.zeros(arr.shape + (len(channels),), dtype = dtype)
-    res = np.zeros(arr.shape + (channels,), dtype = dtype)
+    result = np.zeros(arr.shape + (channels,), dtype = dtype)
     for c in range(channels):
-        c = int(c)
-        res[..., c:c+1][arr == c] = 1
-    return res
+        result[..., c:c+1][arr == c] = 1
+    return result
 
-# load medical image functions
-def load_data_2D (imageNames, normImage=False, categorical=False, dtype = np.float32, 
-                    getAffines = False, early_stop = False):
-    '''
-    Load medical image data from names, cases list provided into a list for each.
-    
-    This function pre-allocates 4D arrays for conv2d to avoid excessive memory usage.
-    
-    normImage: bool (normalise the image 0.0 - 1.0)
-    early_stop: Stop loading pre-maturely, leaves arrays mostly empty, for quick loading and testing scripts.
-    '''
-    affines = []
 
-    # get fixed size
-    num = len(imageNames)
-    first_case = nib.load(imageNames[0]).get_fdata(caching = 'unchanged')
-    if len(first_case.shape) == 3:
-        first_case = first_case[:, :, 0] # sometimes extra dims , remove
-    if categorical: # To make segments/masks have the correct size
-        first_case = to_channels(first_case, dtype = dtype)
-        rows, cols, channels = first_case.shape
+def load_data_2D(
+        image_names: list[str], 
+        norm_image: bool, 
+        one_hot: bool, 
+        dtype: np.dtype, 
+        early_stop: bool
+        ) -> np.ndarray:
+    """
+    Load 2D Nifti images and masks, both resized to (IMG_SIZE, IMG_SIZE).
+    Masks will be one-hot encoded as: (IMG_SIZE, IMG_SIZE, IMG_LABELS).
+    
+    Parameters:
+        image_names (list[str]): List of Nifti image file paths
+        norm_image (bool): Boolean flag to normalise images (mean=0, std=1)
+        one_hot (bool): Boolean flag to one hot encode images
+        dtype (np.dtype): Type and size of the data to be returned as an array
+        early_stop (bool): Boolean flag to prematurely stop loading files
+
+    Returns:
+        np.ndarray: Array containing the data from the Nifti files
+    """
+
+    # Get the number of images in the list
+    num = len(image_names)
+    # Get desired image shape
+    rows = IMG_SIZE
+    cols = IMG_SIZE
+    channels = IMG_LABELS
+
+    if one_hot: # Save images as (N, H, W, C)
         images = np.zeros((num, rows, cols, channels), dtype = dtype)
-    else:
-        rows, cols = first_case.shape
-        images = np.zeros(( num, rows, cols), dtype = dtype)
+    else: # Save images as (N, H, W)
+        images = np.zeros((num, rows, cols), dtype = dtype)
 
-    for i, inName in enumerate(tqdm(imageNames)):
-        niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching = 'unchanged') # read disk only
-        affine = niftiImage.affine
-        # print(f"Index: {i}, Shape: {inImage.shape}")
-        if len (inImage.shape) == 3:
-            inImage = inImage[:, :, 0] # sometimes extra dims in HipMRI_study data
-        inImage = resize(inImage, (rows, cols), order=1, preserve_range=True)
-        inImage = inImage.astype(dtype)
-        if normImage:
-            # ~ inImage = inImage / np . linalg . norm ( inImage )
-            # ~ inImage = 255. * inImage / inImage . max ()
-            inImage = (inImage - inImage.mean()) / inImage.std()
-        if categorical:
-            inImage = to_channels(inImage, dtype = dtype)
-            images[i, : , : , :] = inImage
+    for idx, image_name in enumerate(tqdm(image_names)):
+        nifti_image = nib.load(image_name)
+        image = nifti_image.get_fdata(caching = 'unchanged') # Read disk only
+        if len(image.shape) == 3:
+            image = image[:, :, 0] # Remove extra dimensions, if any
+        image = resize(image, (rows, cols), order=1, preserve_range=True)
+        image = image.astype(dtype)
+        if norm_image:
+            image = (image - image.mean()) / image.std()
+        if one_hot:
+            image = to_channels(image, dtype = dtype)
+            images[idx, : , : , :] = image
         else:
-            images[i, : , :] = inImage
+            images[idx, : , :] = image
 
-        affines.append(affine)
-        if i > 40 and early_stop:
+        if idx > 40 and early_stop:
             break
     
-    if getAffines:
-        return images, affines
-    else :
-        return images
+    return images
     
-def load_data_2D_from_directory(image_folder_path: str, normImage=False, categorical=False, dtype = np.float32, getAffines = False, early_stop = False) -> np.ndarray:
-    """ Returns np array of all Nifti images in the specified image folder."""
+
+def load_data_2D_from_directory(
+        image_folder_path: str, 
+        norm_image = True, 
+        one_hot = False, 
+        dtype: np.dtype = np.float32, 
+        early_stop = False
+        ) -> np.ndarray:
+    """
+    Returns np array of all Nifti images in the specified image folder.
+    
+    Creates a list of all image path names in a folder, then feeds 
+    that into load_data_2D() to return a np arrary of those images.
+    
+    Parameters:
+        image_folder_path (str): Path to folder with Nifti images
+        norm_image (bool): Boolean flag to normalise images (mean=0, std=1)
+        one_hot (bool): Boolean flag to one hot encode images
+        dtype (np.dtype): Type and size of the data to be returned as an array
+        early_stop (bool): Boolean flag to prematurely stop loading files
+    
+    Returns:
+        np.ndarray: Array containing the data from the Nifti files
+    """
+
     image_names = []
-    for file in os.listdir(image_folder_path):
+    for file in sorted(os.listdir(image_folder_path)):
         image_names.append(os.path.join(image_folder_path, file))
-    return load_data_2D(image_names, normImage, categorical, dtype, getAffines, early_stop)
+    return load_data_2D(image_names, norm_image, one_hot, dtype, early_stop)

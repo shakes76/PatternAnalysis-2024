@@ -66,11 +66,23 @@ This approach significantly improved segmentation performance, especially for sm
 
 Another optimisation implemented was the use of a learning rate scheduler. Specifically, PyTorch's OneCycleLR scheduler was employed. Throughout the epochs, this scheduler gradually increases the learning rate to a peak value, then slowly reduces it. This approach helps improve model performance, reduces training time, and increases the likelihood of finding a global minimum.
 
-## Dependencies:
+## Project info:
+
+### Dependencies:
 * Python 3.12.4
 * PyTorch 2.4.1+cu118
 * Numpy 1.26.3
 * NiBabel 5.2.1
+
+### File structure:
+```plaintext
+3DProstateSegment_s4647117/
+├── README.md
+├── dataset.py  # Custom PyTorch Dataset for Loading and Preprocessing NIfTI Files
+├── modules.py  # Core components and architecture of the 3DUnet
+├── train.py     # Training Script for 3DUNet Model, as well as calculating per-class Dice Score
+└── utils.py     # Utility functions such as custom weighted Dice loss and Dice score calculations
+```
 
 ## Input:
 Input images have dimensions [256, 256, 128]. Some of the data the model was trained on had dimensions [256, 256, 144], these were trimmed down to [256, 256, 128] to keep resolution consistent.

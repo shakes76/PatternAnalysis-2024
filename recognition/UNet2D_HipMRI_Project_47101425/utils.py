@@ -68,3 +68,4 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+    

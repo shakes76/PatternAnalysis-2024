@@ -197,19 +197,19 @@ _Parameters kept constant: epochs = 80, learning rate = 3e-4, batch size = 32, d
 | 1e-5         | 72.2                        |**67.2**           | No             |
 | 1e-4         | 62.4                        | 59.3              | No            |
 
-### Some Worst Plots
+### Some Worst Plots Outputs
 
 In this section, we first present the worst-case plots to illustrate the impact of inappropriate hyperparameter settings and the model's response. These plots reveal significant discrepancies between training and validation curves, showing evidence of overfitting, instability, and poor generalization performance. 
 
-Following this, we present the best-case plots, which demonstrate the improvements and stability achieved after fine-tuning. 
-
-Some example of worst plots from inapporiate hyperparameters:
+Some example of **worst plots** from inapporiate hyperparameters:
 
 ![worst plot 1](Results/res_17_1e-6Decay_bad/accuracy_curve.png)
 ![worst plot 2](Results/res_17_1e-6Decay_bad/loss_curve.png)
 
 ![worst plot 1](Results/res_16_1-e4Decay_bad/accuracy_curve.png)
 ![worst plot 2](Results/res_16_1-e4Decay_bad/loss_curve.png)
+
+Following this, we present the best-case plots, which demonstrate the improvements and stability achieved after further fine-tuning. 
 
 ### Best Parameters and Plots
 
@@ -219,18 +219,37 @@ After hyperparameter fine-tuning, the best parameters were determined as follows
 
 The results of training using these parameters are illustrated in the following plots. 
 
-#### **Best Accuracy Curve**
+**Best Accuracy Curve**:
 
 ![best plot 1](Results/res_7_80epoch/accuracy_curve.png)
 
-SHOW THE PLOT HERE
 
 The training and validation accuracies are relatively close together, indicating that the model is learning effectively and generalizing well within these parameters. While the training accuracy shows less fluctuation, the validation accuracy exhibits wider variations, suggesting that the model is somewhat sensitive to different validation batches.  At around the 11th epoch, both the training and validation accuracies sharply increase, indicating a significant learning point where the model adjusts its parameters effectively. It shows that the model found a good set of features early on but needed further epochs to refine the accuracy.
 
-#### **Best Loss Curve**
+**Best Loss Curve**:
 
 ![best plot 1](Results/res_7_80epoch/loss_curve.png)
 
 Both the training and validation losses generally follow a downward trend, indicating that the model is learning to minimize errors. At around the 20th epoch, the curves align closely, suggesting that the model's performance is balanced between training and validation at this stage. Beyond this point, the validation loss starts fluctuating significantly, with no clear trend. This variability implies that while the model performs well on the training set, it struggles with generalizing to unseen data. The wild fluctuations and lack of trend in the validation loss curve highlight potential overfitting, as the model may be adapting too specifically to the training data.
 
-Overall, the test accuracy of 67% is slightly lower than the best validation accuracy of 72%, meaning that there is still overfitting.
+Overall, the **best test accuracy of 67%** is slightly lower than the best validation accuracy of 72%, meaning that there is still overfitting.
+
+### Evaluation in `predict.py`
+
+The `predict.py` script is designed to demonstrate how the trained model can be used to make predictions on new data. It showcases the inference process and provides example usage by loading the best model, processing input images, and predicting class labels. 
+
+To evaluate the model's performance visually, the script displays a **confusion matrix** based on the model's predictions against ground truth labels.
+
+Here are some **inference results** from the best model:
+
+![inference plot 1](Results/res_7_80epoch/confusion_matrix.png)
+![inference plot 2](Results/res_7_80epoch/prediction_visualization.png)
+
+## References
+
+- [1]: Vision transformer. (2023, August 6). Wikipedia. https://en.wikipedia.org/wiki/Vision_transformer
+- [2]: Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., & Houlsby, N. (2021). AN IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE. https://arxiv.org/pdf/2010.11929
+- [3]: lucidrains. (2024). GitHub - lucidrains/vit-pytorch: Implementation of Vision Transformer, a simple way to achieve SOTA in vision classification with only a single transformer encoder, in Pytorch. GitHub. https://github.com/lucidrains/vit-pytorch?tab=readme-ov-file
+- [4]: Datasets & DataLoaders — PyTorch Tutorials 1.11.0+cu102 documentation. (2024). Pytorch.org. https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
+- [5]: Vision Transformer (ViT). (2019). Huggingface.co. https://huggingface.co/transformers/v4.9.1/model_doc/vit.html
+

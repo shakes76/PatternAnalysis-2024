@@ -50,6 +50,7 @@ The project consists of several key files:
 - [`modules.py`](modules.py): Contains Generator, Discriminator, MappingNetwork and other models.
 - [`utils.py`](utils.py): Utility functions for getting noise, converting latent space to style space etc
 - [`dataset.py`](dataset.py): Loads ADNI data.
+- [`constants.py`](constants.py): Constants defined across all files.
 
 ## Dependencies
 - Both Linux and Windows are supported.
@@ -84,8 +85,9 @@ pip install -r requirements.txt
 
 ### Training
 
-Single usage as shown below (does not support cmd args parsing). Refer to [config.py](config.py) for resetting parameters. \
-The network is trained from scratch, the generator and discriminator loss is printed on each iteration.
+Single usage as shown below (does not support cmd args parsing). Refer to [constants.py](constants.py) for resetting parameters. \
+The network is trained from scratch, and generator loss, discriminator loss, gradient penalty and path length penalty
+are printed for each batch completion, every epoch
 ```
 > python train.py
 
@@ -161,6 +163,7 @@ Any images will be saved in the following folder:
 saved_examples/
     256x256/
 '''
+256x256 can be replaced with any image size if the dataloader resizes the images to this size accordingly.
 
 ### Data augmentation
 
@@ -517,4 +520,16 @@ The minor fluctuations towards later epochs show ongoing improvements and adjust
 The combination of these observations points to a well-trained GAN where the generator gradually learns to produce realistic samples, and the discriminator remains competitive, helping refine the generator's output. The images improve over time, correlating with the stable, yet dynamic, loss trends seen in the plots. Adjustments to the discriminator strength or regularization techniques might further fine-tune this balance for even better results.
 
 Additionally, these losses align well with the provided images - as the image quality substantially increased at 10 and then 20 epochs, before having relatively steady improvement beyond 20 epochs.
+
 ## References
+T. Karras, S. Laine, and T. Aila, “A Style-Based Generator Architecture for Generative Adversarial
+Networks,” arXiv:1812.04948 [cs, stat], Mar. 2019, arXiv: 1812.04948. [Online]. Available: http:
+//arxiv.org/abs/1812.04948
+
+T. Karras, S. Laine, M. Aittala, J. Hellsten, J. Lehtinen, and T. Aila, “Analyzing and Improving the Image
+Quality of StyleGAN,” arXiv:1912.04958 [cs, eess, stat], Mar. 2020, arXiv: 1912.04958. [Online]. Available:
+http://arxiv.org/abs/1912.04958
+
+Lucidrains, “stylegan2-pytorch,” GitHub Repository. https://github.com/lucidrains/stylegan2-pytorch (accessed Oct. 14, 2024).
+
+NVlabs, “stylegan2,” GitHub Repository. https://github.com/NVlabs/stylegan2 (accessed Oct. 14, 2024).

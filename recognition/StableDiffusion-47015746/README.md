@@ -30,7 +30,7 @@ The architecture of a conditional stable diffusion model is very similar to the 
 
 ![alt text](resources/stablediffusion_overview.jpg)
 
-A VQ-VAE (vector quantized variational autoencoders) was used to turn the images from pixel space to latent space. Based on general reading on the topic of Stable Diffusion, having a VQ-VAE over a vanilla VAE doesn't ultimately matter in the results of the overall model. However, having a simple autoencoder drastically worsens the generated images; when starting the project, I used a basic autoencoder for stable diffusion model, and because noise addition/removal is highly senstitive during image generation , the decoder wasn't able to translate that process well to pixel space. Below is an example of the generated images I obtained with the simple autoencoder:
+A VQ-VAE (vector quantized variational autoencoders) was used to turn the images from pixel space to latent space. Based on general reading on the topic of Stable Diffusion, having a VQ-VAE over a vanilla VAE doesn't ultimately matter in the results of the overall model. However, having a simple autoencoder drastically worsens the generated images; when starting the project, I used a basic autoencoder for the stable diffusion model, and because noise addition/removal is highly senstitive during image generation, the decoder wasn't able to translate that process well to pixel space. Below is an example of the generated images I obtained when using a simple autoencoder in the stable diffusion model:
 
 ![alt text](resources/generation_with_simple_AE.gif)
 

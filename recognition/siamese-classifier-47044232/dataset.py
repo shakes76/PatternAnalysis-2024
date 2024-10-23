@@ -7,6 +7,7 @@ Made by Joshua Deadman
 
 import matplotlib.pyplot as plt
 from PIL import Image
+import numpy as np
 import random
 import torch
 from torchvision.transforms import v2
@@ -68,7 +69,23 @@ class ISICKaggleChallengeSet(Dataset):
         """ Returns the size of the dataset. """
         return len(self._image_set)
 
-    # TODO implement this method.
     def show_images(self) -> None:
-        """ Shows a few images with any transforms applied. """
-        pass
+        """ Plots 9 random images applying any transforms present. """
+        images = []
+        indices = np.random.randint(0, len(self._image_set), size=3)
+        for i in indices:
+            images.append(self[i])
+        figure = 1
+        for y, tup in enumerate(images):
+            for x, image in enumerate(tup):
+                if x  < 3: # Don't try to plot label
+                    plt.subplot(3,3,figure)
+                    plt.imshow(image.permute(1,2,0).numpy())
+                    if x == 0 or x == 1:
+                        label = "Benign" if images[y][-1] == 0 else "Malignant"
+                    else:
+                        label = "Benign" if images[y][-1] == 1 else "Malignant"
+                    plt.title(label)
+                    figure += 1
+                    plt.axis("off")
+        plt.show()

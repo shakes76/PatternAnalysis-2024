@@ -29,6 +29,6 @@ def generate_examples(epoch, n=20):
 # Example usage:
 if __name__ == "__main__":
     # Generate images every 20 epochs (or modify according to your need)
-    for epoch in range(0, EPOCHS, 20):
+    for epoch in range(EPOCHS):
         generate_examples(epoch, n=10)  # Generate 10 example images for each set of latent vectors
 

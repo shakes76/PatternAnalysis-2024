@@ -89,7 +89,7 @@ def train_fn(
 ):
     loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
 
-    scaler = torch.cuda.amp.GradScaler('cuda')  # GradScaler for AMP
+    scaler = torch.cuda.amp.GradScaler()  # GradScaler for AMP
 
     G_losses = []
     D_losses = []

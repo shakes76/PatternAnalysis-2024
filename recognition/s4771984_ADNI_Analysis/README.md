@@ -20,3 +20,10 @@ The ADNI (Alzheimer's disease Neuroimaging Initiative) dataset is widely used da
 
 ### 4) Longitudinal Data :
 - The dataset also includes longitudinal follow-ups where patients data is collected over time. This will help in the essential for studying the disease progression and effectiveness of interventions.
+
+# Requirements
+- Python 3.8+
+- Tensorflow/PyTorch
+- Numpy
+- Matplotlib
+- Scikit-learn

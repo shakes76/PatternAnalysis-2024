@@ -48,7 +48,7 @@ def set_seed(seed=SEED):
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
-def dice_score(predictions, masks, smooth=1e-6):
+def dice_score(predictions, masks, smooth=1e-5):
     """
     Calculates Dice score for each class in multi-class segmentation.
 
@@ -78,7 +78,7 @@ def dice_score(predictions, masks, smooth=1e-6):
     return dice_score
 
 class WeightedDiceLoss(nn.Module):
-    def __init__(self, label_weights=None, smooth=1e-6):
+    def __init__(self, label_weights=None, smooth=1e-5):
         super(WeightedDiceLoss, self).__init__()
         self.label_weights = label_weights
         self.smooth = smooth
@@ -109,7 +109,7 @@ class CombinedLoss(nn.Module):
     """
     Calculates loss as a weighted sum of CrossEntropyLoss and DiceLoss
     """
-    def __init__(self, label_weights=None, dice_weight=0.8, smooth=1e-6):
+    def __init__(self, label_weights=None, dice_weight=0.5, smooth=1e-5):
         super(CombinedLoss, self).__init__()
         self.dice_weight = dice_weight
         self.smooth = smooth

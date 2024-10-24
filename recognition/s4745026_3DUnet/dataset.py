@@ -4,6 +4,9 @@ from tqdm import tqdm
 import utils
 import torch
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
+import glob
+import torch.nn as nn
 
 
 def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, orient=False, early_stop=False):
@@ -58,25 +61,30 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
         return images
 
 
-class Prostate3DDataset(Dataset):
-    def __init__(self, image_paths, label_paths, transform=None):
-        self.image_paths = image_paths
-        self.label_paths = label_paths
-        self.transform = transform
+class Custom3DDataset(Dataset):
+    def __init__(self):
+        self.image_paths = glob.glob(
+            f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
+        self.label_paths = glob.glob(
+            f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
+
+        self.upsample = torch.nn.Upsample(
+            size=(128, 128, 128), mode="trilinear")
+        # self.classes = {i: i for i in range(6)}
 
     def __len__(self):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        image = nib.load(self.image_paths[idx]).get_fdata(dtype=np.float32)
-        label = nib.load(self.label_paths[idx]).get_fdata(dtype=np.uint8)
+        image = load_data_3D([self.image_paths[idx]])
+        label = load_data_3D([self.label_paths[idx]])
 
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
         label = torch.tensor(label, dtype=torch.long)
 
-        if self.transform:
-            sample = {"image": image, "label": label}
-            sample = self.transform(sample)
-            image, label = sample["image"], sample["label"]
+        label = nn.functional.one_hot(
+            label, num_classes=6).permute(3, 1, 0, 2).float()
+        image = self.upsample(image)
+        label = self.upsample(label)
 
-        return image, label
+        return image.squeeze(0), label

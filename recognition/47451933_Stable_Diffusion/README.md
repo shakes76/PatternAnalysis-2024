@@ -8,7 +8,9 @@ This is an attempt at an implemention of latent diffusion model based on the sta
 - [File Structure](#File-Structure)
 - [Background](#Background)
 - [Implementation](#Implementing-Stable-Diffusion)
-- [Usage]()
+- [Usage](#Usage)
+- [Results](#Results)
+- [References](#References)
 
 # File Structure
 ```
@@ -68,19 +70,52 @@ this is the letent diffusion architecture used for the orginal stable diffusion 
 - Corss attention to condition on input
 - Denoising step to remove the noise predicted by the unet
 
-## Model Architecture
+## Model Architecture Implemented
 <img src="https://github.com/SixLeopard/PatternAnalysis-2024/blob/a681523d2aa48e0a22c2dd8d42716b387e8c94e9/recognition/47451933_Stable_Diffusion/results/COMP3710SD_diagram.png" width="800">
+can see the implemented model architecture has all the same key componets as the stable diffusion models
+
+### Key Components
+- VAE Encoder and Decoder to takes images from pixel space to latent space
+- Forward diffusion process -> add increasing levels of noise over a set number of timesteps (using noise schedular + sinsuodial time step embedings)
+- De-Noising U-Net to predict the noise of the current timestep
+- Corss attention to condition on wether the brain is AD or NC
+- Denoising step to remove the noise predicted by the unet
 
 ## Setup
 
+### Train, Test, Validation Split
+the ADNI dataset comes with a train test split already but having an additional validation set is useful to see generalisation performance during traning to see if the model is overfitting. Since the images are broken up between a patient and then all the slices of there brain to split the data into an aditional set is not as asy as just taking a 10% extra split off since this would result in images data leakage. so to get an additional validation set the test set was split using the following algorthim (in sudo code):
+```python
+num_patients_for_val_set = num_images_in_train_set // 100
+patients_seen = set()
+for i in test_set:
+    patient = i.split("_")[0]
+    if len(patients_seen) <= num_patients_for_val_set:
+        patients_seen.add(patient)
+    if patient in patients_seen:
+        move_from_test_to_val(i)
+```
+the orignal train set was used as the train set then what was left of the test set about 11k images was used for testing and for validation the new validation set created was used
 ### Data Transformations
-
+the following transformation were applied to the images before laoding
+```python
+transforms = tvtransforms.Compose([
+            tvtransforms.Grayscale(), #grascale images 
+            tvtransforms.Resize(self.image_size), #the next two lines decrease the resolution to 200x200
+            tvtransforms.CenterCrop(self.image_size),
+            tvtransforms.ToTensor(), #turn the datat into a tensor if its not already
+            tvtransforms.Normalize(0.5,0.5)]) #normilze the data
+```
+- the grey scale takes the images from 3 channels to 1 channel reducing the size of each image without loss of information beacuse there grey scale anyway
+- resize to 200x200 since there orignally 256x240 so croped to 200x200 to make them sqaure to simplify things and slightly reduce the size of each image
+- normilize the images otherwise this could cause poor performance
 # Usage
-<img src="https://github.com/SixLeopard/PatternAnalysis-2024/blob/a681523d2aa48e0a22c2dd8d42716b387e8c94e9/recognition/47451933_Stable_Diffusion/results/COMP3710SD_diagram_infrence.png" width="800">
+before running either the training or predicting run the setup.py first to make sure all the correct folders are created for the models to save to when completed and it also check to make sure the dataset is present and in the right location and format
 
 ## Training
 
 ## Inference
+<img src="https://github.com/SixLeopard/PatternAnalysis-2024/blob/a681523d2aa48e0a22c2dd8d42716b387e8c94e9/recognition/47451933_Stable_Diffusion/results/COMP3710SD_diagram_infrence.png" width="800">
 
 # Results
 

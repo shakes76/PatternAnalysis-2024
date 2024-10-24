@@ -11,7 +11,7 @@ g_image_size = (640, 640)
 image_transform = transforms.Compose([
     transforms.Resize(g_image_size),
     transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
 class ISICDataset(Dataset):
@@ -25,7 +25,7 @@ class ISICDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = self.annotations.iloc[idx, 0]
-        img_path = os.path.join(self.root_dir, "ISIC-2017_Training_Data", img_name)
+        img_path = os.path.join(self.root_dir, img_name)
         if not img_path.endswith('.jpg'):
             img_path += ".jpg"
         image = Image.open(img_path).convert("RGB")

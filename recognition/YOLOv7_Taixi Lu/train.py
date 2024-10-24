@@ -12,6 +12,7 @@ import os
 def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=10):
     model.train()
     losses = []
+    anchor_in_model = get_anchor(model)
     for epoch in range(num_epochs):
         print(f"\nEpoch [{epoch + 1}/{num_epochs}]:")
         epoch_start_time = time.time()
@@ -38,9 +39,8 @@ def train_yolo(model, dataloader, optimizer, loss_function, device, num_epochs=1
             targets = []
             for grid_size in grid_sizes:
                 scale_targets = torch.stack([construct_yolo_target(
-                    gt, grid_size=grid_size, target_class=labels[idx],
-                    image_size=(images.shape[2], images.shape[3]),
-                    num_classes=g_num_classes, num_anchors=g_num_anchors)
+                    gt, grid_size=grid_size, target_class=labels[idx], anchors=anchor_in_model,
+                    image_size=g_image_size, num_classes=g_num_classes, num_anchors=g_num_anchors)
                     for idx, gt in enumerate(ground_truth_arrays)])
                 targets.append(scale_targets.to(device))
 
@@ -120,11 +120,12 @@ def validate_yolo(model, dataloader, ground_truth_path, device):
                     #     continue
 
                     pred_box = pred[:4]  # tx, ty, tw, th (center x, center y, width, height)
-                    yolo_x_center, yolo_y_center, yolo_width, yolo_height = pred_box.detach().cpu().numpy()
-                    yolo_x1 = yolo_x_center - (yolo_width / 2)
-                    yolo_y1 = yolo_y_center - (yolo_height / 2)
-                    yolo_x2 = yolo_x_center + (yolo_width / 2)
-                    yolo_y2 = yolo_y_center + (yolo_height / 2)
+                    # yolo_x_center, yolo_y_center, yolo_width, yolo_height = pred_box.detach().cpu().numpy()
+                    # yolo_x1 = yolo_x_center - (yolo_width / 2)
+                    # yolo_y1 = yolo_y_center - (yolo_height / 2)
+                    # yolo_x2 = yolo_x_center + (yolo_width / 2)
+                    # yolo_y2 = yolo_y_center + (yolo_height / 2)
+                    yolo_x1, yolo_y1, yolo_x2, yolo_y2 = pred_box.detach().cpu().numpy()
 
                     # Calculate IoU with the ground truth
                     iou = calculate_iou([yolo_x1, yolo_y1, yolo_x2, yolo_y2],
@@ -142,20 +143,20 @@ def validate_yolo(model, dataloader, ground_truth_path, device):
 
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataloader = get_dataloader(csv_file='data/train/ISIC-2017_Training_Part3_GroundTruth.csv', root_dir='data/train',
-                                batch_size=4)
+    dataloader = get_dataloader(csv_file='data/train/ISIC-2017_Training_Part3_GroundTruth.csv',
+                                root_dir='data/train/ISIC-2017_Training_Data', batch_size=4)
     print(f"Number of batches: {len(dataloader)}")
     print(f"Batch size: {dataloader.batch_size}")
     print(f"Number of samples: {len(dataloader.dataset)}")
     print(f"Image dimensions: {dataloader.dataset[0][0].shape}")
 
-    # yolov7 = get_yolo_model(model_path='yolov7_training.pt', device=device)
-    #
-    # # yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)
-    # optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
-    # loss_function = YOLOLoss()
-    # train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=20)
+    yolov7 = get_yolo_model(model_path='yolov7_training.pt', device=device)
 
-    yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)
+    optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
+    loss_function = YOLOLoss()
+    train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=20)
+
+    # yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)
+    # yolov7.to(device)
     validate_yolo(yolov7, dataloader, ground_truth_path='data/train/ISIC-2017_Training_Part1_GroundTruth',
                   device=device)

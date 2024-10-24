@@ -39,11 +39,11 @@ def get_yolo_model(model_path, device):
             print(f"\nOriginal anchors: \n{module.anchors}")
             # new_anchors = module.anchors
             new_anchors = torch.tensor([
-                [136.0, 86.0], [125.0, 95.0], [170.0, 116.0],  # Small Anchors
+                [136.0, 100.0], [125.0, 107.0], [170.0, 117.0],  # Small Anchors
                 [222.0, 157.0], [226.0, 170.0], [314.0, 237.0],  # Medium Anchors
-                [366.0, 221.0], [571.0, 386.0], [616.0, 612.0]   # Large Anchors
+                [466.0, 430.0], [571.0, 500.0], [630.0, 630.0]  # Large Anchors
             ]).to(device)
-            new_anchors=new_anchors.view(3, 6)  # flatten to suit the yolo config file (yaml) format
+            new_anchors = new_anchors.view(3, 6)  # flatten to suit the yolo config file (yaml) format
             new_idetect = IDetect(
                 nc=g_num_classes, anchors=new_anchors, ch=[layer.in_channels for layer in module.m])
             new_idetect.f = module.f
@@ -57,19 +57,30 @@ def get_yolo_model(model_path, device):
     return model
 
 
+def get_anchor(model):
+    """
+    get the anchor in current model, only for construct_yolo_target use, not detached
+    """
+    for name, module in model.model._modules.items():
+        if isinstance(module, IDetect):
+            # print(f"Original IDetect: \n{module}")
+            # print(f"\nOriginal anchors: \n{module.anchors}")
+            return module.anchors
+
+
 def calculate_iou(yolo_box_vertex, ground_truth_vertex, print_log=False):
     # Calculate Intersection Over Union (IoU) between YOLO output and ground truth mask
     gt_x1, gt_y1, gt_x2, gt_y2 = ground_truth_vertex[:4]
     gt_area = (gt_x2 - gt_x1) * (gt_y2 - gt_y1)
 
     yolo_x1, yolo_y1, yolo_x2, yolo_y2 = yolo_box_vertex[:4]
+    yolo_area = (yolo_x2 - yolo_x1) * (yolo_y2 - yolo_y1)
+
     inter_x1 = max(yolo_x1, gt_x1)
     inter_y1 = max(yolo_y1, gt_y1)
     inter_x2 = min(yolo_x2, gt_x2)
     inter_y2 = min(yolo_y2, gt_y2)
-
     inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
-    yolo_area = (yolo_x2 - yolo_x1) * (yolo_y2 - yolo_y1)
 
     union_area = yolo_area + gt_area - inter_area
     if union_area > 0:
@@ -77,8 +88,38 @@ def calculate_iou(yolo_box_vertex, ground_truth_vertex, print_log=False):
             if inter_area > 0:
                 print(f"inter_area: {inter_area:.1f}, iou: {inter_area / union_area:.4f}")
             else:
-                print(f"gt_w: {(gt_x2 - gt_x1):.1f}, gt_h: {(gt_y2 - gt_y1):.1f}, gt_area: {gt_area:.2f}, ratio: {yolo_area/gt_area:.3f}")
+                print(
+                    f"gt_w: {(gt_x2 - gt_x1):.1f}, gt_h: {(gt_y2 - gt_y1):.1f}, gt_area: {gt_area:.2f}, ratio: {yolo_area / gt_area:.3f}")
 
+        return inter_area / union_area
+    else:
+        return 0
+
+
+def calculate_iou_YOLO_box(yolo_box, ground_truth_box):
+    # Calculate Intersection Over Union (IoU) between YOLO output and ground truth mask
+    gt_x_center, gt_y_center, gt_width, gt_height = ground_truth_box[:4]
+    gt_x1 = gt_x_center - gt_width / 2
+    gt_x2 = gt_x_center + gt_width / 2
+    gt_y1 = gt_y_center - gt_height / 2
+    gt_y2 = gt_y_center + gt_height / 2
+    gt_area = gt_width * gt_height
+
+    yolo_x_center, yolo_y_center, yolo_width, yolo_height = yolo_box[:4]
+    yolo_x1 = yolo_x_center - yolo_width / 2
+    yolo_x2 = yolo_x_center + yolo_width / 2
+    yolo_y1 = yolo_y_center - yolo_height / 2
+    yolo_y2 = yolo_y_center + yolo_height / 2
+    yolo_area = yolo_width * yolo_height
+
+    inter_x1 = max(yolo_x1, gt_x1)
+    inter_y1 = max(yolo_y1, gt_y1)
+    inter_x2 = min(yolo_x2, gt_x2)
+    inter_y2 = min(yolo_y2, gt_y2)
+    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
+
+    union_area = yolo_area + gt_area - inter_area
+    if union_area > 0:
         return inter_area / union_area
     else:
         return 0
@@ -99,7 +140,8 @@ def get_YOLO_box(ground_truth):
     return x_center, y_center, width, height
 
 
-def construct_yolo_target(ground_truth, grid_size, target_class, image_size=(640, 640), num_classes=3, num_anchors=3):
+def construct_yolo_target(ground_truth, grid_size, target_class, anchors,
+                          image_size=(640, 640), num_classes=3, num_anchors=3):
     # Create an empty target tensor
     target = torch.zeros((num_anchors, grid_size, grid_size, 5 + num_classes))
 
@@ -121,6 +163,10 @@ def construct_yolo_target(ground_truth, grid_size, target_class, image_size=(640
     grid_x = int(x_center * grid_size)
     grid_y = int(y_center * grid_size)
 
+    # Ensure grid cell indices are within bounds
+    # grid_x = min(max(0, grid_x), grid_size - 1)
+    # grid_y = min(max(0, grid_y), grid_size - 1)
+
     # Calculate the cell-relative position
     x_cell = (x_center * grid_size) - grid_x
     y_cell = (y_center * grid_size) - grid_y
@@ -134,11 +180,37 @@ def construct_yolo_target(ground_truth, grid_size, target_class, image_size=(640
         target[anchor, grid_y, grid_x, 4] = 1  # Objectness score
         target[0, grid_y, grid_x, 5 + target_class] = 1  # One-hot encoded class
 
+    # best_anchor = 0
+    # best_iou = 0
+    # for i, anchor in enumerate(anchors):
+    #     anchor_width, anchor_height = anchor[0]
+    #     anchor_width /= img_width
+    #     anchor_height /= img_height
+    #
+    #     # Calculate IoU between the ground-truth box and the anchor box
+    #     inter_width = min(width, anchor_width)
+    #     inter_height = min(height, anchor_height)
+    #     inter_area = inter_width * inter_height
+    #     union_area = (width * height) + (anchor_width * anchor_height) - inter_area
+    #     iou = inter_area / union_area
+    #
+    #     if iou > best_iou:
+    #         best_iou = iou
+    #         best_anchor = i
+    #
+    # # Fill in the target tensor for the best matching anchor
+    # target[best_anchor, grid_y, grid_x, 0] = x_cell  # tx
+    # target[best_anchor, grid_y, grid_x, 1] = y_cell  # ty
+    # target[best_anchor, grid_y, grid_x, 2] = width  # tw
+    # target[best_anchor, grid_y, grid_x, 3] = height  # th
+    # target[best_anchor, grid_y, grid_x, 4] = 1  # Objectness score
+    # target[best_anchor, grid_y, grid_x, 5 + target_class] = 1  # One-hot encoded class
+
     return target
 
 
 class YOLOLoss(nn.Module):
-    def __init__(self, lambda_coord=5.0, lambda_noobj=0.5):
+    def __init__(self, lambda_coord=50, lambda_noobj=0.5):
         super(YOLOLoss, self).__init__()
         self.lambda_coord = lambda_coord  # Weight for bounding box localization loss
         self.lambda_noobj = lambda_noobj  # Weight for no-object confidence loss
@@ -161,23 +233,28 @@ class YOLOLoss(nn.Module):
             target_boxes = target[..., :4]  # Ground-truth boxes
             target_obj = target[..., 4]  # Ground-truth objectness
             target_class = target[..., 5:]  # Ground-truth classes
-            target_class = target_class[:, 0, :, :, :]
+            # target_class = target_class[:, 0, :, :, :]
 
             # Bounding box loss (using Mean Squared Error)
             box_loss = func.mse_loss(pred_boxes, target_boxes, reduction='sum')
+            # box_loss = calculate_iou_YOLO_box(pred_boxes, target_boxes)
 
-            # # Objectness loss (using Binary Cross-Entropy)
-            # obj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj, reduction='sum')
-            #
-            # # No-object loss
+            # No-object loss
             # noobj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj,
-            #                                                    reduction='sum') * self.lambda_noobj
+            #                                                    reduction='sum')
+            obj_mask = target_obj > 0  # Mask for object presence
+            noobj_mask = target_obj == 0  # Mask for no object presence
+
+            obj_loss = func.binary_cross_entropy_with_logits(pred_obj[obj_mask], target_obj[obj_mask], reduction='sum')
+            noobj_loss = func.binary_cross_entropy_with_logits(pred_obj[noobj_mask], target_obj[noobj_mask],
+                                                               reduction='sum')
 
             # Classification loss (using Cross-Entropy)
-            class_loss = func.cross_entropy(pred_class, target_class.long(), reduction='sum')
+            # class_loss = func.cross_entropy(pred_class, target_class.float(), reduction='sum')
+            class_loss = func.cross_entropy(pred_class[obj_mask], target_class[obj_mask].float(), reduction='sum')
 
             # Combine the losses
-            # total_loss += (self.lambda_coord * box_loss) + obj_loss + noobj_loss + class_loss
-            total_loss += (self.lambda_coord * box_loss) + class_loss
+            total_loss += (self.lambda_coord * box_loss) + obj_loss + (self.lambda_noobj * noobj_loss) + class_loss
+            # total_loss += (self.lambda_coord * box_loss) + (self.lambda_noobj * noobj_loss)
 
         return total_loss

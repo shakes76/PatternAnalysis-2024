@@ -20,8 +20,6 @@ def predict_yolo(model, dataloader, ground_truth_path, device):
             del preds
             torch.cuda.empty_cache()
 
-            # gt_x1, gt_y1, gt_x2, gt_y2 = (0, 0, 0, 0)
-
             for i, pred in enumerate(preds_NMS):
                 if pred is not None and len(pred) > 0:
                     image = images[i].cpu().numpy().transpose(1, 2, 0)  # Convert to HWC format

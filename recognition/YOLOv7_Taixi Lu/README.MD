@@ -70,12 +70,12 @@ A construct_yolo_target function was implemented to help me transform the mask i
 To train the YOLO model, I loaded the yolov7_training.pt model as described previously to enable training on standard YOLOv7.  I loaded the dataset with a batch size of 4, and Adam optimizer was used with learning rate of 0.001. The custom loss function (described in model section) was used to provide loss during the training. 
 
 In the training, since our data set was not formatted as a standard YOLO train set required, I used a helper function construct_yolo_target to construct the labeling as same format as the predict output from the model. 
-20 epochs of training were performed on the training set. I saved the model after each epoch to compare the performance later. Also, the average loss in each training epoch was recorded and shown in the plot below: 
+15 epochs of training were performed on the training set. I saved the model after each epoch to compare the performance later. Also, the average loss in each training epoch was recorded and shown in the plot below: 
 ![training_loss.png](training_loss.png)
 
 We can see that the loss start very high and decreased rapidly. This indicating the standard yolo was performed badly initially, and our training is efficiently enhancing the performance. 
 
-A validation based on the training set was performed imminently after the 20 epochs of training to get a rough idea about the IoU performance. Since we have only one object to detect in each image, the prediction with maximum confidence in each image was evaluated. The performance shown in this validation will be further described in the Reflection section below.
+A validation based on the training set was performed imminently after the 15 epochs of training to get a rough idea about the IoU performance. Since we have only one object to detect in each image, the prediction with maximum confidence in each image was evaluated. The performance shown in this validation will be further described in the Reflection section below.
 
 ### Testing
 
@@ -89,7 +89,8 @@ The images with overlays are then saved under "data/test/predictions/" folder. T
 
 There were many debugs and optimizations happening during the whole developing process, but most of them are hard to visualize. Thus, in this section I will focus on illustrate those major changes after the model is nearly working, and hopefully show the efforts I did to improve the model.
 
-After finally implemented the code and trained the model, I found the model did not perform as expected. The best average IoU score I was able to get form the new trained model was around 13,which is better than the standard pretrained model but still far away from being usable. I then go ahead and checked the visualization of the prediction. I found several problems:
+After finally implemented the code and trained the model, I found the model did not perform as expected. The best average IoU score I was able to get form the new trained model was around 13,which is better than the standard pretrained model but still far away from being usable. 
+I then go ahead and checked the visualization of the prediction, where the green boxes are ground truth box and the red boxes are the predicted boundary. I found several problems:
 
 1. There are some data with weak visual distinction. Meanwhile, there are some interfering visual features which are much more distinctive. For example:
 
@@ -120,8 +121,9 @@ Except the location, I also found the classification of the model was not perfor
 
 Based on the problems discovered in the new model, I made two changes: Reduce the anchor size, and modify construct_yolo_target function. More specifically about construct_yolo_target, instead of setting all anchor at the correct place with target label, I picked a anchor that best describe the boundary size and set it with target label (See line 185 in modules.py). 
 
-After all the adjustment, I was able to get the model to more sensitive to small objects as show in below (Although IoU was not very high, they are visually looks reasonable already).
-![ISIC_0013073_prediction.png](./Readme%20pictures/ISIC_0013073_prediction.png)
+After all the adjustment, I was able to get the model to more sensitive to small objects as show in below (Although IoU was not very high, they are visually reasonable already.).
+
 ![ISIC_0013600_prediction.png](./Readme%20pictures/ISIC_0013600_prediction.png)
-![ISIC_0012216_prediction.png](./Readme%20pictures/ISIC_0012216_prediction.png)
-![ISIC_0012372_prediction.png](./Readme%20pictures/ISIC_0012372_prediction.png)
+![ISIC_0015245_prediction.png](./Readme%20pictures/ISIC_0015245_prediction.png)
+![ISIC_0014652_prediction.png](./Readme%20pictures/ISIC_0014652_prediction.png)
+

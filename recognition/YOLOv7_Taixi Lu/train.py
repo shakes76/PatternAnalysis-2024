@@ -150,7 +150,7 @@ if __name__ == '__main__':
     yolov7 = get_yolo_model(model_path='yolov7_training.pt', device=device)
 
     optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
-    loss_function = YOLOLoss()
+    loss_function = YOLOLoss(lambda_coord=100, lambda_noobj=0.5)
     train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=15)
 
     # yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)

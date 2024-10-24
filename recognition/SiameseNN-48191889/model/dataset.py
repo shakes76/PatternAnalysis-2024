@@ -49,7 +49,7 @@ class ISICDataset(Dataset):
             """
 
             # Oversamples the minority class by a factor of 4
-            # by duplicating the existing data. might switch to other methods if overfitting
+            # by duplicating the existing data.
 
             over_factor = 4
             self.c1_idx = self.c1_idx * over_factor

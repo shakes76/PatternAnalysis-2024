@@ -29,7 +29,7 @@ class SiameseNetwork(nn.Module):
         self.fc1 = nn.Linear(36864, 4096)
         self.fc2 = nn.Linear(4096, 1)
 
-    def forward_once(self, x):
+    def forward(self, x):
         # Forward pass through convolutional layer + max pooling layer pairs
         x = self.pool(F.relu(self.c1(x)))
         x = self.pool(F.relu(self.c2(x)))
@@ -43,10 +43,10 @@ class SiameseNetwork(nn.Module):
         x = F.relu(self.fc1(x))
         return x
 
-    def forward(self, input1, input2):
+    def predict(self, input1, input2):
         # Pass both images through the same SNN architecture
-        output1 = self.forward_once(input1)
-        output2 = self.forward_once(input2)
+        output1 = self.forward(input1)
+        output2 = self.forward(input2)
 
         # Compute the L1 distance between the resulting outputs
         l1_dist = torch.abs(output1 - output2)

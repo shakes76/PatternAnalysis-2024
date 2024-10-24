@@ -52,7 +52,7 @@ def predict(model, test_loader):
     recall = recall_score(label_list, prediction_list)
     f1 = f1_score(label_list, prediction_list)
 
-    print(f"\nTest Accuracy: {accuracy * 100:.2f}%")
+    print(f"\nTest Accuracy: {accuracy * 100:.2f}")
     print(f"Precision: {precision * 100:.2f}")
     print(f"Recall: {recall * 100:.2f}")
     print(f"F1-score: {f1 * 100:.2f}")

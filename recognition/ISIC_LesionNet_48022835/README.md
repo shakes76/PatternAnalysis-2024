@@ -19,7 +19,7 @@ See figures [1] and [2] below that demonstrate the discussed processes and struc
 
 [2]  
 
-![YOLO backbone, neck and head structure](https://www.researchgate.net/profile/Gultekin-Isik/publication/367544020/figure/fig2/AS:11431281122758901@1677554526049/Main-structure-of-YOLO-v4-architecture-28.png)
+![YOLOv11 backbone, neck and head structure](https://miro.medium.com/v2/resize:fit:1200/1*L8rMuwurmyBH1ixIqcrMSQ.png)
 
 ### ISIC 2018 Challenge
 The Internation skin imaging collaboration (ISIC) challenges are annual competitions aimed at advancing research and development in the field of automated skin lesion analysis using dermoscopic images. The 2018 ISIC Challenge consisted of three distinct challenges, where the first two share a dataset. The first challenge was lesion segmentation, the second was lesion attribute detection, and the third was disease classification. As will be discussed in further detail under the [Project Implementation](#project-implementation) header, the data from this challenge can be utilised, when correctly formatted, and leveraged by a YOLO model.
@@ -50,5 +50,5 @@ Talk about predict.py. Talk about results, inference, etc.
 ### Figures and Plots:
 image [1]: https://www.dlology.com/blog/gentle-guide-on-how-yolo-object-localization-works-with-keras-part-2/
 
-image [2]: https://www.researchgate.net/publication/367544020_A_new_YOLO-based_method_for_real-time_crowd_detection_from_video_and_performance_analysis_of_YOLO_models
+image [2]: https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71
 

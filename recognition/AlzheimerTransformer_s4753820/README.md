@@ -86,13 +86,31 @@ Example output.
 
 
 ## Vision Transformer Architecture
-{INFO ABOUT VIT; CITE THE REFERENCES HERE. ADD IMAGES. YAY.}
 
-Initially developed for natural language processing tasks, transformers have now been successfully applied to vision tasks by treating image patches as tokens, similar to words in a sentence. 
-They are competitive against CNNs as transformers have no inductive bias and can learn from patches due to their attention mechanism, although this makes them
-data hungry (Ballal, 2023). 
+Initially developed for natural language processing tasks, transformers have now been successfully applied to vision tasks by treating image patches as tokens, similar to words in a sentence. They are competitive against CNNs as transformers have no inductive bias and can learn from patches due to their attention mechanism, although this makes them data hungry (Ballal, 2023). 
+
+![alt text](plots/Vision_Transformer_Architecture_woi9aw.png)
+<small> Figure: Vision Transformer Architecture (Dosovitskiy, 2020)</small>
+
+The core components are as follows (and their coded representations can be seen in `modules.py`):
+
+**Core Components of Vision Transformer**:
+
+
+1. Patch Embeddings: The input image is divided into small, fixed-size patches (e.g., 16x16 pixels), and each patch is flattened and linearly embedded into a high-dimensional vector. This process is akin to tokenizing words in a sentence. The sequence of patch embeddings is fed into the transformer model, where each patch essentially serves as a "token" (Dosovitskiy et al., 2020).
+
+2. Positional Encodings: To retain spatial information, positional encodings are added to the patch embeddings which helps the model maintain the spatial arrangement and constitution of the image (Dosovitskiy et al., 2020; Ballal, 2023).
+
+3. Transformer Encoder: The transformer architecture used here is similar to that used in natural language processing. It consists of multiple layers of multi-head self-attention and feed-forward neural networks. This attention mechanism allows the model to focus on various parts of the image simultaneously, to learn complex dependencies between patches (Vaswani et al., 2017; Dosovitskiy et al., 2020).
+
+4. Classification Token: A special [CLS] token is prepended to the sequence of patch embeddings. The output corresponding to this token is used for classification, making it the representation of the entire image after passing through the transformer layers (Dosovitskiy et al., 2020).
+
+5. Dropout and Regularization: Dropout is applied in multiple layers, including embedding dropout and MLP block dropout, to prevent overfitting and ensure training stability, especially when using smaller datasets (Dosovitskiy et al., 2020; Ballal, 2023).
+
+Generally, increasing the parameter size of the model allows it to represent more complex relationships about the data.
+
 ## Preprocessing: Dataset Loading + Augmentation
-To ensure optimal performance and prevent data leakage, the dataset is split into training, validation, and test sets. The following preprocessing steps are applied:
+To ensure optimal performance and prevent data leakage, the dataset is split into training, validation, and test sets using generators so the random splits are deterministic. The following preprocessing steps are applied:
 
 1. Dataset Organization
 The dataset, sourced from the ADNI database, is structured into two primary categories—Alzheimer’s Disease (AD) and No Alzheimer’s (NC)—for both training and test sets. The directory structure is as follows:
@@ -167,17 +185,22 @@ All plots are located within `/plots`.
 
 v0 Experiment: 
 <p float="left">
-  <img src="plots/v0noAugments_accuracy_plot.png" width="600" />
-  <img src="plots/v0noAugments_loss_plot.png" width="600" />
+  <img src="plots/v0noAugments_accuracy_plot.png" width="400" />
+  <img src="plots/v0noAugments_loss_plot.png" width="400" />
 </p>
 
 v3: Changed transformer encoder to be pytorch's default encoderlayer. Added embedding dropout layer as ViT paper has it in Appendix B (Dosovitskiy et al., 2020). Re-implementing normalisation but without other data augmentation.
 <p float="left">
-  <img src="plots/v3_accuracy_plot.png" width="600" />
-  <img src="plots/v3_loss_plot.png" width="600" />
+  <img src="plots/v3_accuracy_plot.png" width="400" />
+  <img src="plots/v3_loss_plot.png" width="400" />
 </p>
 
 
+Looking at the graphs of v6/v7, they are also much more stable than previous versions, showing less validation accuracy 'stumbles' over time, and a consistent increase in accuracy. This is likely because the aggressive transformations forces the model to have a more complex system to understand, and thus must learn to generalise better. This also means that increasing epoch duration is a good idea, as the model is less likely to overfit as the data is not as simple anymore.
+Furthermore, the scheduler also plays a part in stability by decreasing the learning rate as we get better validation accuracy over time (we use ReduceLROnPlateau).
+<p float="left">
+  <img src="plots/v7_accuracy_plot.png" width="600" />
+</p>
 
 v14: Seeing as 13 performed well with reducing the complexity of the model, v13 reduces the complexity even more by reducing the number of transformer layers, heads in each layer, nlp size and embedding dims. It also is the best performing model thus far.
 <p float="left">

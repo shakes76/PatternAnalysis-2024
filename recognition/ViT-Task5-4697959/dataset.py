@@ -1,11 +1,47 @@
 # dataset.py
-
 import os
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+import random
+from torchvision import transforms
+from torch.utils.data import DataLoader, Dataset
+from PIL import Image
 import torch
 from sklearn.utils import class_weight
 import numpy as np
+
+class ADNIDataset(Dataset):
+    def __init__(self, data_dir, subset, transform=None):
+        """
+        Args:
+            data_dir (string): Directory with all the images.
+            subset (string): 'train' or 'test' to specify which subset of the data to use.
+            transform (callable, optional): Optional transform to be applied on an image.
+        """
+        self.transform = transform
+        self.root_dir = data_dir
+        self.subset = subset
+
+        # List all file paths with their corresponding label
+        self.data_paths = []
+        for label_class in ['AD', 'NC']:
+            class_dir = os.path.join(data_dir, self.subset, label_class)
+            for filename in os.listdir(class_dir):
+                if os.path.isfile(os.path.join(class_dir, filename)):
+                    self.data_paths.append((os.path.join(class_dir, filename), label_class))
+
+    def __len__(self):
+        return len(self.data_paths)
+
+    def __getitem__(self, idx):
+        img_path, label_class = self.data_paths[idx]
+        image = Image.open(img_path).convert('L')  # Convert image to grayscale
+
+        # Encode label: 1 for Alzheimer's (AD), 0 for normal control (NC)
+        label = 1 if label_class == 'AD' else 0
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, label
 
 def get_data_loaders(data_dir, batch_size=32, img_size=224, val_split=0.2, num_workers=4):
     """
@@ -41,38 +77,36 @@ def get_data_loaders(data_dir, batch_size=32, img_size=224, val_split=0.2, num_w
                              std=[0.229, 0.224, 0.225])
     ])
 
-    # Paths to dataset splits
-    train_dir = os.path.join(data_dir, 'train')
-    test_dir = os.path.join(data_dir, 'test')
+    ## Initialize the dataset for train and test
+    train_dataset = ADNIDataset(data_dir=data_dir, subset='train', transform=train_transforms)
+    test_dataset = ADNIDataset(data_dir=data_dir, subset='test', transform=test_val_transforms)
 
-    # Create datasets
-    train_dataset = datasets.ImageFolder(root=train_dir, transform=train_transforms)
-    test_dataset = datasets.ImageFolder(root=test_dir, transform=test_val_transforms)
+    # Patient-level splitting for train/validation sets
+    unique_patient_ids = list(set('_'.join(path.split('/')[-1].split('_')[:-1]) for path, _ in train_dataset.data_paths))
+    validation_patient_ids = set(random.sample(unique_patient_ids, int(val_split * len(unique_patient_ids))))
 
-    # Split train_dataset into train and validation
-    num_train = len(train_dataset)
-    num_val = int(val_split * num_train)
-    num_train = num_train - num_val
-    train_subset, val_subset = random_split(train_dataset, [num_train, num_val])
+    # Split train_dataset based on patient IDs
+    train_data_paths = [(path, label) for path, label in train_dataset.data_paths if '_'.join(path.split('/')[-1].split('_')[:-1]) not in validation_patient_ids]
+    val_data_paths = [(path, label) for path, label in train_dataset.data_paths if '_'.join(path.split('/')[-1].split('_')[:-1]) in validation_patient_ids]
 
-    # Create data loaders
-    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    # Update the data_paths for each dataset split
+    train_dataset.data_paths = train_data_paths
+    val_dataset = ADNIDataset(data_dir=data_dir, subset='train', transform=train_transforms)
+    val_dataset.data_paths = val_data_paths
+
+    # Create DataLoader instances
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    # Class names
-    class_names = train_dataset.classes
-
     # Compute class weights for handling class imbalance
-    labels = [label for _, label in train_subset]
-    class_weights = class_weight.compute_class_weight('balanced',
-                                                     classes=np.unique(labels),
-                                                     y=labels)
-    # computed class weights are converted to a PyTorch
+    labels = [label for _, label in train_dataset.data_paths]
+    class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(labels), y=labels)
     class_weights = torch.tensor(class_weights, dtype=torch.float)
 
+    # Return data loaders and metadata
     return {
         'train': train_loader,
         'val': val_loader,
         'test': test_loader
-    }, class_names, class_weights
+    }, ['NC', 'AD'], class_weights

@@ -1,19 +1,19 @@
-# Siamese network for Classification of ISIC 2020 data set
+# Siamese network for Classification of ISIC 2020 Data Set
 ## Project Introduction
 ### Project Summary and Aim
-The purpose of this project was to create a Siamese Network that is able to classify skin lesions from the ISIC 2020 Kaggle Challenge data set as either 'normal' or 'melanoma'. The full data set contains 33,126 images of skin lesions  (584 (1.8%) melanoma and 32542 (98.2%) normal).
+The purpose of this project was to create a Siamese Network that is able to classify skin lesions from the ISIC 2020 Kaggle Challenge data set as either 'normal' or 'melanoma'. The full data set contains 33,126 images of skin lesions  (584 (1.8%) melanoma and 32,542 (98.2%) normal).
 
 The aim of this project is to produce a model that is able to achieve an 'accuracy' of 0.8 when the model is used to predict a testing set (set of data that was unseen during training).
 
 ### Accuracy  Metric
-As noted above the data set is highly unbalanced (1.8% melanoma images and 98.2% normal images). Thus using the standard accuracy score metric to gauge the performance of the model is very misleading. As,for example we could just have our model predict all images as normal thus achieving an 'accuracy' of 98.2% whilst learning nothing about the data and being unable to predict melanomas.
+As noted above the data set is highly unbalanced (1.8% melanoma images and 98.2% normal images). Thus using the standard accuracy score metric to gauge the performance of the model is very misleading. As, for example, we could just have our model predict all images as normal thus achieving an 'accuracy' of 98.2% whilst learning nothing about the data and being unable to predict melanomas.
 
 Therefore it was decided that AUR ROC should be used as the metric to gauge the performance of the model. This metric was chosen as it provides a balance between sensitivity (True Positive Rate) and specificity (True Negative Rate) ensuring that both classes are considered [[1](#References)]. This metric is very commonly used for imbalanced datasets such as this [[1](#References)]. Thus this project will aim to maximise AUR ROC on the testing set. (See ed post #253 for support of this approach [[2](#References)]). Additionally it should be noted that the official kaggle challenge that this dataset originated from used AUR ROC as the metric to determine accuracy of test predictions [[3](#References)] (https://www.kaggle.com/c/siim-isic-melanoma-classification/overview).
 
 
 ## File Structure
 ### Current Structure
-This is the current structure of the project as is when cloned from it
+This is the current structure of the project when cloned directly from the repo
 ```
 PatternAnalysis-2024/recognition/siamese_s46387334/
 │
@@ -114,7 +114,7 @@ The first thing that was done to the data was to split the images up into three 
 - Test Set (10% of all data)
     - Will be used to evaluate the performance of the final model
 
-The validation and testing sets were kept relatively small to maximise performance of the model by giving it a larger set of data to train on. Due to the large size of the data set the validation and testing sets are still large enough to get a good idea of the population. This is a standard split to apply when we have a dataset of over 10,000+ samples [[4](#References)].  Due to the unbalanced nature it could result in some variation however this is deemed as acceptable in industry as we will still have ~60 samples from the minority class in each set [[4](#References)].
+The validation and testing sets were kept relatively small to maximise performance of the model by giving it a larger set of data to train on. Due to the large size of the data set the validation and testing sets are still large enough to give a good representation of the population. This is a standard split to apply when we have a dataset of over 10,000+ samples [[4](#References)].  Due to the unbalanced nature it could result in some variation however this is deemed as acceptable in industry as we will still have enough samples from the minority class in each set [[4](#References)].
 
 ### Dataset Oversampling and Augmentation
 Due to the large class imbalance mentioned above it is preferred if a method is used to ensure that the model is trained on balanced data [[5](#References)].To do this we use a two step approach - oversampling the minority class, then data augmentation. It should be noted this class balancing was only done for the training set.
@@ -125,15 +125,15 @@ For oversampling - the minority class (melanoma) was oversampled until both clas
 - `RandomVerticalFlip` (Randomly vertically flip the image)
 - `ColorJitter` (Randomly adjust the brightness, contrast, saturation and hue of the image)
 
-Note, all images also underwent normalisation (All pixel values where normalised to take values between 0 and 1 and approximately follow the standard normal distribution) [[6](#References)].
+Note, all images (Train, Validation and Test) also underwent normalisation [[6](#References)].
 
 ### Triplet Data Generation
-Before the data can be used in the Siamese Network each of the dataset must be arranged into triplets (this is due to the unique `TripletLoss` function we use). `dataset.py` implements the `TripletDataGenerator` class that generates triplets (anchor, positive, negative) for Siamese network training. Each triplet consists of two images from the same class (anchor and positive) and one from the opposite class (negative).
+Before the data can be used to train the Siamese Network - it must be arranged into triplets (this is due to the unique `TripletLoss` function we use). `dataset.py` implements the `TripletDataGenerator` class that generates triplets (anchor, positive, negative) for Siamese network training. Each triplet consists of two images from the same class (anchor and positive) and one from the opposite class (negative). Note - this only needs to be done for the training data - testing and validation data can just use the anchor (positive and negative have no use) when preforming predictions.
 
 
 > ### How to use dataset.py
 > - The full data set (images and labels) and be accessed via the `get_isic2020_data()` function in `dataset.py`
-> - The train (with oversampling), validation, test split triplet data loaders (datasets have been grouped into triplets) (with augmentation applied) can be accessed accessed via the `get_isic2020_data_loaders()` function in `dataset.py`
+> - The train (with oversampling, augmentation and triplets formed), validation and test data loaders can be accessed accessed via the `get_isic2020_data_loaders()` function in `dataset.py`
 
 
 ## Siamese Network Details
@@ -142,12 +142,12 @@ This section will contain details that pertain mainly to `modules.py`
 ### Siamese Network Overview
 Siamese Networks are a type model that takes advantage of metric learning to preform classification [[7](#References)]. Siamese Networks are made of two components:
 
-1. The Feature Extractor model: This model will map data points into a new space where the distances between points reflect their similarities [[7](#References)]. Minimising the distance between similar pairs and maximize the distance between dissimilar pairs. This will be done via the use of a loss function focused on metric learning. This new space is called the 'embedding' of the data [[7](#References)].
+1. The Feature Extractor model: This model will map data points into a new space where the distances between points reflect their similarities [[7](#References)]. Minimising the distance between similar pairs and maximising the distance between dissimilar pairs. This will be done via the use of a loss function focused on metric learning (We will use TripletLoss). This new space is called the 'embedding' of the data [[7](#References)].
 
 2. The Classifier model: This model will take the 'embedded' data points and based on the embedding produce a classification (normal or melanoma) [[7](#References)].
 
 ### Feature Extractor (Embedding) Model Architecture
-Out model will use a modified implementation of `resnet50` as the Feature Extractor. The bulk of the model follows the traditional `resnet50` architecture pictured bellow.
+Our model will use a modified implementation of `resnet50` as the Feature Extractor. The bulk of the model follows the traditional `resnet50` architecture pictured bellow.
 
 ![alt text](readme_figures/resnet50_arch.jpg)
 
@@ -198,12 +198,12 @@ Grid Search using a validation set was used determine the optimal set of hyper p
 
 
 ## Other Training Selections
-List of other selections made for training. Where possible - grid Search using a validation set was used determine the optimal selection:
+List of other selections made for training. Where possible - Grid Search using a validation set was used determine the optimal selection:
 - Learning Rate Scheduler: `ReduceLROnPlateau`
 - Feature Extractor Loss: `TripletLoss`
 - Classifier Loss: `CrossEntropyLoss`
 - Optimiser: `Adam`
-- Save best model based on: AUR ROC on Validation Set
+- Save best model based on: AUR ROC on Validation Set (Form of early stopping)
 
 ### Training Process
 A standard training loop will take place ensuring that both the Feature Extractor and Classifier models are trained. The model that preforms best on the validation set (in terms of AUR ROC metric) will be saved as `siamese_net_model.pt`.
@@ -241,7 +241,7 @@ This section will contain details that pertain mainly to `predict.py`
 > - Metrics will be printed to stdout, and figures saved to `PatternAnalysis/recognition/siamese_s46387334/`
 
 ## Results Summary
-After running training and prediction as listed above, these were the results produced when predicting on the unseen testing set.
+After running training and prediction as listed above, these were the results produced when predicting on the unseen testing set using the final model.
 
 ### Evaluation Metrics
 #### 1. Testing AUC ROC (Area Under the Receiver Operating Characteristic Curve)
@@ -272,13 +272,13 @@ Testing Sensitivity: 0.828
 ![alt text](readme_figures/train_val_train_progress.png)
 - Training curve does not pull away from validation, and validation does not plateau. This indicates little to no overfitting.
 - Neither set plateau's this could indicate that the model could be run for longer to further improve results. However we can see the rates slowing down - and due to hardware compute limitations running it for too long was infeasible. Since the model was able to reach the desired AUR ROC ('accuracy metric' of 0.8) further training was not required.
-- Validation set metrics over train are erratic, this is because the model does not train on the validation data. This could be exacerbated by the fact that only the training data is augmented. A possible solution for this is discussed in the 'improvements' section.
-- We can see that as 'overall' accuracy had a lot of movement - but AUR ROC steadily improved. This makes sense as at the start the model was getting the high accuracy by just predicting a majority of the images as normal (as this is the majority class) however as training progressed it was able to form a more balanced way to predict - successfully predicting both classes (minority and majority).
+- Validation set metrics over training epochs are erratic, this is because the model does not train on the validation data. This could be exacerbated by the fact that only the training data is augmented. A possible solution for this is discussed in the 'improvements' section.
+- We can see that 'overall' validation accuracy had a lot of movement (up and down) while training - but validation AUR ROC steadily improved. This makes sense as at the start the model was getting the high accuracy by just predicting a majority of the images as normal (as this is the majority class) however as training progressed it was able to form a more balanced way to predict - successfully predicting both classes (minority and majority).
 
 
 #### 2. Testing ROC Curve
 ![alt text](readme_figures/testing_roc_curve.png)
-- As mentioned in the metrics section preforms well in high sensitivity regions, but less so in the high specificity regions. This is preferred vs the other way around [[8](#References)], however to improve the model its specificity should be the focus of improvement.
+- As mentioned in the metrics section, this model preforms well in high sensitivity regions, but less so in the high specificity regions. This is preferred vs the other way around [[8](#References)], however to improve the model its specificity should be the focus of improvement.
 
 
 #### 3. Testing Confusion Matrix
@@ -288,8 +288,8 @@ Testing Sensitivity: 0.828
 
 #### 4. Testing t-SNE Embedding Visualization
 ![alt text](readme_figures/testing_tsne_embeddings.png)
-- We can very clearly see via the embeddings that the Feature Extractor model has successfully seperated the two classes.
-- We can see that the melanoma samples (class 1) as been grouped around the bottom right of the 2D embedding. we can see partial overlap - this is mainly due to trying to condense the 128 dimension embedding into 2D - however these overlapping points could be miss classifications by the model.
+- We can very clearly see via the embeddings that the Feature Extractor model has successfully identified ways to help separate the two classes.
+- We can see that the melanoma samples (class 1) have formed general groups in the embedding separate from the normal samples (class 0) indicating that the feature extractor was able to identify methods of separating the two classes. We can see partial overlap - this is mainly due to trying to condense the 128 dimension embedding into 2D - however these overlapping points could also represent the overlap between classes in the model (Similar images but from different classes).
 - This shows the implementation of metric learning utilised by TripletLoss to minimize the distance between similar pairs and maximize the distance between dissimilar pairs.
 
 

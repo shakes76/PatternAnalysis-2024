@@ -17,7 +17,18 @@ def read_image(img_path):
 def extract_bounding_box(img):
     contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
-        return None  # No contour found
+        return None 
+    
+    x, y, w, h = cv2.boundingRect(contours[0])
+    return x, y, w, h
+
+def normalize_bbox(x, y, w, h, img_shape):
+    height, width = img_shape[:2]
+    x_center = (x + w / 2) / width
+    y_center = (y + h / 2) / height
+    w_norm = w / width
+    h_norm = h / height
+    return x_center, y_center, w_norm, h_norm
     
 def process_masks(input_dir, output_dir):
     ensure_directory(output_dir)
@@ -30,7 +41,12 @@ def process_masks(input_dir, output_dir):
             try:
                 img = read_image(img_path)
                 bbox = extract_bounding_box(img)
-                print(bbox)
+                
+                if bbox:
+                    normalized_bbox = normalize_bbox(*bbox, img.shape)
+                    print(normalized_bbox)
+                else:
+                    print(f"No contours found in {filename}")
             except Exception as e:
                 print(f"Error processing {filename}: {str(e)}")
            

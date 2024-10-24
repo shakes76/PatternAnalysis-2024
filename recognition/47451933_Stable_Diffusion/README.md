@@ -44,11 +44,13 @@ This is an attempt at an implemention of latent diffusion model based on the sta
 ```
 # Background
 ## Stable Diffusion
-Stable diffusion is a kind of diffusion model call latent diffusion (except for v3 which divereged from latent diffusion).
+Stable diffusion is a generative model and more specifcally is a kind of diffusion model call latent diffusion (except for v3 which divereged from latent diffusion). it was developed by Stability AI with help from Runway and Compvis.
 # Diffusion Models
+Diffusion models are a type of model where images are generated from noise by iterativly removed the noise to constrcut new images. to train them they are train on the different levels of noise tagges with a time step, these images are then passed to a unet along with its timestep to try and predict the noise in the images at that timestep. to generate new images a completely noisy image is passed and it goes throughj every timestep predicting and removing the noise each time. this results in an image completely generated from noise since the u-net is predicting noise that when removed will look like the images its trained on.
 
+Diffusion Models are an alternative to the GAN and standalone VAE approch to generating images. It produces a better varity of images than GANs and better quaility images then a VAE but at the cost of slower generation performance 
 ## Latent Diffusion Models
-latent diffusion was devloped by reserachers at Ludwig Maximilian University
+latent diffusion was devloped by reserachers at Ludwig Maximilian University and is improvement apon the the diffusion model by since using larger images was extremely slow with diffusion. Latent diffusion can drastically imporve the speed by doing the diffusion process in the latent space created by VAE this way its not doing the porcess on the full image can do it on a downsampled version, thus requiring signficantly less resources and time.
 
 # Implementing Stable Diffusion
 Stable diffusion V1 is the first stable diffusion model released and has an 8 factor downsampling VAE (Variational Autoencoder), a 860M U-Net and uses OpenAi's CLIP Bit0L/14 text encoder for conditiong on text prompts. 
@@ -57,6 +59,14 @@ Since all the orignal versions of stable diffusion are types of latent diffusion
 
 ## Latent Diffusion Architecture used by Stable Diffusion
 <img src="https://upload.wikimedia.org/wikipedia/commons/f/f6/Stable_Diffusion_architecture.png" width="800">
+this is the letent diffusion architecture used for the orginal stable diffusion versions.
+
+### Key Components
+- Encoder and Decoder to takes images from pixel space to latent space
+- Forward diffusion process -> add increasing levels of noise over a set number of timesteps
+- De-Noising U-Net to predict the noise of the current timestep
+- Corss attention to condition on input
+- Denoising step to remove the noise predicted by the unet
 
 ## Model Architecture
 <img src="https://github.com/SixLeopard/PatternAnalysis-2024/blob/a681523d2aa48e0a22c2dd8d42716b387e8c94e9/recognition/47451933_Stable_Diffusion/results/COMP3710SD_diagram.png" width="800">

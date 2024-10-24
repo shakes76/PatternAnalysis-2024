@@ -16,8 +16,8 @@ learning_rate = 1e-3
 num_classes = 6  # Adjust this based on your specific number of classes
 
 # Paths
-image_directory = "C:/Users/sophi/Downloads/HipMRI_study_keras_slices_data/keras_slices_train"
-label_directory = "C:/Users/sophi/Downloads/HipMRI_study_keras_slices_data/keras_slices_seg_train"
+image_directory = "C:/Users/sophi/Downloads/HipMRI_study_keras_slices_data/keras_slices_train"   #### WILL NEED TO CHANGE TO WORK FOR YOU
+label_directory = "C:/Users/sophi/Downloads/HipMRI_study_keras_slices_data/keras_slices_seg_train" #### WILL NEED TO CHANGE TO WORK FOR YOU
 
 # Create data loaders
 train_loader = create_dataloader(image_directory, label_directory, batch_size=batch_size)

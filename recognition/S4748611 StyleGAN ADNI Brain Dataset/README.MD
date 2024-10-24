@@ -69,7 +69,7 @@ python predict.py NC
 <br/>
 Alzheimer's Disease Brains:
 <br/>
-![AD TSNE](images/tsne_AD.png)
+<img src="images/tsne_AD.png" alt="AD TSNE" width="400"/>
 <br/>
 <br/>
 Normal Cognition Brains:

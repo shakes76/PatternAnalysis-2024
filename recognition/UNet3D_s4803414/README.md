@@ -1,42 +1,24 @@
 # 3D U-Net for MRI Segmentation
 ## Description
-This repository contains a PyTorch implementation of a 3D U-Net
-model for semantic segmentation of MRI images. The algorithm is 
-designed to accurately segment medical images by predicting 
-pixel-level masks. The problem solved by this algorithm is 
-vital in medical image analysis, where precise segmentation 
-helps in diagnosing conditions, planning treatment, and 
-evaluating therapy outcomes. Specifically, this implementation 
-focuses on semantic segmentation of MRI scans from the HipMRI 
-Study dataset. 
+This repository contains a PyTorch implementation of a 3D U-Net model for semantic segmentation of MRI images. The algorithm is designed to accurately segment medical images by predicting pixel-level masks. The problem solved by this algorithm is vital in medical image analysis, where precise segmentation helps in diagnosing conditions, planning treatment, and evaluating therapy outcomes. Specifically, this implementation focuses on the semantic segmentation of MRI scans from the HipMRI Study dataset.
 
 
 ## How It Works
-The 3D U-Net architecture, as implemented in the code, 
-is a convolutional neural network designed to process 3D 
-input volumes, making it particularly effective for segmenting 
-volumetric medical data like MRI scans. The model utilizes an 
-encoder-decoder structure, where the encoder (contracting path)
-uses ResNet blocks to compress the input into a 
-lower-dimensional latent space, and the decoder (expanding path)
-reconstructs the segmentation mask. Skip connections between the
-encoder and decoder layers preserve essential spatial information
-by concatenating the corresponding feature maps, ensuring that 
-fine details lost during downsampling are recovered.
+The 3D U-Net architecture, as implemented in the code, is a convolutional neural network designed to process 3D input volumes. It is particularly effective for segmenting volumetric medical data such as MRI scans. The model utilizes an encoder-decoder structure. The encoder (contracting path) uses ResNet blocks to compress the input into a lower-dimensional latent space, while the decoder (expanding path) reconstructs the segmentation mask. Skip connections between the encoder and decoder layers preserve essential spatial information by concatenating the corresponding feature maps, ensuring that fine details lost during downsampling are recovered.
 
-In this implementation, the encoder applies downsampling 
-through 3D convolutions and max pooling, while the decoder 
-uses upsampling with transposed convolutions to generate 
-segmentation predictions. Each voxel (3D pixel) in the output 
-receives a class label that corresponds to a structure such 
-as an organ or lesion.
+In this implementation, the encoder uses 3D convolutions and max pooling for downsampling, while the decoder employs upsampling with transposed convolutions to produce segmentation predictions. Each 3D pixel in the output is assigned a class label representing a structure, like an organ or lesion.
 
-The code also incorporates ResNet-style blocks in the 
-encoder and bottleneck layers, enhancing the model’s feature 
-extraction by including residual connections, which help 
-stabilize training. These connections allow the network to 
-better capture complex structures in the input volumes, 
-leading to more accurate segmentation.
+The code includes ResNet-style blocks in the encoder and bottleneck layers. These blocks enhance the model's feature extraction by incorporating residual connections, which help to stabilize training. The connections enable the network to effectively capture complex structures in the input volumes, resulting in more accurate segmentation.
+
+The implementation leverages the Adam optimizer with a learning 
+rate of 1e-3, training for 16 epochs. Due to CUDA memory 
+constraints, the batch size is set to 2. The model is trained 
+using cross-entropy as the loss function, which is well-suited 
+for multi-class segmentation tasks. Additionally, the Dice 
+similarity score is computed to evaluate the model's segmentation 
+performance, as it provides a more nuanced assessment of overlap 
+between predicted and true regions, beneficial for 
+imbalanced class distributions.
 
 The diagram below illustrates an example 3D U-Net architecture, 
 showing 
@@ -68,9 +50,8 @@ pip install torch torchvision matplotlib nibabel
 ```
 
 ## Reproducibility
-To ensure reproducibility, all random seeds are set explicitly 
-within the training script. If you want to reproduce the 
-results exactly, ensure the same dataset splits, 
+All random seeds are set explicitly 
+within the training script to ensure reproducibility. If you want to reproduce the results exactly, ensure the same dataset splits, 
 hyperparameters, and model initialization are used. The model 
 weights are stored and can be reloaded from `model/new_model.pth`. 
 The code relies on personalised paths to data. For personal use, 
@@ -96,7 +77,7 @@ assigned a class label corresponding to the target structure.
 **Example Output:**
 - Segmentation mask: A 3D array of dimensions `(depth, height, width)` with integer values representing class labels.
 
-Below is a sample input MRI slice and mask, with the corresponding 
+Below is a sample input MRI slice and mask with the corresponding 
 segmentation output.
 
 ![Output Image](./Content/prediction2.png)
@@ -114,11 +95,11 @@ training data.
 ## Data Splitting
 The dataset was split into **training (80%)**, 
 **validation (10%)**, and **testing (10%)** subsets. 
-This split was chosen to ensure a sufficient amount of data 
+This split was chosen to ensure sufficient data 
 for training while reserving enough data for accurate 
-evaluation. The data was stratified by cases to ensure that 
-images from the same subject were not present in multiple 
-sets, which could otherwise lead to overfitting.
+evaluation. 
+
+Data was also augmented to improve the performance during training. Augmentation techniques such as random rotations, flips, and intensity shifts were applied to introduce variability and make the model more robust to changes in the data. This helps prevent overfitting, especially when working with smaller datasets, and enhances the model's ability to generalize to unseen cases, improving its segmentation accuracy on real-world data.
 
 ## Results
 The 3D U-Net model was trained for 16 epochs, with early 
@@ -154,28 +135,17 @@ the key results from the training process:
   - Test Class-specific Dice Scores: [0.98341535 0.95497757 0.78998656 0.79622618 0.72969815 0.76118778]
 
 
-  Evident above, the model achieves >0.7 dice similarity score 
-  for each class. Initially, the performance of the last two classes 
-was poor due to smaller and/or more complex regions. Weighting was introduced
-to ensure that smaller, potentially clinically relevant structures are well-learned by the model.
+ As seen above, the model attains a dice similarity score of >0.7 for each class. Initially, the performance of the last two classes was subpar because of smaller and more complex regions. To address this issue, weighting was implemented to ensure that the model effectively learns smaller, potentially clinically significant structures.
 
 ## Reflections and Future Work
-Task was very challenging and took time management across 4 weeks 
-to complete. The topic of segmenting MRI imaging was quite 
-interesting and very rewarding once the code was complete. For future 
-work I would improve the prediction output colours as I didn't 
-have time to run the code again to get the image mask and prediction 
-the same colour. It would be interesting to see how much the performance improves
-with an increased number of epochs as well. I would remove the early stopping 
-and train the model for 32 epochs to see how performance changes. I am also curious to see
-how the model performs with more sample data. Collecting more MRI images and feeding the through the model
-to test performance would be very benficial.
+I faced a challenging task that demanded effective time management over a 4-week period to complete. The topic of segmenting MRI imaging was fascinating, and I felt a great sense of fulfillment once the code was finalized. In future work, I aim to enhance the prediction output colors as I didn't have the opportunity to rerun the code to ensure the image mask and prediction are in the same color. It would be intriguing to observe how the performance improves with an increased number of epochs. I plan to eliminate the early stopping and train the model for 32 epochs to observe how performance changes. I am also curious to see how the model performs with more sample data. Acquiring additional MRI images and testing their performance through the model would be highly beneficial.
 
 ## References
-- F. Isensee, P. Kickingereder, W. Wick, M. Bendszus, and K. H. Maier-Hein, “Brain Tumor Segmentation
-and Radiomics Survival Prediction: Contribution to the BRATS 2017 Challenge,” Feb. 2018. [Online].
+- F. Isensee, P. Kickingereder, W. Wick, M. Bendszus, and K. H. Maier-Hein, "Brain Tumor Segmentation
+and Radiomics Survival Prediction: Contribution to the BRATS 2017 Challenge," Feb. 2018. [Online].
 Available: https://arxiv.org/abs/1802.10508v1- 
 - Dowling, Jason; & Greer, Peter (2021): Labelled weekly MR images of the male pelvis. v2. CSIRO. Data Collection. https://doi.org/10.25919/45t8-p065
 - Soleimani, P. and Farezi, N.
 Soleimani, P., & Farezi, N. (2023). Utilizing deep learning via the 3D U-net neural network for the delineation of brain stroke lesions in MRI image. Retrieved from https://www.nature.com/articles/s41598-023-47107-7
 - Wolny. (n.d.). wolny/pytorch-3dunet: 3D U-Net model for volumetric semantic segmentation written in pytorch. Retrieved from https://github.com/wolny/pytorch-3dunet
+- This work was corrected using Grammarly (https://grammarly.com/)  on 24th  of October 2024

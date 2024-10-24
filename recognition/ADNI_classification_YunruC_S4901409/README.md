@@ -186,7 +186,7 @@ According to the algorithm, the optimal hyperparameters are shown as below:
 Figure 4: The Best Hyperparameters (with the Highest Val Accuracy) out of 10 Trials
 </p>
 
-However, after reviewing the test accuracy across 10 trials, I found another set of hyperparameters interesting. 
+However, after reviewing the test accuracy across 10 trials, I found the set of hyperparameters of the 8th trial interesting. 
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/494a1cd3-2158-4f4e-afbc-77447e385911" alt="hyperparameters with high test accuracy" />
@@ -200,35 +200,36 @@ Although this set did not achieve a relatively high validation accuracy across 3
 
 <div style="display: flex; justify-content: space-between;">
     <div style="text-align: center; width: 48%;">
-        <h3>Graph 1: Losses and Accuracy of the Best Model (Highest Validation Accuracy) across 70 Epochs</h3>
-        <img src="graph1.png" alt="Graph 1" style="width: 100%;"/>
+        <img src="https://github.com/user-attachments/assets/230a3fff-4e5a-43fa-a448-9cd5cfffe5f7" alt="Graph 1" style="width: 100%;"/>
+        <h5>Graph 1: Losses and Accuracy of the Best Model (optimal hyperparameters) across 70 Epochs</h5>
     </div>
     <div style="text-align: center; width: 48%;">
-        <h3>Graph 2: Losses and Accuracy of the Model with the High Test Accuracy across 70 Epochs </h3>
         <img src="https://github.com/user-attachments/assets/e7dc7181-d732-4bb8-b727-f0d569074b7b" alt="Graph 2" style="width: 100%;"/>
+        <h5>Graph 2: Losses and Accuracy of the Best Model (8th Trial's Hyperparameters) across 70 Epochs </h5>
     </div>
 </div>
 
-
+Graph 1 presents two subplots illustrating the performance of the GFNet model trained with the optimal hyperparameters resulting from 10 trials. During the early epochs, both the training and validation losses decrease dramatically, indicating that the model is learning efficiently and reducing error. Although the validation loss starts to fluctuate after the 30th epoch, it continues to decrease alongside the training loss. Despite this, the loss curves for training and validation gradually shows a tendency to disperse, suggesting the probability of overfitting. A similar trend is observed in the accuracy plot: while both accuracies increase as losses decrease, a small gap exists between them. In contrast, the loss and accuracy plots in Graph 2 (for the model trained with hyperparameters giving relatively high test accuracy) suggest that the model is not overfitting. The curves for both loss and accuracy are closely aligned, revealing that the model is generalizing well to unseen validation. Additionally, the model trained with the optimal hyperparameters achieves a validation accuracy of approximately 0.97, whereas the model trained with the hyperparameters from the 8th trial reaches a slightly lower accuracy of around 0.95. However, when testing the best models from both sets of hyperparameters, the model with 8th trial's hyperparameters outperformed, achieving a higher test accuracy of 0.6799 on the test set (Figure 7) compared to the 0.6607 (Figure 6).
 
 <div style="display: flex; justify-content: space-between;">
     <div style="text-align: center; width: 48%;">
-        <h3>Figure 6: The Test Accuracy and the Confusion Matrix of the Best Model (Hyperparameters with High Validation Accuracy)</h3>
-        <img src="graph1.png" alt="Graph 1" style="width: 100%;"/>
+        <img src="https://github.com/user-attachments/assets/94af36f2-8703-4caf-aa73-14c8f62b7682" alt="Graph 1" style="width: 100%;"/>
+        <h5>Figure 6: The Test Accuracy and the Confusion Matrix of the Best Model (Hyperparameters with High Validation Accuracy)</h5>
     </div>
     <div style="text-align: center; width: 48%;">
-        <h3>Figure 7: The Test Accuracy and the Confusion Matrix of the Best Model (Hyperparameters with High Test Accuracy)</h3>
         <img src="https://github.com/user-attachments/assets/75c137f2-3e7d-4978-bdbe-8605c8040838" alt="Figure 7" style="width: 100%;"/>
+        <h5>Figure 7: The Test Accuracy and the Confusion Matrix of the Best Model (8th Trial's Hyperparameters)</h5>
     </div>
 </div>
-
 
 
 
 ## References
 1. Albanie, S. (2023). *Vision Transformer Basics.* YouTube. https://www.youtube.com/watch?v=vsqKGZT8Qn8
 2. Bang, J.-H., Park, S.-W., Kim, J.-Y., Park, J., Huh, J.-H., Jung, S.-H., & Sim, C.-B. (2023). *CA-CMT: Coordinate attention for optimizing CMT Networks.* IEEE Access, 11, 76691–76702. https://doi.org/10.1109/access.2023.3297206
-3. NTi Audio. (n.d.). *Fast Fourier Transform (FFT): Basics, strengths and limitations.* NTi Audio. https://www.nti-audio.com/en/support/know-how/fast-fourier-transform-fft
-4. Saturn Cloud. (2023). *How to normalize image dataset using PyTorch.* Saturn Cloud. https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/
-5. Zhao, R., Liu, Z., Lin, J., Lin, Y., Han, S., & Hu, H. (2021). *Global Filter Networks for Image Classification.* arXiv. https://arxiv.org/abs/2107.00645
+3. OpenAI. (2024). ChatGPT (Oct 2024 version) [Large language model]. https://openai.com
+4. NTi Audio. (n.d.). *Fast Fourier Transform (FFT): Basics, strengths and limitations.* NTi Audio. https://www.nti-audio.com/en/support/know-how/fast-fourier-transform-fft
+5. Saturn Cloud. (2023). *How to normalize image dataset using PyTorch.* Saturn Cloud. https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/
+6. Zhao, R., Liu, Z., Lin, J., Lin, Y., Han, S., & Hu, H. (2021). *Global Filter Networks for Image Classification.* arXiv. https://arxiv.org/abs/2107.00645
+7. 
 

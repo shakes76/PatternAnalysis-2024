@@ -22,28 +22,28 @@ sigmoid. The data is trained for 10 epochs with adam optimizer and dsc as valida
 ## Results
 The results show that the model improve loss and dsc over training. It perform well on unseen data, which mean it is 
 not overfitting.
-![DSC of model over epochs of training](./image/dsc1.png)
-![Loss of model over epochs of training](./image/loss1.png)
-![Result of model on unseen data](./image/result1.png)
-![Visualisation of model performance in comparison to original mask](./image/visual1.png)
+![DSC of model over epochs of training](./image/dsc1.png)<br>
+![Loss of model over epochs of training](./image/loss1.png)<br>
+![Result of model on unseen data](./image/result1.png)<br>
+![Visualisation of model performance in comparison to original mask](./image/visual1.png)<br>
 
 ## Usage Instruction
 ### Dependencies
-cudatoolkit               11.2.2
-cudnn                     8.1.0.77
-h5py                      3.12.1
-keras                     2.10.0
-matplotlib                3.9.2
-nibabel                   5.3.1
-nilearn                   0.10.4
-numpy                     1.26.4
-python                    3.9.20
-pyyaml                    6.0.2
-scikit-image              0.24.0
-scikit-learn              1.5.2
-scipy                     1.13.1
-tensorflow                2.10.1
-tqdm                      4.66.5
+cudatoolkit               11.2.2<br>
+cudnn                     8.1.0.77<br>
+h5py                      3.12.1<br>
+keras                     2.10.0<br>
+matplotlib                3.9.2<br>
+nibabel                   5.3.1<br>
+nilearn                   0.10.4<br>
+numpy                     1.26.4<br>
+python                    3.9.20<br>
+pyyaml                    6.0.2<br>
+scikit-image              0.24.0<br>
+scikit-learn              1.5.2<br>
+scipy                     1.13.1<br>
+tensorflow                2.10.1<br>
+tqdm                      4.66.5<br>
 
 ### Run train.py
 Run with:

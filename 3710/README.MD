@@ -64,6 +64,12 @@ The graph above shows the model's loss over 99 training episodes, and we can see
 
 The graph above represents each Facebook page in the dataset. The data is compressed to 2 dimensions by t-SNE, and each category is represented by a different color, resulting in a total of 4 different colors. The graph shows good clustering and from the results it is clear that the model has an accuracy path of 95.55%, which indicates that the model has learned the feature information about the nodes based on their categories.
 
+## References
 
+The data used came from https://snap.stanford.edu/data/facebook-large-page-page-network.html
 
+For some of the comments, I have taken the comments given by chatgpt and modified my own in order to make them more sensible and understandable.
 
+For the code part I referred to the previous years' uploaded students' code and used it as an inspiration to create my own model, referring to: 's4742823 - Task 2 - Facebook GCN #60', and 'Topic recognition #43'. '
+
+I read the relevant articles to make sure I understood the construction and meaning of the model: https://jonathan-hui.medium.com/graph-convolutional-networks-gcn-pooling-839184205692

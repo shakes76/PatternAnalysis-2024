@@ -5,7 +5,7 @@ import os
 import time
 
 from dataset import load_mri_data
-from train import DATA_PATH, BATCH_LENGTH, BUFFER_SIZE
+from train import SAVED_RESULTS_PATH, DATA_PATH, BATCH_LENGTH, BUFFER_SIZE, multiclass_dice_coefficient, background_dsc, body_dsc, bone_dsc, bladder_dsc, rectum_dsc, prostate_dsc
 
 def predict_model():
     """
@@ -15,6 +15,13 @@ def predict_model():
     #Load and batch test data
     test_dataset = load_mri_data(DATA_PATH, True)[1]
     test_batches = test_dataset.shuffle(BUFFER_SIZE).batch(BATCH_LENGTH)
+    
+    #Load trained model
+    trained_improved_3d_unet_model = keras.models.load_model(SAVED_RESULTS_PATH + "improved_3d_unet_model.keras", custom_objects={"multiclass_dice_coefficient": multiclass_dice_coefficient, "background_dsc": background_dsc, "body_dsc": body_dsc, "bone_dsc": bone_dsc, "bladder_dsc": bladder_dsc, "rectum_dsc": rectum_dsc, "prostate_dsc": prostate_dsc})
+    
+    #Evaluate the trained model on the test set by calculating the dice similarity
+    # coefficients for each class and the multiclass dice similarity coefficient
+    trained_improved_3d_unet_model.evaluate(test_batches)
 
 if __name__ == "__main__":
     

@@ -4,14 +4,15 @@ import nibabel as nib
 import tensorflow as tf
 import skimage.transform
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
-    channels = np.unique(arr)
+    # channels = np.unique(arr)
+    channels = np.arange(6)
     res = np.zeros(arr.shape + (len(channels), ), dtype=dtype)
     for c in channels:
         c = int(c)
         res[..., c : c + 1][arr == c] = 1
-
     return res
 
 # load medical image functions
@@ -55,6 +56,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             #~ inImage = 255. * inImage / inImage.max()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
+            inImage = np.round(inImage)
             inImage = to_channels(inImage, dtype=dtype)
             images[i, :, :, :] = inImage
         else:

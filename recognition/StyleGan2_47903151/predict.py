@@ -17,11 +17,8 @@ from torchvision.utils import save_image
 
 def umap_plot(mapping_AD: MappingNetwork, mapping_NC: MappingNetwork):
     """
-    :param generator_ad: The generator trained on the AD style
-    :param generator_nc: Generator trained on NC style
-    :param mapping_net: Mapping network that generates noise
-    :param path: path to save the image to
-    :return:
+    Plot and shows the umap plot of the style embeddings, using the mapping network of model trained on AD and NC
+    classes.
     """
     mapping_AD.eval()
     mapping_NC.eval()
@@ -42,18 +39,19 @@ def umap_plot(mapping_AD: MappingNetwork, mapping_NC: MappingNetwork):
 
 def load_model(path=""):
     """
-    :param: path: load the model at the given directory.
-    If the directory is None, use new model.
-    :return: generator, discriminator, noise mapping network and path length penalty
+    load the model at the given directory. If the directory is None, use new model.
+    :param: path: path of the saved/pretrained model.
+    :return: generator, discriminator, mapping network and path length penalty
     """
-    print(path)
     generator = Generator(LOG_RESOLUTION, W_DIM)
     discriminator = Discriminator(LOG_RESOLUTION)
     mapping_net = MappingNetwork(Z_DIM, W_DIM)
     plp = PathLengthPenalty(0.99)
     if path is None:
+        print("Using untrained model.")
         return generator, discriminator, mapping_net, plp
     if not os.path.exists(path):
+        print("Model path does not exits. An untrained model will be used.")
         os.mkdir(path)
     else:
         try:
@@ -82,8 +80,8 @@ def load_model(path=""):
 
 def load_optimizers(generator: Generator, discriminator: Discriminator, mapping_net: MappingNetwork, path="model"):
     """
-    Loads each optimizer from the given directory
-    :return: generator optimizer, discriminator optimizer, and noise mapping network optimizer
+    Loads optimizers from the given directory
+    :return: generator optimizer, discriminator optimizer, and mapping network optimizer
     """
     optim_gen = optim.Adam(generator.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
     optim_critic = optim.Adam(discriminator.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
@@ -110,10 +108,11 @@ def load_optimizers(generator: Generator, discriminator: Discriminator, mapping_
 
 def generate_examples(generator: Generator, mapping_net: MappingNetwork, epoch=None, n=10, display=False, model_dir=""):
     """
-    Use generator and noise mapping network to generate a few images, then save the generated images.
+    Use generator and mapping network to generate a few images, and save the generated images.
     :param epoch the number of epoch the model have trained for
     :param n: integer, the number of example wish to generate
     :param display: Choose whether to display the image or not.
+    :returns a list of generated images.
     """
     generator.eval()
     images = []

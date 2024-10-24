@@ -21,6 +21,7 @@ from predict import load_model, load_optimizers, generate_examples
 def train_fn(
         critic: Discriminator,
         gen: Generator,
+        mapping_net: MappingNetwork,
         path_length_penalty: PathLengthPenalty,
         loader: DataLoader,
         opt_critic: optim.Adam,
@@ -35,7 +36,7 @@ def train_fn(
         real = real.to(DEVICE)
         cur_batch_size = real.shape[0]
 
-        w = get_w(cur_batch_size, W_DIM, DEVICE, mapping_network, LOG_RESOLUTION)
+        w = get_w(cur_batch_size, W_DIM, DEVICE, mapping_net, LOG_RESOLUTION)
         noise = get_noise(cur_batch_size, LOG_RESOLUTION, DEVICE)
         with torch.cuda.amp.autocast():
             fake = gen(w, noise)
@@ -65,7 +66,7 @@ def train_fn(
             generator_loss.append(loss_gen.item())
             discriminator_loss.append(loss_critic.item())
 
-        mapping_network.zero_grad()
+        mapping_net.zero_grad()
         gen.zero_grad()
         loss_gen.backward()
         opt_gen.step()
@@ -78,11 +79,11 @@ def train_fn(
 
 def plot_loss(g_loss, d_loss):
     """
+    Plots the generator lost and discriminator loss graph, and the generator vs. discriminator loss graph before saving
+    them.
     :param g_loss: a python list that stores the generator lost
     :param d_loss: a python list that stores the discriminator lost
     :return: None
-    plots the generator lost and discriminator loss graph, and the generator vs. discriminator loss graph before saving
-    them.
     """
     fig = plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     critic.train()
     mapping_network.train()
 
-    if os.path.exists(f"{args.json_dir}/data.json"):  # loads the json dict which stores the past losses for plotting of loss
+    if os.path.exists(f"{args.json_dir}/data.json"):  # loads the json dict which stores the past losses for plotting
         with open(f"{args.json_dir}/data.json", 'r') as f:
             json_data = json.load(f)
         total_epochs = json_data["epochs"]
@@ -179,6 +180,7 @@ if __name__ == "__main__":
         train_fn(
             critic,
             gen,
+            mapping_network,
             path_length_penalty,
             loader,
             opt_critic,
@@ -197,8 +199,9 @@ if __name__ == "__main__":
                    )
 
         if total_epochs % 10 == 0 or total_epochs == 1 or total_epochs == 5:
+            # generates and save examples
             generate_examples(gen, mapping_network, total_epochs, 12)
-            # generate_umap_plot(critic, loader, total_epochs)
+            # saves model independently so it can be use again later for umap plots
             save_model(gen, critic, mapping_network, path_length_penalty, opt_gen, opt_critic, opt_mapping_network,
                        f"{args.model_dir}_epoch_{total_epochs}")
 
@@ -206,7 +209,6 @@ if __name__ == "__main__":
         json_data["epochs"] += 1
         json_data["G_loss"] = generator_loss
         json_data["D_loss"] = discriminator_loss
-        # Writing to json file to remember num. epochs
         with open(f"{args.json_dir}/data.json", "w") as f:
             json.dump(json_data, f)
         plot_loss(generator_loss, discriminator_loss)

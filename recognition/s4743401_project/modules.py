@@ -3,23 +3,23 @@ import torch.nn as nn
 import numpy as np
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, img_size=240, patch_size=16, in_channels=1, embed_dim=768):  # Adjust in_channels
+    def __init__(self, img_size=240, patch_size=16, in_channels=1, embed_dim=768):  
         super(PatchEmbedding, self).__init__()
         self.patch_size = patch_size
-        self.num_patches = (img_size[0] // patch_size) * (img_size[1] // patch_size)  # Height * Width
+        self.num_patches = (img_size[0] // patch_size) * (img_size[1] // patch_size)  
         self.embed_dim = embed_dim
 
-        # Projection of image into patches
+        # image into patches
         self.proj = nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
-        x = self.proj(x)  # Shape: (batch_size, embed_dim, num_patches**0.5, num_patches**0.5)
-        x = x.flatten(2)  # Shape: (batch_size, embed_dim, num_patches)
-        x = x.transpose(1, 2)  # Shape: (batch_size, num_patches, embed_dim)
+        x = self.proj(x)  
+        x = x.flatten(2)  
+        x = x.transpose(1, 2) 
         return x
 
 def PositionEmbedding(seq_len, emb_size):
-    embeddings = torch.zeros(seq_len, emb_size)  # Initialize with zeros
+    embeddings = torch.zeros(seq_len, emb_size)  
     for i in range(seq_len):
         for j in range(emb_size):
             embeddings[i][j] = np.sin(i / (pow(10000, j / emb_size))) if j % 2 == 0 else np.cos(i / (pow(10000, (j - 1) / emb_size)))
@@ -52,7 +52,7 @@ class FeedForward(nn.Module):
         super().__init__()
         self.ff = nn.Sequential(
             nn.Linear(emb_size, 4 * emb_size),
-            nn.ReLU(),  # Add activation function
+            nn.ReLU(),  
             nn.Linear(4 * emb_size, emb_size)
         )
 
@@ -68,23 +68,28 @@ class Block(nn.Module):
         self.ff = FeedForward(emb_size)
 
     def forward(self, x):
-        x = x + self.dropout(self.att(self.ll(x)))  # Residual connection
-        x = x + self.dropout(self.ff(self.ll(x)))  # Residual connection
+        x = x + self.dropout(self.att(self.ll(x)))  
+        x = x + self.dropout(self.ff(self.ll(x)))  
         return x
 
 class VisionTransformer(nn.Module):
     def __init__(self, num_layers, img_size, emb_size, patch_size, num_head, num_class):
         super().__init__()
-        self.patchemb = PatchEmbedding(patch_size=patch_size, img_size=img_size)
-        # Correct calculation for non-square images
-        self.num_patches = (img_size[0] // patch_size) * (img_size[1] // patch_size)  # Height * Width
-        self.pos_embed = nn.Parameter(PositionEmbedding(self.num_patches + 1, emb_size))  # +1 for class token
+        self.patchembedding = PatchEmbedding(patch_size=patch_size, img_size=img_size)
+        # for non-square images
+        #self.num_patches = (img_size[0] // patch_size) * (img_size[1] // patch_size)  # Height * Width
+        height, width = img_size
+        self.num_patches = (height // patch_size) * (width // patch_size)
+        self.pos_embed = nn.Parameter(PositionEmbedding(self.num_patches + 1, emb_size))  
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, emb_size))  # Shape: (1, 1, emb_size)
         self.attention = nn.Sequential(*[Block(emb_size, num_head) for _ in range(num_layers)])
         self.ff = nn.Linear(emb_size, num_class)
 
-    def forward(self, x):  # x -> (b, c, h, w)
-        embeddings = self.patchemb(x)    
-        embeddings += self.pos_embed  # Add positional embedding
-        x = self.attention(embeddings)  # (b, num_patches, emb_dim)
-        x = self.ff(x[:, 0, :])  # Use the class token for final output
+    def forward(self, x):  
+        embeddings = self.patchembedding(x)    
+        cls_tokens = self.cls_token.expand(embeddings.size(0), -1, -1)
+        embeddings = torch.cat((cls_tokens, embeddings), dim=1)
+        embeddings += self.pos_embed  
+        x = self.attention(embeddings) 
+        x = self.ff(x[:, 0, :])  
         return x

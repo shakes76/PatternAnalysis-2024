@@ -198,7 +198,29 @@ Figure 5: Hyperparameters with High Test Accuracy during training across 30 epoc
 
 Although this set did not achieve a relatively high validation accuracy across 30 epochs, it reached a test accuracy of 0.67 multiple times during training, while the rest trials only reached a maximum of 0.66. As a result, both sets of hyperparameters were used to retrain the model over 70 epochs to evaluate their performance.
 
+<div style="display: flex; justify-content: space-between;">
+    <div style="text-align: center; width: 48%;">
+        <h3>Graph 1: Losses and Accuracy of the Best Model (Highest Validation Accuracy) across 70 Epochs</h3>
+        <img src="graph1.png" alt="Graph 1" style="width: 100%;"/>
+    </div>
+    <div style="text-align: center; width: 48%;">
+        <h3>Graph 2: Losses and Accuracy of the Model with the High Test Accuracy across 70 Epochs </h3>
+        <img src="https://github.com/user-attachments/assets/e7dc7181-d732-4bb8-b727-f0d569074b7b" alt="Graph 2" style="width: 100%;"/>
+    </div>
+</div>
 
+
+
+<div style="display: flex; justify-content: space-between;">
+    <div style="text-align: center; width: 48%;">
+        <h3>Figure 6: The Test Accuracy and the Confusion Matrix of the Best Model (Hyperparameters with High Validation Accuracy)</h3>
+        <img src="graph1.png" alt="Graph 1" style="width: 100%;"/>
+    </div>
+    <div style="text-align: center; width: 48%;">
+        <h3>Figure 7: The Test Accuracy and the Confusion Matrix of the Best Model (Hyperparameters with High Test Accuracy)</h3>
+        <img src="https://github.com/user-attachments/assets/75c137f2-3e7d-4978-bdbe-8605c8040838" alt="Figure 7" style="width: 100%;"/>
+    </div>
+</div>
 
 
 

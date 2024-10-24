@@ -164,7 +164,7 @@ The cause may be an imbalance of data (class imbalance) between the official tra
 Therefore, a good result may have been obtained by randomly re-splitting the whole set. This indicates that the distribution of the data significantly impacts training, and careful partitioning is necessary.
 
 ## Conclusion
-We confirmed that GFNet-H-B can detect Alzheimer's disease with high accuracy using the ADNI dataset. It achieved 98.62% accuracy on a randomly resegmented dataset, but accuracy dropped to 56.68% on official data partitioning.
+We confirmed that GFNet-H-B can detect Alzheimer's disease with high accuracy using the ADNI dataset. It achieved **98.62%** accuracy on a randomly resegmented dataset, but accuracy dropped to 56.68% on official data partitioning.
 These results suggest that GFNet performance may depend on the amount and distribution of data used for training. Further testing is needed to determine whether further data expansion and data preprocessing that accounts for class imbalance and sample bias in the data set will increase accuracy.
 
 ## Running the code
@@ -182,7 +182,7 @@ These results suggest that GFNet performance may depend on the amount and distri
 Train: `pyton train.py`  
 Predict: `python predict.py`
 
-Assume you are in the directory each file is in, have installed all necessary libraries, and that the datasets are stored in "/home/groups/comp3710/ADNI/AD_N."
+Assume you are in the directory each file is in, have installed all necessary libraries, and that the datasets are stored in "/home/groups/comp3710/ADNI/AD_NC".
 
 
 

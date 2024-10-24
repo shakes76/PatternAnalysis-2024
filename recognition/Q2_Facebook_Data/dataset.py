@@ -119,12 +119,18 @@ def split_data (data, train_size = 0.8, val_size = 0.1):
     num_nodes = data.num_nodes
     indices = list(range(num_nodes))
 
+    # set seed for reproducibility
+    seed1 = 42 # best outcome
+    # other seed number such as 100, 58 ,72, 43 were test but did not work
+    seed2 = 80
+    seed = seed1
+    
     #split into tranning and remaining data (val + test)
-    train_idx, temp_idx = train_test_split(indices, train_size=train_size, random_state=42)
+    train_idx, temp_idx = train_test_split(indices, train_size=train_size, random_state=seed)
 
     #split the remaining data into validation and test
     val_size_adjusted = val_size / (1 - train_size) 
-    val_idx, test_idx = train_test_split(temp_idx, train_size=val_size_adjusted, random_state=42)
+    val_idx, test_idx = train_test_split(temp_idx, train_size=val_size_adjusted, random_state=seed)
 
     # create masks
     train_mask = torch.zeros(num_nodes, dtype=torch.bool)

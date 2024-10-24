@@ -1,5 +1,3 @@
-# modules.py
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -8,10 +6,13 @@ import tensorflow_addons as tfa
 def unet_3d(input_shape, num_classes):
     """
     Improved U-Net model with Instance Normalization and Leaky ReLU activation functions.
+    REF: This code came from the tutorial Youtube video. https://youtu.be/GAYJ81M58y8?si=jQqSwcT5bDk3JE-5
+    REF: added the instance normalization and leaky ReLU with the help from chatgpt.
     """
     inputs = keras.Input(shape=input_shape)
 
     # Encoder
+    # Does 3D convolution than a max pooling
     # Block 1
     c1 = layers.Conv3D(16, 3, padding='same', use_bias=False)(inputs)
     c1 = tfa.layers.InstanceNormalization()(c1)
@@ -58,6 +59,7 @@ def unet_3d(input_shape, num_classes):
 
     # Decoder
     # Up Block 1
+    # The transpose does the up convolution.
     u1 = layers.Conv3DTranspose(128, 2, strides=2, padding='same', use_bias=False)(bn)
     u1 = tfa.layers.InstanceNormalization()(u1)
     u1 = layers.LeakyReLU(alpha=0.01)(u1)

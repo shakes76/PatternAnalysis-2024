@@ -11,7 +11,7 @@ def run_train():
     Loads model yolov11s and trains it (32 batchsize, 200 epoch) on gpu if available
     Saves results (plots, weights, etc.) under runs/detect/trainX <- train number
     """
-    model = yolo_model("yolo11s.pt") # initial weights
+    model = yolo_model("yolo11m.pt") # initial weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     results = model.train(batch=16, device=device, data=f"datasets/isic.yaml", epochs=2, imgsz=512)
     # results = model.train(batch=32, device=device, data=f"{yaml_path}/isic.yaml", epochs=200, imgsz=512) # used

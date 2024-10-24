@@ -5,10 +5,12 @@ The introduction of the You-Only-Look-Once (YOLO) algorithm for image detection 
 The YOLO architecture is a convolutional neural network that prioritises speed over accuracy by using a single-stage detection process, as opposed to the two-step process utilised by many of the more accurate object detection algorithms.
 
 ![Comparison of one and two stage detectors.](./figures/detectors.jpeg)
+Image source[1].
 
 YOLO's algorithm can be better understood by analysing its architecture:
 
 ![Diagram of YOLOv11 architecture.](./figures/architecture.jpeg)
+Diagram image source[2].
 
 Essentially, the convolution neural network parses over each pixel in the image and, in one step, tries to fit a bounding box with the pixel as the box's centre. In doing so, the model also outputs a confidence score for the validity of the proposed box. By the end of the single iteration through the image, the model outputs each proposed bounding box with a confidence score above a specific interval (0.25 by default for YOLOv11) as the final detections for the image.
 
@@ -29,7 +31,7 @@ To train the model, a dataset from the 2017 ISIC challenge was used: this includ
 - 150 validation samples
 This training validation split was used since it was the one provided by the ISIC challenge, and the approximately 80/10/10 split is seen to be optimal for large scale training. 
 
-Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1.
+Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1 [3].
 
 ![Example of ISIC image and masks.](./figures/ISIC_image_mask.png)
 
@@ -91,25 +93,51 @@ The result graphs for training can be seen below:
 ![Precision-recall curve](./figures/PR_curve.png)
 ![Metrics plot](./figures/results.png)
 
-## 5. Testing model results
-### 5.1 Running test.py
-The file (by default) also then runs a test on the most recent training batches' weights (the one that was just trained if they are run together).
+## 5. Testing the trained model
+By default, the train.py will train a model and immediately test the newly defined weights. If testing is required on a specific training runs' weights, input the argument run_number=X to test on the X'th training runs weights - if a run_number is not defined, the functionw will take the most recent training run's weights. Also if testing is wanted without training, simply comment out the run_test() function.
 
 By running inference on each image in the dataset, it calculates intersection-over-union score indepenently (metric used to evaluate the allignment of predicted and true bounding boxes) before outputting the average and number of samples with IoU above 0.8.
 
-### 5.2 Results from testing
-In this case, resulting metrics were found to be:
-
-IMAGE WITH AVE IOU AND N IOU>0.8
+Using the hyperparameters in the files, the results obtained were:
+<pre>
+average IoU=0.734695
+294 out of 600 samples had IoU>=0.8
+</pre>
 
 ## 6. Predicting using trained model
 predict.py contains a method to visualise inference (example usage) of the trained model. By default, it also runs on the most recent training batch's weights. It plots and displays 9 random samples of the image, the model's predicted lesion and the true lesion from the test set.
 
 ![Example of predict.py output.](./figures/predict_examples.png)
 
+predict.py also has a function to plot a single testcase's image, true lesion bounding box, and resulting bounding box. Below is an example **input** image for the model:
+![Example of image input (testcase 00000007).](./figures/ISIC_sample.jpg)
+
+And here is the corresponding example **output** from model prediction:
+![Example of segmentation output (testcase 00000007).](./figures/example_detection.png)
+
 ## 8. Appendix
 ### Appendix 1: ISIC Dataset
+[3]: ISIC Challenge dataset (2017), https://challenge.isic-archive.com/data/#2017 
+
 ### Appendix 2: Requirements
+<pre>
+ultralytics==8.3.21
+ultralytics-thop==2.0.9
+matplotlib==3.7.1
+numpy==1.26.4
+opencv-python>=4.1.1
+pillow==10.4.0
+PyYAML==6.0.2
+requests==2.32.3
+scipy==1.13.1
+torch==2.5.0+cu121
+torchvision==0.20.0+cu121
+tqdm==4.66.5
+protobuf==3.20.3
+tensorboard==2.17.0
+pandas==2.2.2
+</pre>
+
 ### Appendix 3: References
-image 1 https://www.v7labs.com/blog/yolo-object-detection 
-yolo architecture and evolution https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71
+[1]: YOLO Algorithm for Object Detection Explained, https://www.v7labs.com/blog/yolo-object-detection 
+[2]: YOLOv11 Architecture Explained: Next-Level Object Detection with Enhanced Speed and Accuracy, https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71

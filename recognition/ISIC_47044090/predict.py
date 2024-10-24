@@ -9,7 +9,23 @@ from utils import scan_directory
 
 modified_filepath = "./datasets/ISIC"
 
-def visualise_testcase(ax, file, true_bbox, pred_bbox):
+def visualise_single_testcase(file, partition='train'):
+    """
+    Helper function to test the extraction process by visualising a single sample and its bounding box
+    """
+    image = Image.open(f'{modified_filepath}/{partition}/images/ISIC_{file}.jpg')
+    f = open(f"{modified_filepath}/{partition}/labels/ISIC_{file}.txt", "r")
+    obj, x_center, y_center, width, height = np.array(f.read().split(" "))
+    x_center, y_center, width, height = float(x_center)*512, float(y_center)*512, float(width)*512, float(height)*512
+    fig, ax = plt.subplots()
+    ax.imshow(image)
+    rect = patches.Rectangle(((x_center) - (width)/2, (y_center) - (height)/2), (width), (height), linewidth=1, edgecolor='r', facecolor='none')
+    ax.add_patch(rect)
+    plt.title(f"Example of detection of {partition} sample {file}")
+    plt.show()
+
+
+def visualise_multiple_testcase(ax, file, true_bbox, pred_bbox):
     """
     Visualises a given testcase onto an axis
 
@@ -61,7 +77,7 @@ def run_predict(run_number=-1, n_rows=3, partition='test'):
                 print("t")
                 pred_xywh = None
 
-            visualise_testcase(ax, file, true_xywh, pred_xywh)
+            visualise_multiple_testcase(ax, file, true_xywh, pred_xywh)
             ax.set_title(f"{partition}_sample_{file}")
             if i==0:
                 ax.legend()
@@ -71,3 +87,4 @@ def run_predict(run_number=-1, n_rows=3, partition='test'):
 
 if __name__ == '__main__':
     run_predict()
+    # visualise_single_testcase("0000007")

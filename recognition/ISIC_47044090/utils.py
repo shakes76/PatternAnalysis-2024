@@ -85,22 +85,6 @@ def iou_torch(true_bbox, pred_bbox):
     return np.round(iou_value.tolist(), 3)
 
 
-def test_extraction(mask):
-    """
-    Helper function to test the extraction process by visualising a single sample and its bounding box
-    """
-    image = Image.open(f'{modified_filepath}/train/images/ISIC_{mask}.jpg')
-    f = open(f"{modified_filepath}/train/labels/ISIC_{mask}.txt", "r")
-    obj, x_center, y_center, width, height = np.array(f.read().split(" "))
-    x_center, y_center, width, height = float(x_center)*512, float(y_center)*512, float(width)*512, float(height)*512
-    fig, ax = plt.subplots()
-    ax.imshow(image)
-    rect = patches.Rectangle(((x_center) - (width)/2, (y_center) - (height)/2), (width), (height), linewidth=1, edgecolor='r', facecolor='none')
-    ax.add_patch(rect)
-    plt.title("Lesion detection example")
-    plt.show()
-
-
 def image_and_mask(sample):
     """
     Helper function to test the extraction process by visualising a single sample and its bounding box

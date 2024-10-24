@@ -85,8 +85,8 @@ model = GFNet(num_classes=2).to(device)
 
 # Loss function, optimizer, and number of epochs
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.00001)
-num_epochs = 50
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+num_epochs = 150
 
 # Train the model
 train_loss, val_loss, train_acc, val_acc = train_model_with_val_loss(model, criterion, optimizer, num_epochs, train_loader, val_loader)

@@ -1,6 +1,7 @@
 # StyleGAN2 Based Image Generation Network on ANDI Brain Dataset
 ## Project Aim
-The aim of the model is to create a Image generation network of the ANDI dataset based on StyleGAN2.
+The aim of the model is to create a Image generation network of the ADNI brain dataset based on StyleGAN2, and to 
+investigate the relationship between the style latent space of models on different classes of the dataset.
 
 ## Dependencies
 
@@ -18,6 +19,10 @@ The aim of the model is to create a Image generation network of the ANDI dataset
     |  pyqt           |5.15.10            |
 
 
+## Dataset
+
+This project trains on the ADNI dataset. The ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset contains two 
+classes: Alzheimer’s disease (AD) and Normal Cognition (NC). 
 
 ## StyleGAN2 architecture
 
@@ -25,7 +30,7 @@ This project implements StyleGAN2. StyleGAN2 is an improvement from StyleGAN, wh
 of two main components: a generator and discriminator. Generator will generate fake images given an input noise, and the
 discriminator is a classifier that classifies whether the given input image is real or fake.
 
-StyleGAN improves GAN by using the following:
+StyleGAN improves GAN by the following:
 - Instead of a traditional latent input, generator takes a learned constant. 
 - Using a standalone mapping network and AdaIN for style transfer.
   - The mapping network is a neural network composed of 8 fully connected layers. It takes a randomly sampled point from
@@ -36,7 +41,7 @@ StyleGAN improves GAN by using the following:
 - Mixing regularization
   - Since the Style generation uses intermediate vector at each level of synthesis, the network may learn the 
   correlation between the levels. Mixing regularization is introduced to reduce the correlation between levels.
-![stylegan.png](model_images%2Fstylegan.png)
+![stylegan.png](stylegan.png)
 
 StyleGAN2 improves StyleGAN by addressing the shortcoming of StyleGAN, namely, the droplet effect and the preference of 
 features over a certain position. Weight modulation and demodulation is used, and got rid of progressive growing

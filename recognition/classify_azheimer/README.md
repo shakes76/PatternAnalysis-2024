@@ -46,7 +46,19 @@ GFNet is a vision transformer model that leverages global filter layers to captu
 These steps enhance the diversity of the training data, helping the model to generalize better.
 
 ## Model
-We utilize the GFNet vision transformer for this classification task. GFNet is known for its robust performance in image classification tasks.
+We utilize the GFNetPyramid vision transformer for this classification task. GFNetPyramid is an extension of the original GFNet architecture, designed to capture multi-scale features through a hierarchical pyramid structure. It combines global filtering with a pyramid of feature representations, allowing the model to effectively process images at different scales.
+## How It Works
+The GFNetPyramid model works by integrating global filtering mechanisms within a pyramid architecture to efficiently capture both local and global features from MRI images:
+
+Patch Embedding: The input MRI image is divided into patches, and each patch is embedded into a high-dimensional feature space.
+
+Pyramid Structure: The model consists of multiple stages, each operating at different resolutions. At each stage, the spatial dimensions are reduced, creating a pyramid of feature maps.
+
+Global Filtering: Instead of using standard convolutions, the model applies global filters in the frequency domain using the Fast Fourier Transform (FFT). This allows the model to capture long-range dependencies and global context.
+
+Feature Aggregation: Features from different stages are combined, enabling the model to consider information at various scales.
+
+Classification Head: The aggregated features are passed through a fully connected layer to produce the final classification probabilities.
 
 ## Training
 The model is trained on the ADNI dataset with the goal of achieving a minimum accuracy of 0.8 on the test set. Training details and hyperparameters are provided in the training script.
@@ -61,8 +73,9 @@ The model's performance is evaluated on a separate test set. Metrics such as acc
 To reproduce the results:
 
 1. Clone the repository.
-2. Run the training and predict script: `python predict.py --epoch [num:defaut = 5] --train`.
-3. if just want train the model just run `python train.py --epoch [num:defaut = 5]`.
+2. download ANDI dataset to `recognition/classify_azheimer/AD_NC`
+3. Run the training and predict script: `python predict.py --epoch [num:defaut = 5] --train`.
+4. if just want train the model just run `python train.py --epoch [num:defaut = 5]`.
 
 
 
@@ -78,6 +91,19 @@ The model did not reach the target accuracy of 0.8. Potential reasons include:
 - **Complexity of MRI Data**: High variability and subtle differences in MRI scans.
 - **Model Overfitting**: The model may have overfitted the training data.
 - **Data Imbalance**: Possible imbalance between AD and normal cases.
+
+
+Below is the training plot showing the train accuracy and loss over epochs:
+![Training Plot](training_plot.png)
+
+## Dependencies
+- Python: 3.12
+- PyTorch: 1.10
+- Torchvision: 0.11
+- NumPy: 1.21
+- Matplotlib: 3.4
+- timm: 0.4.12
+
 
 ## Appendix
 For more information on the ADNI dataset, visit the [ADNI website](http://adni.loni.usc.edu/).

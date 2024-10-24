@@ -122,7 +122,7 @@ class Decoder(nn.Module):
 class VectorQuantizer(nn.Module):
     """
     Discretize the continuous latent representation into vectors in the codebook
-    reference from: https://github.com/lucidrains/vector-quantize-pytorch, https://huggingface.co/spaces/danurahul/gan/blob/main/taming-transformers/taming/modules/vqvae/quantize.py
+    idea reference from: https://github.com/lucidrains/vector-quantize-pytorch, https://huggingface.co/spaces/danurahul/gan/blob/main/taming-transformers/taming/modules/vqvae/quantize.py
     """
     def __init__(self, num_embeddings, embedding_dim, commitment_cost=0.25):
         super(VectorQuantizer, self).__init__()

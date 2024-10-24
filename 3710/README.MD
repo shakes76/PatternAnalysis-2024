@@ -53,12 +53,15 @@ scikit-learn
 After training the model 99 times on the training set and early stop, we obtained an accuracy of 94.87% on the test set, at which point the accuracy growth leveled off.
 
 ![accuracy](https://github.com/Xiangxu-66/PatternAnalysis-2024/blob/9eda198dc4c3cbac159af55d258d0929a9da9c9e/plot/accuracy_over_epochs.png)
+
 The graph above shows the change in accuracy of the GCN model over the course of 99 training sessions. We can see that the accuracy of both the training and validation sets rises rapidly at the beginning and starts to rise slowly at about the 20th epoch. The accuracy of the validation set is very close to the training set, which means that the model is not overfitting the training set.
 
 ![loss](https://github.com/Xiangxu-66/PatternAnalysis-2024/blob/9eda198dc4c3cbac159af55d258d0929a9da9c9e/plot/loss_over_epochs.png)
+
 The graph above shows the model's loss over 99 training episodes, and we can see from the image that the validation loss values start out very high but then quickly decrease and stabilize, and in the last few epochs the training loss and validation loss are about the same, further indicating that the model is not overfitting.
 
 ![visualized](https://github.com/Xiangxu-66/PatternAnalysis-2024/blob/9eda198dc4c3cbac159af55d258d0929a9da9c9e/plot/TSNE_Visualization.png)
+
 The graph above represents each Facebook page in the dataset. The data is compressed to 2 dimensions by t-SNE, and each category is represented by a different color, resulting in a total of 4 different colors. The graph shows good clustering and from the results it is clear that the model has an accuracy path of 95.55%, which indicates that the model has learned the feature information about the nodes based on their categories.
 
 

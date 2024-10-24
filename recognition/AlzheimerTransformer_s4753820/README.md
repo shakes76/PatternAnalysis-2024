@@ -185,8 +185,8 @@ All plots are located within `/plots`.
 
 v0 Experiment: 
 <p float="left">
-  <img src="plots/v0noAugments_accuracy_plot.png" width="400" />
-  <img src="plots/v0noAugments_loss_plot.png" width="400" />
+  <img src="plots/v0noAugments_accuracy_plot.png" width="500" />
+  <img src="plots/v0noAugments_loss_plot.png" width="500" />
 </p>
 
 v3: Changed transformer encoder to be pytorch's default encoderlayer. Added embedding dropout layer as ViT paper has it in Appendix B (Dosovitskiy et al., 2020). Re-implementing normalisation but without other data augmentation.

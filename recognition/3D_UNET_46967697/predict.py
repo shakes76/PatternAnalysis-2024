@@ -87,11 +87,11 @@ def save_prediction_images(device, model, test_loader, num_images=5):
             predicted = torch.argmax(output, dim=1)
 
             # Select the middle slice
-            slice_idx = images.shape[2] // 2  
+            slice_idx = images.shape[4] // 2  
 
-            image_slice = images[0, 0, slice_idx, :, :] 
-            label_slice = labels[0, 0, slice_idx, :, :]  
-            predicted_slice = predicted[0, slice_idx, :, :] 
+            image_slice = images[0, 0, :, :, slice_idx] 
+            label_slice = labels[0, 0, :, :, slice_idx]  
+            predicted_slice = predicted[0, :, :, slice_idx] 
 
             # Save the images
             torchvision.utils.save_image(image_slice.unsqueeze(0), f'{ORIGINAL_IMAGES_PATH}/image_{idx}_input.png')

@@ -233,6 +233,7 @@ model = GFNet(
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.RAdam(model.parameters(), lr=1.2655138149073937e-05, weight_decay=9.472938882625012e-05)
 '''
+
 However, this model has a relatively high false positive rate (1962 FP cases compared to 1858 cases). During the situation of detecting whether a patient has Alzheimer's Disease, a higher false positive rate means incorrectly diagnosing healthy individuals as having the disease, which can cause unnecessary stress and potentially inappropriate treatments. Lastly, there are still limitations in the training process, as the final result falls short of the expected 0.8 accuracy on the test set. For instance, the Optuna study was limited to only 10 trials with 30 epochs per trial, which may have contributed to overfitting when selecting the best hyperparameters. Therefore, more trials with a higher number of epochs could help identify the true best hyperparameters. To reach the target accuracy of 0.8, more advanced techniques should be employed, such as using the pre-trained model and fine-tuning it on the given dataset.
 
 ## References

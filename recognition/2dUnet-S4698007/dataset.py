@@ -16,9 +16,9 @@ class NiftiDataset(Dataset):
         self.normImage = normImage 
         
         # List all gzipped image files
-        self.image_files = [f for f in os.listdir(image_directory) if f.endswith('.gz')]
+        self.image_files = sorted([f for f in os.listdir(image_directory) if f.endswith('.gz')])
         # List all gzipped label files
-        self.label_files = [f for f in os.listdir(label_directory) if f.endswith('.gz')]
+        self.label_files = sorted([f for f in os.listdir(label_directory) if f.endswith('.gz')])
 
         # Ensure the number of images matches the number of labels
         assert len(self.image_files) == len(self.label_files), "No. of images and labels must match."

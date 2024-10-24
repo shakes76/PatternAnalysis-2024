@@ -37,23 +37,23 @@ IMAGE_SIZE = 224
 ### basic normalisation for RGB inesity values per channel 
 #### use 0.5 to place intensity values between [-1, 1]
 TRAIN_TRANSFORM = transforms.Compose([
+    transforms.ToTensor(),
     transforms.Resize(IMAGE_SIZE),
     transforms.CenterCrop(IMAGE_SIZE),
-    transforms.RandomErasing(p=0.3, scale=(0.01, 10), ratio=(0.5, 2.0)),
+    transforms.RandomErasing(p=0.3, scale=(0.01, 0.10), ratio=(0.5, 2.0)),
     transforms.Normalize(mean=[0.25], std=[0.25]),
-    transforms.ToTensor()
     ])
 
 TEST_TRANSFORM = transforms.Compose([
+    transforms.ToTensor(),
     transforms.Resize(IMAGE_SIZE),
     transforms.CenterCrop(IMAGE_SIZE),
-    transforms.Normalize(mean=[0.25], std=[0.25]),
-    transforms.ToTensor()
+    transforms.Normalize(mean=[0.25], std=[0.25])
     ])
 
 
 class ADNI(Dataset):
-    def __init__(self, path=DATASET_PATH, type="train", transform=None, val=False, ratio=0.8, tqdm=False):
+    def __init__(self, path=DATASET_PATH, type="train", transform="train", val=False, ratio=0.8, tqdm=False):
         root = osP.join(path, type)
         self.path = root
         self.ad_path = osP.join(root, 'AD')
@@ -143,6 +143,9 @@ class ADNI(Dataset):
 
         if self.transform:
             img = self.transform(img)
+
+        label = self.labels[true_id]
+        return img, label
 
 
 class ADNITest(Dataset):

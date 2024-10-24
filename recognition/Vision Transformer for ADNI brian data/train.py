@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import tqdm
+from tqdm import tqdm
 import copy
 import numpy as np
 from functools import partial
@@ -92,8 +92,8 @@ def plot(train_accs, test_acc):
     plt.show()
 
 if __name__ == "__main__":
-    train_data = dataset.ADNI(val=False, split="train")
-    val_data = dataset.ADNI(val=True, split="train")
+    train_data = dataset.ADNI(val=False, type="train", transform="train")
+    val_data = dataset.ADNI(val=True, type="train", transform="val")
 
     train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True)

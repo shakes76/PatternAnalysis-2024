@@ -2,6 +2,7 @@
 
 # GNN Model for Semi-Supervised Node Classification on Facebook Page-Page Network
 
+## Name: Keyi Zheng  SID: 47973350
 
 ## Overview
 This project implements a suitable multi-layer Graph Neural Network model using Graph Attention Networks  for semi-supervised multi-class node classification. The dataset originally used is the Facebook Large Page-Page Network dataset and we used partially processed dataset, which consists of nodes with 128-dimensional feature vectors and edges representing connections between pages. The model is trained to classify the nodes based on their features and the graph structure. 

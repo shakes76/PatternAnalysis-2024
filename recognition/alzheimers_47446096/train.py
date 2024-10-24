@@ -1,4 +1,4 @@
-from modules import ConvolutionalVisionTransformer
+from modules import VisionTransformer, ConvolutionalVisionTransformer
 from dataset import *
 import torch
 from torchsummary import summary
@@ -7,13 +7,12 @@ from torch.cuda.amp import GradScaler
 
 def train(device: str = "cpu"):
     NUM_EPOCH = 1000
-    LEARNING_RATE = 0.0002
+    LEARNING_RATE = 0.0001  
 
-    model = ConvolutionalVisionTransformer(device)
-    print(summary(model, (1, 256, 256)))
-    trainLoader = getTrainLoader(gpu = True, batchSize=128, workers=1)
+    model = VisionTransformer(12, 14, (1, 224, 224), 128, 8, 4, device).to(device)
+    #model = torch.load("./model15/model_epoch_266").to(device)
+    print(summary(model, (1, 224, 224)))
     valLoader = getValLoader(gpu = True, batchSize=128)
-
     scaler = GradScaler()
 
     trainAccList = []
@@ -22,10 +21,12 @@ def train(device: str = "cpu"):
     valLossList = []
 
     crit = torch.nn.CrossEntropyLoss()
-    opt = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
+    opt = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE, weight_decay=0.03)
     maxValAcc = 0
+    #schL1 = torch.optim.lr_scheduler.CosineAnnealingLR(opt, 100)
     print("Beginning Training")
     for epoch in range(NUM_EPOCH):
+        trainLoader = getTrainLoader(gpu = True, batchSize=128, workers=2)
         print(f'Epoch {epoch+1}/{NUM_EPOCH}:', end = ' ')
         model.train()
         trainAcc = 0
@@ -47,7 +48,7 @@ def train(device: str = "cpu"):
             a, predLabels = torch.max(outputs.data, 1)
             trainAcc += (labels == predLabels).sum().item()            
             trainLoss += loss.item()
-
+        #schL1.step()
         trainAcc /= len(trainLoader.dataset)
         trainLoss /= len(trainLoader)
         trainAccList.append(trainAcc)
@@ -78,9 +79,9 @@ def train(device: str = "cpu"):
                 valLossList.append(valLoss) 
                 print(f"Validation Loss = {valLoss}, Validation Accuracy = {100 * valAcc} %")
         
-        #if (valAccList[-1] > maxValAcc or valAccList[-1] >= 0.8):
-        #    maxValAcc = valAccList[-1]
-        #    torch.save(model, f"model_epoch_{epoch + 1}")
+        if (valAccList[-1] > maxValAcc or valAccList[-1] >= 0.8):
+            maxValAcc = valAccList[-1]
+            torch.save(model, f"model_epoch_{epoch + 1}")
         
         if ((epoch + 1) % 20 == 0):
             plt.plot(range(1, epoch + 2), trainAccList, label = "Train Accuracy")

@@ -13,21 +13,20 @@ VALPATH = "/val"
 IMG_SIZE = 224
 
 TRAIN_TRANSFORM = transforms.Compose([
-    transforms.Resize(IMG_SIZE),
-    transforms.RandomCrop(IMG_SIZE),
+    transforms.RandomResizedCrop((IMG_SIZE, IMG_SIZE)),
     transforms.RandAugment(num_ops = 3),
     transforms.Grayscale(),
     transforms.ToTensor(),
-    transforms.Normalize(mean = 0.1155, std = 0.2224)
+    transforms.Normalize(mean = 0.1156, std = 0.2198)
 ])
 TEST_TRANSFORM = transforms.Compose([
-    transforms.Resize(IMG_SIZE),
-    transforms.CenterCrop(IMG_SIZE),
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.Grayscale(),
     transforms.ToTensor(),
-    transforms.Normalize(mean = 0.1155, std = 0.2224)
+    transforms.Normalize(mean = 0.1156, std = 0.2198)
 ])
 CALC_TRANSFORM = transforms.Compose([
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor()
 ])
 
@@ -64,7 +63,7 @@ def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True, gpu
         root = path,
         transform = TEST_TRANSFORM
     )
-    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=1, pin_memory = gpu)
+    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=0, pin_memory = gpu)
     return valLoader
 
 def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):

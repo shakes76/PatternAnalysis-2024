@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torch import Tensor
-from einops import rearrange
+from einops import rearrange, repeat
 import functools
 class VisionTransformer(nn.Module):
 
@@ -33,7 +33,7 @@ class VisionTransformer(nn.Module):
 
         assert self.pLen % self.mhaHeadFactor == 0
         self.blocks = nn.ModuleList(
-            [TransformerEncBlk(self.pLen, self.pLen // self.mhaHeadFactor, self.hiddenMul, device = self.device) for i in range(self.depth)]
+            [TransformerEncBlk(self.pLen, self.mhaHeadFactor, self.hiddenMul, device = self.device) for i in range(self.depth)]
         )
     
     def forward(self, x):
@@ -56,13 +56,13 @@ class TransformerEncBlk(nn.Module):
         self.mha = nn.MultiheadAttention(
             self.dim,
             self.nHeads,
-            dropout = 0.2,
+            dropout = 0.1,
             batch_first = True,
             device = self.device
         )
         self.n2 = nn.LayerNorm(self.dim, device = self.device)
         self.l1 = nn.Linear(self.dim, self.dim * self.hiddenMul, device = self.device)
-        self.d1 = nn.Dropout(p = 0.2)
+        self.d1 = nn.Dropout(p = 0.1)
         self.activation = nn.GELU()
         self.l2 = nn.Linear(self.dim * self.hiddenMul, self.dim, device = self.device)
 
@@ -71,7 +71,7 @@ class TransformerEncBlk(nn.Module):
         y, _ = self.mha(y, y, y)
         x = x + y
         z = self.d1(self.activation(self.l1(self.n2(x))))
-        z = self.l2(z)
+        z = self.d1(self.l2(z))
         x = x + z
         return x
 
@@ -203,16 +203,15 @@ class ConvolutionalPatchSplitter(nn.Module):
         self.padding = padding
         channels, height, width = self.imgDims
         #* Ensure that the image can be correctly split into patches
-        assert height % self.kernal == 0
-        assert width % self.kernal == 0
         self.conv = nn.Conv2d(channels, self.outputDim, self.kernal, self.stride, padding= self.padding, device = self.device)
-        self.norm = nn.BatchNorm2d(self.outputDim, device = self.device)
+        self.norm = nn.LayerNorm(self.outputDim, device = self.device)
     
     def forward(self, x: Tensor) -> Tensor:
         '''
         #TODO
         '''
-        return self.norm(self.conv(x))
+        x = rearrange(self.conv(x), 'b c h w -> b (h w) c')
+        return self.norm(x)
     
 class ConvolutionalTransformerEncBlk(nn.Module):
     def __init__(self, imgDim: tuple[int, int, int], nHeads: int, hiddenMul:int, device:str = 'cpu', final:bool = False) -> None:
@@ -224,36 +223,54 @@ class ConvolutionalTransformerEncBlk(nn.Module):
         self.device = device
         self.final = final
 
-        self.n1 = nn.LayerNorm(self.dim, device = self.device)
-        self.conv = nn.Conv2d(self.imgDim[0], self.imgDim[0], 3, 1, 1, device=self.device)
-        self.conv2 = nn.Conv2d(self.imgDim[0], self.imgDim[0], 3, 2, 1, device=self.device)
-        print(self.nHeads)
-        print(self.dim)
-        self.mha = nn.MultiheadAttention(
-            self.dim,
-            self.nHeads,
-            dropout = 0.5,
-            batch_first = True,
-            device = self.device
+        self.conv = nn.Sequential(
+            nn.Conv2d(self.dim, self.dim, kernel_size=3, padding=1, stride=1, device=self.device),
+            nn.BatchNorm2d(self.dim, self.dim, device=self.device),
+            nn.Dropout(0.3)
         )
-        self.n2 = nn.LayerNorm(self.dim, device = self.device)
-        self.l1 = nn.Linear(self.dim, self.dim * self.hiddenMul, device = self.device)
-        self.d1 = nn.Dropout(p = 0.5)
-        self.activation = nn.GELU()
-        self.l2 = nn.Linear(self.dim * self.hiddenMul, self.dim, device = self.device)
-        self.d2 = nn.Dropout(p = 0.5)
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(self.dim, self.dim, kernel_size=3, padding=1, stride=2, device=self.device),
+            nn.BatchNorm2d(self.dim, self.dim, device=self.device),
+            nn.Dropout(0.3)
+        )
 
+        self.norm = nn.LayerNorm(self.dim, device=self.device)
+        self.mlp = nn.Sequential(
+            nn.Linear(self.dim, self.dim * self.hiddenMul, device = self.device),
+            nn.GELU(),
+            nn.Dropout(0.3),
+            nn.Linear(self.dim * self.hiddenMul, self.dim, device = self.device),
+            nn.Dropout(0.3)
+        )
+
+        self.mha = nn.MultiheadAttention(self.dim, self.nHeads, 0.3, batch_first = True, device = self.device)
+
+    def forward_conv(self, x):
+        B, hw, C = x.shape
+        if self.final:
+            cls_token, x = torch.split(x, [1, hw-1], 1)
+        H = W = int(x.shape[1]**0.5)
+        x = rearrange(x, 'b (h w) c -> b c h w', h=H, w=W)
+        q = self.conv(x)
+        k = self.conv2(x)
+        v = self.conv2(x)
+        q = rearrange(q, 'b c h w -> b (h w) c')
+        k = rearrange(k, 'b c h w -> b (h w) c')
+        v = rearrange(v, 'b c h w -> b (h w) c')
+
+        if self.final:
+                q = torch.cat((cls_token, q), dim=1)
+                k = torch.cat((cls_token, k), dim=1)
+                v = torch.cat((cls_token, v), dim=1)
+        
+        return (q, k, v)
+
+        #TODO
     def forward(self, x: Tensor) -> Tensor:
-        size = x.size()[-1]
-        q = rearrange(self.conv(x), 'b c h w -> b (h w) c')
-        k = rearrange(self.conv2(x), 'b c h w -> b (h w) c')
-        v = rearrange(self.conv2(x), 'b c h w -> b (h w) c')
-        x = rearrange(x, 'b c h w -> b (h w) c')
-        y, _ = self.mha(q, k, v)
-        x = x + y
-        z = self.d1(self.activation(self.l1(self.n2(x))))
-        x = x + z
-        return rearrange(x, 'b (h w) c -> b c h w', h = size, w = size)
+
+        q, k, v = self.forward_conv(x)
+        x = x + self.mha(q, k, v)[0]
+        return x + self.norm(self.mlp(x))
     
 class ConvolutionalTransformerBlk(nn.Module):
     def __init__(self, imgDims: tuple[int, int, int], embChannels:int, kernal:int, stride:int, padding:int, nHeads:int, hiddenMul: int,
@@ -278,29 +295,35 @@ class ConvolutionalTransformerBlk(nn.Module):
             self.padding,
             self.device
         )
+        
         newsize = int((self.imgDims[-1] + 2 * self.padding - self.kernal) / self.stride + 1)
-        self.newImgdims = (self.embChannels + 1 if self.final else self.embChannels, newsize, newsize)
+        self.newImgdims = (self.embChannels, newsize, newsize)
         
-        
-        self.n1 = nn.LayerNorm(int(self.newImgdims[0]), device = self.device)
-        self.l1 = nn.Linear(int(self.newImgdims[0]), 2, device = self.device)
+        self.mlpHead = nn.Sequential(
+            nn.LayerNorm(self.newImgdims[0], device = self.device),
+            nn.Linear(self.newImgdims[0], self.newImgdims[0] * self.hiddenMul, device = self.device),
+            nn.Dropout(0.3),
+            nn.GELU(),
+            nn.Linear(self.newImgdims[0] * self.hiddenMul, 2, device = self.device),
+            nn.Dropout(0.3)
+        )
 
         self.blocks = nn.ModuleList(
-            [ConvolutionalTransformerEncBlk(self.newImgdims, self.nHeads, self.hiddenMul, self.device) for i in range(self.depth)]
+            [ConvolutionalTransformerEncBlk(self.newImgdims, self.nHeads, self.hiddenMul, self.device, final = self.final) for i in range(self.depth)]
         )
     
     def forward(self, x):
         x = self.enc(x)
+        size = int(x.size()[1] ** 0.5)
         if (self.final):
-            size = [s for s in x.size()]
-            size[1] = 1
-            classToken = torch.rand(size, device=self.device)
-            x = torch.cat((classToken, x), dim = 1)
+            token = nn.Parameter(torch.rand(x.size()[0], 1, x.size()[2], device = self.device))
+            x = torch.cat([token, x], dim = 1)
         for block in self.blocks:
             x = block(x)
         if (self.final):
-            x = rearrange(x, 'b c h w -> b (h w) c')
-            x = self.l1(self.n1(x)[:, 0])
+            x = self.mlpHead(x[:, 0])
+        else:
+            x = rearrange(x, 'b (h w) c -> b c h w', h = size, w = size)
         return x
     
 class ConvolutionalVisionTransformer(nn.Module):
@@ -308,14 +331,17 @@ class ConvolutionalVisionTransformer(nn.Module):
         super(ConvolutionalVisionTransformer, self).__init__()
         self.device = device
 
-        self.b1 = ConvolutionalTransformerBlk((1, 224, 224), 64, 7, 4, 0, 1, 1, 1, device=self.device)
+        self.b1 = ConvolutionalTransformerBlk((1, 224, 224), 64, 7, 4, 2, 1, 4, 1, device=self.device)
 
-        self.b2 = ConvolutionalTransformerBlk((64, 56, 56), 192, 3, 2, 0, 3, 1, 2, device=self.device)
+        self.b2 = ConvolutionalTransformerBlk((64, 56, 56), 192, 3, 2, 1, 3, 4, 2, device=self.device)
 
-        self.b3 = ConvolutionalTransformerBlk((192, 28, 28), 383, 3, 2, 0, 6, 1, 8, device=self.device, final=True)
+        self.b3 = ConvolutionalTransformerBlk((192, 28, 28), 384, 3, 2, 1, 6, 4, 6, device=self.device, final=True)
+
+        self.smax = nn.Softmax(dim = 1)
 
     def forward(self, x):
         x = self.b1(x)
         x = self.b2(x)
         x = self.b3(x)
-        return x  
+        return self.smax(x)
+

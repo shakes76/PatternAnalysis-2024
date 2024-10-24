@@ -4,6 +4,7 @@ DataLoader, load and preprocess 2D slices of HipMRI Study on Prostate Cancer in 
 @author Thuan Pham - 46964472
 """
 import os
+import sys
 import tensorflow as tf
 from tensorflow import keras
 from dataset import load_data_tf
@@ -19,18 +20,29 @@ else:
     print("Using GPU")
 
 # hyper parameters
-image_height = 256
-image_width = 128
 batch_size = 16
 epochs = 5
+if len(sys.argv) < 2:
+    print("Error: not enough argument.")
+    print("Usage: python train.py <dataset_dir> [epochs] [batch_size].")
+    print("Default for epochs is 5 and batch_size is 16")
+    quit()
+else:
+    dataset_dir = sys.argv[1]
+    if len(sys.argv) > 2:
+        epochs = int(sys.argv[2])
+    if len(sys.argv) >= 4:
+        batch_size = int(sys.argv[3])
+image_height = 256
+image_width = 128
 channels = 6
 
 # Load train and test data
-train_image_dir = os.path.join("keras_slices_data", "keras_slices_train")
-train_seg_dir = os.path.join("keras_slices_data", "keras_slices_seg_train")
+train_image_dir = os.path.join(dataset_dir, "keras_slices_train")
+train_seg_dir = os.path.join(dataset_dir, "keras_slices_seg_train")
 train_dataset = load_data_tf(train_image_dir, train_seg_dir, batch_size=batch_size)
-test_image_dir = os.path.join("keras_slices_data", "keras_slices_test")
-test_seg_dir = os.path.join("keras_slices_data", "keras_slices_seg_test")
+test_image_dir = os.path.join(dataset_dir, "keras_slices_test")
+test_seg_dir = os.path.join(dataset_dir, "keras_slices_seg_test")
 test_dataset = load_data_tf(test_image_dir, test_seg_dir, batch_size=batch_size)
 
 # Create 2D UNet Model

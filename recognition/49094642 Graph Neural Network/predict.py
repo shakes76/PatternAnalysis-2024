@@ -26,5 +26,7 @@ def main():
     data_loader = DataLoader(edge_path, features_path, target_path)
     data = data_loader.create_data()
 
+    visualize_embeddings(model, data)
+    
 if __name__ == "__main__":
     main()

@@ -39,10 +39,58 @@ Before running anything, you must alter the contents of utils.py to reflect the 
 Do note that modules.py does not need to be explicity ran, and is referenced from the other scripts. If wanted, it is recommended that you only run modules.py **after** dataset.py for the sole purpose of installing the small, medium, and large model pre-trained weights.
 
 
-
 ### Dataset Processing
-The
-Talk about dataset.py. Talk about preprocessing, talk about data split.
+The data is split into three datasets as above. The training dataset contains 2594 images and segmentation masks, the validation dataset contains 100 of each, and the test dataset contains 1000 of each. The split is structured this way to ensure training is done thoroughly and on the widest range of inputs possible. Validation is a simpler part of the training process and hence requires a smaller dataset. Testing on a large array of samples is required to effectively diagnose the trained model's performance, which accounts for the large test dataset as well.
+
+![Example image of raw lesion image](./README_figures/RawDataImage.png)
+  
+The preprocessing of data for a YOLO model implementation is quite particular. YOLO models require a very specifically formatted data structure to properly train and run inference. The first step is to downscale to 640x640 and normalise the aspect ratio of each image and mask. This ensures quicker training, and image transferring as there are less pixels. The next and most important part is preparing the masks. As we are given segmentation masks for each of the three datasets, but we are training the model for detection, we must process these masks into bounding boxes, then extract from these bounding boxes a 'label' text file which contains the class, centreX, centreY, width, height of each object in the image. Do note that each value is normalised between 0 and 1. See below example where class 0 is indicative of the lesion class (only class to detect):
+
+```
+0 0.4146455223880597 0.4691011235955056 0.15951492537313433 0.28651685393258425
+```
+
+dataset.py should be the first script to run. It should only be run once the contents of utils.py have been adjusted.
+The dataset.py file will create the folder structure and yaml file necessary for the project if they do not already exist. However, feel free to manually create the directories as below:
+```
+Data ---
+    Testing ---
+            images ---
+            labels ---
+    Training ---
+            images ---
+            labels ---
+    Validation ---
+            images ---
+            labels ---
+    lesion_detection.yaml
+
+yolo ---
+    (weights)
+
+(scripts)
+```
+The contents of the lesion_detection.yaml should be as below, and running dataset.py will create a similar one that works for all intents and purposes. It is essential that processed images and labels are correctly delivered to their respective folders for train.py and predict.py to work as intended.
+```
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../Data # dataset root dir
+train: Training/images # train images (relative to 'path')
+val: Validation/images # val images (relative to 'path') 
+test: Testing/images
+
+# Classes (1 class of lesions)
+names:
+    0: Lesion
+```
+
+To use dataset.py, run on the command line w/ the optional argument -d following by any up to all of these three: test train val. Any dataset specified after -d will **not** be installed. Example usage:
+```
+python dataset.py    # installs all datasets
+python dataset.py -d train val    # only installs testing dataset
+```
+  
+The main process of dataset.py is to get the raw images and masks from the specified path in *utils.py*, create all the required directories and files, then transfer the processed images and calculated labels into the created directories they belong. This process can take upwards of 10 minutes depending on the datasets installed and device specifications.
+
 
 ### Training
 Talk about train.py. Talk about plots, metrics, results.
@@ -52,6 +100,7 @@ Talk about predict.py. Talk about results, inference, etc.
 
 ## Appendix
 ### ISIC Challenge dataset (2018):
+https://challenge.isic-archive.com/data/#2018
 
 ### Requirements.txt:
 ```
@@ -68,6 +117,7 @@ ultralytics==8.3.18
 ```
 
 ### Ultralytics: 
+https://docs.ultralytics.com/models/yolo11/
 
 ### Figures and Plots:
 image [1]: https://www.dlology.com/blog/gentle-guide-on-how-yolo-object-localization-works-with-keras-part-2/

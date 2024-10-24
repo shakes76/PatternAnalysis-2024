@@ -51,7 +51,7 @@ Make sure to place the ADNI folder in the same directory as the python files.
 python train.py
 ```
 
-2. **Generating Images**: After training, you can generate new images using the trained model. Run the `predict.py` script. If you wish to generate images of a brain with Alzheimers Disease run.
+2. **Generating Images**: After training, you can generate new images using the trained model. Run the `predict.py` script. If you wish to generate images of a brain with Alzheimer's Disease run.
 
 ```
 python predict.py AD
@@ -67,7 +67,7 @@ python predict.py NC
 <br/>
 <br/>
 
-3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images, saved as `t-SNE_visualization.png`.
+3. **t-SNE Visualization**: After training, the script will generate a t-SNE visualization of the real and generated images.
 <br/>
 Alzheimer's Disease Brains:
 <br/>

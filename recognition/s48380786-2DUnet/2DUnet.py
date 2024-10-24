@@ -54,7 +54,8 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             # inImage = 255. * inImage / inImage.max()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
-            inImage = utils.to_channels(inImage, dtype=dtype)
+            #inImage = utils.to_channels(inImage, dtype=dtype)
+            inImage = to_channels(inImage, dtype=dtype)
             images[i, :, :, :] = inImage
         else:
             images[i, :, :] = inImage
@@ -121,7 +122,8 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
             # inImage = 255. * inImage / inImage.max()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
-            inImage = utils.to_channels(inImage, dtype=dtype)
+            #inImage = utils.to_channels(inImage, dtype=dtype)
+            inImage = to_channels(inImage, dtype=dtype)
             # images[i, :, :, :, :] = inImage
             images[i, :inImage.shape[0], :inImage.shape[1], :inImage.shape[2], :inImage.shape[3]] = inImage  # with pad
         else:
@@ -144,6 +146,7 @@ import skimage.transform as skTrans
 # Define the target shape
 target_shape = (256, 128)
 
+"""
 # Function to resize images using Scikit-Image
 def resize_images_skimage(images, target_shape):
     # Create an empty array to store the resized images
@@ -159,11 +162,49 @@ def resize_images_skimage(images, target_shape):
         resized_images[i, :, :] = resized_image
 
     return resized_images
+"""
 
+# Function to resize a single image
+def resize_image(image, target_shape):
+    return skTrans.resize(image, target_shape, order=1, preserve_range=True, anti_aliasing=True)
+
+def pad_channels(image, target_channels):
+    """
+    Pad the channels of an image to the target number of channels.
+    """
+    current_channels = image.shape[-1]
+    
+    # If the current number of channels is less than the target, pad with zeros
+    if current_channels < target_channels:
+        padding_shape = list(image.shape)
+        padding_shape[-1] = target_channels - current_channels
+        padding = np.zeros(padding_shape, dtype=image.dtype)
+        image = np.concatenate((image, padding), axis=-1)
+
+    return image
+
+# Function to load and resize images one by one using load_data_2D
+def load_and_resize_images(image_paths, target_shape, normImage=False, categorical=False, target_channels=6):
+    resized_images = []  # To store resized images
+
+    for image_path in image_paths:
+        # Load image one at a time using load_data_2D
+        image = load_data_2D([image_path], normImage=normImage, categorical=categorical)  # Loading one image at a time
+        resized_image = resize_image(image[0], target_shape)  # Resize the single image
+
+        # If categorical, pad the channels to the target number of channels
+        if categorical:
+            resized_image = pad_channels(resized_image, target_channels)
+
+        resized_images.append(resized_image)  # Append the resized image to the list
+
+    # Stack all resized images into a NumPy array
+    return np.stack(resized_images)
 
 import os
 # Define the root directory
 dataroot = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/"
+
 
 # Create paths for images and segmentation labels
 train_image_dir = os.path.join(dataroot, "keras_slices_train")
@@ -186,16 +227,44 @@ test_image_paths = sorted([os.path.join(test_image_dir, f) for f in os.listdir(t
 test_label_paths = sorted([os.path.join(test_label_dir, f) for f in os.listdir(test_label_dir) if f.endswith('.nii.gz')])
 
 # Load data
-# Images are not able to be resized because the error occurs before resizing. load_data_2D expects consistent sizing beforehand
-train_images = load_data_2D(train_image_paths, normImage=True, categorical=False)
-train_labels = load_data_2D(train_label_paths, normImage=False, categorical=True)
-train_images_resized = resize_images_skimage(train_images, target_shape)
+train_images_resized = load_and_resize_images(train_image_paths, target_shape, normImage=True, categorical=False)
+val_images_resized = load_and_resize_images(val_image_paths, target_shape, normImage=True, categorical=False)
+test_images_resized = load_and_resize_images(test_image_paths, target_shape, normImage=True, categorical=False)
 
-val_images = load_data_2D(val_image_paths, normImage=True, categorical=False)
-val_labels = load_data_2D(val_label_paths, normImage=False, categorical=True)
-val_images_resized = resize_images_skimage(val_images, target_shape)
+# Segmentation Masks
+train_labels_resized = load_and_resize_images(train_label_paths, target_shape, normImage=False, categorical=True)
+val_labels_resized = load_and_resize_images(val_label_paths, target_shape, normImage=False, categorical=True)
+test_labels_resized = load_and_resize_images(test_label_paths, target_shape, normImage=False, categorical=True)
 
-test_images = load_data_2D(test_image_paths, normImage=True, categorical=False)
-test_labels = load_data_2D(test_label_paths, normImage=False, categorical=True)
-test_images_resized = resize_images_skimage(test_images, target_shape)
 
+#debug
+print(f"Resized shape of train_images: {train_images_resized.shape}")
+print(f"Resized shape of train_labels: {train_labels_resized.shape}")
+print(f"Resized shape of val_images: {val_images_resized.shape}")
+print(f"Resized shape of val_labels: {val_labels_resized.shape}")
+print(f"Resized shape of test_images: {test_images_resized.shape}")
+print(f"Resized shape of test_labels: {test_labels_resized.shape}")
+
+
+"""
+def find_max_channels(image_paths):
+    max_channels = 0
+    for image_path in image_paths:
+        # Load the image (segmentation mask)
+        image = load_data_2D([image_path], normImage=False, categorical=False)  # Load without one-hot encoding
+        unique_labels = np.unique(image[0])  # Find unique labels in the mask
+        max_channels = max(max_channels, len(unique_labels))  # Track the maximum number of unique labels
+    return max_channels
+
+# Check maximum number of channels in the training labels
+max_train_channels = find_max_channels(train_label_paths)
+print(f"Maximum number of channels in training labels: {max_train_channels}")
+
+# Check maximum number of channels in the validation labels
+max_val_channels = find_max_channels(val_label_paths)
+print(f"Maximum number of channels in validation labels: {max_val_channels}")
+
+# Check maximum number of channels in the test labels
+max_test_channels = find_max_channels(test_label_paths)
+print(f"Maximum number of channels in test labels: {max_test_channels}")
+"""

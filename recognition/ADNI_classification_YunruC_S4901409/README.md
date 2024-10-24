@@ -239,7 +239,7 @@ However, this model has a relatively high false positive rate (1962 FP cases com
 ## References
 1. Albanie, S. (2023). *Vision Transformer Basics.* YouTube. https://www.youtube.com/watch?v=vsqKGZT8Qn8
 2. Bang, J.-H., Park, S.-W., Kim, J.-Y., Park, J., Huh, J.-H., Jung, S.-H., & Sim, C.-B. (2023). *CA-CMT: Coordinate attention for optimizing CMT Networks.* IEEE Access, 11, 76691–76702. https://doi.org/10.1109/access.2023.3297206
-3. IBM. (n.d.). Overfitting. https://www.ibm.com/topics/overfitting
+3. IBM. (n.d.). *Overfitting.* https://www.ibm.com/topics/overfitting
 4. NTi Audio. (n.d.). *Fast Fourier Transform (FFT): Basics, strengths and limitations.* NTi Audio. https://www.nti-audio.com/en/support/know-how/fast-fourier-transform-fft.
 5. OpenAI. (2024). ChatGPT (Oct 2024 version) [Large language model]. https://openai.com
 6. Saturn Cloud. (2023). *How to normalize image dataset using PyTorch.* Saturn Cloud. https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/

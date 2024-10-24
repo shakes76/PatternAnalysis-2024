@@ -11,7 +11,13 @@ modified_filepath = "./datasets/ISIC"
 
 def scan_directory(partition):
     """
-    Gathers all labels in directory into a list
+    Helper function that gathers all file codes in partition directory into a list
+
+    Parameters:
+        partition: test/train/val
+    
+    Return:
+        list: list of all codes (e.g., [000111, 000124, ...] in the partition)
     """
     imgs = []
     for filename in os.scandir(f"{original_filepath}/{partition}/masks"):
@@ -21,23 +27,16 @@ def scan_directory(partition):
     return imgs
 
 
-def test_extraction(mask):
-    """
-    Helper function to test the extraction process by visualising a single sample and its bounding box
-    """
-    image = Image.open(f'{modified_filepath}/train/imgs/ISIC_{mask}.jpg')
-    f = open(f"{modified_filepath}/train/txt/ISIC_{mask}.txt", "r")
-    obj, x_center, y_center, width, height = np.array(f.read().split(" "))
-    x_center, y_center, width, height = float(x_center)*512, float(y_center)*512, float(width)*512, float(height)*512
-    fig, ax = plt.subplots()
-    ax.imshow(image)
-    rect = patches.Rectangle(((x_center) - (width)/2, (y_center) - (height)/2), (width), (height), linewidth=1, edgecolor='r', facecolor='none')
-    ax.add_patch(rect)
-    plt.show()
-
-
 def get_newest_item(directory):
-    # Get the full paths of all files and folders in the directory
+    """
+    Get the full paths of all files and folders in the directory
+
+    Parameters:
+        directory (string): directory in which to search for newest file/folder
+    
+    Returns:
+        string: path to newest file/folder
+    """
     items = [os.path.join(directory, f) for f in os.listdir(directory)]
 
     if not items:
@@ -51,6 +50,8 @@ def get_newest_item(directory):
 
 def iou_torch(true_bbox, pred_bbox):
     """
+    Calcualtes the IoU for two bounding boxes (true and predicted)
+    
     Parameters:
         true_bbox=torch([[center x, center y, width, height]]) 
         pred_bbox=torch([[center x, center y, width, height]]) 

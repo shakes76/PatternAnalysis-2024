@@ -11,9 +11,9 @@ from tqdm import tqdm
 
 def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
     #channels = np . unique ( arr )
-    test = 5
-    res = np . zeros ( arr . shape + ( test ,) , dtype = dtype )
-    for c in range(test) :
+    num_classes = 5
+    res = np . zeros ( arr . shape + ( num_classes ,) , dtype = dtype )
+    for c in range(num_classes) :
         c = int ( c )
         res [... , c : c +1][ arr == c ] = 1
 
@@ -53,18 +53,21 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
         Pre_inImage = niftiImage . get_fdata ( caching = "unchanged") # read disk only
         affine = niftiImage . affine
         #Now loads as Pre_inImage and the Pre_inImage is resized to always be 256,128
-        inImage = skTrans.resize(Pre_inImage, (256,128), order=1, preserve_range=True)
+        inImage = skTrans.resize(Pre_inImage, (256,128), order=0, preserve_range=True)
 
         if len ( inImage . shape ) == 3:
             inImage = inImage [: ,: ,0] # sometimes extra dims in HipMRI_study data
             inImage = inImage . astype ( dtype )
+        
         if normImage :
             # ~ inImage = inImage / np . linalg . norm ( inImage )
             # ~ inImage = 255. * inImage / inImage . max ()
             inImage = ( inImage - inImage . mean () ) / inImage . std ()
         if categorical :
+                #print(f"Unique values in raw mask before to_channels for image {i}: {np.unique(inImage)}")
                 inImage = to_channels ( inImage , dtype = dtype )
                 images [i ,: ,: ,:] = inImage
+                #print(f"After to_channels for image {i}: {np.unique(inImage, axis=0)}")
         else :
             images [i ,: ,:] = inImage
 
@@ -106,7 +109,7 @@ class ProstateCancerDataset(Dataset):
         imageNames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
         self.images = load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype)
         segNames = sorted([os.path.join(seg_dir, f) for f in os.listdir(seg_dir) if f.endswith('.nii.gz')])
-        self.segImages = load_data_2D(segNames, normImage=normImage, categorical=True, dtype=dtype)
+        self.segImages = load_data_2D(segNames, normImage=False, categorical=True, dtype=dtype)
         
         self.transform = transform  # Optional transformations (like resizing or normalization)
     
@@ -117,6 +120,8 @@ class ProstateCancerDataset(Dataset):
         # Get the input image and ground truth mask for the given index
         image = self.images[idx]
         segImage = self.segImages[idx]
+
+        #print(f"Mask {idx} unique values: {np.unique(segImage)}")
 
         # Apply any transformations (if any)
         if self.transform is not None:

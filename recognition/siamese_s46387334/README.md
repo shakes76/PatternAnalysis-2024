@@ -3,7 +3,7 @@
 ### Project Summary and Aim
 The purpose of this project was to create a Siamese Network that is able to classify skin lesions from the ISIC 2020 Kaggle Challenge data set as either 'normal' or 'melanoma'. The full data set contains 33,126 images of skin lesions  (584 (1.8%) melanoma and 32,542 (98.2%) normal).
 
-The aim of this project is to produce a model that is able to achieve an 'accuracy' of 0.8 when the model is used to predict a testing set (set of data that was unseen during training).
+The aim of this project is to produce a model that is able to achieve an 'accuracy' of 'around' 0.8 when the model is used to predict a testing set (set of data that was unseen during training).
 
 ### Accuracy  Metric
 As noted above the data set is highly unbalanced (1.8% melanoma images and 98.2% normal images). Thus using the standard accuracy score metric to gauge the performance of the model is very misleading. As, for example, we could just have our model predict all images as normal thus achieving an 'accuracy' of 98.2% whilst learning nothing about the data and being unable to predict melanomas.
@@ -166,11 +166,11 @@ However the last fully connected layer, FC1000 (layer normally used for class pr
 ### Feature Extractor Model Loss function (Triplet Loss)
 For the desired metric learning to take place when training the feature extractor, we must use a unique loss function. For this problem we implement the loss function `TripletLoss`, a popular loss for siamese networks [[7](#References)]. `Tripletloss` will take each triplet output by the data loader and will calculate the loss via the following function [[7](#References)]:
 
-$
-loss = \max(0, D(A, P) - D(A, N) + margin)
-$
+```
+loss = max(0, D(A, P) - D(A, N) + margin)
+```
 
-Where $D$ represents Euclidean distance, A, P and N represent the output embeddings of the Anchor, Positive and Negative images from the triplet respectively, and margin is a hyper parameter to enforce a minimum separation between classes. The diagram bellow shows how the loss will react to learning [[7](#References)].
+Where D represents Euclidean distance, A, P and N represent the output embeddings of the Anchor, Positive and Negative images from the triplet respectively, and margin is a hyper parameter to enforce a minimum separation between classes. The diagram bellow shows how the loss will react to learning [[7](#References)].
 
 ![alt text](readme_figures/triplet_loss.png)
 

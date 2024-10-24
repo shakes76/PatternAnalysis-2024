@@ -68,7 +68,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
         affines.append(affine)
         
-        if i > 20 and early_stop:
+        if i > 50 and early_stop:
             break
 
     if getAffines:
@@ -89,8 +89,7 @@ def save_nifti(image, affine, out_path):
 
 # Example usage
 if __name__ == "__main__":
-    # Replace with your NIfTI files directory
-    image_dir = "path/to/your/nifti/files"
+    image_dir = r"C:\Users\舒画\Downloads\HipMRI_study_keras_slices_data\keras_slices_train"
     image_files = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii') or f.endswith('.nii.gz')]
 
     # Load the images

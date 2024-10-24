@@ -14,6 +14,8 @@ class ISICDataset(Dataset):
         self.data = self.load_data()
         self.labels = self.load_labels(metadata_path)
 
+        self.add_augmented_malignant_cases()
+
     def load_data(self):
         image_files = []
         for root, _, files in os.walk(self.dataset_path):
@@ -29,6 +31,28 @@ class ISICDataset(Dataset):
     def get_label_from_filename(self, filename):
         img_id = os.path.basename(filename)
         return self.labels.get(img_id, None)
+
+    def add_augmented_malignant_cases(self, num_augmentations=5):
+        original_data = self.data.copy()
+        original_labels = self.labels.copy()
+
+        malignant_transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(30),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+        ])
+
+        for img_path in original_data:
+            label = original_labels.get(os.path.basename(img_path), None)
+            if label == 1:
+                img = Image.open(img_path).convert("RGB")
+                for _ in range(num_augmentations):
+                    augmented_img = malignant_transform(img)
+                    augmented_img_path = img_path.replace('.jpg', f'_augmented_{_}.jpg')
+                    augmented_img.save(augmented_img_path)
+                    self.data.append(augmented_img_path)
+                    self.labels[os.path.basename(augmented_img_path)] = label  # Add to labels
 
     def __len__(self):
         return len(self.data)

@@ -16,7 +16,7 @@ The Vision Transformer model is utilized to process brain images and make predic
 Initially developed for natural language processing tasks, transformers have now been successfully applied to vision tasks by treating image patches as tokens, similar to words in a sentence. They are competitive against CNNs as transformers have no inductive bias and can learn from patches due to their attention mechanism, although this makes them data hungry (Ballal, 2023). 
 
 ![alt text](plots/Vision_Transformer_Architecture_woi9aw.png)
-<small> Figure: Vision Transformer Architecture (Dosovitskiy, 2020)</small>
+<small> Figure 1: Vision Transformer Architecture (Dosovitskiy, 2020)</small>
 
 The core components are as follows (and their coded representations can be seen in `modules.py`):
 
@@ -140,7 +140,7 @@ This visualizes the predictions for a batch of test images, displaying both true
 
 Example output.
 ![alt text](plots/batch_predictions.png)
-
+<small> Figure 2: Batch predictions vs true labels for 32 ADNI brain images, along with the model's confidence probability of each image being that label. </small>
 
 
 ## Experiments and Results
@@ -155,7 +155,7 @@ Recognizing this issue, we reverted to Akshay’s original design in v5, but ret
 <p float="left">
   <img src="plots/v7_true_acc_plot.png" width="500" />
   <img src="plots/v7_true_loss_plot.png" width="500" /> </p>
-<small> (Forgive the graph names, I... ran a few experiments with a bug in the code) </small>.
+<small> Figures 3 and 4: Accuracy and Loss for v7 model (Forgive the graph names, I... ran a few experiments with a bug in the code) </small>.
 
 
 <br>
@@ -180,6 +180,8 @@ The following table summarizes the experiments and test accuracies achieved acro
 | **v14**     | 8                      | 256                | 1024         | 8             | 50         | 32             | 3e-4              | Yes           | Aggressive Transforms           | **67.93%**         |
 | **v15**     | 12                     | 256                | 1024         | 8             | 100        | 32             | 3e-4              | Yes           | Aggressive Transforms           | **67.28%**         |
 
+<small> Table 1: Experimented trained models with version names as well as attributes about each model. </small>
+
 Aggressive transforms simply means the current transformations within dataset.py (with image rotation, random cropping, etc.).
 #### Examples of experiment results
 All plots are located within `/plots`.
@@ -189,19 +191,25 @@ v0 Experiment:
   <img src="plots/v0noAugments_accuracy_plot.png" width="500" />
   <img src="plots/v0noAugments_loss_plot.png" width="500" />
 </p>
+<small> Figures 5 and 6: Accuracy and Loss for v0 model </small>
 
-v3: Changed transformer encoder to be pytorch's default encoderlayer. Added embedding dropout layer as ViT paper has it in Appendix B (Dosovitskiy et al., 2020). Re-implementing normalisation but without other data augmentation.
+v3: Changed transformer encoder to be pytorch's default encoderlayer. Added embedding dropout layer as ViT paper has it in Appendix B (Dosovitskiy et al., 2020). Re-implementing normalisation but without other data augmentation. Results immediately resulted in reverting the code back to the original system without pytorch's encoderlayer. Later v6/v7 performed much better (see Figures 3 and 4).
+
 <p float="left">
   <img src="plots/v3_accuracy_plot.png" width="500" />
   <img src="plots/v3_loss_plot.png" width="500" />
 </p>
+<small> Figures 7 and 8: Accuracy and Loss for v3 model </small>
+
 
 
 v14: Seeing as 13 performed well with reducing the complexity of the model, v13 reduces the complexity even more by reducing the number of transformer layers, heads in each layer, nlp size and embedding dims. It also is the best performing model thus far.
+
 <p float="left">
   <img src="plots/v14_accuracy_plot.png" width="500" />
   <img src="plots/v14_loss_plot.png" width="500" />
 </p>
+<small> Figures 9 and 10: Accuracy and Loss for v14 model </small>
 
 
 ### Best Model Results
@@ -217,15 +225,20 @@ From the test accuracy, we see that our best model was v14 with a test accuracy 
    macro avg     0.6755    0.6726    0.6716      8992
 weighted avg     0.6754    0.6732    0.6718      8992
 ```
+<small> Table 2: Metrics of v14 model on test set. </small>
+
 ![alt text](plots/confusion_matrix.png)
+<small> Figure 11: Confusion matrix of v14 model on test set. </small>
 
 #### Sample predictions from v14 (best model)
 ![alt text](plots/batch_predictions.png)
-
+<small> Identical to Figure 2 (v14 model). </small>
 
 ### Future Extensions
 For future research, trying out other transformer architectures and different data augmentation styles may lead to better results. GFNets are a promising area, but also, based on some of the loss plots certain models were not actually trained to the asymptote line (see v13 plot below). This suggests that longer training times may result in better accuracies.
 ![alt text](plots/v13_loss_plot.png)
+<small> Figure 12: Loss plot of v13 model. </small>
+
 ## References
 
 Ballal, A., 2023. Building a Vision Transformer from Scratch in PyTorch, Available at: https://www.akshaymakes.com/blogs/vision-transformer [Accessed 21 October 2024].

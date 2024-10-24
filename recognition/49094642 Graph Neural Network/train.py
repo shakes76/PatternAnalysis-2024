@@ -31,6 +31,9 @@ def main():
     data_loader = DataLoader(edge_path, features_path, target_path)
     data = data_loader.create_data()
 
+    model = GCN(in_channels=data.num_node_features, hidden_channels=64, out_channels=len(torch.unique(data.y)))
+    optimizer = Adam(model.parameters(), lr=0.01, weight_decay=5e-4) 
+    
     plt.figure()
     plt.plot(accuracies, label='Accuracy')
     plt.xlabel('Epoch')

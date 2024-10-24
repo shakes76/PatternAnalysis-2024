@@ -33,6 +33,9 @@ def train_siamese_network(dataset, transform=None):
 
         print(f'Iteration: {i}, Loss: {loss.item()}')
 
+    torch.save(net.state_dict(), 'model.pth')
+    print(f'Model saved to {os.path.abspath("model.pth")}')
+
 if __name__ == "__main__":
     dataset_path = kagglehub.dataset_download("nischaydnk/isic-2020-jpg-256x256-resized")
     dataset_image_path = os.path.join(dataset_path, "train-image/image")

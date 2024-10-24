@@ -159,7 +159,7 @@ if __name__ == '__main__':
     """
 
     # File paths
-    path = "recognition/Q2_Facebook_Data/facebook_large"
+    path = "recognition/Q2_Facebook_Data_GNN/facebook_large"
     features_path = f"{path}/musae_facebook_features.json"
     edges_path = f"{path}/musae_facebook_edges.csv"
     target_path = f"{path}/musae_facebook_target.csv"

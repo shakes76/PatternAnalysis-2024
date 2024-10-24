@@ -29,6 +29,10 @@ def normalize_bbox(x, y, w, h, img_shape):
     w_norm = w / width
     h_norm = h / height
     return x_center, y_center, w_norm, h_norm
+
+def save_label(filename, data):
+    with open(filename, 'w') as f:
+        f.write(f"0 {data[0]:.6f} {data[1]:.6f} {data[2]:.6f} {data[3]:.6f}")
     
 def process_masks(input_dir, output_dir):
     ensure_directory(output_dir)
@@ -44,7 +48,8 @@ def process_masks(input_dir, output_dir):
                 
                 if bbox:
                     normalized_bbox = normalize_bbox(*bbox, img.shape)
-                    print(normalized_bbox)
+                    save_label(output_file, normalized_bbox)
+                    print(f"Processed: {filename}")
                 else:
                     print(f"No contours found in {filename}")
             except Exception as e:

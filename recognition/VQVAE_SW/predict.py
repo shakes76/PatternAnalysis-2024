@@ -16,8 +16,11 @@ model.eval()
 test_loader = get_data_loader(data_dir, subset='test', batch_size=batch_size, shuffle=False, normImage=True, target_size=(256, 256))
 
 def predict_and_evaluate(data_loader):
-    with torch.no_grad():
-        ssim_scores = []
+    """
+    Make predictions on the test set and evaluate the reconstruction quality
+    """
+    with torch.no_grad(): # Turn off gradient calculation to reduce memory usage
+        ssim_scores = [] # Store the SSIM scores of all images
         for batch_idx, batch in enumerate(data_loader):
             batch = batch.to(device)
 

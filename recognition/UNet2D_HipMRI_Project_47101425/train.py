@@ -133,12 +133,15 @@ def main(base_dir, image_dir, mask_dir):
     image_dir = os.path.join(base_dir, image_dir)
     mask_dir = os.path.join(base_dir, mask_dir)
 
+    # Create training dataset
     train_dataset = MedicalImageDataset(image_dir=image_dir, mask_dir=mask_dir, normImage=True, batch_size=8, shuffle=True)
     dataset = train_dataset.get_dataset()
 
+    # Set directory to store TensorBoard logs
     log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
+    # Train model
     model.fit(
         dataset, 
         epochs=25, 
@@ -147,9 +150,11 @@ def main(base_dir, image_dir, mask_dir):
         verbose=1
     )
 
+    # Give basic info on model features
     model.summary()
+    # Save model
     model.save('unet_model', save_format='tf')
-
+    # Plot model output
     plot_sample_images(dataset, model)
 
 

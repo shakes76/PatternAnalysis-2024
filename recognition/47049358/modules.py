@@ -53,7 +53,7 @@ class ContextModule(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ContextModule, self).__init__()
         self.block1 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
-        self.dropout = nn.Dropout(DROP_PROB) # Drop description uncertain, replace it with Dropout3d when poor performance
+        self.dropout = nn.Dropout(DROP_PROB)
         self.block2 = StandardModule(in_channels = in_channels, out_channels = out_channels, inplace = True)
         
     def forward(self, x):
@@ -112,7 +112,7 @@ class UpsamplingModule(nn.Module):
         x = self.block(x)
         return x
 
-""" A mlocalisation modules that consists of a 3 x 3 x 3 convolution followed by a 1 x 1 x 1 convolution that halves the
+""" Localisation modules that consists of a 3 x 3 x 3 convolution followed by a 1 x 1 x 1 convolution that halves the
 number of feature maps. It acccepts the concatenated features from the skip connection and recombines them together.
 
  Parameters:

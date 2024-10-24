@@ -209,18 +209,20 @@ Although this set did not achieve a relatively high validation accuracy across 3
     </div>
 </div>
 
-Graph 1 presents two subplots illustrating the performance of the GFNet model trained with the optimal hyperparameters resulting from 10 trials. During the early epochs, both the training and validation losses decrease dramatically, indicating that the model is learning efficiently and reducing error. Although the validation loss starts to fluctuate after the 30th epoch, it continues to decrease alongside the training loss. Despite this, the loss curves for training and validation gradually shows a tendency to disperse, suggesting the probability of overfitting. A similar trend is observed in the accuracy plot: while both accuracies increase as losses decrease, a small gap exists between them. In contrast, the loss and accuracy plots in Graph 2 (for the model trained with hyperparameters giving relatively high test accuracy) suggest that the model is not overfitting. The curves for both loss and accuracy are closely aligned, revealing that the model is generalizing well to unseen validation. Additionally, the model trained with the optimal hyperparameters achieves a validation accuracy of approximately 0.97, whereas the model trained with the hyperparameters from the 8th trial reaches a slightly lower accuracy of around 0.95. However, when testing the best models from both sets of hyperparameters, the model with 8th trial's hyperparameters outperformed, achieving a higher test accuracy of 0.6799 on the test set (Figure 7) compared to the 0.6607 (Figure 6).
+Graph 1 presents two subplots illustrating the performance of the GFNet model trained with the optimal hyperparameters resulting from 10 trials. During the early epochs, both the training and validation losses decrease dramatically, indicating that the model is learning efficiently and reducing error. Although the validation loss starts to fluctuate after the 30th epoch, it continues to decrease alongside the training loss. Despite this, the loss curves for training and validation gradually shows a tendency to disperse, suggesting the probability of overfitting. A similar trend is observed in the accuracy plot: while both accuracies increase as losses decrease, a small gap exists between them. In contrast, the loss and accuracy plots in Graph 2 (for the model trained with hyperparameters giving relatively high test accuracy) suggest that the model is not overfitting. The curves for both loss and accuracy are closely aligned, revealing that the model is generalizing well to unseen validation. Additionally, the model trained with the optimal hyperparameters achieves a validation accuracy of approximately 0.97, whereas the model trained with the hyperparameters from the 8th trial reaches a slightly lower accuracy of around 0.95. However, when testing the best models from both sets of hyperparameters, the model with 8th trial's hyperparameters outperformed, achieving a higher test accuracy of 0.6799 on the test set (Figure 7) compared to 0.6607 (Figure 6). The higher train and validation accuracy but lower test accuracy is likely due to the overfitting, where the trained model struggles to make correct predictions on the new test data. The optimal hyperparameters have a `drop_path_rate` of 0.088, whereas trial 8 has a rate of 0.177. The lower drop path rate may be a key factor contributing to the overfitting, as fewer layers are dropped during training, allowing the model to memorize the training data instead of learning general patterns.
 
 <div style="display: flex; justify-content: space-between;">
     <div style="text-align: center; width: 48%;">
         <img src="https://github.com/user-attachments/assets/94af36f2-8703-4caf-aa73-14c8f62b7682" alt="Graph 1" style="width: 100%;"/>
-        <h5>Figure 6: The Test Accuracy and the Confusion Matrix of the Best Model (Hyperparameters with High Validation Accuracy)</h5>
+        <h5>Figure 6: The Test Accuracy and the Confusion Matrix of the Best Model (Optimal Hyperparameters)</h5>
     </div>
     <div style="text-align: center; width: 48%;">
         <img src="https://github.com/user-attachments/assets/75c137f2-3e7d-4978-bdbe-8605c8040838" alt="Figure 7" style="width: 100%;"/>
         <h5>Figure 7: The Test Accuracy and the Confusion Matrix of the Best Model (8th Trial's Hyperparameters)</h5>
     </div>
 </div>
+
+
 
 
 

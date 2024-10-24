@@ -22,14 +22,14 @@ The data is in nii.gz format, therefore 'nibabel' library is used to convert the
 
 During training, the reconstruction loss is calculated as the mean squared error (MSE) between the original and reconstructed images. The total loss is the sum of the reconstruction loss and the commitment loss returned by the model. The model's parameters are updated via backpropagation, and the optimiser adjusts the weights accordingly. 
 
-The configuration file is also saved to the log directory for reproducibility. At specified intervals, the script logs the reconstruction loss, commitment loss, total loss, and the structural similarity index measurescore (SSIM) for both the training and validation datasets. It also saves the original and reconstructed images for both training and validation at specified intervals (different to logging interval).
+The configuration file is also saved to the log directory. At specified intervals, the script logs the reconstruction loss, commitment loss, total loss, and the structural similarity index measure score (SSIM) for both the training and validation datasets. It also saves the original and reconstructed images for both training and validation datasets at specified intervals (different to logging interval).
 
-After the training process is complete, a metrics plot showing the training and validation losses, and SSIM scores for each epoch is saved. The final version of the trained model, along with the best-performing model, is saved to the log directory. Additionally, the overall training time is logged.
+After the training process is complete, a metrics plot showing the training and validation losses, and SSIM scores for each epoch is saved. The latest version of the trained model, along with the best-performing model, is saved to the log directory. Additionally, the overall training time is logged. 
 
-The model is also evaluated on the test data. The batch size is set to 1. The histogram of loss and SSIM score are saved and average loss and SSIM score are logged. The original and reconstructed images of the first six samples are saved.
+The model is also evaluated on the test data using the latest weights. The batch size is set to 1. The histogram of loss and SSIM score are saved and average loss and SSIM score are logged. The original and reconstructed images of the first six samples are saved.
 
 ## Prediction
-`predict.py` saves the original and reconstructed images from the specified directory. Each image is saved with a title that includes the loss and SSIM score.
+`predict.py` saves the original and reconstructed images from the specified directory. Each image is saved with a title that states the loss and SSIM score.
 
 # Hyperparameters
 Configuration files must be created to specify the hyperparameters for training and prediction. The configuration files are in YAML format and contain the following parameters:
@@ -75,15 +75,16 @@ Configuration files must be created to specify the hyperparameters for training 
 - **transforms**: The list of augmentations for the data.
 
 # Requirements
-- PyYAML
-- nibabel
-- numpy
-- pillow
-- scikit-image
-- scikit-learn
-- scipy
-- torch
-- torchvision
+- PyYAML==6.0.1
+- matplotlib==3.8.4
+- nibabel==5.3.0
+- numpy==1.26.4
+- pillow==10.4.0
+- scikit-image==0.24.0
+- scikit-learn==1.4.2
+- torch==2.3.0
+- torchvision==0.18.0
+- tqdm==4.66.4
 
 The packages can be installed using the following command:
 ```bash
@@ -104,7 +105,7 @@ python recognition/VQVAE_47323254/predict.py --config path/to/config.yaml
 ```
 
 # Example Output
-Here is the result of running training with `example_train_config.yaml`. This downscales the original image by 4. The model is trained through 30 epochs and data are augmented with several transformations. 
+Here is the result of running training with `example_train_config.yaml`. This downscales the original image by 4. This is the result of a model that is trained through 30 epochs and data are augmented with several transformations. 
 
 ## Training
 - Configuration file used for training
@@ -286,5 +287,16 @@ Reona Nakagawa
   year         = {2021},
   howpublished = {\url{https://github.com/vvvm23/vqvae-2/blob/main/main-vqvae.py}},
   note         = {Accessed: Oct. 5, 2024}
+}
+```
+
+**HipMRI Study on Prostate Cancer**
+```bibtex
+@misc{hipmri_dataset_2024,
+  author       = {HipMRI Study on Prostate Cancer},
+  title        = {Processed 2D Slices (2D Images)},
+  year         = {2024},
+  howpublished = {\url{https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2}},
+  note         = {Accessed: Oct. 24, 2024}
 }
 ```

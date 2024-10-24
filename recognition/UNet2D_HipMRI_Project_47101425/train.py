@@ -83,7 +83,6 @@ def plot_sample_images(dataset, model):
 
         # Convert predicted mask to binary (threshold at 0.5)
         pred_mask = predictions[0] 
-        pred_mask = (pred_mask > 0.5).astype(np.float32)
 
         # Plot the actual image, ground truth, and predicted mask
         fig, ax = plt.subplots(1, 3, figsize=(12, 4))
@@ -154,8 +153,8 @@ def main(base_dir, image_dir, mask_dir):
     model.summary()
     # Save model
     model.save('unet_model', save_format='tf')
-    # Plot model output
-    plot_sample_images(dataset, model)
+    # Optional: Plot model output
+    # plot_sample_images(dataset, model)
 
 
 if __name__ == "__main__":

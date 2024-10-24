@@ -79,7 +79,7 @@ class GNNModel(torch.nn.Module):
 
 class AdvanceGNNModel(torch.nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, output_dim= 4, num_layers=6, dropout=0.65, edge_dropout=0.4):
+    def __init__(self, input_dim, hidden_dim, output_dim= 4, dropout=0.65, edge_dropout=0.4):
         """
         Initilise the advance GNN model with a stack of graph convolution layers.
 
@@ -269,9 +269,9 @@ if __name__ == '__main__':
     """
     This block of code is used to call the implementation of the GNNModel class.
     Three different models are implemented in this block to test the best model for the given dataset.
-    1. Basic GNN model -not in use
-    2. Advanced GNN model -not in use
-    3. Advanced GAT model
+    1. Basic GNN model - not in use
+    2. Advanced GNN model - model used in the final implementation
+    3. Advanced GAT model - not in use
 
     The best model is selected based on the performance of the model on the given dataset.
     Other models are commented out in the code.
@@ -280,9 +280,9 @@ if __name__ == '__main__':
     # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
 
     # Advanced GNN - not used
-    # model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
 
     # Advanced GAT
-    model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
+    # model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
 
     print(model)

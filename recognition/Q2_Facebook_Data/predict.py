@@ -99,15 +99,20 @@ if __name__ == '__main__':
 
     # initialize the model
     # each model is test to see which one gives the best results
+    
     # GNN model - not in use - only learn from one predict class
     # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3) 
-    # model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
-    model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
 
-    path2 =  "recognition/Q2_Facebook_Data/modelAdvanced2.pth"
+    # Advance GNN model 
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+
+    # GAT model - not in use - not much difference in the results compared to the AdvanceGNNModel
+    # model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
+
+    # path2 =  "recognition/Q2_Facebook_Data/modelAdvanced2.pth"
+    path1 =  "recognition/Q2_Facebook_Data/modelAdvanced1.pth"
     # Load trained model weights
-    # model.load_state_dict(torch.load('recognition/Q2_Facebook_Data/modelEnhance1.pth')) - not in use
-    model.load_state_dict(torch.load(path2))
+    model.load_state_dict(torch.load(path1))
     
     # predict the labels
     pred = predict(data, model)

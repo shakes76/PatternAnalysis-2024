@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 
 
-def train_model(data, model, epochs=20, learning_rate=0.0012, weight_decay=2e-4, patience=20):
+def train_model(data, model, epochs=40, learning_rate=0.0012, weight_decay=2e-4, patience=20):
     """
     This function trains the given model on the given data.
     The training loop is run for the specified number of epochs.
@@ -100,7 +100,7 @@ def train_model(data, model, epochs=20, learning_rate=0.0012, weight_decay=2e-4,
             patience_counter = 0
 
             # save the model
-            torch.save(model.state_dict(), "recognition/Q2_Facebook_Data/modelAdvanced2.pth")
+            torch.save(model.state_dict(), "recognition/Q2_Facebook_Data/modelAdvanced1.pth")
 
         else:
             patience_counter += 1
@@ -127,7 +127,6 @@ def train_model(data, model, epochs=20, learning_rate=0.0012, weight_decay=2e-4,
     train_confusion_matrix = confusion_matrix(train_labels, train_preds)
     print("Confusion Matrix for Train Data:")
     print(train_confusion_matrix)
-
 
     # validation data
     correct = pred[data.val_mask] == data.y[data.val_mask]
@@ -220,9 +219,9 @@ if __name__ == '__main__':
     The model is trained using the train_model function(GNN).
 
     Three different models are implemented in this block to test the best model for the given dataset.
-    1. Basic GNN model -not in use
-    2. Advanced GNN model -not in use
-    3. Advanced GAT model
+    1. Basic GNN model - not in use
+    2. Advanced GNN model - model in use for training
+    3. Advanced GAT model - not in use
     The best model is selected based on the performance of the model on the given dataset.
     Other models are commented out in the code.
 
@@ -244,10 +243,10 @@ if __name__ == '__main__':
     # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
 
     # Advance GNN - not used
-    # model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
 
     # Advance GAT 
-    model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
+    # model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
 
     # train the model
     model = train_model(data, model)

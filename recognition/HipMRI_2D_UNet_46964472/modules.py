@@ -1,9 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras.layers import Input, Conv2D, Conv2DTranspose, BatchNormalization, ReLU, Dense, Flatten, MaxPool2D, Concatenate
+from keras.layers import Input, Conv2D, Conv2DTranspose, BatchNormalization, ReLU, MaxPool2D, Concatenate
 from keras.initializers import GlorotNormal
-from keras.models import Model
-import numpy as np
 
 def Norm_Conv2D(input, n_filters, 
                 kernel_size=(3, 3), 

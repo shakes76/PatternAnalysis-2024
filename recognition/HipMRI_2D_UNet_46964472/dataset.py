@@ -2,9 +2,10 @@ import os
 import numpy as np
 import nibabel as nib
 import tensorflow as tf
+from tensorflow import keras
+from keras.utils import Sequence
 import skimage.transform
 from tqdm import tqdm
-from matplotlib import pyplot as plt
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     # channels = np.unique(arr)
@@ -52,8 +53,8 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
                                               order=1, preserve_range=True)
         inImage = inImage.astype(dtype)
         if normImage:
-            #~ inImage = inImage / np.linalg.norm(inImage)
-            #~ inImage = 255. * inImage / inImage.max()
+            # inImage = inImage / np.linalg.norm(inImage)
+            # inImage = 255. * inImage / inImage.max()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
             inImage = np.round(inImage)
@@ -71,6 +72,19 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
+class DataGenerator(Sequence):
+    def __init__(self, x_set, y_set, batch_size):
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+        return batch_x, batch_y
+
 def load_data_tf(image_dir, seg_dir, dtype=np.float32, batch_size=32, shuffle=False):
     image_list = os.listdir(image_dir)
     image_path = []
@@ -78,11 +92,15 @@ def load_data_tf(image_dir, seg_dir, dtype=np.float32, batch_size=32, shuffle=Fa
     for image in image_list:
         image_path.append(os.path.join(image_dir, image))
         seg_path.append(os.path.join(seg_dir, image.replace("case", "seg")))
-    images = load_data_2D(image_path)
+    images = load_data_2D(image_path, normImage=True)
     segs = load_data_2D(seg_path, categorical=True)
+    print(images.min())
+    print(images.max())
+    # dataset = tf.data.Dataset.from_tensor_slices((images, segs))
+    # if shuffle:
+    #     dataset = dataset.shuffle(images.shape[0])
+    # dataset = dataset.batch(batch_size)
 
-    dataset = tf.data.Dataset.from_tensor_slices((images, segs))
-    if shuffle:
-        dataset = dataset.shuffle(images.shape[0])
-    dataset = dataset.batch(batch_size)
+    dataset = DataGenerator(images, segs, batch_size)
+
     return dataset

@@ -10,9 +10,7 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 - [Model Architecture](#model-architecture)
 - [Training](#training)
 - [Results](#results)
-- [License](#license)
 - [Acknowledgments](#acknowledgments)
-- [References](#references)
 
 
 
@@ -144,18 +142,12 @@ Normal Cognition Brains:
 <br/>
 
 
-## License
-
---------------------------------
-
 ## Acknowledgments
 
 - [ADNI](http://adni.loni.usc.edu/) for providing the dataset.
 - [TensorFlow](https://www.tensorflow.org/) and [Keras](https://keras.io/) for the deep learning framework.
 - [Scikit-learn](https://scikit-learn.org/stable/) for the t-SNE implementation.
 - [StyleGAN Architecture](https://arxiv.org/abs/1812.04948) for helping construct a StyleGAN
-
-## References
 - Tsang, S.-H. (2023, September 8). Brief Review — AdaIN: Arbitrary Style Transfer in Real-time with Adaptive Instance Normalization. Medium. https://sh-tsang.medium.com/brief-review-adain-arbitrary-style-transfer-in-real-time-with-adaptive-instance-normalization-70d30cf95ef7
 - What is a GAN? - Generative Adversarial Networks Explained - AWS. (2023). Amazon Web Services, Inc. https://aws.amazon.com/what-is/gan/
 

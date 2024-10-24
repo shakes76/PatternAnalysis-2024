@@ -22,6 +22,9 @@ class ProstateCancerDataset(Dataset):
 
         image = nib.load(image_path).get_fdata()  # Load the image data
         mask = nib.load(mask_path).get_fdata()    # Load the segmentation mask
+        
+        # Normalize the mask to be binary (0 or 1)
+        mask = (mask > 0).astype(np.float32)  # Convert mask to binary (0, 1)
 
         # Ensure the data has the correct shape for PyTorch (Add channel dimension)
         image = np.expand_dims(image, axis=0)  # Shape: (1, H, W)

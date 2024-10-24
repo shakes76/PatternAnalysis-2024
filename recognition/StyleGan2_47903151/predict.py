@@ -26,7 +26,6 @@ def umap_plot(mapping_AD: MappingNetwork, mapping_NC: MappingNetwork):
     mapping_AD.eval()
     mapping_NC.eval()
     plt.figure(figsize=(10, 8))
-    plt.title("Umap embedding for Epoch 80 ")
 
     with torch.no_grad():
         z = torch.randn(10000, W_DIM).to(DEVICE)

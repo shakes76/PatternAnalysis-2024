@@ -59,13 +59,85 @@ generates images with resolution 256x256. This is chosen as it is closest to the
 ## Preprocessing
 The images are cropped to 256x256, and then random horizontal flip was applied.
 
-## Training result
-### Epoch 0
-![Epoch_0.png](Epoch_0.png)
+## Usage
+Before training or generating examples using trained model, please download the ADNC dataset. Replace all instances of 
+{AD_NC} below with the directory of your downloaded dataset.
 
+To train on the entire dataset (without separating AD and NC classes, run:
+
+```python3 train.py --dataset_dir {directory} --classes all```
+
+To train specifically only on AD or NC brain images, run:
+
+```python3 train.py --dataset_dir {directory} --classes AD``` or
+
+```python3 train.py --dataset_dir {directory} --classes NC```
+
+Models are saved to model folder under current directory by default. If you wish to save model and load model from a
+different directory, add your directory with 
+
+```--model_dir {directory}```
+
+example usage:
+
+`python3 train.py --model_dir model --classes AD --dataset_dir AD_NC/train`
+
+To see examples using a trained model, run 
+
+```python3 predict.py --dataset_dir AD_NC/train --model_dir model --plot_umap True --AD_dir AD --NC_dir NC```
+
+If plot_umap is set to be True, --AD_dir and --NC_dir must be specified.
+
+## Training result
+### Comparison of fake images and real images
+![epoch_0.png](fake_vs_real%2Fepoch_0.png)
+![epoch_20.png](fake_vs_real%2Fepoch_20.png)
+![epoch_30.png](fake_vs_real%2Fepoch_30.png)
+
+### training loss
+In total, 3 models were trained. A general model that trained on both AD and NC, an AD-only model, and a NC-only model.
+
+#### Loss of general model
+![training_loss.png](training%2Ftraining_loss.png)
+![training_loss_proportion.png](training%2Ftraining_loss_proportion.png)
+
+#### Loss of AD model
+![training_loss_AD.png](training%2Ftraining_loss_AD.png)
+![training_loss_proportion_AD.png](training%2Ftraining_loss_proportion_AD.png)
+
+#### Loss of NC model
+![training_loss_NC.png](training%2Ftraining_loss_NC.png)
+![training_loss_proportion_NC.png](training%2Ftraining_loss_proportion_NC.png)
+
+### UMAP embedding
+Aside from a model that trained on both AD and NC brain images indiscriminately, two additional models were trained on 
+only AD brain images and only NC brain images. The style embedding output by the mapping network was plotted using umap.
+
+When the model was initialized, the umap embedding formed 2 different clusters, this is expected as the mapping network 
+started with random values.
+
+As the training progresses, the embedding starts to get closer and overlap with each other. However, as training 
+progresses(starting at around epoch 30), the embedding starts to separate from each other and eventually formed 2 
+separate clusters again.
+
+This indicates that brain with AD and NC brain have different "styles". However the two distinct cluster contradicts the
+recent UQ work (Liu, S. et al., 2023) where the embedding of the two disease have overlaps. 
+
+This may indicate that the model is over-fitting, as that AD and NC model were only trained on the train set of each 
+class, and there was no validation of the model using a validation step. Further investigation is needed.
+
+![umap_ep_0.png](umap%20plot%2Fumap_ep_0.png)
+![umap_ep_5.png](umap%20plot%2Fumap_ep_5.png)
+![umap_ep_30.png](umap%20plot%2Fumap_ep_30.png)
+![umap_ep_80.png](umap%20plot%2Fumap_ep_80.png)
 
 ## Reference 
-https://arxiv.org/pdf/1406.2661 
-https://machinelearningmastery.com/introduction-to-style-generative-adversarial-network-stylegan/
-[1]https://www.whichfaceisreal.com/learn.html?ref=blog.paperspace.com
-https://blog.paperspace.com/understanding-stylegan2/
+Ian J. Goodfellow et al. (2014). Generative Adversarial Networks https://arxiv.org/pdf/1406.2661 
+
+Tero Karras et al. (2018). A Style-Based Generator Architecture for Generative Adversarial Networks https://doi.org/10.48550/arXiv.1812.04948
+
+Jason Brownlee (2020). A Gentle Introduction to StyleGAN the Style Generative Adversarial Network https://machinelearningmastery.com/introduction-to-style-generative-adversarial-network-stylegan/
+
+Abd Elilah TAUIL (2023). Understanding StyleGAN2 https://blog.paperspace.com/understanding-stylegan2/
+
+Liu, S. et al. (2023). Style-Based Manifold for Weakly-Supervised Disease Characteristic Discovery. In: Greenspan, H., et al. Medical Image Computing and Computer Assisted Intervention – MICCAI 2023. MICCAI 2023. Lecture Notes in Computer Science, vol 14224. Springer, Cham. https://doi.org/10.1007/978-3-031-43904-9_36

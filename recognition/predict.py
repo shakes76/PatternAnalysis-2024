@@ -4,20 +4,76 @@ import torch.nn as nn
 from modules import GFNet
 from dataset import get_datasets, get_dataloaders
 from train import train_model, evaluate_model
+from torchvision import transforms
+from PIL import Image
+import sys
+import matplotlib.pyplot as plt  # Imported for plotting
+
+def plot_metrics(history, save_dir='plots'):
+    """
+    Plots training and validation accuracy and loss over epochs.
+
+    Args:
+        history (dict): Dictionary containing training history with keys:
+                        'train_loss', 'val_loss', 'train_acc', 'val_acc'.
+        save_dir (str): Directory where plots will be saved.
+    """
+    # Ensure the save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+
+    epochs = range(1, len(history['train_loss']) + 1)
+
+    # Plot Training and Validation Loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, history['train_loss'], 'bo-', label='Training Loss')
+    plt.plot(epochs, history['val_loss'], 'ro-', label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    loss_plot_path = os.path.join(save_dir, 'loss_plot.png')
+    plt.savefig(loss_plot_path)
+    plt.close()  # Close the figure to free memory
+
+    # Plot Training and Validation Accuracy
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, history['train_acc'], 'bo-', label='Training Accuracy')
+    plt.plot(epochs, history['val_acc'], 'ro-', label='Validation Accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    acc_plot_path = os.path.join(save_dir, 'accuracy_plot.png')
+    plt.savefig(acc_plot_path)
+    plt.close()  # Close the figure to free memory
+
+    print(f"Loss plot saved to {loss_plot_path}")
+    print(f"Accuracy plot saved to {acc_plot_path}")
+
+
+
 
 def main():
+    """
+    Main function to handle setup, training, and evaluation.
+    """
+    # Check command-line arguments
+    if len(sys.argv) != 1:
+        print("Usage: python predict.py")
+        sys.exit(1)
+
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
     # Hyperparameters
-    num_epochs = 30
-    batch_size = 128
+    num_epochs = 150
+    batch_size = 64
     learning_rate = 1e-4
     weight_decay = 1e-5
 
     # Data directory
-    data_dir = '/home/groups/comp3710/ADNI/AD_NC'
+    data_dir = '/home/groups/comp3710/ADNI/AD_NC'  # Update this path as necessary
 
     print("\n=== Preparing Datasets ===")
     try:
@@ -58,7 +114,7 @@ def main():
     model = GFNet(
         img_size=224,
         patch_size=16,
-        in_chans=3,
+        in_chans=1,
         num_classes=2,
         embed_dim=768,
         depth=12,
@@ -71,7 +127,7 @@ def main():
     model = model.to(device)
     print("Model initialized.\n")
 
-   # Define loss function and optimizer
+    # Define loss function and optimizer
     print("=== Setting Up Loss Function and Optimizer ===")
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -88,8 +144,8 @@ def main():
     test_accuracy = evaluate_model(model, test_loader, device=device)
     print(f'Final Test Accuracy: {test_accuracy:.4f}\n')
 
-    print("=== Training Process Completed Successfully ===")
-
+    print("=== Prediction Process Completed Successfully ===")
 
 if __name__ == '__main__':
     main()
+

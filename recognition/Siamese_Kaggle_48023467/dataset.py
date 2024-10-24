@@ -37,7 +37,6 @@ class ISICDataset(Dataset):
         
         # Split data into training and validation sets based on the ratio
         # Data stratified to account for unbalanced dataset label ratio
-        # DEBUG - MENTION RANDOM STATE FOR REPRODUCEABILITY
         img_train, img_val = train_test_split(img_refs, train_size=split_ratio, stratify=[label for _, label in img_refs], random_state=27)
         
         # Balance data in training mode by oversampling
@@ -137,7 +136,7 @@ class ISICDataset(Dataset):
     def generate_img_references(self, dir, label):
         refs = []
         for file in os.listdir(dir):
-            if file.endswith((".png", ".jpg", ".svg")): # Common image extensions DEBUG - MENTION IN README
+            if file.endswith((".png", ".jpg", ".svg")):
                 img_ref = os.path.join(dir, file)
                 refs.append((img_ref, label))
         return refs

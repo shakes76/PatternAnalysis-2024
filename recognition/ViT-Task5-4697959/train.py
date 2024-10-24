@@ -247,6 +247,7 @@ def main():
 
     # Configuration
     data_dir = "/home/groups/comp3710/ADNI/AD_NC"  # Dataset path
+    meta_data_path = "/home/groups/comp3710/ADNI/meta_data_with_label.json" # Path to the metadata file
     batch_size = 32 # change the batch size 
     img_size = 224
     val_split = 0.2
@@ -274,6 +275,7 @@ def main():
     # Get data loaders, class names, and class weights
     dataloaders, class_names, class_weights = get_data_loaders(
         data_dir=data_dir,
+        meta_data_path=meta_data_path,
         batch_size=batch_size,
         img_size=img_size,
         val_split=val_split,

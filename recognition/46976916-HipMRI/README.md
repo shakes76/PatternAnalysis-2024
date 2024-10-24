@@ -1,0 +1,34 @@
+# Prostate Cancer Segmentation using UNet
+** Bailey Jarrett - Student Number: 4697691 **
+
+## Description
+This project implements a UNet based deep learning algorithm to perform multiclass segmentation on prostate MRI scans.
+The goal is to accurately identify and seperate various regions of interest within prostate scans
+
+The algorith processes 2D slices of MRI scans and predicts segmentation masks, which can aid in diagnosis and treatment planning
+
+### How It Works
+The UNet model consists of a contracting path to capture context and a symmetric expanding path for precise localization. The model takes in 2D grayscale MRI images of size 256x128 and outputs a segmentation mask with five classes. Each pixel in the output represents a different region of interest, such as different parts of the background, the body or prostate.
+
+The model was trained on labeled MRI data using cross-entropy loss and Dice similarity coefficient for evaluation. After training, the model can predict segmentation masks for new MRI scans, which are used to assess the extent and location of prostate cancer.
+
+### The model parameters
+The final model had the input parameters:
+- Number of Epochs = 16
+- Learn Rate = 0.0001
+- Batch Size = 16
+- UNet model features = [16, 32, 64, 128]
+
+### Dependencies
+- Python 3.12.6
+- PyTorch 2.5.0+cu124
+- Albumentations 1.4.19
+- Torchvision 0.20.0
+- Numpy 2.1.2
+- Matplotlib 3.9.2
+
+### Example Prediction Results
+Using a model trained for 16 epochs with the inputs (??)
+The model was then used on an never seen before testing set which resulted in the following:
+Pixel Accuracy: 96.62 and Dice Score: 0.9058
+-insert images

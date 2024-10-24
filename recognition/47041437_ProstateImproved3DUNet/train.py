@@ -20,7 +20,7 @@ class Dice_loss(nn.Module):
     def label_loss(self, pedictions, targets, smooth=0.1):
         intersection = (pedictions * targets).sum()  
         total = pedictions.sum() + targets.sum()                         
-        dice_coeff = (2.0 * intersection + smooth) / (total + smooth)  
+        dice_coeff = (2.* intersection + smooth) / (total + smooth)  
         return dice_coeff
     
     # Calculate DSC for each channel, add them up and get the mean
@@ -87,7 +87,7 @@ def main():
     augment = augmentation()
     entropy_loss = nn.CrossEntropyLoss().to(device)
     dice_loss = Dice_loss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters())
 
     # Parameters
     epoch = 45
@@ -99,8 +99,8 @@ def main():
     dataset = load_data_3D("/home/groups/comp3710/HipMRI_Study_open/semantic_MRs/*", "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only/*")
     train, validate, test = torch.utils.data.random_split(dataset, [181, 15, 15])
 
-    # Set your desired batch size here
-    batch_size = 1  
+    # Set your desired batch size here for batch_size > 1 and set augment = True in dataset
+    batch_size = 1
     train = DataLoader(train, batch_size=batch_size, shuffle=True, pin_memory=True)
     validate = DataLoader(validate, batch_size=batch_size, shuffle=False, pin_memory=True)
     test = DataLoader(test, batch_size=batch_size, shuffle=False, pin_memory=True)
@@ -112,7 +112,7 @@ def main():
             image = image.squeeze(0)
             label = label.squeeze(0)
             image, label = augment.augment(image, label)
-            # !!!Use repeat or expand to transfer batchsize value if batchsize > 1
+            # !!!Use repeat or expand to transfer batchsize value before unsqueeze if batchsize > 1
             image = image.unsqueeze(0)
             image = image.float().to(device)
             label = label.long().to(device)
@@ -128,6 +128,7 @@ def main():
             validation_dsc_epoch = {k: 0 for k in validation_dsc.keys()}
             for image, label in validate:
                 label = label.squeeze(0)
+                #image = image.unsqueeze(0)
                 image = image.float().to(device)
                 label = label.long().to(device)
                 pred = model(image)
@@ -152,6 +153,7 @@ def main():
             testing_dsc_epoch = {k: 0 for k in testing_dsc.keys()}
             for image, label in test:
                 label = label.squeeze(0)
+                # image = image.unsqueeze(0)
                 image = image.float().to(device)
                 label = label.long().to(device)
                 pred = model(image)

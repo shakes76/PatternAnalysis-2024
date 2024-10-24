@@ -127,3 +127,26 @@ if __name__ == '__main__':
     print(f"Count of each class in val loader:\n{val_loader.dataset.img_labels['target'].value_counts()}")
     print(f"Count of each class in test loader:\n{test_loader.dataset.img_labels['target'].value_counts()}")
 
+
+    # Show sample images from the training set - 3 of each class
+    import matplotlib.pyplot as plt
+
+    # Define the classes
+    classes = ['benign', 'malignant']
+
+    # Create a figure
+    fig, axs = plt.subplots(2, 3, figsize=(10, 6))
+
+    # Plot 3 samples for each class
+    for i, cls in enumerate(classes):
+        class_indices = train_loader.dataset.img_labels[train_loader.dataset.img_labels['target'] == i].index
+        for j in range(3):
+            img, label = train_loader.dataset[class_indices[j]]
+            img = img.permute(1, 2, 0)  # Change the order of dimensions for plotting
+            axs[i, j].imshow(img)
+            axs[i, j].set_title(f"Class: {classes[label]}")
+            axs[i, j].axis('off')
+
+    plt.tight_layout()
+    plt.savefig('sample_images.png')
+

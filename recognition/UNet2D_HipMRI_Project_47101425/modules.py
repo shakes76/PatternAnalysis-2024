@@ -21,14 +21,17 @@ class UNet(tf.keras.Model):
 
     def UNet2D_compact(self):
         """
-        Build the 2D U-Net architecture.
+        Build the 2D U-Net architecture. 
 
         Returns:
             tf.keras.Model: A Keras Model object representing the U-Net architecture.
         """
         inputs = tf.keras.layers.Input(shape=self.input_dims)
 
-        # Encoder
+        # Encoder - Downsampling block
+        # Each layer contains a block of 2 2D Convolution layers
+        # and one MaxPool2D layer, reducing the spatial dimensions
+        # to extract the distinguising patterns
         down1 = self.norm_conv2d(inputs, self.latent_dim // 16)
         down1 = self.norm_conv2d(down1, self.latent_dim // 16)
         pool1 = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding="same")(down1)
@@ -48,7 +51,12 @@ class UNet(tf.keras.Model):
         latent = self.norm_conv2d(pool4, self.latent_dim) # Bottom layer - Latent Layer
         latent = self.norm_conv2d(latent, self.latent_dim)
 
-        # Decoder
+        # Decoder - Upsampling block
+        # Features a similar 2D Conv layer, however increases the 
+        # spatial dimensions as the image passes through each
+        # layer, using Concatentate to merge the abstract features
+        # from the corresponding (downsampling) block on the same layer
+        # with the high-level features at that point
         up4 = tf.keras.layers.Conv2DTranspose(self.latent_dim // 2, kernel_size=(2, 2), strides=(2, 2), padding="same")(latent)
         up4 = tf.keras.layers.Concatenate(axis=-1)([up4, down4])
         up4 = self.norm_conv2d(up4, self.latent_dim // 2)
@@ -69,7 +77,8 @@ class UNet(tf.keras.Model):
         up1 = self.norm_conv2d(up1, self.latent_dim // 16)
         up1 = self.norm_conv2d(up1, self.latent_dim // 16)
 
-        outputs = tf.keras.layers.Conv2D(self.channels, kernel_size=(1, 1), activation="sigmoid")(up1) # Output Layer
+        # Output Layer - 
+        outputs = tf.keras.layers.Conv2D(self.channels, kernel_size=(1, 1), activation="sigmoid")(up1) 
 
         model = tf.keras.models.Model(inputs=inputs, outputs=outputs)
         return model

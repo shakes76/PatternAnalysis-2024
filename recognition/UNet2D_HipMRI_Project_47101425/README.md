@@ -1,98 +1,108 @@
 # Medical Image Segmentation with UNet
 
-This repository implements a **medical image segmentation** pipeline using the **UNet architecture** in PyTorch. The model is designed to solve segmentation problems on 2D medical images, specifically for MRI slices, using the Dice coefficient as the main evaluation metric. Medical image segmentation plays a critical role in diagnosing, planning, and treatment in medical imaging tasks by helping isolate regions of interest, such as organs or abnormalities, from medical images.
+This repository implements a **medical image segmentation** pipeline using the **UNet architecture** in PyTorch. Medical image segmentation plays a critical role in diagnosing, planning, and treatment in medical imaging tasks by helping isolate regions of interest, such as organs or abnormalities, from medical images. This model is designed to solve segmentation problems on processed 2D slices stored as NIFTI files, specifically for the HIPMRI study on Prostate Cancer, using the Dice coefficient as the main evaluation metric. 
 
 ## Algorithm Description
 
-**UNet** is a deep convolutional network architecture specifically designed for image segmentation tasks. It uses an encoder-decoder structure: the encoder reduces the spatial dimensions while increasing feature depth, and the decoder restores the spatial dimensions using up-sampling. This architecture is particularly effective for tasks like medical image segmentation where pixel-level accuracy is crucial. The task involves using MRI slices as input and producing binary masks that highlight areas of interest.
-
-The segmentation model is trained to minimize the difference between predicted masks and ground truth labels using the **Binary Cross-Entropy (BCE)** loss and evaluated with the **Dice Similarity Coefficient**. The problem it solves is identifying and segmenting particular structures from MRI images, which is crucial in clinical applications such as planning surgeries or analyzing medical scans.
+This algorithm takes input from the HIPMRI dataset, and passes through the *encoder* block of the UNet architecture. An example of which can be seen below:
+![Example of UNet model architecture](images/u-net-architecture.png)
+This architecture is comprised of 2D convolutional layers (with 3x3 kernel size and ReLU activation), followed by a 2x2 max pooling layer to downsample the input; extract features and patterns from the input image, while max pooling layers reduce spatial dimensions, allowing the network to focus on higher-level features. After reaching the latent layer, the output is passed through the *decoder* block; consists of two 2D convolutional layers (with 3x3 kernel size and ReLU activation), followed by a 2D transpose convolution layer (ConvTranspose2D) to upsample the feature map. *Concatenation* is used to combine upsampled features with their corresponding encoder features, enabling the retention of spatial details from previous layers. This process helps the network recover fine-grained information while ensuring gradients flow smoothly through the network during backpropagation, facilitating better learning and improved segmentation accuracy.
 
 ## How It Works
 
-The training process includes feeding the MRI images into the UNet model, which generates a segmentation mask for each image. The model is optimized to minimize the **Binary Cross-Entropy Loss** function, and the Dice coefficient is calculated to assess the overlap between the predicted segmentation and the ground truth labels. We also visualize the segmentation outputs for qualitative assessment. Testing on unseen data allows the evaluation of generalization performance.
+The code first takes the data found in the HIPMRI folders (specifically the training data), processing them into a dataset to be used by the UNet model. The model is then trained on this dataset; with the goal of minimizing **Dice Loss**. The Dice coefficient is calculated to assess overlap between the predicted segmentations and ground truth labels. The model is then trained, ensuring the model is able to maintain/reach the Dice similarity coefficient of 0.75. An example of training output can be seen as below:
 
-### Architecture
+Here is an example of training output with the loss scores and Dice Similarity Coefficient during trianing:
+```bash
+Epoch 1/10
+1433/1433 [==============================] - 651s 451ms/step - loss: 0.3108 - dice_coefficient: 0.6892
+Epoch 2/10
+1433/1433 [==============================] - 631s 440ms/step - loss: 0.3011 - dice_coefficient: 0.6989
+Epoch 3/10
+1433/1433 [==============================] - 633s 442ms/step - loss: 0.2987 - dice_coefficient: 0.7013
+```
+After training, a plot of actual images vs. model output is produced to visualize model accuracy; the trained model is saved
 
-- **Encoder**: A series of convolutional layers followed by max-pooling, which reduces spatial dimensions while capturing features.
-- **Decoder**: A series of upsampling layers with skip connections from the encoder, restoring the spatial dimensions and making pixel-wise predictions.
-- **Skip Connections**: Help retain spatial information that would otherwise be lost during downsampling, ensuring fine-grained segmentation details.
-
-## Dependencies
+## Project Dependencies
 
 The code requires the following dependencies:
 - **Python**: 3.8+
-- **PyTorch**: 1.10.0+
 - **NumPy**: 1.21.0+
 - **Matplotlib**: 3.4.3+
+- **TensorFlow**: 2.10.0+
+- **TensorBoard**: 2.10.1+
 - **Nibabel**: 3.2.1 (for handling NIFTI files)
 
-Install the required dependencies using:
+- [Processed 2D Image Data from the HIPMRI Study](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2)
 
-```bash
-pip install -r requirements.txt
-```
+The required dependencies can be installed by doing the following (this contributes to model-output reproduction):
+1. Install conda/miniconda (pip can be used if desired but the steps are different)
+2. Create a environment via:
+   ```bash
+   conda create <environment_name>
+   ```
+3. Activate the environment via:
+   ```bash
+   conda activate <environment_name>
+   ```
+4. Install the following dependencies:
+   ```bash
+   conda install numpy matplotlib tensorflow 
+   ```
+   ```bash
+   conda install conda-forge::tensorboard
+   ```
+   ```bash
+   conda install conda-forge::nibabel
+   ```
+5. Ensure all installed dependencies are running compatible versions:
+   ```bash
+   conda update --all
+   ```
 
-## Reproducibility
-To ensure the reproducibility of the results:
-- We use a fixed random seed for dataset shuffling and weight initialization.
-- Training and testing datasets are split using an 80-20 ratio.
-- Consistent preprocessing methods are applied, including normalization of input images.
-- Set the random seed for reproducibility in PyTorch:
-```bash
-torch.manual_seed(42)
-```
-
-## Preprocessing and Dataset Splits
-The MRI images are preprocessed with the following steps:
-
-1. Normalization: Each MRI slice is normalized to have a mean of 0 and a standard deviation of 1.
-2. Augmentation (optional): Random flips and rotations are applied to improve model generalization.
-
-
-Data is split as follows:
-- Training: 80% of the data is used for training. This allows the model to learn the majority of the patterns in the data.
-- Testing: 20% of the data is reserved for testing to evaluate the model’s generalization on unseen data. This split ensures that we can fairly evaluate the model's performance.
-
-## Example Input and Output
-# Input
-- A 2D MRI slice (e.g., .nii.gz format).
-# Output
-- A binary mask for segmentation.
-
-# Example Code for Loading and Testing the Model
-```bash
-# Load the trained model
-model = UNet().to(device)
-model.load_state_dict(torch.load('./model.pth'))
-model.eval()
-
-# Load test data
-test_dataset = MedicalImageDataset(image_dir='path_to_test_data', normImage=True, load_type='2D')
-test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
-
-# Evaluate and visualize the predictions
-test_model(model, test_loader)
-visualize_predictions(model, test_loader, num_images=4)
-```
-
-# Example Dice Coefficient Output
-```bash
-Copy code
-> Testing
-Average Dice Coefficient: 0.8532
-```
 # Example Visualizations
-
-		
-## Training, Validation, and Testing Split Justification
-The 80-20 split between training and testing is standard practice in machine learning, ensuring enough data for training while retaining a portion for unbiased testing. This ensures the model generalizes well to new, unseen data. Preprocessing such as normalization is used to standardize the input data, making the training process more stable.
-
-We apply random transformations (e.g., rotations, flips) as part of the data augmentation strategy to make the model more robust to variations in the images. These augmentations help the model generalize better to variations in the real-world data, which is crucial for medical applications.
+	
+## Model Usage
+The model can be used by running the included test driver script via 
+```bash
+python test_driver_script.py
+```
+This creates and trains the model; runs the model on the validation dataset after testing. The script allows optional custom paths to the dataset via updating `data_directory`, `train_image_directory`, `train_mask_directory`, and `validate_image_directory`, `validate_mask_directory`
 
 ## Figures and Visualizations
-An example of the model's predictions alongside the original MRI image and the ground truth mask is shown below.
+An example of the model's predictions alongside the original MRI image and the ground truth mask is shown below:
+(To reproduce the example graphs obtained, use the following parameters when training the model:
+```bash
+# Initialize learning rate scheduler
+    decay_steps = 1000
+    initial_learning_rate = 0.001
+    lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
+        initial_learning_rate, decay_steps)
 
+    # Adam Optimizer
+    optimizer = tf.keras.optimizers.SGD(learning_rate=lr_schedule, clipvalue=1.0, clipnorm=1.0)
+...
+model.fit(
+        dataset, 
+        epochs=25, 
+        steps_per_epoch=len(dataset),
+        callbacks=[tensorboard_callback],
+        verbose=1
+    )
+```
+)
+![Example of model training metric plot epoch loss](images/epoch-loss-example)
+![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example)
 
-## Citation and References
-Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation. arXiv preprint arXiv:1505.04597.
+To help better visualize the model's accuracy, here is an example of the plot of an actual image, the ground truth and a model's prediction put side-by-side to better present the model's accuracy after training
+![Example of UNet model output](images/model-output-example.png)
+
+An example of model training metrics is shown above; more in-depth metrics can also be obtained by taking the directory of the log files generated from training & running (in your conda environment):
+```bash
+tensorboard --logdir <directory to logs>
+```
+Example:
+```bash
+tensorboard --logdir "C:\Users\Documents\UNet-HIPMRI\logs\fit\20241021-235527"
+```
+and holding *CTRL* and clicking on the `http://localhost:6006/` link generated

@@ -95,8 +95,27 @@ def save_prediction_images(device, model, test_loader, num_images=5):
 
             # Save the images
             torchvision.utils.save_image(image_slice.unsqueeze(0), f'{ORIGINAL_IMAGES_PATH}/image_{idx}_input.png')
-            torchvision.utils.save_image(label_slice.unsqueeze(0).float(), f'{ORIGINAL_LABELS_PATH}/image_{idx}_label.png')
-            torchvision.utils.save_image(predicted_slice.unsqueeze(0).float(), f'{PREDICTION_PATH}/image_{idx}_output.png')
+            save_coloured_label(label_slice.cpu().numpy(), f'{ORIGINAL_LABELS_PATH}/image_{idx}_label.png')
+            save_coloured_label(predicted_slice.cpu().numpy(), f'{PREDICTION_PATH}/image_{idx}_output.png')
+
+            total_saved_images += 1
+
+
+def save_coloured_label(label_array, path):
+    """
+    Save the label image with a colourmap for better visualization.
+    
+    label_array (numpy.ndarray): Array of class labels.
+    path (str): The file path to save the image.
+    """
+    # Define a colormap for the classes
+    colourmap = plt.get_cmap('tab10', NUM_CLASSES)
+    
+    # Convert the label array to color
+    colour_label = colourmap(label_array / label_array.max())
+
+    # Save the image
+    plt.imsave(path, colour_label)
 
 
 if __name__ == "__main__":
@@ -115,4 +134,5 @@ if __name__ == "__main__":
 
     # Test the model
     test_model(device, model, test_loader, DiceLoss())
-    
+
+    save_prediction_images(device, model, test_loader)

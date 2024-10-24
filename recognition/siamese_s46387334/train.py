@@ -172,7 +172,7 @@ def plot_training_graphs(
     the epochs of training and save the plots to the folder.
     """
     # Plot Loss
-    plt.figure(figsize=(15, 8))
+    plt.figure(figsize=(15, 5))
     
     plt.subplot(1, 3, 1)
     plt.plot(range(epochs), train_loss_per_epoch, label='Train Loss', color='darkseagreen')

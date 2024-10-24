@@ -113,29 +113,17 @@ def get_config() -> dict:
 
     Returns: the current config settings
     """
-    # config = {
-    #     # If we wish to only use a subset of the data to training
-    #     # Set to: None to use the full dataset.
-    #     # Smaller numbers will speed up training but may reduce final model performance.
-    #     'data_subset': 16000,
-    #     'metadata_path': './data/train-metadata.csv',
-    #     'image_dir': './data/train-image/image/',
-    #     'batch_size': 32,
-    #     'embedding_dims': 128,
-    #     'learning_rate': 0.0001,
-    #     'epochs': 20,
-    # }
     config = {
         # If we wish to only use a subset of the data to training
         # Set to: None to use the full dataset.
         # Smaller numbers will speed up training but may reduce final model performance.
-        'data_subset': 300,
+        'data_subset': 16000,
         'metadata_path': './data/train-metadata.csv',
         'image_dir': './data/train-image/image/',
-        'batch_size': 8,
-        'embedding_dims': 2,
+        'batch_size': 32,
+        'embedding_dims': 128,
         'learning_rate': 0.0001,
-        'epochs': 2,
+        'epochs': 20,
     }
     return config
 

@@ -113,16 +113,18 @@ The first thing that was done to the data was to split the images up into three 
 - Test Set (10% of all data)
     - Will be used to evaluate the performance of the final model
 
-The Validation and testing sets were kept relatively small to maximise performance of the model by giving it a larger set of data to train on. Due to the large size of the data set the validation and testing sets are still large enough to get a good idea of the population.
+The validation and testing sets were kept relatively small to maximise performance of the model by giving it a larger set of data to train on. Due to the large size of the data set the validation and testing sets are still large enough to get a good idea of the population. This is a standard split to apply when we have a dataset of over 10,000+ samples (REF).  Due to the unbalanced nature it could result in some variation however this is deemed as acceptable in industry as we will still have ~60 samples from the minority class in each set (REF).
 
 ### Dataset Oversampling and Augmentation
 Due to the large class imbalance mentioned above it is preferred if a method is used to ensure that the model is trained on balanced data (REF).To do this we use a two step approach - oversampling the minority class, then data augmentation. It should be noted this class balancing was only done for the training set.
 
-For oversampling - the minority class (melanoma) was oversampled until both classes had an equal number of data points. Then to ensure that this oversampling does not lead to overfitting - we apply data augmentation to all samples. Augmentation methods used are as follows (see the following documentation for details https://pytorch.org/vision/main/transforms.html)  (REF):
+For oversampling - the minority class (melanoma) was oversampled until both classes had an equal number of data points. Then to ensure that this oversampling does not lead to overfitting - we apply data augmentation to all samples. Augmentation methods used are as follows (see the following documentation for details https://pytorch.org/vision/main/transforms.html) (REF). The following augmentations were chosen as they are commonly used for medical imaging problems such as this (REF).
 - `RandomRotation` (Randomly rotate the image)
 - `RandomHorizontalFlip` (Randomly horizontally flip the image)
 - `RandomVerticalFlip` (Randomly vertically flip the image)
 - `ColorJitter` (Randomly adjust the brightness, contrast, saturation and hue of the image)
+
+Note, all images also underwent normalisation (All pixel values where normalised to take values between 0 and 1 and approximately follow the standard normal distribution)
 
 ### Triplet Data Generation
 Before the data can be used in the Siamese Network each of the dataset must be arranged into triplets (this is due to the unique `TripletLoss` function we use). `dataset.py` implements the `TripletDataGenerator` class that generates triplets (anchor, positive, negative) for Siamese network training. Each triplet consists of two images from the same class (anchor and positive) and one from the opposite class (negative).

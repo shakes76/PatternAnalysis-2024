@@ -1,5 +1,6 @@
 from dataset import get_dataloaders
 from modules import GFNet
+import math
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -80,11 +81,11 @@ def main():
     train_dataloader, test_dataloader = get_dataloaders()
 
     # Create the components nessesary for training
-    model = GFNet().to(device)
+    model = GFNet(embed_dim=256, patch_size=8, drop_rate=0.1, drop_path_rate=0.1).to(device)
     criterion = nn.CrossEntropyLoss()
     optimiser = optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.003)
 
-    epochs = 30
+    epochs = 10
     train_accuracies = []
     # Loop through each of the epochs
     for epoch in range(epochs):

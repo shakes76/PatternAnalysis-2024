@@ -1,61 +1,21 @@
-Epoch 1/30
-Train - Loss: 0.7169, Accuracy: 55.35%
-Epoch 2/30
-Train - Loss: 0.6658, Accuracy: 60.49%
-Epoch 3/30
-Train - Loss: 0.6057, Accuracy: 68.14%
-Epoch 4/30
-Train - Loss: 0.5774, Accuracy: 71.24%
-Epoch 5/30
-Train - Loss: 0.5569, Accuracy: 72.70%
-Epoch 6/30
-Train - Loss: 0.5409, Accuracy: 74.05%
-Epoch 7/30
-Train - Loss: 0.5314, Accuracy: 74.91%
-Epoch 8/30
-Train - Loss: 0.5230, Accuracy: 75.35%
-Epoch 9/30
-Train - Loss: 0.5094, Accuracy: 76.05%
-Epoch 10/30
-Train - Loss: 0.5008, Accuracy: 76.71%
-Epoch 11/30
-Train - Loss: 0.4910, Accuracy: 77.41%
-Epoch 12/30
-Train - Loss: 0.4880, Accuracy: 77.23%
-Epoch 13/30
-Train - Loss: 0.4770, Accuracy: 78.11%
-Epoch 14/30
-Train - Loss: 0.4673, Accuracy: 78.64%
-Epoch 15/30
-Train - Loss: 0.4549, Accuracy: 79.63%
-Epoch 16/30
-Train - Loss: 0.4578, Accuracy: 79.03%
-Epoch 17/30
-Train - Loss: 0.4524, Accuracy: 79.63%
-Epoch 18/30
-Train - Loss: 0.4485, Accuracy: 79.76%
-Epoch 19/30
-Train - Loss: 0.4410, Accuracy: 79.87%
-Epoch 20/30
-Train - Loss: 0.4322, Accuracy: 80.59%
-Epoch 21/30
-Train - Loss: 0.4294, Accuracy: 81.02%
-Epoch 22/30
-Train - Loss: 0.4244, Accuracy: 80.98%
-Epoch 23/30
-Train - Loss: 0.4245, Accuracy: 81.08%
-Epoch 24/30
-Train - Loss: 0.4220, Accuracy: 81.24%
-Epoch 25/30
-Train - Loss: 0.4150, Accuracy: 81.45%
-Epoch 26/30
-Train - Loss: 0.4130, Accuracy: 81.62%
-Epoch 27/30
-Train - Loss: 0.4113, Accuracy: 81.59%
-Epoch 28/30
-Train - Loss: 0.4021, Accuracy: 82.30%
-Epoch 29/30
-Train - Loss: 0.4056, Accuracy: 81.93%
-Epoch 30/30
-Train - Loss: 0.4015, Accuracy: 82.05%
-Test - Loss: 0.7246, Accuracy: 67.40%
+Epoch 1/10
+Train - Loss: 0.9553, Accuracy: 54.97%
+Epoch 2/10
+Train - Loss: 0.6465, Accuracy: 64.63%
+Epoch 3/10
+Train - Loss: 0.5564, Accuracy: 73.35%
+Epoch 4/10
+Train - Loss: 0.5000, Accuracy: 77.23%
+Epoch 5/10
+Train - Loss: 0.4622, Accuracy: 79.59%
+Epoch 6/10
+Train - Loss: 0.4352, Accuracy: 80.79%
+Epoch 7/10
+Train - Loss: 0.4134, Accuracy: 82.08%
+Epoch 8/10
+Train - Loss: 0.3908, Accuracy: 83.27%
+Epoch 9/10
+Train - Loss: 0.3778, Accuracy: 83.95%
+Epoch 10/10
+Train - Loss: 0.3631, Accuracy: 84.49%
+Test - Loss: 0.7494, Accuracy: 68.40%

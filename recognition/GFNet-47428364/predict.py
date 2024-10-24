@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 """ Main method """
 def main():
     # Load the saved model
-    model = GFNet()
+    model = GFNet(embed_dim=256, patch_size=8)
     model.load_state_dict(torch.load("GFNet-Model.pth", weights_only=True))
     model.to(device)
 

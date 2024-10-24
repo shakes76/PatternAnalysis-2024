@@ -63,7 +63,11 @@ To address this imbalance, the Dice loss for each class was computed individuall
 This approach significantly improved segmentation performance, especially for smaller, less-represented classes.
 
 #### Dice loss class weighting:
-After testing more sophisticated methods of obtaining these weights (for example calculating them based on the total number of pixels each class has in the entire dataset), the best performance was found by using the follwing weights: [1, 2, 3, 4, 5, 6]. This way, the less a given class appears, the more weighting it has on the overall loss. Again, this allows smaller classes to not be overlooked in training.
+After testing more sophisticated methods of obtaining these weights (for example calculating them based on the total number of pixels each class has in the entire dataset), the best performance was found by simply using the following weights: 
+```plaintext
+[0.0476,0.0952,0.1429,0.1905,0.2381,0.2857]
+```
+ (Note that we simply normalised the following to obtain these values: [1, 2, 3, 4, 5, 6]). This way, the less a given class appears, the more weighting it has on the overall loss. Again, this allows smaller classes to not be overlooked in training.
 
 #### Learning rate scheduler:
 
@@ -71,12 +75,13 @@ Another optimisation implemented was the use of a learning rate scheduler. Speci
 
 #### Learning rate scheduler parameters:
 - **optimizer**: The optimizer (Adam) whose learning rate will be modified.
-- **max_lr**: The maximum learning rate, set to \(1 \times 10^{-3}\) (0.001).
+- **max_lr**: The maximum learning rate, set to (1 × 10⁻³) (0.01).
 - **total_steps**: Total number of training steps used to schedule the learning rate.
 - **pct_start**: Percentage of total steps spent increasing the learning rate, here set to 30%.
 - **anneal_strategy**: Decay method after reaching the max learning rate; 'cos' means cosine annealing.
-- **div_factor**: Initial learning rate calculated as `max_lr` divided by this factor, resulting in \(0.001 / 25 = 0.00004\).
-- **final_div_factor**: Final learning rate, which is the initial rate divided by this factor, leading to around \(4 x 10^{-9}\).
+- **div_factor**: Initial learning rate calculated as max_lr divided by this factor, resulting in (0.01 / 25 = 0.0004).
+- **final_div_factor**: Final learning rate, which is the initial rate divided by this factor, leading to around (4 × 10⁻⁹).
+
 
 #### Batch size:
 The batch size was kept at 2, since the model is quite memory intensive, and large batch sizes are not viable as a result. It showed a slight improvement in performance over a batch size of 1.
@@ -93,8 +98,8 @@ The batch size was kept at 2, since the model is quite memory intensive, and lar
 ```plaintext
 3DProstateSegment_s4647117/
 ├── README.md
-├── dataset.py  # Custom PyTorch Dataset for Loading and Preprocessing NIfTI Files
-├── modules.py  # Core components and architecture of the 3DUnet
+├── dataset.py   # Custom PyTorch Dataset for Loading and Preprocessing NIfTI Files
+├── modules.py   # Core components and architecture of the 3DUnet
 ├── train.py     # Training Script for 3DUNet Model, as well as calculating per-class Dice Score
 └── utils.py     # Utility functions such as custom weighted Dice loss and Dice score calculations
 ```
@@ -137,13 +142,15 @@ As above, colored are the predicted labels, and greyscale is actual label
 
 ### Training and Validation loss:
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/loss.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
+    <img src="https://github.com/JosephSav/Markdown/blob/main/loss_new.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
 </div>
+We observed a spike in the validation loss during training, which is not surprising given our choice of a smaller batch size (due to memory limitations), as it tends to introduce more variability in the training process.
 
 ### Learning rate:
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/learning_rate.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
+    <img src="https://github.com/JosephSav/Markdown/blob/main/learning_rate_new.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
 </div>
+We can observe how our learning rate scheduler works from this graph.
 
 ## Preprocessing and data splits:
 

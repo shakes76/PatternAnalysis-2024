@@ -6,12 +6,15 @@ Created by:     Shogo Terashima
 ID:             S47779628
 Last update:    24/10/2024
 Reference:
-@inproceedings{rao2021global,
-  title={Global Filter Networks for Image Classification},
-  author={Rao, Yongming and Zhao, Wenliang and Zhu, Zheng and Lu, Jiwen and Zhou, Jie},
-  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
-  year = {2021}
-}
+Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). 
+    GFNet: Global Filter Networks for Visual Recognition. 
+    IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(9), 10960–10973. 
+    https://doi.org/10.1109/tpami.2023.3263824
+
+raoyongming. (2021). GitHub - raoyongming/GFNet: 
+    [NeurIPS 2021] [T-PAMI] Global Filter Networks for Image Classification. GitHub.
+     https://github.com/raoyongming/GFNet?tab=MIT-1-ov-file#readme
+
 """
 import torch
 import torch.nn as nn

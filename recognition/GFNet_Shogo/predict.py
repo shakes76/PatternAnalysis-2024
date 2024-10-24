@@ -8,9 +8,8 @@ ID:             S47779628
 Last update:    24/10/2024
 """
 import torch
-from dataset import TestPreprocessing
 from modules import GFNet
-from dataset import TrainPreprocessing, TestPreprocessing, CombinedPreprocessing
+from dataset import CombinedPreprocessing
 import os
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt

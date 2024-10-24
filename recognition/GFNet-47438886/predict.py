@@ -10,24 +10,22 @@ from dataset import load_adni_data
 from utils import get_device, get_dataset_root
 from train import initialise_model, initialise_optimizer, initialise_scheduler
 
+MODEL_PATH = "model_checkpoint_actual_split.pth"
+
 # Testing loop
-def test_model():
+def test_existing_model():
     device = get_device()
     root_dir = get_dataset_root()
 
     model = initialise_model(device)
-    # optimizer = initialise_optimizer(model)
-    # scheduler = initialise_scheduler(optimizer)
-
-    checkpoint = torch.load("sketchy_model_checkpoint.pth", map_location=torch.device('cpu'))
-    # checkpoint = torch.load("model_checkpoint.pth")
+    
+    if device == 'cpu':
+        checkpoint = torch.load(MODEL_PATH, map_location=torch.device('cpu'))
+    else:
+        checkpoint = torch.load(MODEL_PATH)
 
     # Load the values from checkpoint
     model.load_state_dict(checkpoint['model_state_dict'])
-    maximum_validation_accuracy = max(checkpoint['validation_accuracy'])
-    print("Maximum validation accuracy", maximum_validation_accuracy)
-    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     testing_start = time.time()
     model.eval()  # Set the model to evaluation mode
@@ -46,8 +44,9 @@ def test_model():
 
     accuracy = correct / total
     testing_time = time.time() - testing_start
+    
     print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
     print("Accuracy", accuracy)
 
 if __name__ == "__main__":
-    test_model()
+    test_existing_model()

@@ -119,10 +119,6 @@ print(f"Training complete! It took {(stop-start)/60} minutes\n")
 
 generate_loss_plot(train_loss, val_loss, "Siamese Network", save=args.saveplots)
 
-# The feature vectors can be stored while testing as the training is done
-testing_features = []
-testing_labels = []
-
 # Evaluating the Siamese Network with test data
 print("Testing the model to see loss...")
 siamese.eval()
@@ -134,8 +130,6 @@ with torch.no_grad(): # Reduces memory usage
 
         # Evaluate images
         anchor_result, positive_result, negative_result = siamese(anchor, positive, negative)
-        testing_features.append(anchor_result)
-        testing_labels.append(label.to(device))
 
         loss = tripletloss(anchor_result, positive_result, negative_result)
         if i % (len(test_loader)//2) == 0 and i != len(test_loader)-1:
@@ -146,6 +140,8 @@ training_features = []
 training_labels = []
 validation_features = []
 validation_labels = []
+testing_features = []
+testing_labels = []
 with torch.no_grad():
     for anchor, _, _, label in train_loader:
         features = siamese.forward_once(anchor.to(device))
@@ -155,6 +151,10 @@ with torch.no_grad():
         features = siamese.forward_once(anchor.to(device))
         validation_features.append(features)
         validation_labels.append(label.to(device))
+    for anchor, _, _, label in test_loader:
+        features = siamese.forward_once(anchor.to(device))
+        testing_features.append(features)
+        testing_labels.append(label.to(device))
 
 # Generate a t-SNE plot on the training_features
 cpu_features = []
@@ -182,7 +182,7 @@ for epoch in range(config.EPOCHS_CLASSIFIER):
 
     # Training
     for features, labels in zip(training_features, training_labels):
-        optimiser.zero_grad()
+        classifier.zero_grad()
         out = classifier(features)
         loss = cross_entropy(out, labels)
         t_loss_total.append(loss.item())
@@ -232,5 +232,5 @@ with torch.no_grad():
 generate_loss_plot(train_loss, val_loss, "Binary Classifier", save=args.saveplots)
 
 if not args.nomodels:
-    torch.save(siamese.state_dict(), os.path.join(config.MODELPATH, "siamese_" + datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth")))
-    torch.save(classifier.state_dict(), os.path.join(config.MODELPATH, "classifier_" + datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth")))
+    torch.save(siamese.state_dict(), os.path.join(config.MODELPATH, "siamese_" + datetime.now().strftime('%d-%m-%Y_%H-%M' + ".pth")))
+    torch.save(classifier.state_dict(), os.path.join(config.MODELPATH, "classifier_" + datetime.now().strftime('%d-%m-%Y_%H-%M' + ".pth")))

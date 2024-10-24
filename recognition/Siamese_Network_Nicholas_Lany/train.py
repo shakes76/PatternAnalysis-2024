@@ -10,28 +10,29 @@ from dataset import ISICDataset, SiameseDataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train_siamese_network(dataset, transform=None):
+def train_siamese_network(dataset, transform=None, epochs=10):
     train_dataloader = DataLoader(SiameseDataset(dataset, transform=transform), batch_size=16, shuffle=True)
     net = SiameseNetwork().to(device)
     criterion = ContrastiveLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.001)
 
-    # print number of iterations this loop will have
-    print(f'Number of iterations: {len(train_dataloader)}')
+    print(f'Number of iterations per epoch: {len(train_dataloader)}')
 
-    for i, (img1, img2, labels) in enumerate(train_dataloader):
-        img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
+    for epoch in range(epochs):
+        print(f'Starting epoch {epoch + 1}/{epochs}')
+        for i, (img1, img2, labels) in enumerate(train_dataloader):
+            img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
 
-        optimizer.zero_grad()
+            optimizer.zero_grad()
 
-        similarity = net(img1, img2)
+            similarity = net(img1, img2)
 
-        loss = criterion(*similarity, labels.float())
+            loss = criterion(*similarity, labels.float())
 
-        loss.backward()
-        optimizer.step()
+            loss.backward()
+            optimizer.step()
 
-        print(f'Iteration: {i}, Loss: {loss.item()}')
+        print(f'Epoch {epoch + 1}/{epochs} Loss: {loss.item()}')
 
     torch.save(net.state_dict(), 'model.pth')
     print(f'Model saved to {os.path.abspath("model.pth")}')
@@ -48,4 +49,4 @@ if __name__ == "__main__":
 
     isic_dataset = ISICDataset(dataset_path=dataset_image_path, metadata_path=meta_data_path)
 
-    train_siamese_network(dataset=isic_dataset, transform=transform)
+    train_siamese_network(dataset=isic_dataset, transform=transform, epochs=10)

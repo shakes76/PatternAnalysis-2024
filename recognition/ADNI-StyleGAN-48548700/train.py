@@ -1,40 +1,24 @@
-# Import dataset and network models
-from dataset import ImageDataset  # Assuming this is the class you defined
+﻿# Import dataset and network models
+from dataset import *  
 from modules import *  
 import torch 
 from tqdm import tqdm 
 from torch import optim
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
-from torchvision import transforms
 
 # Define constants and hyperparameters
-DATASET                 = "./AD/train"  # Path to the training dataset
+DATASET                 = "./train"  # Path to the dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
-EPOCHS                  = 100  # Number of training epochs
-LEARNING_RATE           = 1e-4  # Learning rate for optimization
+EPOCHS                  = 50 # Number of training epochs
+LEARNING_RATE           = 1e-3  # Learning rate for optimization
 BATCH_SIZE              = 32  # Batch size for training
 LOG_RESOLUTION          = 7  # Logarithmic resolution used for 128*128 images
 Z_DIM                   = 256  # Dimension of the latent space
 W_DIM                   = 256  # Dimension of the mapping network output
-LAMBDA_GP               = 15  # Weight for the gradient penalty term
-GAMMA                   = 20
-MAX_NORM                = 0.5
-
-# Define transformations for the dataset (resize to 128x128, normalize to [-1, 1])
-image_transforms = transforms.Compose([
-    transforms.Resize((128, 128)),
-    transforms.Grayscale(num_output_channels=3),  # Convert grayscale to 3-channel RGB
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize for 3 channels
-])
-
-# Create the dataset and DataLoader
-train_dataset = ImageDataset(image_dir=DATASET, transform=image_transforms)
-loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
+LAMBDA_GP               = 10  # Weight for the gradient penalty term
 
 # Function to compute the gradient penalty for the discriminator
-def gradient_penalty(critic, real, fake, device="cpu"):
+def gradient_penalty(critic, real, fake, device= DEVICE):
     # Compute gradient penalty for the critic
     BATCH_SIZE, C, H, W = real.shape
     beta = torch.rand((BATCH_SIZE, 1, 1, 1)).repeat(1, C, H, W).to(device)
@@ -59,12 +43,14 @@ def gradient_penalty(critic, real, fake, device="cpu"):
 
 # Function to generate latent vectors 'w' from random noise
 def get_w(batch_size):
+    # Generate 'w' from random noise
     z = torch.randn(batch_size, W_DIM).to(DEVICE)
     w = mapping_network(z)
     return w[None, :, :].expand(LOG_RESOLUTION, -1, -1)
 
 # Function to generate noise inputs for the generator
 def get_noise(batch_size):
+    # Generate noise inputs for the generator
     noise = []
     resolution = 4
 
@@ -74,10 +60,13 @@ def get_noise(batch_size):
         else:
             n1 = torch.randn(batch_size, 1, resolution, resolution, device=DEVICE)
         n2 = torch.randn(batch_size, 1, resolution, resolution, device=DEVICE)
+
         noise.append((n1, n2))
+
         resolution *= 2
 
     return noise
+
 
 # Training function for the discriminator and generator
 def train_fn(
@@ -88,93 +77,78 @@ def train_fn(
     opt_critic,
     opt_gen,
     opt_mapping_network,
-    epoch,  # Add epoch as a parameter
 ):
-    loop = tqdm(loader, leave=True)
-
-    scaler = torch.amp.GradScaler('cuda')
-
+    loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
+    
     G_losses = []
     D_losses = []
-
-    # Print the current epoch number at the start of the epoch
-    print(f"Starting Epoch {epoch}...")
-
-    for batch_idx, real in enumerate(loop):
-        real = real.to(DEVICE)
+    
+    for batch_idx, (real, _) in enumerate(loop):
+        real = real.to(DEVICE)  # Move real data to the specified device
         cur_batch_size = real.shape[0]
 
-        real.requires_grad_(True)
-
-        w = get_w(cur_batch_size)
-        noise = get_noise(cur_batch_size)
-
-        with torch.amp.autocast('cuda'):
-            fake = gen(w, noise)
-            critic_fake = critic(fake.detach())
-            critic_real = critic(real)
-
-            r1_penalty = torch.autograd.grad(
-                outputs=critic_real.sum(),
-                inputs=real,
-                create_graph=True
-            )[0].pow(2).view(real.size(0), -1).sum(1).mean()
-
+        w     = get_w(cur_batch_size)  # Generate 'w' from random noise
+        noise = get_noise(cur_batch_size)  # Generate noise inputs for the generator
+        with torch.amp.autocast('cuda'):  # Use automatic mixed-precision (AMP) for faster training
+            fake = gen(w, noise)  # Generate fake images
+            critic_fake = critic(fake.detach())  # Get critic scores for fake images
+            
+            critic_real = critic(real)  # Get critic scores for real images
+            gp = gradient_penalty(critic, real, fake, device=DEVICE)  # Compute gradient penalty
             loss_critic = (
-                -(torch.mean(critic_real) - torch.mean(critic_fake))
-                + (GAMMA / 2) * r1_penalty
-                + (0.001 * torch.mean(critic_real ** 2))
+                -(torch.mean(critic_real) - torch.mean(critic_fake))  # Critic loss
+                + LAMBDA_GP * gp  # Gradient penalty term
+                + (0.001 * torch.mean(critic_real ** 2))  # Regularization term
             )
-        
-        if torch.isnan(loss_critic):
-            print(f"Stopping training: loss_critic is NaN at Epoch {epoch}, Batch {batch_idx}")
-            raise ValueError("NaN detected in loss_critic, stopping training...")
-        
-        # Log values every 10 batches
-        if batch_idx % 10 == 0:
-            print(f"Epoch {epoch}, Batch {batch_idx}: critic_real: {critic_real.mean().item()}, critic_fake: {critic_fake.mean().item()}")
-            print(f"Epoch {epoch}, Batch {batch_idx}: r1_penalty: {r1_penalty.item()}, loss_critic: {loss_critic.item()}")
-
         D_losses.append(loss_critic.item())
 
-        critic.zero_grad()
-        scaler.scale(loss_critic).backward()
-        torch.nn.utils.clip_grad_norm_(critic.parameters(), MAX_NORM)
-        scaler.step(opt_critic)
-        scaler.update()
+        critic.zero_grad()  # Reset gradients for the critic
+        loss_critic.backward()  # Backpropagate the critic loss
+        opt_critic.step()  # Update critic's weights
 
-        with torch.amp.autocast('cuda'):
-            gen_fake = critic(fake)
-            loss_gen = -torch.mean(gen_fake)
+        gen_fake = critic(fake)  # Get critic scores for fake images
+        loss_gen = -torch.mean(gen_fake)  # Generator loss
 
-        if batch_idx % 16 == 0:
+        if batch_idx % 16 == 0:  # Apply path length penalty every 16 batches
             plp = path_length_penalty(w, fake)
-            loss_gen = loss_gen + plp
-
+            if not torch.isnan(plp):
+                loss_gen = loss_gen + plp  # Update generator loss with path length penalty
         G_losses.append(loss_gen.item())
-
-        mapping_network.zero_grad()
-        gen.zero_grad()
-        scaler.scale(loss_gen).backward()
-        scaler.step(opt_gen)
-        scaler.update()
-        opt_mapping_network.step()
+        mapping_network.zero_grad()  # Reset gradients for the mapping network
+        gen.zero_grad()  # Reset gradients for the generator
+        loss_gen.backward()  # Backpropagate the generator loss
+        opt_gen.step()  # Update generator's weights
+        opt_mapping_network.step()  # Update mapping network's weights
 
         loop.set_postfix(
-            epoch=epoch,  # Add epoch to the tqdm progress bar
-            r1_penalty=r1_penalty.item(),
+            gp=gp.item(),
             loss_critic=loss_critic.item(),
         )
-
+        
+        
+    
     return (D_losses, G_losses)
+    
+import csv
 
-
-
+def save_losses_to_csv(g_losses, d_losses, filename="losses.csv"):
+    with open(filename, mode="a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Epoch", "Generator Loss", "Discriminator Loss"])
+        
+        for i in range(len(g_losses)):
+            gen_loss = g_losses[i] if i < len(g_losses) else ""
+            disc_loss = d_losses[i] if i < len(d_losses) else ""
+            writer.writerow([i, gen_loss, disc_loss])
 
 # Initialize the mapping network, generator, and critic on the specified device
 mapping_network     = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)  # Initialize mapping network
 gen                 = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)  # Initialize generator
 critic              = Discriminator(LOG_RESOLUTION).to(DEVICE)  # Initialize critic
+
+loader = get_loader(DATASET, LOG_RESOLUTION, BATCH_SIZE)
+
+gen                 = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)
 
 path_length_penalty = PathLengthPenalty(0.99).to(DEVICE)
 
@@ -182,32 +156,49 @@ opt_gen             = optim.Adam(gen.parameters(), lr=LEARNING_RATE, betas=(0.0,
 opt_critic          = optim.Adam(critic.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
 opt_mapping_network = optim.Adam(mapping_network.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
 
-gen.train()
-critic.train()
-mapping_network.train()
+if __name__ == "__main__":
+    gen.train()
+    critic.train()
+    mapping_network.train()
 
-Total_G_Losses = []
-Total_D_Losses = []
+    Total_G_Losses = []
+    Total_D_Losses = []
 
-for epoch in range(EPOCHS):
-    G_Losses, D_Losses = train_fn(
-        critic,
-        gen,
-        path_length_penalty,
-        loader,
-        opt_critic,
-        opt_gen,
-        opt_mapping_network,
-        epoch,
-    )
-    
-    Total_G_Losses.extend(G_Losses)
-    Total_D_Losses.extend(D_Losses)
-    
-    if epoch % 20 == 0:
-        torch.save(gen.state_dict(), f'generator_epoch{epoch}.pt')
+    for epoch in range(EPOCHS):
+        G_Losses , D_Losses = train_fn(
+            critic,
+            gen,
+            path_length_penalty,
+            loader,
+            opt_critic,
+            opt_gen,
+            opt_mapping_network,
+        )
+        
+        Total_G_Losses.extend(G_Losses)
+        Total_D_Losses.extend(D_Losses)
 
-plt.figure(figsize=(10,5))
-plt.title("Generator Loss During Training")
-plt.plot(Total_G_Losses, label="G", color="blue")
-plt.xlabel("iterations")
+        save_losses_to_csv(Total_G_Losses, Total_D_Losses, filename="total_losses.csv")
+
+        if epoch % 5 == 0:
+            torch.save(gen.state_dict(), f'generator_epoch{epoch}.pt')
+            torch.save(critic.state_dict(), f'critic_epoch{epoch}.pt')
+            torch.save(opt_gen.state_dict(), f'opt_gen_epoch{epoch}.pt')
+            torch.save(opt_critic.state_dict(), f'opt_critic_epoch{epoch}.pt')
+            torch.save(opt_mapping_network.state_dict(), f'opt_mapping_network_epoch{epoch}.pt')
+
+    plt.figure(figsize=(10,5))
+    plt.title("Generator Loss During Training")
+    plt.plot(Total_G_Losses, label="G", color="blue")
+    plt.xlabel("iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig('gen_loss.png')
+
+    plt.figure(figsize=(10,5))
+    plt.title("Discriminator Loss During Training")
+    plt.plot(Total_D_Losses, label="D", color="orange")
+    plt.xlabel("iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig('dis_loss.png')

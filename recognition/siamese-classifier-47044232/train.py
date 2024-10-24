@@ -23,10 +23,10 @@ from utils import split_data, generate_loss_plot, tsne_plot
 
 # Argument handler
 parser = argparse.ArgumentParser()
-parser.add_argument("-nm", "--nomodels", action="store_false", default=True, help="Stops the trained models from being saved.")
+parser.add_argument("-nm", "--nomodels", action="store_true", default=False, help="Stops the trained models from being saved.")
 parser.add_argument("-sp", "--saveplots", action="store_true", default=False, help="Save the plots to demonstrate training. If flag not present, plots will be shown.")
 args = parser.parse_args()
-# TODO verify argument handling is correct
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if not torch.cuda.is_available():
     print("WARNING: Using the CPU to train...")
@@ -216,7 +216,7 @@ with torch.no_grad():
         all_labels.extend(labels.data.cpu())
         all_predictions.extend(predicted.cpu())
 
-    print('\nTest Accuracy for Classification: {} %'.format(100 * correct / total))
+    print('\nTest Accuracy for Classification: {}%'.format(100 * correct / total))
 
     # Generate a confusion matrix to visualise accuracy
     plt.close() # As ConfusionMatrixDisplay uses it's own figure

@@ -115,6 +115,11 @@ Sample images are generated and saved every 2 epochs and are stored as outlined 
 Models are saved every 4 epochs and are stored as outlined in preprocessing.
 Plot for the generator and discriminator loss over all iterations are saved at the end of training.
 
+### Predicting
+Note that the current code in predict.py extracts the 50th epoch model from both Generator and Mapping network (named 50 for each) in lines 56 and 57. In order to load in whatever epoch model you want, you will need to change this 50 to the relevant model name. Models are named as their corresponding epoch. Having said this, to predict (which allows the loading of a pre-trained model), and generate some images and a t-SNE visualisation using these pre-trained models, run the following code.
+```
+>> python predict.py
+```
 ## Dataset
 The Alzheimer's Disease Neuroimaging Initiative (ADNI) is a large-scale, longitudinal research study designed to develop \
 clinical, imaging, genetic, and biochemical biomarkers for the early detection and progression of Alzheimer's Disease (AD). \
@@ -154,16 +159,16 @@ Where AD represents Alzheimer's Disease samples and NC represents Normal Control
 Any model checkpoints will need to be placed in their appropriate folder:
 ```
 Models/
-    Gen/
-    Discriminator/
-    MappingNetwork
+    Gen/256x256
+    Discriminator/256x256
+    MappingNetwork/256x256
 ```
 
 Any images will be saved in the following folder:
-'''
+```
 saved_examples/
     256x256/
-'''
+```
 256x256 can be replaced with any image size if the dataloader resizes the images to this size accordingly.
 
 ### Data augmentation

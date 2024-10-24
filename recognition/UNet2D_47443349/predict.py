@@ -16,6 +16,7 @@ from dataset import ProstateDataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
 import torch
+import torch.nn.functional as F
 from utils import TEST_IMG_DIR, TEST_MASK_DIR
 from utils import dice_score
 from utils import N_LABELS, LABEL_NUMBER_TO_NAME
@@ -63,6 +64,7 @@ def run_test(model):
     for i, score in enumerate(average_dice_scores):
         print(f"Average Dice Score for {LABEL_NUMBER_TO_NAME[i]}: {score.item():.4f}")
 
+# Plot sample image, predicted mask, and true mask
 def plot_sample(image, mask, prediction, idx):
     """
     Plots the input image, true mask, and predicted mask.
@@ -89,6 +91,7 @@ def plot_sample(image, mask, prediction, idx):
     plt.savefig(name, bbox_inches='tight', format='png')
     plt.show()
 
+# Run plotting of samples
 def run_samples(model):
     """
     Runs visualisation of some sample predicted segmentations.
@@ -106,6 +109,7 @@ def run_samples(model):
             norm_image = (image - IMAGES_MEAN) / IMAGES_STD
             norm_image = norm_image.to(DEVICE)
             prediction = model(norm_image)
+            prediction = F.softmax(prediction, dim=1)
             prediction = torch.argmax(prediction, dim=1) # Soft (probability-based) to hard prediction
 
             # Plot sample
@@ -121,5 +125,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    

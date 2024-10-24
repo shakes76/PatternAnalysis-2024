@@ -1,6 +1,6 @@
 """
-Contains files that mainly handle data tracking from the training
-and evaluation loops of the GFNet model.
+Contains the model parameters and paths to the image files to 
+be used for training, testing, and predicting.
 
 Benjamin Thatcher
 s4784738
@@ -13,7 +13,7 @@ import os
 All necessary parameters for training the model
 '''
 def get_parameters():
-    epochs = 6
+    epochs = 30
     learning_rate = 1e-4
     patch_size = (16, 16)
     embed_dim = 512
@@ -23,7 +23,6 @@ def get_parameters():
     drop_path_rate = 0.1
     weight_decay = 1e-2
     t_max = 6
-
 
     return (
         epochs,
@@ -38,27 +37,25 @@ def get_parameters():
         t_max,
     )
 
-'''
-Returns the paths to the ADNI datasets. The training and testing paths each 
-should contain 'AD' and 'NC' subfolders of brain images.
-'''
 def get_path_to_images():
-    #train_path = '/home/groups/comp3710/ADNI/AD_NC/train'
-    #test_path = '/home/groups/comp3710/ADNI/AD_NC/test'
-    train_path = '../AD_NC/train'
-    test_path = '../AD_NC/test'
+    '''
+    Returns the paths to the ADNI datasets. The training and testing paths each 
+    should contain 'AD' and 'NC' subfolders of brain images.
+    '''
+    train_path = '/home/groups/comp3710/ADNI/AD_NC/train'
+    test_path = '/home/groups/comp3710/ADNI/AD_NC/test'
 
     return train_path, test_path
 
-'''
-Returns the path to an image whose classification will be predicted in predict.py.
-'''
 def get_prediction_image():
+    '''
+    Returns the path to an image whose classification will be predicted in predict.py.
+    A random image from the testing set will be selected if a set img_path is not set.
+    '''
     # A set image path to be returned
     img_path = None
 
-    # If there is no set image path, an image will be selected at random from the test_path
-    # returned from get_path_to_images
+    # Select a random image if necessary
     if not img_path:
         _, test_path = get_path_to_images()
         # Pick AD or NC image with 50-50 probability

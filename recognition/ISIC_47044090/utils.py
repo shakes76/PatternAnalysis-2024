@@ -83,3 +83,51 @@ def iou_torch(true_bbox, pred_bbox):
 
     iou_value = inter_area / union_area if union_area > 0 else 0 # compute IoU (avoid division by zero)
     return np.round(iou_value.tolist(), 3)
+
+
+def test_extraction(mask):
+    """
+    Helper function to test the extraction process by visualising a single sample and its bounding box
+    """
+    image = Image.open(f'{modified_filepath}/train/images/ISIC_{mask}.jpg')
+    f = open(f"{modified_filepath}/train/labels/ISIC_{mask}.txt", "r")
+    obj, x_center, y_center, width, height = np.array(f.read().split(" "))
+    x_center, y_center, width, height = float(x_center)*512, float(y_center)*512, float(width)*512, float(height)*512
+    fig, ax = plt.subplots()
+    ax.imshow(image)
+    rect = patches.Rectangle(((x_center) - (width)/2, (y_center) - (height)/2), (width), (height), linewidth=1, edgecolor='r', facecolor='none')
+    ax.add_patch(rect)
+    plt.title("Lesion detection example")
+    plt.show()
+
+
+def image_and_mask(sample):
+    """
+    Helper function to test the extraction process by visualising a single sample and its bounding box
+    """
+    fig, axs = plt.subplots(1,2)
+    image = Image.open(f'{original_filepath}/train/images/ISIC_{sample}.jpg')
+    mask = Image.open(f'{original_filepath}/train/masks/ISIC_{sample}_segmentation.png').convert('1')
+    axs[0].imshow(image)
+    axs[1].imshow(mask)
+
+    axs[0].set_title("ISIC supplied image")
+    axs[1].set_title("ISIC supplied mask")
+    plt.show()
+
+def image_and_mask(sample):
+    """
+    Helper function to test the extraction process by visualising a single sample and its bounding box
+    """
+    fig, axs = plt.subplots(1,2)
+    image = Image.open(f'{original_filepath}/train/images/ISIC_{sample}.jpg')
+    mask = Image.open(f'{modified_filepath}//train/images/ISIC_{sample}.jpg')
+    axs[0].imshow(image)
+    axs[1].imshow(mask)
+
+    axs[0].set_title("original ISIC supplied image")
+    axs[1].set_title("modified image for YOLO use")
+    plt.show()
+
+
+# image_and_mask("0000001")

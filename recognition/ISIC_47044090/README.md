@@ -16,8 +16,6 @@ This is in contrast to other two-stage models that split this process into two s
 
 The newest innovation in the YOLO model is Ultralytic's YOLOv11, which is said to perform better and faster than the previous models. Ultralytics is also responsible for the release of every iteration since YOLOv8 in 2023.
 
-YOLO VERSION RELEASE TIMELINE
-
 ## 2. Introduction to lesion segmentation and the ISIC2017 dataset
 ### 2.1 Lesion segementation
 This algorithm aims to provide a fast and accurate form of lesion detection from a single dermoscopic image - in this case, the accuracy of detection and segmentation is paramount, as it would theoretically be used for the medical purposes.
@@ -33,6 +31,8 @@ This training validation split was used since it was the one provided by the ISI
 
 Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1.
 
+IMAGE OF ISIC SAMPLES
+
 However, these cannot directly be plugged into YOLOv11, as Ultralytics' YOLO models require a specific file format and file structure. Firstly, it requires that all images are of equal and even dimensions. Secondly, all labels must be in the form of a .txt file which contains (for each bounding box identified): its class, centre x-coordinate, centre y-coordinate, width and height.
 
 
@@ -45,8 +45,6 @@ IMAGE OF RESIZING
 After this point, the image was scaled down to 512x512, which was a picked as it serves as a midpoint between maximising information (larger image=more information=better training) and minimising computation time (larger image=longer training=more resources). This was applied to both the images and the ground truth masks provided by ISIC.
 
 For Ultralytics compatability, the masks also needed their information transferred to a .txt file in the above-mentioned format. This was done by extracting the bounding box around coordinates who's pixel values were not 0 (as lesions are highlighted white and everything else is black in the masks provided). For this task, there is only one class to detect (lesion).
-
-IMAGE OF MASK ON IMAGE
 
 ### 3.2 Organisation
 This is all implemented in the dataset.py file, but to use this (and Ultralytics' YOLO models), the files must be organised in a specific way:
@@ -93,3 +91,5 @@ IMAGE FROM PREDICT.py
 ### Appendix 1: ISIC Dataset
 ### Appendix 2: Requirements
 ### Appendix 3: References
+image 1 https://www.v7labs.com/blog/yolo-object-detection 
+yolo architecture and evolution https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71

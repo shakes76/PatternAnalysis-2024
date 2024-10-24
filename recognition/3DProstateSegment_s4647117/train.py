@@ -160,14 +160,14 @@ def train_loop():
     model = UNet3D().to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-    num_epochs = 20
+    num_epochs = 30
 
     total_steps = num_epochs * len(train_loader)
 
     # Initialize OneCycleLR scheduler
     scheduler = OneCycleLR(
         optimizer,
-        max_lr=1e-3,  # Maximum learning rate
+        max_lr=1e-2,  # Maximum learning rate
         total_steps=total_steps,
         pct_start=0.3,  # Percentage of cycle spent increasing the lr
         anneal_strategy='cos',  # 'cos' for cosine annealing

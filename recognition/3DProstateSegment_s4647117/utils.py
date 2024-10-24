@@ -13,7 +13,8 @@ import torch
 import torch.nn.functional as F
 
 # Hyperparameter to prioritise classes that are less common to ensure they are not neglected
-CLASS_WEIGHTS = torch.tensor([1, 2, 3, 4, 5, 6])
+CLASS_WEIGHTS = torch.tensor([1, 2, 3, 4, 5, 6], dtype=torch.float32)
+CLASS_WEIGHTS /= CLASS_WEIGHTS.sum()
 
 def per_class_dice_loss(pred, target, num_classes=6, epsilon=1e-6):
     """

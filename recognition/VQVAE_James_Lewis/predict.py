@@ -12,6 +12,7 @@ def load_model(model, model_path, device):
     @param model_path: str, the path to the model weights
     @param device: torch.device, the device to move the model to
     @return: nn.Module, the model with the weights loaded"""
+
     model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.to(device)
 
@@ -58,14 +59,8 @@ def construct_images(original_imag_list, reconstructed_data_list, section, ssim_
     plt.close()
 
 
-
-
-
-
-
-
 def main():
-#Hyperparameters
+    #Hyperparameters
     input_dim = 1
     out_dim = 128
     n_res_block = 2

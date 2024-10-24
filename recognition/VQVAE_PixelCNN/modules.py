@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
+import os
 
 # Getting the device (in my case GPU with cuda 12.4)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -171,12 +172,6 @@ class Model(nn.Module):
     
 
 ## -----------------------------------Pixel CNN Model-----------------------------------
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tqdm import tqdm
-import os
 
 # Custom masked convolution for PixelCNN
 class MaskedConv2d(nn.Conv2d):

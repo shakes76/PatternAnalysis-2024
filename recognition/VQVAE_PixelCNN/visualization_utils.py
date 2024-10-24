@@ -64,20 +64,67 @@ def save_and_display_images(original_imgs, recon_imgs):
 
     plt.close()
 
-# Main code to load model, generate images, and calculate SSIM
+    
+#---------------------------------------------------------------------
+
+
+# This code displays the latent space
+
+# Function to extract latent vector from the encoder for a single image
+def extract_latent_vector_single_image(model, image):
+    model.eval()  # Set the model to evaluation mode
+    with torch.no_grad():
+        image = image.to(device)
+        latent_vector = model._encoder(image)  # Get the latent vector from encoder
+        print(type(latent_vector))
+        print(latent_vector.size())
+        latent_vector = latent_vector[0][0]
+        print(latent_vector.size())
+    return latent_vector.cpu().numpy()  # Move to CPU for visualization
+
+# Function to visualize the latent vector
+def visualize_latent_vector(latent_vector, title_line):
+    plt.figure(figsize=(10, 5))
+    plt.imshow(latent_vector, cmap='viridis', aspect='auto')
+    plt.colorbar()
+    plt.title(title_line)
+    # plt.show()
+    plt.savefig('Output/sample_visualization.png')
+
+    plt.close()
+
+# ------------------------------------------------------------------
+
+
+# Function to extract latent vector from the encoder for a single image
+def extract_quantized_values_single_image(model, image):
+    model.eval()  # Set the model to evaluation mode
+    with torch.no_grad():
+        image = image.to(device)
+        _, _, _, quantized_values = model(image)  # Get the latent vector from encoder
+        print(type(quantized_values))
+        print(quantized_values.size())
+        quantized_values = quantized_values[0][0]
+        print(quantized_values.size())
+    return quantized_values.cpu().numpy()  # Move to CPU for visualization
+
+
+
+# ------------------------------------------------------------------
+
 if __name__ == '__main__':
-    model_path = './Model/Vqvae.pth'
+
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    # Initialize the model
+
+    # Initialize model and load weights
     model = Model(HIDDEN_DIM, RESIDUAL_HIDDEN_DIM, NUM_RESIDUAL_LAYER, NUM_EMBEDDINGS, EMBEDDING_DIM, COMMITMENT_COST).to(device)
-    
-    # Load the saved model
-    model = load_model(model, model_path)
-    
-    # Load your test dataloader (make sure you define your dataloader)
+    model.load_state_dict(torch.load('./Model/Vqvae.pth'))
+
+    # Load a single image from the dataset using a DataLoader
     dataloader = get_dataloader("HipMRI_study_keras_slices_data", batch_size = BATCH_SIZE)
-    
+
+
     # Generate the reconstructed images for the batch
     original_imgs, recon_imgs = generate_images(model, dataloader)
 
@@ -89,3 +136,19 @@ if __name__ == '__main__':
 
     # Save and display the batch of original and reconstructed images
     save_and_display_images(original_imgs, recon_imgs)
+
+
+    # Get a single batch of images from the dataloader
+    batch = next(iter(dataloader))  # Extract the first batch from the dataloader
+    test_image = batch[0].unsqueeze(0)  # Get the first image from the batch and add batch dimension [1, C, H, W]
+
+    # Extract the latent vector from the model
+    latent_vector = extract_latent_vector_single_image(model, test_image)
+    # Extract the latent vector from the model
+    quantized_values = extract_quantized_values_single_image(model, test_image)
+
+    # Visualize the latent vector
+    visualize_latent_vector(latent_vector, "Latent Space Representation (Single Channel)")
+
+    # Visualize the quantized latent vector
+    visualize_latent_vector(quantized_values, "Quantized Latent Space Representation (Single Channel)")

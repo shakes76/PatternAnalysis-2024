@@ -1,3 +1,9 @@
+"""
+Author: Xiangxu Zhang
+student number: 47643439
+The script is used to compute the accuracy of the model on the test and validation sets 
+and outputs a Facebook dataset compressed to two dimensions using a t-distribution.
+"""
 import torch
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt

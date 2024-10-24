@@ -113,6 +113,50 @@ transforms = tvtransforms.Compose([
 before running either the training or predicting run the setup.py first to make sure all the correct folders are created for the models to save to when completed and it also check to make sure the dataset is present and in the right location and format
 
 ## Training
+The the VAE for encoding and decoding is train sepreatly from the unet since it isnt reasonable for them both to be trained at the same since the unet relys on latent space produced from the VAE to train and if this is changing at the same time it won't learn properly. First the VAE is trained to encode images into latent space in this case since its a vae it produces a distripution over the latent space, it then reconstruct from a sample of the distribution.
+### VAE Training
+Trained to be able to encode and decode the image trying to get as similiar output to the image it put in.
+### Encoding
+each image is encoded using the vea wich then produces a mu and logvar for the latent space, to actually get an encoded image, a sample is taken from this latent space which also output as h
+```python
+# get mean and variance for sampling
+# and to be used to calculate Kullback-Leibler divergence loss.
+h = self.encoder(x)
+mu = self.fc_mu(h)
+logvar = self.fc_logvar(h)
+
+# get sample
+z = self.sample_latent(mu, logvar)
+h = self.decode(z)
+
+return h, mu, logvar
+```
+### Decoding
+after each imge goes through the encoder the sample h then gets put throught he decoder, to reconstruct the image
+```python
+x_recon = self.decoder(z)
+return x_recon
+```
+### Loss
+the loss for a vae is combination of the conconstruction loss and Kullback-Leibler divergence loss to not onlt ensure that its reconstructing the images well by the KL loss works like regulisation ensuring thats its generlising well by measuring the distribution its producing
+```python
+#sudo code
+reconstrcution_loss = MSE(reconstructed_images, images, reduction='sum')
+Kullback-Leibler_divergence_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+loss = 0.5*recon_loss + Leibler_divergence_loss
+```
+
+### Unet Training
+
+#### Encoding
+
+#### Foward Diffusion (adding noise)
+
+#### U-Net noise prediction
+
+#### Reverse Diffusion
+
+### Decoding
 
 ## Inference
 <img src="https://github.com/SixLeopard/PatternAnalysis-2024/blob/a681523d2aa48e0a22c2dd8d42716b387e8c94e9/recognition/47451933_Stable_Diffusion/results/COMP3710SD_diagram_infrence.png" width="800">

@@ -11,12 +11,11 @@ from PIL import Image
 import torchvision.transforms as transforms
 from modules import GFNet
 from utils import get_parameters, get_prediction_image
-from dataset import get_data_loader
 
 def predict(image_path, model_path='best_model.pth', device='cuda'):
     """
     Loads an image, applies the GFNet model, and predicts whether it's 
-    AD (ALzheimer's positive) or NC (Normal control).
+    AD (Alzheimer's positive) or NC (Normal control).
     """
     # Define the image transformations to ensure the input image is compatible with the model
     transform = transforms.Compose([
@@ -55,14 +54,12 @@ def predict(image_path, model_path='best_model.pth', device='cuda'):
     return "Alzheimer's positive (AD)" if predicted.item() == 1 else "Normal (NC)"
 
 if __name__ == "__main__":
-    # Example image path
-    #image_path = '../AD_NC/test/AD/388206_78.jpeg'
-    image_path = '../AD_NC/test/NC/1185628_97.jpeg'
+    # Get the image whose classification is to be predicted
     image_path = get_prediction_image()
 
-    # Set device (use CUDA if available)
+    # Set device
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # Run the prediction
+    # Run the prediction and print results
     result = predict(image_path, model_path='best_model.pth', device=device)
     print(f'The predicted result is: {result}')

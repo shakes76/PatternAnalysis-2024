@@ -1,3 +1,9 @@
+"""
+Author: Xiangxu Zhang
+student number: 47643439
+This script is designed to handle the loading, preprocessing, 
+and splitting of the data in the facebook.npz file into several different collections for subsequent use.
+"""
 import numpy as np
 import torch
 from torch_geometric.data import Data

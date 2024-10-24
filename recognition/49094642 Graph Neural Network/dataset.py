@@ -1,4 +1,4 @@
-class Dataset(Dataset):
+class DataLoader:
     def __init__(self, edge_path, features_path, target_path, transform=None):
         self.edge_path = edge_path
         self.data2_path = data2_path

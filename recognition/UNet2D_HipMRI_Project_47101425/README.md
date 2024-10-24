@@ -101,7 +101,7 @@ As can be seen here, with adjustment, the UNet model was able to acheive above 0
 ![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example.png)
 
 To help better visualize the model's accuracy, here is an example of the plot of an actual image, the ground truth and a model's prediction put side-by-side to better present the model's accuracy after training
-![Example of UNet model output](images/model-output-example.png)
+![Example of UNet model output](images/model-output-example-10.png)
 
 An example of model training metrics is shown above; more in-depth metrics can also be obtained by taking the directory of the log files generated from training & running (in your conda environment):
 ```bash

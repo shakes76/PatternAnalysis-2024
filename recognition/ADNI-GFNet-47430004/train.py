@@ -16,6 +16,9 @@ import argparse
 import matplotlib.pyplot as plt
 import torch.optim as optim
 
+from functools import partial
+import torch.nn as nn
+
 from typing import Iterable, Optional
 from timm.data import Mixup
 from timm.utils import accuracy
@@ -61,7 +64,7 @@ def get_args_parser():
                         help='Clip gradient norm (default: None, no clipping)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='SGD momentum (default: 0.9)')
-    parser.add_argument('--weight-decay', type=float, default=5e-2,
+    parser.add_argument('--weight-decay', type=float, default=1e-1,
                         help='weight decay (default: 0.05)')
     # Learning rate schedule parameters
     parser.add_argument('--sched', default='cosine', type=str, metavar='SCHEDULER',
@@ -264,7 +267,8 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(None, batch_size=args.batch_size)
     epoch = 0
 
-    model = GFNet(num_classes=2, in_chans=1, drop_rate=args.drop)
+    model = GFNet(num_classes=2, in_chans=1, drop_rate=args.drop, patch_size=16, embed_dim=384, depth=19, mlp_ratio=4, drop_path_rate=0.3,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6))
     model.to(device)
 
     optimizer = create_optimizer(args, model)

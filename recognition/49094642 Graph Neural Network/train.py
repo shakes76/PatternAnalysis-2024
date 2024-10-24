@@ -33,7 +33,15 @@ def main():
 
     model = GCN(in_channels=data.num_node_features, hidden_channels=64, out_channels=len(torch.unique(data.y)))
     optimizer = Adam(model.parameters(), lr=0.01, weight_decay=5e-4) 
-    
+
+    losses, accuracies = [], []
+    for epoch in range(200):
+        loss = train(model, data, optimizer)
+        acc = test(model, data)
+        losses.append(loss)
+        accuracies.append(acc)
+        print(f'Epoch: {epoch}, Loss: {loss:.4f}, Accuracy: {acc:.4f}')
+        
     plt.figure()
     plt.plot(accuracies, label='Accuracy')
     plt.xlabel('Epoch')

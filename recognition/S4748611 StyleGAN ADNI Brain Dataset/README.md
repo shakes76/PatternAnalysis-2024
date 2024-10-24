@@ -121,7 +121,6 @@ Discriminator Learning Rate: 0.0001, decreasing very slowly
 
 
 
-<br/>
 ## Results
 
 After training, the model generates synthetic brain images that resemble the training data. Images generated from the final models produced the following results:

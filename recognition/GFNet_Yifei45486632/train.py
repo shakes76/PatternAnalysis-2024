@@ -1,13 +1,13 @@
 from modules import build_model
-from dataset import load_images
+from dataset import load_images_with_labels
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import matplotlib.pyplot as plt
 
 print("Loading training data and test data...")
-train_images, train_labels = load_images('train')
-test_images, test_labels = load_images('test')
+train_images, train_labels = load_images_with_labels('train')
+test_images, test_labels = load_images_with_labels('test')
 print(f"Loaded {len(train_images)} traing images.")
 print(f"Shape of the first training image: {train_images[0].shape}")
 print(f"Total number of training labels: {len(train_labels)}")

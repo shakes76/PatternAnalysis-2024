@@ -2,108 +2,55 @@
 
 import torch
 import torch.nn as nn
-import torch.fft as fft
+import torch.nn.functional as F
 
+class PatchEmbedding(nn.Module):
+    def __init__(self, in_channels, patch_size, embed_dim):
+        super(PatchEmbedding, self).__init__()
+        self.conv = nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
 
-class GFNet(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768, 
-                 num_classes=2, num_layers=6, dropout=0.1):
-        """
-        GFNet-inspired Vision Transformer for image classification using Fourier transforms.
-        Args:
-            img_size (int): Input image size (assumes square images).
-            patch_size (int): Size of each image patch.
-            in_channels (int): Number of input channels (3 for RGB).
-            embed_dim (int): Dimension of the patch embeddings.
-            num_classes (int): Number of output classes (2 for AD vs. NC).
-            num_layers (int): Number of Fourier-based transformer layers.
-            dropout (float): Dropout rate.
-        """
-        super(GFNet, self).__init__()
-        self.num_patches = (img_size // patch_size) ** 2
-        self.patch_embed = nn.Conv2d(
-            in_channels, embed_dim, kernel_size=patch_size, stride=patch_size
-        )  # Converts image to patch embeddings
+    def forward(self, x):
+        x = self.conv(x)  # (batch_size, embed_dim, H', W')
+        x = x.flatten(2).transpose(1, 2)  # (batch_size, num_patches, embed_dim)
+        return x
 
-        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches, embed_dim))
-        self.dropout = nn.Dropout(dropout)
-
-        # Feedforward layers applied after Fourier transform
-        self.ffn = nn.Sequential(
-            nn.Linear(embed_dim, embed_dim * 4),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(embed_dim * 4, embed_dim),
-            nn.Dropout(dropout),
+class TransformerBlock(nn.Module):
+    def __init__(self, embed_dim, num_heads, ff_hidden_dim):
+        super(TransformerBlock, self).__init__()
+        self.attention = nn.MultiheadAttention(embed_dim, num_heads)
+        self.ff = nn.Sequential(
+            nn.Linear(embed_dim, ff_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(ff_hidden_dim, embed_dim)
         )
+        self.norm1 = nn.LayerNorm(embed_dim)
+        self.norm2 = nn.LayerNorm(embed_dim)
 
-        # Stacking multiple Fourier-based layers
-        self.layers = nn.ModuleList([self._build_layer(embed_dim) for _ in range(num_layers)])
+    def forward(self, x):
+        attn_out, _ = self.attention(x, x, x)  # Self-attention
+        x = self.norm1(x + attn_out)  # Residual connection + normalization
+        ff_out = self.ff(x)
+        x = self.norm2(x + ff_out)  # Another residual connection + normalization
+        return x
 
-        # Classification head
-        self.norm = nn.LayerNorm(embed_dim)
+class VisionTransformer(nn.Module):
+    def __init__(self, in_channels=3, num_classes=2, patch_size=16, embed_dim=192, num_heads=3, ff_hidden_dim=768, num_layers=12):
+        super(VisionTransformer, self).__init__()
+        self.patch_embedding = PatchEmbedding(in_channels, patch_size, embed_dim)
+        self.transformer_blocks = nn.ModuleList([
+            TransformerBlock(embed_dim, num_heads, ff_hidden_dim) for _ in range(num_layers)
+        ])
         self.fc = nn.Linear(embed_dim, num_classes)
 
-    def _build_layer(self, embed_dim):
-        """
-        Helper function to create a single Fourier-based transformer block.
-        """
-        return nn.Sequential(
-            nn.LayerNorm(embed_dim),
-            FourierTransformLayer(embed_dim),  # Custom Fourier transform layer
-            self.ffn
-        )
-
     def forward(self, x):
-        # Create patch embeddings
-        x = self.patch_embed(x)
-        x = x.flatten(2).transpose(1, 2)
+        x = self.patch_embedding(x)  # (batch_size, num_patches, embed_dim)
+        for block in self.transformer_blocks:
+            x = block(x)  # Process through each transformer block
+        x = x.mean(dim=1)  # Global average pooling
+        x = self.fc(x)  # Classification head
+        return x
 
-        # Add position embeddings
-        x = x + self.pos_embed
-        x = self.dropout(x)
-
-        # Pass through Fourier-based transformer layers
-        for layer in self.layers:
-            x = layer(x)
-
-        # Take the mean of all patch embeddings (global average pooling)
-        x = self.norm(x.mean(dim=1))
-
-        # Classification
-        logits = self.fc(x)
-        return logits
-
-
-class FourierTransformLayer(nn.Module):
-    def __init__(self, embed_dim):
-        """
-        Layer that applies a Fourier Transform to each input patch embedding.
-        Args:
-            embed_dim (int): Dimension of the input embeddings.
-        """
-        super(FourierTransformLayer, self).__init__()
-        self.embed_dim = embed_dim
-
-    def forward(self, x):
-        # Apply 1D Fourier transform along the embedding dimension
-        x_fft = fft.fft(x, dim=-1).real
-        return x_fft
-
-
-def get_model():
-    """
-    Utility function to create the GFNet model.
-    """
-    model = GFNet(
-        img_size=224, 
-        patch_size=16, 
-        in_channels=3, 
-        embed_dim=768, 
-        num_classes=2, 
-        num_layers=6, 
-        dropout=0.1
-    )
-    return model
-
+def get_vit_model(num_classes=2):
+    return VisionTransformer(num_classes=num_classes)
+    
 

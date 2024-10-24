@@ -7,7 +7,7 @@ from matplotlib import transforms
 
 """
 REFERENCES:
- Chandra, S. (2024). Report: Pattern Recognition, Version 1.57. Retrieved 36th September 2024 from 
+ Chandra, S. (2024). Report: Pattern Recognition, Version 1.57. Retrieved 30th September 2024 from 
     https://learn.uq.edu.au/bbcswebdav/pid-10273751-dt-content-rid-65346599_1/xid-65346599_1
 Contains function to load Nifti files as well.
 """
@@ -31,7 +31,7 @@ Dictionary of parameters for the VQVAE.
 parameters = {
     "lr": 2e-4, 
     "epochs": 50, 
-    "batch": 100,
+    "batch": 64,
     "gpu": "cuda",
     "cpu": "cpu"
 }

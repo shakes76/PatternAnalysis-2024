@@ -36,6 +36,7 @@ class Mlp(nn.Module):
         self.fc1 = nn.Linear(in_features, hidden_features)
         self.act = act_layer()
         self.fc2 = nn.Linear(hidden_features, out_features)
+        # Dropout layer to avoid overfitting
         self.drop = nn.Dropout(drop)
 
     def forward(self, x):
@@ -47,6 +48,7 @@ class Mlp(nn.Module):
             torch.Tensor: Output tensor after processing.
         """
 
+        # Apply linear layer, activation, and dropout
         x = self.fc1(x)
         x = self.act(x)
         x = self.drop(x)
@@ -65,6 +67,7 @@ class GlobalFilter(nn.Module):
 
     def __init__(self, dim, h=14, w=8):
         super().__init__()
+        # Complex weights initialized for the Fourier filtering
         self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
         self.w = w
         self.h = h
@@ -80,6 +83,7 @@ class GlobalFilter(nn.Module):
         """
 
         B, N, C = x.shape
+        # Determine spatial size if not provided
         if spatial_size is None:
             a = b = int(math.sqrt(N))
         else:
@@ -87,15 +91,17 @@ class GlobalFilter(nn.Module):
 
         x = x.view(B, a, b, C)
 
+        # # Ensure the tensor is in float32 format for compatibility with FFT operations.
         x = x.to(torch.float32)
 
+        # # Apply the 2D Fast Fourier Transform (FFT)
         x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
+
+        # # Apply the inverse 2D FFT to bring the result back to the spatial domain
         x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
-
         x = x.reshape(B, N, C)
-
         return x
 
 class Block(nn.Module):
@@ -130,6 +136,7 @@ class Block(nn.Module):
             torch.Tensor: Output tensor after processing.
         """
 
+        # Apply normalization, global filtering, MLP, and DropPath
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
     
@@ -148,10 +155,12 @@ class PatchEmbed(nn.Module):
         super().__init__()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
+        # Calculate number of patches in the image
         num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
         self.img_size = img_size
         self.patch_size = patch_size
         self.num_patches = num_patches
+        # Convolutional layer for converting image into patch embeddings
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
@@ -162,10 +171,12 @@ class PatchEmbed(nn.Module):
         Returns:
             torch.Tensor: Flattened patch embeddings.
         """
+
         B, C, H, W = x.shape
-        # FIXME look at relaxing size constraints
+        
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+        # Project image patches and flatten the output
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
@@ -189,11 +200,13 @@ class GFNet(nn.Module):
                  mlp_ratio=4., representation_size=None, uniform_drop=False,
                  drop_rate=0., drop_path_rate=0., norm_layer=None, 
                  dropcls=0):
+        
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
 
+        # Patch Embedding
         self.patch_embed = PatchEmbed(
                 img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
@@ -206,7 +219,6 @@ class GFNet(nn.Module):
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)] 
 
-        
         self.blocks = nn.ModuleList([
             Block(
                 dim=embed_dim, mlp_ratio=mlp_ratio,
@@ -214,13 +226,11 @@ class GFNet(nn.Module):
             for i in range(depth)])
         
         self.norm = norm_layer(embed_dim)
-
         self.pre_logits = nn.Identity()
 
+         # Classification head
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
-
         self.final_dropout = nn.Identity()
-
         trunc_normal_(self.pos_embed, std=.02)
         self.apply(self._init_weights)
 
@@ -240,6 +250,7 @@ class GFNet(nn.Module):
         """
         Forward pass for extracting features from the input tensor.
         """
+
         B = x.shape[0]
         x = self.patch_embed(x)
         x = x + self.pos_embed
@@ -255,6 +266,7 @@ class GFNet(nn.Module):
         """
         Forward pass through the entire network.
         """
+
         x = self.forward_features(x)
         x = self.final_dropout(x)
         x = self.head(x)

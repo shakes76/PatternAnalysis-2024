@@ -13,7 +13,6 @@ import torchvision.transforms as transforms
 # Paths to the ADNI dataset
 ADNI_ROOT_PATH = Path('/home', 'groups', 'comp3710', 'ADNI', 'AD_NC')
 
-
 # Transformations for training set and preprocessing testing set
 TRAIN_TRANSFORM = transforms.Compose([
     transforms.RandomRotation(degrees=10),

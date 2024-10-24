@@ -1,11 +1,3 @@
-Login:
-
-ssh s4803613@rangpur.compute.eait.uq.edu.au
-conda activate torch
-squeue -u s4803613
-____________________________________________________________________________
-TRAINING RUNNER
-
 #!/bin/bash
 #SBATCH --partition=a100
 #SBATCH --gres=gpu:1

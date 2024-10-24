@@ -11,6 +11,7 @@ import random
 import matplotlib.pyplot as plt
 import math
 
+
 def evaluate_model(model, device, test_loader):
     """
     Evaluate the model's accuracy on the test dataset.
@@ -35,6 +36,7 @@ def evaluate_model(model, device, test_loader):
     accuracy = 100 * correct / total
     print(f'Accuracy on the test set: {accuracy:.2f}%')
 
+
 def do_predictions(model, device: torch.device, num_predictions: int = 9, show_plot: bool = True):
     """
     Randomly selects a number of samples from the test dataset,
@@ -52,15 +54,16 @@ def do_predictions(model, device: torch.device, num_predictions: int = 9, show_p
     fig, axes = plt.subplots(nrows=nrc, ncols=nrc, squeeze=False, figsize=(math.ceil(224 * nrc / 100), math.ceil(224 * nrc / 100)))
 
     for i in range(num_predictions):
+        # Randomly select samples
         idx = random.randint(0, len(test_dataset) - 1)
         image, label = test_dataset[idx]
         image_tensor = image.unsqueeze(0).to(device)  
         output = model(image_tensor)
         _, predicted = torch.max(output, 1)
         pred = int(predicted[0].item())
-        label_strs = {0: "NC", 1: "AD"}
+        label_strs = {0: "NC", 1: "AD"} # Label mappings
 
-        image = image.permute(1, 2, 0).cpu().numpy() 
+        image = image.permute(1, 2, 0).cpu().numpy() # Prepare image for display
         ax = axes[i // nrc, i % nrc]
         ax.imshow(image)
         ax.set_title(f"Pred: {label_strs[pred]}, True: {label_strs[label]}")
@@ -75,22 +78,21 @@ def do_predictions(model, device: torch.device, num_predictions: int = 9, show_p
     if show_plot:
         plt.show()
 
+
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using device: {device}')
 
     model = GFNet().to(device)
-    model.load_state_dict(torch.load('gfnet_model.pth'))
+    model.load_state_dict(torch.load('gfnet_model.pth')) # Load trained model weight
     print("Model loaded successfully.")
 
-
     batch_size = 8  
-    test_loader = get_adni_dataloader(batch_size=batch_size, train=False)
+    test_loader = get_adni_dataloader(batch_size=batch_size, train=False)  # Get test data
 
-  
     evaluate_model(model, device, test_loader)
 
-    do_predictions(model, device, num_predictions=9, show_plot=True)
+    do_predictions(model, device, num_predictions=9, show_plot=True) # Make predictions and visualize
 
 if __name__ == "__main__":
     main()

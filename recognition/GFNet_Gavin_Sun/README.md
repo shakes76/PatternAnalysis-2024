@@ -1,9 +1,9 @@
 # Alzheimer's disease classification using GFNet
-Alzheimer's disease is a degenerative brain disorder primarily characterized by memory loss and cognitive decline. Early diagnosis and classification of Alzheimer's disease are crucial for effective treatment and care. The aim of this project is to develop a vision transformer capable of classifying Alzheimer's disease based on brain MRI scans. For this purpose, we utilize GFNet (Global Filter Networks), a specialized architecture designed for medical imaging tasks. The model was trained on the Alzheimer's Disease Neuroimaging Initiative (ADNI) dataset and achieved a test accuracy of 76.57%.
+Alzheimer's disease is a degenerative brain disorder primarily characterized by memory loss and cognitive decline. Early diagnosis and classification of Alzheimer's disease are crucial for effective treatment and care. The aim of this project is to develop a vision transformer capable of classifying Alzheimer's disease based on brain MRI scans. For this purpose, I utilize GFNet (Global Filter Networks), a specialized architecture designed for medical imaging tasks. The model was trained on the Alzheimer's Disease Neuroimaging Initiative (ADNI) dataset and achieved a test accuracy of 76.57%.
 
 
 ## Model Architecture
-The overall architecture of the Global Filter Network can be seen in the following illustration:
+The overall architecture of the Global Filter Network (Rao, 2023) can be seen in the following illustration:
 
 ![alt text](<Figures/Screenshot 2024-10-22 215240.png>)
 
@@ -52,21 +52,25 @@ The custom `ADNIDataset` class allows for loading both training and testing data
 
 When calling the `__getitem__` method, images are opened as grayscale images. 
 The default split for training and validation datasets is set to 80% training and 20% validation.
+This split ensures sufficient data for both learning and validating, and is the ratio commonly
+used in other brain mri deep learning tasks.
+
+Note: The preprocessed ADNI dataset has already split the Test set
 
 
 ### Preprocessing and Augmentation
 The following augmentations are applied to the training set:
-    RandomRotation(degrees=10),
-    RandomResizedCrop(size=224),
-    ColorJitter(brightness=(0.8, 1.2)), 
-    ToTensor(),
-    Normalize(mean=[0.0062], std=[0.0083])
+- RandomRotation: Helps the model become invariant to rotational changes
+- RandomResizedCrop: Learns features from varying regions of the brain MRI
+- ColorJitter: Helps when dealing with MRI scans that can vary due to different machine settings
+- ToTensor: Converts the image from a PIL image or NumPy array
+- Normalize: Speeds up convergence during training
 
 The testing set undergoes the following preprocessing:
-    Resize(256),
-    CenterCrop(224),
-    ToTensor(),
-    Normalize(mean=[0.0062], std=[0.0083])
+- Resize: Ensures that all images have a uniform size
+- CenterCrop: Ensures that the most important region of the image is used for evaluation
+- ToTensor: Converts the image to a PyTorch tensor
+- Normalize: Ensures the test data distribution matches the training distribution
 
 Note: the normalization values were calculated based on the ADNI preprocessed dataset.
 
@@ -119,11 +123,11 @@ Note: If you are running a seperate dataset from ADNI, you may have to change th
 
 On Local Machine:
 1. Run train.py
-2. Run Predict.py
+2. Run predict.py
 
 On Rangpur:
 1. Copy and paste the files onto the Rangpur
-2. Make seperate file for slurm script
+2. Make slurm script
 3. Run slurm file
 
 

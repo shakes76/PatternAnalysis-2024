@@ -16,26 +16,17 @@ def main():
 
     # Hyperparameters
     batch_size = 8
-    base_lr = 0.0001  
-    max_lr = 0.001    
-    num_epochs = 120 # Prev 100
-    step_size = 5
+    base_lr = 0.0001    
+    num_epochs = 120 
 
-    T_0 = 10  
-    T_mult = 2 
-
-    # Load data
+    # Load the ADNI dataset using DataLoader for training and validation
     train_loader, val_loader = get_adni_dataloader(batch_size=batch_size, train=True)
 
     model = GFNet().to(device)  
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=base_lr)
 
-    # # cosine lr
-    # scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, 
-    #                                         step_size_up=step_size, mode='triangular')
-    # optimizer = AdamW(model.parameters(), lr=base_lr)
-    # scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=num_epochs)
+    # Optimizer and LR Scheduler
+    optimizer = optim.Adam(model.parameters(), lr=base_lr)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
 
     train_losses, val_losses = [], []
@@ -45,6 +36,7 @@ def main():
         train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler, train_losses, train_accuracies, device)
         validate_one_epoch(epoch, model, val_loader, criterion, val_losses, val_accuracies, device)
 
+        # Update the learning rate scheduler
         scheduler.step(epoch + 1)
 
         print(f'Epoch [{epoch + 1}/{num_epochs}], '
@@ -52,6 +44,7 @@ def main():
               f'Val Loss: {val_losses[-1]:.4f}, Val Acc: {val_accuracies[-1]:.2f}, '
               f'LR: {scheduler.get_last_lr()[0]:.6f}')
 
+    # Save Model
     torch.save(model.state_dict(), 'gfnet_model.pth')
     plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_accuracies)
 
@@ -75,6 +68,8 @@ def train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler,
     running_loss = 0.0
     correct = 0
     total = 0
+
+    # Iterate through batches of training data
     for images, labels in train_loader:
         images, labels = images.to(device), labels.to(device)
 
@@ -84,6 +79,7 @@ def train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler,
         loss.backward()
         optimizer.step()
 
+        # Update the learning rate based on the scheduler
         scheduler.step()
 
         running_loss += loss.item()
@@ -91,6 +87,7 @@ def train_one_epoch(epoch, model, train_loader, criterion, optimizer, scheduler,
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
+    # Add loss and accuracy
     train_losses.append(running_loss / len(train_loader))
     train_accuracies.append(100 * correct / total)
 
@@ -116,6 +113,7 @@ def validate_one_epoch(epoch, model, val_loader, criterion, val_losses, val_accu
         for images, labels in val_loader:
             images, labels = images.to(device), labels.to(device)
 
+            # forward pass through model
             outputs = model(images)
             loss = criterion(outputs, labels)
 
@@ -141,6 +139,7 @@ def plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_acc
 
     plt.figure(figsize=(12, 5))
 
+    # Plot losses
     plt.subplot(1, 2, 1)
     plt.plot(range(num_epochs), train_losses, label='Train Loss')
     plt.plot(range(num_epochs), val_losses, label='Validation Loss')
@@ -149,6 +148,7 @@ def plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_acc
     plt.ylabel('Loss')
     plt.legend()
 
+    # Plot accuracies
     plt.subplot(1, 2, 2)
     plt.plot(range(num_epochs), train_accuracies, label='Train Accuracy')
     plt.plot(range(num_epochs), val_accuracies, label='Validation Accuracy')
@@ -157,6 +157,7 @@ def plot_metrics(num_epochs, train_losses, val_losses, train_accuracies, val_acc
     plt.ylabel('Accuracy (%)')
     plt.legend()
 
+    # Save the plots as a PNG file
     plt.tight_layout()
     plt.savefig(f"Training_vs_validation.png")
 

@@ -284,7 +284,7 @@ can see theirs a clear distinction between the two as intended.
 ## Dependencies
 all the packages installed when doing all the training and testing of the models is included in the requirements.txt file install this file with pip before use will ensure everything will work as expected.
 # References
-- https://adni.loni.usc.edu/ (adni dataset)
-- https://arxiv.org/abs/2112.10752 (stable diffusion paper)
-- https://github.com/CompVis/stable-diffusion (stable diffusion repo)
-- https://arxiv.org/abs/1802.03426 (umap paper)
+- ADNI | Alzheimer’s Disease Neuroimaging Initiative (no date) ADNI. Available at: https://adni.loni.usc.edu/. (ADNI dataset)
+- Rombach, R. et al. (2022) ‘High-Resolution Image Synthesis with Latent Diffusion Models’, arXiv:2112.10752 [cs] [Preprint]. Available at: https://arxiv.org/abs/2112.10752. (stable diffusion paper)
+- Stable Diffusion (2022) GitHub. Available at: https://github.com/CompVis/stable-diffusion. (stable diffusion repo)
+- McInnes, L., Healy, J. and Melville, J. (2018) UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction, arXiv.org. Available at: https://arxiv.org/abs/1802.03426. (umap paper)

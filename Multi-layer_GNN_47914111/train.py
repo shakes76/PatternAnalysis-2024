@@ -11,7 +11,7 @@ on a node classification task. It includes functions to:
 5. Save the trained model.
 
 The main function `train()` orchestrates the complete process of model training, 
-evaluation, and visualization.
+evaluation, and visualization. 
 """
 import torch
 import numpy as np

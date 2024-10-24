@@ -1,8 +1,9 @@
 import torch
 import pandas as pd
 import json
-import torch_geometric.transforms as T
+import numpy as np
 from torch_geometric.data import Data
+import torch_geometric.transforms as T
 
 class DataLoader:
     def __init__(self, edge_path, features_path, target_path):
@@ -17,9 +18,7 @@ class DataLoader:
     def load_features(self):
         with open(self.features_path) as f:
             features_dict = json.load(f)
-        features_list = []
-        for node_id, feature in features_dict.items():
-            features_list.append([int(node_id)] + feature)
+        features_list = [[int(node_id)] + feature for node_id, feature in features_dict.items()]
         features_df = pd.DataFrame(features_list)
         return torch.tensor(features_df.iloc[:, 1:].values, dtype=torch.float)
 
@@ -36,8 +35,7 @@ class DataLoader:
         num_nodes = y.size(0)
         train_mask = torch.zeros(num_nodes, dtype=torch.bool)
         test_mask = torch.zeros(num_nodes, dtype=torch.bool)
-        
-        # Randomly select 80% of nodes for training and 20% for testing
+
         indices = np.arange(num_nodes)
         np.random.shuffle(indices)
         split_idx = int(0.8 * num_nodes)
@@ -46,8 +44,4 @@ class DataLoader:
         test_mask[test_indices] = True
 
         data = Data(x=x, edge_index=edges, y=y, train_mask=train_mask, test_mask=test_mask)
-        return T.NormalizeFeatures()(data)
-        x = self.load_features()
-        y = self.load_target()
-        dataset = Data(x=x, dege_index=edges, y=y)
         return T.NormalizeFeatures()(data)

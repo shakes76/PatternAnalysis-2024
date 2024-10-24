@@ -2,7 +2,8 @@ import torch
 import torchvision
 from dataset import ProstateCancerDataset
 from torch.utils.data import DataLoader
-import pickle
+import numpy as np
+import matplotlib.pyplot as plt
 
 def save_checkpoint(state, filename = "my_checkpoint.pth.tar"):
     print("--Saving Checkpoint--")
@@ -56,6 +57,10 @@ def check_accuracy(loader, model, device="cuda"):
 
             preds = preds.view(-1)
             y = y.view(-1)
+
+            for cls in range(5):
+                print(f"Class {cls} - Predicted: {(preds == cls).sum().item()} pixels")
+
             num_correct += (preds == y).sum().item()
             num_pixels += torch.numel(preds)
 
@@ -72,3 +77,61 @@ def check_accuracy(loader, model, device="cuda"):
         print(f"Got {num_correct}/{num_pixels} pixels correct with accuracy {(num_correct/num_pixels)*100:.2f}")
         print(f"Dice score: {avg_dice_score:.4f}")
         model.train()
+
+def visualize_predictions(loader, model, device, num_images=3):
+    """
+    Visualizes the input image, ground truth mask, and predicted mask side by side.
+    
+    Parameters:
+    - loader: DataLoader object for validation or test set.
+    - model: Your segmentation model.
+    - device: torch.device object (e.g., 'cuda' or 'cpu').
+    - num_images: Number of images to visualize (default is 3).
+    """
+    model.eval()
+    images_shown = 0
+
+    with torch.no_grad():  # Turn off gradients for validation
+        for x, y in loader:
+            x = x.to(device)
+            y = y.to(device)
+            print(torch.unique(y))
+
+            # Forward pass to get predictions
+            preds = model(x)
+            preds = torch.argmax(torch.softmax(preds, dim=1), dim=1)  # Get predicted class for each pixel
+
+            if y.shape[-1] == 5:  # If y is one-hot encoded
+                y = torch.argmax(y, dim=-1)
+
+            # Move tensors back to CPU for visualization
+            x = x.cpu()
+            y = y.cpu()
+            preds = preds.cpu()
+
+            # Loop through the batch and plot images
+            for i in range(x.shape[0]):  # x.shape[0] is the batch size
+                if images_shown >= num_images:
+                    return  # Exit once we've shown the desired number of images
+
+                fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+
+                # Input image
+                ax[0].imshow(np.squeeze(x[i].numpy()), cmap='gray')
+                ax[0].set_title('Input Image')
+                ax[0].axis('off')
+
+                # Ground truth mask (true segmentation)
+                ax[1].imshow(y[i].numpy(), cmap='gray')
+                ax[1].set_title('Ground Truth Mask')
+                ax[1].axis('off')
+
+                # Predicted mask
+                ax[2].imshow(preds[i].numpy(), cmap='gray')
+                ax[2].set_title('Predicted Mask')
+                ax[2].axis('off')
+
+                plt.show()
+                images_shown += 1
+
+    model.train()  # Return to train mode after validatio

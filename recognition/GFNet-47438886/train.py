@@ -1,40 +1,83 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 from modules import GFNet
 from dataset import load_adni_data
-import platform
 from functools import partial
 import time
 from timm.scheduler import create_scheduler
+import matplotlib.pyplot as plt
+
+from utils import get_dataset_root, get_device
+
+def initialise_model(device: str):
+    model = GFNet(
+            patch_size=16, embed_dim=256, depth=12, mlp_ratio=4, 
+            norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
+    return model
+
+def initialise_optimizer(model: nn.Module):
+    optimizer = optim.Adam(model.parameters(), lr=0.00001, amsgrad=True)  # Adam optimizer with initial learning rate 0.01
+    return optimizer
+
+
+def initialise_scheduler(optimizer: torch.optim):
+    # Cosine Annealing Learning Rate Scheduler with minimum learning rate (eta_min)
+    # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=5, verbose=True)
+    return scheduler
+
+def plot_graphs(train_loss: list, validation_loss: list, train_accuracy: list, validation_accuracy: list):
+    """
+    Function to plot the model's loss and accuracy over the epochs during training
+
+    Parameters:
+        train_loss: A list of losses recorded during training
+        train_accuracy: A list of accuracy values on based on train set 
+                recorded during training
+        validation_loss: A list of validation loss values recorded during 
+                training
+        validation_accuracy: A list of accuracy values on tested on validation 
+                set recorded during training
+
+    Returns: None
+    """
+    labels = ["Loss", "Accuracy"]
+    fig, axs = plt.subplots(2, 1)
+    train_data = [train_loss, train_accuracy]
+    val_data = [validation_loss, validation_accuracy]
+
+    for index, ax in enumerate(axs):
+        ax.plot(train_data[index], label=f"Training {labels[index]}", color="blue")
+        ax.plot(val_data[index], label=f"Validation {labels[index]}", color="red")
+        ax.set_xlabel("Epochs")
+        ax.set_ylabel(labels[index])
+        ax.set_title(f"Training and Validation {labels[index]}")
+        ax.legend()
+        ax.grid(True)
+        
+    plt.tight_layout()
+    plt.savefig("training_figures.png")
 
 def main():
 
-    if platform.system() == "Windows":
-        root_dir = 'ADNI_AD_NC_2D/AD_NC'
-    else:
-        root_dir = '/home/groups/comp3710/ADNI/AD_NC'
-    
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
+    root_dir = get_dataset_root()
 
     train_loader, val_loader = load_adni_data(root_dir=root_dir)
 
     # Assuming you already have a model and dataloaders (train_loader, val_loader)
-    model = GFNet(
-            patch_size=16, embed_dim=384, depth=12, mlp_ratio=4, 
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
+    model = initialise_model(device)
 
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()  # Use the appropriate loss function
-    optimizer = optim.Adam(model.parameters(), lr=0.000001, amsgrad=True)  # Adam optimizer with initial learning rate 0.01
+    optimizer = initialise_optimizer(model)
+    scheduler = initialise_scheduler(optimizer)
 
     # Training loop
     n_epochs = 100
-
-    # Cosine Annealing Learning Rate Scheduler with minimum learning rate (eta_min)
-    # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
 
     train_loss_list = []
     validation_loss_list = []
@@ -107,13 +150,13 @@ def main():
         validation_accuracy_list.append(validation_accuracy)
 
         # Step the scheduler
-        scheduler.step()
+        scheduler.step(validation_loss)
 
         # Print epoch statistics
         print(f'Epoch [{epoch + 1}/{n_epochs}], '
               f'Train Loss: {training_loss:.4f}, Train Accuracy: {training_accuracy:.2f}%, '
               f'Val Loss: {validation_loss:.4f}, Val Accuracy: {validation_accuracy:.2f}%'
-              f'Learning Rate: {optimizer.param_groups[0]["lr"]:.6f}')
+              f'Learning Rate: {optimizer.param_groups[0]["lr"]:.8f}')
         
         # Checkpoint based on best validation accuracy
         if validation_accuracy > best_validation_accuracy:
@@ -130,7 +173,7 @@ def main():
                 'training_loss': train_loss_list
             }
 
-            torch.save(checkpoint, 'model_checkpoint.pth')
+            torch.save(checkpoint, 'model_checkpoint_actual.pth')
 
         
     training_time = time.time() - start_time
@@ -162,6 +205,9 @@ def main():
     print("Validation loss:", validation_loss_list)
     print("Training accuracy:", train_accuracy_list)
     print("Training loss:", train_loss_list)
+
+
+
 
         
 if __name__ == "__main__":

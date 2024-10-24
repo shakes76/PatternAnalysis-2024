@@ -16,9 +16,6 @@ from dataset import get_data_loader
 from modules import GFNet
 from utils import get_parameters, get_path_to_images
 
-from torchvision import transforms
-import torchvision.transforms.functional as TF
-
 def train_one_epoch(model: torch.nn.Module, criterion,
                     data_loader, optimizer: torch.optim.Optimizer,
                     device: torch.device):
@@ -40,7 +37,7 @@ def train_one_epoch(model: torch.nn.Module, criterion,
         loss.backward()
         optimizer.step()
 
-        # Convert outputs to predicted class (using argmax for multi-class classification)
+        # Convert outputs to predicted class
         _, predicted = torch.max(outputs, 1)
         running_loss += loss.item()
         total += labels.size(0)
@@ -49,9 +46,7 @@ def train_one_epoch(model: torch.nn.Module, criterion,
     # After each epoch, calculate loss and accuracy
     epoch_loss = running_loss / len(data_loader)
     accuracy = 100 * correct / total
-
     return accuracy, epoch_loss
-
 
 @torch.no_grad()
 def evaluate(data_loader, model, criterion, device):
@@ -72,15 +67,15 @@ def evaluate(data_loader, model, criterion, device):
             loss = criterion(outputs, labels)
             test_loss += loss.item()
 
-            # Convert outputs to predicted class (using argmax for multi-class classification)
+            # Convert outputs to predicted class
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+    # After each epoch, calculate loss and accuracy
     epoch_loss = test_loss / len(data_loader)
     accuracy = 100 * correct / total
     return accuracy, epoch_loss
-
 
 def plot_data(train_acc, train_loss, val_acc, val_loss):
     """
@@ -116,7 +111,7 @@ def plot_data(train_acc, train_loss, val_acc, val_loss):
     plt.grid(True)
     plt.savefig('./assets/training_loss.png')
 
-    # Plot validation accuracy/loss
+    # Plot validation accuracy
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 2)
     plt.plot(val_acc, label='Validation Accuracy', color='blue')
@@ -139,9 +134,12 @@ def plot_data(train_acc, train_loss, val_acc, val_loss):
     plt.savefig('./assets/validation_loss.png')
     plt.show()
     
-
 def train_GFNet(dataloaders):
-    # Model architecture and hyperparameters
+    '''
+    Trains a GFNet with the given dataloaders containing training,
+    validating, and testing brain images
+    '''
+    # Import model architecture and hyperparameters
     (epochs,
     learning_rate,
     patch_size,
@@ -161,7 +159,7 @@ def train_GFNet(dataloaders):
     data_loader_train, data_loader_val = dataloaders['train']
     data_loader_test = dataloaders['test']
 
-    # Create model with hard-coded parameters
+    # Create the GFNet model
     print(f"Creating GFNet model with img_size: 224x224 (device = {device})")
     model = GFNet(
         img_size=(224, 224),
@@ -172,7 +170,6 @@ def train_GFNet(dataloaders):
         mlp_ratio=mlp_ratio,
         drop_rate=drop_rate,
         drop_path_rate=drop_path_rate,
-        #norm_layer=partial(nn.LayerNorm, eps=1e-6)
     ).to(device)
 
     if device == 'cuda':
@@ -205,25 +202,25 @@ def train_GFNet(dataloaders):
         val_acc.append(val_a)
         val_loss.append(val_l)
 
-        #lr_scheduler.step(val_a)
         lr_scheduler.step()
         
+        # Print results at each epoch of training
         print(f'Accuracy of training set (epoch {epoch+1}/{epochs}): {train_a:.1f}%, and loss {train_l:.1f}')
         print(f'Accuracy on validation set (epoch {epoch+1}/{epochs}): {val_a:.1f}%, and loss {val_l:.1f}') 
 
     print("### Now it's time to run inference on the test dataset ###")
     test_acc, test_loss = evaluate(data_loader_test, model, criterion, device)
-    print(f'Accuracy on test set: {test_acc:.1f}, and loss: {test_loss:.1f}\n')
+    print(f'Accuracy on test set: {test_acc:.1f}, and loss: {test_loss:.3f}\n')
     
     plot_data(train_acc, train_loss, val_acc, val_loss)
     print('Saved loss and accuracy plots in ./assets/')
 
-    print('Saving model...')
+    print('Saving model as best_model.pth')
     torch.save(model.state_dict(), 'best_model.pth')
 
     total_time = time.time() - start_time
-    print(f'Training time: {str(datetime.timedelta(seconds=int(total_time)))}')
-
+    print(f'Total training time: {str(datetime.timedelta(seconds=int(total_time)))}')
+    
 
 if __name__ == "__main__":
     # Paths to the training and validation datasets

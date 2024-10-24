@@ -14,9 +14,9 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 # Parameters
 NUM_EPOCHS = 40
-START_EPOCH = 30 # 0 index
-train_dir = '/home/groups/comp3710/ADNI/AD_NC/train' # '/home/groups/comp3710/ADNI/AD_NC/train'
-test_dir = '/home/groups/comp3710/ADNI/AD_NC/test' # '/home/groups/comp3710/ADNI/AD_NC/train'
+START_EPOCH = 0
+train_dir = 'TRAIN_DATA_PATH'
+test_dir = 'TEST_DATA_PATH'
 csv_file_path = 'training_epochs.csv'
 batch_size = 32
 learning_rate = 0.001
@@ -37,6 +37,17 @@ weight_decay = 1e-4
 
 
 def initialize_weights(m):
+    """
+    Initialize the weights of a given module.
+    Parameters:
+    m (torch.nn.Module): The module whose weights need to be initialized.
+    The function applies different initialization strategies based on the type of the module:
+    - nn.Linear: Xavier (Glorot) initialization for weights and zeros for biases.
+    - nn.Conv2d: Kaiming (He) initialization for weights and zeros for biases.
+    - nn.LayerNorm: Ones for weights and zeros for biases.
+    - nn.Embedding: Uniform initialization in the range [-0.1, 0.1] for weights.
+    """
+    
     if isinstance(m, nn.Linear):
         # Xavier (Glorot) initialization for linear layers
         nn.init.xavier_uniform_(m.weight)
@@ -74,7 +85,6 @@ if __name__ == "__main__":
 
     device = torch.device('cuda')
     cuda_available = torch.cuda.is_available()
-    print(f"Is CUDA available? {cuda_available}")
     model = AlzheimerModel(in_channels, patch_size, embed_size, img_size, num_layers, num_heads, d_mlp, dropout_rate)
     model.to(device)
 
@@ -96,12 +106,12 @@ if __name__ == "__main__":
         print("Initialising weights for the first time")
         model.apply(initialize_weights)
 
-    
-
-
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
 
+    # Start training loop
     for epoch in range(START_EPOCH, NUM_EPOCHS):
+        
+        # Train the model
         start_time = time.time()
         model.train()
         running_loss = 0.0
@@ -121,7 +131,8 @@ if __name__ == "__main__":
 
         # Step the scheduler at the end of each epoch
         scheduler.step()
-
+        
+        # Validate the model
         model.eval()
         correct = 0
         total = 0
@@ -141,7 +152,9 @@ if __name__ == "__main__":
 
                 all_preds.extend(predicted.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
-
+                
+        
+        # Calculate validation loss and accuracy, and print the results
         val_loss = val_running_loss / len(val_loader)
 
         print("Confusion Matrix:")
@@ -149,7 +162,7 @@ if __name__ == "__main__":
         print("Classification Report:")
         print(classification_report(all_labels, all_preds))
 
-        accuracy = 0 #100 * correct / total
+        accuracy = 100 * correct / total
         avg_loss = running_loss / len(train_loader)
 
         log_message = f'Epoch [{epoch+1}/{NUM_EPOCHS}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}\n'
@@ -161,6 +174,7 @@ if __name__ == "__main__":
 
         print(log_message + accuracy_message + time_msg)
 
+        # Save the training loss and validation loss to a CSV file
         if not os.path.exists(csv_file_path):
             with open(csv_file_path, 'w', newline='') as file:
                 file.write('epoch,train_loss,val_loss\n')
@@ -171,12 +185,9 @@ if __name__ == "__main__":
         with open('training_log.txt', 'a') as log_file:
             log_file.write(log_message)
             log_file.write(accuracy_message)
-            log_file.write(time_msg)
-        #print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}')
-       
+            log_file.write(time_msg)       
 
-        # Save the model checkpoint after each epoch
-        #torch.save(model.state_dict(), f'output/param/alzheimer_vit_epoch_{epoch+1}.pth')
+        # Save model checkpoint for every epoch < 10 and then every 20th epoch
         if epoch < 10 or (epoch+1) % 20 == 0:
             torch.save({
                 'model_state_dict': model.state_dict(),

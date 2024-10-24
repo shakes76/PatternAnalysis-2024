@@ -1,79 +1,72 @@
-
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 
-def to_channels (arr: np.ndarray, dtype=np.uint8) -> np.ndarray :
+def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
     for c in channels:
         c = int(c)
-        res [... , c : c +1][arr == c] = 1
+        res[..., c: c + 1][arr == c] = 1
 
     return res
-def load_data_3D(imageNames, normImage=False, categorical=False, dtype = np.float32, getAffines=False, orient=False, early_stop=False):
-    '''
-    Load medical image data from names , cases list provided into a list for each .
+
+def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, early_stop=False):
+    """
+    Load medical image data from names, cases list provided into a list for each.
 
     This function pre - allocates 5D arrays for conv3d to avoid excessive memory & usage .
 
     normImage : bool (normalise the image 0.0 -1.0)
-    orient : Apply orientation and resample image? Good for images with large slice & thickness or anisotropic resolution 9
     dtype: Type of the data. If dtype =np.uint8, it is assumed that the data is & labels 10
     early_stop: Stop loading pre-maturely? Leaves arrays mostly empty, for quick & loading and testing scripts .
-    '''
+    """
     affines = []
 
-    #~ interp = ' continuous '
+    # ~ interp = ' continuous '
     interp = 'linear '
-    if dtype == np.uint8 : # assume labels
+    if dtype == np.uint8:  # assume labels
         interp = 'nearest '
 
     # get fixed size
-    num = len(imageNames)
-    niftiImage = nib.load(imageNames[0])
-    if orient:
-        niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
-    #~ testResultName="oriented.nii.gz"
-    #~ niftiImage.to_filename(testResultName)
-    first_case = niftiImage.get_fdata(caching='unchanged')
-    if len( first_case.shape) == 4:
-        first_case = first_case[:,:,:,0] # sometimes extra dims , remove
-    if categorical :
-        first_case = to_channels (first_case, dtype=dtype)
+    num = len(image_names)
+    nifti_image = nib.load(image_names[0])
+    first_case = nifti_image.get_fdata(caching='unchanged')
+    if len(first_case.shape) == 4:
+        first_case = first_case[:, :, :, 0]  # sometimes extra dims , remove
+    if categorical:
+        first_case = to_channels(first_case, dtype=dtype)
         rows, cols, depth, channels = first_case.shape
         images = np.zeros((num, rows, cols, depth, channels), dtype=dtype)
     else:
         rows, cols, depth = first_case.shape
         images = np.zeros((num, rows, cols, depth), dtype=dtype)
 
-    for i, inName in enumerate(tqdm(imageNames)):
-        niftiImage = nib.load(inName)
-        if orient:
-            niftiImage = im.applyOrientation(niftiImage, interpolation=interp, scale=1)
-        inImage = niftiImage.get_fdata(caching='unchanged') # read disk only
-        affine = niftiImage.affine
-        if len(inImage.shape) == 4:
-            inImage = inImage[:,:,:,0] # sometimes extra dims in HipMRI_study data
-        inImage = inImage[:,:,:depth] # clip slices
-        inImage = inImage.astype(dtype)
-        if normImage:
-            #~ inImage= inImage/np.linalg.norm(inImage)
-            #~ inImage = 255.*inImage/inImage.max()
-            inImage = (inImage-inImage.mean())/inImage.std()
+    for i, inName in enumerate(tqdm(image_names)):
+        nifti_image = nib.load(inName)
+        in_image = nifti_image.get_fdata(caching='unchanged')  # read disk only
+        affine = nifti_image.affine
+        if len(in_image.shape) == 4:
+            in_image = in_image[:, :, :, 0]  # sometimes extra dims in HipMRI_study data
+        in_image = in_image[:, :, :depth]  # clip slices
+        in_image = in_image.astype(dtype)
+        if norm_image:
+            # ~ in_image= in_image/np.linalg.norm(in_image)
+            # ~ in_image = 255.*in_image/in_image.max()
+            in_image = (in_image - in_image.mean()) / in_image.std()
         if categorical:
-            inImage = utils.to_channels(inImage, dtype=dtype)
-            #~ images[i,:,:,:,:] = inImage
-            images[i,:inImage.shape[0],:inImage.shape [1],: inImage.shape[2],:inImage.shape [3]] = inImage # with pad
+            in_image = to_channels(in_image, dtype=dtype)
+            # ~ images[i,:,:,:,:] = in_image
+            images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2], :in_image.shape[3]] = in_image  # with pad
         else:
-            #~ images[i,:,:,:] = inImage
-            images [i,:inImage.shape[0],:inImage.shape[1],: inImage.shape[2]] = inImage # with pad
+            # ~ images[i,:,:,:] = in_image
+            images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2]] = in_image  # with pad
 
         affines.append(affine)
         if i > 20 and early_stop:
             break
 
-    if getAffines:
+    if get_affines:
         return images, affines
     else:
         return images

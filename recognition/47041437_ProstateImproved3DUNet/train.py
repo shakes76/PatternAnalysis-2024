@@ -20,7 +20,7 @@ class Dice_loss(nn.Module):
     def label_loss(self, pedictions, targets, smooth=0.1):
         intersection = (pedictions * targets).sum()  
         total = pedictions.sum() + targets.sum()                         
-        dice_coeff = (2.* intersection + smooth) / (total + smooth)  
+        dice_coeff = (2.0 * intersection + smooth) / (total + smooth)  
         return dice_coeff
     
     # Calculate DSC for each channel, add them up and get the mean

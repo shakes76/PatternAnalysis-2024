@@ -1,109 +1,71 @@
-import os
-import pandas as pd
-from torchvision.io import read_image
 import torch
-from torch.utils.data import Dataset, DataLoader, Subset
-from sklearn.model_selection import train_test_split
-import random
-import matplotlib.pyplot as plt
-from torchvision import transforms
+import torch.nn as nn
+import torchvision.models as models
+import torchvision.transforms as transforms
+import torch.nn.functional as F
 
-LOCAL = True  # For my local machine
-IMAGE_DIR = os.path.expanduser('~/Projects/COMP3710/siamese_project/dataset/train-image/image/') if not LOCAL else \
-    os.path.expanduser('~/.kaggle/datasets/isic-2020-jpg-256x256-resized/train-image/image/')
-ANOT_FILE = os.path.expanduser('~/Projects/COMP3710/siamese_project/dataset/train-metadata.csv') if not LOCAL else \
-    os.path.expanduser('~/.kaggle/datasets/isic-2020-jpg-256x256-resized/train-metadata.csv')
 
-class ISICKaggleDataset(Dataset):
-    def __init__(self, annotations_file, img_dir, indices=None, transform=None):
-        self.img_labels = pd.read_csv(annotations_file)
-        if indices is not None:
-            self.img_labels = self.img_labels.iloc[indices].reset_index(drop=True)
-        self.img_dir = img_dir
-        self.transform = transform
+class SiameseNetwork(nn.Module):
+    def __init__(self):
+        super(SiameseNetwork, self).__init__()
+        # Load pretrained ResNet-50 models for feature extraction
+        self.feature_extractor = models.resnet50(pretrained=True)
+        self.feature_extractor.fc = nn.Identity()  # Remove the classification layer to get feature embeddings
 
-    def __len__(self):
-        return len(self.img_labels)
+        # Add a small network after the feature extraction for contrastive loss
+        self.embedding_layer = nn.Sequential(
+            nn.Linear(2048, 512),
+            nn.ReLU(),
+            nn.Linear(512, 128)
+        )
 
-    def __getitem__(self, idx):
+        # Define a transform to ensure input is of the correct type (float)
+        self.transform = transforms.Compose([
+            transforms.ConvertImageDtype(torch.float),
+        ])
+
+    def forward(self, x):
+        # Apply transformation to ensure input type is float
+        x = self.transform(x)
+        # Extract features using ResNet-50
+        x = self.feature_extractor(x)
+        # Pass through the embedding layer to get final embedding
+        x = self.embedding_layer(x)
+        return x
+
+
+class Classifier:
+    def __init__(self, margin=0.5):
+        self.margin = margin
+        self.reference_set = []
+
+    def set_reference_set(self, reference_embeddings, reference_labels):
         """
-        Return an image and its label.
+        Set the reference set using a batch of embeddings and their corresponding labels.
+        :param reference_embeddings: Tensor of shape (N, D) where N is the number of reference samples and D is the embedding size.
+        :param reference_labels: Tensor of shape (N,) where N is the number of reference samples.
         """
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 1]) + '.jpg'
-        image = read_image(img_path).float() / 255.0  # Normalize to [0, 1]
-        label = self.img_labels.iloc[idx, 3]
+        self.reference_set = [(embedding, label) for embedding, label in zip(reference_embeddings, reference_labels)]
 
-        if self.transform:
-            image = self.transform(image)
+    def predict_class(self, embedding):
+        """
+        Predict the class of the input embedding based on the margin.
+        :param embedding: Tensor of shape (D,)
+        :return: Predicted class (0 or 1).
+        """
+        positive_distances = []
+        negative_distances = []
 
-        return image, label
+        for ref_embedding, label in self.reference_set:
+            distance = F.pairwise_distance(embedding.unsqueeze(0), ref_embedding.unsqueeze(0), p=2).item()
+            if label == 1:
+                positive_distances.append(distance)
+            else:
+                negative_distances.append(distance)
 
+        # Calculate average distances to positive and negative samples
+        avg_positive_distance = sum(positive_distances) / len(positive_distances) if positive_distances else float('inf')
+        avg_negative_distance = sum(negative_distances) / len(negative_distances) if negative_distances else float('inf')
 
-def split_dataset(metadata, test_size=0.2, val_size=0.1, random_state=42):
-    """
-    Splits dataset into train, validation, and test sets using stratified sampling.
-    """
-    labels = metadata['target']
-    train_indices, test_indices = train_test_split(range(len(metadata)), test_size=test_size, stratify=labels, random_state=random_state)
-    train_labels = labels.iloc[train_indices]
-    train_indices, val_indices = train_test_split(train_indices, test_size=val_size / (1 - test_size), stratify=train_labels, random_state=random_state)
-
-    return train_indices, val_indices, test_indices
-
-
-def get_data_loaders(batch_size=32):
-    """
-    Prepares and returns the data loaders for training, validation, and test datasets using a 70/20/10 split.
-    """
-    # Load metadata from CSV
-    metadata = pd.read_csv(ANOT_FILE)
-
-    # Split the dataset into train, val, and test indices using stratified sampling
-    train_indices, val_indices, test_indices = split_dataset(metadata)
-
-    # Define transformations for the training set
-    train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(degrees=15),
-        transforms.RandomCrop(size=(224, 224)),
-    ])
-
-    # Create datasets for each split
-    train_dataset = ISICKaggleDataset(annotations_file=ANOT_FILE, img_dir=IMAGE_DIR, indices=train_indices, transform=train_transform)
-    val_dataset = ISICKaggleDataset(annotations_file=ANOT_FILE, img_dir=IMAGE_DIR, indices=val_indices)
-    test_dataset = ISICKaggleDataset(annotations_file=ANOT_FILE, img_dir=IMAGE_DIR, indices=test_indices)
-
-    # Create data loaders for training, validation, and test sets
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-    return train_loader, val_loader, test_loader
-
-
-def show_image_grid(dataset, num_images=5):
-    """
-    Displays a grid of images from the dataset.
-    """
-    fig, ax = plt.subplots(1, num_images, figsize=(20, 5))
-
-    for i in range(num_images):
-        image, label = dataset[i]
-        ax[i].imshow(image.permute(1, 2, 0))
-        ax[i].set_title(f"Label: {label}")
-        ax[i].axis('off')
-
-    plt.tight_layout()
-    plt.show()
-
-
-if __name__ == "__main__":
-    # Test data loading
-    train_loader, val_loader, test_loader = get_data_loaders(batch_size=4)
-    print(f"Train Loader Batch Count: {len(train_loader)}")
-    print(f"Validation Loader Batch Count: {len(val_loader)}")
-    print(f"Test Loader Batch Count: {len(test_loader)}")
-
-    # Show image grid
-    dataset = ISICKaggleDataset(annotations_file=ANOT_FILE, img_dir=IMAGE_DIR)
-    show_image_grid(dataset, num_images=5)
+        # Predict class based on the margin
+        return 1 if avg_positive_distance < avg_negative_distance - self.margin else 0

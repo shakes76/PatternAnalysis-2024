@@ -1,130 +1,135 @@
-import os
+import torch
+import torch.optim as optim
+import torch.nn as nn
+import matplotlib.pyplot as plt
+from dataset import load_all_data
+from modules import UNet2D
 import numpy as np
-import nibabel as nib
-from tqdm import tqdm
-from scipy.ndimage import zoom  # Used to scale the image
 
+# GPU support
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
-    """
-    Convert the array into one-hot encoded channel representation.
-    Each unique value in the input becomes its own channel.
-    """
-    channels = np.unique(arr)
-    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
+# Calculate the Dice coefficient
+def dice_coefficient(pred, target, smooth=1.0):
+    intersection = (pred * target).sum()
+    return (2. * intersection + smooth) / (pred.sum() + target.sum() + smooth)
 
-    for c in channels:
-        c = int(c)
-        res[..., c:c + 1][arr == c] = 1
+# DICE loss
+def dice_loss(pred, target, smooth=1e-6):
+    intersection = (pred * target).sum()
+    return 1 - (2. * intersection + smooth) / (pred.sum() + target.sum() + smooth)
 
-    return res
+# Mixed Loss (Dice Loss + BCELoss.)）
+def combined_loss(pred, target):
+    bce = nn.BCELoss()(pred, target)
+    dice = dice_loss(pred, target)
+    return bce + dice
 
+# Validate the model
+def validate_model(model, criterion, val_data):
+    model.eval()
+    val_loss = 0.0
+    dice_scores = []
+    with torch.no_grad():
+        for i in range(val_data.shape[0]):
+            inputs = torch.tensor(val_data[i], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(device)
+            masks = inputs
+            masks = torch.clamp(masks, 0, 1).to(device)
+            masks = torch.cat([masks, 1 - masks], dim=1)
 
-def resize_image(image, target_shape=(256, 256)):
-    """
-    Resize a 2D image to the target shape using zoom interpolation.
-    Args:
-        image: Input 2D image.
-        target_shape: Target shape to resize the image.
-    Returns:
-        Resized image.
-    """
-    zoom_factors = [t / i for t, i in zip(target_shape, image.shape)]
-    return zoom(image, zoom_factors, order=1)  # Bilinear interpolation
+            outputs = model(inputs)
+            loss = criterion(outputs, masks)
+            val_loss += loss.item()
 
+            dice_score = dice_coefficient(outputs, masks)
+            dice_scores.append(dice_score.item())
 
-def load_data_2D(imageNames, normImage=False, categorical=True, dtype=np.float32, getAffines=False, early_stop=False,
-                 target_shape=(256, 256)):
-    """
-    Load 2D medical image data from a list of NIfTI files.
-    Args:
-        imageNames: List of paths to NIfTI image files.
-        normImage: If True, normalize the image.
-        categorical: If True, one-hot encode the image based on unique values.
-        dtype: Data type for the image arrays.
-        getAffines: If True, return affine matrices along with images.
-        early_stop: If True, stop after processing 20 images (for testing).
-        target_shape: The target shape to resize all images to.
-    Returns:
-        A numpy array of loaded images and optionally their affines.
-    """
-    affines = []
-    num = len(imageNames)
+    avg_loss = val_loss / val_data.shape[0]
+    avg_dice = np.mean(dice_scores)
+    return avg_loss, avg_dice
 
-    # Initialize and store the adjusted image array
-    if categorical:
-        channels = len(np.unique(nib.load(imageNames[0]).get_fdata(caching='unchanged')))
-        images = np.zeros((num, target_shape[0], target_shape[1], channels), dtype=dtype)
-    else:
-        images = np.zeros((num, target_shape[0], target_shape[1]), dtype=dtype)
+# Train the model
+def train_model(model, criterion, optimizer, scheduler, train_data, val_data, num_epochs=50):
+    model.train()
+    train_losses = []
+    val_losses = []
+    val_dice_scores = []
 
-    for i, inName in enumerate(tqdm(imageNames)):
-        niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged')
-        affine = niftiImage.affine
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        print(f'Starting Epoch {epoch+1} of {num_epochs}')
 
-        if len(inImage.shape) == 3:
-            inImage = inImage[:, :, 0]  # Take the first layer as the 2D image
+        # Training loops
+        for i in range(train_data.shape[0]):
+            inputs = torch.tensor(train_data[i], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(device)
+            masks = inputs
+            masks = torch.clamp(masks, 0, 1).to(device)
+            masks = torch.cat([masks, 1 - masks], dim=1)
 
-        inImage = inImage.astype(dtype)
+            optimizer.zero_grad()
+            outputs = model(inputs)
 
-        # Resize the image
-        inImage = resize_image(inImage, target_shape)
+            loss = criterion(outputs, masks)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
 
-        if normImage:
-            inImage = (inImage - inImage.mean()) / inImage.std()
+        avg_loss = running_loss / train_data.shape[0]
+        train_losses.append(avg_loss)
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Training Loss: {avg_loss:.4f}')
 
-        if categorical:
-            inImage = to_channels(inImage, dtype=dtype)
-            images[i, :, :, :] = inImage
-        else:
-            images[i, :, :] = inImage
+        # Validate the model
+        val_loss, val_dice = validate_model(model, criterion, val_data)
+        val_losses.append(val_loss)
+        val_dice_scores.append(val_dice)
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Validation Loss: {val_loss:.4f}, Validation Dice: {val_dice:.4f}')
 
-        affines.append(affine)
+        # Adjust the learning rate
+        scheduler.step(val_loss)
 
-    if getAffines:
-        return images, affines
-    else:
-        return images
+    # Plot training and validation loss curves
+    plt.plot(range(1, num_epochs + 1), train_losses, label='Training Loss')
+    plt.plot(range(1, num_epochs + 1), val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss over Time')
+    plt.legend()
+    plt.show()
 
+    return val_dice_scores
 
-def save_nifti(image, affine, out_path):
-    """
-    Save a 2D or 3D image as a NIfTI file.
-    Args:
-        image: numpy array containing image data.
-        affine: affine matrix for the NIfTI image.
-        out_path: Output file path.
-    """
-    nifti_img = nib.Nifti1Image(image, affine)
-    nib.save(nifti_img, out_path)
+# main
+def main():
+    image_dir = r'C:\Users\舒画\Downloads\HipMRI_study_keras_slices_data\keras_slices_train'
+    images = next(load_all_data(image_dir, normImage=True, target_shape=(256, 256), batch_size=32))
 
+    print(f'Loaded {images.shape[0]} images with shape {images.shape[1:]}')
 
-def load_all_data(image_dir, normImage=False, categorical=False, dtype=np.float32, target_shape=(256, 256)):
-    """
-    Load all 2D images from a directory containing NIfTI files.
-    Args:
-        image_dir: Directory containing NIfTI files.
-        normImage: If True, normalize the image.
-        categorical: If True, one-hot encode the image based on unique values.
-        dtype: Data type for the image arrays.
-        target_shape: The target shape to resize all images to.
-    Returns:
-        A numpy array of all loaded images.
-    """
-    # Get the paths of all NIfTI files in the directory
-    imageNames = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if
-                  f.endswith('.nii') or f.endswith('.nii.gz')]
-    return load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype,
-                        target_shape=target_shape)
+    # The dataset is divided into 80% training set, 10% validation set, and 10% test set
+    train_size = int(0.8 * images.shape[0])
+    val_size = int(0.1 * images.shape[0])
+    test_size = images.shape[0] - train_size - val_size
 
+    train_data = images[:train_size]
+    val_data = images[train_size:train_size + val_size]
+    test_data = images[train_size + val_size:]
 
-    # Example usage
-if __name__ == "__main__":
-    image_dir = r"C:\Users\舒画\Downloads\HipMRI_study_keras_slices_data\keras_slices_train"
-    image_files = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if
-                   f.endswith('.nii') or f.endswith('.nii.gz')]
+    # Define the model
+    model = UNet2D(in_channels=1, out_channels=2).to(device)
 
-    # Load the images
-    images, affines = load_data_2D(image_files, normImage=True, categorical=False, getAffines=True, early_stop=True,
-                                   target_shape=(256, 256))
+    # Define the loss function and optimizer
+    criterion = combined_loss
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+
+    # Use the learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+
+    # Train the model
+    train_model(model, criterion, optimizer, scheduler, train_data, val_data, num_epochs=50)
+
+    # Save the model
+    torch.save(model.state_dict(), 'unet_model1.pth')
+    print("Model saved as 'unet_model1.pth'")
+
+if __name__ == '__main__':
+    main()

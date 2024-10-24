@@ -18,6 +18,7 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 
 
 ## Dependencies
+- python - 3.9
 - tensorflow - 2.11.0
 - matplotlib - 3.9.2
 - scikit-learn - 1.5.2
@@ -51,19 +52,12 @@ Make sure to place the ADNI folder in the same directory as the python files.
 python train.py
 ```
 
-2. **Generating Images**: After training, you can generate new images using the trained model. Run the `predict.py` script. If you wish to generate images of a brain with Alzheimer's Disease run.
+2. **Generating Images**: After training, you can generate new images using the trained model. Run the `predict.py` script. If you wish to generate images of a brain, run the following command and use either NC to produce Normal Cognition images or AD to produce images of a brain with Alzheimer's Disease.
 
 ```
-python predict.py AD
-```
-<br/>
-  If you wish to generate images of a brain considered Normal Cognitive, run.
-
-```
-python predict.py NC
+python predict.py AD/NC
 ```
 
-  5 images of the brain of the type you want to see will be saved as png files.
 <br/>
 <br/>
 
@@ -124,7 +118,7 @@ Image Size: (128,128)
 Generator Learning Rate: 0.0002, increasing very slowly
 Discriminator Learning Rate: 0.0001, decreasing very slowly
 
-### Disriminator and Generator Losses
+### Discriminator and Generator Losses
 <img src="images/Discriminator Loss AD.png" alt="AD Disc Loss" width="400"/>
 <img src="images/Generator Loss AD.png" alt="AD Gen Loss" width="400"/>
 <br/>

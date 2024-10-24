@@ -1,7 +1,6 @@
 import numpy as np
 import nibabel as nib
-from tqdm import tqdm   
-import utils as utils
+from tqdm import tqdm
 import cv2
 import os  # Ensure you have this to work with file paths
 import torch
@@ -53,24 +52,24 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching='unchanged')
         affine = niftiImage.affine
-        
+
         if len(inImage.shape) == 3:
             inImage = inImage[:, :, 0]  # Remove extra dims if necessary
         inImage = inImage.astype(dtype)
-        
+
         # Resize the image if necessary
         if inImage.shape != (rows, cols):
             inImage = resize_image(inImage, (rows, cols))
-        
+
         if normImage:
             inImage = (inImage - inImage.mean()) / inImage.std()
-        
+
         if categorical:
             inImage = to_channels(inImage, dtype=dtype)
             images[i, :, :, :] = inImage
         else:
             images[i, :, :] = inImage
-        
+
         affines.append(affine)
         if i > 20 and early_stop:
             break
@@ -79,27 +78,4 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
-
-class MedicalImageDataset(torch.utils.data.Dataset):
-    def __init__(self, image_dir, label_dir, device):
-        self.image_filenames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
-        self.label_filenames = sorted([os.path.join(label_dir, f) for f in os.listdir(label_dir) if f.endswith('.nii.gz')])
-        self.normImage = True  # Adjust as needed
-        self.categorical = False  # Adjust as needed
-        self.device = device
-
-    def __getitem__(self, idx):
-        print(f"Loading image: {self.image_filenames[idx]}")  # Debug print
-        # Load image and label using your provided function
-        image = load_data_2D([self.image_filenames[idx]], normImage=self.normImage, categorical=self.categorical)
-        label = load_data_2D([self.label_filenames[idx]], normImage=False, categorical=self.categorical)
-
-        # Convert to PyTorch tensors and move to the correct device
-        image = torch.tensor(image, dtype=torch.float32).to(self.device)  # Ensure float type
-        label = torch.tensor(label, dtype=torch.float32).to(self.device)  # Ensure float type
-
-        return image, label
-
-    def __len__(self):
-        return len(self.image_filenames)
 

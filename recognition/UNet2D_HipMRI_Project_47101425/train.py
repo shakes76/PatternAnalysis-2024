@@ -98,7 +98,7 @@ def plot_sample_images(dataset, model):
         ax[1].axis('off') 
 
         # Plot predicted mask 
-        ax[2].imshow(pred_mask, cmap='gray', vmin=0, vmax=1)
+        ax[2].imshow(pred_mask, cmap='gray', vmin=0.4, vmax=0.9)
         ax[2].set_title("Predicted Mask")
         ax[2].axis('off') 
 

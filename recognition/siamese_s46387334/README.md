@@ -96,9 +96,9 @@ The ISIC 2020 Kaggle Challenge data set is self described as a "Skin Lesion Anal
 
 The full original dataset can be sourced from https://challenge2020.isic-archive.com/. However due to the dataset size - to ensure efficient computation a resized version of the data set was used that was sourced from https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized. From now on the resized data set will be discussed. The images are located in a single folder (train-image/image/) and the classifications of each image are contained within a single csv file (train-metadata.csv) Each of the images from the resized data set are 256 x 256 pixels and a few examples of these images are pictured bellow.
 
-![alt text](readme_figures/sample_data_images.png)
+![sample data images - normal](readme_figures/sample_data_images.png)
 
-![alt text](readme_figures/sample_data_images_2.png)
+![sample data images - melanoma](readme_figures/sample_data_images_2.png)
 
 
 ### Dataset Train Validation Test Split
@@ -149,7 +149,7 @@ Siamese Networks are a type model that takes advantage of metric learning to pre
 ### Feature Extractor (Embedding) Model Architecture
 Our model will use a modified implementation of `resnet50` as the Feature Extractor. The bulk of the model follows the traditional `resnet50` architecture pictured bellow.
 
-![alt text](readme_figures/resnet50_arch.jpg)
+![resnet50 architecture](readme_figures/resnet50_arch.jpg)
 
 However the last fully connected layer, FC1000 (layer normally used for class predictions) of `resnet50` is replaced by a sequence of fully connected layers to form our 'Feature Extractor Head' used to produce embeddings. The layers are as follows:
 
@@ -172,7 +172,7 @@ loss = max(0, D(A, P) - D(A, N) + margin)
 
 Where D represents Euclidean distance, A, P and N represent the output embeddings of the Anchor, Positive and Negative images from the triplet respectively, and margin is a hyper parameter to enforce a minimum separation between classes. The diagram bellow shows how the loss will react to learning [[7](#References)].
 
-![alt text](readme_figures/triplet_loss.png)
+![triplet loss example](readme_figures/triplet_loss.png)
 
 ### Classifier Model Architecture
 For the classifier a single layer neural net (perceptron) was used. The input will be the output embedding from the feature extractor and the output will be the chosen class (normal or melanoma). i.e. the classifier is - Linear Layer: in: `embedding dimensions` out: 2. The bulk of the training / work should be done by the feature extractor.
@@ -269,7 +269,7 @@ Testing Sensitivity: 0.828
 
 ### Evaluation Figures
 #### 1. Training / Validation loss, accuracy and AUR ROC over the training epochs
-![alt text](readme_figures/train_val_train_progress.png)
+![train validation set progress while training](readme_figures/train_val_train_progress.png)
 - Training curve does not pull away from validation, and validation does not plateau. This indicates little to no overfitting.
 - Neither set plateau's this could indicate that the model could be run for longer to further improve results. However we can see the rates slowing down - and due to hardware compute limitations running it for too long was infeasible. Since the model was able to reach the desired AUR ROC ('accuracy metric' of 0.8) further training was not required.
 - Validation set metrics over training epochs are erratic, this is because the model does not train on the validation data. This could be exacerbated by the fact that only the training data is augmented. A possible solution for this is discussed in the 'improvements' section.
@@ -277,17 +277,17 @@ Testing Sensitivity: 0.828
 
 
 #### 2. Testing ROC Curve
-![alt text](readme_figures/testing_roc_curve.png)
+![testing roc curve](readme_figures/testing_roc_curve.png)
 - As mentioned in the metrics section, this model preforms well in high sensitivity regions, but less so in the high specificity regions. This is preferred vs the other way around [[8](#References)], however to improve the model its specificity should be the focus of improvement.
 
 
 #### 3. Testing Confusion Matrix
-![alt text](readme_figures/testing_confusion_matrix.png)
+![testing confusion matrix](readme_figures/testing_confusion_matrix.png)
 - Details were covered in the Metric Section
 
 
 #### 4. Testing t-SNE Embedding Visualization
-![alt text](readme_figures/testing_tsne_embeddings.png)
+![testing tsne embeddings](readme_figures/testing_tsne_embeddings.png)
 - We can very clearly see via the embeddings that the Feature Extractor model has successfully identified ways to help separate the two classes.
 - We can see that the melanoma samples (class 1) have formed general groups in the embedding separate from the normal samples (class 0) indicating that the feature extractor was able to identify methods of separating the two classes. We can see partial overlap - this is mainly due to trying to condense the 128 dimension embedding into 2D - however these overlapping points could also represent the overlap between classes in the model (Similar images but from different classes).
 - This shows the implementation of metric learning utilised by TripletLoss to minimize the distance between similar pairs and maximize the distance between dissimilar pairs.

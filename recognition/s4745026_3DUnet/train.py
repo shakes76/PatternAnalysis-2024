@@ -10,14 +10,14 @@ from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 
 
-num_epochs = 5
+num_epochs = 1
 learning_rate = 0.01
 batch_size = 4
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset = DataLoader(Custom3DDataset())
-train_len = int(0.2 * len(dataset))  # fix percentages
-val_len = int(0.7*len(dataset))
+dataset = Custom3DDataset()
+train_len = int(0.7 * len(dataset))  # fix percentages
+val_len = int(0.2*len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_loader, validate_loader, test_loader = random_split(
     dataset, [train_len, val_len, test_len])

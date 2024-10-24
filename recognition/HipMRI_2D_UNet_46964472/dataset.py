@@ -108,6 +108,7 @@ def load_data_predict(image_dir, seg_dir, number_image):
         image_path.append(os.path.join(image_dir, image_list[index]))
         seg_path.append(os.path.join(seg_dir, image_list[index].replace("case", "seg")))
     # Load Nifti file data
-    images = load_data_2D(image_path, normImage=True)
-    segs = load_data_2D(seg_path, categorical=True)
-    return images, segs
+    images = load_data_2D(image_path)
+    images_norm = load_data_2D(image_path, normImage=True)
+    segs = load_data_2D(seg_path)
+    return images, images_norm, segs

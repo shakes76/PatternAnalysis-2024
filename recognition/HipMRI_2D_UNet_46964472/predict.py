@@ -20,7 +20,7 @@ else:
 
 # hyper parameters
 batch_size = 16
-number_predict = 10
+number_predict = 5
 
 # Load validate dataset
 validate_image_dir = os.path.join("keras_slices_data", "keras_slices_validate")
@@ -36,31 +36,30 @@ print('Test Loss ', results[0] )
 print('Test Dice Coefficients ', results[1] )
 
 # Load random validate image and segmentation
-predict_image, predicted_seg = load_data_predict(validate_image_dir, 
+true_image, predict_image, predicted_seg = load_data_predict(validate_image_dir, 
                                                  validate_seg_dir, 
                                                  number_predict)
-# Predict and visualise results
-plt.figure(figsize=(12, 12))
+# Predict
+predict = model.predict(predict_image)
+# Argmax to reverse one hot encoding
+predict = np.argmax(predict, axis=3)
+
+# Visualise results
+plt.figure()
 figure_pos = 0
-for i in range(number_predict):
-    image = predict_image[i]
-    seg = predicted_seg[i]
-    predict = model.predict(image, batch_size=1)
-    # Argmax to combines segmentation map to one mask
-    predict = np.argmax(predict, axis=2)
-    
+for i in range(number_predict):    
     figure_pos += 1
-    plt.subplot(number_predict, 3, figure_pos)
-    plt.imshow(np.squeeze(image))
+    plt.subplot(3, number_predict, i + 1)
+    plt.imshow(true_image[i])
     plt.title('Original Image')
 
     figure_pos += 1
-    plt.subplot(number_predict, 3, figure_pos)
-    plt.imshow(np.squeeze(seg))
+    plt.subplot(3, number_predict, number_predict + i + 1)
+    plt.imshow(predicted_seg[i])
     plt.title('Original Mask')
 
     figure_pos += 1
-    plt.subplot(number_predict, 3, figure_pos)
-    plt.imshow(np.squeeze(predict))
+    plt.subplot(3, number_predict, number_predict * 2 + i + 1)
+    plt.imshow(predict[i])
     plt.title('Prediction')
 plt.show()

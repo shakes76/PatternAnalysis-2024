@@ -13,7 +13,8 @@ The GFnet is a deep learning architecture originally designed for image classifi
 This design was to address the issue of complexity, as the complexity of self-attention and the MLP grows quadratically as an image size increases which results in a model that is hard to scale up for problems(Tsang, 2023). The GFNet's approach is to learn long-term spacial dependencies in the frequency domain with log-linear complexity.
 
 The Model design follows closely to the original implementation shown below:
-![Model GFNet](assets/GFNet_intro.gif)
+
+![Model GFNet](assets/GFnet_intro.gif)
 
 _Image Reference: [Rao, Y., & Zhao, W. (2021). Global Filter Networks for Image Classification. GitHub.](https://github.com/raoyongming/GFNet/tree/master)_
 
@@ -27,6 +28,7 @@ The ADNI dataset has been used in this project to train and test our model. ADNI
  The ADNI dataset can be download from their website, [ADNI website](https://adni.loni.usc.edu/).
 
  Here is an example image from the data set:
+
  ![Example](assets/Example_image.jpeg)
 
 ### Pre-processing the Data

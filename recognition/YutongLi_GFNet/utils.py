@@ -4,6 +4,9 @@ import random
 
 
 def split_val_set(original_dataset_path, new_dataset_path, split_ratio):
+    """
+    split the orginal train set to new train set and val set by split ratio. Then save the new dataset.
+    """
     print("splitting dataset")
     split_ratio = 1 - split_ratio
     # Define paths

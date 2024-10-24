@@ -35,7 +35,7 @@ def upload_dataset(device):
     # Define the assignment of training and testing set
     num_nodes = tensor_targets.shape[0]
     node_indices = torch.arange(num_nodes)
-    train_id, test_id = train_test_split(node_indices, test_size=0.7, random_state=42)
+    train_id, test_id = train_test_split(node_indices, test_size=0.3, random_state=42)
 
     train_features = tensor_features[train_id]
     train_targets = tensor_targets[train_id]

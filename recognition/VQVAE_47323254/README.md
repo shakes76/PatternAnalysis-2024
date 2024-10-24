@@ -124,7 +124,7 @@ Here is the result of running training with `example_train_config.yaml`. This do
 2024-10-17 01:28:53,271 - INFO - Epoch [30/30], Train Loss: 0.0046, Val Loss: 0.0042, Train SSIM: 0.9262, Val SSIM: 0.9273
 2024-10-17 01:28:53,271 - INFO - Training took 27.23 minutes
 
-2024-10-17 01:29:01,155 - INFO - Test Loss: 0.0114, Test SSIM: 0.8874
+2024-10-17 01:29:01,155 - INFO - Test Loss: 0.0039, Test SSIM: 0.9366
 ```
 
 - Original and reconstructed images during training (This image is from epoch 1)
@@ -154,8 +154,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0753 | 0.6455 |
 | Test  | 0.0936 | 0.6469 |
 
-<img src="images/train_plot_small_lr.png" alt="learning rate 0.0001" height="220"/>
-<img src="images/small_lr_metrics.png" alt="learning rate 0.0001" height="220"/>
+<img src="images/train_plot_small_lr.png" alt="learning rate 0.0001" height="250"/>
+<img src="images/small_lr_metrics.png" alt="learning rate 0.0001" height="250"/>
 
 ### Learning Rate = 0.0005
 
@@ -165,8 +165,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0090 | 0.8958 |
 | Test  | 0.0134 | 0.8673 |
 
-<img src="images/train_plot_mid_lr.png" alt="learning rate 0.0005" height="220"/>
-<img src="images/mid_lr_metrics.png" alt="learning rate 0.0005" height="220"/>
+<img src="images/train_plot_mid_lr.png" alt="learning rate 0.0005" height="250"/>
+<img src="images/mid_lr_metrics.png" alt="learning rate 0.0005" height="250"/>
 
 ### Learning Rate = 0.001
 
@@ -176,8 +176,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0053 | 0.9053 |
 | Test  | 0.0053 | 0.9175 |
 
-<img src="images/train_plot_high_lr.png" alt="learning rate 0.001" height="220"/>
-<img src="images/high_lr_metrics.png" alt="learning rate 0.001" height="220"/>
+<img src="images/train_plot_high_lr.png" alt="learning rate 0.001" height="250"/>
+<img src="images/high_lr_metrics.png" alt="learning rate 0.001" height="250"/>
 
 ### Learning Rate = 0.005
 
@@ -187,8 +187,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0048 | 0.9012 |
 | Test  | 0.0045 | 0.9124 |
 
-<img src="images/train_plot_highest_lr.png" alt="learning rate 0.005" height="220"/>
-<img src="images/highest_lr_metrics.png" alt="learning rate 0.005" height="220"/>
+<img src="images/train_plot_highest_lr.png" alt="learning rate 0.005" height="250"/>
+<img src="images/highest_lr_metrics.png" alt="learning rate 0.005" height="250"/>
 
 ## Augmentations
 I experimented with various augmentations to evaluate their impact on the model's performance. These augmentations included random horizontal and vertical flips, translations, brightness, contrast, saturation, hue adjustments, and Gaussian blur. Additionally, I resized the images to 256x256. The experiment was conducted using a downscale factor of 4 over 30 epochs, with a learning rate of 0.001. The model performed better with the augmented data, and resizing the images to a square further improved its performance. Without augmentations, the performance of the model was inconsistent across different images, but with augmentations, the model was able to perform accurately on various images.
@@ -212,9 +212,6 @@ I experimented with various augmentations to evaluate their impact on the model'
 
 <img src="images/augmentation_resize_metrics.png" alt="resize" height="250"/>
 <img src="images/augmentation_resize_images.png" alt="resize" height="250"/>
-
-## Model Complexity
-I experimented with the complexity of the model by changing the number of hidden channels in the encoder and decoder, the number of hidden channels in the residual blocks, the number of residual blocks, number of embeddings, and size of embeddings. The experiment was conducted using a downscale factor of 4 over 30 epochs, with a learning rate of 0.001 and augmentations with resizing. TODO
 
 ## Downscale Factor
 I experimented with different downscale factors, 8 and 16, to evaluate the model's performance with more compressed codebooks. The experiments were conducted over 100 epochs, using a learning rate of 0.001 and augmentations with resizing. I also changed the model complexity by adjusting the number of hidden channels in the encoder and decoder, the number and size of residual blocks, the number of embeddings, and the embedding size.
@@ -251,11 +248,11 @@ The results with higher downscale factors were more inconsistent compared to a d
 <img src="images/downscale_16_images.png" alt="downscale 16" height="250"/>
 
 ## Observations
-There was no overfitting observed during my experiments. The model often performed better on the validation and test sets than on the training data. I carefully checked there was no data leakage in the training phase. I believe the following factors contributed to this result:
+There was no observable overfitting during my experiments. The model often performed better on the validation and test sets than on the training data. I carefully checked there was no data leakage in the training phase. I believe the following factors contributed to this result:
 
 1. **Training Data Size**: The training set was significantly larger than the validation and test sets (11,460 vs. 660 and 540, respectively). This larger dataset likely contained more diverse and generalisable features, which allows the model to learn patterns that applied well to the unseen data. The model parameters may have been better optimised for the smaller, specific patterns in the validation and test data.
 
-2. **Model Complexity**: The model may not have been complex enough to fully capture all the features in the larger training set. As a result, it may have generalised better to the smaller validation and test sets, where fewer features needed to be captured.
+2. **Model Complexity**: The model may not have been complex enough to fully capture all the features in the larger training set. As a result, it may have generalised better to the smaller validation and test sets, where fewer features needed to be captured. 
 
 3. **Data Similarity**: The HipMRI images used in this experiment were very similar to each other. This likely allowed the model to learn the general features of the dataset quickly, leading to good performance on both validation and test data.
 

@@ -1,5 +1,5 @@
 """
-Helper functions that will be used in the training process.
+Helper functions that can be used during the training or testing process.
 """
 
 import random

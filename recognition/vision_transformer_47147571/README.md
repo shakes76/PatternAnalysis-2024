@@ -45,7 +45,7 @@ This data preprocessing is handled automatically by our dataset classes. *Please
 Two dataset classes are provided for loading the data. Both classes automatically crop the valid area in the original images and save the processed images to the `processed` folders. Both dataset classes support a `transform` parameter for applying image transformations. Additionally, the labels are assigned with AD as 1 and NC as 0.
 
 
-- **`ADNIDataset`**: This dataset loads each image as a single-channel grayscale image. The dataset splits the data into training and validation sets based on the `seed` and `split_ratio` provided. By setting `val=True`, you can load the validation set. When `seed` and `split_ratio` are fixed, the dataset provides a consistent and complementary split between the training and validation sets, ensuring all data is loaded correctly. The `split` parameter determines which subset (train or test) is being loaded. In our implementation, we used `seed=0` and `split_ratio=0.9`.
+- **`ADNIDataset`**: This dataset loads each image as a single-channel grayscale image. The dataset splits the data into training and validation sets based on the `seed` and `split_ratio` provided. By setting `val=True`, you can load the validation set. When `seed` and `split_ratio` are fixed, the dataset provides a *consistent and complementary* split between the training and validation sets, ensuring all data is loaded correctly. The `split` parameter determines which subset (train or test) is being loaded. In our implementation, we used `seed=0` and `split_ratio=0.9`.
   
 - **`ADNIDatasetTest`**: This dataset loads patient-level batches of 20 grayscale images from the same patient based on their patient ID. It will load the data from `test` folder.
 

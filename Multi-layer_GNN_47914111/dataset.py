@@ -23,8 +23,6 @@ def load_data():
     Load data from a fixed file path and convert it to tensors.
     """
     filepath = "C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/facebook_large/facebook.npz"
-    
-    # Load data
     data = np.load(filepath)
 
     # Extract numpy arrays
@@ -150,9 +148,6 @@ def preprocess_adjacency_matrix():
     print(f"Validation Mask: {validation_mask.sum().item()}")
     print(f"Test Mask: {test_mask.sum().item()}")
 
-    # Return all processed data
     return normalized_adjacency_tensor, train_mask, validation_mask, test_mask, feature_matrix, label_tensor
 
-
-# Complete data preprocessing pipeline
 preprocess_adjacency_matrix()

@@ -5,12 +5,11 @@ Made by Joshua Deadman
 """
 
 import argparse
-from datetime import datetime
 import matplotlib.pyplot as plt
+import os
 from sklearn.metrics import ConfusionMatrixDisplay
 import torch
 from torch.utils.data import DataLoader
-from torchvision.transforms import v2
 
 from config import BATCH_SIZE, DATAPATH, WORKERS
 from modules import SiameseNetwork, BinaryClassifier
@@ -26,10 +25,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if not torch.cuda.is_available():
     print("WARNING: Using the CPU...")
 
-_, _, sample = split_data(DATAPATH + "/train-metadata.csv")
+_, _, sample = split_data(os.path.join(DATAPATH, "train-metadata.csv"))
 print(f"Testing on a sample of {len(sample)} images.")
 
-sample_set = ISICKaggleChallengeSet(DATAPATH + "/train-image/image/", sample, transforms=None)
+sample_set = ISICKaggleChallengeSet(os.path.join(DATAPATH, "train-image/image/"), sample, transforms=None)
 sample_loader = DataLoader(sample_set, batch_size=BATCH_SIZE, num_workers=WORKERS)
 
 # Initialise models

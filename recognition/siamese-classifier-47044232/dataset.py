@@ -6,6 +6,7 @@ Made by Joshua Deadman
 """
 
 import matplotlib.pyplot as plt
+import os
 from PIL import Image
 import numpy as np
 import random
@@ -46,9 +47,9 @@ class ISICKaggleChallengeSet(Dataset):
         while negative["target"] == anchor["target"]:
             negative = random.choice(self._image_set)
 
-        anchor_img = Image.open(self._root + anchor["isic_id"] + ".jpg").convert("RGB")
-        positive_img = Image.open(self._root + positive["isic_id"] + ".jpg").convert("RGB")
-        negative_img = Image.open(self._root + negative["isic_id"] + ".jpg").convert("RGB")
+        anchor_img = Image.open(os.path.join(self._root, anchor["isic_id"] + ".jpg")).convert("RGB")
+        positive_img = Image.open(os.path.join(self._root, positive["isic_id"] + ".jpg")).convert("RGB")
+        negative_img = Image.open(os.path.join(self._root, negative["isic_id"] + ".jpg")).convert("RGB")
 
         if self._transforms is not None:
             anchor_img = self._transforms(anchor_img)

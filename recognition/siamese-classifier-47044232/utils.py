@@ -7,6 +7,7 @@ Made by Joshua Deadman
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import seaborn as sns
 from sklearn.manifold import TSNE
 import pandas as pd
@@ -69,7 +70,7 @@ def generate_loss_plot(training_loss, validation_loss, model, save=False) -> Non
     plt.ylabel("Loss")
     plt.legend()
     if save:
-        plt.savefig(IMAGEPATH + "/loss_"+ model.lower().replace(" ","") + ".png")
+        plt.savefig(os.path.join(IMAGEPATH, "loss_" + model.lower().replace(" ","") + ".png"))
     else:
         plt.show()
 
@@ -111,6 +112,6 @@ def tsne_plot(features, labels, save=False) -> None:
     plt.ylabel('')
     
     if save:
-        plt.savefig(IMAGEPATH + "/tsne_scatterplot.png")
+        plt.savefig(os.path.join(IMAGEPATH, "tsne_scatterplot.png"))
     else:
         plt.show()

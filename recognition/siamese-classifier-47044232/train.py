@@ -8,6 +8,7 @@ Made by Joshua Deadman
 import argparse
 from datetime import datetime
 import matplotlib.pyplot as plt
+import os
 from sklearn.metrics import ConfusionMatrixDisplay
 import time
 import torch
@@ -32,7 +33,7 @@ if not torch.cuda.is_available():
     print("WARNING: Using the CPU to train...")
 
 # Make disjoint sets of data
-train, test, val = split_data(config.DATAPATH+"/train-metadata.csv")
+train, test, val = split_data(os.path.join(config.DATAPATH, "train-metadata.csv"))
 
 transforms = v2.Compose([
     v2.RandomRotation(degrees=(0, 10)),
@@ -44,9 +45,9 @@ transforms = v2.Compose([
 ])
 
 # Form datsets and load them
-train_set = ISICKaggleChallengeSet(config.DATAPATH+"/train-image/image/", train, transforms=transforms)
-test_set = ISICKaggleChallengeSet(config.DATAPATH+"/train-image/image/", test, transforms=transforms)
-val_set = ISICKaggleChallengeSet(config.DATAPATH+"/train-image/image/", val, transforms=transforms)
+train_set = ISICKaggleChallengeSet(os.path.join(config.DATAPATH, "train-image/image/"), train, transforms=transforms)
+test_set = ISICKaggleChallengeSet(os.path.join(config.DATAPATH, "train-image/image/"), test, transforms=transforms)
+val_set = ISICKaggleChallengeSet(os.path.join(config.DATAPATH, "train-image/image/"), val, transforms=transforms)
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
 val_loader = DataLoader(val_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
@@ -221,14 +222,15 @@ with torch.no_grad():
     # Generate a confusion matrix to visualise accuracy
     plt.close() # As ConfusionMatrixDisplay uses it's own figure
     cm_display = ConfusionMatrixDisplay.from_predictions(all_labels, all_predictions, display_labels=["Benign", "Malignant"])
-    cm_display.plot(colorbar=False)
+    cm_display.plot()
     if args.saveplots:
-        plt.savefig(config.IMAGEPATH + "/confusion_matrix.png", dpi=80)
+        plt.savefig(os.path.join(config.IMAGEPATH, "confusion_matrix.png"), dpi=80)
     else:
+        plt.close()
         plt.show()
 
 generate_loss_plot(train_loss, val_loss, "Binary Classifier", save=args.saveplots)
 
 if not args.nomodels:
-    torch.save(siamese.state_dict(), config.MODELPATH + "/siamese_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
-    torch.save(classifier.state_dict(), config.MODELPATH + "/classifier_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
+    torch.save(siamese.state_dict(), os.path.join(config.MODELPATH, "siamese_" + datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth")))
+    torch.save(classifier.state_dict(), os.path.join(config.MODELPATH, "classifier_" + datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth")))

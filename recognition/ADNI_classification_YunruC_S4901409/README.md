@@ -155,7 +155,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 model.to(device)
 ```
-Once the optimization is completed, graphs of the optimization history and parameters will be plotted. Finally, the best hyperparameters obtained will then be used to train the model for 70 epochs, with the best model saved to `model.pth`, and the losses and accuracy visualized.
+Once the optimization is completed, the best hyperparameters obtained will then be used to train the model for 70 epochs, with the best model saved to `model.pth`, and the losses and accuracy visualized.
 
 ### 4. predict.py
 The best model identified during training is used to evaluate the performance on the test dataset, and the resulting confusion matrix is displayed.

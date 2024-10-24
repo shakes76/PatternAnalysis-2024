@@ -66,6 +66,8 @@ MODEL_DIR = os.path.join(os.getcwd(), "trained_models", MODEL_NAME)
 MODEL_CHECKPOINT_DIR = os.path.join(MODEL_DIR, "checkpoint.pth")
 TRAIN_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "training_dice_score.pth")
 TEST_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "testing_dice_score.pth")
+TRAIN_LOSS_PLOT_DIR = os.path.join(MODEL_DIR, "training_loss_plot.png")
+TRAIN_DICE_PLOT_DIR = os.path.join(MODEL_DIR, "training_dice_score_plot.png")
 LOG_DIR = os.path.join(MODEL_DIR, "log.txt")
 # Also print messages when they are written to the log file
 VERBOSE = True
@@ -260,8 +262,8 @@ def plot_training_metrics(loss: list[float], dice_score: list[list[float]]):
     plt.legend()
     # Show and save figures
     plt.show()
-    loss_fig.savefig('training_loss_plot')
-    dice_fig.savefig('training_dice_score_plot')
+    loss_fig.savefig(TRAIN_LOSS_PLOT_DIR)
+    dice_fig.savefig(TRAIN_DICE_PLOT_DIR)
 
 
 def main():

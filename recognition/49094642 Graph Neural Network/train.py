@@ -24,6 +24,6 @@ class Tester:
         model.eval()
         with torch.no_grad():  
             pred = model(data).argmax(dim=1) 
-            correct = (pred[self.data.test_mask] == self.data.y[self.data.test_mask]).sum() 
-            acc = int(correct) / int(self.data.test_mask.sum())  
+            correct = (pred == data.y).sum().item()
+            acc = correct / data.num_nodes 
             return acc

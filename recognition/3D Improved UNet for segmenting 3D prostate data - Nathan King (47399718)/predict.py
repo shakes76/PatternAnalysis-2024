@@ -1,3 +1,10 @@
+"""
+This script executes the loading and testing process of the trained 3D Improved UNet Model. Additionally, examples showing the
+input, true segmentation and predicted segmentation are visualised and saved to depict the performance of the model.
+
+@author Nathan King
+"""
+
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np

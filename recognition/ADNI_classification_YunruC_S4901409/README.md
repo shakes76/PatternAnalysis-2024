@@ -196,7 +196,7 @@ However, after reviewing the test accuracy across 10 trials, I found another set
 Figure 5: Hyperparameters with High Test Accuracy during training across 30 epochs
 </p>
 
-Although this set did not achieve a relatively high validation accuracy across 30 epochs, it reached a test accuracy of 0.67 multiple times during training, while the rest trials only reached a maximum of 0.66. As a result, both sets of hyperparameters were used to retrain the model over 70 epochs to evaluate their performance.
+Although this set did not achieve a relatively high validation accuracy across 30 epochs, it reached a test accuracy of 0.67 multiple times during training, while the rest trials only reached a maximum of 0.66. As a result, both sets of hyperparameters were used to retrain the model over 70 epochs to evaluate their performance. The plots for losses and accuracy of both models are shown as below:
 
 <div style="display: flex; justify-content: space-between;">
     <div style="text-align: center; width: 48%;">

@@ -103,7 +103,7 @@ As can be seen here, with adjustment, the UNet model was able to acheive above 0
 To help better visualize the model's accuracy, here is an example of the plot of an actual image, the ground truth and a model's prediction put side-by-side to better present the model's accuracy after training
 ![Example of UNet model output](images/model-output-example-10.png)
 
-An example of model training metrics is shown above; more in-depth metrics can also be obtained by taking the directory of the log files generated from training & running (in your conda environment):
+The graphs of the model training and more in-depth metrics can be obtained by taking the directory of the log files generated from training & running (using *powershell*, in your conda environment):
 ```bash
 tensorboard --logdir <directory to logs>
 ```

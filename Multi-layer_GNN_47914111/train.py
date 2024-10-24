@@ -40,7 +40,7 @@ def train_epoch(model, optimizer, criterion, data, clip=1.0):
     """
     Perform one training epoch.
     """
-    # 1. Set the model to training mode
+    # 1. Set the model to  training mode
     model.train()
     
     # 2. Clear the previous gradients

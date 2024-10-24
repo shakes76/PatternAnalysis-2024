@@ -3,12 +3,15 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --gres=gpu:a100
-#SBATCH --partition=a100
-#SBATCH --time=0-00:30:00
+#SBATCH --gres=gpu:1
+#SBATCH --partition=comp3710
+#SBATCH --time=10:00:00
+#SBATCH --account=comp3710
+#SBATCH --mail-user=g.deo@student.uq.edu.au
 #SBATCH --job-name=s4742462_siamese_3710_project
 #SBATCH -o runner_siamese.log
 
 
 conda activate torch
-python3 dataset.py
+pip install -r requirements.txt
+python3 train.py

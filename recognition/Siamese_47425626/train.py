@@ -15,24 +15,25 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
 # Local flag to adjust parameters for testing
-LOCAL = True
+LOCAL = False
 
 # Parameters
-NUM_EPOCHS = 20 if not LOCAL else 10
+NUM_EPOCHS = 60 if not LOCAL else 10
 LEARNING_RATE = 0.001
-BATCH_SIZE = 32 if not LOCAL else 2
+BATCH_SIZE = 128
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
+SUBSET_SIZE = 0.5
 
 # Load data loaders without sampler for now
 train_loader, val_loader, test_loader = get_data_loaders(batch_size=BATCH_SIZE)
 
 # If LOCAL, use a subset of the train and validation datasets for faster testing
 if LOCAL:
-    train_subset_indices = np.random.choice(len(train_loader.dataset), size=int(0.05 * len(train_loader.dataset)), replace=False)
+    train_subset_indices = np.random.choice(len(train_loader.dataset), size=int(SUBSET_SIZE * len(train_loader.dataset)), replace=False)
     train_subset = Subset(train_loader.dataset, train_subset_indices)
     train_loader = DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True)
 
-    val_subset_indices = np.random.choice(len(val_loader.dataset), size=int(0.05 * len(val_loader.dataset)), replace=False)
+    val_subset_indices = np.random.choice(len(val_loader.dataset), size=int(SUBSET_SIZE * len(val_loader.dataset)), replace=False)
     val_subset = Subset(val_loader.dataset, val_subset_indices)
     val_loader = DataLoader(val_subset, batch_size=BATCH_SIZE, shuffle=False)
 

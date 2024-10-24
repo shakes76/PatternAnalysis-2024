@@ -63,12 +63,21 @@ In `predict.py`
 3. Run the `train.py` to train the model. This will save the best model as `best_model.pth` and generate loss and accuracy plots saved as `loss.png` and `accuracy.png`.
 4. Make sure the `random_state=48300588` is not modified, and run the `predict.py` to evaluate the model and visualise embedding. This will generate a t-SNE plot of node embedding saved as `tsne_embeddings.png`, and print sample predictions and test accuracy.
 
+## **Dependencies**
+
+- **Python**: 3.11.5 or higher
+- **PyTorch**: 2.4.0 or higher
+- **PyTorch Geometric**: 2.6.1 or higher
+- **NumPy**: 1.26.4 or higher
+- **scikit-learn**: 1.5.1 or higher
+- **Matplotlib**: 3.8.4 or higher
 
 ## **Hyper-parameters Comparison**
 
 Learning Rate:
 
-$$\begin{array}{|c|c|c|}
+$$
+\begin{array}{|c|c|c|}
 \hline
 \text{Learning Rate (lr)} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
 \hline
@@ -132,7 +141,8 @@ $$
 
 Data Size:
 
-$$\begin{array}{|c|c|c|c|c|}
+$$
+\begin{array}{|c|c|c|c|c|}
 \hline
 \text{Train Size} & \text{Val Size} & \text{Test Size} & \text{Early Stopping Epoch} & \text{Test Accuracy} \\
 \hline
@@ -142,7 +152,6 @@ $$\begin{array}{|c|c|c|c|c|}
 \hline
 \end{array}
 $$
-
 
 My final hyper-parameter values:
 
@@ -165,6 +174,9 @@ $$
 \end{array}
 $$
 
+Although the learning rate of **0.5** is relatively high, the momentum (**0.95**) can benefit that, which helps smooth the updates and avoid oscillations.
+The weight decay of **5e-4** assists in regularisation, preventing over-fitting by penalising large weights.
+The test accuracy of **94.87%** after early stopping demonstrates strong generalisation on the Facebook Large Page-Page Network dataset, which is a very good result for multi-class node classification.
 
 ## **Results and Visualisation**
 
@@ -230,9 +242,26 @@ Figure 3 t-SNE Visualisation of Node Embedding:
 
 ![tsne_embeddings.png](https://github.com/Astora-Solaire/PatternAnalysis-2024/blob/424b786df1b996195be2ab73e86c9d61986050da/recognition/plots/tsne_embeddings.png)
 
+Figure 1 shows the training and validation accuracy over epochs. The accuracy increases steadily and converges after around 100 epochs, where both training and validation accuracy are quite close.
+The highest validation accuracy reaches about **94.09%** after epoch 147, and early stopping was used to avoid over-fitting. The final test accuracy is impressive at **94.87%**.
 
+Figure 2 shows the training and validation loss, which both decrease significantly as training progresses.
+By the end of the training, the validation loss stabilises around **0.1961**, with the training loss slightly lower, showing no signs of divergence between the two.
 
+Figure 3 visualises the node embedding for different classes. The nodes are well-separated into distinct clusters, with minimal overlap between the classes.
 
+## **Conclusion**
 
+This model achieved excellent performance in classifying nodes in the Facebook dataset with high accuracy and well-separated t-SNE clusters. The hyper-parameters such as learning rate, momentum, and weight decay contributed to smooth training with good convergence of both accuracy and loss.
 
+## **References**
 
+Data taken from: https://snap.stanford.edu/data/facebook-large-page-page-network.html
+
+GCN model based on: https://arxiv.org/abs/1609.02907
+
+After the model was created and the code was able to run initially, I referenced the code from [# s4742823 - Task 2 - Facebook GCN #60]([s4742823 - Task 2 - Facebook GCN by tarpentine · Pull Request #60 · shakes76/PatternAnalysis-2023](https://github.com/shakes76/PatternAnalysis-2023/pull/60) that adds to the model batch normalisation layers (`nn.BatchNorm1d`) after each convolutional layer to stabilise and accelerate training.
+
+Additionally, [# s4742823 - Task 2 - Facebook GCN #60]([s4742823 - Task 2 - Facebook GCN by tarpentine · Pull Request #60 · shakes76/PatternAnalysis-2023](https://github.com/shakes76/PatternAnalysis-2023/pull/60) added self-loops to the adjacency matrix to include the node's own features during aggregation. It hits me that I can use add_self_loops from `torch_geometric.utils` to add self-loops to `edge_index`.
+
+Since I noticed the comments form **[gayanku](https://github.com/gayanku)** to [# Topic recognition - s4764408 #136]([Topic recognition - s4764408 by pulpasaur · Pull Request #136 · shakes76/PatternAnalysis-2023](https://github.com/shakes76/PatternAnalysis-2023/pull/136))mentioned *No early stop*, so I implemented early stopping based on validation loss to prevent over-fitting.

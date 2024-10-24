@@ -28,7 +28,7 @@ masks:
 ![3D U-Net Architecture](Content/UNET_model.png)
 
 ### Visualization
-Below is an example visualization of the segmentation process for a given slice from an MRI scan:
+Below is a visualization of the segmentation process by the model for a given slice from an MRI scan:
 - **Left**: Original MRI slice
 - **Center**: Ground truth segmentation mask
 - **Right**: Model prediction

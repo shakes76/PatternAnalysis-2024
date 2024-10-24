@@ -26,15 +26,15 @@ set_seed(SEED)
 
 # Hyperparameters
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BATCH_SIZE = 32
-NUM_EPOCHS = 30
-LEARNING_RATE = 1e-5
-LABEL_WEIGHTS = torch.tensor([1.0, 1.0, 1.5, 1.5, 2.5, 2.5]).to(DEVICE)
+BATCH_SIZE = 8
+NUM_EPOCHS = 50
+LEARNING_RATE = 1e-4
+LABEL_WEIGHTS = torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]).to(DEVICE)
 
 # Data loading
 transform_train = transforms.Compose([
     transforms.RandomVerticalFlip(),
-    transforms.RandomRotation(15),
+    transforms.RandomRotation(10),
 ])
 
 train_set = ProstateDataset(image_dir=TRAIN_IMG_DIR, mask_dir=TRAIN_MASK_DIR, transforms=transform_train, early_stop=False, normImage=True)
@@ -45,7 +45,7 @@ validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=Fa
 
 # Initialisations
 model = UNet2D(in_channels=1, out_channels=6, initial_features=64, n_layers=4).to(DEVICE)
-criterion = CombinedLoss(label_weights=LABEL_WEIGHTS, dice_weight=0.8)
+criterion = CombinedLoss(label_weights=LABEL_WEIGHTS, dice_weight=0.5)
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 # Lists to store epoch losses for plotting

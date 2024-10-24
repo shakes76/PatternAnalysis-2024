@@ -1,96 +1,135 @@
-# Recognition Tasks
-Various recognition tasks solved in deep learning frameworks.
+# Graph Node Classification Using GCN
 
-Tasks may include:
-* Image Segmentation
-* Object detection
-* Graph node classification
-* Image super resolution
-* Disease classification
-* Generative modelling with StyleGAN and Stable Diffusion
-Graph Convolutional Network for Facebook Page Classification
-This project implements a Graph Convolutional Network (GCN) to classify Facebook pages into four categories: Politicians, Government Organizations, Television Shows, and Companies. The classification task is based on a Facebook Page-Page network dataset where nodes represent Facebook pages, edges represent mutual likes, and features are page descriptions.
+This project implements a **Graph Convolutional Network (GCN)** to classify nodes in a **Facebook Page-Page Network**. The goal of this task is to classify Facebook pages into one of four categories:
+1. **Politicians**
+2. **Government Organizations**
+3. **Television Shows**
+4. **Companies**
 
-Project Overview
-The task is to perform semi-supervised multi-class node classification using a GCN. The input graph consists of pages as nodes, mutual likes as edges, and 128-dimensional feature vectors representing each page's description. The goal is to classify each page into one of the four predefined categories.
+The graph node classification task is an essential application in many real-world domains where the data is represented as a graph structure. In this case, nodes represent Facebook pages, and edges represent mutual "likes" between these pages. The model is trained to categorize each page based on its feature representation and the connections to other nodes in the network.
 
-Tasks Involved
-This project focuses on the following key tasks:
+## Problem and Algorithm Description
 
-Graph Node Classification: Using GCN to classify nodes (Facebook pages) based on their features and connections.
-Visualization: UMAP (Uniform Manifold Approximation and Projection) is used to reduce the dimensionality of the node embeddings and visualize the classification results.
-Data Description
-The dataset used in this project is preprocessed and provided in the form of a .npz file containing:
+The problem at hand involves classifying nodes in a graph based on their features and connectivity. The algorithm used is a **Graph Convolutional Network (GCN)**, which is particularly effective for learning graph-structured data. GCNs generalize traditional convolution operations to graphs, where each node aggregates information from its neighbors to update its representation. This is especially useful for semi-supervised learning tasks like node classification.
 
-edges: A 171,002 x 2 matrix representing the mutual likes (connections) between Facebook pages (nodes).
-features: A 22,470 x 128 matrix, where each row represents a 128-dimensional feature vector for a Facebook page.
-target: A 22,470-length array representing the class labels for each page, with values ranging from 0 to 3, corresponding to the four categories.
-Data Splitting
-80% of the data is used for training.
-10% is used for testing.
-10% is used for validation.
-Model Architecture
-The Graph Convolutional Network (GCN) used in this project has the following architecture:
+The GCN in this project has three main components:
+- **Graph Convolution Layers**: These layers propagate and transform node feature information based on their neighbors' features.
+- **Dropout Layers**: These help prevent overfitting by randomly zeroing out node activations during training.
+- **ReLU Activation Function**: Introduces non-linearity and helps mitigate the vanishing gradient problem.
 
-Graph Convolutional Layers: Three GraphConv layers, which propagate information between connected nodes.
-Dropout Layers: Dropout is applied after each GraphConv layer to prevent overfitting.
-ReLU Activation: Each GraphConv layer uses ReLU as the activation function to introduce non-linearity.
-Linear Classifier: A final fully connected layer classifies the nodes into one of four categories.
-Detailed Architecture:
+### Visualization
 
-Input dimension: 128
-Hidden layers: 3 GraphConv layers with dimensions [128, 128, 256, 256]
-Final output dimension: 4 (number of classes)
-Training Details
-Hyperparameters
-Learning Rate: 0.001
-Optimizer: Adam with weight decay of 5e-4
-Epochs: 100
-Dropout Rate: 0.5
-Loss Function: Cross-Entropy Loss
-Training Process
-During the training process, the model learns to classify nodes based on their features and neighbors. The following metrics are tracked:
+The learned embeddings of the nodes are visualized using **UMAP (Uniform Manifold Approximation and Projection)**, a dimensionality reduction technique. The plots generated before and after training show how well the model has classified nodes into distinct categories.
 
-Training Loss: Measures how well the model fits the training data.
-Test Accuracy: Measures the model's performance on the test set.
-At the end of training, a UMAP plot is generated to visualize the learned embeddings of the nodes.
+![UMAP Before Training](./p1.png)
+*Figure 1: UMAP visualization of the node embeddings before training*
 
-Training Results
-The model was trained for 100 epochs, and the training loss and test accuracy over time are shown below. In the final few epochs, the loss stabilizes and the test accuracy reaches around 92.85%.
+![UMAP After Training](./p2.png)
+*Figure 2: UMAP visualization of the node embeddings after training*
 
-Example training output:
+![Training Loss and Test Accuracy](./p4.png)
+*Figure 3: Training Loss and Test Accuracy Over 100 Epochs*
 
-Epoch 100/100, Loss: 0.2588612735271454, Test Accuracy: 0.9285714030265808
-UMAP Visualization
-After training, UMAP is applied to the learned node embeddings to reduce them to 2D for visualization purposes. The UMAP plot shows how well the model has learned to separate the nodes into different classes.
+![UMAP After 100 Epochs](./p3.png)
+*Figure 4: UMAP visualization of the node embeddings after 100 epochs*
 
 
-The different colors in the UMAP plot represent the four classes, with each point corresponding to a Facebook page.
+## Dependencies
 
-Files Overview
-dataset.py: Contains functions for loading and preparing the data. It uses DGL to create the graph and prepare the training/test masks.
-modules.py: Defines the GCN model architecture, including GraphConv layers, ReLU activation, and dropout.
-train.py: The main training script, which trains the GCN model, tracks the loss and accuracy, and generates the UMAP plot for visualization.
-predict.py: Loads the trained model and visualizes the results using UMAP.
-Trained Model: By default, the model weights are saved in the _pycache_ directory under the name gcn_model.pth.
-Running the Project
-Training the Model
-To train the model, use the following command:
+This project requires the following dependencies:
+- `torch` (PyTorch) for building and training the GCN model
+- `dgl` (Deep Graph Library) for constructing and processing graph data
+- `numpy` for numerical operations
+- `matplotlib` for plotting graphs and visualizing training results
+- `umap-learn` for dimensionality reduction in node embedding visualization
 
+## Version Information
+
+For reproducibility, it's important to note the following versions:
+
+- Python 3.8+
+- torch 1.10+
+- dgl 0.7+
+- umap-learn 0.5.1+
+
+## Input and Output
+
+### Input:
+The input data is a graph where:
+
+- **Nodes**: Facebook pages, each with a 128-dimensional feature vector representing the page description.
+- **Edges**: Connections (mutual likes) between pages.
+
+### Output:
+The output is a classification of each node into one of the four categories:
+- **Politicians**
+- **Government Organizations**
+- **Television Shows**
+- **Companies**
+
+### Example:
+A node with the following features:
+
+```python
+[0.23, 0.55, 0.12, ..., 0.71]
+```
+### Installation Instructions
+
+To get started, clone this repository and install the dependencies in a virtual environment:
+
+```bash
+git clone <repository-url>
+cd <repository-directory>
+python -m venv venv
+source venv/bin/activate 
+pip install -r requirements.txt
+```
+
+## Training and Testing Instructions
+
+### To train the model, run:
+
+```bash
 python train.py
-This will train the GCN on the Facebook Page-Page network and generate the UMAP visualization.
+```
 
-Visualizing the Results
-Once the model is trained, you can visualize the node embeddings using UMAP by running:
+This command will:
+- Load the dataset and create the graph structure.
+- Train the GCN model for 100 epochs.
+- Track the training loss and test accuracy during training.
 
+### To visualize the trained node embeddings using UMAP, run:
+
+```bash
 python predict.py
-This will load the trained model and generate a UMAP plot showing how well the model has classified the nodes into the four categories.
+```
 
-Dependencies
-The following Python packages are required to run the project:
+This will load the pre-trained model and generate a 2D UMAP plot of the learned node embeddings.
 
-torch: For building and training the GCN model.
-dgl: For creating and manipulating graph data structures.
-numpy: For handling numerical data.
-matplotlib: For plotting training metrics and UMAP visualizations.
-umap-learn: For reducing the dimensionality of the learned node embeddings.
+## Pre-processing
+
+### Data Preprocessing
+The dataset is provided in a `.npz` format, which contains:
+- **Edges**: A 171,002 x 2 matrix representing connections between nodes.
+- **Features**: A 22,470 x 128 matrix representing node features (page descriptions).
+- **Targets**: A 22,470-length array representing the class labels (0 to 3) for each node.
+
+### Splitting the Data
+The data is split into training and test sets as follows:
+- **Training Set**: 80% of the nodes
+- **Test Set**: 20% of the nodes
+
+The model uses random masking to differentiate between training and testing nodes. During the training phase, only the training set is used to update the model weights, while the validation and test sets are used for evaluation.
+
+### Preprocessing Reference
+The dataset and pre-processing techniques are based on the **Facebook Large Page-Page Network** from [Stanford SNAP](https://snap.stanford.edu/data/facebook-large-page-page-network.html).
+
+## Justification for Training, Validation, and Testing Splits
+
+The chosen split (80% for training,and 20% for testing) ensures that the model has enough data to learn meaningful representations while also being evaluated on unseen data. The test set allows us to assess the model's generalization ability, while the validation set is used for hyperparameter tuning and to prevent overfitting.
+
+
+
+
+
+

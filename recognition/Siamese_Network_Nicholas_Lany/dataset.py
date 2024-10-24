@@ -39,30 +39,27 @@ class ISICDataset(Dataset):
         return img, label
 
 class SiameseDataset(Dataset):
-    def __init__(self, dataset, transform=None):
+    def __init__(self, dataset, num_pairs=50000, transform=None):
         self.dataset = dataset
         self.transform = transform
+        # self.pairs = self.generate_pairs(num_pairs)
+        self.len = num_pairs*256*256*3*2 # Can be arbitrary since pairs can keep being generated
 
-    def __len__(self):
-        return len(self.dataset)
-
-    # Yes, this function kind of returns a new pair of images and label each time you call the same index... But does it matter?
-    def __getitem__(self, index):
+    def generate_pair(self, index):
+        index = index % len(self.dataset)
         img0_tuple, label0 = self.dataset[index]
-
-        # We need approximately 50% of images to be in the same class
         should_get_same_class = random.randint(0, 1)
 
         if should_get_same_class:
-            # Look until the same class image is found
+            # Find an image with the same class
             while True:
-                img1_tuple, label1 = self.dataset[random.randint(0, len(self.dataset) - 1)]
+                img1_tuple, label1 = random.choice(self.dataset)
                 if label0 == label1:
                     break
         else:
-            # Look until a different class image is found
+            # Find an image with a different class
             while True:
-                img1_tuple, label1 = self.dataset[random.randint(0, len(self.dataset) - 1)]
+                img1_tuple, label1 = random.choice(self.dataset)
                 if label0 != label1:
                     break
 
@@ -76,6 +73,18 @@ class SiameseDataset(Dataset):
         similarity_label = torch.tensor(int(label0 != label1), dtype=torch.float32)
 
         return img0, img1, similarity_label
+
+    def generate_pairs(self, num_pairs):
+        pairs = []
+        for _ in range(num_pairs):
+            pairs.append(self.generate_pairs())
+        return pairs
+
+    def __len__(self):
+        return self.len
+
+    def __getitem__(self, index):
+        return self.generate_pair(index)
 
 if __name__ == "__main__":
     dataset_path = kagglehub.dataset_download("nischaydnk/isic-2020-jpg-256x256-resized")

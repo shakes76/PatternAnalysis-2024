@@ -4,19 +4,19 @@ import pandas as pd
 import kagglehub
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from modules import CNN
+from modules import CNN, SiameseNetwork
 from dataset import ISICDataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 prediction_threshold = 0.5
 
 def load_model(model_path):
-    model = CNN(shape=(256, 256), num_classes=2).to(device)  # Load CNN model
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()  # Set model to evaluation mode
-    return model
+    siamese_model = SiameseNetwork().to(device)
+    siamese_model.load_state_dict(torch.load(model_path, map_location=device))
+    return siamese_model.cnn 
 
-def classify_images(model, dataset, transform=None):
+
+def classify_images(model, dataset, transform=None, num_samples=100):
     dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
     
     correct_predictions = 0
@@ -24,6 +24,9 @@ def classify_images(model, dataset, transform=None):
 
     with torch.no_grad():
         for images, labels in dataloader:
+            if total_images >= num_samples:
+                break
+
             images, labels = images.to(device), labels.to(device)
 
             outputs = model(images)
@@ -46,7 +49,21 @@ if __name__ == "__main__":
         transforms.ToTensor(),
     ])
 
-    isic_dataset = ISICDataset(dataset_path=dataset_image_path, metadata_path=meta_data_path, transform=transform)
+    augment_transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(30),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+    ])
+
+    isic_dataset = ISICDataset(
+        dataset_path=dataset_image_path,
+        metadata_path=meta_data_path,
+        transform=transform,
+        augment_transform=augment_transform,
+        num_augmentations=5
+    )
 
     model = load_model(model_save_path)
+    model.eval()
     classify_images(model, isic_dataset, transform=transform)

@@ -15,6 +15,16 @@ from PIL import Image
 
 # Helper function to extract patient ID from the filename
 def extract_patient_id(file_name):
+    """
+    Function to extract the first part of the file name out, i.e., patientID
+    E.g. 23542_290.jpeg will return 23542
+
+    Parameters:
+        file_name: Name of file
+    
+    Returns: 
+        The patientID from the file name
+    """
     return re.match(r"([^_]+)_", file_name).group(1)
 
 class ADNIDataset(Dataset):
@@ -45,7 +55,7 @@ class ADNIDataset(Dataset):
         return image, label
     
 
-def load_adni_data(root_dir, valid_size=0.2, batch_size=32, testing=False):
+def load_adni_data(root_dir, valid_size=0.1, batch_size=32, testing=False):
     """
     Load the ADNI dataset and ensure no leakage by splitting data subject-wise.
     
@@ -83,7 +93,7 @@ def load_adni_data(root_dir, valid_size=0.2, batch_size=32, testing=False):
         
         # Perform a patient-wise split
         unique_patients = set(patient_ids)
-        train_patients, val_patients = train_test_split(list(unique_patients), test_size=valid_size, random_state=42)
+        train_patients, val_patients = train_test_split(list(unique_patients), test_size=0.1, random_state=42)
         
         # Split the dataset into training and validation based on patient IDs
         train_data = [(img, lbl) for img, lbl, pid in data if pid in train_patients]

@@ -1,3 +1,11 @@
+"""
+This file contains the code used to train, validate, test the GFNet model based
+on the ADNI dataset. The best epoch with the best validation accuracy saves the
+model weights to be used as inference. Performance from training is also 
+plotted and saved as a figure.
+
+Author: Kevin Gu
+"""
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -57,9 +65,43 @@ def plot_graphs(train_loss: list, validation_loss: list, train_accuracy: list, v
         ax.set_title(f"Training and Validation {labels[index]}")
         ax.legend()
         ax.grid(True)
-        
+
     plt.tight_layout()
     plt.savefig("training_figures.png")
+
+
+def test_model(model: nn.Module, device: str, root_dir: str) -> float:
+    """
+    Test the model on the test dataset.
+
+    Parameters:
+        model: Model to test on
+        device: Device to run testing on
+        root_dir: Root directory of ADNI dataset
+
+    Returns:
+        accuracy: Accuracy as a percentage from testing on test set
+    """
+     # Testing loop
+    testing_start = time.time()
+    model.eval()  # Set the model to evaluation mode
+    correct = 0
+    total = 0
+    test_loader = load_adni_data(root_dir=root_dir, testing=True)
+    with torch.no_grad():  # No need to compute gradients during evaluation
+        for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+    accuracy = correct / total
+    testing_time = time.time() - testing_start
+    print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
+    print("Accuracy", accuracy)
+
+    return accuracy
 
 def main():
 
@@ -182,29 +224,31 @@ def main():
 
 
     # Testing loop
-    testing_start = time.time()
-    model.eval()  # Set the model to evaluation mode
-    correct = 0
-    total = 0
-    test_loader = load_adni_data(root_dir=root_dir, testing=True)
-    with torch.no_grad():  # No need to compute gradients during evaluation
-        for inputs, labels in test_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+    accuracy = test_model(model, device, root_dir)
 
-    accuracy = correct / total
-    testing_time = time.time() - testing_start
-    print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
-    print("Accuracy", accuracy)
+    # testing_start = time.time()
+    # model.eval()  # Set the model to evaluation mode
+    # correct = 0
+    # total = 0
+    # test_loader = load_adni_data(root_dir=root_dir, testing=True)
+    # with torch.no_grad():  # No need to compute gradients during evaluation
+    #     for inputs, labels in test_loader:
+    #         inputs, labels = inputs.to(device), labels.to(device)
+    #         outputs = model(inputs)
+    #         _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
+    #         total += labels.size(0)
+    #         correct += (predicted == labels).sum().item()
 
-    print("\n\n\n\n")
-    print("Validation accuracy:", validation_accuracy_list)
-    print("Validation loss:", validation_loss_list)
-    print("Training accuracy:", train_accuracy_list)
-    print("Training loss:", train_loss_list)
+    # accuracy = correct / total
+    # testing_time = time.time() - testing_start
+    # print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
+    # print("Accuracy", accuracy)
+
+    # print("\n\n\n\n")
+    # print("Validation accuracy:", validation_accuracy_list)
+    # print("Validation loss:", validation_loss_list)
+    # print("Training accuracy:", train_accuracy_list)
+    # print("Training loss:", train_loss_list)
 
 
 

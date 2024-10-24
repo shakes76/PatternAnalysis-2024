@@ -260,3 +260,4 @@ class GFNet(nn.Module):
         x = self.final_dropout(x)
         x = self.head(x)
         return x
+

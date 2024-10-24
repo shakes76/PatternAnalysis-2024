@@ -1,10 +1,12 @@
 """
-Utility functions useful across the multiple files.
+Utility functions useful across the multiple files. Specifically, functions to
+get the current device and also dataset root.
 
 Author: Kevin Gu
 """
 import torch
 import platform
+
 
 def get_device() -> str:
     """
@@ -19,6 +21,7 @@ def get_device() -> str:
         device = "cpu"
         print("Could not find Cuda GPU, using CPU")
     return device
+
 
 def get_dataset_root() -> str:
     """

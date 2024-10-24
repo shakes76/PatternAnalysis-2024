@@ -14,7 +14,7 @@ model = UNet().to(device)
 criterion = torch.nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-num_epochs = 50
+num_epochs = 10
 for epoch in range(num_epochs):
     model.train()
     for images in dataloader:
@@ -26,5 +26,6 @@ for epoch in range(num_epochs):
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
-
+        torch.cuda.empty_cache()
     print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+    torch.cuda.empty_cache()

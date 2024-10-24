@@ -265,3 +265,5 @@ After the model was created and the code was able to run initially, I referenced
 Additionally, [# s4742823 - Task 2 - Facebook GCN #60]([s4742823 - Task 2 - Facebook GCN by tarpentine · Pull Request #60 · shakes76/PatternAnalysis-2023](https://github.com/shakes76/PatternAnalysis-2023/pull/60) added self-loops to the adjacency matrix to include the node's own features during aggregation. It hits me that I can use add_self_loops from `torch_geometric.utils` to add self-loops to `edge_index`.
 
 Since I noticed the comments form **[gayanku](https://github.com/gayanku)** to [# Topic recognition - s4764408 #136]([Topic recognition - s4764408 by pulpasaur · Pull Request #136 · shakes76/PatternAnalysis-2023](https://github.com/shakes76/PatternAnalysis-2023/pull/136))mentioned *No early stop*, so I implemented early stopping based on validation loss to prevent over-fitting.
+
+I asked ChatGPT to give me some hints of GCN model, and brief introduction. I didn't copy the code from ChatGPT directly, I did a lot modifications.

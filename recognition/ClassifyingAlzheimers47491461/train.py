@@ -10,12 +10,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 import dataset
-import modules
+from modules import *
 
 torch.device("cuda")
 
-patch_dim = 16
-latent_dim = 768
-drop = 0.1
-# Matching dimensions from ViT paper
-size = 224

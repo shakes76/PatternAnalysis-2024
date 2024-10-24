@@ -25,10 +25,11 @@ This algorithm aims to provide a fast and accurate form of lesion detection from
 ![Example of lesion segmentation.](./figures/lesion_detection.png)
 
 ### 2.2 2017 ISIC Challenge
-To train the model, a dataset from the 2017 ISIC challenge was used: this includes 
+To train the model, a dataset from the 2017 ISIC challenge was used. This includes :
 - 2000 training samples
 - 200 testing samples
 - 150 validation samples
+
 This training validation split was used since it was the one provided by the ISIC challenge, and the approximately 80/10/10 split is seen to be optimal for large scale training. 
 
 Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1 [3].
@@ -110,6 +111,7 @@ predict.py contains a method to visualise inference (example usage) of the train
 ![Example of predict.py output.](./figures/predict_examples.png)
 
 predict.py also has a function to plot a single testcase's image, true lesion bounding box, and resulting bounding box. Below is an example **input** image for the model:
+
 ![Example of image input (testcase 00000007).](./figures/ISIC_sample.jpg)
 
 And here is the corresponding example **output** from model prediction:
@@ -142,3 +144,5 @@ pandas==2.2.2
 [1]: YOLO Algorithm for Object Detection Explained, https://www.v7labs.com/blog/yolo-object-detection 
 
 [2]: YOLOv11 Architecture Explained: Next-Level Object Detection with Enhanced Speed and Accuracy, https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71
+
+[4]: Ultralytics models, https://docs.ultralytics.com/models/

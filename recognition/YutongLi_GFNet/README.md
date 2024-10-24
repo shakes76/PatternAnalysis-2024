@@ -41,13 +41,38 @@ img_size=224    # input image size
 patch_size=16    # patch size
 in_chans=1      # input channel 
 num_classes=2    # number of classes
-embed_dim=768    # embedding dimension
+embed_dim=512    # embedding dimension
 depth=12    # depth of transformer
 drop_rate=0.    # dropout rate
-drop_path_rate=0.    # stochastic depth rate
+drop_path_rate=0.1    # stochastic depth rate
 norm_layer=None    # normalization layer
 ```
 Loss function use cross entropy loss. Use Adam optimerzer and set the learning rate to 0.001 and the weight decay to 0.001.
+
+## Data Processing
+Firstly, download the AD_NC dataset. Split the original train set into the new train set and validation set with a 90% to 10% ratio.
+For the new train set, do the following data augmentation.  
+```
+transforms.Grayscale(num_output_channels=1),
+transforms.RandomRotation(20),
+CropBrainRegion(),
+transforms.Resize((224, 224)),
+transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+transforms.ToTensor(),
+transforms.Normalize(mean=[0.1174], std=[0.2163])
+```
+for the val and test set, do the following data augmentation.
+```
+transforms.Grayscale(num_output_channels=1),
+CropBrainRegion(),
+transforms.Resize((224, 224)),
+transforms.ToTensor(),
+transforms.Normalize(mean=[0.1174], std=[0.2163])
+```
+mean and standard deviation is calculated by the overall dataset.  
+CropBrainRegion is a function that use cv2 to cut the black area of a brain image. By this way we can let the model focus on the brain area.  
+
+
 
 
 

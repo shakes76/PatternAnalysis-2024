@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from modules import GNNModel, AdvanceGNNModel
+from modules import GNNModel, AdvanceGNNModel, AdvanceGATModel
 from dataset import load_facebook_data, split_data
 from train import train_model, test_model
 import matplotlib.pyplot as plt
@@ -46,12 +46,16 @@ def visualise_results(data, pred):
         The data object containing the node features and edge index
     pred : torch.tensor
         The predicted labels for the data
+
+    Returns:
+    --------
+    None
     """
     # Get the true labels
     true = data.y[data.test_mask].cpu().numpy()
-
     predicted_labels = pred[data.test_mask].cpu().numpy()
 
+    # give classifications to the labels
     # confusion matrix
     cm = confusion_matrix(true, predicted_labels)
     plt.figure(figsize=(10, 8))
@@ -59,6 +63,7 @@ def visualise_results(data, pred):
                 yticklabels =['tvshow', 'government', 'company', 'politician'])
     plt.xlabel('Predicted')
     plt.ylabel('True')
+    plt.title("Confusion Matrix - test data")
     print("Confusion Matrix:")
     plt.show()
 
@@ -93,10 +98,13 @@ if __name__ == '__main__':
     data.test_mask = test_mask
 
     # initialize the model
-    # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3) - not in use
-    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+    # each model is test to see which one gives the best results
+    # GNN model - not in use - only learn from one predict class
+    # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3) 
+    # model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+    model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
 
-    path2 =  "recognition/Q2_Facebook_Data/modelAdvancedGNN2.pth"
+    path2 =  "recognition/Q2_Facebook_Data/modelAdvanced2.pth"
     # Load trained model weights
     # model.load_state_dict(torch.load('recognition/Q2_Facebook_Data/modelEnhance1.pth')) - not in use
     model.load_state_dict(torch.load(path2))

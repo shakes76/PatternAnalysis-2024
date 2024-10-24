@@ -1,14 +1,15 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from modules import GNNModel, AdvanceGNNModel
+from modules import GNNModel, AdvanceGNNModel, AdvanceGATModel
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from dataset import load_facebook_data, split_data
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix 
+import seaborn as sns
 
 
-def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4, patience=20):
+def train_model(data, model, epochs=20, learning_rate=0.0012, weight_decay=2e-4, patience=20):
     """
     This function trains the given model on the given data.
     The training loop is run for the specified number of epochs.
@@ -28,6 +29,9 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
         The learning rate for the Adam optimiser
     weight_decay : float, optional (default=2e-4)
         The weight decay for the Adam optimiser
+    patience : int, optional (default=20)
+        The number of epochs to wait for an improvement in 
+        validation accuracy before stopping training
    
     Returns:
     --------
@@ -43,8 +47,8 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
     # optimiser
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay= weight_decay)
 
-    # loss function
-    loss_fn = torch.nn.CrossEntropyLoss()
+    # basic cross entropy loss
+    loss_fn = torch.nn.CrossEntropyLoss()     
 
     # learning rate scheduler
     scheduler = ReduceLROnPlateau(optimiser, mode='max', factor=0.4, patience=7, verbose=True)
@@ -96,7 +100,7 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
             patience_counter = 0
 
             # save the model
-            torch.save(model.state_dict(), "recognition/Q2_Facebook_Data/modelAdvancedGNN2.pth")
+            torch.save(model.state_dict(), "recognition/Q2_Facebook_Data/modelAdvanced2.pth")
 
         else:
             patience_counter += 1
@@ -116,7 +120,7 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
     train_acc = int(correct.sum()) / int(data.train_mask.sum())
     print(f"Train Accuracy: {train_acc:.4f}")
 
-    # confusion matrix
+    # print confusion matrix to console
     train_preds = out[data.train_mask].argmax(dim=1).cpu().numpy()
     train_labels = data.y[data.train_mask].cpu().numpy()
 
@@ -130,7 +134,7 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
     val_acc = int(correct.sum()) / int(data.val_mask.sum())
     print(f"Validation Accuracy: {val_acc:.4f}")
     
-    # confusion matrix
+    # print confusion matrix to console
     val_preds = out[data.val_mask].argmax(dim=1).cpu().numpy()
     val_labels = data.y[data.val_mask].cpu().numpy()
 
@@ -138,7 +142,7 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
     print("Confusion Matrix for Validation Data:")
     print(val_confusion_matrix)
 
-    # PLotting validation acc and training loss on seprate graphs
+    # PLotting validation acc and training loss on separate graphs
     plt.figure(figsize=(10, 8))
     plt.plot(val_accuracies, label='Validation Accuracy')
     plt.legend()
@@ -147,12 +151,11 @@ def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4
     plt.savefig('recognition/Q2_Facebook_Data/val_accuracy.png')
     plt.show()
 
-
     plt.plot(train_losses, label='Train Loss')
     plt.plot(val_losses, label='Validation Loss')
     plt.legend()
     plt.title('Losses')
-    # save the graph
+    # save the graph 
     plt.savefig('recognition/Q2_Facebook_Data/losses.png')
     plt.show()
 
@@ -163,6 +166,9 @@ def test_model(data, model):
     """
     This function tests the GNN model on the give data path.
     The test accuracy is printed to the console.
+    The confusion matrix is printed to the console.
+    The classification report is printed to the console.
+    The confusion matrix is plotted and saved to a file.
 
     Parameters:
     -----------
@@ -174,8 +180,7 @@ def test_model(data, model):
     Returns:
     --------
     test_acc : float
-        The test accuracy of the model  
-
+        The test accuracy of the model        
 
     """
     model.eval()
@@ -185,8 +190,27 @@ def test_model(data, model):
         correct = pred[data.test_mask] == data.y[data.test_mask]
         test_acc = int(correct.sum()) / int(data.test_mask.sum())
         print(f"Test Accuracy: {test_acc:.4f}")
-        return test_acc
 
+    # confusion matrix
+    test_preds = out[data.test_mask].argmax(dim=1).cpu().numpy()
+    test_labels = data.y[data.test_mask].cpu().numpy()
+
+    # cosnle printed confusion matrix and classification report
+    print("Classification Report:")
+    print(classification_report(test_labels, test_preds, target_names=['tvshow', 'government', 'company', 'politician']))
+
+    # confusion matrix plot
+    cm = confusion_matrix(test_labels, test_preds)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels =['tvshow', 'government', 'company', 'politician'], 
+                yticklabels =['tvshow', 'government', 'company', 'politician'])
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title("Confusion Matrix - test data")
+    print("Confusion Matrix:")
+    plt.show()
+
+    return test_acc
 
 
 if __name__ == '__main__':
@@ -194,8 +218,17 @@ if __name__ == '__main__':
     This main function trains a GNN model on the Facebook dataset.
     The data is loaded using the load_facebook_data function from the dataset module.
     The model is trained using the train_model function(GNN).
+
+    Three different models are implemented in this block to test the best model for the given dataset.
+    1. Basic GNN model -not in use
+    2. Advanced GNN model -not in use
+    3. Advanced GAT model
+    The best model is selected based on the performance of the model on the given dataset.
+    Other models are commented out in the code.
+
     The trained model is tested using the test_model function.
-    The model is saved to a file using torch.save.
+    The test accuracy, confusion matrix and classification report are printed to the console.
+    The confusion matrix is plotted and saved to a file.
     """
     # File paths
     path = "recognition/Q2_Facebook_Data/facebook_large"
@@ -203,15 +236,19 @@ if __name__ == '__main__':
     edges_path = f"{path}/musae_facebook_edges.csv"
     target_path = f"{path}/musae_facebook_target.csv"
 
-
     # load the data
     data = load_facebook_data(features_path, edges_path, target_path)  
-
 
     # initialise the model
     # Basic GNN - not used
     # model = GNNModel(input_dim=128, hidden_dim=64, output_dim=4, num_layers=3)
-    model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+
+    # Advance GNN - not used
+    # model = AdvanceGNNModel(input_dim=128, hidden_dim=[512])
+
+    # Advance GAT 
+    model = AdvanceGATModel(input_dim=128, hidden_dim=[128,128])
+
     # train the model
     model = train_model(data, model)
 
@@ -221,4 +258,5 @@ if __name__ == '__main__':
     # save the model - not in use as model is saved in train_model function
     # modelName = "recognition/Q2_Facebook_Data/modelEnhance1.pth"
     # modelName = "recognition/Q2_Facebook_Data/modelAdvance1.pth"
+    # modelName = "recognition/Q2_Facebook_Data/modelAdvance2.pth"
     # torch.save(model.state_dict(), modelName)

@@ -23,15 +23,6 @@ def get_mean_std(dataloader):
 
     return mean, std 
 
-'''
-Gets the list of all patient ID's from the data
-'''
-def get_patient_ids(data_path):
-    # Files are encoded with the ID and the image number seperated by an underscore.
-    all_files = [os.path.basename(file) for _, _, filenames in os.walk(data_path) for file in filenames]
-    patient_ids = list(set([file.split('_')[0] for file in all_files]))
-    return patient_ids
-
 """ Returns the train and test dataloaders for the ADNI dataset """
 def get_dataloaders(batch_size=32, image_size=224, path="recognition/GFNet-47428364/AD_NC"):
     # Create transformer
@@ -49,14 +40,15 @@ def get_dataloaders(batch_size=32, image_size=224, path="recognition/GFNet-47428
     # Normalised transformations for training
     train_transforms = transforms.Compose([
         transforms.Resize((image_size, image_size)),
-        transforms.RandomRotation(5),
-        transforms.RandomResizedCrop(image_size, scale=(0.9, 1.1)),
+        transforms.RandomAffine(degrees=10, translate=(0.15, 0.15), scale=(0.9, 1.1)),
+        transforms.ColorJitter(brightness=0.4, contrast=0.4),
+        transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.15, 2.0)),
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
     ])
 
     # Normalised transformations for testing
-    test_transformers = transforms.Compose([
+    test_transforms = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
@@ -64,14 +56,10 @@ def get_dataloaders(batch_size=32, image_size=224, path="recognition/GFNet-47428
 
     # Generate datasets
     train_dataset = ImageFolder(root=path+"/train", transform=train_transforms)
-    test_dataset = ImageFolder(root=path+"/test", transform=test_transformers)
-
-    patient_ids = get_patient_ids(path+"/train")
-    train_indices = [i for i, (path_, _) in enumerate(train_dataset.samples) if path_.split('\\')[-1].split('_')[0] in patient_ids]
-    train_subset = Subset(train_dataset, train_indices)
+    test_dataset = ImageFolder(root=path+"/test", transform=test_transforms)
                               
     # Generate dataloaders
-    train_dataloader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_dataloader, test_dataloader

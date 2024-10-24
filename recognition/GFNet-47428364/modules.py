@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.fft
 
-""" Trunk Normal Method """
+""" Trunc Normal Method """
 def trunc_normal_(tensor, mean=0., std=1., a=-2., b=2.):
     def norm_cdf(x):
         return (1. + math.erf(x / math.sqrt(2.))) / 2.

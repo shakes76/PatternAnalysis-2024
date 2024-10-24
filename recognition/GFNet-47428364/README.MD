@@ -44,7 +44,7 @@ model.load_state_dict(torch.load("GFNet-Model.pth"))
 
 ### Outputs
 ```
-Test - Loss: 0.7512, Accuracy: 68.52%
+Test - Loss: 0.5908, Accuracy: 70.41%
 ```
 
 ## Pre-Processing

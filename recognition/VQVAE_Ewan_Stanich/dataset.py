@@ -17,7 +17,7 @@ device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 def load_data(testing=False, batch_size=16):
     """
         Loads the data from the Nifti files and returns the training, sting and validation data loaders. The
-        validation set is taken to be half od the provided training set, as it is important to be validating the model
+        validation set is taken to be half of the provided training set, as it is important to be validating the model
         in each epoch to judge performance, yet also test the performance of the final model on unseen data.
 
         Input:

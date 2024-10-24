@@ -70,8 +70,9 @@ This image demonstrates the full capability of the model to generate recognisabl
 To reproduce the results complete the following:
 
 1. Install all required dependencies
-2. Run the train.py file, this will create/wipe all necessary output folders and train the model. The training loop will update the SSIM scores plot and training loss plot on each epoch completion and at specified intervals will generate output images to compare progression. After training is complete the final image will be output.
-3. Run the predict.py file to generate more reconstructed images.
+2. Ensure to change the folder destination strings at the top of the load_data and load_test_data functions in dataset.py to wheverever you have the nifti files stored.
+3. Run the train.py file, this will create/wipe all necessary output folders and train the model. The training loop will update the SSIM scores plot and training loss plot on each epoch completion and at specified intervals will generate output images to compare progression. After training is complete the final image will be output.
+4. Run the predict.py file to generate more reconstructed images.
 
 It is recommended to run these files on a device with a GPU otherwise training may take much longer than intended. By following these steps it will be possible to replicate the above results.
 
@@ -98,6 +99,8 @@ Plots of training loss and validation SSIM scores are also output over each epoc
 ## Preprocessing the Data
 
 The data was taken from the CSIRO HipMRI Dataset in the form of Nifti files. It was found that not all of that data was of the same dimension or shape. As such, when loading in the data it was checked whether each image had the correct dimension and shape, if they didn't they either had their dimension reduced, image resized or both. After this had been ensures, the data was loaded as grayscale with one channel and then normalised to ensure more efficient training and better performance. The data was then put into a pytorch DataLoader and passed into the model.
+
+Note that the data itself is grayscale images, but for better interpretation of the generated images, a colourmap was used to give more detail and allow better comparison between original and reconstructed images.
 
 ## Splitting the Dataset
 

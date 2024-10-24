@@ -1,3 +1,22 @@
+""" 
+This script evaluates a trained Vision Transformer (ViT) model for image classification.
+
+Loads a saved ViT model and test dataset.
+Visualizes predictions on a batch of images, displaying true and predicted labels.
+
+Evaluates the model performance with metrics such as precision, recall, and F1-score, along with a confusion matrix.
+
+Key Functions:
+1. `predict_batch`: Loads a batch of images, applies the model to predict labels, and visualizes the results with true and predicted labels.
+2. `evaluate_model`: Evaluates the model on a dataset, generates a classification report, and plots a confusion matrix.
+3. `imshow`: Helper function to unnormalize and display images with predictions and probabilities.
+4. `main`: Runs the prediction or evaluation process, depending on user input.
+
+
+Saves classification reports and confusion matrices as images and text files.
+Includes options for running evaluation or visualizing model predictions. 
+
+"""
 import torch
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt

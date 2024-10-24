@@ -1,3 +1,16 @@
+
+""" 
+This script trains a Vision Transformer (ViT) model for image classification using PyTorch.
+
+Loads datasets and creates data loaders for training, validation, and testing.
+Initializes the ViT model with customizable parameters (e.g., patch size, transformer layers).
+
+Implements a full training loop with validation and learning rate scheduling.
+Saves model checkpoints and plots for losses/accuracies, and allows resuming from checkpoints.
+
+Uses argparse for flexible hyperparameter tuning and options like plotting and data augmentation.
+"""
+
 from modules import ViT
 from dataset import get_dataloaders
 from pathlib import Path

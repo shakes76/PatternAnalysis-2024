@@ -18,6 +18,7 @@ ipykernel @ file:///home/conda/feedstock_root/build_artifacts/ipykernel_17198454
 ipython @ file:///home/conda/feedstock_root/build_artifacts/ipython_1725050136642/work
 jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1696326070614/work
 Jinja2 @ file:///croot/jinja2_1716993405101/work
+joblib==1.4.2
 jupyter_client @ file:///home/conda/feedstock_root/build_artifacts/jupyter_client_1726610684920/work
 jupyter_core @ file:///home/conda/feedstock_root/build_artifacts/jupyter_core_1710257359434/work
 kiwisolver==1.4.7
@@ -32,6 +33,7 @@ nest_asyncio @ file:///home/conda/feedstock_root/build_artifacts/nest-asyncio_17
 networkx @ file:///croot/networkx_1717597493534/work
 numpy @ file:///croot/numpy_and_numpy_base_1725470312869/work/dist/numpy-2.0.1-cp311-cp311-linux_x86_64.whl#sha256=372b9067cf9c96d8662c6f20ef49eeda43f0f8d2f074820224c954d8d8fae7bc
 packaging @ file:///home/conda/feedstock_root/build_artifacts/packaging_1718189413536/work
+pandas==2.2.3
 parso @ file:///home/conda/feedstock_root/build_artifacts/parso_1712320355065/work
 pexpect @ file:///home/conda/feedstock_root/build_artifacts/pexpect_1706113125309/work
 pickleshare @ file:///home/conda/feedstock_root/build_artifacts/pickleshare_1602536217715/work
@@ -45,12 +47,17 @@ Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1714846767
 pyparsing==3.1.4
 PySocks @ file:///work/ci_py311/pysocks_1676822712504/work
 python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1709299778482/work
+pytz==2024.2
 PyYAML @ file:///croot/pyyaml_1698096049011/work
 pyzmq @ file:///home/conda/feedstock_root/build_artifacts/pyzmq_1725448927736/work
 requests @ file:///croot/requests_1721410876868/work
+scikit-learn==1.5.2
+scipy==1.14.1
+seaborn==0.13.2
 six @ file:///home/conda/feedstock_root/build_artifacts/six_1620240208055/work
 stack-data @ file:///home/conda/feedstock_root/build_artifacts/stack_data_1669632077133/work
 sympy @ file:///croot/sympy_1724938189289/work
+threadpoolctl==3.5.0
 torch==2.4.1
 torchaudio==2.4.1
 torchinfo==1.8.0
@@ -60,6 +67,7 @@ tqdm==4.66.5
 traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1713535121073/work
 triton==3.0.0
 typing_extensions @ file:///croot/typing_extensions_1715268824938/work
+tzdata==2024.2
 urllib3 @ file:///croot/urllib3_1718912636303/work
 wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1704731205417/work
 zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1726248574750/work

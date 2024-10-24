@@ -47,7 +47,6 @@ def train():
 def plot_results(train_losses, test_accuracies):
     epochs = range(1, len(train_losses) + 1)
 
-    # 创建一个新图表
     plt.figure()
     plt.plot(epochs, train_losses, label='Training Loss', color='red')
     plt.plot(epochs, test_accuracies, label='Test Accuracy', color='blue')
@@ -60,17 +59,14 @@ def plot_results(train_losses, test_accuracies):
 
 def show_graph(graph, model):
     with th.no_grad():
-        # 获取节点嵌入
+
         embeddings = model(graph, graph.ndata['features'])
 
-    # 将嵌入转换为 numpy 格式
     embeddings = embeddings.numpy()
 
-    # 使用 UMAP 降维
     umap_embeddings = umap.UMAP(n_neighbors=30, min_dist=0.5, n_components=2).fit_transform(embeddings)
     true_labels = graph.ndata['labels'].numpy()
 
-    # 创建 UMAP 图
     plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], c=true_labels, cmap='viridis', s=10)
     plt.colorbar()
 

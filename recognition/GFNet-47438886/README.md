@@ -1,13 +1,21 @@
 # Classifying Alzheimer's Disease with a Vision Transformer
 
-This repository contains the code used to train one of the latest vision transformers, known as the GFNet, to identify Alzheimer's Disease in 2D slices of MRI brain scans. The data used comes from the [ADNI dataset](https://adni.loni.usc.edu/), which is split into two classes: AD (Alzheimer's Disease) and NC (Normal Control). The model architecture is based on the innovative work of Rong, et al [1].
+As the life expectancy of humans across the world rise, the chances of Alzheimer's Disease have also increased, putting an extra burden on doctors and specialists. The advent of AI has brought many new methods to assist with diagnoses. This repository contains the code used to train one of the latest vision transformers, known as the GFNet, to identify Alzheimer's Disease in 2D slices of MRI brain scans. The data used comes from the [ADNI dataset](https://adni.loni.usc.edu/), which is split into two classes: AD (Alzheimer's Disease) and NC (Normal Control). The model architecture is based on the innovative work of Rong, et al [1].
 
 ## The Global Filter Network (GFNet)
-In a typical vision transformer (ViT), an image is broken up into smaller patches, representing the tokens that are fed into the transformer. A self-attention block then seeks to learn the relationship between all the patches, in a way that is free from inductive biases, such as spatial relations typically associated with convolutional neural networks (CNNs). While effective at learning the true distribution, the self-attention block is computationally expensive, running at $O(n^2)$ complexity. 
+In a typical vision transformer, an image is broken up into smaller patches, representing the tokens that are fed into the transformer. A self-attention block then seeks to learn the relationship between all the patches, in a way that is free from inductive biases. Traditional methods like convolutional neural networks (CNNs) often contained spatial biases, a product of the convolution operation, making them less generalisable. While vision transformers are effective at learning the true distribution without inductive biases, the self-attention block is computationally expensive, running at $O(n^2)$ complexity.
 
-The Global Filter Network improves this, reducing the algorithmic complexity down to $O(n\log(n))$. It deos this by replacing the self-attention block with 
+The Global Filter Network improves this upon this. The self-attention layer is replaced with the global filter layer, which includes a Fast Fourier transform to convert the patches to the frequency domain. A learnable filter with weights across different frequencies is multiplied to the result, and finally an inverse Fourier Transform is used to return it to the spatial domain. The filter can be thought of as emphasising relevant features in the frequency domain, and attenuating other less relevant features. This layer is summarised in the pseudocode shown below:
+```
+X = rfft2(x, dim=(1, 2))
+X_tilde = X * K
+x = irfft2(X_tilde, dim=(1, 2))
+```
+All of this can be thought of as the mixing of tokens that is normally seen in the self-attention layer in vision transformers.
 
-hrough the use of the Fast Fourier Transform. This speeds up the training process signifcantly.
+Because a Fast Fourier Transform is used to convert to the frequency domain, the algorithmic complexity decreases from $O(n^2)$ to $O(n\log(n))$, significantly speeding up training and also allowing for higher resolutions (i.e., more patches). 
+
+The typical features associated with vision transformers like dense linear layers for classification are applied afterwards. The overall architecture of the Global Filter Network can be seen in the diagram below.
 
 !["Architecture"](assets/architecture.jpg)
 
@@ -88,10 +96,12 @@ The files are named as `patientID_sliceID.jpeg`, where `patientID` represents br
 The ADNI dataset is already split into two sets for training and testing. Since a validation set was not provided, a portion of the training data was used for validation; specifically, 10% of the images in the provided train set was used. This split gives as much data for training as possible, improving upon its accuracy and generalisability.
 
 The training data contained multiple slices of the same brain of patients.
-To ensure no data leakage between the training and validation sets, the data had to be split on a patient level. This was done by looking at the names of the files, extracting the `patientID`, and assigning patients to either the training or validation set. After this, another split had to be done to ensure the equivalent distribution of classes in the training and validation set. This gives ht model a better chance to learn the difference between the two classes. All of this has been implemented in the `dataset.py` file.
+To ensure no data leakage between the training and validation sets, the data had to be split on a patient level. This was done by looking at the names of the files, extracting the `patientID`, and assigning patients to either the training or validation set. 
+
+After this, another split had to be done to ensure the equivalent distribution of classes in the training and validation set. This gives the model a better chance to learn the difference between the two classes. After performing all of the above splits, the validation set contained a equal mix of 460 images for both AD and NC classes. For the training set, the NC class contained 4080 images, while the AD class contained 4000, roughly 50-50.
 
 ### Pre-processing
-Pre-processing was then performed on the data before training. Augmentation was necessary as the ADNI dataset is not particularly large, and generally for deep learning models, the more data there is, the better the outcoem. The following transformations were done on the training data:
+Pre-processing was then performed on the data before training. Augmentation was necessary as the ADNI dataset is not particularly large, and generally for deep learning models, the more data there is, the better the outcome. The following transformations were done on the training data:
 1. The images were centre cropped to 224 x 224, to align with the suggested sizes proposed by Rao., et al. [1]. 
 2. Random vertical flips were added to the data. This helps the model be more generalisable, improving upon its accuracy on unseen data.
 3. Gaussian noise was added to the images. Again, this helps with generalisability, but it also represents something that occurs in real life. Practical signals like those from MRIs are will always have some degree of noise associated with it.

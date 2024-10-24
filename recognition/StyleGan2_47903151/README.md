@@ -117,24 +117,20 @@ In total, 3 models were trained. A general model that trained on both AD and NC,
 ### UMAP embedding
 Aside from a model that trained on both AD and NC brain images indiscriminately, two additional models were trained on 
 only AD brain images and only NC brain images. The style embedding output by the mapping network was plotted using umap.
+10001 random noise was put in to the map to get the output with 20002 points, where there are 10001 points of AD mapping
+and 10001 of NC mapping.
 
-When the model was initialized, the umap embedding formed 2 different clusters, this is expected as the mapping network 
-started with random values.
+When the model was initialized, there is no distinction between umap embeddings of AD and NC. This is expected as the 
+mapping network is untrained.
 
-As the training progresses, the embedding starts to get closer and overlap with each other. However, as training 
-progresses(starting at around epoch 30), the embedding starts to separate from each other and eventually formed 2 
-separate clusters again.
+As the training progresses, the embedding starts to moving away from each other. At around epoch 30, it is observed that
+the two classes overlap, but are separate. This agrees with the recent UQ work (Liu, S. et al., 2023), suggesting that 
+AD could be a progressive disease.
 
-This indicates that brain with AD and NC brain have different "styles". However the two distinct cluster contradicts the
-recent UQ work (Liu, S. et al., 2023) where the embedding of the two disease have overlaps. 
 
-This may indicate that the model is over-fitting, as that AD and NC model were only trained on the train set of each 
-class, and there was no validation of the model using a validation step. Further investigation is needed.
-
-![umap_ep_0.png](umap%20plot%2Fumap_ep_0.png)
-![umap_ep_5.png](umap%20plot%2Fumap_ep_5.png)
-![umap_ep_30.png](umap%20plot%2Fumap_ep_30.png)
-![umap_ep_80.png](umap%20plot%2Fumap_ep_80.png)
+![umap_epoch_0.png](umap%20plot%2Fumap_epoch_0.png)
+![umap_epoch_5.png](umap%20plot%2Fumap_epoch_5.png)
+![umap_epoch_30.png](umap%20plot%2Fumap_epoch_30.png)
 
 ## Reference 
 Ian J. Goodfellow et al. (2014). Generative Adversarial Networks https://arxiv.org/pdf/1406.2661 

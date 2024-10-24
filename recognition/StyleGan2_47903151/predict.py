@@ -25,14 +25,20 @@ def umap_plot(mapping_AD: MappingNetwork, mapping_NC: MappingNetwork):
     plt.figure(figsize=(10, 8))
 
     with torch.no_grad():
-        z = torch.randn(10000, W_DIM).to(DEVICE)
+
+        z = torch.randn(1, W_DIM).to(DEVICE)
         style_AD = mapping_AD(z)
         style_NC = mapping_NC(z)
+        for i in range(10000):
+            z = torch.randn(1, W_DIM).to(DEVICE)
+            style_AD = torch.cat((mapping_AD(z), style_AD))
+            style_NC = torch.cat((mapping_NC(z), style_NC))
         reducer = umap.UMAP()
         umap_embeddings = reducer.fit_transform(style_AD)
         plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], s=5)
         umap_embeddings = reducer.fit_transform(style_NC)
         plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], s=5)
+        plt.title("Umap plot of embeddings, epoch 5")
         plt.legend(["AD", "NC"])
     plt.show()
 

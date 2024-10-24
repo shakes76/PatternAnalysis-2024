@@ -1,3 +1,8 @@
+"""
+Author: Xiangxu Zhang
+student number: 47643439
+This script is used to train the model and output pictures of accuracy and loss with the training epoch.
+"""
 import torch
 from modules import GNN
 from dataset import load_data

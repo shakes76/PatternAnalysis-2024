@@ -23,12 +23,12 @@ else:
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"VQVAE being tested on {device}.\n")
 
-encoder = Encoder(input_dim=dimensions["input"], hidden_dim=dimensions["hidden"], output_dim=dimensions["latent"])
-quantise = Quantise(n_embeddings=dimensions["embeddings"], embed_dim=dimensions["latent"])
-decoder = Decoder(input_dim=dimensions["latent"], hidden_dim=dimensions["hidden"], output_dim=dimensions["output"])
+encoder = Encoder(inputDim=dimensions["input"], hiddenDim=dimensions["hidden"], outputDim=dimensions["latent"])
+quantise = Quantise(nEmbeddings=dimensions["embeddings"], embed_dim=dimensions["latent"])
+decoder = Decoder(inputDim=dimensions["latent"], hiddenDim=dimensions["hidden"], outputDim=dimensions["output"])
 
 # Initialise the SSIM measure
-ssim = StructuralSimilarityIndexMeasure(data_range=1.0)
+ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
 
 vqvae = Model(Encoder=encoder, Quantise=quantise, Decoder=decoder).to(device)
 
@@ -54,6 +54,7 @@ with torch.no_grad():
 
     pred, commitment_loss, codebook_loss, perplexity = vqvae(test_images)
     print(pred.shape)
+    pred.to(device)
 
     # Save both a single image for clarity and multiple images to prove the model's ability to generate a variety of scans.
     SaveOneImage(pred, "one_reconstructed", "Reconstructed Scan")
@@ -63,5 +64,3 @@ with torch.no_grad():
     
     # Calculate the SSIM over the current batch of images
     print(f"Structural Similarity Index Measure between original and reconstructed images = {ssim(pred, test_images)}")
-
-

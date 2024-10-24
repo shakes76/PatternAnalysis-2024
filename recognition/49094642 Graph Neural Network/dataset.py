@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import numpy as np
 from torch_geometric.data import Data
-import torch_geometric.transforms as T
 
 class DataLoader:
     def __init__(self, edge_path, features_path, target_path):
@@ -12,36 +11,31 @@ class DataLoader:
         self.target_path = target_path
 
     def load_edges(self):
-        edges_df = pd.read_csv(self.edge_path)
-        return torch.tensor(edges_df.values.T, dtype=torch.long)
+        return torch.tensor(pd.read_csv(self.edge_path).values.T, dtype=torch.long)
 
     def load_features(self):
         with open(self.features_path) as f:
             features_dict = json.load(f)
-        features_list = [[int(node_id)] + feature for node_id, feature in features_dict.items()]
-        features_df = pd.DataFrame(features_list)
-        return torch.tensor(features_df.iloc[:, 1:].values, dtype=torch.float)
+        return torch.tensor(np.array(list(features_dict.values())), dtype=torch.float)
 
     def load_target(self):
-        target_df = pd.read_csv(self.target_path)
-        return torch.tensor(target_df['target'].values, dtype=torch.long)
+        return torch.tensor(pd.read_csv(self.target_path)['target'].values, dtype=torch.long)
 
     def create_data(self):
         edges = self.load_edges()
         x = self.load_features()
         y = self.load_target()
 
-        # Split the dataset into train/test and add train/test masks
         num_nodes = y.size(0)
-        train_mask = torch.zeros(num_nodes, dtype=torch.bool)
-        test_mask = torch.zeros(num_nodes, dtype=torch.bool)
-
-        indices = np.arange(num_nodes)
-        np.random.shuffle(indices)
-        split_idx = int(0.8 * num_nodes)
-        train_indices, test_indices = indices[:split_idx], indices[split_idx:]
-        train_mask[train_indices] = True
-        test_mask[test_indices] = True
+        train_mask, test_mask = self.create_masks(num_nodes)
 
         data = Data(x=x, edge_index=edges, y=y, train_mask=train_mask, test_mask=test_mask)
-        return T.NormalizeFeatures()(data)
+        return data
+
+    @staticmethod
+    def create_masks(num_nodes, train_split=0.8):
+        mask = np.zeros(num_nodes, dtype=bool)
+        train_size = int(train_split * num_nodes)
+        indices = np.random.permutation(num_nodes)
+        mask[indices[:train_size]] = True
+        return torch.tensor(mask), torch.tensor(~mask)

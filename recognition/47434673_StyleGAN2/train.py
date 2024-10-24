@@ -25,80 +25,90 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Training
 
 
-def train_fn(discrim, gen, path_length_penalty, loader, opt_discrim, opt_gen, opt_mapping_network,):
-    """The training cycle of the StyleGAN2"""
-    loop = tqdm(loader, leave=True) # Visualises the training progress
+# def train_stylegan2(discrim, gen, path_length_penalty, loader, opt_discrim, opt_gen, opt_mapping_network,):
+#     """The training cycle of the StyleGAN2"""
+#     loop = tqdm(loader, leave=True) # Visualises the training progress
 
-    curr_Gloss = []
-    curr_Dloss = []
+#     curr_Gloss = []
+#     curr_Dloss = []
 
-    for batch_idx, (real, _) in enumerate(loop):
-        real = real.to(device)
-        cur_batch_size = real.shape[0]
+#     for batch_idx, (real, _) in enumerate(loop):
+#         real = real.to(device)
+#         cur_batch_size = real.shape[0]
 
-        w = utils.get_w(cur_batch_size, modules.mapping_network, device)
-        noise = utils.get_noise(cur_batch_size, device)
+#         w = utils.get_w(cur_batch_size, modules.mapping_network, device)
+#         noise = utils.get_noise(cur_batch_size, device)
 
-        # Use cuda AMP for accelerated training
-        with torch.cuda.amp.autocast():
-            # Generate fake image using the Generator
-            fake = gen(w, noise)
+#         # Use cuda AMP for accelerated training
+#         with torch.amp.autocast('cuda'):
+#             # Generate fake image using the Generator
+#             fake = gen(w, noise)
 
-            # Get a critic score for the fake and real image
-            discrim_fake = discrim(fake.detach())
-            discrim_real = discrim(real)
+#             # Get a critic score for the fake and real image
+#             discrim_fake = discrim(fake.detach())
+#             discrim_real = discrim(real)
 
-            # Calculate and log gradient penalty
-            gp = predict.gradient_penalty(discrim, real, fake, device=device)
-            loss_discrim = (
-                -(torch.mean(discrim_real) - torch.mean(discrim_fake))
-                + utils.lambda_gp * gp
-                + (0.001 * torch.mean(discrim_real ** 2))
-            )
+#             # Calculate and log gradient penalty
+#             gp = predict.gradient_penalty(discrim, real, fake, device=device)
+#             loss_discrim = (
+#                 -(torch.mean(discrim_real) - torch.mean(discrim_fake))
+#                 + utils.lambda_gp * gp
+#                 + (0.001 * torch.mean(discrim_real ** 2))
+#             )
         
-        # Append the observed Discriminator loss to the list
-        curr_Dloss.append(loss_discrim.item())
+#         # Append the observed Discriminator loss to the list
+#         curr_Dloss.append(loss_discrim.item())
 
-        # Reset gradients for the Discriminator
-        # Backpropagate the loss and update the discriminator's weights
-        discrim.zero_grad()
-        loss_discrim.backward()
-        opt_discrim.step()
+#         # Reset gradients for the Discriminator
+#         # Backpropagate the loss and update the discriminator's weights
+#         discrim.zero_grad()
+#         loss_discrim.backward()
+#         opt_discrim.step()
 
-        # Get score for the Discriminator and the Generator
-        gen_fake = discrim(fake)
-        loss_gen = -torch.mean(gen_fake)
+#         # Get score for the Discriminator and the Generator
+#         gen_fake = discrim(fake)
+#         loss_gen = -torch.mean(gen_fake)
 
-        # Apply path length penalty on every 16 Batches
-        if batch_idx % 16 == 0:
-            plp = path_length_penalty(w, fake)
-            if not torch.isnan(plp):
-                loss_gen = loss_gen + plp
+#         # Apply path length penalty on every 16 Batches
+#         if batch_idx % 16 == 0:
+#             plp = path_length_penalty(w, fake)
+#             if not torch.isnan(plp):
+#                 loss_gen = loss_gen + plp
 
-        # Append the observed Generator loss to the list
-        curr_Gloss.append(loss_gen.item())
+#         # Append the observed Generator loss to the list
+#         curr_Gloss.append(loss_gen.item())
 
-        modules.mapping_network.zero_grad() # Reset gradients for the mapping network and  generator
-        gen.zero_grad()
-        loss_gen.backward() # Backpropagate the generator loss
-        opt_gen.step()
-        opt_mapping_network.step()
-        # Update generator's weights and Update mapping network's weights
-        loop.set_postfix(
-            gp=gp.item(),
-            loss_critic=loss_discrim.item(),
-        )
+#         modules.mapping_network.zero_grad() # Reset gradients for the mapping network and  generator
+#         gen.zero_grad()
+#         loss_gen.backward() # Backpropagate the generator loss
+#         opt_gen.step()
+#         opt_mapping_network.step()
+#         # Update generator's weights and Update mapping network's weights
+#         loop.set_postfix(
+#             gp=gp.item(),
+#             loss_critic=loss_discrim.item(),
+#         )
 
-    return (curr_Dloss, curr_Gloss)
+#     return (curr_Dloss, curr_Gloss)
 
 
 ####################################################
-# Main function
+# Main function (and training)
+
+def gpu_warmup(device):
+    if torch.cuda.is_available():
+        # Create a small dummy tensor on the GPU
+        dummy = torch.tensor([1.0], device=device)
+        # Perform a simple operation to force CUDA context initialization
+        dummy = dummy * 2
+        print("GPU warmup complete")
 
 if __name__ == "main":
     # Device Config
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Device: ', device)
+
+    gpu_warmup(device) # Warm up the GPU to avoid errors
 
     # Create batch of latent vectors used to visualise the progression of the generator
     fixed_noise = torch.randn(64, nz, 1, 1, device=device)
@@ -137,15 +147,82 @@ if __name__ == "main":
 
         # loop over total epcoh.
         for epoch in range(epochs):
-            curr_Gloss, curr_Dloss = train.train_fn(
-                discrim,
-                gen,
-                path_length_penalty,
-                loader,
-                opt_discrim,
-                opt_gen,
-                opt_mapping_network,
-            )
+            # curr_Gloss, curr_Dloss = train_stylegan2(
+            #     discrim,
+            #     gen,
+            #     path_length_penalty,
+            #     loader,
+            #     opt_discrim,
+            #     opt_gen,
+            #     opt_mapping_network,
+            # )
+
+            #######################################################
+            
+            """The training cycle of the StyleGAN2"""
+            loop = tqdm(loader, leave=True) # Visualises the training progress
+
+            curr_Gloss = []
+            curr_Dloss = []
+
+            for batch_idx, (real, _) in enumerate(loop):
+                real = real.to(device)
+                cur_batch_size = real.shape[0]
+
+                w = utils.get_w(cur_batch_size, modules.mapping_network, device)
+                noise = utils.get_noise(cur_batch_size, device)
+
+                # Use cuda AMP for accelerated training
+                with torch.amp.autocast('cuda'):
+                    # Generate fake image using the Generator
+                    fake = gen(w, noise)
+
+                    # Get a critic score for the fake and real image
+                    discrim_fake = discrim(fake.detach())
+                    discrim_real = discrim(real)
+
+                    # Calculate and log gradient penalty
+                    gp = predict.gradient_penalty(discrim, real, fake, device=device)
+                    loss_discrim = (
+                        -(torch.mean(discrim_real) - torch.mean(discrim_fake))
+                        + utils.lambda_gp * gp
+                        + (0.001 * torch.mean(discrim_real ** 2))
+                    )
+                
+                # Append the observed Discriminator loss to the list
+                curr_Dloss.append(loss_discrim.item())
+
+                # Reset gradients for the Discriminator
+                # Backpropagate the loss and update the discriminator's weights
+                discrim.zero_grad()
+                loss_discrim.backward()
+                opt_discrim.step()
+
+                # Get score for the Discriminator and the Generator
+                gen_fake = discrim(fake)
+                loss_gen = -torch.mean(gen_fake)
+
+                # Apply path length penalty on every 16 Batches
+                if batch_idx % 16 == 0:
+                    plp = path_length_penalty(w, fake)
+                    if not torch.isnan(plp):
+                        loss_gen = loss_gen + plp
+
+                # Append the observed Generator loss to the list
+                curr_Gloss.append(loss_gen.item())
+
+                modules.mapping_network.zero_grad() # Reset gradients for the mapping network and  generator
+                gen.zero_grad()
+                loss_gen.backward() # Backpropagate the generator loss
+                opt_gen.step()
+                opt_mapping_network.step()
+                # Update generator's weights and Update mapping network's weights
+                loop.set_postfix(
+                    gp=gp.item(),
+                    loss_critic=loss_discrim.item(),
+                )
+
+            ###########################################################
 
             # Append the current loss to the main list
             G_Loss.extend(curr_Gloss)
@@ -155,7 +232,7 @@ if __name__ == "main":
             if epoch % 10 == 0:
                 predict.generate_examples(gen, mapping_network, epoch, device)
 
-            if (epoch % 10 == 0) or ((epoch == epochs-1) and (i == len(loader)-1)):
+            if (epoch % 10 == 0) or ((epoch == epochs-1) and (epoch == len(loader)-1)):
                 fake = gen(fixed_noise).detach().cpu()
                 img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
 

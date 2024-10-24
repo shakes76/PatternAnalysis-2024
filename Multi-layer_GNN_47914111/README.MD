@@ -78,12 +78,12 @@ The loss function of the model uses cross-entropy loss, which is suitable for mu
 #### Output:
 The loss and accuracy of each epoch during model training, as well as the final test set accuracy.
 The accuracy and loss change curve of the model.
-https://github.com/YuchengWatoo/PatternAnalysis-2024/blob/db52977247e0781ac7b70d2bc2c2142fba0f9d2c/Multi-layer_GNN_47914111/plots/GCN_accuracy.png
+https://github.com/YuchengWatoo/PatternAnalysis-2024/blob/1ecb8cdc14275c70d1ce1c366ca58aa647ad1f80/Multi-layer_GNN_47914111/plots/GCN_accuracy.png
 In the first 20 rounds, the training accuracy and validation accuracy increased rapidly, indicating that the model effectively learned the graph structure and features at the beginning.
 In the subsequent training, the accuracy gradually stabilized and was relatively stable at about 60 rounds.
 The accuracy curves of the training set and the validation set are very close, both close to 0.9. This shows that the performance on both the training set and the validation set is good and there is no overfitting.
 
-https://github.com/YuchengWatoo/PatternAnalysis-2024/blob/db52977247e0781ac7b70d2bc2c2142fba0f9d2c/Multi-layer_GNN_47914111/plots/GCN_loss.png
+https://github.com/YuchengWatoo/PatternAnalysis-2024/blob/1ecb8cdc14275c70d1ce1c366ca58aa647ad1f80/Multi-layer_GNN_47914111/plots/GCN_loss.png
 In the first 20 rounds, both the training loss and the critical loss dropped rapidly, indicating that the model quickly optimized the parameters and reduced the error at the beginning.
 In the subsequent training, the loss value gradually stabilized and was relatively stable at about 80 rounds.
 The loss curves of the training set and the validation set are very close. The validation loss is slightly lower than the training loss, indicating that the model has good generalization ability on the validation set.
@@ -102,7 +102,7 @@ Save the trained GCN model (GCN_Model.pt).
 
 #### Output:
 The node feature visualization diagram after dimensionality reduction using the t-SNE algorithm shows the node classification representation learned by the model, and saves the diagram as an image file.
-https://github.com/YuchengWatoo/PatternAnalysis-2024/blob/db52977247e0781ac7b70d2bc2c2142fba0f9d2c/Multi-layer_GNN_47914111/plots/TSNE_train_plot.png
+https://github.com/YuchengWatoo/PatternAnalysis-2024/blob/1ecb8cdc14275c70d1ce1c366ca58aa647ad1f80/Multi-layer_GNN_47914111/plots/TSNE_train_plot.png
 
 The boundaries between the four categories are relatively clear, indicating that the model has successfully separated the features of different categories. In particular, 1 and 3 show obvious separation. Category 2 shows a certain degree of aggregation, indicating that the node features of this category are relatively similar.
 Although most points show clear classification, there is confusion at the junction of 1 and 2. This shows that the feature similarity between nodes is high.

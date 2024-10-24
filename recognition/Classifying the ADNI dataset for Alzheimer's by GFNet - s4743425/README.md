@@ -57,6 +57,7 @@ The images get pre processed prior to training and testing. This step is complet
 - torch==2.2.2+cu121
 - torchvision==0.17.2
 
+
 This Model was trained and tested on the UQ High performance computer Rangpur. Running locally will likely result in different run times and possibly slightly different results.
 
 ### Dataset Structure
@@ -78,8 +79,25 @@ The ADNI dataset structure will require to have the following:
 
 ### Training
 
+To Train the GFNet on the ADNI dataset from scratch run the following:
+```
+python train.py
+```
+This will save the training model to your source directory as 'trained_model.pth'.
 
 ### Predictions
+
+To Run predictions run the following: 
+
+python predict.py --model_path /path/to/trained_model.pth --output-dir /path/to/image_dir
+
+The parsed arguments --model_path is to the trained_model.pth, and --output-dir is to where you want to store your predicted images.
+
+If no arguments are parsed, the model will assume that 'trained_model.pth' is in your source directory and the output predicted images will be saved in a folder named 'prediction_outputs' in the source directory.
+
+The predicted images are 4 randomly selected images from the testing directory to show the results. Here is a example output:
+
+![Prediction](assets/prediction_image.png)
 
 
 ## Results

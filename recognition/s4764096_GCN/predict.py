@@ -9,18 +9,13 @@ def show_graph(graph, model):
 
         embeddings = model(graph, graph.ndata['features'])
 
-
     embeddings = embeddings.numpy()
-
 
     umap_embeddings = umap.UMAP(n_neighbors=30, min_dist=0.5, n_components=2).fit_transform(embeddings)
     true_labels = graph.ndata['labels'].numpy()
 
-
     plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], c=true_labels, cmap='viridis', s=10)
     plt.colorbar()
-
-
     plt.show()
 
 if __name__ == '__main__':

@@ -54,7 +54,6 @@ def plot_results(train_losses, test_accuracies):
     plt.ylabel('Value')
     plt.title('Training Loss and Test Accuracy Over Epochs')
     plt.legend()
-
     plt.show()
 
 def show_graph(graph, model):

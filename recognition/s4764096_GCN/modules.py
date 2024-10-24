@@ -5,19 +5,15 @@ import torch.nn.init as init
 
 
 class GCN(nn.Module):
-    def __init__(self, input_feats, num_classes=4):  # 设置 num_classes 为 4
+    def __init__(self, input_feats, num_classes=4):
         super(GCN, self).__init__()
         self.layers = nn.ModuleList()
         self.dropout = nn.Dropout(p=0.5)
-
-        # 添加 GraphConv 层，允许入度为0的节点
         self.layers.append(dglnn.GraphConv(input_feats, 128, activation=nn.ReLU(), allow_zero_in_degree=True))
         self.layers.append(dglnn.GraphConv(128, 128, activation=nn.ReLU(), allow_zero_in_degree=True))
         self.layers.append(dglnn.GraphConv(128, 256, activation=nn.ReLU(), allow_zero_in_degree=True))
         self.layers.append(dglnn.GraphConv(256, 256, activation=nn.ReLU(), allow_zero_in_degree=True))
-        self.classifier = nn.Linear(256, num_classes)  # num_classes 为 4
-
-        # 初始化模型权重
+        self.classifier = nn.Linear(256, num_classes)
         self._initialize_weights()
 
     def forward(self, graph, inputs):

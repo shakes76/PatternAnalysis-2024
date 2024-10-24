@@ -128,6 +128,10 @@ The dataset and pre-processing techniques are based on the **Facebook Large Page
 
 The chosen split (80% for training,and 20% for testing) ensures that the model has enough data to learn meaningful representations while also being evaluated on unseen data. The test set allows us to assess the model's generalization ability, while the validation set is used for hyperparameter tuning and to prevent overfitting.
 
+## References
+
+- Data from: [Stanford SNAP - Facebook Large Page-Page Network](https://snap.stanford.edu/data/facebook-large-page-page-network.html)
+- Project translated and assisted with code issues by ChatGPT, an AI language model developed by OpenAI.
 
 
 

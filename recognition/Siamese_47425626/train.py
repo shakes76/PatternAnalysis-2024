@@ -9,12 +9,16 @@ from pytorch_metric_learning import losses
 from pytorch_metric_learning.distances import LpDistance
 from tqdm import tqdm
 import numpy as np
+import matplotlib.pyplot as plt
+import pickle
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 # Local flag to adjust parameters for testing
 LOCAL = True
 
 # Parameters
-NUM_EPOCHS = 20 if not LOCAL else 1
+NUM_EPOCHS = 20 if not LOCAL else 10
 LEARNING_RATE = 0.001
 BATCH_SIZE = 32 if not LOCAL else 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
@@ -24,11 +28,11 @@ train_loader, val_loader, test_loader = get_data_loaders(batch_size=BATCH_SIZE)
 
 # If LOCAL, use a subset of the train and validation datasets for faster testing
 if LOCAL:
-    train_subset_indices = np.random.choice(len(train_loader.dataset), size=int(0.01 * len(train_loader.dataset)), replace=False)
+    train_subset_indices = np.random.choice(len(train_loader.dataset), size=int(0.05 * len(train_loader.dataset)), replace=False)
     train_subset = Subset(train_loader.dataset, train_subset_indices)
     train_loader = DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True)
 
-    val_subset_indices = np.random.choice(len(val_loader.dataset), size=int(0.01 * len(val_loader.dataset)), replace=False)
+    val_subset_indices = np.random.choice(len(val_loader.dataset), size=int(0.05 * len(val_loader.dataset)), replace=False)
     val_subset = Subset(val_loader.dataset, val_subset_indices)
     val_loader = DataLoader(val_subset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -42,6 +46,16 @@ optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 # Learning rate scheduler
 scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda epoch: 0.99 ** epoch)
+
+# Lists to store loss values for plotting
+train_losses = []
+val_losses = []
+
+# Lists to store embeddings and labels for visualization
+train_embeddings_list = []
+train_labels_list = []
+val_embeddings_list = []
+val_labels_list = []
 
 # Training Loop
 for epoch in range(NUM_EPOCHS):
@@ -75,6 +89,7 @@ for epoch in range(NUM_EPOCHS):
 
     # Calculate average loss for the epoch
     avg_loss = total_loss / len(train_loader)
+    train_losses.append(avg_loss)
 
     # Validation Loop
     model.eval()  # Set model to evaluation mode
@@ -88,7 +103,77 @@ for epoch in range(NUM_EPOCHS):
 
             val_loss += criterion(val_embeddings, val_labels).item()
 
+            # Store validation embeddings and labels for visualization
+            val_embeddings_list.append(val_embeddings.cpu())
+            val_labels_list.append(val_labels.cpu())
+
     avg_val_loss = val_loss / len(val_loader)
+    val_losses.append(avg_val_loss)
 
     # Print summary of training and validation losses for each epoch
     print(f"Epoch [{epoch + 1}/{NUM_EPOCHS}] Summary: Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+
+    # Store training embeddings and labels for the final epoch
+    if epoch == NUM_EPOCHS - 1:
+        with torch.no_grad():
+            for batch in train_loader:
+                img, labels = batch
+                img, labels = img.to(DEVICE), labels.to(DEVICE)
+                embeddings = model(img)
+                train_embeddings_list.append(embeddings.cpu())
+                train_labels_list.append(labels.cpu())
+
+# Concatenate all embeddings and labels
+train_embeddings = torch.cat(train_embeddings_list, dim=0).numpy()
+train_labels = torch.cat(train_labels_list, dim=0).numpy()
+val_embeddings = torch.cat(val_embeddings_list, dim=0).numpy()
+val_labels = torch.cat(val_labels_list, dim=0).numpy()
+
+# Save embeddings for later use
+with open("train_embeddings.pkl", "wb") as f:
+    pickle.dump((train_embeddings, train_labels), f)
+
+with open("val_embeddings.pkl", "wb") as f:
+    pickle.dump((val_embeddings, val_labels), f)
+
+# Plotting the training and validation losses
+plt.figure(figsize=(10, 5))
+plt.plot(range(1, NUM_EPOCHS + 1), train_losses, label='Training Loss')
+plt.plot(range(1, NUM_EPOCHS + 1), val_losses, label='Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss Over Epochs')
+plt.legend()
+plt.grid(True)
+plt.savefig('loss_plot.png')
+
+# PCA and t-SNE for Visualization
+pca = PCA(n_components=2)
+tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
+
+# Reduce dimensions using PCA
+train_pca = pca.fit_transform(train_embeddings)
+val_pca = pca.transform(val_embeddings)
+
+# Apply t-SNE
+train_tsne = tsne.fit_transform(train_pca)
+val_tsne = tsne.fit_transform(val_pca)
+
+# Plotting the PCA + t-SNE reduced embeddings
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.scatter(train_tsne[:, 0], train_tsne[:, 1], c=train_labels, cmap='viridis', alpha=0.6)
+plt.colorbar()
+plt.title('Training Embeddings Visualization (t-SNE)')
+plt.xlabel('Component 1')
+plt.ylabel('Component 2')
+
+plt.subplot(1, 2, 2)
+plt.scatter(val_tsne[:, 0], val_tsne[:, 1], c=val_labels, cmap='viridis', alpha=0.6)
+plt.colorbar()
+plt.title('Validation Embeddings Visualization (t-SNE)')
+plt.xlabel('Component 1')
+plt.ylabel('Component 2')
+
+plt.tight_layout()
+plt.savefig('embeddings_visualization.png')

@@ -27,3 +27,4 @@ The ADNI (Alzheimer's disease Neuroimaging Initiative) dataset is widely used da
 - Numpy
 - Matplotlib
 - Scikit-learn
+- Google Colab Pro+ For Faster Training

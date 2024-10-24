@@ -5,6 +5,10 @@ using the processed 2D slices (2D images) available here with the 2D UNet [1] wi
 minimum Dice similarity coefficient of 0.75 on the test set on the prostate label. You will need to load 
 Nifti file format and sample code is provided in Appendix B. [Easy Difficulty]"
 
+I quickly want to mention that I prefixed each commit with 'topic recognition' this was a force of habit,
+typically when working on git repositories I branch the solution to a branch named after a change request
+e.g. "CR-123" and prefix each commit with this.
+
 An initial test code was run to just visualise one of the slices before using 2D UNet to get a sense of 
 what the images look like. The resuling image afer test.py was run can be seen in slice_print_from_initial_test
 in the images folder.

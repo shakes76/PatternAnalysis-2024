@@ -18,9 +18,9 @@ import numpy as np
 
 import wandb
 
-dir_img = Path('/content/train2')
-dir_mask = Path('/content/train2_seg')
-dir_checkpoint = Path('/content/checkpoints')
+dir_img = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_test')
+dir_mask = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_seg_test')
+dir_checkpoint = Path('./checkpoints')
 
 def evaluate(net, dataloader, device, amp):
     net.eval()

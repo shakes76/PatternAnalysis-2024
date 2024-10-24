@@ -126,12 +126,12 @@ Discriminator Learning Rate: 0.0001, decreasing very slowly
 
 After training, the model generates synthetic brain images that resemble the training data. Images generated from the final models produced the following results:
 <br/>
-Alzheimer's Disease Brains:
+Example Alzheimer's Disease Brains:
 <br/>
 ![AD Predict](images/AD_image.png)
 <br/>
 <br/>
-Normal Cognition Brains:
+Example Normal Cognition Brains:
 <br/>
 ![NC Predict](images/NC_image.png)
 <br/>

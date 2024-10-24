@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.models import resnet50
 
 def PCA_transform(input_data, n_components, shape):
     mean = torch.mean(input_data, dim=0)
@@ -40,13 +41,15 @@ class CNN(nn.Module):
         return x
 
 class SiameseNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=2):
         super(SiameseNetwork, self).__init__()
-        self.cnn = CNN((256,256), 2)
-    
+        self.resnet = resnet50(pretrained=True)
+
+        self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)
+
     def forward(self, input1, input2):
-        output1 = self.cnn.forward(input1)
-        output2 = self.cnn.forward(input2)
+        output1 = self.resnet(input1)
+        output2 = self.resnet(input2)
 
         return output1, output2
 

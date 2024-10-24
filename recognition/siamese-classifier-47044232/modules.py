@@ -47,7 +47,8 @@ class BinaryClassifier(nn.Module):
         super().__init__()
         self._layer1 = nn.Linear(1000, 500)
         self._layer2 = nn.Linear(500, 100)
-        self._layer3 = nn.Linear(100, 2)
+        self._layer3 = nn.Linear(100, 50)
+        self._layer4 = nn.Linear(50, 2)
         self._reLU = nn.ReLU()
 
     def forward(self, features) -> torch.Tensor:
@@ -62,4 +63,6 @@ class BinaryClassifier(nn.Module):
         x = self._reLU(x)
         x = self._layer2(x)
         x = self._reLU(x)
-        return self._layer3(x)
+        x = self._layer3(x)
+        x = self._reLU(x)
+        return self._layer4(x)

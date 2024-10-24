@@ -118,4 +118,4 @@ You can easily run this project and change any parameters you want by using trai
 
 
 ## Reference
-[1] Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification. In Advances in Neural Information Processing Systems (NeurIPS).
+[1] Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification. (NeurIPS)

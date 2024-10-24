@@ -13,8 +13,39 @@ import torch.nn.parallel
 import torch.optim as optim
 from tqdm import tqdm
 from modules import Generator, Discriminator, FCBlock
-from dataset import process_adni, process_cifar
+from dataset import ADNI_IMG_SIZE, process_adni, process_cifar
 import math
+import cv2
+import os
+
+ADNI_DATA = "adni"
+CIFAR_DATA = "cifar"
+
+def generate_and_save_imgs(model, epoch, w, noise):
+    with torch.no_grad():
+        predictions = model(w, noise).detach().cpu()
+
+    fig = plt.figure(figsize=(4,4))
+
+    for i in range(predictions.shape[0]):
+        plt.subplot(4, 4, i + 1)
+        fake_img = predictions[i, 0, :, :]
+        fake_img = (fake_img + 1) / 2
+        fake_img = fake_img.numpy()
+        # fake_img = (fake_img * 127.5 + 127.5).astype(np.uint8)
+        image = cv2.cvtColor(fake_img, cv2.COLOR_BGR2RGB)
+        plt.imshow(image)
+        # plt.imshow(predictions[i, 0, :, :] * 127.5 * 127.5, cmap="rgb")
+        plt.axis("off")
+
+    # Create the directory if it doesn't exist
+    os.makedirs("./stylegan_outputs", exist_ok=True)
+
+    # Correctly format the filename with the epoch number
+    filename = f"./stylegan_outputs/img_at_epoch_{epoch}.png"
+    plt.savefig(filename)
+    # plt.show()
+
 
 def get_w(w_dim, batch_size, num_layers, latent_net, device):
     """
@@ -156,7 +187,7 @@ def main():
     torch.manual_seed(manual_seed)
     torch.use_deterministic_algorithms(True)
 
-    model_name = "stylegan2-cifar"
+    model_name = "stylegan2-adni"
     print("> Model Name:", model_name)
 
     # -- Check Device --
@@ -168,19 +199,20 @@ def main():
     print("> Device:", device)
 
     # -- Hyper-parameters --
-    num_epochs = 25
-    lr = 1e-3 # Use 1e-3 for Adam
+    num_epochs = 50
+    lr = 1e-4 # Use 1e-3 for Adam
     batch_size = 64
     channels = 3
     z_dim = 512
     w_dim = 512
-    image_size = 32
+    image_size = ADNI_IMG_SIZE
     num_layers = int(math.log2(image_size))
-    data_name = 'cifar'
+    data_name = ADNI_DATA # or CIFAR_DATA
+    load_models = False
+    save_models = False
+    test = True
 
-    if data_name == "adni":
-        image_size = 240
-        batch_size = 32
+    if data_name == ADNI_DATA:
         dataset, dataloader = process_adni(batch_size=batch_size)
     else:
         dataset, dataloader = process_cifar(batch_size=batch_size)
@@ -194,9 +226,29 @@ def main():
     model_G = model_G.to(device)
     model_D = model_D.to(device)
 
+    if load_models:
+        model_G.load_state_dict(torch.load('./models/model_G.pth', map_location=device))
+        model_D.load_state_dict(torch.load('/models/model_D.pth', map_location=device))
+        latent_net.load_state_dict(torch.load('/models/latent_net.pth', map_location=device))
+
+        model_G.train()
+        model_D.train()
+        latent_net.train()
+
     # Train model
     model_G, model_D = train(model_G, model_D, latent_net, num_epochs, dataloader, lr,
         z_dim, w_dim, channels, num_layers, image_size, device)
+
+    if test:
+        # Test model
+        w = get_w(w_dim, 16, num_layers, latent_net, device)
+        noise = get_noise(num_layers, 16, device)
+        generate_and_save_imgs(model_G, 0, w, noise)
+
+    if save_models:
+        torch.save(model_G.state_dict(), './models/model_G.pth')
+        torch.save(latent_net.state_dict(), './models/latent_net.pth')
+        torch.save(model_D.state_dict(), './models/model_D.pth')
 
 if __name__ == "__main__":
     main()

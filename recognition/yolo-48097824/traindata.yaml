@@ -1,0 +1,5 @@
+train: 'C:\Users\jccoc\Downloads\ISIC_DATASET\train' #location for training images
+validation: 'C:\Users\jccoc\Downloads\ISIC_DATASET\validation' #location for validation images
+
+nc: 1 #number of classes
+names: ['Lesion'] #class name

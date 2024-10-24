@@ -28,12 +28,12 @@ This project implements a StyleGAN model to generate synthetic brain images usin
 The model uses the ADNI dataset, which can be downloaded from the [ADNI website](http://adni.loni.usc.edu/). The dataset should be organized in the following directory structure: <br/>
 └── ADNI <br/>
 │&emsp;&emsp;├── AD_NC/ <br/>
-│&emsp;&emsp;&emsp;&emsp;&nbsp;├── train/ <br/>
-│&emsp;&emsp;&emsp;&emsp;&nbsp;│&emsp;&emsp;├── AD/ <br/>
-│&emsp;&emsp;&emsp;&emsp;&nbsp;│&emsp;&emsp;└── NC/ <br/>
-│&emsp;&emsp;&emsp;&emsp;&nbsp;└── test/ <br/>
-│&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;├── AD/ <br/>
-│&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;└── NC/ <br/>
+│&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;├── train/ <br/>
+│&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;│&emsp;&emsp;├── AD/ <br/>
+│&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;│&emsp;&emsp;└── NC/ <br/>
+│&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;└── test/ <br/>
+│&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&nbsp;├── AD/ <br/>
+│&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&nbsp;└── NC/ <br/>
 └── dataset.py <br/>
 └── modules.py <br/>
 └── predict.py <br/>

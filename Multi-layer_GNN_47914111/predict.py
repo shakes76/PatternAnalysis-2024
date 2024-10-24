@@ -35,6 +35,7 @@ def plot_scatter(z, labels, num_classes):
     plt.xticks([])
     plt.yticks([])
 
+    # Plot each class separately
     for i in range(num_classes):
         indices = np.where(labels == i)
         plt.scatter(z[indices, 0], z[indices, 1], label=i)
@@ -50,27 +51,24 @@ def save_plot(directory, name):
 
     filepath = os.path.join(directory, f"{name}.png")
     plt.savefig(filepath)
-    print(f"Plot saved to {filepath}")  # Added a print statement to confirm the plot was saved
-    plt.close()  # Ensure the plot is closed after saving to avoid overlap with future plots
+    print(f"Plot saved to {filepath}")  
+    plt.close()  
 
 def plot_tsne(name, data, labels, num_classes, device):
     """
     Perform t-SNE on the model output and save the scatter plot.
     """
     data = data.to(device)
-    labels = labels.to('cpu')  # Ensure labels are on CPU for plotting
+    labels = labels.to('cpu')  
 
     # Perform t-SNE on the data
     z = perform_tsne(data, device)
-
-    # Create the scatter plot
     plot_scatter(z, labels, num_classes)
 
     # Save the plot in the specified directory
     plot_dir = "C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/"
     save_plot(plot_dir, name)
-
-    plt.show()  # Ensure the plot is displayed if running interactively
+    plt.show() 
 
 def load_and_prepare_model(num_features, num_classes, device, model_path="GCN_Model.pt"):
     """
@@ -95,8 +93,8 @@ def process_and_forward_pass(model, feature_matrix, adjacency_matrix, device):
     # Set the model to evaluation mode
     model.eval()
 
-    # Perform the forward pass
-    with torch.no_grad():  # Disable gradient calculations for inference
+    # Disable gradient calculations for inference
+    with torch.no_grad():  
         output = model(feature_matrix, adjacency_matrix)
 
     return output

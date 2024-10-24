@@ -47,7 +47,7 @@ The required dependencies can be installed by doing the following (this contribu
    ```
 4. Install the following dependencies:
    ```bash
-   conda install numpy matplotlib tensorflow 
+   conda install numpy matplotlib tensorflow tqdm
    ```
    ```bash
    conda install conda-forge::tensorboard

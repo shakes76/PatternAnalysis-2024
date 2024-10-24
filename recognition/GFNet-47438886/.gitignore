@@ -1,2 +1,6 @@
 ADNI_AD_NC_2D*
 __pycache__/
+*.pth
+*.out
+runner
+README.pdf

@@ -128,6 +128,3 @@ def image_and_mask(sample):
     axs[0].set_title("original ISIC supplied image")
     axs[1].set_title("modified image for YOLO use")
     plt.show()
-
-
-# image_and_mask("0000001")

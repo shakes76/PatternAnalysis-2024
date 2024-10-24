@@ -34,10 +34,10 @@ synthesis.
 Generative Adversarial Networks (GANs) are a class of deep learning models designed for generative tasks.
 The GAN architecture consists of two main components:
 
-1. Generator (G): This network takes random noise as input and generates synthetic data
+1. **Generator (G)**: This network takes random noise as input and generates synthetic data
 (in our case, brain scan images).
 
-2. Discriminator (D): This network tries to distinguish between real data from the training set
+2. **Discriminator (D)**: This network tries to distinguish between real data from the training set
 and fake data produced by the Generator.
 
 The training process involves a minimax game between G and D:
@@ -53,11 +53,11 @@ One of the challenges in traditional GAN architectures is feature entanglement. 
 phenomenon where different features or attributes of the generated images are not clearly separated in
 the latent space. Feature entanglement can manifest in several ways:
 
-- Lack of Control: When features are entangled, it becomes difficult to manipulate specific attributes
+- **Lack of Control**: When features are entangled, it becomes difficult to manipulate specific attributes
 of the generated images independently. Changing one aspect of the image often affects others
 unintentionally.
 
-- Limited Diversity: Entanglement can limit the diversity of generated samples, as the model struggles
+- **Limited Diversity**: Entanglement can limit the diversity of generated samples, as the model struggles
 to combine features in novel ways.
 
 Addressing feature entanglement is crucial for improving the quality and utility of generated images,
@@ -77,30 +77,30 @@ class="center">
 
 Key components and innovations of the StyleGAN architecture include:
 
-1. Mapping Network: This network transforms the input latent code z into an intermediate latent code w.
+1. **Mapping Network**: This network transforms the input latent code z into an intermediate latent code w.
 The mapping network allows for better disentanglement of features and more control over the generated
 images' styles. It consists of multiple fully connected layers.
 
-2. Synthesis Network: This is the main part of the generator that actually produces the image.
+2. **Synthesis Network**: This is the main part of the generator that actually produces the image.
 It's structured as a series of convolutional layers, each operating at a different resolution.
 
-3. Adaptive Instance Normalization (AdaIN): This technique applies the style at different resolutions,
+3. **Adaptive Instance Normalization (AdaIN)**: This technique applies the style at different resolutions,
 enabling fine-grained control over image features. AdaIN layers are inserted after each convolutional
 layer in the synthesis network.
 
-4. Noise Injection: Random noise is added at each layer of the synthesis network, introducing stochastic
+4. **Noise Injection**: Random noise is added at each layer of the synthesis network, introducing stochastic
 variation and improving the realism of generated images, especially in terms of fine details.
 
-5. Progressive Growing: StyleGAN starts training on low-resolution images and progressively increases the
+5. **Progressive Growing**: StyleGAN starts training on low-resolution images and progressively increases the
 resolution during training, allowing for stable training of high-resolution images.
 
-6. Style Mixing: During training, styles from two latent codes are randomly mixed, improving the network's
+6. **Style Mixing**: During training, styles from two latent codes are randomly mixed, improving the network's
 ability to separate different aspects of the generated images.
 
 The StyleGAN family has undergone several iterations, with StyleGAN2 being a significant improvement over
 the original.
 
-### StyleGAN2
+## StyleGAN2
 
 In this project, we implemented the StyleGAN2 architecture, which addresses several shortcomings of
 the original StyleGAN. Key features of StyleGAN2 include:

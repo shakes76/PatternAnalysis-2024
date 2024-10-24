@@ -19,7 +19,8 @@ Some traditional methods are Convolutional Nueral Networks (CNNs) for image clas
 Transformer models use self-attention layers to capture long-term dependencies, which are able to learn more diverse interactions between spatial locations[1].
 Global Filter Network (GFNet), which follows the trend of removing inductive biases from vision models while enjoying the log-linear complexity in computation. The basic idea behind this architecture is to learn the interactions among spatial locations in the frequency domain.
 
-    
+![GFNet Structure](GFNet_Strcuture.png)
+
 # Library Dependencies:
 
 # Modules.py

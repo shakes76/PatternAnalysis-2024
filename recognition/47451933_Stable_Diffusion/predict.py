@@ -31,19 +31,36 @@ unet = torch.load("models/unet.model", weights_only=False)
 unet.eval()
 
 if __name__ == '__main__':
-    n_images = 10
+    n_images = 64
     # Display the generated images
     sample_images = generate_sample(0, unet, vae_decoder, vae_encoder, latent_dim, num_timesteps, noise_scheduler, num_samples=n_images)
-    display_images(sample_images, title="fully generated AD brain images")
+    if n_images <= 10:
+        display_images(sample_images, title="fully generated AD brain images", num_images=n_images)
+    else:
+        plt.figure(figsize=(8,8))
+        plt.axis("off")
+        plt.title("fully generated AD brain images")
+        #make grid
+        plt.imshow(np.transpose(tvutils.make_grid(sample_images.to(device)[:64], padding=2, normalize=True).cpu(),(1,2,0)))
+        plt.show()
 
-    sample_images = generate_sample(0, unet, vae_decoder, vae_encoder, latent_dim, num_timesteps, noise_scheduler, num_samples=n_images)
-    display_images(sample_images, title="fully generated AD brain images")
+    sample_images = generate_sample(1, unet, vae_decoder, vae_encoder, latent_dim, num_timesteps, noise_scheduler, num_samples=n_images)
+    if n_images <= 10:
+        display_images(sample_images, title="fully generated NC brain images", num_images=n_images)
+    else:
+        plt.figure(figsize=(8,8))
+        plt.axis("off")
+        plt.title("fully generated NC brain images")
+        #make grid
+        plt.imshow(np.transpose(tvutils.make_grid(sample_images.to(device)[:64], padding=2, normalize=True).cpu(),(1,2,0)))
+        plt.show()
 
     #show test images
     test_images = next(iter(data_loader_test))[0]
     plt.figure(figsize=(8,8))
     plt.axis("off")
     plt.title("64 Samples of Test Images")
+    #make grid
     plt.imshow(np.transpose(tvutils.make_grid(test_images.to(device)[:64], padding=2, normalize=True).cpu(),(1,2,0)))
     plt.show()
 

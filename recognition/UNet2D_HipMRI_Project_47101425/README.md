@@ -71,7 +71,7 @@ This creates and trains the model; runs the model on the validation dataset afte
 
 ## Figures and Visualizations
 An example of the model's predictions alongside the original MRI image and the ground truth mask is shown below:
-(To reproduce the example graphs obtained, use the following parameters when training the model:
+To reproduce the example graphs obtained, use the following parameters when training the model:
 ```bash
 # Initialize learning rate scheduler
     decay_steps = 1000
@@ -90,9 +90,10 @@ model.fit(
         verbose=1
     )
 ```
-)
-![Example of model training metric plot epoch loss](recognition/UNet2D_HipMRI_Project_47101425/images/epoch-loss-example.png)
-![Example of model training metric plot dice similarity coefficient](recognition/UNet2D_HipMRI_Project_47101425/images/dice-coeff-example.png)
+As can be seen here, with adjustment, the UNet model was able to acheive above 0.75 similarity coefficient on the dataset
+![Example of model training output](model-output.png)
+![Example of model training metric plot epoch loss](images/epoch-loss-example.png)
+![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example.png)
 
 To help better visualize the model's accuracy, here is an example of the plot of an actual image, the ground truth and a model's prediction put side-by-side to better present the model's accuracy after training
 ![Example of UNet model output](images/model-output-example.png)

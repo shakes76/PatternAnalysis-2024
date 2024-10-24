@@ -19,13 +19,13 @@ gen = Generator().to(device)
 disc = Discriminator().to(device)
 
 # Load the generator and discriminator inference models
-gen.load_state_dict(torch.load(os.path.join(hp.SAVED_OUTPUT_DIR, "8x8_gen_final_model.pth"), weights_only=True))
-disc.load_state_dict(torch.load(os.path.join(hp.SAVED_OUTPUT_DIR, "8x8_disc_final_model.pth"), weights_only=True))
+gen.load_state_dict(torch.load(os.path.join(hp.SAVED_OUTPUT_DIR, "generator_model.pth"), weights_only=True))
+disc.load_state_dict(torch.load(os.path.join(hp.SAVED_OUTPUT_DIR, "discriminator_model.pth"), weights_only=True))
 gen.eval()
 disc.eval()
 
 # Load the ADNI dataset validation images
-image_loader = load_ADNI_dataset(image_size=8, training_set=False)
+image_loader = load_ADNI_dataset(training_set=False)
 
 # Stores the features and labels for each batch
 features_list = []
@@ -70,6 +70,6 @@ plt.ylabel('UMAP 2')
 legend_labels = {0: 'CN', 1: 'AD'}
 handles, _ = scatter.legend_elements()
 plt.legend(handles, [legend_labels[int(label)] for label in np.unique(all_labels)])
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "8x8_AD_and_CN_UMAP_plot.png"), pad_inches=0)
+plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "AD_and_CN_UMAP_plot.png"), pad_inches=0)
 plt.close()
 

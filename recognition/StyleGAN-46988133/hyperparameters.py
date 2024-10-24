@@ -8,8 +8,8 @@ ROOT = r"C:\Users\Mathew\ADNI_Dataset"
 # The relative path to a folder where all training output will be saved
 SAVED_OUTPUT_DIR = r"recognition/StyleGAN-46988133/saved_output/"
 
-# The desired output image resolution of the StyleGAN
-DESIRED_IMAGE_SIZE = 256
+# The IMAGE_SIZExIMAGE_SIZE pixel dimension of the images loaded into the model
+IMAGE_SIZE = 256
 
 # The number of channels of the images loaded into the model (1 = Greyscale)
 NUM_CHANNELS = 1
@@ -36,43 +36,12 @@ EMBED_DIMENSIONS = 8
 # The amount of features used within the generator
 GEN_FEATURE_SIZE = 512
 
-# Used to clip the generator's gradient to a certain size
-GEN_GRAD_CLIP = 40
-
 # The amount of features used within the discriminator
 DISC_FEATURE_SIZE = 128
 
-# Used to clip the discriminator's gradient to a certain size
-DISC_GRAD_CLIP = 20
-
-################################## Progressive Growing ###########################
-
-# The initial value of alpha for fade-in blending at the start of each resolution 
-ALPHA_START = 1e-5
-
-# The starting depth indicating the lowest resolution (8x8)
-START_DEPTH = 0
-
-# The max depth indicating the highest resolution (256x256)
-MAX_DEPTH = 5
-
-# Fade-In percentage used in blending old and new resolutions
-FADE_IN_PERCENTAGE = 0.5
-
-# The amount of steps per resolution
-STEPS_PER_RESOLUTION = 5000
-
-# The amount of epochs per image resolution
-EPOCHS_PER_RESOLUTION = [30, 30, 40, 40, 50, 80]
-
-# Different batch sizes required for different image resolutions
-BATCH_SIZES = [256, 256, 128, 128, 64, 64, 64]
-
-# The discriminator factors that influence the feature map sizes
-GEN_FACTORS = [LATENT_SIZE, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64]
-
-# The discriminator factors that influence the feature map sizes
-DISC_FACTORS = [NUM_CHANNELS, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2]
+# Used to clip the discriminator's and generator's gradient to a certain size if needed
+GEN_GRAD_CLIP = 200
+DISC_GRAD_CLIP = 200
 
 ################################## Training Loop #################################
 
@@ -83,9 +52,18 @@ MIXING_PROB = 0.5
 # Set a seed for randomness for reproducibility
 RANDOM_SEED = 999
 
+# The total number of images trained on the model at any given time
+BATCH_SIZE = 128
+
 # The learning rates used by Adam optimisers
 GEN_LEARNING_RATE = 0.001
 DISC_LEARNING_RATE = 0.0005
+
+# Controls the T_Max variable of the Cosine Annealing Scheduler
+COSINE_ANNEALING_RATE = 0.1
+
+# The number of epochs used during training
+NUM_OF_EPOCHS = 100
 
 ################################## Helper Functions and Classes ##################
 
@@ -96,4 +74,4 @@ EPSILON = 1e-8
 LAMBDA = 10
 
 # Used in L2 regularisation 
-L2_REG_TERM = 0.00001
+L2_REG_TERM = 0.001

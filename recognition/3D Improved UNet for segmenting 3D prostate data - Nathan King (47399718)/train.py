@@ -16,6 +16,8 @@ DATA_PATH = "C:/Users/nk200/Downloads/HipMRI_study_complete_release_v1/" #This i
 BATCH_LENGTH = 2
 BUFFER_SIZE = 64
 
+EPOCHS = 10
+
 def multiclass_dice_coefficient(y_true, y_pred):
     """
     Calculates the multiclass dice similarity coefficient between y_true and y_pred using the formula defined in the reference.
@@ -165,7 +167,7 @@ def train_model():
     train_batches = train_batches.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     validation_batches = validate_dataset.batch(BATCH_LENGTH)
     test_batches = test_dataset.batch(BATCH_LENGTH)
-    
+
     #Build model and print summary of the model
     mri_improved_3d_unet_model = improved_3d_unet_model()
     tf.config.list_physical_devices("GPU")
@@ -186,6 +188,26 @@ def train_model():
                                    validation_steps = VALIDATION_STEPS,
                                    validation_data = validation_batches,
                                    verbose = True)
+
+    #Plot and save the training and validation accuracy of the model for each epoch
+    plt.plot(range(EPOCHS), history.history["accuracy"], label = "Training Accuracy")
+    plt.plot(range(EPOCHS), history.history["val_accuracy"], label = "Validation Accuracy")
+    plt.legend(loc="upper left")
+    plt.title("Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.savefig(SAVED_RESULTS_PATH + "Accuracy.png")
+    plt.show()
+    
+    #Plot and save the training and validation loss of the model for each epoch
+    plt.plot(range(EPOCHS), history.history["loss"], label = "Training Loss")
+    plt.plot(range(EPOCHS), history.history["val_loss"], label = "Validation Loss")
+    plt.legend(loc="upper left")
+    plt.title("Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.savefig(SAVED_RESULTS_PATH + "Loss.png")
+    plt.show()
     
     #Plot and save the training and validation multiclass dice coefficient of the model for each epoch
     plt.plot(range(EPOCHS), history.history["multiclass_dice_coefficient"], label = "Training Multiclass Dice Coefficient")
@@ -228,7 +250,7 @@ def train_model():
     #Evaluate the model on the test set by calculating the dice similarity
     # coefficients for each class and the multiclass dice similarity coefficient
     mri_improved_3d_unet_model.evaluate(test_batches)
-    
+
     #Save the trained model to use for predictions
     mri_improved_3d_unet_model.save(SAVED_RESULTS_PATH + "improved_3d_unet_model.keras")
 

@@ -39,9 +39,9 @@ def get_yolo_model(model_path, device):
             print(f"\nOriginal anchors: \n{module.anchors}")
             # new_anchors = module.anchors
             new_anchors = torch.tensor([
-                [136.0, 100.0], [125.0, 107.0], [170.0, 117.0],  # Small Anchors
-                [222.0, 157.0], [226.0, 170.0], [314.0, 237.0],  # Medium Anchors
-                [466.0, 430.0], [571.0, 500.0], [630.0, 630.0]  # Large Anchors
+                [30.0, 30.0], [70.0, 70.0], [160.0, 160.0],  # Small Anchors
+                [200.0, 200.0], [250.0, 250.0], [300.0, 300.0],  # Medium Anchors
+                [350.0, 350.0], [450.0, 450.0], [550.0, 550.0]  # Large Anchors
             ]).to(device)
             new_anchors = new_anchors.view(3, 6)  # flatten to suit the yolo config file (yaml) format
             new_idetect = IDetect(
@@ -96,41 +96,13 @@ def calculate_iou(yolo_box_vertex, ground_truth_vertex, print_log=False):
         return 0
 
 
-def calculate_iou_YOLO_box(yolo_box, ground_truth_box):
-    # Calculate Intersection Over Union (IoU) between YOLO output and ground truth mask
-    gt_x_center, gt_y_center, gt_width, gt_height = ground_truth_box[:4]
-    gt_x1 = gt_x_center - gt_width / 2
-    gt_x2 = gt_x_center + gt_width / 2
-    gt_y1 = gt_y_center - gt_height / 2
-    gt_y2 = gt_y_center + gt_height / 2
-    gt_area = gt_width * gt_height
-
-    yolo_x_center, yolo_y_center, yolo_width, yolo_height = yolo_box[:4]
-    yolo_x1 = yolo_x_center - yolo_width / 2
-    yolo_x2 = yolo_x_center + yolo_width / 2
-    yolo_y1 = yolo_y_center - yolo_height / 2
-    yolo_y2 = yolo_y_center + yolo_height / 2
-    yolo_area = yolo_width * yolo_height
-
-    inter_x1 = max(yolo_x1, gt_x1)
-    inter_y1 = max(yolo_y1, gt_y1)
-    inter_x2 = min(yolo_x2, gt_x2)
-    inter_y2 = min(yolo_y2, gt_y2)
-    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
-
-    union_area = yolo_area + gt_area - inter_area
-    if union_area > 0:
-        return inter_area / union_area
-    else:
-        return 0
-
 
 def get_YOLO_box(ground_truth):
     gt_indices = np.argwhere(ground_truth > 0)
     if len(gt_indices) == 0:
         return None
-    gt_x1, gt_y1 = gt_indices.min(axis=0)
-    gt_x2, gt_y2 = gt_indices.max(axis=0)
+    gt_y1, gt_x1 = gt_indices.min(axis=0)
+    gt_y2, gt_x2 = gt_indices.max(axis=0)
 
     x_center = (gt_x1 + gt_x2) / 2
     y_center = (gt_y1 + gt_y2) / 2
@@ -172,39 +144,42 @@ def construct_yolo_target(ground_truth, grid_size, target_class, anchors,
     y_cell = (y_center * grid_size) - grid_y
 
     # Fill in the target tensor
-    for anchor in range(num_anchors):
-        target[anchor, grid_y, grid_x, 0] = x_cell  # tx
-        target[anchor, grid_y, grid_x, 1] = y_cell  # ty
-        target[anchor, grid_y, grid_x, 2] = width  # tw
-        target[anchor, grid_y, grid_x, 3] = height  # th
-        target[anchor, grid_y, grid_x, 4] = 1  # Objectness score
-        target[0, grid_y, grid_x, 5 + target_class] = 1  # One-hot encoded class
 
-    # best_anchor = 0
-    # best_iou = 0
-    # for i, anchor in enumerate(anchors):
-    #     anchor_width, anchor_height = anchor[0]
-    #     anchor_width /= img_width
-    #     anchor_height /= img_height
-    #
-    #     # Calculate IoU between the ground-truth box and the anchor box
-    #     inter_width = min(width, anchor_width)
-    #     inter_height = min(height, anchor_height)
-    #     inter_area = inter_width * inter_height
-    #     union_area = (width * height) + (anchor_width * anchor_height) - inter_area
-    #     iou = inter_area / union_area
-    #
-    #     if iou > best_iou:
-    #         best_iou = iou
-    #         best_anchor = i
-    #
-    # # Fill in the target tensor for the best matching anchor
-    # target[best_anchor, grid_y, grid_x, 0] = x_cell  # tx
-    # target[best_anchor, grid_y, grid_x, 1] = y_cell  # ty
-    # target[best_anchor, grid_y, grid_x, 2] = width  # tw
-    # target[best_anchor, grid_y, grid_x, 3] = height  # th
-    # target[best_anchor, grid_y, grid_x, 4] = 1  # Objectness score
-    # target[best_anchor, grid_y, grid_x, 5 + target_class] = 1  # One-hot encoded class
+    # set all anchor
+    # for anchor in range(num_anchors):
+    #     target[anchor, grid_y, grid_x, 0] = x_cell  # tx
+    #     target[anchor, grid_y, grid_x, 1] = y_cell  # ty
+    #     target[anchor, grid_y, grid_x, 2] = width  # tw
+    #     target[anchor, grid_y, grid_x, 3] = height  # th
+    #     target[anchor, grid_y, grid_x, 4] = 1  # Objectness score
+    #     target[0, grid_y, grid_x, 5 + target_class] = 1  # One-hot encoded class
+
+    # set best anchor only
+    best_anchor = 0
+    best_iou = 0
+    for i, anchor in enumerate(anchors):
+        anchor_width, anchor_height = anchor[0]
+        anchor_width /= img_width
+        anchor_height /= img_height
+
+        # Calculate IoU between the ground-truth box and the anchor box
+        inter_width = min(width, anchor_width)
+        inter_height = min(height, anchor_height)
+        inter_area = inter_width * inter_height
+        union_area = (width * height) + (anchor_width * anchor_height) - inter_area
+        iou = inter_area / union_area
+
+        if iou > best_iou:
+            best_iou = iou
+            best_anchor = i
+
+    # Fill in the target tensor for the best matching anchor
+    target[best_anchor, grid_y, grid_x, 0] = x_cell  # tx
+    target[best_anchor, grid_y, grid_x, 1] = y_cell  # ty
+    target[best_anchor, grid_y, grid_x, 2] = width  # tw
+    target[best_anchor, grid_y, grid_x, 3] = height  # th
+    target[best_anchor, grid_y, grid_x, 4] = 1  # Objectness score
+    target[best_anchor, grid_y, grid_x, 5 + target_class] = 1  # One-hot encoded class
 
     return target
 
@@ -237,11 +212,8 @@ class YOLOLoss(nn.Module):
 
             # Bounding box loss (using Mean Squared Error)
             box_loss = func.mse_loss(pred_boxes, target_boxes, reduction='sum')
-            # box_loss = calculate_iou_YOLO_box(pred_boxes, target_boxes)
 
             # No-object loss
-            # noobj_loss = func.binary_cross_entropy_with_logits(pred_obj, target_obj,
-            #                                                    reduction='sum')
             obj_mask = target_obj > 0  # Mask for object presence
             noobj_mask = target_obj == 0  # Mask for no object presence
 
@@ -250,11 +222,9 @@ class YOLOLoss(nn.Module):
                                                                reduction='sum')
 
             # Classification loss (using Cross-Entropy)
-            # class_loss = func.cross_entropy(pred_class, target_class.float(), reduction='sum')
             class_loss = func.cross_entropy(pred_class[obj_mask], target_class[obj_mask].float(), reduction='sum')
 
             # Combine the losses
             total_loss += (self.lambda_coord * box_loss) + obj_loss + (self.lambda_noobj * noobj_loss) + class_loss
-            # total_loss += (self.lambda_coord * box_loss) + (self.lambda_noobj * noobj_loss)
 
         return total_loss

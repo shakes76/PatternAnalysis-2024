@@ -38,9 +38,11 @@ def predict_yolo(model, dataloader, ground_truth_path, device):
                         ground_truth_image.close()
                         gt_indices = np.argwhere(ground_truth_array > 0)
                         if len(gt_indices) > 0:
-                            gt_x1, gt_y1 = gt_indices.min(axis=0)
-                            gt_x2, gt_y2 = gt_indices.max(axis=0)
+                            gt_y1, gt_x1 = gt_indices.min(axis=0)
+                            gt_y2, gt_x2 = gt_indices.max(axis=0)
                             draw.rectangle((gt_x1, gt_y1, gt_x2, gt_y2), outline='green', width=2)
+                            draw.text((gt_x1, gt_y1), f"class: {labels[i]:.0f}"
+                                      , fill='green', font=font)
                         else:
                             continue
                     except FileNotFoundError:
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataloader = get_dataloader(csv_file='data/test/ISIC-2017_Test_v2_Part3_GroundTruth.csv',
                                 root_dir='data/test/ISIC-2017_Test_v2_Data', batch_size=1)
-    yolov7 = torch.load("trained model/yolov7_epoch_1.pt", map_location=device)
+    yolov7 = torch.load("trained model/yolov7_epoch_15.pt", map_location=device)
     ground_truth_path = 'data/test/ISIC-2017_Test_v2_Part1_GroundTruth'
     yolov7.to(device)
     predict_yolo(yolov7, dataloader, ground_truth_path, device=device)

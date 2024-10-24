@@ -116,15 +116,10 @@ def validate_yolo(model, dataloader, ground_truth_path, device):
                     max_conf_idx = torch.argmax(image_predictions[:, 4])
                     pred = image_predictions[max_conf_idx]
                     # confid = pred[4]
-                    # if confid < 0.5:  # Object confidence
+                    # if confid < 0.5:  # optional filter for Object confidence
                     #     continue
 
-                    pred_box = pred[:4]  # tx, ty, tw, th (center x, center y, width, height)
-                    # yolo_x_center, yolo_y_center, yolo_width, yolo_height = pred_box.detach().cpu().numpy()
-                    # yolo_x1 = yolo_x_center - (yolo_width / 2)
-                    # yolo_y1 = yolo_y_center - (yolo_height / 2)
-                    # yolo_x2 = yolo_x_center + (yolo_width / 2)
-                    # yolo_y2 = yolo_y_center + (yolo_height / 2)
+                    pred_box = pred[:4]
                     yolo_x1, yolo_y1, yolo_x2, yolo_y2 = pred_box.detach().cpu().numpy()
 
                     # Calculate IoU with the ground truth
@@ -139,6 +134,8 @@ def validate_yolo(model, dataloader, ground_truth_path, device):
     print(f"Average Intersection Over Union (IoU): {avg_iou:.4f}")
     max_iou = np.max(all_ious) if len(all_ious) > 0 else 0
     print(f"Maximum Intersection Over Union (IoU): {max_iou:.4f}")
+    min_iou = np.min(all_ious) if len(all_ious) > 0 else 0
+    print(f"Maximum Intersection Over Union (IoU): {min_iou:.4f}")
 
 
 if __name__ == '__main__':
@@ -154,7 +151,7 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(yolov7.parameters(), lr=0.001)
     loss_function = YOLOLoss()
-    train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=20)
+    train_yolo(yolov7, dataloader, optimizer, loss_function, device, num_epochs=15)
 
     # yolov7 = torch.load("trained model/yolov7_epoch_20.pt", map_location=device)
     # yolov7.to(device)

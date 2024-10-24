@@ -16,6 +16,7 @@ from utils import (
     save_checkpoint,
     get_loaders,
     check_accuracy,
+    visualize_predictions,
     #save_predictions_as_img,
 )
 
@@ -32,7 +33,7 @@ from utils import (
 LEARN_RATE = 0.0001
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
-NUM_EPOCHS = 3
+NUM_EPOCHS = 2
 NUM_WORKERS = 1
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 256
@@ -138,6 +139,7 @@ def main():
         #print("started an epoch")
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
         check_accuracy(val_loader, model, DEVICE)
+        visualize_predictions(val_loader, model, device=DEVICE, num_images=3)
         #print("completed an epoch")
 
         #save model

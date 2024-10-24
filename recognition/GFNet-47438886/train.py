@@ -19,23 +19,35 @@ import matplotlib.pyplot as plt
 
 from utils import get_dataset_root, get_device
 
+
 def initialise_model(device: str):
+    """
+    Initialises the model
+    """
     model = GFNet(
             patch_size=16, embed_dim=256, depth=12, mlp_ratio=4, 
             norm_layer=partial(nn.LayerNorm, eps=1e-6)).to(device)
     return model
 
+
 def initialise_optimizer(model: nn.Module):
+    """
+    Initialises optimiser
+    """
     optimizer = optim.Adam(model.parameters(), lr=0.00001, amsgrad=True)  # Adam optimizer with initial learning rate 0.01
     return optimizer
 
 
 def initialise_scheduler(optimizer: torch.optim):
+    """
+    Intialises the scheduler
+    """
     # Cosine Annealing Learning Rate Scheduler with minimum learning rate (eta_min)
     # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
     # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=5, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=10, verbose=True)
     return scheduler
+
 
 def plot_graphs(train_loss: list, validation_loss: list, train_accuracy: list, validation_accuracy: list):
     """
@@ -79,8 +91,7 @@ def test_model(model: nn.Module, device: str, root_dir: str) -> float:
         device: Device to run testing on
         root_dir: Root directory of ADNI dataset
 
-    Returns:
-        accuracy: Accuracy as a percentage from testing on test set
+    Returns: None
     """
      # Testing loop
     testing_start = time.time()
@@ -101,7 +112,88 @@ def test_model(model: nn.Module, device: str, root_dir: str) -> float:
     print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
     print("Accuracy", accuracy)
 
-    return accuracy
+
+def train_and_validate_one_epoch(train_loader, val_loader, model, optimizer, 
+                                 scheduler, criterion, device):
+    """
+    Train and validate the model for one epoch, stepping the scheduler with it.
+
+    Parameters:
+        train_loader: DataLoader for train set
+        val_loader: DataLoader for validation set
+        model: The GFNet model to train on
+        optimizer: The chosen optimizer
+        scheduler: The learning rate scheduler
+        criterion: Metric to evaluate loss function
+        device: Device to train on
+
+    Returns:
+        training_loss: A list of losses recorded during training
+        training_accuracy: A list of accuracy values on based on train set 
+                recorded during training
+        validation_loss: A list of validation loss values recorded during 
+                training
+        validation_accuracy: A list of accuracy values on tested on validation 
+                set recorded during training
+    """
+    # Training phase
+    model.train()  # Set the model to training mode
+
+    running_loss = 0.0
+    correct_train = 0
+    total_train = 0
+
+    for inputs, targets in train_loader:
+        # Move data to the GPU if available
+        inputs, targets = inputs.to(device), targets.to(device)
+
+        # Zero the gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+
+        # Backward pass and optimization
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
+        total_train += targets.size(0)
+        correct_train += (predicted == targets).sum().item()  # Count correct predictions
+
+    # Calculate training loss and accuracy
+    training_loss = running_loss / len(train_loader)
+    training_accuracy = 100 * correct_train / total_train
+
+    # Validation phase
+    model.eval()  # Set the model to evaluation mode
+    running_val_loss = 0.0
+    correct_val = 0
+    total_val = 0
+
+    with torch.no_grad():
+
+        for inputs, targets in val_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+
+            running_val_loss += loss.item()  # Accumulate loss
+            _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
+            total_val += targets.size(0)
+            correct_val += (predicted == targets).sum().item()  # Count correct predictions
+
+    validation_loss = running_val_loss / len(val_loader)
+    validation_accuracy = 100 * correct_val / total_val
+
+    # Step the scheduler
+    scheduler.step(validation_loss)
+
+    return training_loss, training_accuracy, validation_loss, validation_accuracy
 
 def main():
 
@@ -112,7 +204,6 @@ def main():
 
     # Assuming you already have a model and dataloaders (train_loader, val_loader)
     model = initialise_model(device)
-
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()  # Use the appropriate loss function
     optimizer = initialise_optimizer(model)
@@ -125,74 +216,23 @@ def main():
     validation_loss_list = []
     train_accuracy_list = []
     validation_accuracy_list = [] 
+    
 
     best_validation_accuracy = 0
 
     start_time = time.time()
+
     for epoch in range(n_epochs):
-        # Training phase
-        model.train()  # Set the model to training mode
 
-        running_loss = 0.0
-        correct_train = 0
-        total_train = 0
-
-        for inputs, targets in train_loader:
-            # Move data to the GPU if available
-            inputs, targets = inputs.to(device), targets.to(device)
-
-            # Zero the gradients
-            optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-
-            # Backward pass and optimization
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
-            total_train += targets.size(0)
-            correct_train += (predicted == targets).sum().item()  # Count correct predictions
-
-        # Calculate training loss and accuracy
-        training_loss = running_loss / len(train_loader)
-        training_accuracy = 100 * correct_train / total_train
-
+        training_loss, training_accuracy, validation_loss, validation_accuracy = \
+            train_and_validate_one_epoch(train_loader, val_loader, model, 
+                                         optimizer, scheduler, criterion, 
+                                         device)
+        
         train_loss_list.append(training_loss)
         train_accuracy_list.append(training_accuracy)
-
-            
-        # Validation phase
-        model.eval()  # Set the model to evaluation mode
-        running_val_loss = 0.0
-        correct_val = 0
-        total_val = 0
-
-        with torch.no_grad():
-        
-            for inputs, targets in val_loader:
-                inputs, targets = inputs.to(device), targets.to(device)
-
-                # Forward pass
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
-
-                running_val_loss += loss.item()  # Accumulate loss
-                _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
-                total_val += targets.size(0)
-                correct_val += (predicted == targets).sum().item()  # Count correct predictions
-
-        validation_loss = running_val_loss / len(val_loader)
-        validation_accuracy = 100 * correct_val / total_val
-
         validation_loss_list.append(validation_loss)
         validation_accuracy_list.append(validation_accuracy)
-
-        # Step the scheduler
-        scheduler.step(validation_loss)
 
         # Print epoch statistics
         print(f'Epoch [{epoch + 1}/{n_epochs}], '
@@ -215,43 +255,16 @@ def main():
                 'training_loss': train_loss_list
             }
 
-            torch.save(checkpoint, 'model_checkpoint_actual.pth')
-
+            torch.save(checkpoint, 'model_checkpoint_actual_split.pth')
         
     training_time = time.time() - start_time
     print(f"Training took {training_time} seconds or {training_time / 60} minutes")
 
-
+    plot_graphs(train_loss_list, validation_loss_list, train_accuracy_list, 
+                validation_accuracy_list)
 
     # Testing loop
-    accuracy = test_model(model, device, root_dir)
-
-    # testing_start = time.time()
-    # model.eval()  # Set the model to evaluation mode
-    # correct = 0
-    # total = 0
-    # test_loader = load_adni_data(root_dir=root_dir, testing=True)
-    # with torch.no_grad():  # No need to compute gradients during evaluation
-    #     for inputs, labels in test_loader:
-    #         inputs, labels = inputs.to(device), labels.to(device)
-    #         outputs = model(inputs)
-    #         _, predicted = torch.max(outputs.data, 1)  # Get predicted classes
-    #         total += labels.size(0)
-    #         correct += (predicted == labels).sum().item()
-
-    # accuracy = correct / total
-    # testing_time = time.time() - testing_start
-    # print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
-    # print("Accuracy", accuracy)
-
-    # print("\n\n\n\n")
-    # print("Validation accuracy:", validation_accuracy_list)
-    # print("Validation loss:", validation_loss_list)
-    # print("Training accuracy:", train_accuracy_list)
-    # print("Training loss:", train_loss_list)
-
-
-
+    test_model(model, device, root_dir)
 
         
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 # 3D U-Net for Prostate MRI Segmentation
 ###### YA HONG s4764092
-This project uses **UNet-3D** to train the Prostate 3D dataset for medical volumetric image segmentation, evaluated by the **Dice similarity coefficient**. The dataset has significant **class imbalance** (e.g., background: 1,068,883,043 pixels, prostate: 1,771,500 pixels). The prostate is difficult to segment accurately due to its small volume, blurred boundaries, and the complexity of anatomical structures. To address these challenges, I applied data augmentation strategies, adjusted the model’s initial feature size (`init_features`), and experimented with various loss functions (such as **Dice loss**, weighted cross-entropy, and their combinations) to improve segmentation performance for minority classes.
 
+This project uses **UNet-3D** to train the Prostate 3D dataset for medical volumetric image segmentation, evaluated by the **Dice similarity coefficient**. The dataset has significant **class imbalance** (e.g., background: 1,068,883,043 pixels, prostate: 1,771,500 pixels). The prostate is difficult to segment accurately due to its small volume, blurred boundaries, and the complexity of anatomical structures. To address these challenges, I applied data augmentation strategies, adjusted the model’s initial feature size (`init_features`), and experimented with various loss functions (such as **Dice loss**, weighted cross-entropy, and their combinations) to improve segmentation performance for minority classes.
 
 ## About the Data
 
@@ -21,10 +21,12 @@ The dataset used for training consists of 3D MRI volumes and corresponding label
 - **Validation set**: 5% of the data is reserved for evaluating model selection, testing different loss functions, and determining whether data augmentation should be applied. It helps ensure the model does not overfit.
 - **Testing set**: 5% of the data is used to evaluate the model's performance on unseen data, providing a final measure of generalization.
 
-### Data Agument
+### Data Augmentation
+
 In this project, I attempted to use **data augmentation** to mitigate the issue of class imbalance. Due to the small volume and blurry boundaries of the prostate region in MRI images, which makes it occupy a small portion of the dataset, data augmentation theoretically helps generate more diverse training samples and improves the model's performance on minority class segmentation.
 
 I used **RandomFlip** from the **torchio** library to perform random flipping on the images, with a 50% probability along the x, y, and z axes. This method was intended to increase the diversity of training data without altering the core structural information of the images.
+
 All experiments were conducted under the **same conditions** (model architecture, hyperparameters, and data splits), except for the inclusion of data augmentation, to ensure that the effects observed were solely due to the augmentation process.
 
 However, in practice, I found that data augmentation did not yield the expected results. The model performed better without data augmentation, as shown in the table below:
@@ -41,11 +43,12 @@ After applying data augmentation, the segmentation performance for some classes,
 
 Although data augmentation can, in theory, increase data diversity, for my model and the characteristics of the existing data, using augmentation strategies (even the basic flipping operation) may have altered some key spatial information, which resulted in a decrease in segmentation performance. Therefore, in subsequent experiments, I chose not to use data augmentation to preserve the integrity of the original image features.
 
-
 ## About the Model
+
 UNet3D is a three-dimensional extension of the 2D U-Net, specifically designed to handle 3D data. This model operates directly on entire volumetric data through 3D convolutions, capturing richer spatial contextual information that is crucial for understanding complex 3D structures. Unlike the 2D U-Net, which processes images slice by slice, UNet3D maintains spatial continuity of images, preventing the loss of cross-slice information during processing—this is extremely important in medical imaging analysis. Additionally, by integrating multi-scale features and skip connections between the encoder and decoder, UNet3D significantly enhances segmentation precision, especially for small-volume and complex-shaped structures. These features make UNet3D highly effective in 3D medical imaging segmentation tasks, particularly suited for handling complex images such as prostate MRI.
 
 ### Architecture
+
 The model consists of the following components:
 
 - **Encoder**: Composed of 5 convolutional blocks, each consisting of two 3D convolution layers. After each convolution, Batch Normalization is applied to standardize the feature maps, followed by a ReLU activation function for non-linearity. Downsampling is performed using 3D MaxPooling layers, gradually extracting multi-scale features from the input data.
@@ -88,15 +91,15 @@ Dice loss is calculated as **1 - Dice coefficient**, where the Dice coefficient 
 
 **Combined Loss**:  
 The combined loss incorporates both weighted cross-entropy and Dice loss. The formula is:  
-**α × Weighted Cross-Entropy + β × log(Dice Loss)** (the log function is used to scale the Dice Loss to the same order of magnitude as the cross-entropy loss).  
+**α × Weighted Cross-Entropy + β × log(Dice Loss)** ,the log function is used to scale the Dice Loss to the same order of magnitude as the cross-entropy loss.  
 I chose **α=0.5** and **β=0.5**. The goal of this combination is to address class imbalance while also optimizing segmentation accuracy. The results are shown in the table below:
 
-| Loss Function         | Average Dice Score | Class 0 | Class 1 | Class 2 | Class 3 | Class 4 | Class 5 |
-|-----------------------|--------------------|---------|---------|---------|---------|---------|---------|
-| Cross-Entropy Loss    | 0.3074             | 0.9649  | 0.8796  | 0.0000  | 0.0000  | 0.0000  | 0.0000  |
-| Weighted Cross-Entropy  | 0.7859         | 0.9555  | 0.8988  | 0.7913  | 0.7797  | 0.5687  | 0.7212  |
-| Dice Loss             | 0.8093             | 0.9585  | 0.9093  | 0.8084  | 0.8168  | 0.6062  | 0.7282  |
-| Combined Loss         | 0.7568             | 0.9603  | 0.8953  | 0.7667  | 0.7095  | 0.5298  | 0.6793  |
+| Loss Function         | Average | Class 0 | Class 1 | Class 2 | Class 3 | Class 4 | Class 5 |
+|-----------------------|---------|---------|---------|---------|---------|---------|---------|
+| Cross-Entropy Loss    | 0.3074  | 0.9649  | 0.8796  | 0.0000  | 0.0000  | 0.0000  | 0.0000  |
+| Weighted Cross-Entropy  | 0.7859  | 0.9555  | 0.8988  | 0.7913  | 0.7797  | 0.5687  | 0.7212  |
+| Dice Loss             | 0.8093  | 0.9585  | 0.9093  | 0.8084  | 0.8168  | 0.6062  | 0.7282  |
+| Combined Loss         | 0.7568  | 0.9603  | 0.8953  | 0.7667  | 0.7095  | 0.5298  | 0.6793  |
 
 As the results show, **Dice Loss** performs best in addressing class imbalance, particularly for improving segmentation in small-volume classes. Compared to weighted cross-entropy loss and the combined loss, Dice Loss better captures the characteristics of small-volume targets such as the prostate. This is mainly because Dice Loss focuses on the overlap between predictions and ground truth, making it particularly suitable for segmenting small, blurry-edged targets. Unlike weighted cross-entropy, which relies on pixel counts, Dice Loss directly optimizes the overlap region, reducing the impact of class imbalance and better handling the segmentation of small-volume classes.
 
@@ -109,8 +112,72 @@ As mentioned earlier, I selected the model that performed the best during valida
 - **Learning rate**: 1e-3
 - **Accumulation Steps**: 4
 
-## Result
+## Results
 
+The following plots show the changes in the class-specific Dice scores and the average Dice score over 100 epochs on the validation set.
+
+We observed that classes 0, 1, 2, and 3 achieved a Dice score above 0.7 as early as epoch 10. Class 5, although slower, reached a Dice score above 0.7 around epoch 80. However, Class 4's Dice score started to plateau around epoch 40 and, unfortunately, did not reach the 0.7 threshold.
+
+![Average Validation Dice Scores](epoch_100_average_validation_dice_scores.png)
+![Class_Specific Validation Dice Scores](epoch_100_class_specific_validation_dice_scores.png)
+![Training and Validation Loss](epoch_100_training_validation_loss.png)
+
+
+
+## Test Set Results
+
+After running the model on the test set, we obtained the following average Dice scores:
+
+| **Average** | **Class 0** | **Class 1** | **Class 2** | **Class 3** | **Class 4** | **Class 5** |
+|-------------|-------------|-------------|-------------|-------------|-------------|-------------|
+| **0.8093**  | **0.9585**   | **0.9005**  | **0.8195**  | **0.7911**  | **0.6262**  | **0.7437**  |
+
+We also identified the best and worst predictions for each class. Below are the corresponding visualizations for each class:
+
+### Class 0
+<p align="center">
+  <img src="best_class_0.png" alt="Best Prediction for Class 0" width="45%">
+  <img src="worst_class_0.png" alt="Worst Prediction for Class 0" width="45%">
+</p>
+
+### Class 1
+<p align="center">
+  <img src="best_class_1.png" alt="Best Prediction for Class 1" width="45%">
+  <img src="worst_class_1.png" alt="Worst Prediction for Class 1" width="45%">
+</p>
+
+### Class 2
+<p align="center">
+  <img src="best_class_2.png" alt="Best Prediction for Class 2" width="45%">
+  <img src="worst_class_2.png" alt="Worst Prediction for Class 2" width="45%">
+</p>
+
+### Class 3
+<p align="center">
+  <img src="best_class_3.png" alt="Best Prediction for Class 3" width="45%">
+  <img src="worst_class_3.png" alt="Worst Prediction for Class 3" width="45%">
+</p>
+
+### Class 4
+<p align="center">
+  <img src="best_class_4.png" alt="Best Prediction for Class 4" width="45%">
+  <img src="worst_class_4.png" alt="Worst Prediction for Class 4" width="45%">
+</p>
+
+### Class 5
+<p align="center">
+  <img src="best_class_5.png" alt="Best Prediction for Class 5" width="45%">
+  <img src="worst_class_5.png" alt="Worst Prediction for Class 5" width="45%">
+</p>
+
+### Overall Best and Worst Predictions
+
+In addition to the class-specific best and worst predictions, we also visualized the overall best and worst predictions based on the global average Dice score:
+
+<p align="center">
+  <img src="best_global.png" alt="Best Overall Prediction" width="45%">
+  <img src="worst_global.png" alt="Worst Overall Prediction" width="45%">
+</p>
 
 
 
@@ -136,18 +203,23 @@ This project requires the following Python libraries:
 
 - **loss.py**: Defines custom loss functions, including **DiceLoss**, **Weighted Cross-Entropy Loss**, and **Combined Loss**.
 
-- **train.py**: The main script for training the model. Records training and validation loss, as well as Dice scores across multiple epochs. Saves the best-trained model weights to **final.pth**.
+- **train.py**: The main script for training the model. Records Dice scores across multiple epochs. Saves the trained model weights to **final.pth**.
 
-- **final.pth**: Contains the weights of the best-trained model, based on the highest validation performance during training. This model is used in the testing and evaluation phases.
 
 - **predict.py**: Contains the script for testing and evaluating the trained model using the weights from **final.pth**. It computes per-class and overall Dice scores, and visualizes the best and worst segmentation predictions for each class, saving these as PNG files.
 
 ### Usage:
 
-To train and test the model, run `train.py`. To test an already trained model, run `predict.py`.
+To train and test the model, run `train.py`. This script will evaluate the model's performance on the validation set and save the trained model to `final.pth`. To test the model, run `predict.py`. Ensure that you have previously trained the model and saved the model file as `final.pth`.
 
-By default, `dataset.py` loads 3D MRI data from the specified directories. Make sure to adjust the paths in `dataset.py` to point to your data. Additionally, if you want to use an existing `final.pth` for predictions, you need to modify the path to `final.pth` in `predict.py` according to your working directory to ensure it loads correctly.
+By default, `dataset.py` loads 3D MRI data from specified directories. Be sure to adjust the paths in `dataset.py` to point to your data locations. Additionally, ensure that the path where `train.py` saves `final.pth` is the same path from which `predict.py` loads it.
 
-For reproducibility, please note that the test set is **randomly split** each time the script is run, which may result in slight variations in the results between runs.
+For reproducibility, please be aware that the test set is **randomly split** each time the scripts are run. This may cause slight variations in results across different executions.
 
 
+## Reference
+The UNet3D model architecture diagram (as well as general inspiration) was taken from:
+
+Çiçek, Ö., Abdulkadir, A., Lienkamp, S. S., Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation. In Lecture Notes in Computer Science (including subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics) (Vol. 9901, pp. 424–432).
+Springer International Publishing
+https://doi.org/10.1007/978-3-319-46723-8_49 

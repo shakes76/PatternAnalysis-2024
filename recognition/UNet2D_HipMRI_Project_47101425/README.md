@@ -31,7 +31,9 @@ The code requires the following dependencies:
 - **Matplotlib**: 3.4.3+
 - **TensorFlow**: 2.10.0+
 - **TensorBoard**: 2.10.1+
-- **Nibabel**: 3.2.1 (for handling NIFTI files)
+- **Nibabel**: 3.2.1+ (for handling NIFTI files)
+- **TQDM**: 4.66.5+
+- **SciKit-Image**: 0.24.0+
 
 - Processed 2D Image Data from the [HIPMRI Study](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2) (click the link to download)
 

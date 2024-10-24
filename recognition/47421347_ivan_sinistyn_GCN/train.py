@@ -1,3 +1,7 @@
+"""This is the file when the training is happening.
+    Data is loaded, The model is created, saved and the results are
+    plotted and save here
+"""
 from modules import GCN
 from dataset import FacebookPagePageLargeNetwork
 from sklearn.metrics import accuracy_score
@@ -9,7 +13,7 @@ FILE_PATH = "./facebook.npz"
 VALIDATION_RATIO = 0.1
 TEST_RATIO= 0.1
 
-EPOCHS = 20
+EPOCHS = 400
 LEARING_RATE = 0.01
 
 OUT_CHANNELS = 64
@@ -26,6 +30,10 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
 
     total_validation_accuracy = []
     total_validation_loss = []
+
+    # Arbitrary
+    best_accuracy = 0
+    best_state_dict = None
 
     for i in range(EPOCHS):
         gcn.train()
@@ -48,8 +56,6 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
         optimizer.zero_grad()
         total_train_loss.append(loss.item())
         total_train_accuracy.append(accuracy)
-        
-
 
         #  Do the evaluation
         gcn.eval()
@@ -67,21 +73,28 @@ def train_GCN(dataset: FacebookPagePageLargeNetwork, gcn: GCN):
         total_validation_loss.append(validation_loss.item())
         total_validation_accuracy.append(validation_accuracy)
 
-        
-        print(f"Epoch: {i + 1}/{EPOCHS}\nTRAIN: Loss: {loss.item()}, Accuracy: {accuracy}\nVALIDATION: Loss: {validation_loss.item()}, Accuracy: {validation_accuracy}\n")
+        # Save the best parameters of the model
+        if validation_accuracy > best_accuracy:
+            best_accuracy = validation_accuracy
+            best_state_dict = gcn.state_dict()
+
+        # Print the validation and train loss every 50 epochs:
+        if i % 10 == 0 or i == EPOCHS - 1:
+            print(f"Epoch: {i + 1}/{EPOCHS}\nTRAIN: Loss: {loss.item()}, Accuracy: {accuracy}\nVALIDATION: Loss: {validation_loss.item()}, Accuracy: {validation_accuracy}\n")
 
     # Plot and save the loss and accuracy
     save_plot(total_train_accuracy, total_validation_accuracy, EPOCHS, "./images/accuracy.png", "Accuracy", (0, 1))
-    save_plot(total_train_loss, total_validation_loss, EPOCHS, "./images/loss.png", "Loss", (0, 3))
+    save_plot(total_train_loss, total_validation_loss, EPOCHS, "./images/loss.png", "Loss", (0.5, 2))
     
-    torch.save(gcn, "./GCN_model.pth")
 
-
+    # Save the state dictionary instead of the whole model
+    torch.save(best_state_dict, "./GCN_model_state_dict.pth")
 
 
 if __name__ == "__main__":
 
-    device = torch.device('cpu')
+   
+    device = torch.device( 'gpu' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}")
 
     # Create the dataset and transfer it to device

@@ -21,9 +21,9 @@ class GNNLayer(torch.nn.Module):
         if active:
             output = F.relu(output)
         return output
-    
+
 class GCN(torch.nn.Module):
-    def __init__(self, in_features, out_features, num_classes, dropout_probability = 0.5) -> None:
+    def __init__(self, in_features, out_features, num_classes) -> None:
         super(GCN, self).__init__()
 
         self.gnn1 = GNNLayer(in_features, out_features)
@@ -31,7 +31,6 @@ class GCN(torch.nn.Module):
         self.gnn2 = GNNLayer(out_features, out_features // 2)
         self.norm2 = torch.nn.BatchNorm1d(out_features // 2)
         self.gnn3 = GNNLayer(out_features // 2, num_classes)
-        # self.norm3 = torch.nn.BatchNorm1d(num_classes)
 
 
     def forward(self, data):
@@ -47,7 +46,9 @@ class GCN(torch.nn.Module):
         x = self.norm2(x)
         x = torch.relu(x)
 
-        x = self.gnn3(x, adj)        
+        x = self.gnn3(x, adj)
+        x = torch.relu(x)
+
         predict = F.softmax(x, dim=1)
         return predict
 

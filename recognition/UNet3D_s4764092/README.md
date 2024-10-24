@@ -75,7 +75,7 @@ Based on these results, I selected an **initial feature size of 32**, as it prov
 
 The process is illustrated in the following figure:
 
-![UNet 3D Architecture](model_architecture.png)
+![UNet 3D Architecture](Visualizations/model_architecture.png)
 
 ## About the Loss Functions 
 
@@ -118,9 +118,9 @@ The following plots show the changes in the class-specific Dice scores and the a
 
 We observed that classes 0, 1, 2, and 3 achieved a Dice score above 0.7 as early as epoch 10. Class 5, although slower, reached a Dice score above 0.7 around epoch 80. However, Class 4's Dice score started to plateau around epoch 40 and, unfortunately, did not reach the 0.7 threshold.
 
-![Average Validation Dice Scores](epoch_100_average_validation_dice_scores.png)
-![Class_Specific Validation Dice Scores](epoch_100_class_specific_validation_dice_scores.png)
-![Training and Validation Loss](epoch_100_training_validation_loss.png)
+![Average Validation Dice Scores](Visualizations/epoch_100_average_validation_dice_scores.png)
+![Class_Specific Validation Dice Scores](Visualizations/epoch_100_class_specific_validation_dice_scores.png)
+![Training and Validation Loss](Visualizations/epoch_100_training_validation_loss.png)
 
 
 
@@ -136,38 +136,38 @@ We also identified the best and worst predictions for each class. Below are the 
 
 ### Class 0
 <p align="center">
-  <img src="best_class_0.png" alt="Best Prediction for Class 0" width="45%">
-  <img src="worst_class_0.png" alt="Worst Prediction for Class 0" width="45%">
+  <img src="Visualizations/best_class_0.png" alt="Best Prediction for Class 0" width="45%">
+  <img src="Visualizations/worst_class_0.png" alt="Worst Prediction for Class 0" width="45%">
 </p>
 
 ### Class 1
 <p align="center">
-  <img src="best_class_1.png" alt="Best Prediction for Class 1" width="45%">
-  <img src="worst_class_1.png" alt="Worst Prediction for Class 1" width="45%">
+  <img src="Visualizations/best_class_1.png" alt="Best Prediction for Class 1" width="45%">
+  <img src="Visualizations/worst_class_1.png" alt="Worst Prediction for Class 1" width="45%">
 </p>
 
 ### Class 2
 <p align="center">
-  <img src="best_class_2.png" alt="Best Prediction for Class 2" width="45%">
-  <img src="worst_class_2.png" alt="Worst Prediction for Class 2" width="45%">
+  <img src="Visualizations/best_class_2.png" alt="Best Prediction for Class 2" width="45%">
+  <img src="Visualizations/worst_class_2.png" alt="Worst Prediction for Class 2" width="45%">
 </p>
 
 ### Class 3
 <p align="center">
-  <img src="best_class_3.png" alt="Best Prediction for Class 3" width="45%">
-  <img src="worst_class_3.png" alt="Worst Prediction for Class 3" width="45%">
+  <img src="Visualizations/best_class_3.png" alt="Best Prediction for Class 3" width="45%">
+  <img src="Visualizations/worst_class_3.png" alt="Worst Prediction for Class 3" width="45%">
 </p>
 
 ### Class 4
 <p align="center">
-  <img src="best_class_4.png" alt="Best Prediction for Class 4" width="45%">
-  <img src="worst_class_4.png" alt="Worst Prediction for Class 4" width="45%">
+  <img src="Visualizations/best_class_4.png" alt="Best Prediction for Class 4" width="45%">
+  <img src="Visualizations/worst_class_4.png" alt="Worst Prediction for Class 4" width="45%">
 </p>
 
 ### Class 5
 <p align="center">
-  <img src="best_class_5.png" alt="Best Prediction for Class 5" width="45%">
-  <img src="worst_class_5.png" alt="Worst Prediction for Class 5" width="45%">
+  <img src="Visualizations/best_class_5.png" alt="Best Prediction for Class 5" width="45%">
+  <img src="Visualizations/worst_class_5.png" alt="Worst Prediction for Class 5" width="45%">
 </p>
 
 ### Overall Best and Worst Predictions
@@ -175,8 +175,8 @@ We also identified the best and worst predictions for each class. Below are the 
 In addition to the class-specific best and worst predictions, we also visualized the overall best and worst predictions based on the global average Dice score:
 
 <p align="center">
-  <img src="best_global.png" alt="Best Overall Prediction" width="45%">
-  <img src="worst_global.png" alt="Worst Overall Prediction" width="45%">
+  <img src="Visualizations/best_global.png" alt="Best Overall Prediction" width="45%">
+  <img src="Visualizations/worst_global.png" alt="Worst Overall Prediction" width="45%">
 </p>
 
 

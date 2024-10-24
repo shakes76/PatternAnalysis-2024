@@ -9,6 +9,11 @@ class CustomDataset(Dataset):
         return torch.tensor(edge_df.values.T, dtype=torch.long)
 
     def load_features(self):
+        with open(self.features_path) as f:
+            features_dict = json.load(f)
+        features_list = []
+        for node_id, feature in features_dict.items():
+            features_list.append([int(note_id)] + feature)
         features_df = pd.DataFrame(features_list)
         return torch.tensor(features_df.iloc[:, 1:].values, dtype=torch.float)
    

@@ -198,11 +198,11 @@ Below are examples of the original and reconstructed images from the test set:
 
 - **Original Image**
 
-  <img src="/Users/siyaowu/Library/Application Support/typora-user-images/Screenshot 2024-10-24 at 11.26.17 PM.png" alt="Screenshot 2024-10-24 at 11.26.17 PM" style="zoom:50%;" />
+  <img src="/Users/siyaowu/Desktop/class/2024-S2/COMP3710/assignment/Project/PatternAnalysis-2024/recognition/VQVAE_SW/image/o1.png" alt="o1" style="zoom:50%;" />
 
 - **Reconstructed Image**
 
-  <img src="/Users/siyaowu/Library/Application Support/typora-user-images/Screenshot 2024-10-24 at 11.26.44 PM.png" alt="Screenshot 2024-10-24 at 11.26.44 PM" style="zoom:50%;" />
+  <img src="/Users/siyaowu/Desktop/class/2024-S2/COMP3710/assignment/Project/PatternAnalysis-2024/recognition/VQVAE_SW/image/r1.png" alt="r1" style="zoom:50%;" />
 
   **SSIM: 0.5074**
 
@@ -210,11 +210,11 @@ Below are examples of the original and reconstructed images from the test set:
 
 - **Original Image**
 
-  <img src="/Users/siyaowu/Library/Application Support/typora-user-images/Screenshot 2024-10-24 at 11.27.52 PM.png" alt="Screenshot 2024-10-24 at 11.27.52 PM" style="zoom:50%;" />
+  <img src="/Users/siyaowu/Desktop/class/2024-S2/COMP3710/assignment/Project/PatternAnalysis-2024/recognition/VQVAE_SW/image/o2.png" alt="o2" style="zoom:50%;" />
 
 - **Reconstructed Image**
 
-  <img src="/Users/siyaowu/Library/Application Support/typora-user-images/Screenshot 2024-10-24 at 11.28.05 PM.png" alt="Screenshot 2024-10-24 at 11.28.05 PM" style="zoom:50%;" />
+  <img src="/Users/siyaowu/Desktop/class/2024-S2/COMP3710/assignment/Project/PatternAnalysis-2024/recognition/VQVAE_SW/image/r2.png" alt="r2" style="zoom:50%;" />
 
   **SSIM: 0.5198**
 
@@ -222,11 +222,11 @@ Below are examples of the original and reconstructed images from the test set:
 
 - **Original Image**
 
-  <img src="/Users/siyaowu/Library/Application Support/typora-user-images/Screenshot 2024-10-24 at 11.28.22 PM.png" alt="Screenshot 2024-10-24 at 11.28.22 PM" style="zoom:50%;" />
+  <img src="/Users/siyaowu/Desktop/class/2024-S2/COMP3710/assignment/Project/PatternAnalysis-2024/recognition/VQVAE_SW/image/o3.png" alt="o3" style="zoom:50%;" />
 
 - **Reconstructed Image**
 
-  <img src="/Users/siyaowu/Library/Application Support/typora-user-images/Screenshot 2024-10-24 at 11.28.48 PM.png" alt="Screenshot 2024-10-24 at 11.28.48 PM" style="zoom:50%;" />
+  <img src="/Users/siyaowu/Desktop/class/2024-S2/COMP3710/assignment/Project/PatternAnalysis-2024/recognition/VQVAE_SW/image/r3.png" alt="r3" style="zoom:50%;" />
 
   **SSIM: 0.5261**
 

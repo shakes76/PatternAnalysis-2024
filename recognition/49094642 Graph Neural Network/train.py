@@ -1,13 +1,15 @@
 import torch
-import matplotlib.pyplot as plt
+import torch.nn.functional as F
+from torch_geometric.data import Data
 from modules import GCN
 from dataset import DataLoader
+import matplotlib.pyplot as plt
 
 def train(model, data, optimizer, scheduler):
     model.train()
     optimizer.zero_grad()
     out = model(data)
-    loss = torch.nn.functional.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
     scheduler.step()
@@ -23,7 +25,6 @@ def test(model, data):
 
 def plot_metrics(losses, accuracies):
     plt.figure(figsize=(12, 5))
-
     plt.subplot(1, 2, 1)
     plt.plot(losses, label="Loss")
     plt.xlabel("Epoch")
@@ -41,7 +42,6 @@ def plot_metrics(losses, accuracies):
     plt.show()
 
 def main():
-    # Configuration parameters
     edge_path = r"C:\Users\wuzhe\Desktop\musae_facebook_edges.csv"
     features_path = r"C:\Users\wuzhe\Desktop\musae_facebook_features.json"
     target_path = r"C:\Users\wuzhe\Desktop\musae_facebook_target.csv"
@@ -53,8 +53,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
 
-    losses = []
-    accuracies = []
+    losses, accuracies = [], []
 
     for epoch in range(200):
         loss = train(model, data, optimizer, scheduler)
@@ -63,10 +62,10 @@ def main():
         accuracies.append(acc)
         if epoch % 10 == 0:
             print(f'Epoch: {epoch}, Loss: {loss:.4f}, Accuracy: {acc:.4f}')
-            
+
     plot_metrics(losses, accuracies)
 
-    torch.save(model.state_dict(), "trained_model.pth")
+    torch.save(model.state_dict(), 'gcn_model.pth')
 
 if __name__ == "__main__":
     main()

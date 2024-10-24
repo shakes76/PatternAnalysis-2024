@@ -153,6 +153,8 @@ The training script will:
 Each training run is isolated in its own directory, allowing you to maintain multiple experiments.
 
 ![Example Training History](assets/Train_History.png)
+
+The training history graphs show healthy learning dynamics across 250 epochs. The loss plot (left) demonstrates successful convergence, with both training and validation loss steadily decreasing and stabilizing around epoch 150. Initially, there's a gap between training and validation loss that narrows over time, indicating good generalization. The F1 score plot (right) shows consistent improvement across all splits (train/validation/test), ultimately reaching strong performance around 0.85-0.90. Notably, while training F1 rises quickly early on, validation and test F1 scores show a more gradual improvement before catching up around epoch 100, suggesting the model effectively learns to generalize without overfitting. The final convergence of all three F1 curves indicates robust and balanced model performance across training, validation, and test sets.
 ### Inference and Analysis
 To analyze a trained model:
 

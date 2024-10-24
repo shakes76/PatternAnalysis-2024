@@ -1,7 +1,4 @@
 # modules.py
-# Uses 2 instances of ResNet18 to process image pairs as a Siamese Network, then has a basic image
-# classifier to map them to class probabilities.
-# Author: Harrison Martin
 
 import torch
 import torch.nn as nn
@@ -10,8 +7,8 @@ import torchvision.models as models
 class ResNet18Embedding(nn.Module):
     def __init__(self):
         super(ResNet18Embedding, self).__init__()
-        # Load pre-trained ResNet18 model
-        self.model = models.resnet18(pretrained=True)
+        # Load ResNet18 model without pre-trained weights
+        self.model = models.resnet18(weights=None)
         # Modify the last fully connected layer to output embeddings
         self.model.fc = nn.Identity()
 
@@ -26,8 +23,7 @@ class SiameseNetwork(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(256, 1),
-            nn.Sigmoid()
+            nn.Linear(256, 1)
         )
 
     def forward(self, x1, x2):
@@ -38,8 +34,8 @@ class SiameseNetwork(nn.Module):
         diff = torch.abs(out1 - out2)
         # Pass the difference through the fully connected layers
         out = self.fc(diff)
-        return out
-    
+        return out  # Outputs raw logits
+
 class ImageClassifier(nn.Module):
     def __init__(self):
         super(ImageClassifier, self).__init__()
@@ -47,11 +43,10 @@ class ImageClassifier(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(256, 1),
-            nn.Sigmoid()
+            nn.Linear(256, 1)
         )
 
     def forward(self, x):
         embeddings = self.embedding_net(x)
         out = self.fc(embeddings)
-        return out
+        return out  # Outputs raw logits

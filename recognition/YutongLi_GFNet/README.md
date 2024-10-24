@@ -89,10 +89,7 @@ Precision: 0.7046
 Recall: 0.8998
 F1 Score: 0.7903
 ```
-
-
-
-
+On one NVIDIA a100 graph card, total traning time is 2:06:36.  
 
 
 

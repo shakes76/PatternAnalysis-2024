@@ -11,3 +11,9 @@ def visualize_embeddings(model, data):
     plt.colorbar(scatter)
     plt.title('UMAP of GCN Node Embeddings')
     plt.show()
+
+    for epoch in range(100):
+        train(model, data, optimizer)
+        acc = test(model, data)
+        print(f'Epoch: {epoch}, Accuracy: {acc:.4f}')
+    

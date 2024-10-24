@@ -22,6 +22,7 @@ import argparse
 import yaml
 import utils
 
+
 class ISICDataset(Dataset):
     def __init__(self, img_dir, mask_dir, transform=None):
         """
@@ -403,9 +404,11 @@ def prepare_directories():
     }
 
     # Write the YAML file
-    with open("Data/lesion_detection.yaml", 'w') as yaml_file:
-        yaml.dump(data, yaml_file, default_flow_style=False, sort_keys=False)
-        print(f"YAML file created at Data/lesion_detection.yaml")
+    
+    if not os.path.exists("Data/lesion_detection.yaml"):
+        with open("Data/lesion_detection.yaml", 'w') as yaml_file:
+            yaml.dump(data, yaml_file, default_flow_style=False, sort_keys=False)
+            print(f"YAML file created at Data/lesion_detection.yaml")
 
     
 

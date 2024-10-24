@@ -61,17 +61,3 @@ class UNET(nn.Module):
             x = self.ups[index+1](concat_skip)
         
         return self.finalconv(x)
-    
-def test():
-    x = torch.randn((1, 1, 256, 128))
-    model = UNET()
-    preds = model(x)
-    print(preds.shape)
-    print(x.shape)
-    #assert preds.shape == x.shape
-
-if __name__ == "__main__":
-    pass
-
-def dice_loss(pred, target):
-    pass

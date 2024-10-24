@@ -14,6 +14,11 @@ def read_image(img_path):
         raise FileNotFoundError(f"Image not found: {img_path}")
     return img
 
+def extract_bounding_box(img):
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None  # No contour found
+    
 def process_masks(input_dir, output_dir):
     ensure_directory(output_dir)
 
@@ -24,6 +29,8 @@ def process_masks(input_dir, output_dir):
             
             try:
                 img = read_image(img_path)
+                bbox = extract_bounding_box(img)
+                print(bbox)
             except Exception as e:
                 print(f"Error processing {filename}: {str(e)}")
            

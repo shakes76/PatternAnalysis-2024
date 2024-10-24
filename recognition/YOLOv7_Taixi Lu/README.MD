@@ -35,7 +35,7 @@ Since we are using a predefined YOLO model, the model must be downloaded from ht
 There are two entrance function of this code, and they are in train.py and predict.py. Where the train.py is for training the model based on the training dataset and provide some statistical summary about the model. And the predict.py is for evaluating the model using the test set and provide visualization feedback.
 
 ### Other requirement
-This code may require permission of creating folders to save the visualization feedback, and model definition. 
+This code may require permission of creating folders to save the visualization feedback, and model definition. If related error occurred, please manually create the required folder. 
 
 ## My implementation
 ### Data loading
@@ -71,9 +71,11 @@ To train the YOLO model, I loaded the yolov7_training.pt model as described prev
 
 In the training, since our data set was not formatted as a standard YOLO train set required, I used a helper function construct_yolo_target to construct the labeling as same format as the predict output from the model. 
 15 epochs of training were performed on the training set. I saved the model after each epoch to compare the performance later. Also, the average loss in each training epoch was recorded and shown in the plot below: 
+
 ![training_loss.png](training_loss.png)
 
-We can see that the loss start very high and decreased rapidly. This indicating the standard yolo was performed badly initially, and our training is efficiently enhancing the performance. 
+We can see that the loss start very high and decreased rapidly. This indicating the standard yolo was performed badly initially, and our training was efficiently enhancing the performance. 
+The loss start to decrease slower after about 3 epochs, which may indicate the model will be over fitted after 3 epochs. We can verify this by comparing the performance difference of the model on test set later.
 
 A validation based on the training set was performed imminently after the 15 epochs of training to get a rough idea about the IoU performance. Since we have only one object to detect in each image, the prediction with maximum confidence in each image was evaluated. The performance shown in this validation will be further described in the Reflection section below.
 

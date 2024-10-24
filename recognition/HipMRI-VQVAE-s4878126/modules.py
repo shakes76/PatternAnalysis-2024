@@ -4,8 +4,9 @@ import torch.nn.functional as F
 
 """
 REFERENCES:
-Kang, J. (2024). Pytorch-VAE-tutorial. Retrieved 31st August 2024 from 
+Kang, J. (2024, February 15). Pytorch-VAE-tutorial. Retrieved 31st August 2024 from 
     https://github.com/Jackson-Kang/Pytorch-VAE-tutorial
+Malysheva, S. (2018). _Pytorch-VAE_. https://github.com/SashaMalysheva/Pytorch-VAE
 Yadav, S. (2019, September 1). Understanding Vector Quantized Variational Autoencoders (VQ-VAE) [Blog]. Medium.
     https://shashank7-iitd.medium.com/understanding-vector-quantized-variational-autoencoders-vq-vae-323d710a888a 
 """

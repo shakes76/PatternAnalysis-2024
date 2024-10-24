@@ -3,6 +3,8 @@ from tensorflow import keras
 import numpy as np
 import os
 import time
+import matplotlib
+import matplotlib.pyplot as plt
 
 from modules import improved_3d_unet_model
 from dataset import DOWNSIZE_FACTOR, load_mri_data
@@ -13,8 +15,6 @@ DATA_PATH = "C:/Users/nk200/Downloads/HipMRI_study_complete_release_v1/" #This i
 
 BATCH_LENGTH = 2
 BUFFER_SIZE = 64
-
-EPOCHS = 10
 
 def multiclass_dice_coefficient(y_true, y_pred):
     """
@@ -187,7 +187,46 @@ def train_model():
                                    validation_data = validation_batches,
                                    verbose = True)
     
-    #Evaluate the model on the test set
+    #Plot and save the training and validation multiclass dice coefficient of the model for each epoch
+    plt.plot(range(EPOCHS), history.history["multiclass_dice_coefficient"], label = "Training Multiclass Dice Coefficient")
+    plt.plot(range(EPOCHS), history.history["val_multiclass_dice_coefficient"], label = "Validation Multiclass Dice Coefficient")
+    plt.legend(loc="upper left")
+    plt.title("Multiclass Dice Coefficient")
+    plt.xlabel("Epoch")
+    plt.ylabel("Multiclass Dice Coefficient")
+    plt.savefig(SAVED_RESULTS_PATH + "MulticlassDiceCoefficient.png")
+    plt.show()
+    
+    #Plot and save the training dice similarity coefficients (for each class) of the model for each epoch
+    plt.plot(range(EPOCHS), history.history["background_dsc"], label = "Background DSC")
+    plt.plot(range(EPOCHS), history.history["body_dsc"], label = "Body DSC")
+    plt.plot(range(EPOCHS), history.history["bone_dsc"], label = "Bone DSC")
+    plt.plot(range(EPOCHS), history.history["bladder_dsc"], label = "Bladder DSC")
+    plt.plot(range(EPOCHS), history.history["rectum_dsc"], label = "Rectum DSC")
+    plt.plot(range(EPOCHS), history.history["prostate_dsc"], label = "Prostate DSC")
+    plt.legend(loc="upper left")
+    plt.title("Training Dice Similarity Coefficients For Each Class")
+    plt.xlabel("Epoch")
+    plt.ylabel("Training Dice Similarity Coefficient")
+    plt.savefig(SAVED_RESULTS_PATH + "TrainingDiceSimilarityCoefficients.png")
+    plt.show()
+    
+    #Plot and save the validation dice similarity coefficients (for each class) of the model for each epoch
+    plt.plot(range(EPOCHS), history.history["val_background_dsc"], label = "Background DSC")
+    plt.plot(range(EPOCHS), history.history["val_body_dsc"], label = "Body DSC")
+    plt.plot(range(EPOCHS), history.history["val_bone_dsc"], label = "Bone DSC")
+    plt.plot(range(EPOCHS), history.history["val_bladder_dsc"], label = "Bladder DSC")
+    plt.plot(range(EPOCHS), history.history["val_rectum_dsc"], label = "Rectum DSC")
+    plt.plot(range(EPOCHS), history.history["val_prostate_dsc"], label = "Prostate DSC")
+    plt.legend(loc="upper left")
+    plt.title("Validation Dice Similarity Coefficients For Each Class")
+    plt.xlabel("Epoch")
+    plt.ylabel("Validation Dice Similarity Coefficient")
+    plt.savefig(SAVED_RESULTS_PATH + "ValidationDiceSimilarityCoefficients.png")
+    plt.show()
+
+    #Evaluate the model on the test set by calculating the dice similarity
+    # coefficients for each class and the multiclass dice similarity coefficient
     mri_improved_3d_unet_model.evaluate(test_batches)
     
     #Save the trained model to use for predictions

@@ -42,7 +42,7 @@ def load_ADNI_dataset(image_size, training_set):
         dataset = dset.ImageFolder(root=os.path.join(hp.ROOT, "Validate Set"), transform=transform)
 
     # Calculate the required batch size based on the image resolution
-    batch_size = hp.BATCH_SIZES[int(math.log2(image_size / 4))]
+    batch_size = hp.BATCH_SIZES[int(math.log2(image_size / 4)) - 1]
 
     # Split the images into batches for training
     train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)

@@ -2,7 +2,6 @@
 train.py created by Matthew Lockett 46988133
 """
 import os
-import math
 import random
 import time
 import torch
@@ -199,40 +198,42 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             # (3) - Update the Generator with new fake images/labels
             # ---------------------------------------------------------------------------
 
-            # Reset gradients of the generator
-            gen.zero_grad()
+            # Train twice as many times as the Discriminator
+            for _ in range(2):
+                # Reset gradients of the generator
+                gen.zero_grad()
 
-            # Generate a batch of latent vectors to input into the generator
-            latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
+                # Generate a batch of latent vectors to input into the generator
+                latent1 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
 
-            # Create a second latent space batch randomly, for mixing regularisation
-            if random.random() < hp.MIXING_PROB:
-                latent2 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
-            else:
-                latent2 = None
+                # Create a second latent space batch randomly, for mixing regularisation
+                if random.random() < hp.MIXING_PROB:
+                    latent2 = torch.randn(batch_size, hp.LATENT_SIZE, device=device)
+                else:
+                    latent2 = None
 
-            # Generate fake images and labels
-            rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
-            fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
+                # Generate fake images and labels
+                rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
+                fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
-            # Forward pass fake images through discriminator (with updated discriminator)
-            fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels, depth=current_depth, alpha=alpha)
+                # Forward pass fake images through discriminator (with updated discriminator)
+                fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
-            # Calculate the losses of the generator
-            loss_gen = adversial_criterion(fake_pred.view(-1), real_labels)
-            loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
-            l2_reg = l2_regularisation(gen)
+                # Calculate the losses of the generator
+                loss_gen = adversial_criterion(fake_pred.view(-1), real_labels)
+                loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
+                l2_reg = l2_regularisation(gen)
 
-            # Calculate the total loss of the generator
-            tot_loss_gen = loss_gen + loss_class_gen + l2_reg
+                # Calculate the total loss of the generator
+                tot_loss_gen = loss_gen + loss_class_gen + l2_reg
 
-            # Calculate average output value of discriminator due to generator "real" images
-            gen_avg = fake_pred.mean().item()
+                # Calculate average output value of discriminator due to generator "real" images
+                gen_avg = fake_pred.mean().item()
 
-            # Update the generator based on gradients and losses
-            tot_loss_gen.backward()
-            grad_norm_gen = torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP)
-            gen_opt.step()
+                # Update the generator based on gradients and losses
+                tot_loss_gen.backward()
+                grad_norm_gen = torch.nn.utils.clip_grad_norm_(gen.parameters(), max_norm=hp.GEN_GRAD_CLIP)
+                gen_opt.step()
 
             # ---------------------------------------------------------------------------
             # (4) - Logging and Statistics Output 

@@ -4,6 +4,7 @@ predict.py created by Matthew Lockett 46988133
 import os
 import umap
 import torch
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from modules import *
@@ -33,6 +34,8 @@ image_loader = load_ADNI_dataset(image_size=IMAGE_SIZE, training_set=False)
 # Stores the features and labels for each batch
 features_list = []
 labels_list = []
+depth = int(math.log2(IMAGE_SIZE / 4)) - 1
+print(depth)
 
 # REF: The following code was inspired by ChatGPT-o1-preview via the following prompt.
 # REF: Prompt: I want to save my model with pytorch after training then load it again 
@@ -47,7 +50,7 @@ with torch.no_grad():
         labels = labels.to(device)
 
         # Get the classifications from the discriminator on the dataset images
-        real_fake_output, class_output, features = disc(images, labels)
+        real_fake_output, class_output, features = disc(images, labels, depth=depth, alpha=1.0)
 
         # Save the features and labels for UMAP plotting 
         features_list.append(features.cpu().numpy())

@@ -63,10 +63,10 @@ FADE_IN_PERCENTAGE = 0.65
 STEPS_PER_RESOLUTION = 5000
 
 # The amount of epochs per image resolution
-EPOCHS_PER_RESOLUTION = [35, 35, 40, 40, 50, 80]
+EPOCHS_PER_RESOLUTION = [35, 35, 50, 50, 50, 80]
 
 # Different batch sizes required for different image resolutions
-BATCH_SIZES = [128, 128, 128, 64, 64, 32, 32]
+BATCH_SIZES = [128, 128, 64, 64, 64, 32, 32]
 
 # The discriminator factors that influence the feature map sizes
 GEN_FACTORS = [LATENT_SIZE, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64]
@@ -99,4 +99,4 @@ EPSILON = 1e-8
 LAMBDA = 10
 
 # Used in L2 regularisation 
-L2_REG_TERM = 0.0001
+L2_REG_TERM = 0.001

@@ -51,11 +51,13 @@ class GCN(torch.nn.Module):
         super(GCN, self).__init__()
         # First GCN Layer
         self.conv1 = GCNLayer(in_channels, hidden_channels)
-        self.bn1 = torch.nn.BatchNorm1d(hidden_channels)  # Batch normalization after first layer
+        # Batch normalization after first layer
+        self.bn1 = torch.nn.BatchNorm1d(hidden_channels)  
         
         # Second GCN Layer
         self.conv2 = GCNLayer(hidden_channels, hidden_channels)
-        self.bn2 = torch.nn.BatchNorm1d(hidden_channels)  # Batch normalization after second layer
+        # Batch normalization after second layer
+        self.bn2 = torch.nn.BatchNorm1d(hidden_channels)  
         
         # Third GCN Layer (output layer)
         self.conv3 = GCNLayer(hidden_channels, num_classes)

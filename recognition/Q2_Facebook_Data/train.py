@@ -7,6 +7,9 @@ from dataset import load_facebook_data, split_data
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix 
 import seaborn as sns
+from sklearn.manifold import TSNE
+import umap
+
 
 def train_model(data, model, epochs=40, learning_rate=0.0012, weight_decay=2e-4, patience=20):
     """
@@ -204,6 +207,76 @@ def test_model(data, model):
 
     return test_acc
 
+
+# tsne embedding for visualisation
+def tsne_embedding(data, model):
+    """
+    This function visualises the t-SNE embedding of the given data.
+    The t-SNE embedding is computed using the t-SNE algorithm.
+    The t-SNE embedding is plotted and displayed.
+
+    Parameters:
+    -----------
+    data : torch_geometric.data.Data
+        The input data for the model
+    model : torch.nn.Module
+        The trained model - GNN Model
+
+    Returns:
+    --------
+    None
+
+    """
+    model.eval()
+    with torch.no_grad():
+        embeddings = model(data.x, data.edge_index)
+
+    print(embeddings.shape)
+    # tsne embedding 
+    tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+    embeddings2D = tsne.fit_transform(embeddings.cpu())
+
+    # plot the t-SNE embedding
+    plt.figure(figsize=(10, 8))
+    plt.scatter(embeddings2D[:, 0], embeddings2D[:, 1], c=data.y, cmap='tab10', alpha=0.5)
+    plt.colorbar()
+    plt.title("t-SNE embedding  data")
+    plt.show()
+
+# simalrly UMAP embedding can be done as well
+def umap_embedding(data, model):
+    """
+    This function visualises the UMAP embedding of the given data.
+    The UMAP embedding is computed using the UMAP algorithm.
+    The UMAP embedding is plotted and displayed.
+
+    Parameters:
+    -----------
+    data : torch_geometric.data.Data
+        The input data for the model
+    model : torch.nn.Module
+        The trained model - GNN Model
+
+    Returns:
+    --------
+    None
+    """
+    model.eval()
+    with torch.no_grad():
+        embeddings = model(data.x, data.edge_index)
+
+    umap_embeddings = umap.UMAP(
+        n_neighbors=50,
+          min_dist=0.1, n_components=2, random_state=42).fit_transform(embeddings.cpu())
+
+    # plot the UMAP embedding
+    plt.figure(figsize=(10, 8))
+    plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], c=data.y, cmap='tab10', alpha=0.7)
+    plt.colorbar()
+    plt.title("UMAP embedding data")
+    plt.show()
+
+
 class FocusLoss(torch.nn.Module):
 
     """
@@ -300,6 +373,12 @@ if __name__ == '__main__':
 
     # test the model
     test_model(data, model)
+
+    # tsne embedding
+    tsne_embedding(data, model)
+
+    # umap embedding
+    umap_embedding(data, model)
 
     # save the model - not in use as model is saved in train_model function
     # modelName = "recognition/Q2_Facebook_Data/modelEnhance1.pth"

@@ -11,6 +11,63 @@ This project focuses on using Vision Transformers (ViT) for the detection of Alz
 The Vision Transformer model is utilized to process brain images and make predictions with a target test accuracy of 80%. This project includes dataset preprocessing, augmentation, and the implementation of a Vision Transformer architecture for image classification.
 
 
+## Vision Transformer Architecture
+
+Initially developed for natural language processing tasks, transformers have now been successfully applied to vision tasks by treating image patches as tokens, similar to words in a sentence. They are competitive against CNNs as transformers have no inductive bias and can learn from patches due to their attention mechanism, although this makes them data hungry (Ballal, 2023). 
+
+![alt text](plots/Vision_Transformer_Architecture_woi9aw.png)
+<small> Figure: Vision Transformer Architecture (Dosovitskiy, 2020)</small>
+
+The core components are as follows (and their coded representations can be seen in `modules.py`):
+
+**Core Components of Vision Transformer**:
+
+
+1. Patch Embeddings: The input image is divided into small, fixed-size patches (e.g., 16x16 pixels), and each patch is flattened and linearly embedded into a high-dimensional vector. This process is akin to tokenizing words in a sentence. The sequence of patch embeddings is fed into the transformer model, where each patch essentially serves as a "token" (Dosovitskiy et al., 2020).
+
+2. Positional Encodings: To retain spatial information, positional encodings are added to the patch embeddings which helps the model maintain the spatial arrangement and constitution of the image (Dosovitskiy et al., 2020; Ballal, 2023).
+
+3. Transformer Encoder: The transformer architecture used here is similar to that used in natural language processing. It consists of multiple layers of multi-head self-attention and feed-forward neural networks. This attention mechanism allows the model to focus on various parts of the image simultaneously, to learn complex dependencies between patches (Vaswani et al., 2017; Dosovitskiy et al., 2020).
+
+4. Classification Token: A special [CLS] token is prepended to the sequence of patch embeddings. The output corresponding to this token is used for classification, making it the representation of the entire image after passing through the transformer layers (Dosovitskiy et al., 2020).
+
+5. Dropout and Regularization: Dropout is applied in multiple layers, including embedding dropout and MLP block dropout, to prevent overfitting and ensure training stability, especially when using smaller datasets (Dosovitskiy et al., 2020; Ballal, 2023).
+
+Generally, increasing the parameter size of the model allows it to represent more complex relationships about the data.
+
+## Preprocessing: Dataset Loading + Augmentation
+To ensure optimal performance and prevent data leakage, the dataset is split into training, validation, and test sets using generators so the random splits are deterministic. The following preprocessing steps are applied:
+
+1. Dataset Organization
+The dataset, sourced from the ADNI database, is structured into two primary categories—Alzheimer’s Disease (AD) and No Alzheimer’s (NC)—for both training and test sets. The directory structure is as follows:
+```
+ADNI/
+├── train/
+│   ├── AD/
+│   └── NC/
+└── test/
+    ├── AD/
+    └── NC/
+```
+Each subdirectory (AD and NC) contains brain MRI images that are categorized accordingly.
+
+2. Image Size and Normalization
+After experimenting with different data augmentations (no normalisation, only normalisation, and aggressive augmenting + normalising), we found aggressive augmenting to work best.
+
+The original vision transformer uses 16x16 image patches, and as our images are by default 256x256, we resize them to 224x224 pixels. Additionally, normalization is applied based on statistics computed from the training dataset to stabilize the model during training. These statistics include the mean (0.1156) and standard deviation (0.2229) for each RGB channel (in this case, all channels have equivalent statistics as they are greyscale images). Normalization ensures that the pixel values fall within a similar range, which helps the model converge faster.
+
+Mean and standard deviation are computed only on the training dataset to avoid **data leakage** and are then applied consistently across training, validation, and test sets.
+
+3. Data Augmentation
+Data augmentation techniques were applied to the training dataset to improve the model’s robustness and generalization by artifically constructing more data for the model to train from. These include:
+
+- Random Horizontal Flip: Randomly flips the image horizontally with a 50% probability.
+- Random Rotation: Randomly rotates the image by small angles (up to ±10 degrees).
+- Random Resized Crop: Randomly crops the image and resizes it to the target dimensions (224x224), using a scale of 0.8 to 1.0 of the original image size.
+- Center Crop: A smaller center crop (224 // 1.2) is applied after resizing.
+
+All these were applied before normalisation. The aggressive data augmentation was also applied on the test set, although whether to do this or only apply normalisation is subject to debate (Edstem #427, Google, Eureka Labs). For our case, we will apply the transformations onto the test set, as this more resembles the data trained on and thus the model should perform better. Ideally, this would not need to be applied as augmentation is meant to help the model generalise but this only occurs if the models are trained for enough epochs (which may not be the case due to resource constraints).
+
 ## Usage 
 ### Repository Structure
 
@@ -85,62 +142,6 @@ Example output.
 ![alt text](plots/batch_predictions.png)
 
 
-## Vision Transformer Architecture
-
-Initially developed for natural language processing tasks, transformers have now been successfully applied to vision tasks by treating image patches as tokens, similar to words in a sentence. They are competitive against CNNs as transformers have no inductive bias and can learn from patches due to their attention mechanism, although this makes them data hungry (Ballal, 2023). 
-
-![alt text](plots/Vision_Transformer_Architecture_woi9aw.png)
-<small> Figure: Vision Transformer Architecture (Dosovitskiy, 2020)</small>
-
-The core components are as follows (and their coded representations can be seen in `modules.py`):
-
-**Core Components of Vision Transformer**:
-
-
-1. Patch Embeddings: The input image is divided into small, fixed-size patches (e.g., 16x16 pixels), and each patch is flattened and linearly embedded into a high-dimensional vector. This process is akin to tokenizing words in a sentence. The sequence of patch embeddings is fed into the transformer model, where each patch essentially serves as a "token" (Dosovitskiy et al., 2020).
-
-2. Positional Encodings: To retain spatial information, positional encodings are added to the patch embeddings which helps the model maintain the spatial arrangement and constitution of the image (Dosovitskiy et al., 2020; Ballal, 2023).
-
-3. Transformer Encoder: The transformer architecture used here is similar to that used in natural language processing. It consists of multiple layers of multi-head self-attention and feed-forward neural networks. This attention mechanism allows the model to focus on various parts of the image simultaneously, to learn complex dependencies between patches (Vaswani et al., 2017; Dosovitskiy et al., 2020).
-
-4. Classification Token: A special [CLS] token is prepended to the sequence of patch embeddings. The output corresponding to this token is used for classification, making it the representation of the entire image after passing through the transformer layers (Dosovitskiy et al., 2020).
-
-5. Dropout and Regularization: Dropout is applied in multiple layers, including embedding dropout and MLP block dropout, to prevent overfitting and ensure training stability, especially when using smaller datasets (Dosovitskiy et al., 2020; Ballal, 2023).
-
-Generally, increasing the parameter size of the model allows it to represent more complex relationships about the data.
-
-## Preprocessing: Dataset Loading + Augmentation
-To ensure optimal performance and prevent data leakage, the dataset is split into training, validation, and test sets using generators so the random splits are deterministic. The following preprocessing steps are applied:
-
-1. Dataset Organization
-The dataset, sourced from the ADNI database, is structured into two primary categories—Alzheimer’s Disease (AD) and No Alzheimer’s (NC)—for both training and test sets. The directory structure is as follows:
-```
-ADNI/
-├── train/
-│   ├── AD/
-│   └── NC/
-└── test/
-    ├── AD/
-    └── NC/
-```
-Each subdirectory (AD and NC) contains brain MRI images that are categorized accordingly.
-
-2. Image Size and Normalization
-After experimenting with different data augmentations (no normalisation, only normalisation, and aggressive augmenting + normalising), we found aggressive augmenting to work best.
-
-The original vision transformer uses 16x16 image patches, and as our images are by default 256x256, we resize them to 224x224 pixels. Additionally, normalization is applied based on statistics computed from the training dataset to stabilize the model during training. These statistics include the mean (0.1156) and standard deviation (0.2229) for each RGB channel (in this case, all channels have equivalent statistics as they are greyscale images). Normalization ensures that the pixel values fall within a similar range, which helps the model converge faster.
-
-Mean and standard deviation are computed only on the training dataset to avoid **data leakage** and are then applied consistently across training, validation, and test sets.
-
-3. Data Augmentation
-Data augmentation techniques were applied to the training dataset to improve the model’s robustness and generalization by artifically constructing more data for the model to train from. These include:
-
-- Random Horizontal Flip: Randomly flips the image horizontally with a 50% probability.
-- Random Rotation: Randomly rotates the image by small angles (up to ±10 degrees).
-- Random Resized Crop: Randomly crops the image and resizes it to the target dimensions (224x224), using a scale of 0.8 to 1.0 of the original image size.
-- Center Crop: A smaller center crop (224 // 1.2) is applied after resizing.
-
-All these were applied before normalisation. The aggressive data augmentation was also applied on the test set, although whether to do this or only apply normalisation is subject to debate (Edstem #427, Google, Eureka Labs). For our case, we will apply the transformations onto the test set, as this more resembles the data trained on and thus the model should perform better. Ideally, this would not need to be applied as augmentation is meant to help the model generalise but this only occurs if the models are trained for enough epochs (which may not be the case due to resource constraints).
 
 ## Experiments and Results
 
@@ -150,14 +151,14 @@ Initially, we implemented the Vision Transformer (ViT) based on Akshay Ballal's 
 
 As we progressed, we tried substituting PyTorch's default MultiheadAttention layers in v3 (LearnPytorch.io, 2023). However, this approach destabilized our training, leading to poor results (effectively 50% accuracy), likely due to discrepancies in how dropout and normalization were handled within PyTorch’s implementation. v3 demonstrated a drop in accuracy, suggesting that using the pre-built TransformerEncoderLayer might not align well with our custom architecture.
 
-Recognizing this issue, we reverted to Akshay’s original design in v5, but retained the embedding dropout layer (recommended in Appendix B of the ViT paper). This setup marked a significant improvement in performance. Further experimentation with v6 and v7 introduced aggressive data augmentation and a learning rate scheduler (ReduceLROnPlateau). These additions helped stabilize training and improved generalization, with v7 reaching a stable test accuracy of around 66% (see table and v7 graph below).
+Recognizing this issue, we reverted to Akshay’s original design in v5, but retained the embedding dropout layer (recommended in Appendix B of the ViT paper). This setup marked a significant improvement in performance. Further experimentation with v6 and v7 introduced aggressive data augmentation and a learning rate scheduler (ReduceLROnPlateau). These additions helped stabilize training and improved generalization, with v7 reaching a stable test accuracy of around 66% and validation accuracies approaching 70% (see table and v7 graph below).
 <p float="left">
-  <img src="plots/v7_true_acc_plot.png" width="600" />
-  <img src="plots/v7_true_loss_plot.png" width="600" /> </p>
-<small> (Forgive the graph name) </small>.
+  <img src="plots/v7_true_acc_plot.png" width="500" />
+  <img src="plots/v7_true_loss_plot.png" width="500" /> </p>
+<small> (Forgive the graph names, I... ran a few experiments with a bug in the code) </small>.
 
 
-
+<br>
 
 The scheduler adjusted the learning rate dynamically based on the validation loss, which helped prevent overfitting, while the aggressive transformations forced the model to become more robust to input variations. Subsequent larger models like v10 and v13 showed promising results as well.
 
@@ -191,21 +192,15 @@ v0 Experiment:
 
 v3: Changed transformer encoder to be pytorch's default encoderlayer. Added embedding dropout layer as ViT paper has it in Appendix B (Dosovitskiy et al., 2020). Re-implementing normalisation but without other data augmentation.
 <p float="left">
-  <img src="plots/v3_accuracy_plot.png" width="400" />
-  <img src="plots/v3_loss_plot.png" width="400" />
+  <img src="plots/v3_accuracy_plot.png" width="500" />
+  <img src="plots/v3_loss_plot.png" width="500" />
 </p>
 
-
-Looking at the graphs of v6/v7, they are also much more stable than previous versions, showing less validation accuracy 'stumbles' over time, and a consistent increase in accuracy. This is likely because the aggressive transformations forces the model to have a more complex system to understand, and thus must learn to generalise better. This also means that increasing epoch duration is a good idea, as the model is less likely to overfit as the data is not as simple anymore.
-Furthermore, the scheduler also plays a part in stability by decreasing the learning rate as we get better validation accuracy over time (we use ReduceLROnPlateau).
-<p float="left">
-  <img src="plots/v7_accuracy_plot.png" width="600" />
-</p>
 
 v14: Seeing as 13 performed well with reducing the complexity of the model, v13 reduces the complexity even more by reducing the number of transformer layers, heads in each layer, nlp size and embedding dims. It also is the best performing model thus far.
 <p float="left">
-  <img src="plots/v14_accuracy_plot.png" width="600" />
-  <img src="plots/v14_loss_plot.png" width="600" />
+  <img src="plots/v14_accuracy_plot.png" width="500" />
+  <img src="plots/v14_loss_plot.png" width="500" />
 </p>
 
 
@@ -222,7 +217,7 @@ From the test accuracy, we see that our best model was v14 with a test accuracy 
    macro avg     0.6755    0.6726    0.6716      8992
 weighted avg     0.6754    0.6732    0.6718      8992
 ```
-![alt text](plots/confusion_matrix.png).
+![alt text](plots/confusion_matrix.png)
 
 #### Sample predictions from v14 (best model)
 ![alt text](plots/batch_predictions.png)

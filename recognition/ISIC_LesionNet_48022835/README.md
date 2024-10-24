@@ -27,11 +27,21 @@ The Internation skin imaging collaboration (ISIC) challenges are annual competit
 
 ## Project Implementation
 ### General
-Talk about what we are actually doing as far as lesion detection using YOLO goes.
-Discuss dependencies using requirements.txt (see appendix), talk about result reproducability.
-Talk about utils.py and modules.py
+This project aims to use a YOLOv11 network to detect lesions within the 2018 ISIC dataset. The goal is to have a minimum intersection over union of 0.8 on the test set and a suitable classification accuracy. By utilising pre-trained weights, we can train our model very efficiently, fine tuning it to the task of detecting lesions through multiple epochs of standard training.  
+
+![Example image of detected lesion](./README_figures/ExampleDetection.jpg)
+  
+In order to utilise the scripts in this project, it is essential that all required modules and libraries are installed. The requirements.txt file found in the [appendix](#appendix) outlines required dependencies and their versions.  
+Results reproducability may vary. Over several training attempts, the best fined tuned weights all seemed to perform similarly when running inference and comparing metrics. This is indicative that results from training and subsequent predictions or testing should be reliabily synonymous with mine.  
+  
+To begin implementing my project, ensure all 5 .py files exist in the same directory. The scripts act best under the assumption that all 3 datasets (train, validation, test) are fully installed (raw images and raw ground truth masks).  
+Before running anything, you must alter the contents of utils.py to reflect the absolute or relative (from utils.py) file path to each of the 6 data folders (2 for each dataset). Example paths already exist. In the event that you do not want to load all datasets, ensure the directory paths do not exist for the datasets you do not want. Do not give empty folder paths.  
+Do note that modules.py does not need to be explicity ran, and is referenced from the other scripts. If wanted, it is recommended that you only run modules.py **after** dataset.py for the sole purpose of installing the small, medium, and large model pre-trained weights.
+
+
 
 ### Dataset Processing
+The
 Talk about dataset.py. Talk about preprocessing, talk about data split.
 
 ### Training
@@ -44,6 +54,18 @@ Talk about predict.py. Talk about results, inference, etc.
 ### ISIC Challenge dataset (2018):
 
 ### Requirements.txt:
+```
+matplotlib==3.9.2
+numpy==1.23.5
+opencv_python==4.10.0.84
+Pillow==11.0.0
+PyYAML==6.0.1
+PyYAML==6.0.2
+skimage==0.0
+torch==2.5.0
+torchvision==0.20.0
+ultralytics==8.3.18
+```
 
 ### Ultralytics: 
 

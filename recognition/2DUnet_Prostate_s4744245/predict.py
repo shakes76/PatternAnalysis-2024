@@ -77,7 +77,13 @@ def save_validation_image(image, mask, prediction, index):
 
 
 
+from sklearn.utils import class_weight
 
+labels_train = np.argmax(images_seg_train, axis=-1)
+labels_train = labels_train.flatten()
+class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(labels_train), y=labels_train)
+
+print(class_weights)
 
 # Initialize the U-Net model
 model = unet_model1(n_classes, input_size=(256, 128, 1))
@@ -85,8 +91,8 @@ model = unet_model1(n_classes, input_size=(256, 128, 1))
 # Train the U-Net model
 history = train_unet_model(model, images_train, images_seg_train, 
                            images_validate, images_seg_validate, 
-                           model_save_path="best_unet_model.h5")
-                           #class_weights=class_weights)
+                           model_save_path="best_unet_model.h5",
+                           class_weights=class_weights)
 
 
 

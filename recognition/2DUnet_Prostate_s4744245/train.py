@@ -1,13 +1,10 @@
 import numpy as np
 import random
-
+#import wandb
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras import backend as K
-
-
-
 
 
 # plot the training/validation curves from the history
@@ -15,8 +12,9 @@ import matplotlib.pyplot as plt
 
 #define training variables
 BATCH_SIZE = 1
-EPOCHS = 1
+EPOCHS = 50
 n_classes = 6
+learning_rate = 0.005
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -48,7 +46,8 @@ def dice_loss(y_true, y_pred):
 
 def train_unet_model(model, train_images, train_labels, 
                      val_images, val_labels, 
-                     batch_size=BATCH_SIZE, epochs=EPOCHS, model_save_path="unet_model.h5", class_weights=[1, 1, 1, 1, 1]):
+                     batch_size=BATCH_SIZE, epochs=EPOCHS, learning_rate=learning_rate,
+                     model_save_path="unet_model.h5", class_weights=[1, 1, 1, 1, 1, 1]):
     """
     Trains the U-Net model with the given training and validation data.
 
@@ -81,8 +80,30 @@ def train_unet_model(model, train_images, train_labels,
                                    mode='max', 
                                    verbose=1)
     
-    # Compile the model (ensure it's compiled with the desired loss and metric)
-    model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=['accuracy'])
+    #weightAndBiasCallback = tf.keras.callbacks.LambdaCallback(
+    #    on_epoch_end=lambda epoch, logs: weightsBiasDict.update({epoch: model.get_weights()}))
+
+    def weighted_categorical_crossentropy(class_weights):
+        def wcce(y_true, y_pred):
+            Kweights = K.constant(class_weights)
+
+            if not tf.is_tensor(y_pred): 
+                y_pred = K.constant(y_pred)
+            
+            y_true = K.cast(y_true, y_pred.dtype)
+            
+            # Calculate categorical cross-entropy and apply the class weights
+            loss = K.categorical_crossentropy(y_true, y_pred)
+            return loss * K.sum(y_true * Kweights, axis=-1)
+        
+        return wcce
+    
+    loss = weighted_categorical_crossentropy(class_weights)
+    optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
+
+
+    # Compile the model 
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     # Print the model summary to verify the architecture
     model.summary()
@@ -96,18 +117,22 @@ def train_unet_model(model, train_images, train_labels,
     
     #plot_training(history)
 
+    #wandb.finish()
+
     return history
 
 
 
 def plot_training(history):
-    plt.plot(history.history['dice_coefficient'])
-    plt.plot(history.history['val_dice_coefficient'])
-    plt.title('Model Dice Coefficient')
-    plt.ylabel('Dice Coefficient')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'], loc='upper left')
-        # Save the figure
-    plt.savefig('training_curve.png')
-    plt.close()
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
 
+    plt.figure()
+    plt.plot(history.epoch, loss, 'r', label='Training loss')
+    plt.plot(history.epoch, val_loss, 'bo', label='Validation loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss Value')
+    plt.ylim([0, 1])
+    plt.legend()
+    plt.savefig('training_loss.png')

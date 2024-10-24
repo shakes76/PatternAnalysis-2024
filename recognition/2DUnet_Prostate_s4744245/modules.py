@@ -52,17 +52,17 @@ def unet_model(n_classes, input_size=(256, 128, 1)):
     
     return model
 
-def unet_model1(n_classes, input_size=(256, 128, 1), dropout_rate=0.3):
+def unet_model1(n_classes, input_size=(256, 128, 1), dropout_rate=0.5):
     inputs = layers.Input(input_size)
     
     # Encoder (downsampling)
     conv1 = layers.Conv2D(64, 3, activation='relu', kernel_initializer='he_normal', padding='same')(inputs)    # 256x128x64
-    conv1 = layers.Dropout(dropout_rate)(conv1)
+    conv1 = layers.Dropout(dropout_rate*0.5)(conv1)
     conv1 = layers.Conv2D(64, 3, activation='relu', kernel_initializer='he_normal', padding='same')(conv1)     # 256x128x64
     pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)                       # 128x64x64
 
     conv2 = layers.Conv2D(128, 3, activation='relu', kernel_initializer='he_normal', padding='same')(pool1)    # 128x64x128
-    conv2 = layers.Dropout(dropout_rate)(conv2)
+    conv2 = layers.Dropout(dropout_rate*0.8)(conv2)
     conv2 = layers.Conv2D(128, 3, activation='relu', kernel_initializer='he_normal', padding='same')(conv2)    # 128x64x128
     pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)                       # 64x32x128
 
@@ -91,13 +91,13 @@ def unet_model1(n_classes, input_size=(256, 128, 1), dropout_rate=0.3):
     up7 = layers.Conv2DTranspose(256, 2, strides=(2, 2), padding='same')(conv6) # 64x32x256
     merge7 = layers.concatenate([conv3, up7], axis=3)
     conv7 = layers.Conv2D(256, 3, activation='relu', kernel_initializer='he_normal', padding='same')(merge7)   # 64x32x256
-    conv7 = layers.Dropout(dropout_rate)(conv7)
+    conv7 = layers.Dropout(dropout_rate*0.8)(conv7)
     conv7 = layers.Conv2D(256, 3, activation='relu', kernel_initializer='he_normal', padding='same')(conv7)    # 64x32x256
 
     up8 = layers.Conv2DTranspose(128, 2, strides=(2, 2), padding='same')(conv7) # 128x64x128
     merge8 = layers.concatenate([conv2, up8], axis=3)
     conv8 = layers.Conv2D(128, 3, activation='relu', kernel_initializer='he_normal', padding='same')(merge8)   # 128x64x128
-    conv8 = layers.Dropout(dropout_rate)(conv8)
+    conv8 = layers.Dropout(dropout_rate*0.5)(conv8)
     conv8 = layers.Conv2D(128, 3, activation='relu', kernel_initializer='he_normal', padding='same')(conv8)    # 128x64x128
     
     up9 = layers.Conv2DTranspose(64, 2, strides=(2, 2), padding='same')(conv8)  # 256x128x64

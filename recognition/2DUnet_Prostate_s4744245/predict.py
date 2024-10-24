@@ -85,6 +85,9 @@ class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(
 
 print(class_weights)
 
+
+
+
 # Initialize the U-Net model
 model = unet_model1(n_classes, input_size=(256, 128, 1))
 
@@ -95,24 +98,22 @@ history = train_unet_model(model, images_train, images_seg_train,
                            class_weights=class_weights)
 
 
+def print_image(index):
+    image = images_test[index]  # Shape (256, 128, 1)
+    mask = images_seg_test[index]   # Shape (256, 128, 5)
 
-index = 0
-image = images_test[index]  # Shape (256, 128, 1)
-mask = images_seg_test[index]   # Shape (256, 128, 5)
+    # Get prediction from the model
+    prediction = model.predict(image[np.newaxis, ..., np.newaxis])  # shape of input (1, 256, 128, 1)
 
+    # Convert prediction to class labels (argmax along the last axis)
+    predicted_labels = np.argmax(prediction[0], axis=-1)  # Shape (256, 128), per-pixel class
 
+    # Convert one-hot encoded mask to class labels for comparison/visualization
+    true_labels = np.argmax(mask, axis=-1) 
 
-# Get prediction from the model
-prediction = model.predict(image[np.newaxis, ..., np.newaxis])  # shape of input (1, 256, 128, 1)
+    # Save the images (modify this function to handle the labels as needed)
+    save_validation_image(image, true_labels, predicted_labels, index)
 
-# Convert prediction to class labels (argmax along the last axis)
-predicted_labels = np.argmax(prediction[0], axis=-1)  # Shape (256, 128), per-pixel class
-
-# Convert one-hot encoded mask to class labels for comparison/visualization
-true_labels = np.argmax(mask, axis=-1) 
-
-# Save the images (modify this function to handle the labels as needed)
-save_validation_image(image, true_labels, predicted_labels, index)
 
 
 

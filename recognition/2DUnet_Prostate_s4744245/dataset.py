@@ -3,6 +3,7 @@ import nibabel as nib
 from tqdm import tqdm
 from skimage.transform import resize
 import glob
+import tensorflow as tf
 
 
 def to_channels(arr: np.ndarray , dtype = np.uint8) -> np.ndarray :
@@ -113,11 +114,7 @@ def load_data():
     print(f"Segement Validation data shape: {images_seg_validate.shape}")
 
 
-
-
     return images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate
-
-
 
 
 

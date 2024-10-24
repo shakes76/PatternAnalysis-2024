@@ -11,10 +11,10 @@ from tensorflow.keras import backend as K
 import matplotlib.pyplot as plt
 
 #define training variables
-BATCH_SIZE = 1
+BATCH_SIZE = 16
 EPOCHS = 50
 n_classes = 6
-learning_rate = 0.005
+learning_rate = 0.001
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -23,25 +23,39 @@ def dice_coefficient(y_true, y_pred, smooth=1e-6):
     intersection = K.sum(y_true_f * y_pred_f)  # Intersection between true and predicted
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+
+def weighted_categorical_crossentropy(class_weights):
+    def wcce(y_true, y_pred):
+        Kweights = K.constant(class_weights)
+
+        if not tf.is_tensor(y_pred): 
+            y_pred = K.constant(y_pred)
+            
+        y_true = K.cast(y_true, y_pred.dtype)
+            
+        # Calculate categorical cross-entropy and apply the class weights
+        loss = K.categorical_crossentropy(y_true, y_pred)
+        return loss * K.sum(y_true * Kweights, axis=-1)
+        
+    return wcce
+    
 def weighted_dice_loss(class_weights):
-    def loss(y_true, y_pred):
+    def wdl(y_true, y_pred):
+        # Calculate the Dice coefficient for each class
         dice_scores = []
-        for i in range(n_classes):
-            dice_scores.append(dice_coefficient(y_true[..., i], y_pred[..., i]))
-        dice_scores = K.stack(dice_scores)  # Shape: (n_classes,)
+        for i in range(y_true.shape[-1]):  # Iterate over the number of classes
+            class_dice = dice_coefficient(y_true[..., i], y_pred[..., i])
+            dice_scores.append(class_dice)
 
-        # Ensure class_weights is a tensor of shape (n_classes, 1) for correct broadcasting
-        class_weights_tensor = K.constant(np.array(class_weights).reshape(-1, 1))  # Shape: (n_classes, 1)
-
-        # Calculate the weighted Dice score
-        weighted_dice = K.dot(class_weights_tensor, K.reshape(dice_scores, (-1, 1)))  # Shape: (1, 1)
-
-        return 1 - K.flatten(weighted_dice)  # Return as a scalar
-    return loss
-
-# Define the Dice loss 
-def dice_loss(y_true, y_pred):
-    return 1 - dice_coefficient(y_true, y_pred)
+        # Convert list to tensor
+        dice_scores = K.stack(dice_scores)
+            
+        # Apply the class weights
+        weighted_dice = K.sum(class_weights * (1 - dice_scores))  # 1 - Dice score to convert to loss
+        
+        return weighted_dice
+    
+    return wdl
 
 
 def train_unet_model(model, train_images, train_labels, 
@@ -82,28 +96,15 @@ def train_unet_model(model, train_images, train_labels,
     
     #weightAndBiasCallback = tf.keras.callbacks.LambdaCallback(
     #    on_epoch_end=lambda epoch, logs: weightsBiasDict.update({epoch: model.get_weights()}))
-
-    def weighted_categorical_crossentropy(class_weights):
-        def wcce(y_true, y_pred):
-            Kweights = K.constant(class_weights)
-
-            if not tf.is_tensor(y_pred): 
-                y_pred = K.constant(y_pred)
-            
-            y_true = K.cast(y_true, y_pred.dtype)
-            
-            # Calculate categorical cross-entropy and apply the class weights
-            loss = K.categorical_crossentropy(y_true, y_pred)
-            return loss * K.sum(y_true * Kweights, axis=-1)
-        
-        return wcce
     
-    loss = weighted_categorical_crossentropy(class_weights)
+
+    #loss = weighted_categorical_crossentropy(class_weights)
+    loss = weighted_dice_loss(class_weights)
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
 
 
     # Compile the model 
-    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+    model.compile(optimizer=optimizer, loss=loss, metrics=[dice_coefficient])
 
     # Print the model summary to verify the architecture
     model.summary()
@@ -115,7 +116,7 @@ def train_unet_model(model, train_images, train_labels,
                         epochs=epochs,
                         callbacks=[checkpoint, early_stopping])
     
-    #plot_training(history)
+    plot_training(history)
 
     #wandb.finish()
 

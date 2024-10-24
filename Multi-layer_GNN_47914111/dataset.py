@@ -1,3 +1,16 @@
+"""
+This script implements a complete data loading and preprocessing pipeline for 
+the Facebook Large Page-Page Network dataset. It includes functions for:
+
+1. Loading data from a file and converting it to PyTorch tensors.
+2. Extracting relevant data information (number of nodes, features, and classes).
+3. Creating training, validation, and test masks.
+4. Preprocessing the adjacency matrix by adding self-loops, normalizing it, and 
+   converting it to a sparse PyTorch tensor.
+
+The final processed data includes the normalized adjacency matrix, node features, 
+node labels, and masks for training, validation, and testing.
+"""
 import numpy as np
 import torch
 import scipy.sparse as sp

@@ -1,3 +1,8 @@
+'''
+Loads data by creating DataLoader objects for training, validation and testing sets for VQVAE
+
+Author: Arpon Sarker (s4745413)
+'''
 import torch
 from torch.utils.data import Dataset, DataLoader
 import nibabel as nib
@@ -9,6 +14,7 @@ import numpy as np
 torch.autograd.set_detect_anomaly(True)
 
 # Custom dataset class (similar to the one discussed previously)
+# Given in assignment report in BlackBoard 
 class NiftiDataset(Dataset):
     def __init__(self, image_paths, transform=None, normImage=False, categorical=False, dtype=np.float32, early_stop=False):
         self.image_paths = image_paths
@@ -56,6 +62,13 @@ class NiftiDataset(Dataset):
 
         return images
     def resize_image(self, image_data):
+        """
+        Resizes the image to the required dimension of 256x128
+        Params:
+        - image_data: image data for resizing
+        Returns:
+        - resized image data as numpy array
+        """
         if image_data.ndim == 2:
             image_data = image_data[np.newaxis, ...]
         if image_data.ndim == 3:
@@ -73,6 +86,9 @@ class NiftiDataset(Dataset):
         return res
 
     def __len__(self):
+        """
+        returns the total number of images.
+        """
         return len(self.image_paths)
 
     def load_nifti(self, img_paths):
@@ -92,6 +108,21 @@ class NiftiDataset(Dataset):
     # Function to return 3 dataloaders: train, validation, and test
     @staticmethod
     def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, transform=None, normImage=True):
+        """
+        Creates dataloaders for training, validation and testing datasets of the HipMRI slices
+
+        Params:
+        - train_dir: Directory for training set
+        - val_dir: Directory for validation set
+        - test_dir: Directory for test set
+        - batch_size: size of batch
+        - num_workers: number of workers for data loading
+        - transform: transformations for pre-processing data
+        - normImage: to normalise images or not
+
+        Returns
+        - Dataloaders for each set
+        """
         # List of paths for each set
         train_images = [os.path.join(train_dir, f) for f in os.listdir(train_dir) if f.endswith('.nii.gz')]
         val_images = [os.path.join(val_dir, f) for f in os.listdir(val_dir) if f.endswith('.nii.gz')]
@@ -109,18 +140,22 @@ class NiftiDataset(Dataset):
 
         return train_loader, val_loader, test_loader
 
-# Example usage:
-#train_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_train"
-#val_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_validate"
-#test_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_test"
-
-#base_dir = os.getcwd()
-#train_dir = os.path.join(base_dir, train_dir)
-#val_dir = os.path.join(base_dir, val_dir)
-#test_dir = os.path.join(base_dir, test_dir)
-
-
 def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, transform=None, normImage=True):
+    """
+    Creates data loaders but outside of Nifti class 
+
+    Params:
+    - train_dir: Directory for training set
+    - val_dir: Directory for validation set
+    - test_dir: Directory for test set
+    - batch_size: size of batch
+    - num_workers: number of workers for data loading
+    - transform: transformations for pre-processing data
+    - normImage: to normalise images or not
+
+    Returns
+    - Dataloaders for each set
+    """
     # List of paths for each set
     train_images = [os.path.join(train_dir, f) for f in os.listdir(train_dir) if f.endswith('.nii.gz')]
     val_images = [os.path.join(val_dir, f) for f in os.listdir(val_dir) if f.endswith('.nii.gz')]
@@ -137,11 +172,3 @@ def get_dataloaders(train_dir, val_dir, test_dir, batch_size=8, num_workers=4, t
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     return train_loader, val_loader, test_loader
-
-# train_loader, val_loader, test_loader = get_dataloaders(train_dir, val_dir, test_dir, batch_size=16, num_workers=4, transform=data_transforms)
-#print("Success! - Made all the loaders from the directories")
-
-#TODO: Number of workers may need to decrease to 1 to make it faster
-
-
-

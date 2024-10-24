@@ -28,7 +28,7 @@ def visualise_single_testcase(file: str, run_number=-1, partition='test'):
     
     fig, ax = plt.subplots()
     ax.set_title(f"Prediction of {partition} sample {file} ")
-    image = Image.open(f'{modified_filepath}/test/images/ISIC_{file}.jpg') # get image
+    image = Image.open(f'{modified_filepath}/{partition}/images/ISIC_{file}.jpg') # get image
     ax.imshow(image)
     results = model.predict(f"{modified_filepath}/{partition}/images/ISIC_{file}.jpg", imgsz=512, conf=0.1) 
     for result in results: 
@@ -113,5 +113,5 @@ def run_predict(run_number=-1, n_rows=3, partition='test'):
 
 
 if __name__ == '__main__':
-    run_predict()
-    # visualise_single_testcase("0012092")
+    # run_predict()
+    visualise_single_testcase("0000007", partition="train")

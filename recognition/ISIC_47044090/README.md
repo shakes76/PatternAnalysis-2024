@@ -109,7 +109,7 @@ predict.py contains a method to visualise inference (example usage) of the train
 
 ![Example of predict.py output.](./figures/predict_examples.png)
 
-Below is an example **input** image for the model:
+predict.py also has a function to plot a single testcase's image, true lesion bounding box, and resulting bounding box. Below is an example **input** image for the model:
 ![Example of image input (testcase 00000007).](./figures/ISIC_sample.jpg)
 
 And here is the corresponding example **output** from model prediction:
@@ -140,4 +140,5 @@ pandas==2.2.2
 
 ### Appendix 3: References
 [1]: YOLO Algorithm for Object Detection Explained, https://www.v7labs.com/blog/yolo-object-detection 
+
 [2]: YOLOv11 Architecture Explained: Next-Level Object Detection with Enhanced Speed and Accuracy, https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71

@@ -31,5 +31,12 @@ def main():
     data_loader = DataLoader(edge_path, features_path, target_path)
     data = data_loader.create_data()
 
+    plt.figure()
+    plt.plot(accuracies, label='Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Metrics')
+    plt.legend()
+    plt.show()
+
 if __name__ == "__main__":
     main()

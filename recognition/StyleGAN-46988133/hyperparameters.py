@@ -57,16 +57,16 @@ START_DEPTH = 0
 MAX_DEPTH = 5
 
 # Fade-In percentage used in blending old and new resolutions
-FADE_IN_PERCENTAGE = 0.65
+FADE_IN_PERCENTAGE = 0.5
 
 # The amount of steps per resolution
 STEPS_PER_RESOLUTION = 5000
 
 # The amount of epochs per image resolution
-EPOCHS_PER_RESOLUTION = [25, 30, 40, 40, 50, 80]
+EPOCHS_PER_RESOLUTION = [30, 30, 40, 40, 50, 80]
 
 # Different batch sizes required for different image resolutions
-BATCH_SIZES = [128, 128, 128, 64, 64, 32, 32]
+BATCH_SIZES = [256, 256, 128, 128, 64, 64, 64]
 
 # The discriminator factors that influence the feature map sizes
 GEN_FACTORS = [LATENT_SIZE, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64]
@@ -78,14 +78,14 @@ DISC_FACTORS = [NUM_CHANNELS, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2]
 
 # Mixing Regularisation ratio and probability
 MIXING_RATIO = 0.5
-MIXING_PROB = 0.0
+MIXING_PROB = 0.5
 
 # Set a seed for randomness for reproducibility
 RANDOM_SEED = 999
 
 # The learning rates used by Adam optimisers
 GEN_LEARNING_RATE = 0.001
-DISC_LEARNING_RATE = 0.001
+DISC_LEARNING_RATE = 0.0005
 
 ################################## Helper Functions and Classes ##################
 
@@ -96,4 +96,4 @@ EPSILON = 1e-8
 LAMBDA = 10
 
 # Used in L2 regularisation 
-L2_REG_TERM = 0.01
+L2_REG_TERM = 0.00001

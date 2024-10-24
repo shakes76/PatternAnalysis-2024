@@ -23,3 +23,17 @@ To reproduce the results in this project, you will need the following dependenci
 - Numpy 1.25.0
 - Matplotlib 3.7.2
 - Tqdm 4.66.1
+
+## Pre-processing Techniques
+
+In this project, the MRI images undergo several pre-processing steps to ensure optimal performance of the 2D U-Net model for prostate cancer segmentation. The key pre-processing techniques include:
+
+1. **Image Normalization**:
+   - MRI images are often characterized by varying intensity values due to different imaging conditions. Normalization scales the pixel values to a specific range (typically [0, 1]) to ensure consistency across images. This process can enhance the convergence of the neural network during training.
+   - **Reference**: 
+     - A. M. F. De Mello et al., "Improving the Generalization of Deep Learning Models for Medical Imaging through Data Normalization," *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 2020.
+
+2. **Resizing**:
+   - The images are resized to a consistent dimension (e.g., 256x128) suitable for input into the U-Net model. This step maintains a uniform input size, allowing for batch processing during training.
+   - **Reference**: 
+     - R. Ronneberger, O. Fischer, and T. Brox, "U-Net: Convolutional Networks for Biomedical Image Segmentation," *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 2015.

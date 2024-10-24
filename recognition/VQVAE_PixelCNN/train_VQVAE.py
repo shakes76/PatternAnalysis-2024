@@ -125,7 +125,7 @@ if __name__ == '__main__':
     count_image_dimensions('HipMRI_study_keras_slices_data/keras_slices_test')
     count_image_dimensions('HipMRI_study_keras_slices_data/keras_slices_validate')
 
-    dataloader = get_dataloader("HipMRI_study_keras_slices_data")
+    dataloader = get_dataloader("HipMRI_study_keras_slices_data", batch_size = BATCH_SIZE)
 
     # Verifying the dataset loader
 

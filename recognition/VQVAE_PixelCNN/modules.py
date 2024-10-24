@@ -169,3 +169,89 @@ class Model(nn.Module):
     def decode(self, quantized):
         return self._decoder(quantized)
     
+
+## -----------------------------------Pixel CNN Model-----------------------------------
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from tqdm import tqdm
+import os
+
+# Custom masked convolution for PixelCNN
+class MaskedConv2d(nn.Conv2d):
+    def __init__(self, mask_type, in_channels, out_channels, kernel_size, **kwargs):
+        super().__init__(in_channels, out_channels, kernel_size, **kwargs)
+        self.mask_type = mask_type
+
+        if isinstance(kernel_size, int):
+            kernel_size = (kernel_size, kernel_size)
+
+        mask = torch.zeros(kernel_size)
+        mask[:kernel_size[0] // 2, :] = 1.0  # Mask everything below the center row
+        mask[kernel_size[0] // 2, :kernel_size[1] // 2] = 1.0  # Mask everything to the right of center column
+
+        if self.mask_type == "B":
+            mask[kernel_size[0] // 2, kernel_size[1] // 2] = 1.0  # Include center for type B mask
+
+        self.register_buffer('mask', mask[None, None])  # Mask buffer
+
+    def forward(self, x):
+        self.weight.data *= self.mask  # Apply mask to weights
+        return super().forward(x)
+
+# Residual block used in PixelCNN
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channel):
+        super().__init__()
+
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channel, in_channel // 2, 1),
+            nn.ReLU(inplace=True)
+        )
+        self.conv2 = nn.Sequential(
+            MaskedConv2d("B", in_channel // 2, in_channel // 2, 3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(in_channel // 2, in_channel, 1),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        inputs = x
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        return inputs + x  # Residual connection
+
+# PixelCNN architecture
+class PixelCNN(nn.Module):
+    def __init__(self, in_channel=128, channels=128, out_channel=128, num_residual_block=5):
+        super(PixelCNN, self).__init__()
+        
+        # Initial layer (masked conv A)
+        self.stem = nn.Sequential(
+            MaskedConv2d("A", in_channel, channels, 7, padding=3),
+            nn.ReLU(inplace=True)
+        )
+
+        # Residual blocks
+        self.res_blocks = nn.Sequential(
+            *[ResidualBlock(channels) for _ in range(num_residual_block)]
+        )
+
+        # Output layers (masked conv B)
+        self.head = nn.Sequential(
+            MaskedConv2d("B", channels, channels, 2, padding=1),
+            nn.ReLU(inplace=True),
+            MaskedConv2d("B", channels, channels, 2, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels, out_channel, 3)  # Final output conv
+        )
+
+    def forward(self, x):
+        x = self.stem(x)
+        x = self.res_blocks(x)
+        x = self.head(x)
+        return x

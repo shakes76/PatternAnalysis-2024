@@ -14,7 +14,6 @@ from collections import Counter
 from torchvision.transforms import Normalize, Compose, ToTensor
 import torchvision.transforms as transforms
 from PIL import Image
-from train_VQVAE import BATCH_SIZE
 
 def count_image_dimensions(image_dir):
     """
@@ -225,7 +224,7 @@ class ProstateMRIDataset(Dataset):
         return np.array(image)  # Convert back to NumPy array if needed
 
 
-def get_dataloader(root_dir, batch_size=BATCH_SIZE, normImage=False, categorical=False, target_size=(256, 128)):
+def get_dataloader(root_dir, batch_size = 32, normImage=False, categorical=False, target_size=(256, 128)):
     """
     Create a PyTorch DataLoader for batching and shuffling the dataset from Folder1, Folder2, and Folder3.
     

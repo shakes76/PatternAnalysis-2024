@@ -1,3 +1,6 @@
+
+# Reference: https://github.com/MishaLaskin/vqvae
+
 import torch
 import torch.nn as nn
 import numpy as np

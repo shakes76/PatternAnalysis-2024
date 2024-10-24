@@ -2,24 +2,18 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 import utils
+import torch
+from torch.utils.data import Dataset
 
 
 def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, orient=False, early_stop=False):
     affines = []
-    # ~ interp = ' continuous '
-    interp = 'linear'
-    if dtype == np.uint8:  # Assume labels
-        interp = 'nearest'
-
     # Get fixed size
     num = len(image_names)
+
     nifti_image = nib.load(image_names[0])
-    if orient:
-        print("Orient Placeholder")
-        # nifti_image = im.applyOrientation(nifti_image, interpolation=interp, scale=1)
-        # ~ testResultName = " oriented . nii .gz"
-        # ~ niftiImage . to_filename ( testResultName )
     first_case = nifti_image.get_fdata(caching='unchanged')
+
     if len(first_case.shape) == 4:
         first_case = first_case[:, :, :, 0]  # sometimes extra dims, remove
     if categorical:
@@ -32,20 +26,14 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
 
     for i, in_name in enumerate(tqdm(image_names)):
         nifti_image = nib.load(in_name)
-        if orient:
-            print("Orient Placeholder")
-            # nifti_image = im.applyOrientation(nifti_image, interpolation=interp, scale=1)
         inImage = nifti_image.get_fdata(caching='unchanged')  # read disk only
         affine = nifti_image.affine
         if len(inImage.shape) == 4:
             # sometimes extra dims in HipMRI_study data
             inImage = inImage[:, :, :, 0]
-        inImage = inImage[:, :, : depth]  # clip slices
         inImage = inImage.astype(dtype)
 
         if norm_image:
-            # ~ inImage = inImage / np. linalg . norm ( inImage )
-            # ~ inImage = 255. * inImage / inImage . max ()
             inImage = (inImage - inImage.mean()) / inImage.std()
 
         if categorical:
@@ -53,7 +41,7 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
             inImage = utils.to_channels(inImage, dtype=dtype)
             # ~ images [i ,: ,: ,: ,:] = inImage
             images[i, :inImage.shape[0], :inImage.shape[1],
-                   :inImage.shape[2], :inImage.shape[3]] = inImage  # with pad
+                   :inImage.shape[2], :] = inImage  # with pad
 
         else:
             # ~ images [i ,: ,: ,:] = inImage
@@ -68,3 +56,27 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
         return images, affines
     else:
         return images
+
+
+class Prostate3DDataset(Dataset):
+    def __init__(self, image_paths, label_paths, transform=None):
+        self.image_paths = image_paths
+        self.label_paths = label_paths
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image = nib.load(self.image_paths[idx]).get_fdata(dtype=np.float32)
+        label = nib.load(self.label_paths[idx]).get_fdata(dtype=np.uint8)
+
+        image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
+        label = torch.tensor(label, dtype=torch.long)
+
+        if self.transform:
+            sample = {"image": image, "label": label}
+            sample = self.transform(sample)
+            image, label = sample["image"], sample["label"]
+
+        return image, label

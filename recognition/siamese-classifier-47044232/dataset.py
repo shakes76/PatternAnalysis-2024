@@ -12,7 +12,10 @@ import numpy as np
 import random
 import torch
 from torchvision.transforms import v2
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
+
+from utils import split_data
+from config import BATCH_SIZE, DATAPATH, WORKERS
 
 # Code is inspired by that found in:
 #   https://github.com/andreasveit/triplet-network-pytorch/blob/master/triplet_mnist_loader.py
@@ -90,3 +93,31 @@ class ISICKaggleChallengeSet(Dataset):
                     figure += 1
                     plt.axis("off")
         plt.show()
+
+def get_dataloaders() -> tuple[DataLoader, DataLoader, DataLoader]:
+    """ Performs the splitting, and loading of the training, testing and validation sets. 
+
+    Returns:
+        A tuple of the DataLoader objects for the training, testing and validations sets respectively.  
+    """
+    # Form the disjoin sets of data
+    train, test, val = split_data(os.path.join(DATAPATH, "train-metadata.csv"))
+
+    transforms = v2.Compose([
+        v2.RandomRotation(degrees=(0, 10)),
+        v2.RandomHorizontalFlip(),
+        v2.RandomVerticalFlip(),
+        v2.ToImage(),
+        v2.ToDtype(torch.float32, scale=True),
+        v2.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
+    ])
+
+    # Form datsets and load them
+    train_set = ISICKaggleChallengeSet(os.path.join(DATAPATH, "train-image/image/"), train, transforms=transforms)
+    test_set = ISICKaggleChallengeSet(os.path.join(DATAPATH, "train-image/image/"), test, transforms=transforms)
+    val_set = ISICKaggleChallengeSet(os.path.join(DATAPATH, "train-image/image/"), val, transforms=transforms)
+    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, num_workers=WORKERS)
+    test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, num_workers=WORKERS)
+    val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, num_workers=WORKERS)
+
+    return train_loader, test_loader, val_loader

@@ -14,13 +14,11 @@ import time
 import torch
 from torch.nn import TripletMarginLoss, CrossEntropyLoss
 from torch.optim.adam import Adam
-from torch.utils.data import DataLoader
-from torchvision.transforms import v2
 
 import config
 from modules import SiameseNetwork, BinaryClassifier
-from dataset import ISICKaggleChallengeSet
-from utils import split_data, generate_loss_plot, tsne_plot
+from dataset import get_dataloaders
+from utils import generate_loss_plot, tsne_plot
 
 # Argument handler
 parser = argparse.ArgumentParser()
@@ -32,25 +30,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if not torch.cuda.is_available():
     print("WARNING: Using the CPU to train...")
 
-# Make disjoint sets of data
-train, test, val = split_data(os.path.join(config.DATAPATH, "train-metadata.csv"))
-
-transforms = v2.Compose([
-    v2.RandomRotation(degrees=(0, 10)),
-    v2.RandomHorizontalFlip(),
-    v2.RandomVerticalFlip(),
-    v2.ToImage(),
-    v2.ToDtype(torch.float32, scale=True),
-    v2.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
-])
-
 # Form datsets and load them
-train_set = ISICKaggleChallengeSet(os.path.join(config.DATAPATH, "train-image/image/"), train, transforms=transforms)
-test_set = ISICKaggleChallengeSet(os.path.join(config.DATAPATH, "train-image/image/"), test, transforms=transforms)
-val_set = ISICKaggleChallengeSet(os.path.join(config.DATAPATH, "train-image/image/"), val, transforms=transforms)
-train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
-test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
-val_loader = DataLoader(val_set, batch_size=config.BATCH_SIZE, num_workers=config.WORKERS)
+train_loader, test_loader, val_loader = get_dataloaders()
 
 # Initialise the Siamese Network
 siamese = SiameseNetwork().to(device)

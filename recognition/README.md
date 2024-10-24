@@ -139,8 +139,8 @@ early stopping was never triggered after I added the Leaky ReLU Activation Funct
 Here is a picture of the accuracy rate and the lost. As can be seen from the two graphs, model 
 improved greatly in the first 30 epoches and kept quite steady till around 70 epoches where it 
 saw a slite fluctuation. 
-![accuracy_plot.png](3D_improved%20U_Net_Zheng_Yao_s4769710%2Faccuracy_plot.png)
-![loss_plot.png](3D_improved%20U_Net_Zheng_Yao_s4769710%2Floss_plot.png)
+![accuracy_plot.png](3D_improved%20U_Net_Zheng_Yao_s4769710%2Fpictures%2Faccuracy_plot.png)
+![loss_plot.png](3D_improved%20U_Net_Zheng_Yao_s4769710%2Fpictures%2Floss_plot.png)
 
 ### model performance: 
 Here is the evaluation of the dice score on the entire data set:
@@ -162,7 +162,9 @@ Which I think is a very good result.
 #### Random sample prediction:
 I have chosen a random sample from the data set and here is a comparison for the result from my
 U Net, the label and the input picture. 
-![prediction_example.png](3D_improved%20U_Net_Zheng_Yao_s4769710%2Fprediction_example.png)
+
+![prediction_example.png](3D_improved%20U_Net_Zheng_Yao_s4769710%2Fpictures%2Fprediction_example.png)
+
 The dice score for this particular data is: 
 
 Class 1 Dice Score: 0.9927937388420105

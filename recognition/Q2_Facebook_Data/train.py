@@ -11,7 +11,7 @@ from sklearn.manifold import TSNE
 import umap
 
 
-def train_model(data, model, epochs=40, learning_rate=0.0012, weight_decay=2e-4, patience=20):
+def train_model(data, model, epochs=400, learning_rate=0.0012, weight_decay=2e-4, patience=20):
     """
     This function trains the given model on the given data.
     The training loop is run for the specified number of epochs.

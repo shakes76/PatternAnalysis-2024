@@ -70,25 +70,6 @@ def train_step(real_images, generator, discriminator, generator_optimizer, discr
 
     return gen_loss, disc_loss
 
-def generate_tsne_embeddings(model, class_name):
-    """Generates and plots t-SNE embeddings for a set of generated images."""
-    latent_vectors, constant_inputs = generate_random_inputs(100, LATENT_DIM, INITIAL_SIZE)
-    generated_images = model([latent_vectors, constant_inputs], training=False)
-    flattened_images = np.reshape(generated_images, (100, -1))  # Flatten each image
-
-    # Perform t-SNE transformation
-    tsne = TSNE(n_components=2, random_state=0)
-    tsne_results = tsne.fit_transform(flattened_images)
-
-    # Plot t-SNE results
-    plt.figure(figsize=(8, 8))
-    plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=np.arange(100), cmap='viridis', s=10)
-    plt.title(f"t-SNE embeddings for {class_name} at latent space")
-    plt.colorbar()
-    plt.savefig(f'tsne_{class_name}.png')
-    plt.close()
-    print(f"t-SNE plot saved for {class_name}")
-
 def generate_and_save_images(model, epoch, class_name):
     """Generates and saves a grid of generated images."""
     latent_vectors, constant_inputs = generate_random_inputs(16, LATENT_DIM, INITIAL_SIZE)
@@ -116,7 +97,7 @@ class ADModelTrainer:
     """Trainer class for Alzheimer's Disease (AD) model."""
     def __init__(self):
         self.cross_entropy = tf.keras.losses.BinaryCrossentropy()
-        self.ad_dirs = ['/home/groups/comp3710/ADNI/AD_NC/train/AD', '/home/groups/comp3710/ADNI/AD_NC/test/AD']
+        self.ad_dirs = ['ADNI/AD_NC/train/AD', 'ADNI/AD_NC/test/AD']
         self.dataset = load_and_preprocess_adni(self.ad_dirs, TARGET_SIZE, BATCH_SIZE)
 
     def setup_models(self):
@@ -160,7 +141,6 @@ class ADModelTrainer:
             # Save images and embeddings every 10 epochs
             if (epoch + 1) % 10 == 0:
                 generate_and_save_images(generator, epoch + 1, "AD")
-                generate_tsne_embeddings(generator, "AD")
 
             if (epoch + 1) == EPOCHS:
                 generator.save(f'generator_model_AD.h5')
@@ -171,7 +151,7 @@ class NCModelTrainer:
     """Trainer class for Normal Control (NC) model."""
     def __init__(self):
         self.cross_entropy = tf.keras.losses.BinaryCrossentropy()
-        self.nc_dirs = ['/home/groups/comp3710/ADNI/AD_NC/train/NC', '/home/groups/comp3710/ADNI/AD_NC/test/NC']
+        self.nc_dirs = ['ADNI/AD_NC/train/NC', 'ADNI/AD_NC/test/NC']
         self.dataset = load_and_preprocess_adni(self.nc_dirs, TARGET_SIZE, BATCH_SIZE)
 
     def setup_models(self):
@@ -215,7 +195,6 @@ class NCModelTrainer:
             # Save images and embeddings every 10 epochs
             if (epoch + 1) % 10 == 0:
                 generate_and_save_images(generator, epoch + 1, "NC")
-                generate_tsne_embeddings(generator, "NC")
 
             if (epoch + 1) == EPOCHS:
                 generator.save(f'generator_model_NC.h5')

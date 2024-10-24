@@ -26,6 +26,9 @@ def main():
     data_loader = DataLoader(edge_path, features_path, target_path)
     data = data_loader.create_data()
 
+    model = GCN(in_channels=data.num_node_features, hidden_channels=64, out_channels=len(torch.unique(data.y)))
+    model.load_state_dict(torch.load('gcn_model.pth'))
+
     visualize_embeddings(model, data)
     
 if __name__ == "__main__":

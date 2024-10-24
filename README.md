@@ -19,8 +19,7 @@ Some traditional methods are Convolutional Nueral Networks (CNNs) for image clas
 Transformer models use self-attention layers to capture long-term dependencies, which are able to learn more diverse interactions between spatial locations[1].
 Global Filter Network (GFNet), which follows the trend of removing inductive biases from vision models while enjoying the log-linear complexity in computation. The basic idea behind this architecture is to learn the interactions among spatial locations in the frequency domain.
 
-![GFNet Structure](GFNet_Strcuture.png)
-
+    
 # Library Dependencies:
 
 # Modules.py
@@ -95,14 +94,44 @@ Data Transforms
 
 # Training loop 
 The training loop iterates for a specified number of epochs,
+Total test samples: 9000
+Training set size: 18292
+Validation set size: 3228
+Test set size: 9000
 
 ### Validation
 The model's performance is assessed during training using a validation dataset, which is separate from the training data 15% the total size of the test. This allows for monitoring how well the model generalizes to unseen data.
 
 # Results
 
+First test run
+
+Epoch 30/30
+----------
+Train Loss: 0.0024 Acc: 0.9998
+Val   Loss: 0.1377 Acc: 0.9616
+Best model updated with accuracy: 0.9616
+
+Best Validation Accuracy: 0.9616
+Training completed.
+
+=== Evaluating Model on Test Set ===
+Test Accuracy: 0.6458
+Final Test Accuracy: 0.6458
+
+Testing accuracy was 6458% which is well below the training and Validation tests. This was due to the low samples for training a ViT. With in the next major run i added data augmentation techniques like horizontal Flip and rotate to increase the gernalisability in hopes the model can learn better. I also changed from 30 epochs to 150 with a batch size of 64 instead of 128 to get find better minimas. 
+
+This code is able to be run on rangpur potentiall with greater epochs, more augmentation, other hyper parameter fine tuning to get desired accuracy. 
+
 
 ## Accuracy & Loss
+ # Caveat of small test 30 EPochs - i had rangpur dependency issue for 5 days 
+Train Loss: 0.0024 Acc: 0.9998
+Val   Loss: 0.1377 Acc: 0.9616
+
+=== Evaluating Model on Test Set ===
+Test Accuracy: 0.6458
+Final Test Accuracy: 0.6458
 
 
 

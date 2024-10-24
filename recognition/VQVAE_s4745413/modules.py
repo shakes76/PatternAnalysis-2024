@@ -1,8 +1,14 @@
+'''
+Create each of the components for the VQVAE model which is the Encoder, Decoder, ResidualLayer, Residual Stack, Vector Quantizer, and VQVAE
+
+Author: Arpon Sarker (s4745413)
+'''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+# this anomaly detection is for debugging
 torch.autograd.set_detect_anomaly(True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -18,7 +24,7 @@ class Encoder(nn.Module):
                 nn.Conv2d(h_dim // 2, h_dim, kernel_size=4, stride=2, padding=1),
                 nn.ReLU(),
                 nn.Conv2d(h_dim, h_dim, kernel_size=3, stride=1, padding=1),
-                ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers)
+                ResidualStack(h_dim, h_dim, res_h_dim, n_res_layers) # adds multiple layers of residual layers
                 )
 
     def forward(self, x):
@@ -49,7 +55,8 @@ class ResidualLayer(nn.Module):
 class ResidualStack(nn.Module):
     """
     A stack of residual layers:
-    - in_dim: input dimension - h_dim: hidden layer dimension
+    - in_dim: input dimension 
+    - h_dim: hidden layer dimension
     - res_h_dim: hidden dimension of residual block
     - n_res_layers: number of layers to stack
     """
@@ -61,14 +68,14 @@ class ResidualStack(nn.Module):
     def forward(self, x):
         for layer in self.stack:
             x = layer(x)
-            x = F.relu(x)
+            x = F.relu(x) # applied between and after each layer
         return x
 
 class Decoder(nn.Module):
     """
     p_phi (x|z) network, given a latent sample z p_phi maps back to original space.
     - in_dim: input dimension
-    - h_dim: hidden layer dimensino
+    - h_dim: hidden layer dimension
     - res_h_dim: hidden dimension of residual block
     - n_res_layers: number of layers to stack
     """
@@ -134,7 +141,7 @@ class VQVAE(nn.Module):
     - n_emb: number of embeddings
     - e_dim: dimension of embedding
     - commit_cost: commitmen_cost
-    -save_img_embedding_map: saves image embedding map
+    -save_img_embedding_map: saves image embedding map (codebook)
     """
     def __init__(self, h_dim, res_h_dim, n_res_layers, n_emb, e_dim, commit_cost, save_img_embedding_map=False):
         super(VQVAE, self).__init__()

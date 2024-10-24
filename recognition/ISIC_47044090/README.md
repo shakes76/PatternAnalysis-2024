@@ -1,15 +1,68 @@
-FORMAT:
+# Use of YOLOv11 for Lesion detection in the ISIC2017 dataset 
+## 1. Introduction to YOLOv11
+The introduction of the You-Only-Look-Once (YOLO) algorithm for image detection was first released in 2016 by Joseph Redmon et al. - since then, numerous other researchers have worked on improving the networks' efficiency and accuracy which eventually led to the release of YOLOv11 by Ultralytics in 2024.
 
-Introduction to YOLO
+The YOLO architecture is a convolutional neural network that prioritises speed over accuracy by using a single-stage detection process, as opposed to the two-step process utilised by many of the more accurate object detection algorithms.
 
-Obtaining dataset
+IMAGE ONE STAGE/TWO STAGE
 
-Processing dataset
+YOLO's algorithm can be better understood by analysing its architecture:
 
-Training
+IMAGE OF ARCHITECTURE
 
-Testing (in train set)
+Essentially, the convolution neural network parses over each pixel in the image and, in one step, tries to fit a bounding box with the pixel as the box's centre. In doing so, the model also outputs a confidence score for the validity of the proposed box. By the end of the single iteration through the image, the model outputs each proposed bounding box with a confidence score above a specific interval (0.25 by default for YOLOv11) as the final detections for the image.
 
-predict
+This is in contrast to other two-stage models that split this process into two stages, which generally leads to improved accuracy at the cost of inference and training speed. This makes YOLO (and other one-stage models) ideal for fast-paced environments such as real-time detection or when resources are limited, while the two-stage models are generally preferred when accuracy is priority.
 
-evaluation
+The newest innovation in the YOLO model is Ultralytic's YOLOv11, which is said to perform better and faster than the previous models. Ultralytics is also responsible for the release of every iteration since YOLOv8 in 2023.
+
+YOLO VERSION RELEASE TIMELINE
+
+## 2. Introduction to lesion segmentation and the ISIC2017 dataset
+### 2.1 Lesion segementation
+This algorithm aims to provide a fast and accurate form of lesion detection from a single dermoscopic image - in this case, the accuracy of detection and segmentation is paramount, as it would theoretically be used for the medical purposes.
+
+LESION SEGMENTATION IMAGE
+
+### 2.2 2017 ISIC Challenge
+To train the model, a dataset from the 2017 ISIC challenge was used: this includes 
+    1. 2000 training samples
+    2. 200 testing samples
+    3. 150 validation samples
+Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1.
+
+However, these cannot directly be plugged into YOLOv11, as Ultralytics' YOLO models require a specific file format and file structure. Firstly, it requires that all images are of equal and even dimensions. Secondly, all labels must be in the form of a .txt file which contains (for each bounding box identified): its class, centre x-coordinate, centre y-coordinate, width and height.
+
+
+## 3. Processing dataset for YOLOv11 compatability
+### 3.1 Process
+As was discussed, the images in the ISIC 2017 dataset are of varying sizes and each have un-even dimensions. To alleviate this problem, each image was extended using a black letter-box on its smaller dimension (between x and y) until the image was a square. This method, while achieving the purpose of even dimensions in the image for YOLOv11 compatibility, ensures no warping occurs (which could hinder the training of the model).
+
+IMAGE OF RESIZING
+
+After this point, the image was scaled down to 512x512, which was a picked as it serves as a midpoint between maximising information (larger image=more information=better training) and minimising computation time (larger image=longer training=more resources). This was applied to both the images and the ground truth masks provided by ISIC.
+
+For Ultralytics compatability, the masks also needed their information transferred to a .txt file in the above-mentioned format. This was done by extracting the bounding box around coordinates who's pixel values were not 0 (as lesions are highlighted white and everything else is black in the masks provided). For this task, there is only one class to detect (lesion).
+
+IMAGE OF MASK ON IMAGE
+
+### 3.2 Organisation
+This is all implemented in the dataset.py file, but to use this (and Ultralytics' YOLO models), the files must be organised in a specific way:
+
+ORGANISATION OF FILES (ORIGINAL_ISIC/ISIC/etc)
+
+### 3.3 dataset.py usage
+Simply run the dataset.py to process all images and masks into the required format. 
+
+## 4. Training model for lession detection
+
+## 5. Testing model results
+
+## 7. Evaluation of test results
+
+## 6. Predicting using trained model
+
+## 8. Appendix
+### Appendix 1: ISIC Dataset
+### Appendix 2: Requirements
+### Appendix 3: References

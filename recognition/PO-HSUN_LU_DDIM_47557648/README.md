@@ -18,6 +18,7 @@ Diffusion model were first proposed by Sohl-Dickstein et al. (2015) to generate 
  <p align="center">
  <img width="500px" src="https://github.com/Yukino1010/Diffusion_Model/blob/master/image_source/diffusion.png" >
  </p>
+source: https://en.wikipedia.org/wiki/Diffusion
 
 The concept of diffusion refers to the movement of substances from a region of higher concentration to a region of lower concentration. Inspired by this concept, diffusion models construct a Markov chain to 'push' or 'pull' the image between the original and target distributions (standard Gaussian distribution) by adding or removing noise from the input data. The final goal of the diffusion model is then to determine the noise added to the image and reverse this process.
 
@@ -69,6 +70,7 @@ This program is run in the Kaggle environment (4/10/2024) with a P100 GPU. <br> 
 <p align="center">
   <img width="700px" src="https://github.com/Yukino1010/PatternAnalysis-2024/blob/topic-recognition/recognition/PO-HSUN_LU_DDIM_47557648/training/u-net_arc.png" alt="Backward" />
 </p>
+source: https://arxiv.org/abs/1505.04597
 
 The model architecture is a standard U-Net model. To generate noise at each corresponding timestep, we usually combine the additional condition t into the U-Net model. Since I am working on a conditional image generation task (label 0: NC, label 1: AD), I will include a second condition, c, to control the model.
 

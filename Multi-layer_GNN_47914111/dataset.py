@@ -1,4 +1,6 @@
 """
+Author: Yucheng Wang
+Student ID: 47914111
 This script implements a complete data loading and preprocessing pipeline for 
 the Facebook Large Page-Page Network dataset. It includes functions for:
 

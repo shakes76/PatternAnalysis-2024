@@ -43,7 +43,10 @@ Number of Non-Zero Elements in Adjacency Matrix: 364116
 The GCN model consists of three layers of graph convolutional layers (GCN Layer), and batch normalization and dropout are applied after each layer to prevent overfitting. The output of the last layer is normalized by the Softmax function for classification.
 
 The output of each layer of GCN can be expressed as: 
-$$Z = \text{ReLU}\left( \hat{A} X W \right)$$
+
+$$
+Z = \text{ReLU}\left( \hat{A} X W \right)
+$$
 
 ### Model components
 - **First GCNLayer**: The input features have a dimension of in_channels and the output features have a dimension of hidden_channels. We apply batch normalization and ReLU activation function after the output, and introduce dropout to prevent overfitting.

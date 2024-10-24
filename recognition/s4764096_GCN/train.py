@@ -1,7 +1,5 @@
 import torch as th
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
-import umap.umap_ as umap
 from dataset import prepare_data
 from modules import GCN
 
@@ -42,34 +40,11 @@ def train():
 
     plot_results(train_losses, test_accuracies)
 
-    show_graph(graph, model)
-
 def plot_results(train_losses, test_accuracies):
     epochs = range(1, len(train_losses) + 1)
 
-    plt.figure()
-    plt.plot(epochs, train_losses, label='Training Loss', color='red')
-    plt.plot(epochs, test_accuracies, label='Test Accuracy', color='blue')
-    plt.xlabel('Epoch')
-    plt.ylabel('Value')
-    plt.title('Training Loss and Test Accuracy Over Epochs')
-    plt.legend()
-    plt.show()
-
-def show_graph(graph, model):
-    with th.no_grad():
-
-        embeddings = model(graph, graph.ndata['features'])
-
-    embeddings = embeddings.numpy()
-
-    umap_embeddings = umap.UMAP(n_neighbors=30, min_dist=0.5, n_components=2).fit_transform(embeddings)
-    true_labels = graph.ndata['labels'].numpy()
-
-    plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], c=true_labels, cmap='viridis', s=10)
-    plt.colorbar()
-
-    plt.show()
+    print("Training Losses:", train_losses)
+    print("Test Accuracies:", test_accuracies)
 
 if __name__ == '__main__':
     train()

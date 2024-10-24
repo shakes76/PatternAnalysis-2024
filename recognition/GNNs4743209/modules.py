@@ -123,6 +123,30 @@ class FacebookGNN(nn.Module):
                 if layer.bias is not None:
                     nn.init.zeros_(layer.bias)
 
+    def get_embeddings(self, x, edge_index):
+        """
+        Get node embeddings before the final classification layer.
+
+        Args:
+            x (Tensor): Node feature matrix with shape [num_nodes, in_channels]
+            edge_index (Tensor): Graph connectivity in COO format with shape [2, num_edges]
+
+        Returns:
+            Tensor: Node embeddings with shape [num_nodes, hidden_channels]
+        """
+        # Input block
+        x = self.input_block(x, edge_index)
+
+        # Hidden layers
+        for layer in self.layers:
+            x = layer(x, edge_index)
+
+        # Apply first part of MLP to get final embeddings
+        embeddings = self.mlp[0](x)  # Linear layer
+        embeddings = self.mlp[1](embeddings)  # ReLU activation
+
+        return embeddings
+
     def forward(self, x, edge_index):
         """Forward pass of the model."""
         # Input block

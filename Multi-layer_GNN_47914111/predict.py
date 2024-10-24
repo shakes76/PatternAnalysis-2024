@@ -68,6 +68,7 @@ def plot_tsne(name, data, labels, num_classes, device):
     # Save the plot in the specified directory
     plot_dir = "C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/"
     save_plot(plot_dir, name)
+    # Show the plot
     plt.show() 
 
 def load_and_prepare_model(num_features, num_classes, device, model_path="GCN_Model.pt"):

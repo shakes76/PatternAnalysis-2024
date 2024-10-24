@@ -30,24 +30,30 @@ df_full = FullMelanomaDataset(
 dataset = df_full.dataset
 dataset_val = df_full.dataset_val
 
-base_model = NeuralNetwork.FunctionalNetwork()
-base_model.add_generic_layer(tf.keras.layers.Input(shape=(*image_shape, 3)))
-base_model.add_batch_norm()
-base_model.add_conv2D_layer((5, 5), 4, activation="tanh")
-base_model.add_pooling2D_layer("average", (2,2))
-base_model.add_conv2D_layer((5, 5), 8, activation="tanh")
-base_model.add_pooling2D_layer("average", (2, 2))
-base_model.add_conv2D_layer((5, 5), 16, activation="tanh")
-base_model.add_pooling2D_layer("average", (2, 2))
-base_model.add_conv2D_layer((5, 5), 32, activation="tanh")
-base_model.add_pooling2D_layer("average", (2, 2))
-base_model.add_flatten_layer()
-base_model.add_batch_norm()
-base_model.add_dense_layer(16, activation="tanh")
-base_model.generate_functional_model()
+pretrained_model = tf.keras.applications.ResNet50(
+    include_top=False,
+    input_shape=(*image_shape, 3)
+    )
+pretrained_model.trainable = False
 
-base_model.set_loss_function(tfa.losses.TripletSemiHardLoss())
-base_model.set_optimisation("adam")
+for layer in pretrained_model.layers[:-1]:
+    layer.trainable = True
+
+inputs = tf.keras.layers.Input(shape=(*image_shape, 3))
+pretrained_output = pretrained_model(inputs)
+finetune_output = tf.keras.layers.Dense(512, activation='leaky_relu')(tf.keras.layers.GlobalMaxPool2D()(pretrained_output))
+finetune2_output = tf.keras.layers.Dropout(0.4)(finetune_output)
+finetune3_output = tf.keras.layers.Dense(256, activation='leaky_relu')(finetune2_output)
+finetune4_output = tf.keras.layers.Dense(128, activation='leaky_relu')(finetune3_output)
+normalised_output = finetune4_output
+
+model = tf.keras.Model(inputs, normalised_output)
+
+base_model = NeuralNetwork.FunctionalNetwork()
+base_model.model = model
+
+base_model.set_loss_function(tfa.losses.TripletSemiHardLoss(margin=margin))
+base_model.set_optimisation(tf.keras.optimizers.Adam(learning_rate = 0.001))
 base_model.compile_functional_model()
 base_model.summary()
 

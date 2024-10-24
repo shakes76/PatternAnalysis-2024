@@ -1,3 +1,9 @@
+import torch
+import matplotlib.pyplot as plt
+from modules import GCN
+from dataset import DataLoader
+from sklearn.manifold import UMAP
+
 def visualize_embeddings(model, data):
     model.eval()
     with torch.no_grad():
@@ -9,7 +15,7 @@ def visualize_embeddings(model, data):
     plt.figure(figsize)=(10, 8))
     scatter = plt.scatter(umap_embeds[:, 0], umap_embeds[:, 1], c=data.y.cpu().numpy(), cmap='Spectral', s=5)
     plt.colorbar(scatter)
-    plt.title('UMAP of GCN Node Embeddings')
+    plt.title('UMAP')
     plt.show()
 
     for epoch in range(100):

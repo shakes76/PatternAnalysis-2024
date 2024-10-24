@@ -175,7 +175,7 @@ Where D represents Euclidean distance, A, P and N represent the output embedding
 ![alt text](readme_figures/triplet_loss.png)
 
 ### Classifier Model Architecture
-For the classifier a single fully connected layer was used. The input will be the output embedding from the feature extractor and the output will be the chosen class (normal or melanoma). i.e. the classifier is - Linear Layer: in: `embedding dimensions` out: 2. The bulk of the training / work should be done by the feature extractor.
+For the classifier a single layer neural net (perceptron) was used. The input will be the output embedding from the feature extractor and the output will be the chosen class (normal or melanoma). i.e. the classifier is - Linear Layer: in: `embedding dimensions` out: 2. The bulk of the training / work should be done by the feature extractor.
 
 ### Classifier Loss function
 Since we have a two unit output from the classifier we will use `CrossEntropyLoss` as our loss function for the classifier.

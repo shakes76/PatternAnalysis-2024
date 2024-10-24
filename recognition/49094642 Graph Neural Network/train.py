@@ -49,5 +49,7 @@ def main():
     plt.legend()
     plt.show()
 
+    torch.save(model.state_dict(), 'gcn_model.pth')
+
 if __name__ == "__main__":
     main()

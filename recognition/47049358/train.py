@@ -105,7 +105,7 @@ def train(model: nn.Module, train_loader: DataLoader, criterion, num_epochs: int
     seg_4_dice_coefs = np.zeros(NUM_EPOCHS)
     seg_5_dice_coefs = np.zeros(NUM_EPOCHS)
 
-    scaler = GradScaler()
+    scaler = GradScaler(device=DEVICE.type)
 
     accumuldation_steps = 2
 

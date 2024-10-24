@@ -160,11 +160,11 @@ We can see that the training effectively completed with early stopping, and over
 
 ## Discussion
 In this project, GFNet-H-B was trained using the ADNI dataset and successfully detected Alzheimer's patients with **98.62%** accuracy. As we mentioned earlier, the entire dataset was randomly divided into training, validation, and test sets, respectively, but using the original ADNI split (the official training and test sets), the accuracy was significantly reduced to 56%.
-The cause may be an imbalance of data (class imbalance) between the official training and test sets. In particular, if the test set contains data that cannot be learned from the original training set because of this, i.e., data that is not found in the training set, the model may not be able to generalise to that data.
+The cause may be an imbalance of data between the official training and test sets. In particular, if the test set contains data that cannot be learned from the original training set because of this, the model may not be able to generalise to that data.
 Therefore, a good result may have been obtained by randomly re-splitting the whole set. This indicates that the distribution of the data significantly impacts training, and careful partitioning is necessary.
 
 ## Conclusion
-We confirmed that GFNet-H-B can detect Alzheimer's disease with high accuracy using the ADNI dataset. It achieved **98.62%** accuracy on a randomly resegmented dataset, but accuracy dropped to 56.68% on official data partitioning.
+We confirmed that GFNet-H-B can detect Alzheimer's disease with high accuracy using the ADNI dataset. It achieved **98.62%** accuracy on the randomly split dataset, but accuracy significantly dropped to 56.68% on original data partitioning.
 These results suggest that GFNet performance may depend on the amount and distribution of data used for training. Further testing is needed to determine whether further data expansion and data preprocessing that accounts for class imbalance and sample bias in the data set will increase accuracy.
 
 ## Running the code

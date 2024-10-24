@@ -4,11 +4,11 @@ The introduction of the You-Only-Look-Once (YOLO) algorithm for image detection 
 
 The YOLO architecture is a convolutional neural network that prioritises speed over accuracy by using a single-stage detection process, as opposed to the two-step process utilised by many of the more accurate object detection algorithms.
 
-![Comparison of one and two stage detectors.](/recognition/ISIC_47044090/figures/detectors.jpg)
+![Comparison of one and two stage detectors.](./figures/detectors.jpeg)
 
 YOLO's algorithm can be better understood by analysing its architecture:
 
-![Diagram of YOLOv11 architecture.](./figures/architecture.webp)
+![Diagram of YOLOv11 architecture.](./figures/architecture.jpeg)
 
 Essentially, the convolution neural network parses over each pixel in the image and, in one step, tries to fit a bounding box with the pixel as the box's centre. In doing so, the model also outputs a confidence score for the validity of the proposed box. By the end of the single iteration through the image, the model outputs each proposed bounding box with a confidence score above a specific interval (0.25 by default for YOLOv11) as the final detections for the image.
 
@@ -20,7 +20,7 @@ The newest innovation in the YOLO model is Ultralytic's YOLOv11, which is said t
 ### 2.1 Lesion segementation
 This algorithm aims to provide a fast and accurate form of lesion detection from a single dermoscopic image - in this case, the accuracy of detection and segmentation is paramount, as it would theoretically be used for the medical purposes.
 
-![Example of lesion segmentation.](/figures/lesion_detection.png)
+![Example of lesion segmentation.](./figures/lesion_detection.png)
 
 ### 2.2 2017 ISIC Challenge
 To train the model, a dataset from the 2017 ISIC challenge was used: this includes 
@@ -31,7 +31,7 @@ This training validation split was used since it was the one provided by the ISI
 
 Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1.
 
-![Example of ISIC image and masks.](/figures/ISIC_image_mask.png)
+![Example of ISIC image and masks.](./figures/ISIC_image_mask.png)
 
 However, these cannot directly be plugged into YOLOv11, as Ultralytics' YOLO models require a specific file format and file structure. Firstly, it requires that all images are of equal and even dimensions. Secondly, all labels must be in the form of a .txt file which contains (for each bounding box identified): its class, centre x-coordinate, centre y-coordinate, width and height.
 
@@ -40,7 +40,7 @@ However, these cannot directly be plugged into YOLOv11, as Ultralytics' YOLO mod
 ### 3.1 Process
 As was discussed, the images in the ISIC 2017 dataset are of varying sizes and each have un-even dimensions. To alleviate this problem, each image was extended using a black letter-box on its smaller dimension (between x and y) until the image was a square. This method, while achieving the purpose of even dimensions in the image for YOLOv11 compatibility, ensures no warping occurs (which could hinder the training of the model).
 
-![Example of resizing ISIC image.](/figures/original_modified.png)
+![Example of resizing ISIC image.](./figures/original_modified.png)
 
 After this point, the image was scaled down to 512x512, which was a picked as it serves as a midpoint between maximising information (larger image=more information=better training) and minimising computation time (larger image=longer training=more resources). This was applied to both the images and the ground truth masks provided by ISIC.
 
@@ -85,7 +85,7 @@ IMAGE WITH AVE IOU AND N IOU>0.8
 ## 6. Predicting using trained model
 predict.py contains a method to visualise inference (example usage) of the trained model. By default, it also runs on the most recent training batch's weights. It plots and displays 9 random samples of the image, the model's predicted lesion and the true lesion from the test set.
 
-![Example of predict.py output.](/figures/predict_examples.png)
+![Example of predict.py output.](./figures/predict_examples.png)
 
 ## 8. Appendix
 ### Appendix 1: ISIC Dataset

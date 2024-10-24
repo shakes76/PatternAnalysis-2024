@@ -126,3 +126,7 @@ This file contains the main training loop for the project, initializing all requ
 #### [test.py](./test.py)
 
 This file contains a single function used to generate an 8x4 grid of images, where the first row of images are originals taken from a dataset and the second row of images are the reconstructions after being fed through the fully trained VQVAE.
+
+#### [utils.py](./utils.py)
+
+This file contains many helper functions that assist with loading data, managing output folders, initialising models, calculating SSIM scores and plotting metrics.

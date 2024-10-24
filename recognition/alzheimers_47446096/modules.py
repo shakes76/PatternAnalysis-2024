@@ -5,14 +5,28 @@ from torch import Tensor
 from einops import rearrange, repeat
 import functools
 class VisionTransformer(nn.Module):
-
-    def __init__(self, depth:int,  patchDim: int, imgDims: tuple[int, int, int], patchLen: int, mhaHeadFactor:int, hiddenMul: int, device: str = "cpu") -> None:
+    '''
+    Vision Transformer Implimentation
+    '''
+    def __init__(self, depth:int,  patchDim: int, imgDims: tuple[int, int, int], patchLen: int, nHeads:int, hiddenMul: int, device: str = "cpu") -> None:
+        '''
+        Inputs:
+            depth: int - the number of encoder blocks
+            patchDim: int - width / height of patch
+            imgDims: tuple[int, int, int] - Image (chanels, height, width)
+            patchLen: int - Length of flattened patches
+            nHeads: int - the number of heads of the MHA layer
+            hiddenMul: int - the multiple factor for the var expansion between the
+                two MLP hidden layers
+            device: CUDA device to be computed on
+        Returns: None
+        '''
         super(VisionTransformer, self).__init__()
         self.pDim = patchDim
         self.imgDims = imgDims
         self.pLen = patchLen
         self.device = device
-        self.mhaHeadFactor = mhaHeadFactor
+        self.nHeads = nHeads
         self.depth = depth
         self.hiddenMul = hiddenMul
 
@@ -31,12 +45,21 @@ class VisionTransformer(nn.Module):
 
         self.softMax = nn.Softmax(dim = -1)
 
-        assert self.pLen % self.mhaHeadFactor == 0
+        assert self.pLen % self.nHeads == 0
+        # Generate set of transformer blocks
         self.blocks = nn.ModuleList(
-            [TransformerEncBlk(self.pLen, self.mhaHeadFactor, self.hiddenMul, device = self.device) for i in range(self.depth)]
+            [TransformerEncBlk(self.pLen, self.nHeads, self.hiddenMul, device = self.device) for i in range(self.depth)]
         )
     
     def forward(self, x):
+        '''
+        Compute the forward step of the TransformerEncBlk,
+
+        Inputs:
+            x: Tensor - pytorch tensor of the embedded tokens
+        Returns:
+            Tensor - Computed values after patch processing
+        '''
         x= self.pSplitter(x)
         x = self.pProcessor(x)
         for block in self.blocks:
@@ -45,7 +68,19 @@ class VisionTransformer(nn.Module):
         return x
 
 class TransformerEncBlk(nn.Module):
+    '''
+    Single block of of the Vision. Applies both the MHA layer and the MLP.
+    '''
     def __init__(self, dim: int, nHeads: int, hiddenMul:int , device:str = 'cpu') -> None:
+        '''
+        Inputs:
+            dim: int - the number of tokens
+            nHeads: int - the number of heads of the MHA layer
+            hiddenMul: int - the multiple factor for the var expansion between the
+                two MLP hidden layers
+            device: CUDA device to be computed on
+        Returns: None
+        '''
         super(TransformerEncBlk, self).__init__()
         self.dim = dim
         self.nHeads = nHeads
@@ -67,11 +102,19 @@ class TransformerEncBlk(nn.Module):
         self.l2 = nn.Linear(self.dim * self.hiddenMul, self.dim, device = self.device)
 
     def forward(self, x: Tensor) -> Tensor:
+        '''
+        Compute the forward step of the TransformerEncBlk,
+
+        Inputs:
+            x: Tensor - pytorch tensor of the embedded tokens
+        Returns:
+            Tensor - Computed values after Transformer Block
+        '''
         y = self.n1(x)
-        y, _ = self.mha(y, y, y)
+        y, _ = self.mha(y, y, y) #MHA
         x = x + y
-        z = self.d1(self.activation(self.l1(self.n2(x))))
-        z = self.d1(self.l2(z))
+        z = self.d1(self.activation(self.l1(self.n2(x)))) #MLP
+        z = self.d1(self.l2(z)) #MLP
         x = x + z
         return x
 
@@ -188,11 +231,20 @@ class PatchSplitter(nn.Module):
     
 class ConvolutionalPatchSplitter(nn.Module):
     '''
-    #TODO
+    ConvolutionalPatchSplitter module for ConvolutionalVisionTransformer.
+    Splits image into the required number of patches using convolutional
+    layers instead of linear flattening
     '''
     def __init__(self, kernal: int, imgDims: tuple[int, int, int], outputDim: int, stride: int, padding: int, device: str = 'cpu') -> None:
         '''
-        #TODO
+        Inputs:
+            kernal: int - the widht/height of the kernal
+            imgDims: tuple[int, int, int] - Image (chanels, height, width)
+            outputDim: int - Length of tokens
+            stride: int - stride of convolutional layer
+            padding: int - padding of convolutional layer
+            device: CUDA device to be computed on
+        Returns: None
         '''
         super(ConvolutionalPatchSplitter, self).__init__()
         self.kernal = kernal
@@ -202,19 +254,40 @@ class ConvolutionalPatchSplitter(nn.Module):
         self.outputDim = outputDim
         self.padding = padding
         channels, height, width = self.imgDims
-        #* Ensure that the image can be correctly split into patches
+
         self.conv = nn.Conv2d(channels, self.outputDim, self.kernal, self.stride, padding= self.padding, device = self.device)
         self.norm = nn.LayerNorm(self.outputDim, device = self.device)
     
     def forward(self, x: Tensor) -> Tensor:
         '''
-        #TODO
+        Compute forward step of the ConvolutionalPatchSplitter Module,
+        uses a convolutional layer to create linear images,
+        rearanges them for the next layer and finally applies a
+        normalisation layer
+
+        Input:
+            x: Tensor - pytorch tensor representing the img, must
+                match the dimmensions specified of the ConvolutionalPatchSplitter
+        Returns: Tensor - Computed values after the final linear Layer
         '''
         x = rearrange(self.conv(x), 'b c h w -> b (h w) c')
         return self.norm(x)
     
 class ConvolutionalTransformerEncBlk(nn.Module):
+    '''
+    Single encoder block of of the Vision. Applies both the convolutional projection 
+        for the MHA layer, the MHA layer itself and the MLP layer.
+    '''
     def __init__(self, imgDim: tuple[int, int, int], nHeads: int, hiddenMul:int, device:str = 'cpu', final:bool = False) -> None:
+        '''
+        Inputs:
+            imgDims: tuple[int, int, int] - Image (chanels, height, width)
+            nHeads: int - the number of heads of the MHA layer
+            hiddenMul: int - the multiple factor for the var expansion between the
+                two MLP hidden layers
+            device: CUDA device to be computed on
+        Returns: None
+        '''
         super(ConvolutionalTransformerEncBlk, self).__init__()
         self.imgDim = imgDim
         self.dim = self.imgDim[0]
@@ -223,11 +296,14 @@ class ConvolutionalTransformerEncBlk(nn.Module):
         self.device = device
         self.final = final
 
+        #* Convolution for queries
         self.conv = nn.Sequential(
             nn.Conv2d(self.dim, self.dim, kernel_size=3, padding=1, stride=1, device=self.device),
             nn.BatchNorm2d(self.dim, self.dim, device=self.device),
             nn.Dropout(0.3)
         )
+
+        #* Squeezed x2 convolution for keys and values
         self.conv2 = nn.Sequential(
             nn.Conv2d(self.dim, self.dim, kernel_size=3, padding=1, stride=2, device=self.device),
             nn.BatchNorm2d(self.dim, self.dim, device=self.device),
@@ -235,6 +311,8 @@ class ConvolutionalTransformerEncBlk(nn.Module):
         )
 
         self.norm = nn.LayerNorm(self.dim, device=self.device)
+
+        #* MLP Layer
         self.mlp = nn.Sequential(
             nn.Linear(self.dim, self.dim * self.hiddenMul, device = self.device),
             nn.GELU(),
@@ -246,6 +324,15 @@ class ConvolutionalTransformerEncBlk(nn.Module):
         self.mha = nn.MultiheadAttention(self.dim, self.nHeads, 0.3, batch_first = True, device = self.device)
 
     def forward_conv(self, x):
+        '''
+        Compute the forward convolution projections
+        needed before the MHA layer
+        Inputs:
+            x: Tensor - pytorch tensor of the embedded tokens
+        Returns:
+            (Tensor, Tensor, Tensor) query, key, values after 
+                patch forward convolution projections
+        '''
         B, hw, C = x.shape
         if self.final:
             cls_token, x = torch.split(x, [1, hw-1], 1)
@@ -265,14 +352,26 @@ class ConvolutionalTransformerEncBlk(nn.Module):
         
         return (q, k, v)
 
-        #TODO
-    def forward(self, x: Tensor) -> Tensor:
 
+    def forward(self, x: Tensor) -> Tensor:
+        '''
+        Compute the forward step of the ConvolutionalTransformerEncBlk,
+
+        Inputs:
+            x: Tensor - pytorch tensor of the embedded tokens
+        Returns:
+            Tensor - Computed values after Convolutional Transformer Block
+        '''
         q, k, v = self.forward_conv(x)
         x = x + self.mha(q, k, v)[0]
         return x + self.norm(self.mlp(x))
     
 class ConvolutionalTransformerBlk(nn.Module):
+    '''
+    Single block of ConvolutionalVisionTransformer that contains
+    a set of transformer encoder blocks at teh set img dims for the
+    current scaling of the img.
+    '''
     def __init__(self, imgDims: tuple[int, int, int], embChannels:int, kernal:int, stride:int, padding:int, nHeads:int, hiddenMul: int,
                 depth:int, final:bool = False, device: str = "cpu") -> None:
         super(ConvolutionalTransformerBlk, self).__init__()

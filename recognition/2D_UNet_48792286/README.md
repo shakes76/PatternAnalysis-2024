@@ -13,9 +13,9 @@
 ## Model
 ### UNET is a U-shaped encoder-decoder network architecture, which consists of four encoder blocks and four decoder blocks that are connected via a bridge. The encoder network (contracting path) half the spatial dimensions and double the number of filters (feature channels) at each encoder block. Likewise, the decoder network doubles the spatial dimensions and half the number of feature channels.
 ### ![UNET ARCHITECTURE](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*lvXoKMHoPJMKpKK7keZMEA.png)
-## Data Set
+## DataSet
 ### Here is an example
-
+### /assets/images/img1.png
 ## Usage
 ###
 ## Results

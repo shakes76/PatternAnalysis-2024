@@ -1,4 +1,4 @@
-# Introduction
+# VQVAE for HipMRI Study on Prostate Cancer
 This project aims to create a generative VQVAE model for [HipMRI Study on Prostate Cancer](https://doi.org/10.25919/45t8-p065) using the [processed 2D slices (2D images)](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2). I achieved over 0.9 Structural Similarity Index Measure on 4 times downscaled image in 35 minutes of training on a single GPU. 
 
 ## Model

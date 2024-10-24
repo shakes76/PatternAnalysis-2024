@@ -2,7 +2,6 @@
 import os
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
-#import torchvision
 import skimage.transform as skTrans
 
 import numpy as np
@@ -34,7 +33,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
     '''
     affines = []
     num_to_load = int(len(imageNames) * 0.3)
-    imageNames = imageNames[:num_to_load]
+    imageNames = imageNames[-num_to_load:]
     # get fixed size
     num = len ( imageNames )
     first_case = nib . load ( imageNames [0]) . get_fdata ( caching = "unchanged")
@@ -64,10 +63,8 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
             # ~ inImage = 255. * inImage / inImage . max ()
             inImage = ( inImage - inImage . mean () ) / inImage . std ()
         if categorical :
-                #print(f"Unique values in raw mask before to_channels for image {i}: {np.unique(inImage)}")
                 inImage = to_channels ( inImage , dtype = dtype )
                 images [i ,: ,: ,:] = inImage
-                #print(f"After to_channels for image {i}: {np.unique(inImage, axis=0)}")
         else :
             images [i ,: ,:] = inImage
 
@@ -80,28 +77,6 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
     else :
         return images
 
-'''
-image_dir1 = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
-image_dir = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
-
-imageNames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
-
-# Check the shape and content
-#print(f"Number of images loaded: {len(imageNames)}")
-#print(f"Shape of first image: {images[0].shape}")
-
-image_index = 0
-
-
-images= load_data_2D(imageNames) #early_stop= True
-image = images[image_index]
-
-print("length of images is ", len(images))
-plt.imshow(image)  # Use cmap='gray' for grayscale display
-plt.title(f'Image {image_index}')
-plt.axis('off')  # Turn off axis labels
-plt.show()
-'''
 
 class ProstateCancerDataset(Dataset):
     def __init__(self, image_dir, seg_dir, normImage=True, categorical=False, dtype=np.float32, transform=None):
@@ -121,8 +96,6 @@ class ProstateCancerDataset(Dataset):
         image = self.images[idx]
         segImage = self.segImages[idx]
 
-        #print(f"Mask {idx} unique values: {np.unique(segImage)}")
-
         # Apply any transformations (if any)
         if self.transform is not None:
             #image = self.transform(image)
@@ -130,13 +103,6 @@ class ProstateCancerDataset(Dataset):
             augmentations = self.transform(image=image, mask=segImage)
             image = augmentations["image"]
             segImage = augmentations["mask"]
-
-        #print(f"Image Type: {type(image)}, Image Shape: {image.shape}")
-        #print(f"Mask Type: {type(segImage)}, Mask Shape: {segImage.shape}")
-
-        # Convert to PyTorch tensors (adding a channel dimension if necessary)
-        #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
-        #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
 
         return image, segImage
         

@@ -42,24 +42,14 @@ def check_accuracy(loader, model, device="cuda"):
             x = x.to(device)
             y = y.to(device)
 
-            #print(f"Preds shape before processing: {model(x).shape}")
-            #print(f"Ground truth (y) shape before processing: {y.shape}")
-
             if len(y.shape) == 4 and y.shape[-1] == 5:  # If y has shape [batch_size, num_classes, H, W]
                 y = torch.argmax(y, dim=-1)
-            
-            #print(f"Ground truth (y) shape after processing: {y.shape}")
 
             preds = model(x)
             preds = torch.argmax(torch.softmax(preds, dim=1), dim=1)
 
-            #print(f"Preds shape after processing: {preds.shape}")
-
             preds = preds.view(-1)
             y = y.view(-1)
-
-            for cls in range(5):
-                print(f"Class {cls} - Predicted: {(preds == cls).sum().item()} pixels")
 
             num_correct += (preds == y).sum().item()
             num_pixels += torch.numel(preds)
@@ -95,7 +85,6 @@ def visualize_predictions(loader, model, device, num_images=3):
         for x, y in loader:
             x = x.to(device)
             y = y.to(device)
-            print(torch.unique(y))
 
             # Forward pass to get predictions
             preds = model(x)

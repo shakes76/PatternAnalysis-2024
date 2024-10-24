@@ -17,7 +17,7 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
     
-#[64, 128, 256, 512]
+
 class UNET(nn.Module):
     def __init__(self, in_channels=1, out_channels=5, features=[16, 32, 64, 128],):
         super(UNET, self).__init__()

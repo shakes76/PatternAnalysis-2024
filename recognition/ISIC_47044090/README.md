@@ -109,7 +109,7 @@ predict.py contains a method to visualise inference (example usage) of the train
 
 ![Example of predict.py output.](./figures/predict_examples.png)
 
-predict.py also has a function to plot a single testcase's image, true lesion bounding box, and resulting bounding box. Below is an example **input** image for the model:
+Below is an example **input** image for the model:
 ![Example of image input (testcase 00000007).](./figures/ISIC_sample.jpg)
 
 And here is the corresponding example **output** from model prediction:

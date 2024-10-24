@@ -22,7 +22,7 @@ def scan_directory(partition):
     imgs = []
     for filename in os.scandir(f"{original_filepath}/{partition}/masks"):
         if filename.is_file():
-            imgs.append(re.sub(r'\D', '', filename.path))
+            imgs.append(re.sub(r'\D', '', filename.path)) # extracts just the numbers (file codes)
     
     return imgs
 
@@ -41,7 +41,7 @@ def get_newest_item(directory):
 
     if not items:
         return None  # Handle empty directories
-    if './runs/detect/.DS_Store' in items:
+    if './runs/detect/.DS_Store' in items: # remove .DS_Store if exists
         items.remove('./runs/detect/.DS_Store')
     
     newest_item = max(items, key=os.path.getmtime) # Find the newest item (file or folder) by modification time
@@ -98,6 +98,7 @@ def image_and_mask(sample):
     axs[0].set_title("ISIC supplied image")
     axs[1].set_title("ISIC supplied mask")
     plt.show()
+
 
 def image_and_mask(sample):
     """

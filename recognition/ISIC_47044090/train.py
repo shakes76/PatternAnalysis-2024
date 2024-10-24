@@ -13,9 +13,8 @@ def run_train():
     """
     model = yolo_model("yolo11m.pt") # initial weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    results = model.train(batch=16, device=device, data=f"datasets/isic.yaml", epochs=2, imgsz=512)
-    # results = model.train(batch=32, device=device, data=f"{yaml_path}/isic.yaml", epochs=200, imgsz=512) # used
-    # results = model.train(batch=16, device=device, data=f"{yaml_path}/isic.yaml", epochs=2, imgsz=512)
+    results = model.train(batch=32, device=device, data=f"datasets/isic.yaml", epochs=200, imgsz=512)
+
 
 def run_test(run_number=-1, partition="test"):
     """
@@ -28,26 +27,27 @@ def run_test(run_number=-1, partition="test"):
     """
     if run_number == -1: # most recent training run's best weights
         path = get_newest_item("./runs/detect/") + "/weights/best.pt"
-    else:
+    else: # specific run's weights
         path = f"./runs/detect/train{run_number}/weights/best.pt"
+
     model = yolo_model(path)
     print(f"\bWeights used for test: {path}\n_______________________________________\n")
     
-    ious = []
+    ious = [] # keeps track of iou of each pred
     for file in scan_directory(partition): 
         results = model.predict(f"{modified_filepath}/{partition}/images/ISIC_{file}.jpg", imgsz=512, conf=0.25) 
         for result in results:
             pred_bbox = result.boxes.xywh
-            if pred_bbox.size()==torch.Size([0, 4]):
+            if pred_bbox.size()==torch.Size([0, 4]): # if no detections
                 iou = 0
             else:
-                if pred_bbox.size() != torch.Size([1, 4]):
-                    pred_bbox = [pred_bbox[0]] # takes the most confident classification if multiple exist
+                if pred_bbox.size() != torch.Size([1, 4]): # if multiple detections
+                    pred_bbox = [pred_bbox[0]] # takes the most confident detection
 
                 pred_bbox = pred_bbox 
                 true_xywh = [float(i)*512 for i in open(f"{modified_filepath}/{partition}/labels/ISIC_{file}.txt").read().split(" ")[1:]]
                 true_xywh=torch.tensor([true_xywh])
-                iou = iou_torch(pred_bbox, true_xywh)
+                iou = iou_torch(pred_bbox, true_xywh) # calc iou between true bbox and predicted bbox
 
             print(f"IoU for sample={iou}")
             ious.append(iou)

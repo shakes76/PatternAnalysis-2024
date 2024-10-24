@@ -17,7 +17,7 @@ def resize_mask(file, partition):
     
     then saves it in modified_file_path
     """
-    image = Image.open(f'{original_filepath}/{partition}/labels/ISIC_{file}_segmentation.png')    
+    image = Image.open(f'{original_filepath}/{partition}/labels/ISIC_{file}_segmentation.png') 
     width, height = image.size
     if width >= height:
         image = cv2.copyMakeBorder(asarray(image), math.ceil((width-height)/2), math.floor((width-height)/2), 0, 0, cv2.BORDER_CONSTANT,value=0)
@@ -60,7 +60,7 @@ def convert_mask_to_txt(file, partition):
     """
     image = Image.open(f'{modified_filepath}/{partition}/masks/ISIC_{file}_segmentation.png')
     ys, xs = np.where(image == 255) # extract x and y coordinates of white pixels (=255)
-    x_center = int(np.median(xs))
+    x_center = int(np.median(xs)) # calculate information for .txt file
     width = np.max(xs) - np.min(xs) 
     y_center = int(np.median(ys))
     height = np.max(ys) - np.min(ys)
@@ -74,9 +74,9 @@ def process_dataset():
 
     End result is fully processed dataset ready for Ultralytics
     """
-    for partition in ["train", "test", "val"]:
-        for file in scan_directory(partition):
-            resize_image(file, partition)
+    for partition in ["train", "test", "val"]: # for each partition
+        for file in scan_directory(partition): # for each file in partition
+            resize_image(file, partition) 
             resize_mask(file, partition)
             convert_mask_to_txt(file, partition)
 

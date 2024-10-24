@@ -97,10 +97,12 @@ I then go ahead and checked the visualization of the prediction, where the green
 1. There are some data with weak visual distinction. Meanwhile, there are some interfering visual features which are much more distinctive. For example:
 
 ![ISIC_0013191_prediction.png](./Readme%20pictures/ISIC_0013191_prediction.png)
+
 2. Some of the ground truth boundary boxes seem off. Especially they look like been rotated 90 degree. For example:
 
 ![ISIC_0014648_prediction.png](./Readme%20pictures/ISIC_0014648_prediction.png)
 ![ISIC_0016065_prediction.png](./Readme%20pictures/ISIC_0016065_prediction.png)
+
 3. Many of the detections seems to focus on the smaller features in images while the actual objects are very large. For example: 
 
 ![ISIC_0015050_prediction.png](./Readme%20pictures/ISIC_0015050_prediction.png)

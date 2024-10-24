@@ -20,11 +20,9 @@ class Block(nn.Module):
         self.double_conv = nn.Sequential(
             # First convolution
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
             # Second convolution
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
         

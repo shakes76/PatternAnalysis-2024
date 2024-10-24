@@ -1,39 +1,31 @@
 import os
-os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1" #Had a bug where albumentations module thought it had an update
-import torch
+os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1" #Had bug where Albumentations thought there was a newer version and this
+import torch                               #  was required to prevent it from printing a message to the terminal constantly
 import torch.nn as nn
 from tqdm import tqdm
 import torch.optim as optim
-import torchvision
 
 from modules import UNET
-from dataset import ProstateCancerDataset
 import matplotlib.pyplot as plt
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 from utils import (
-    load_checkpoint,
     save_checkpoint,
     get_loaders,
     check_accuracy,
     visualize_predictions,
-    #save_predictions_as_img,
 )
-
 
 #HyperParameters
 LEARN_RATE = 0.0001
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
-NUM_EPOCHS = 6
+NUM_EPOCHS = 16
 NUM_WORKERS = 1
-IMAGE_HEIGHT = 128
-IMAGE_WIDTH = 256
 PIN_MEMORY = True
-LOAD_MODEL = False
 
-
+#Path locations for the data folders
 TRAIN_IMG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
 TRAIN_SEG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
 VAL_IMG_DIR =  'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_validate'
@@ -64,6 +56,7 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
     
 
 def main():
+    #Transform for training, rotations and flips to add variability to input images
     train_transform = A.Compose(
         [
             A.Resize(height=256, width=128),
@@ -95,6 +88,7 @@ def main():
     loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARN_RATE)
 
+    #Creates the data loaders using get_loaders from utils
     train_loader, val_loader = get_loaders(
         TRAIN_IMG_DIR,
         TRAIN_SEG_DIR,
@@ -111,17 +105,14 @@ def main():
     
     for epoch in range(NUM_EPOCHS):
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
-        #check_accuracy(val_loader, model, DEVICE)
+        
+        #At the end of training does an accuracy check and displays predictions, and then saves model
         if epoch == (NUM_EPOCHS-1):
             check_accuracy(val_loader, model, DEVICE)
+            visualize_predictions(val_loader, model, device=DEVICE, num_images=3)
             checkpoint = {"state_dict":model.state_dict(), "optimizer":optimizer.state_dict(),}
             save_checkpoint(checkpoint)
-            visualize_predictions(val_loader, model, device=DEVICE, num_images=3)
 
-        #save model
-        
-        #print example
-    
 
 if __name__ == "__main__":
     main()

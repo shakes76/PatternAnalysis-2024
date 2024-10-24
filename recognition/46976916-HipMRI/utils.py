@@ -1,5 +1,4 @@
 import torch
-import torchvision
 from dataset import ProstateCancerDataset
 from torch.utils.data import DataLoader
 import numpy as np
@@ -13,6 +12,7 @@ def load_checkpoint(checkpoint, model):
     print("--loading checkpoint--")
     model.load_state_dict(checkpoint["state_dict"])
 
+#Takes in inputs to get the datasets and creates DataLoaders
 def get_loaders(
         train_dir,
         train_seg_dir,
@@ -29,11 +29,11 @@ def get_loaders(
     val_ds = ProstateCancerDataset(image_dir=val_dir, seg_dir=val_seg_dir, transform=val_transform)
     val_loader = DataLoader(val_ds, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory, shuffle=False)
     return train_loader, val_loader
-    
+
+#Takes a loader and a model and prints the pixel accuracy and dice score    
 def check_accuracy(loader, model, device="cuda"):
     num_correct = 0
     num_pixels = 0
-    #dice_score = 0
     dice_score_per_class = torch.zeros(5).to(device)
     model.eval()
 
@@ -67,6 +67,7 @@ def check_accuracy(loader, model, device="cuda"):
         print(f"Pixel Accuracy {(num_correct/num_pixels)*100:.2f} and Dice score: {avg_dice_score:.4f}")
         model.train()
 
+#Creates num_images (default 3) figures, each one showing the input image, ground truth mask and the models segmented output
 def visualize_predictions(loader, model, device, num_images=3):
     model.eval()
     images_shown = 0

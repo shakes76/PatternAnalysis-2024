@@ -1,0 +1,24 @@
+Getting testing data...
+
+  0%|          | 0/540 [00:00<?, ?it/s]
+ 11%|█▏        | 61/540 [00:00<00:00, 602.38it/s]
+ 23%|██▎       | 122/540 [00:00<00:00, 600.58it/s]
+ 34%|███▍      | 183/540 [00:00<00:00, 598.42it/s]
+ 45%|████▌     | 243/540 [00:00<00:00, 598.46it/s]
+ 56%|█████▌    | 303/540 [00:00<00:00, 598.81it/s]
+ 67%|██████▋   | 363/540 [00:00<00:00, 598.06it/s]
+ 78%|███████▊  | 423/540 [00:00<00:00, 598.26it/s]
+ 89%|████████▉ | 483/540 [00:00<00:00, 597.75it/s]
+100%|██████████| 540/540 [00:00<00:00, 598.16it/s]
+/home/ubuntubeast/.local/lib/python3.10/site-packages/torch/_utils.py:776: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+torch.Size([1, 256, 128])
+Finished fetching testing data.
+NVIDIA GeForce RTX 2080 Ti
+cuda is available.
+VQVAE being tested on cuda.
+
+torch.Size([64, 1, 256, 128])
+torch.Size([64, 1, 256, 128])
+commitment loss = 0.012087369337677956, codebook loss = 0.04834947735071182, perplexity = 297.97174072265625
+Structural Similarity Index Measure between original and reconstructed images = 0.6682232618331909

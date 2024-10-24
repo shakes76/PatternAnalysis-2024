@@ -1,4 +1,5 @@
 # Vector Quantised AutoEncoder trained over the HipMRI study for Prostate Cancer Radiotherapy
+**_s4878126 - COMP3710 Semester 2, 2024_**
 ## 1.0 Model Description
 A vector quantised variational autoencoder (VQVAE) is an expanded version of the traditional variational autoencoder (VAE) architecture.
 The following model was developed in PyTorch by employing an object-oriented programming approach. It features an encoder for deriving a latent representation of a MRI scan, a quantisation layer for embedding the image into a discrete space of embeddings and a decoder for reconstructing a similar image from the stored embeddings. 

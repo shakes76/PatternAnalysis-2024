@@ -239,8 +239,13 @@ def train_unet(unet, intermediate_outputs = True, save_model = True):
 
 
 if __name__ == '__main__':
+    vae_losses = []
+    vae_val_losses = []
+    diffusion_losses = []
+    diffusion_losses_val = []
+
     if TRAIN_VAE:
-        train_vae(vae_encoder, vae_decoder, False, True)
+        vae_losses, vae_val_losses = train_vae(vae_encoder, vae_decoder, False, True)
         vae_encoder.eval()
     else:
         vae_encoder = torch.load("models/encoder.model", weights_only=False)
@@ -250,8 +255,22 @@ if __name__ == '__main__':
         vae_decoder.eval()
     
     if TRAIN_UNET:
-        train_unet(unet, False, True)
+        diffusion_losses, diffusion_losses_val = train_unet(unet, False, True)
         vae_decoder.eval()
     else:
         unet = torch.load("models/unet.model", weights_only=False)
         unet.eval()
+    
+    plt.plot(vae_losses)
+    plt.plot(vae_val_losses)
+    plt.title("VAE Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.show()
+
+    plt.plot(diffusion_losses)
+    plt.plot(diffusion_losses_val)
+    plt.title("Diffusion Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.show()

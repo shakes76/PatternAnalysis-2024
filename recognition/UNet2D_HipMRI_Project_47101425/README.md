@@ -55,6 +55,9 @@ The required dependencies can be installed by doing the following (this contribu
    ```bash
    conda install conda-forge::nibabel
    ```
+   ```bash
+   conda install anaconda::scikit-image
+   ```
 5. Ensure all installed dependencies are running compatible versions:
    ```bash
    conda update --all

@@ -156,7 +156,7 @@ def get_dataloader(
 
 if __name__ == "__main__":
     # Use the correct path
-    data_dir = r"C:\Users\Ovint\Documents\PatternAnalysis-2024\recognition\GNNs4743209\data"
+    data_dir = r".\data"
 
     try:
         # Create dataset

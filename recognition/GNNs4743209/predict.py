@@ -233,8 +233,8 @@ class ModelPredictor:
 
 def main():
     # Paths
-    checkpoint_path = r"C:\Users\Ovint\Documents\PatternAnalysis-2024\recognition\GNNs4743209\runs\run_20241024_103409\best_model.pth"
-    data_dir = r"C:\Users\Ovint\Documents\PatternAnalysis-2024\recognition\GNNs4743209\data"
+    checkpoint_path = r".\runs\run_20241024_103409\best_model.pth"
+    data_dir = r".\data"
 
     try:
         # Initialize predictor

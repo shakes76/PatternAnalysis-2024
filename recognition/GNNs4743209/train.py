@@ -208,7 +208,7 @@ class Trainer:
 def main():
     # Configuration
     config = {
-        'data_dir': r"C:\Users\Ovint\Documents\PatternAnalysis-2024\recognition\GNNs4743209\data",
+        'data_dir': r".\data",
         'model_config': {
             'hidden_channels': 256,
             'num_layers': 8,
@@ -264,5 +264,4 @@ def main():
 
 
 if __name__ == "__main__":
-    for i in range(1):
-        main()
+    main()

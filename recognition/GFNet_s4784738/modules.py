@@ -13,7 +13,6 @@ from collections import OrderedDict
 import torch.fft
 from timm.layers import DropPath, trunc_normal_
 
-
 class Mlp(nn.Module):
     def __init__(
         self,
@@ -39,7 +38,6 @@ class Mlp(nn.Module):
         x = self.drop(x)
         return x
 
-
 class GlobalFilter(nn.Module):
     def __init__(self, dim, h=14, w=8):
         super().__init__()
@@ -62,7 +60,6 @@ class GlobalFilter(nn.Module):
         x = x.reshape(B, N, C)
 
         return x
-
 
 class Block(nn.Module):
     def __init__(
@@ -93,7 +90,6 @@ class Block(nn.Module):
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
 
-
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
     """
@@ -113,7 +109,6 @@ class PatchEmbed(nn.Module):
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
-
 
 class GFNet(nn.Module):
     
@@ -173,7 +168,6 @@ class GFNet(nn.Module):
         else:
             print('using linear droppath with expect rate', drop_path_rate * 0.5)
             dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
-        # dpr = [drop_path_rate for _ in range(depth)]  # stochastic depth decay rule
         
         self.blocks = nn.ModuleList([
             Block(
@@ -241,4 +235,3 @@ class GFNet(nn.Module):
         x = self.final_dropout(x)
         x = self.head(x)
         return x
-    

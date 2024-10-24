@@ -190,25 +190,6 @@ def test_model(data, model):
         test_acc = int(correct.sum()) / int(data.test_mask.sum())
         print(f"Test Accuracy: {test_acc:.4f}")
 
-    # confusion matrix
-    test_preds = out[data.test_mask].argmax(dim=1).cpu().numpy()
-    test_labels = data.y[data.test_mask].cpu().numpy()
-
-    # cosnle printed confusion matrix and classification report
-    print("Classification Report:")
-    print(classification_report(test_labels, test_preds, target_names=['tvshow', 'government', 'company', 'politician']))
-
-    # confusion matrix plot
-    cm = confusion_matrix(test_labels, test_preds)
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels =['tvshow', 'government', 'company', 'politician'], 
-                yticklabels =['tvshow', 'government', 'company', 'politician'])
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title("Confusion Matrix - test data")
-    print("Confusion Matrix:")
-    plt.show()
-
     return test_acc
 
 

@@ -76,6 +76,8 @@ mean and standard deviation is calculated by the overall dataset.
 CropBrainRegion is a function that use cv2 to cut the black area of a brain image. By this way we can let the model focus on the brain area.  
 
 ## Traning process
+Run 65 epochs and visualizing the training process:  
+
 
 
 

@@ -112,6 +112,7 @@ def main():
     # Load trained model
     model = load_model(args.model_path)
     # Call test function from train.py
+    
     criterion = nn.CrossEntropyLoss()  # Loss function
     test(device, args.output_dir, model, criterion, test_loader)
 

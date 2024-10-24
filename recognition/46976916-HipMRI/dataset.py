@@ -1,4 +1,3 @@
-#Reading Nifti files - Code from Appendix B
 import os
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
@@ -7,6 +6,8 @@ import skimage.transform as skTrans
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+
+#to_channels and load_data_2D: from Appendix B in COMP3710_Report_v1.57 with slight modifications made to fit use
 
 def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
     #channels = np . unique ( arr )
@@ -32,7 +33,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
     loading and testing scripts .
     '''
     affines = []
-    num_to_load = int(len(imageNames) * 0.3)
+    num_to_load = int(len(imageNames) * 0.35) #A smaller dataset size was required due to computing power limitations
     imageNames = imageNames[-num_to_load:]
     # get fixed size
     num = len ( imageNames )
@@ -51,8 +52,8 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
         niftiImage = nib . load ( inName )
         Pre_inImage = niftiImage . get_fdata ( caching = "unchanged") # read disk only
         affine = niftiImage . affine
-        #Now loads as Pre_inImage and the Pre_inImage is resized to always be 256,128
-        inImage = skTrans.resize(Pre_inImage, (256,128), order=0, preserve_range=True)
+        
+        inImage = skTrans.resize(Pre_inImage, (256,128), order=0, preserve_range=True) #Some files were different sizes, so this line makes sure the output is consistent
 
         if len ( inImage . shape ) == 3:
             inImage = inImage [: ,: ,0] # sometimes extra dims in HipMRI_study data
@@ -80,13 +81,13 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
 
 class ProstateCancerDataset(Dataset):
     def __init__(self, image_dir, seg_dir, normImage=True, categorical=False, dtype=np.float32, transform=None):
-        # Use load_data_2D to load all the input images and ground truth masks at once
+        # Use load_data_2D to load all the input images and segmented ground truth masks
         imageNames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
         self.images = load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype)
         segNames = sorted([os.path.join(seg_dir, f) for f in os.listdir(seg_dir) if f.endswith('.nii.gz')])
         self.segImages = load_data_2D(segNames, normImage=False, categorical=True, dtype=dtype)
         
-        self.transform = transform  # Optional transformations (like resizing or normalization)
+        self.transform = transform  # Optional transformations
     
     def __len__(self):
         return len(self.images)  # Return the number of samples
@@ -96,10 +97,8 @@ class ProstateCancerDataset(Dataset):
         image = self.images[idx]
         segImage = self.segImages[idx]
 
-        # Apply any transformations (if any)
+        # Apply any transformations
         if self.transform is not None:
-            #image = self.transform(image)
-            #segImage = self.transform(segImage)
             augmentations = self.transform(image=image, mask=segImage)
             image = augmentations["image"]
             segImage = augmentations["mask"]

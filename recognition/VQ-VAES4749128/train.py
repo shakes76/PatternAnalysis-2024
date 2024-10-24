@@ -59,3 +59,55 @@ Set up VQ-VAE model with components defined in ./models/ folder
 model = VQVAE(args.n_hiddens, args.n_residual_hiddens,
               args.n_residual_layers, args.n_embeddings, args.embedding_dim, args.beta).to(device)
 
+"""
+Set up optimizer and training loop
+"""
+optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, amsgrad=True)
+
+model.train()
+
+results = {
+    'n_updates': 0,
+    'recon_errors': [],
+    'loss_vals': [],
+    'perplexities': [],
+}
+
+
+def train():
+
+    for i in range(args.n_updates):
+        # (x, _) = next(iter(training_loader))    # b, c, h, w
+        x = next(iter(training_loader))
+        x = x.to(device)
+        optimizer.zero_grad()
+
+        embedding_loss, x_hat, perplexity = model(x)
+        recon_loss = torch.mean((x_hat - x)**2)
+        loss = recon_loss + embedding_loss
+
+        loss.backward()
+        optimizer.step()
+
+        results["recon_errors"].append(recon_loss.cpu().detach().numpy())
+        results["perplexities"].append(perplexity.cpu().detach().numpy())
+        results["loss_vals"].append(loss.cpu().detach().numpy())
+        results["n_updates"] = i
+
+        if i % args.log_interval == 0:
+            """
+            save model and print values
+            """
+            if args.save:
+                hyperparameters = args.__dict__
+                dataset.save_model_and_results(
+                    model, results, hyperparameters, args.filename)
+
+            print('Update #', i, 'Recon Error:',
+                  np.mean(results["recon_errors"][-args.log_interval:]),
+                  'Loss', np.mean(results["loss_vals"][-args.log_interval:]),
+                  'Perplexity:', np.mean(results["perplexities"][-args.log_interval:]))
+
+
+if __name__ == "__main__":
+    train()

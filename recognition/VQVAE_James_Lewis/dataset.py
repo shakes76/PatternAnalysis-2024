@@ -1,7 +1,8 @@
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-
+from skimage.transform import resize
+import torch
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -48,12 +49,11 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         if len(inImage.shape) == 3:
             inImage = inImage[:, :, 0]  # Sometimes extra dims in HipMRI_study data
 
-        inImage = inImage.astype(dtype)
+        inImage = resize(inImage, (256, 128), preserve_range=True, anti_aliasing=True).astype(dtype)
 
         if normImage:
-            # ~ inImage = inImage / np.linalg.norm(inImage)
-            # ~ inImage = 255. * inImage / inImage.max()
-            inImage = (inImage - inImage.mean()) / inImage.std()
+            # Normalize the image to range [0, 1]
+            inImage = (inImage - inImage.min()) / (inImage.max() - inImage.min())
 
         if categorical:
             inImage = to_channels(inImage, dtype=dtype)
@@ -70,3 +70,42 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+
+class DataLoader:
+    def __init__(self, dataset, batch_size=32, shuffle=True):
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.indices = np.arange(len(dataset))
+        self.current_index = 0
+
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+    def __len__(self):
+        return len(self.dataset) // self.batch_size
+
+    def __iter__(self):
+        self.current_index = 0
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+        return self
+
+    def __next__(self):
+        if self.current_index >= len(self.indices):
+            raise StopIteration
+
+        start_idx = self.current_index
+        end_idx = min(start_idx + self.batch_size, len(self.indices))
+        batch_indices = self.indices[start_idx:end_idx]
+
+        # Extract batch data
+        batch_data = [self.dataset[i] for i in batch_indices]
+
+        # Convert list of numpy arrays to a single numpy array
+        batch_data = np.array(batch_data)
+
+        # Convert to PyTorch tensor
+        batch_data = torch.tensor(batch_data).float()
+
+        self.current_index = end_idx
+        return batch_data

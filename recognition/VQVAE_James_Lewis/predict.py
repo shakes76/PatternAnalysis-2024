@@ -1,19 +1,24 @@
-from torchvision.utils import save_image
 import matplotlib.pyplot as plt
-from modules import VQVAE
-from dataset import load_data_2D, DataLoader
+from recognition.VQVAE_James_Lewis.modules import VQVAE
+from recognition.VQVAE_James_Lewis.dataset import load_data_2D, DataLoader
 import torch
 import os
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 
 def load_model(model, model_path, device):
+    """  Load the model from the specified path.
+
+    @param model: nn.Module, the model to load the weights into
+    @param model_path: str, the path to the model weights
+    @param device: torch.device, the device to move the model to
+    @return: nn.Module, the model with the weights loaded"""
     model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.to(device)
 
     return model
 
 
-def construct_images(original_imag_list, reconstructed_data_list, section):
+def construct_images(original_imag_list, reconstructed_data_list, section, ssim_scores):
     """
     Construct and save the original and reconstructed images for visualization.
 
@@ -44,8 +49,8 @@ def construct_images(original_imag_list, reconstructed_data_list, section):
         axes[1, i].imshow(reconstructed_data, cmap='gray')
         axes[1, i].axis('off')
         axes[1, i].set_title(f'Reconstructed {i + 1}')
-
-    plt.suptitle(f'{section.capitalize()} Images')
+    avg_ssim = sum([x['ssim'] for x in ssim_scores]) / len(ssim_scores)
+    plt.suptitle(f'{section.capitalize()} Images, SSIM Score: {avg_ssim}')
 
     # Save the image grid to a file
     save_path = os.path.join(save_dir, f'{section}_reconstructed_images.png')
@@ -60,7 +65,7 @@ def construct_images(original_imag_list, reconstructed_data_list, section):
 
 
 def main():
-
+#Hyperparameters
     input_dim = 1
     out_dim = 128
     n_res_block = 2
@@ -70,6 +75,7 @@ def main():
     embedding_dims = 128
     commitment_cost = 0.25
 
+    # Load the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ssim_metric = StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -82,18 +88,20 @@ def main():
                   commitment_cost,
                   embedding_dims).to(device)
 
-    model_path = "saved_models/vqvae_model.pth"
+    model_path = "results/saved_models/vqvae_model.pth"
     model = load_model(model, model_path, device)
 
+    # Load the test data
     test_image_directory = '/Users/jameslewis/PatternAnalysis-2024/recognition/VQVAE_James_Lewis/data/HipMRI_study_keras_slices_data/keras_slices_test'
     test_image_names = [os.path.join(test_image_directory, f) for f in os.listdir(test_image_directory) if f.endswith('.nii.gz')]
     test_images = load_data_2D(test_image_names, normImage=True)
     test_loader = DataLoader(test_images, batch_size=1, shuffle=False)
 
+    # Initialize the SSIM scores list
     ssim_scores = []
     total_test_ssim = 0
     model.eval()
-
+    # Iterate through the test set (similar to that of test_model in train.py)
     with torch.no_grad():
         for data in test_loader:
 
@@ -125,15 +133,16 @@ def main():
     worst_images = ssim_scores[:4]
     construct_images([x['original'] for x in worst_images],
                              [x['reconstructed'] for x in worst_images],
-                             'worst')
+                             'test_worst', ssim_scores[:4])
 
     # Save 4 best SSIM score images (side by side)
     best_images = ssim_scores[-4:]
     construct_images([x['original'] for x in best_images],
                              [x['reconstructed'] for x in best_images],
-                             'best')
+                             'test_best', ssim_scores[-4:])
 
     print("Images saved for the 4 best and 4 worst SSIM scores.")
+
 
 if __name__ == "__main__":
     main()

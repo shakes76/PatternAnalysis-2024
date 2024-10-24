@@ -1,9 +1,15 @@
+"""
+2D UNet Module
+
+@author Thuan Pham - 46964472
+"""
 import tensorflow as tf
 from tensorflow import keras
 from keras.layers import Input, Conv2D, Conv2DTranspose, BatchNormalization, Activation, MaxPool2D, Concatenate
 from keras.initializers import GlorotNormal
 from keras import Model
 
+# Block of Conv2D -> BatchNormalization -> Activation
 def Norm_Conv2D(input, n_filters, 
                 kernel_size=(3, 3), 
                 strides=(1, 1), 
@@ -22,6 +28,7 @@ def Norm_Conv2D(input, n_filters,
     norm_layer = BatchNormalization()(conv_layer)
     return Activation(activation)(norm_layer)
 
+# Block of Conv2DTranspose -> BatchNormalization -> Activation
 def Norm_Conv2DTranspose(input, n_filters, 
                          kernel_size=(3, 3), 
                          strides=(1, 1), 
@@ -40,7 +47,9 @@ def Norm_Conv2DTranspose(input, n_filters,
     norm_layer = BatchNormalization()(conv_layer)
     return Activation(activation)(norm_layer)
 
+# Return 2D UNet model
 def UNet2D(input_size, latent_dim=64, activation=None, kernel=(3, 3), channels=1, name_prefix=''):
+    # Input layer
     input = Input(input_size)
 
     # Encoder
@@ -61,19 +70,19 @@ def UNet2D(input_size, latent_dim=64, activation=None, kernel=(3, 3), channels=1
 
     # Decoder
     up4 = Norm_Conv2DTranspose(latent, latent_dim//2, kernel, 2)
-    net = Concatenate(axis=3)([up4, down4])
+    net = Concatenate(axis=3)([up4, down4]) # Concat skip connection
     net = Norm_Conv2D(net, latent_dim//2, kernel)
     net = Norm_Conv2D(net, latent_dim//2, kernel)
     up3 = Norm_Conv2DTranspose(net, latent_dim//4, kernel, 2)
-    net = Concatenate(axis=3)([up3, down3])
+    net = Concatenate(axis=3)([up3, down3]) # Concat skip connection
     net = Norm_Conv2D(net, latent_dim//4, kernel)
     net = Norm_Conv2D(net, latent_dim//4, kernel)
     up2 = Norm_Conv2DTranspose(net, latent_dim//8, kernel, 2)
-    net = Concatenate(axis=3)([up2, down2])
+    net = Concatenate(axis=3)([up2, down2]) # Concat skip connection
     net = Norm_Conv2D(net, latent_dim//8, kernel)
     net = Norm_Conv2D(net, latent_dim//8, kernel)
     up1 = Norm_Conv2DTranspose(net, latent_dim//16, kernel, 2)
-    net = Concatenate(axis=3)([up1, down1])
+    net = Concatenate(axis=3)([up1, down1]) # Concat skip connection
     net = Norm_Conv2D(net, latent_dim//16, kernel)
     net = Norm_Conv2D(net, latent_dim//16, kernel)
 

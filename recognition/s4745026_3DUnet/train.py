@@ -5,16 +5,23 @@ import matplotlib.pyplot as plt
 from modules import Basic3DUNet, DiceLoss
 import time
 import os
-from dataset import load_data_3D
+from dataset import load_data_3D, Custom3DDataset
+from torch.utils.data import DataLoader
+from torch.utils.data import random_split
+
 
 num_epochs = 10
 learning_rate = 0.001
 batch_size = 4
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-train_loader = ""
-validate_loader = ""
-test_loader = ""
+dataset = DataLoader(Custom3DDataset())
+train_len = int(0.7 * len(dataset))
+val_len = int(0.2*len(dataset))
+test_len = len(dataset) - train_len - val_len
+train_loader, validate_loader, test_loader = random_split(
+    dataset, [train_len, val_len, test_len])
+
 
 model = Basic3DUNet(in_channels=1, out_channels=4).to(device)
 loss_func = DiceLoss()

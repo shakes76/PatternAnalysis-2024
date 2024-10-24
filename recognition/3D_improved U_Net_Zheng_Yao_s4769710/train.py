@@ -38,6 +38,7 @@ model.compile(optimizer=keras.optimizers.Adam(learning_rate=1e-4),
 model.summary()
 
 # Define callbacks
+# REF: learnt how to save the model from chatgpt.
 callbacks = [
     keras.callbacks.ModelCheckpoint(
         filepath='best_model.h5',

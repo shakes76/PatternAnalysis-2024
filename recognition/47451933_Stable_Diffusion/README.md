@@ -121,6 +121,10 @@ before running either the training or predicting run the setup.py first to make 
 
 ## Training
 The the VAE for encoding and decoding is train separately from the u-net since it isn't reasonable for them both to be trained at the same since the u-net relies on latent space produced from the VAE to train and if this is changing at the same time it won't learn properly. First the VAE is trained to encode images into latent space in this case since its a vae it produces a distribution over the latent space, it then reconstruct from a sample of the distribution.
+### Overall Choices
+- AdamW was used as the optimizer of both the VAE and U-net since its an improvement on the already good Adam but addressing its main problem of not generalizing well by decoupling the weight decay from the gradient update.
+- CosineAnnealingLR was used as the learning rate schedualar for both the VAE and U-Net again since its method of increasing and decreasing the lr periodically to make it explore then learn makes it more likely to reach the global minium during sgd.
+
 ### VAE Training
 Trained to be able to encode and decode the image trying to get as similar output to the image it put in.
 #### Encoding

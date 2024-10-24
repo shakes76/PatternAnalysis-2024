@@ -5,6 +5,9 @@ import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_addons as tfa
+from sklearn.manifold import TSNE
+import tensorflow_datasets as tfds
+import numpy as np
 
 from dataset import BalancedMelanomaDataset, FullMelanomaDataset
 
@@ -52,16 +55,31 @@ model = tf.keras.Model(inputs, normalised_output)
 base_model = NeuralNetwork.FunctionalNetwork()
 base_model.model = model
 
-base_model.set_loss_function(tfa.losses.TripletSemiHardLoss(margin=margin))
+base_model.set_loss_function(tfa.losses.TripletHardLoss(margin=margin))
 base_model.set_optimisation(tf.keras.optimizers.Adam(learning_rate = 0.001))
 base_model.compile_functional_model()
 base_model.summary()
 
-base_model.set_epochs(300)
+base_model.set_epochs(100)
+base_model.enable_wandb("melanoma-balanced-improving-sim")
 base_model.set_early_stopping("val_loss", patience=20, min_delta=0.01)
-base_model.fit_model_batches(dataset, dataset_val, verbose=1)
-base_model.visualise_training(to_file=True, filename="similarity.png")
-plt.show()
+base_model.fit_model_batches(dataset, dataset_val, verbose=1, class_weight={0: 1.0, 1: 1.0})
+
+outputs = base_model.model.predict(dataset_val)
+classes = []
+
+for batch in dataset_val:
+    features, labels = batch
+    numpy_labels = labels.numpy().ravel()
+    classes += list(numpy_labels)
+
+classes = np.array(classes)
+
+tsne = TSNE(n_components=2)
+embedded = tsne.fit_transform(outputs)
+
+plt.scatter(embedded[:, 0], embedded[:, 1], c=classes)
+plt.savefig("tsne.png")
 
 base_model.model.trainable = False
 classifier_model = NeuralNetwork.NeuralNetwork()
@@ -70,9 +88,9 @@ classifier_model.add_dense_layer(32)
 classifier_model.add_dense_layer(16)
 classifier_model.add_dense_layer(1, activation="sigmoid")
 classifier_model.set_loss_function(tf.keras.losses.BinaryCrossentropy())
-classifier_model.set_epochs(300)
+classifier_model.set_epochs(30)
 classifier_model.set_early_stopping("val_loss", patience=20, min_delta=0.01)
-classifier_model.set_batch_size(128)
+classifier_model.set_batch_size(batch_size)
 classifier_model.set_optimisation("adam")
 classifier_model.add_metric(["accuracy"])
 classifier_model.add_metric(tf.keras.metrics.Precision())

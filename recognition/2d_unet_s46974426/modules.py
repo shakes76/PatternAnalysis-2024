@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torch.utils.data import Dataset
+import numpy as np
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""

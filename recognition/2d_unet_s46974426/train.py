@@ -12,6 +12,9 @@ from pathlib import Path
 from torch import optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
+from modules import dice_coeff, multiclass_dice_coeff, UNet, CombinedDataset, dice_loss
+from dataset import load_data_2D
+import numpy as np
 
 import wandb
 
@@ -181,25 +184,26 @@ def train_model(
 
                         logging.info('Validation Dice score: {}'.format(val_score))
                         try:
-                            experiment.log({
-                                'learning rate': optimizer.param_groups[0]['lr'],
-                                'validation Dice': val_score,
-                                'images': wandb.Image(images[0].cpu()),
-                                'masks': {
-                                    'true': wandb.Image(true_masks[0].float().cpu()),
-                                    'pred': wandb.Image(masks_pred.argmax(dim=1)[0].float().cpu()),
-                                },
-                                'step': global_step,
-                                'epoch': epoch,
-                                **histograms
-                            })
+                            pass
+                            # experiment.log({
+                            #     'learning rate': optimizer.param_groups[0]['lr'],
+                            #     'validation Dice': val_score,
+                            #     'images': wandb.Image(images[0].cpu()),
+                            #     'masks': {
+                            #         'true': wandb.Image(true_masks[0].float().cpu()),
+                            #         'pred': wandb.Image(masks_pred.argmax(dim=1)[0].float().cpu()),
+                            #     },
+                            #     'step': global_step,
+                            #     'epoch': epoch,
+                            #     **histograms
+                            # })
                         except:
                             pass
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
             state_dict = model.state_dict()
-            state_dict['mask_values'] = dataset.mask_values
+            state_dict['mask_values'] = training_set.mask_values
             torch.save(state_dict, str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch)))
             logging.info(f'Checkpoint {epoch} saved!')
 

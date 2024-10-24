@@ -128,9 +128,9 @@ Cross Entropy Loss is a standard loss function for multi-class classification ta
 Set the patience value to 10 rounds. If the accuracy of the validation set does not improve within 10 rounds, stop training to prevent overfitting.
 
 ## Usage
-1.Download the dataset and change the path to load the data in dataset.py
-2.Run the train.py to trian the model and plot the results of accuracy and loss. Also save model as GCN_model.pt.
-3.Run the predict.py, visualise tsne plot and saved as TSNE_train_plot.png.
+1. Download the dataset and change the path to load the data in dataset.py
+2. Run the train.py to trian the model and plot the results of accuracy and loss. Also save model as GCN_model.pt.
+3. Run the predict.py, visualise tsne plot and saved as TSNE_train_plot.png.
 ## Dependencies
 Required packages are as follows:
 - torch 2.4.1

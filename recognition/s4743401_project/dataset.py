@@ -16,5 +16,16 @@ def dataloader(data_dir):
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
     }
+    
+    image_datasets = {
+        'train': datasets.ImageFolder(root=data_dir + '/train', transform=data_transforms['train']),
+        'test': datasets.ImageFolder(root=data_dir + '/test', transform=data_transforms['test']),
+    }
 
-#test
+    dataloaders = {
+        'train': DataLoader(image_datasets['train'], batch_size=32, shuffle=True, num_workers=4),
+        'test': DataLoader(image_datasets['test'], batch_size=32, shuffle=False, num_workers=4),
+    }
+
+    return dataloaders, image_datasets['train'].classes
+

@@ -17,3 +17,4 @@ def visualize_embeddings(model, data):
         acc = test(model, data)
         print(f'Epoch: {epoch}, Accuracy: {acc:.4f}')
     
+    visualize_embeddings(model,data)

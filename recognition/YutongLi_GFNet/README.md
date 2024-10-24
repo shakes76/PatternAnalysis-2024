@@ -1,20 +1,20 @@
 # GFnet classify Alzheimer's disease of the ADNI dataset
 
 ## What is FGnet  
-GFNet is a conceptually simple yet computationally efficient architecture designed to advance the trend of minimizing inductive biases in vision models while maintaining log-linear computational complexity. The core idea behind GFNet is to learn the interactions among spatial locations in the frequency domain, diverging from traditional self-attention mechanisms in vision transformers and fully connected layers in MLPs.
+GFNet is a conceptually simple yet computationally efficient architecture designed to advance the trend of minimizing inductive biases in vision models while maintaining log-linear computational complexity. The core idea behind GFNet is to learn the interactions among spatial locations in the frequency domain, diverging from traditional self-attention mechanisms in vision transformers and fully connected layers in MLPs. [1]
 
-In GFNet, interactions among tokens are modeled through a set of learnable global filters applied directly to the spectrum of input features. This unique approach enables the model to capture both long-term and short-term interactions effectively, as the global filters encompass all frequencies. Notably, GFNet learns these filters directly from raw data, eliminating the need for human priors.
+In GFNet, interactions among tokens are modeled through a set of learnable global filters applied directly to the spectrum of input features. This unique approach enables the model to capture both long-term and short-term interactions effectively, as the global filters encompass all frequencies. Notably, GFNet learns these filters directly from raw data, eliminating the need for human priors. [1]
 
-GFNet builds upon the foundation of vision transformers, implementing key modifications to enhance efficiency. Specifically, it replaces the self-attention sub-layer with three pivotal operations:
+GFNet builds upon the foundation of vision transformers, implementing key modifications to enhance efficiency. Specifically, it replaces the self-attention sub-layer with three pivotal operations: [1]
 
 - __2D Discrete Fourier Transform__: Converts input spatial features to the frequency domain.  
 - __Element-wise Multiplication__: Applies global filters to the frequency-domain features.  
 - __2D Inverse Fourier Transform__: Maps features back to the spatial domain.  
 
 This use of Fourier transform facilitates information mixing across tokens, making the global filter layer significantly more efficient than self-attention and MLPs due to the 
-𝑂(𝐿log𝐿) complexity of the Fast Fourier Transform (FFT) algorithm. Consequently, GFNet is less sensitive to token length 𝐿 and seamlessly integrates with larger feature maps and CNN-style hierarchical architectures.
+𝑂(𝐿log𝐿) complexity of the Fast Fourier Transform (FFT) algorithm. Consequently, GFNet is less sensitive to token length 𝐿 and seamlessly integrates with larger feature maps and CNN-style hierarchical architectures. [1]
 
-The overall architecture of GFNet is illustrated in Figure 1. 
+The overall architecture of GFNet is illustrated in this Figure. [1]  
 
 ![image](https://github.com/user-attachments/assets/9f7d5961-35d6-427b-8405-f605675c47a7)  
 
@@ -75,7 +75,7 @@ transforms.Normalize(mean=[0.1174], std=[0.2163])
 mean and standard deviation is calculated by the overall dataset.  
 CropBrainRegion is a function that use cv2 to cut the black area of a brain image. By this way we can let the model focus on the brain area.  
 
-## Traning process
+## Traning Process
 Run 65 epochs and visualizing the training process:  
 ![training_process](https://github.com/user-attachments/assets/fbab4760-3f8d-4d1c-90bb-528445718e7c)
 
@@ -89,10 +89,24 @@ Precision: 0.7046
 Recall: 0.8998
 F1 Score: 0.7903
 ```
-On one NVIDIA a100 graph card, total traning time is 2:06:36.  
+On one NVIDIA a100 graph card, the total traning time is 2:06:36.  
+
+## Dependency Library
+Make sure your environment have following dependency:
+```
+cv2（OpenCV）
+torch（PyTorch）
+numpy
+Pillow（PIL）
+torchvision
+timm
+scikit-learn（sklearn）
+tqdm
+```
+
+## Run this Project
+You can easily run this project and change any parameters you want by using train.py. The 'split_val_set' function in train.py only need to run once. It will cover the previous new dataset if you run multiple times. Nothing terrible will happend but better don't waste 3 min.
 
 
-
-Reference:
-
-
+## Reference:
+[1] Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification. In Advances in Neural Information Processing Systems (NeurIPS).

@@ -123,7 +123,7 @@ the GFNet model achieved the following classification metrics and results.
     <img src="images/confusion_matrix.png" alt="Confusion Matrix">
 </p>
 
-Through several trials, the selected hyperparameters above achieved the most optimal balance between training and validation loss and accuracy. By lowering the learning rate to 0.0005 and increasing the weight decay to 0.005, the validation loss seemed to stabilise throughout the later epochs instead of continually increasing like other hyperparameter choices. Although the minimum accuracy target of 80% was not achieved, the GFNet model was able to maintain an accuracy of approximately 74% throughout training without experiencing significant overfitting on the data and was also able to classify the test data with 75.11% accuracy, as shown in the confusion matrix above.
+Through several trials, the selected hyperparameters above achieved the most optimal balance between training and validation loss and accuracy. While the validation loss did not decrease as smoothly as the training loss, it remained relatively controlled throughout the later epochs in the range of 0.6 to 0.8, indicating that the model avoided severe overfitting. The consistent validation accuracy at around 70% to 75% also suggests that the model generalised well despite the instability during the first few epochs. Although the minimum accuracy target of 80% was not achieved, the GFNet model was able to maintain a reasonable accuracy of approximately 74% throughout training and also managed to classify the test data with an accuracy of 75.11%, as shown in the confusion matrix above.
 
 ## References
 [1] GFNet: Global Filter Networks for Visual Recognition, from: https://openreview.net/pdf?id=K_Mnsw5VoOW

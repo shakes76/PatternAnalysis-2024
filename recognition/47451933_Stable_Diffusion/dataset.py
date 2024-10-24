@@ -38,9 +38,25 @@ class Dataset():
         self.device = device
         self.image_size = 200
 
+        val_set_created = False
+        #create folder for validation set
+        if not os.path.exists(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val'))):
+            os.makedirs(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val')))
+        else:
+            val_set_created = True
+        if not os.path.exists(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val', 'AD'))):
+            os.makedirs(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val', 'AD')))
+        else:
+            val_set_created = True
+        if not os.path.exists(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val', 'NC'))):
+            os.makedirs(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val', 'NC')))
+        else:
+            val_set_created = True
+
         #paths to datasets
         adni_data_path_train = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'train'))
         adni_data_path_test = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test'))
+        adni_data_path_val = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val'))
 
         transforms = tvtransforms.Compose([
             tvtransforms.Grayscale(), #grascale images 
@@ -53,14 +69,31 @@ class Dataset():
         self.train_dataset = torchvision.datasets.ImageFolder(root=adni_data_path_train, transform=transforms)
         self.test_dataset = torchvision.datasets.ImageFolder(root=adni_data_path_test, transform=transforms)
 
+        #move roughly 10% of the test images to val to be a validation set
+        test_len = len(self.test_dataset)
+        val_len = test_len // 100
+        patients_seen = set()
+        if not val_set_created:
+            for i in os.listdir(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test', 'AD'))):
+                patient = i.split("_")[0]
+                if len(patients_seen) <= val_len:
+                    patients_seen.add(patient)
+                if patient in patients_seen:
+                    os.rename(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test', 'AD', i)),
+                            os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val', 'AD', i)))
+            for i in os.listdir(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test', 'NC'))):
+                patient = i.split("_")[0]
+                if len(patients_seen) <= val_len:
+                    patients_seen.add(patient)
+                if patient in patients_seen:
+                    os.rename(os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'test', 'NC', i)),
+                            os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'ADNI', 'AD_NC', 'val', 'NC', i)))
+
+        self.val_dataset = torchvision.datasets.ImageFolder(root=adni_data_path_val, transform=transforms)
+
         print(self.train_dataset)
         print(self.test_dataset)
-
-        #spliting test into a validation and test dataset
-        test_len = len(self.test_dataset)
-        val_len = test_len // 10
-        self.val_dataset = utils.data.Subset(self.test_dataset, range(val_len))
-        self.test_dataset = utils.data.Subset(self.test_dataset, range(val_len,test_len))
+        print(self.val_dataset)
 
         #create data loaders
         print("Creating DataLoaders...⏳") #setup data loadeers for training to make thins easier with batching

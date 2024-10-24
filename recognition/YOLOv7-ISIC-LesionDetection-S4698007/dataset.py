@@ -2,8 +2,10 @@ import os
 import nibabel as nib
 import gzip
 import shutil
+import torch
+from torch.utils.data import Dataset, DataLoader
 
-class NiftiDataset:
+class NiftiDataset(Dataset):
     def __init__(self, image_directory, label_directory, normImage=False, max_images=50):
         self.image_directory = image_directory
         self.label_directory = label_directory
@@ -22,27 +24,35 @@ class NiftiDataset:
                 shutil.copyfileobj(f_in, f_out)
         return decompressed_file
 
-    def load_data(self):
-        images, labels = [], []
-        for image_file, label_file in zip(self.image_files, self.label_files):
-            decompressed_image_path = self.decompress_gz(os.path.join(self.image_directory, image_file))
-            decompressed_label_path = self.decompress_gz(os.path.join(self.label_directory, label_file))
+    def __len__(self):
+        return len(self.image_files)
 
-            img = nib.load(decompressed_image_path).get_fdata()
-            label = nib.load(decompressed_label_path).get_fdata()
+    def __getitem__(self, idx):
+        image_file = self.image_files[idx]
+        label_file = self.label_files[idx]
 
-            # Normalize images if specified
-            if self.normImage:
-                img = (img - img.mean()) / img.std()
+        decompressed_image_path = self.decompress_gz(os.path.join(self.image_directory, image_file))
+        decompressed_label_path = self.decompress_gz(os.path.join(self.label_directory, label_file))
 
-            label = label.astype(int)
-            labels.append(label)
+        img = nib.load(decompressed_image_path).get_fdata()
+        label = nib.load(decompressed_label_path).get_fdata()
 
-            images.append(img)
+        if self.normImage:
+            img = (img - img.mean()) / img.std()
 
-        return images, labels
+        label = label.astype(int)
+
+        img_tensor = torch.tensor(img, dtype=torch.float32).unsqueeze(0)
+        label_tensor = torch.tensor(label, dtype=torch.long)
+
+        return img_tensor, label_tensor
+
+# Create DataLoader
+def create_dataloader(image_directory, label_directory, batch_size=4, max_images=50, normImage=True):
+    dataset = NiftiDataset(image_directory, label_directory, normImage, max_images)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Example usage
-dataset = NiftiDataset(image_path, label_path, normImage=True)
-images, labels = dataset.load_data()
-print(f"Loaded {len(images)} images and {len(labels)} labels.")
+dataloader = create_dataloader(image_path, label_path, batch_size=4, normImage=True)
+for imgs, lbls in dataloader:
+    print(f"Batch size: {imgs.size()}, Labels size: {lbls.size()}")

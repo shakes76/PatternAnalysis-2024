@@ -1,5 +1,5 @@
 """
-Contains helper miscellaneous functions used
+Contains helper miscellaneous functions used and supplied functions.
 
 @author Carl Flottmann
 """
@@ -15,12 +15,24 @@ from metrics import LossClass
 
 
 class ModelState(Enum):
+    """
+    Represent what state the model is in during training.
+
+    Inherits:
+        Enum: python standard enum type.
+    """
     TRAINING = 0
     VALIDATING = 1
     DONE = 2
 
 
 class ModelFile(Enum):
+    """
+    Representation of all components saved in a model file.
+
+    Inherits:
+        Enum: python standard enum type.
+    """
     MODEL = "model"
     CRITERION = "criterion"
     INPUT_CHANNELS = "input_channels"
@@ -31,6 +43,18 @@ class ModelFile(Enum):
 
 
 def save_visualise_figures(input: np.array, truth: np.array, prediction: np.array, num_classes: int, output_path: str, name: str) -> None:
+    """
+    Save a visualisation of the input, mask, and output to the supplied output path with the supplied name.
+
+    Args:
+        input (np.array): a 3D tensor representing the input image.
+        truth (np.array): a 4D tensor representing the ground-truth mask.
+        prediction (np.array): a 4D tensor representing the model prediction.
+        num_classes (int): the number of classes to display.
+        output_path (str): the directory to output to.
+        name (str): the file name of the image to be saved. Do not include .png in this name, that is done in this function.
+    """
+    # view top-down, taking a slice out of the Z axis
     viewed_slice = input.shape[-1] // 2
     colourmap = plt.get_cmap('Paired', num_classes)
 
@@ -68,6 +92,14 @@ def save_visualise_figures(input: np.array, truth: np.array, prediction: np.arra
 
 
 def save_loss_figures(criterion: LossClass, output_path: str, mode: str) -> None:
+    """
+    Save the current data in the criterion as plots.
+
+    Args:
+        criterion (LossClass): a loss class to plot.
+        output_path (str): the directory to output to.
+        mode (str): training, testing, or validation was used to achieve this. Appended to the file name.
+    """
     # first do complete dice loss
     losses = criterion.get_all_losses()
     x_axis = list(range(len(losses[0])))
@@ -120,7 +152,16 @@ def save_loss_figures(criterion: LossClass, output_path: str, mode: str) -> None
     plt.close()
 
 
-def cur_time(start: float) -> float:
+def cur_time(start: float) -> str:
+    """
+    provide a readable format of the time since the supplied argument.
+
+    Args:
+        start (float): start time to measure from.
+
+    Returns:
+        str: readable format of the elapsed time.
+    """
     elapsed_time = time.time() - start
 
     if elapsed_time < 1:  # display in milliseconds

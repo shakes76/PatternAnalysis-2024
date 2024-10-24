@@ -1,5 +1,5 @@
 """
-Contains the code for training, validating, testing, and saving the Unet
+Contains the code for training and validating the model. Will output a model save periodically, which can be loaded in to predict.py to test.
 
 @author Carl Flottmann
 """
@@ -18,18 +18,18 @@ LOCAL = True
 OUTPUT_DIR = "model"
 
 # hyperparameters
-BATCH_SIZE = 1  # there are only about 211 images anyway
-EPOCHS = 2
+BATCH_SIZE = 32
+EPOCHS = 50
 NUM_CLASSES = 6  # as per powerpoint slides
 INPUT_CHANNELS = 1  # greyscale
-NUM_LOADED = 10  # set to None to load all
+NUM_LOADED = None  # set to None to load all
 SHUFFLE = False
 WORKERS = 0
 
 # taken from the paper on the improved unet
-INITIAL_LR = 5e-4
-WEIGHT_DECAY = 1e-5
-DECAY_FACTOR = 0.985
+INITIAL_LR = 5e-4  # for adam optimiser
+WEIGHT_DECAY = 1e-5  # for adam optimiser
+DECAY_FACTOR = 0.985  # for scheduler
 
 
 def main() -> None:
@@ -115,6 +115,7 @@ def main() -> None:
         criterion.save_epoch()
 
         if epoch % output_epochs == 0:
+            # save a checkpoint of where we're currently at to a model file
             checkpoint = {
                 ModelFile.MODEL.value: model.state_dict(),
                 ModelFile.CRITERION.value: criterion.state_dict(),
@@ -149,6 +150,7 @@ def main() -> None:
     output_steps = int(math.ceil(0.25 * data_loader.validate_size()))
     num_digits = len(str(data_loader.validate_size()))
 
+    # use Dice loss for evaluation always
     criterion = DiceLoss(NUM_CLASSES, device)
     model.eval()
     accuracy = Accuracy()
@@ -200,7 +202,7 @@ def main() -> None:
     print(f"[{cur_time(script_start_t)}] Training file for improved 3D Unet complete")
 
 
-if LOCAL:
+if LOCAL:  # windows requires this
     if __name__ == "__main__":
         main()
 else:

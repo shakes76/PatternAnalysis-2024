@@ -1,5 +1,6 @@
 """
-Contains the components of the Unet
+This file contains a pytorch class-based implementation of the Improved 3D Unet. The Network itself is its own class, and each component
+has been split up into their own classes for ease of use.
 
 @author Carl Flottmann
 """
@@ -8,11 +9,25 @@ import torch.nn as nn
 
 
 class Improved3DUnet(nn.Module):
+    """
+    Contains the implementation of the Improved 3D Unet. Hyperparameters such as the filter base and slope for every
+    Leaky ReLU module are available in this class as constants.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
     # hyperparameters
     LEAKY_RELU_SLOPE = 0.02
     FILTER_BASE = 8
 
     def __init__(self, input_channels: int, num_classes: int) -> None:
+        """
+        Initialise the Unet object.
+
+        Args:
+            input_channels (int): number of input channels for the dataset.
+            num_classes (int): number of segmentation classes for the dataset.
+        """
         super(Improved3DUnet, self).__init__()
         # === Encoder ===
 
@@ -48,6 +63,7 @@ class Improved3DUnet(nn.Module):
 
         # === Decoder ===
         self.decoder_concat = Concat()
+        self.decoder_upscale = Upscale()
 
         # layer 4
         self.decoder4_upsample = Upsample(
@@ -61,7 +77,6 @@ class Improved3DUnet(nn.Module):
         self.decoder3_localise = Localise(
             self.FILTER_BASE * 8, self.FILTER_BASE * 4, self.LEAKY_RELU_SLOPE)
         self.decoder3_segment = Segment(self.FILTER_BASE * 4, num_classes)
-        self.decoder3_upscale = Upscale(self.FILTER_BASE * 2)
 
         # layer 2
         self.decoder2_upsample = Upsample(
@@ -70,7 +85,6 @@ class Improved3DUnet(nn.Module):
             self.FILTER_BASE * 4, self.FILTER_BASE * 2, self.LEAKY_RELU_SLOPE)
         self.decoder2_segment = Segment(self.FILTER_BASE * 2, num_classes)
         self.decoder2_sum = Sum(num_classes, self.LEAKY_RELU_SLOPE)
-        self.decoder2_upscale = Upscale(self.FILTER_BASE)
 
         # layer 1
         self.decoder1_upsample = Upsample(
@@ -80,6 +94,16 @@ class Improved3DUnet(nn.Module):
         self.decoder1_sum = Sum(num_classes, self.LEAKY_RELU_SLOPE)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the model and retrieve the output. Applyies the softmax before
+        returning the model output.
+
+        Args:
+            x (torch.Tensor): data to pass through the model.
+
+        Returns:
+            torch.Tensor: the model output after applying softmax.
+        """
         # === Encoding ===
 
         # layer 1
@@ -119,7 +143,7 @@ class Improved3DUnet(nn.Module):
         decoder3_concat = self.decoder_concat(decoder3_upsample, encoder3_sum)
         decoder3_localise = self.decoder3_localise(decoder3_concat)
         decoder3_segment = self.decoder3_segment(decoder3_localise)
-        decoder3_upscale = self.decoder3_upscale(decoder3_segment)
+        decoder3_upscale = self.decoder_upscale(decoder3_segment)
 
         # layer 2
         decoder2_upsample = self.decoder2_upsample(decoder3_localise)
@@ -127,7 +151,7 @@ class Improved3DUnet(nn.Module):
         decoder2_localise = self.decoder2_localise(decoder2_concat)
         decoder2_segment = self.decoder2_segment(decoder2_localise)
         decoder2_sum = self.decoder2_sum(decoder2_segment, decoder3_upscale)
-        decoder2_upscale = self.decoder2_upscale(decoder2_sum)
+        decoder2_upscale = self.decoder_upscale(decoder2_sum)
 
         # layer 1
         decoder1_upsample = self.decoder1_upsample(decoder2_localise)
@@ -140,7 +164,22 @@ class Improved3DUnet(nn.Module):
 
 
 class Conv(nn.Module):
+    """
+    Single-strided 3x3x3 convolution module. Used at the start of the Unet. Applied instance normalisation
+    after the convolution operation.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
+
     def __init__(self, input_filters: int, output_filters: int) -> None:
+        """
+        Initialise the single-strided 3x3x3 convolution module.
+
+        Args:
+            input_filters (int): number of input filters to the module.
+            output_filters (int): number of output filters to the module.
+        """
         super(Conv, self).__init__()
 
         self.process = nn.Sequential(
@@ -150,11 +189,35 @@ class Conv(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output after applying instance normalisation.
+        """
         return self.process(x)
 
 
 class Conv2(nn.Module):
+    """
+    Double-strided 3x3x3 convolution module. Used in the Unet encoder. Applied instance normalisation
+    after the convolution operation.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
+
     def __init__(self, input_filters: int, output_filters: int) -> None:
+        """
+        Initialise the double-strided 3x3x3 convolution module.
+
+        Args:
+            input_filters (int): number of input filters to the module.
+            output_filters (int): number of output filters to the module.
+        """
         super(Conv2, self).__init__()
 
         self.process = nn.Sequential(
@@ -164,14 +227,39 @@ class Conv2(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output after applying instance normalisation.
+        """
         return self.process(x)
 
 
 class Context(nn.Module):
+    """
+    Context module used in the Unet encoder. Applies instance normalisation after the final convolution before the output.
+    Contains, in sequential order, a 3x3x3 convolution, instance normalisation, leaky ReLU, dropout, 3x3x3 convolution,
+    and instance normalisation. The dropout probability hyperparameter is available as a constant.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
     # hyperparameters
     DROPOUT_PROB = 0.3
 
-    def __init__(self, input_filters: int, output_filters: int, slope: float, c=None) -> None:
+    def __init__(self, input_filters: int, output_filters: int, slope: float) -> None:
+        """
+        Initialise the context module.
+
+        Args:
+            input_filters (int): number of input filters to the module.
+            output_filters (int): number of output filters to the module.
+            slope (float): the negative slope for the Leaky ReLU component.
+        """
         super(Context, self).__init__()
 
         self.process = nn.Sequential(
@@ -186,11 +274,35 @@ class Context(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output after applying instance normalisation.
+        """
         return self.process(x)
 
 
 class Sum(nn.Module):
+    """
+    Summation module that performs an element-wise sum of the two inputs, and applied instance normalisation
+    and activation using a Leaky ReLU modue.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
+
     def __init__(self, output_filters: int, slope: float) -> None:
+        """
+        Initialise the summation module.
+
+        Args:
+            output_filters (int): number of output filters to the module.
+            slope (float): the negative slope for the Leaky ReLU component.
+        """
         super(Sum, self).__init__()
 
         self.process = nn.Sequential(
@@ -199,15 +311,41 @@ class Sum(nn.Module):
         )
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x1 (torch.Tensor): data to pass through the module.
+            x2 (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output.
+        """
         return self.process(x1 + x2)
 
 
 class Upsample(nn.Module):
+    """
+    Upsampling module used in the Unet decoder. Applies activation to the output using a Leaky ReLU. The
+    scale factor and mode are available as hyperparameter constants. This module uses a 3x3x3 convolution
+    with instance normalisation and a leaky ReLU.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
     # hyperparameters
     SCALE_FACTOR = 2
     MODE = "nearest"
 
     def __init__(self, input_filters: int, output_filters: int, slope: float) -> None:
+        """
+        Initialise the upsampling module.
+
+        Args:
+            input_filters (int): number of input filters to the module.
+            output_filters (int): number of output filters to the module.
+            slope (float): the negative slope for the Leaky ReLU component.
+        """
         super(Upsample, self).__init__()
 
         self.input_filters = input_filters
@@ -219,13 +357,39 @@ class Upsample(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output.
+        """
         out = nn.functional.interpolate(
             x, scale_factor=self.SCALE_FACTOR, mode=self.MODE)
         return self.process(out)
 
 
 class Localise(nn.Module):
+    """
+    Localisation module used in the Unet decoder. Applies activation to the output using a Leaky ReLU. This module
+    uses a 3x3x3 convolution followed by instance normalisation and a Leaky ReLU, followed by a 1x1x1 convolution,
+    with instance normalisation and a leaky ReLU.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
+
     def __init__(self, input_filters: int, output_filters: int, slope: float) -> None:
+        """
+        Initialise the localisation module.
+
+        Args:
+            input_filters (int): number of input filters to the module.
+            output_filters (int): number of output filters to the module.
+            slope (float): the negative slope for the Leaky ReLU component.
+        """
         super(Localise, self).__init__()
 
         self.process = nn.Sequential(
@@ -240,39 +404,109 @@ class Localise(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output.
+        """
         return self.process(x)
 
 
 class Segment(nn.Module):
+    """
+    Segmentation module used in the Unet decoder. Uses a 1x1x1 convolution for the segmentation to create an output
+    the size of the number of classes.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
+
     def __init__(self, input_filters: int, num_classes: int) -> None:
+        """
+        Initialise the segmentation module.
+
+        Args:
+            input_filters (int): number of input filters to the module.
+            num_classes (int): number of segmentation classes in the data.
+        """
         super(Segment, self).__init__()
 
         self.process = nn.Conv3d(
             input_filters, num_classes, kernel_size=1, stride=1, padding=0, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output.
+        """
         return self.process(x)
 
 
 class Upscale(nn.Module):
+    """
+    Upscale module used in the Unet decoder. Performs an interpolation of the input.
+    The scale factor and mode are available as hyperparameter constants.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
     # hyperparameters
     SCALE_FACTOR = 2
     MODE = "nearest"
 
-    def __init__(self, output_filters: int) -> None:
+    def __init__(self) -> None:
+        """
+        Initialise the upscaling module.
+        """
         super(Upscale, self).__init__()
-        self.output_filters = output_filters
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output.
+        """
         return nn.functional.interpolate(x, scale_factor=self.SCALE_FACTOR, mode=self.MODE)
 
 
 class Concat(nn.Module):
+    """
+    Concatenation module used in the Unet decoder.
+
+    Inherits:
+        nn.Module: pytorch abstract module class.
+    """
     # hyperparameters
     DIMENSION = 1  # accross number of channels
 
     def __init__(self) -> None:
+        """
+        Initialise the concatenation module.
+        """
         super(Concat, self).__init__()
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the module.
+
+        Args:
+            x1 (torch.Tensor): data to pass through the module.
+            x2 (torch.Tensor): data to pass through the module.
+
+        Returns:
+            torch.Tensor: the module output.
+        """
         return torch.cat((x1, x2), dim=self.DIMENSION)

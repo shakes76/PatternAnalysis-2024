@@ -1,5 +1,5 @@
 """
-File for loading the required dataset for the Unet
+File containing custom data loaders for the HipMRI Prostate 3D MRI Dataset, and relevant constants for the Rangpur and windows local environment.
 
 @author Carl Flottmann
 """
@@ -24,6 +24,13 @@ WINDOWS_SEP = "\\"
 
 
 class ProstateDataset(Dataset):
+    """
+    Class that will load data and apply appropriate transforms for the HipMRI Prostate 3D MRI Dataset. Training transforms are available
+    as a constant.
+
+    Inherits:
+        Dataset: pytorch dataset class.
+    """
     TRAIN_TRANSFORM = transforms.Compose([
         transforms.RandomVerticalFlip(),
         transforms.RandomHorizontalFlip(),
@@ -32,6 +39,17 @@ class ProstateDataset(Dataset):
     ])
 
     def __init__(self, images: list[str], masks: list[str], start: int, end: int, start_t: float = None, train: bool = False) -> None:
+        """
+        Initialise and load the images for this dataset.
+
+        Args:
+            images (list[str]): a list of image names in the same directory to load.
+            masks (list[str]): a list of corresponding mask names in the same directory to load. Indexes must correspond to the image indexes.
+            start (int): the index in the images and masks to start loading from.
+            end (int): the index in the images and masks to stop loading from.
+            start_t (float, optional): will print out the time since start_t if supplied on print statements. Defaults to None.
+            train (bool, optional): indicate if this dataset is to be used for training, for transformation purposes. Defaults to False.
+        """
 
         print(f"[{cur_time(start_t) if start_t is not None else "i"}] Loading {
               end - start} images")
@@ -42,9 +60,24 @@ class ProstateDataset(Dataset):
         self.train = train
 
     def __len__(self) -> int:
+        """
+        Return the number of image-mask pairs this dataset will load.
+
+        Returns:
+            int: number of image-mask pairs in this dataset.
+        """
         return len(self.image_3D_data)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Apply transformations and retrieve an image-mask pair from the dataset.
+
+        Args:
+            idx (int): the index of the image-mask pair to retrieve.
+
+        Returns:
+            tuple[torch.Tensor, torch.Tensor]: an image, mask 4D tensor.
+        """
         image = self.image_3D_data[idx]
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
         # Rescale intensity to (0, 1)
@@ -64,6 +97,13 @@ class ProstateDataset(Dataset):
 
 
 class ProstateLoader(DataLoader):
+    """
+    Custom data loader for the the HipMRI Prostate 3D MRI Dataset. Will perform the train, validate, and test split, and can
+    be saved with the model.
+
+    Inherits:
+        DataLoader: pytorch DataLoader class.
+    """
     FILE_TYPE = "*.nii.gz"
     # file names look like <letter><three-digit-number>_Week<number>_SEMANTIc or LFOV
     PREFIX_MATCH = r'([A-Z]+\d+_Week\d+)'
@@ -73,6 +113,19 @@ class ProstateLoader(DataLoader):
     MIN_LOAD = 7  # must load at least 7 images total for this split to work
 
     def __init__(self, image_dir: str, mask_dir: str, num_load: int = None, start_t: float = None, **kwargs) -> None:
+        """
+        Initialise the data loader.
+
+        Args:
+            image_dir (str): directory to load images from.
+            mask_dir (str): directory to load corresponding masks from.
+            num_load (int, optional): number of image-mask pairs to load if not all. Defaults to None, which will load all.
+            start_t (float, optional): will print out the time since start_t if supplied on print statements. Defaults to None.
+            kwargs: any extra arguments that would usually be given to the pytorch DataLoader, e.g. batch size, number of workers, etc.
+
+        Raises:
+            ValueError: if the number of images to load is too small and train, validate, and test splits cannot be performed.
+        """
         if num_load is not None:
             if num_load < self.MIN_LOAD:
                 raise ValueError(f"Must load at least {
@@ -104,30 +157,75 @@ class ProstateLoader(DataLoader):
         self.mask_dir = mask_dir
 
     def get_num_load(self) -> int:
+        """
+        Get the number of image-mask pairs this data loader has been set to load.
+
+        Returns:
+            int: number of image-mask pairs this data loader has been set to load.
+        """
         return self.num_load
 
     def train(self) -> DataLoader:
+        """
+        Retrieve a data loader for the train set.
+
+        Returns:
+            DataLoader: data loader for the train set.
+        """
         dataset = ProstateDataset(
             self.images, self.masks, 0, self.num_train_images, self.start_t, True)
         return DataLoader(dataset, **self.kwargs)
 
     def validate(self) -> DataLoader:
+        """
+        Retrieve a data loader for the validate set.
+
+        Returns:
+            DataLoader: data loader for the validate set.
+        """
         dataset = ProstateDataset(
             self.images, self.masks, self.num_train_images, self.num_train_images + self.num_validate_images, self.start_t)
         return DataLoader(dataset, **self.kwargs)
 
     def validate_size(self) -> int:
+        """
+        Get the number of image-mask pairs this data loader has been set to load for validation.
+
+        Returns:
+            int: number of image-mask pairs this data loader has been set to load for validation.
+        """
         return self.num_validate_images
 
     def test(self) -> DataLoader:
+        """
+        Retrieve a data loader for the test set.
+
+        Returns:
+            DataLoader: data loader for the test set.
+        """
         dataset = ProstateDataset(
             self.images, self.masks, self.num_train_images + self.num_validate_images, self.num_load, self.start_t)
         return DataLoader(dataset, **self.kwargs)
 
     def test_size(self) -> int:
+        """
+        Get the number of image-mask pairs this data loader has been set to load for testing.
+
+        Returns:
+            int: number of image-mask pairs this data loader has been set to load for testing.
+        """
         return self.num_load - self.num_validate_images - self.num_train_images
 
     def __match_dataset_names(self, filename: str) -> str:
+        """
+        Key for sorting the dataset image-mask pairs based on their file name.
+
+        Args:
+            filename (str): name of the file.
+
+        Returns:
+            str: the match on the file name.
+        """
         match = re.search(self.PREFIX_MATCH, filename)
         if match:
             return match.group(1)  # the match on the prefix
@@ -135,6 +233,12 @@ class ProstateLoader(DataLoader):
             return None
 
     def state_dict(self) -> dict:
+        """
+        Retrieve a pytorch saveable dictionary with the data laoder state.
+
+        Returns:
+            dict: pytorch saveable dictionary with the data laoder state.
+        """
         return {
             'image_dir': self.image_dir,
             'mask_dir': self.mask_dir,
@@ -144,4 +248,14 @@ class ProstateLoader(DataLoader):
 
     @staticmethod
     def load_state_dict(state_dict: dict, start_t: int = None) -> ProstateLoader:
+        """
+        Load a state dictionary and retrieve the data loader object.
+
+        Args:
+            state_dict (dict): pytorch saveable dictionary with the data laoder state.
+            start_t (float, optional): will print out the time since start_t if supplied on print statements. Defaults to None.
+
+        Returns:
+            ProstateLoader: custom data loader with the state supplied.
+        """
         return ProstateLoader(state_dict['image_dir'], state_dict['mask_dir'], state_dict['num_load'], start_t, **state_dict['kwargs'])

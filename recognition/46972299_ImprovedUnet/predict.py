@@ -1,5 +1,5 @@
 """
-The test driver script, runs the Unet and saves the output
+The test driver script, runs the supplied Unet and saves the output. The Unet must have all components present to be loaded in.
 
 @author Carl Flottmann
 """
@@ -9,13 +9,12 @@ from modules import Improved3DUnet
 from metrics import DiceLoss, Accuracy
 from dataset import *
 import time
-import matplotlib.pyplot as plt
 
 LOCAL = True
 LOAD_FILE_PATH = ".\\local_model\\model56_train.pt"
 # make sure to include the directory separator as a suffix here
 OUTPUT_PATH = ".\\output\\"
-BATCH_SIZE = 1
+BATCH_SIZE = 32
 SHUFFLE = False
 WORKERS = 0
 
@@ -31,11 +30,10 @@ def main() -> None:
         print(f"[{cur_time(script_start_t)}] Running on device {device}")
     torch.autograd.set_detect_anomaly(True)  # help detect problems
 
+    # tell pytorch loading ModelState types is safe and trusted
     torch.serialization.add_safe_globals([ModelState])
     file_dict = torch.load(LOAD_FILE_PATH, weights_only=True)
 
-    old_criterion = DiceLoss.load_state_dict(
-        file_dict[ModelFile.CRITERION.value])
     if file_dict[ModelFile.TRAINED_LOCALLY.value]:
         print(f"[{cur_time(script_start_t)}] This model was trained locally")
     else:
@@ -46,6 +44,8 @@ def main() -> None:
                   }] Warning! Not running on the same computer this model was trained on")
 
     # check if the model was stopped prematurely and plot the loss if it was
+    old_criterion = DiceLoss.load_state_dict(
+        file_dict[ModelFile.CRITERION.value])
     if file_dict[ModelFile.STATE.value] == ModelState.TRAINING:
         print(
             f"[{cur_time(script_start_t)}] Warning! This model did not finish training")

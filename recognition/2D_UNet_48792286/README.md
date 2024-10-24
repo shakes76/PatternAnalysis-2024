@@ -20,7 +20,7 @@
 ### ![UNET ARCHITECTURE](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*lvXoKMHoPJMKpKK7keZMEA.png)
 ## DataSet
 ### Here is an example
-### ("D:\HuaweiMoveData\Users\HUAWEI\Desktop\af2a47922b174f133a93948ca88b43e.png")
+### ![img1.png]
 #### Each label file is in NIfTI format (.nii or .nii.gz) and contains annotated information for different slices regarding the prostate and surrounding tissues
 ### Data Processing
 #### 3D medical images are converted into multiple 2D slices so that the model can be processed one by one；the image data is normalized to ensure that the value range of the input data is consistent

@@ -33,14 +33,14 @@ def load_and_preprocess_adni(data_dirs, target_size, batch_size):
 def create_adni_dataset(batch_size, target_size):
     # AD class directories
     ad_dirs = [
-        '/home/groups/comp3710/ADNI/AD_NC/test/AD',
-        '/home/groups/comp3710/ADNI/AD_NC/train/AD'
+        'ADNI/AD_NC/test/AD',
+        'ADNI/AD_NC/train/AD'
     ]
 
     # NC class directories
     nc_dirs = [
-        '/home/groups/comp3710/ADNI/AD_NC/test/NC',
-        '/home/groups/comp3710/ADNI/AD_NC/train/NC'
+        'ADNI/AD_NC/test/NC',
+        'ADNI/AD_NC/train/NC'
     ]
 
     # Load and preprocess AD and NC images separately
@@ -60,7 +60,6 @@ def generate_random_inputs(batch_size, latent_dim, initial_size):
 
 
 
-# Example usage
 if __name__ == "__main__":
     BATCH_SIZE = 16
     LATENT_DIM = 512

@@ -26,9 +26,9 @@ model = tf.keras.models.load_model(
 )
 
 # Generate random latent vectors and constant inputs
-num_images = 5  # Number of images to generate
-latent_dim = 512  # Dimensionality of the latent space
-initial_size = 8  # Initial size used in the generator
+num_images = 5  
+latent_dim = 512  
+initial_size = 8 
 
 # Generate latent vectors and constant inputs
 latent_vectors, constant_inputs = generate_random_inputs(num_images, latent_dim, initial_size)
@@ -49,7 +49,7 @@ for i in range(num_images):
     
     plt.imshow(image_to_display, cmap='gray')
     plt.axis('off')
-    plt.savefig(f"generated_image_bw_{model_type}_{i+1}.png", bbox_inches='tight')
+    plt.savefig(f"generated_image_{model_type}_{i+1}.png", bbox_inches='tight')
     plt.close()
 
 print(f"Generated {num_images} images using the {model_type} model.")

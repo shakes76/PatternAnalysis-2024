@@ -37,7 +37,7 @@ In this project, the MRI images undergo several pre-processing steps to ensure o
    - The images are resized to a consistent dimension (e.g., 256x128) suitable for input into the U-Net model. This step maintains a uniform input size, allowing for batch processing during training.
    - **Reference**: 
      - R. Ronneberger, O. Fischer, and T. Brox, "U-Net: Convolutional Networks for Biomedical Image Segmentation," *Medical Image Computing and Computer-Assisted Intervention* (MICCAI), 2015.
-     
+
 ## Dice Scores
 
 The following table shows the Dice coefficient scores for each class in the segmentation task:
@@ -54,3 +54,9 @@ The following table shows the Dice coefficient scores for each class in the segm
 ### Mean Dice Score
 
 The mean Dice score across all classes is approximately **0.78**. This score indicates the model's performance in accurately segmenting the various regions of interest in the MRI images.
+
+## Training Loss Graph
+
+The training process was monitored through the loss graph shown below, which illustrates the model's performance over the epochs. A decreasing loss indicates that the model is learning effectively.
+
+![Loss Graph](PatternAnalysis-2024/recognition/2dUnet-S4698007/graphs/Loss-plot-for-2d-Unet.png)

@@ -56,7 +56,7 @@ class SiameseDataset(Dataset):
         if should_get_same_class:
             # Look until the same class image is found
             while True:
-                img1_tuple, label1 = self.dataset[random.randint(0, len(isic_dataset) - 1)]
+                img1_tuple, label1 = self.dataset[random.randint(0, len(self.dataset) - 1)]
                 if label0 == label1:
                     break
         else:

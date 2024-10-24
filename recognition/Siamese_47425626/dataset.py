@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 import random
 import matplotlib.pyplot as plt
 from torchvision import transforms
+from pytorch_metric_learning.samplers import MPerClassSampler
 
 LOCAL = True  # For my local machine
 IMAGE_DIR = os.path.expanduser('~/Projects/COMP3710/siamese_project/dataset/train-image/image/') if not LOCAL else \
@@ -47,14 +48,16 @@ def split_dataset(metadata, test_size=0.2, val_size=0.1, random_state=42):
     labels = metadata['target']
     train_indices, test_indices = train_test_split(range(len(metadata)), test_size=test_size, stratify=labels, random_state=random_state)
     train_labels = labels.iloc[train_indices]
-    train_indices, val_indices = train_test_split(train_indices, test_size=val_size / (1 - test_size), stratify=train_labels, random_state=random_state)
+    train_indices, val_indices = train_test_split(train_indices, test_size=val_size / (1 - test_size), stratify=train_labels,
+                                                  random_state=random_state)
 
     return train_indices, val_indices, test_indices
 
 
-def get_data_loaders(batch_size=32):
+def get_data_loaders(batch_size=32, sampler=None):
     """
     Prepares and returns the data loaders for training, validation, and test datasets using a 70/20/10 split.
+    Allows for the use of a sampler for the training dataset.
     """
     # Load metadata from CSV
     metadata = pd.read_csv(ANOT_FILE)
@@ -75,7 +78,11 @@ def get_data_loaders(batch_size=32):
     test_dataset = ISICKaggleDataset(annotations_file=ANOT_FILE, img_dir=IMAGE_DIR, indices=test_indices)
 
     # Create data loaders for training, validation, and test sets
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    if sampler is not None:
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler)
+    else:
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
@@ -96,15 +103,3 @@ def show_image_grid(dataset, num_images=5):
 
     plt.tight_layout()
     plt.show()
-
-
-if __name__ == "__main__":
-    # Test data loading
-    train_loader, val_loader, test_loader = get_data_loaders(batch_size=4)
-    print(f"Train Loader Batch Count: {len(train_loader)}")
-    print(f"Validation Loader Batch Count: {len(val_loader)}")
-    print(f"Test Loader Batch Count: {len(test_loader)}")
-
-    # Show image grid
-    dataset = ISICKaggleDataset(annotations_file=ANOT_FILE, img_dir=IMAGE_DIR)
-    show_image_grid(dataset, num_images=5)

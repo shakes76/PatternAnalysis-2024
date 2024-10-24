@@ -1,4 +1,4 @@
-class CustomDataset(Dataset):
+class Dataset(Dataset):
     def __init__(self, edge_path, features_path, target_path, transform=None):
         self.edge_path = edge_path
         self.data2_path = data2_path
@@ -25,5 +25,5 @@ class CustomDataset(Dataset):
         edge = self.load_edges()
         x = self.load_features()
         y = self.load_target()
-        dataset = Data(data_path, transform=transform)
-        return data_loader
+        dataset = Data(x=x, dege_index=edges, y=y)
+        return T.NormalizeFeatures()(data)

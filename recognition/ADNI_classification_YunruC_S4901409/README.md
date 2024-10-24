@@ -209,7 +209,7 @@ Although this set did not achieve a relatively high validation accuracy across 3
     </div>
 </div>
 
-Graph 1 presents two subplots illustrating the performance of the GFNet model trained with the optimal hyperparameters resulting from 10 trials. During the early epochs, both the training and validation losses decrease dramatically, indicating that the model is learning efficiently and reducing error. Although the validation loss starts to fluctuate after the 30th epoch, it continues to decrease alongside the training loss. Despite this, the loss curves for training and validation gradually shows a tendency to disperse, suggesting the probability of overfitting. A similar trend is observed in the accuracy plot: while both accuracies increase as losses decrease, a small gap exists between them. In contrast, the loss and accuracy plots in Graph 2 (for the model trained with hyperparameters giving relatively high test accuracy) suggest that the model is not overfitting. The curves for both loss and accuracy are closely aligned, revealing that the model is generalizing well to unseen validation. Additionally, the model trained with the optimal hyperparameters achieves a validation accuracy of approximately 0.97, whereas the model trained with the hyperparameters from the 8th trial reaches a slightly lower accuracy of around 0.95. However, when testing the best models from both sets of hyperparameters, the model with 8th trial's hyperparameters outperformed, achieving a higher test accuracy of 0.6799 on the test set (Figure 7) compared to 0.6607 (Figure 6). The higher train and validation accuracy but lower test accuracy is likely due to the overfitting, where the trained model struggles to make correct predictions on the new test data. The optimal hyperparameters have a `drop_path_rate` of 0.088, whereas trial 8 has a rate of 0.177. The lower drop path rate may be a key factor contributing to the overfitting, as fewer layers are dropped during training, allowing the model to memorize the training data instead of learning general patterns.
+Graph 1 presents two subplots illustrating the performance of the GFNet model trained with the optimal hyperparameters resulting from 10 trials. During the early epochs, both the training and validation losses decrease dramatically, indicating that the model is learning efficiently and reducing error. Although the validation loss starts to fluctuate after the 30th epoch, it continues to decrease alongside the training loss. Despite this, the loss curves for training and validation gradually shows a tendency to disperse, suggesting the probability of overfitting. A similar trend is observed in the accuracy plot: while both accuracies increase as losses decrease, a small gap exists between them. In contrast, the loss and accuracy plots in Graph 2 (for the model trained with hyperparameters giving relatively high test accuracy) suggest that the model is not overfitting. The curves for both loss and accuracy are closely aligned, revealing that the model is generalizing well to unseen validation. Additionally, the model trained with the optimal hyperparameters achieves a validation accuracy of approximately 0.97, whereas the model trained with the hyperparameters from the 8th trial reaches a slightly lower accuracy of around 0.95. However, when testing the best models from both sets of hyperparameters, the model with 8th trial's hyperparameters outperformed, achieving a higher test accuracy of 0.6799 on the test set (Figure 7) compared to 0.6607 (Figure 6). The higher train and validation accuracy but lower test accuracy is likely due to the overfitting, where the trained model struggles to make correct predictions on the new test data (IBM, n.d.). The optimal hyperparameters have a `drop_path_rate` of 0.088, whereas trial 8 has a rate of 0.177. The lower drop path rate may be a key factor contributing to the overfitting, as fewer layers are dropped during training, allowing the model to memorize the training data instead of learning general patterns.
 
 <div style="display: flex; justify-content: space-between;">
     <div style="text-align: center; width: 48%;">
@@ -222,16 +222,26 @@ Graph 1 presents two subplots illustrating the performance of the GFNet model tr
     </div>
 </div>
 
+As a result, the model trained using trial 8's hyperparameters has a better performance. 
 
-
-
+'''python 
+model = GFNet(
+                img_size=512, 
+                patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=0.17728764992362356,
+                norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        )
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.RAdam(model.parameters(), lr=1.2655138149073937e-05, weight_decay=9.472938882625012e-05)
+'''
+However, this model has a relatively high false positive rate (1962 FP cases compared to 1858 cases). During the situation of detecting whether a patient has Alzheimer's Disease, a higher false positive rate means incorrectly diagnosing healthy individuals as having the disease, which can cause unnecessary stress and potentially inappropriate treatments. Lastly, there are still limitations in the training process, as the final result falls short of the expected 0.8 accuracy on the test set. For instance, the Optuna study was limited to only 10 trials with 30 epochs per trial, which may have contributed to overfitting when selecting the best hyperparameters. Therefore, more trials with a higher number of epochs could help identify the true best hyperparameters. To reach the target accuracy of 0.8, more advanced techniques should be employed, such as using the pre-trained model and fine-tuning it on the given dataset.
 
 ## References
 1. Albanie, S. (2023). *Vision Transformer Basics.* YouTube. https://www.youtube.com/watch?v=vsqKGZT8Qn8
 2. Bang, J.-H., Park, S.-W., Kim, J.-Y., Park, J., Huh, J.-H., Jung, S.-H., & Sim, C.-B. (2023). *CA-CMT: Coordinate attention for optimizing CMT Networks.* IEEE Access, 11, 76691–76702. https://doi.org/10.1109/access.2023.3297206
-3. OpenAI. (2024). ChatGPT (Oct 2024 version) [Large language model]. https://openai.com
-4. NTi Audio. (n.d.). *Fast Fourier Transform (FFT): Basics, strengths and limitations.* NTi Audio. https://www.nti-audio.com/en/support/know-how/fast-fourier-transform-fft
-5. Saturn Cloud. (2023). *How to normalize image dataset using PyTorch.* Saturn Cloud. https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/
-6. Zhao, R., Liu, Z., Lin, J., Lin, Y., Han, S., & Hu, H. (2021). *Global Filter Networks for Image Classification.* arXiv. https://arxiv.org/abs/2107.00645
-7. 
+3. IBM. (n.d.). Overfitting. https://www.ibm.com/topics/overfitting
+4. NTi Audio. (n.d.). *Fast Fourier Transform (FFT): Basics, strengths and limitations.* NTi Audio. https://www.nti-audio.com/en/support/know-how/fast-fourier-transform-fft.
+5. OpenAI. (2024). ChatGPT (Oct 2024 version) [Large language model]. https://openai.com
+6. Saturn Cloud. (2023). *How to normalize image dataset using PyTorch.* Saturn Cloud. https://saturncloud.io/blog/how-to-normalize-image-dataset-using-pytorch/
+7. Zhao, R., Liu, Z., Lin, J., Lin, Y., Han, S., & Hu, H. (2021). *Global Filter Networks for Image Classification.* arXiv. https://arxiv.org/abs/2107.00645
+ 
 

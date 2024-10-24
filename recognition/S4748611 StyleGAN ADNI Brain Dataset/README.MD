@@ -69,12 +69,12 @@ python predict.py NC
 <br/>
 Alzheimer's Disease Brains:
 <br/>
-![AD T-SNE](images/tsne_AD.png).
+![AD TSNE](images/tsne_AD.png).
 <br/>
 <br/>
 Normal Cognition Brains:
 <br/>
-![NC T-SNE](images/tsne_NC.png)
+![NC TSNE](images/tsne_NC.png)
 <br/>
 <br/>
 

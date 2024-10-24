@@ -28,11 +28,7 @@ class CompareAndContrast(Module):
 		euc_dist = pairwise_distance(x, y, keepdim=self._dim)
 		clamp_input = self._marge - euc_dist
 
-		if label == 1:
-
-			input_to_mean = pow(euc_dist, 2)
-		else:
-			input_to_mean = pow(clamp(clamp_input, min=self._min_clamp), 2)
+		input_to_mean = (1 - label)*pow(euc_dist, 2) + label*pow(clamp(clamp_input, min=self._min_clamp), 2)
 
 		return mean(input_to_mean)
 
@@ -47,32 +43,31 @@ class SiameseCNN(Module):
 
 		self._my_dims = (1, 3)
 
+		self._gp_2d_pool = MaxPool2d(kernel_size=2, padding=1)
+
+		self._gp_relu = ReLU()
+		self._gp_flatten = Flatten()
+
 		self._my_internal_nn = ModuleList([
 
 			Conv2d(3, 64, kernel_size=10),
 			Conv2d(64, 128, kernel_size=7),
 			Conv2d(128, 128, kernel_size=4),
+			Conv2d(128, 128, kernel_size=4),
 		])
 
-		self._intermediate_touches = ModuleList([
-
-			ReLU(),
-			MaxPool2d(kernel_size=2, padding=1),
-		])
-
-		self._final_touches = ModuleList([
-
-			Flatten(),
-			Linear(self.sizeof_shape(shape), class_count)
-		])
+		self._gp_linear = Linear(self.sizeof_shape(shape), class_count)
 
 	def forward(self, ix):
 
 		for layer in self._my_internal_nn:
 
-			ix = self._intermediate_touches(layer(ix))
+			ix = self._gp_relu(layer(ix))
+			ix = self._gp_2d_pool(ix)
 
-		return self._final_touches(ix)
+		ix = self._gp_flatten(ix)
+
+		return self._gp_linear(ix)
 
 	def sizeof_shape(self, shape):
 
@@ -80,7 +75,8 @@ class SiameseCNN(Module):
 
 		for layer in self._my_internal_nn:
 
-			ix = self._intermediate_touches(layer(ix))
+			ix = self._gp_relu(layer(ix))
+			ix = self._gp_2d_pool(ix)
 
 		return ix.numel()
 

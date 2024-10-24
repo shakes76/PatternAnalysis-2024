@@ -80,7 +80,7 @@ class DataPairenator(Dataset):
 
 		return len(self.image_paths)
 
-if __name__ == "__main__":
+def create_preset_dataloader():
 
 	data_ref = kagglehub.dataset_download("nischaydnk/isic-2020-jpg-256x256-resized")
 
@@ -93,5 +93,9 @@ if __name__ == "__main__":
 		transforms.ToTensor(),
 	])
 
-	paired_dataset = DataPairenator(image_dir=image_dir, label_file=label_csv, image_transform=image_transform)
+	return DataPairenator(image_dir=image_dir, label_file=label_csv, image_transform=image_transform)
+
+if __name__ == "__main__":
+
+	paired_dataset = create_preset_dataloader()
 

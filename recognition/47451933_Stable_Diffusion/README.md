@@ -29,6 +29,9 @@ This is an attempt at an implemention of latent diffusion model based on the sta
 │   ├── VAE_loss_2.png
 │   ├── VAE_loss_21.png
 │   └── VAE_loss_22.png
+│   └── AD_Genrated_Brains.png
+│   └── NC_Genrated_Brains.png
+│   └── test_brains.png
 ├── .gitignore
 ├── README.md
 ├── dataset.py (for loading in the ADNI dataset)

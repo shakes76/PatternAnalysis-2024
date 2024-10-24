@@ -14,7 +14,7 @@ This design was to address the issue of complexity, as the complexity of self-at
 
 The Model design follows closely to the original implementation shown below:
 
-![Model GFNet](assets/GFnet_intro.gif)
+![intro](assets/GFnet_intro.gif)
 
 _Image Reference: [Rao, Y., & Zhao, W. (2021). Global Filter Networks for Image Classification. GitHub.](https://github.com/raoyongming/GFNet/tree/master)_
 
@@ -44,18 +44,43 @@ The images get pre processed prior to training and testing. This step is complet
  - Random Augmentations, random cropping and random horizontal flips. This was to improve the generalized performance of the model.
  
 
-
 ## Usage
 
-    1. Downloading the data structure:
-
-    2. Clone the repository:
-
-    3. Training:
-
-    4. Predictions:
-
 ### Requirements
+
+- Python 3.x
+- matplotlib==3.8.4
+- numpy==2.1.2
+- Pillow==11.0.0
+- scikit_learn==1.4.2
+- timm==1.0.11
+- torch==2.2.2+cu121
+- torchvision==0.17.2
+
+This Model was trained and tested on the UQ High performance computer Rangpur. Running locally will likely result in different run times and possibly slightly different results.
+
+### Dataset Structure
+This model assumes to be ran on the UQ Rangpur HPC with the dataset directory location: 
+**'/home/groups/comp3710/ADNI/AD_NC'**
+If this directory location does not work for you, this can be changed in [dataset.py](dataset.py)
+
+The ADNI dataset structure will require to have the following:
+
+```
+ AD_NC/
+    ├── test/
+    │   ├── AD/
+    │   └── NC/
+    ├── train/
+        ├── AD/
+        └── NC/
+```
+
+### Training
+
+
+### Predictions
+
 
 ## Results
 

@@ -54,11 +54,13 @@ def train_model(data, model, epochs=40, learning_rate=0.0012, weight_decay=2e-4,
     # loss_fn = torch.nn.CrossEntropyLoss()     
 
     # class weights
-    class_weights = torch.tensor([2.3, 1.1, 1.4, 1.3])
-
-    # loss function - focal loss 
-    loss_fn = FocusLoss()
+    class_weights = torch.tensor([3.0, 1.0, 1.8, 1.8])
+    # reweight the classes
     loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
+
+    # loss function - focal loss - not in use
+    # loss_fn = FocusLoss()
+    # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
 
     # learning rate scheduler
     scheduler = ReduceLROnPlateau(optimiser, mode='max', factor=0.4, patience=7, verbose=True)

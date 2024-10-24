@@ -141,4 +141,12 @@ Required packages are as follows:
 - scipy 1.10.1
 - matplotlib 3.7.2
 - numpy 1.24.3
+
 ## Reference
+1. **Data Source Taken From:**
+   - Facebook Large Page-Page Network Dataset:
+     - J. Leskovec and J. Krevl, “SNAP Datasets: Stanford Large Network Dataset Collection,” 2014, available at: https://snap.stanford.edu/data/facebook-large-page-page-network.html.
+
+2. **GCN Model Based On:**
+   - Kipf, T.N. and Welling, M., “Semi-Supervised Classification with Graph Convolutional Networks,” *arXiv preprint arXiv:1609.02907*, 2016, available at: https://arxiv.org/abs/1609.02907.
+

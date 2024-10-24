@@ -58,23 +58,14 @@ def train_model(epochs=10):
 
         epoch_losses.append(epoch_loss)
         epoch_accuracies.append(epoch_acc)
-    plt.figure(figsize=(10,5))
-    
-    plt.subplot(1, 2, 1)
-    plt.plot(range(1, epochs + 1), epoch_losses, label="Loss")
+    plt.figure(figsize=(8,6))
+    plt.plot(range(1, epochs + 1), epoch_losses, color='red', label='Loss')
+    plt.plot(range(1, epochs + 1), epoch_accuracies, color='blue', label='Accuracy')
     plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training Loss')
+    plt.ylabel('Value')
+    plt.title('Training Loss and Accuracy')
+    plt.legend()
     plt.grid(True)
-
-    plt.subplot(1, 2, 2)
-    plt.plot(range(1, epochs + 1), epoch_accuracies, label="Accuracy")
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.title('Training Accuracy')
-    plt.grid(True)
-
-    plt.tight_layout()
     plt.savefig("training_plot.png")
     torch.save(model.state_dict(), "./alzheimer_classifier.pth")
     return model

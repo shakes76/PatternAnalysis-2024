@@ -77,6 +77,18 @@ CropBrainRegion is a function that use cv2 to cut the black area of a brain imag
 
 ## Traning process
 Run 65 epochs and visualizing the training process:  
+![training_process](https://github.com/user-attachments/assets/fbab4760-3f8d-4d1c-90bb-528445718e7c)
+
+Prediction on test set:  
+```
+Confusion Matrix:
+[[2747 1713]
+ [ 455 4085]]
+test Loss: 1.4276, test Acc: 0.7591
+Precision: 0.7046
+Recall: 0.8998
+F1 Score: 0.7903
+```
 
 
 

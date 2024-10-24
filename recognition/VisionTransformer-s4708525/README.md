@@ -23,7 +23,7 @@ The next step, from the terminal:
 ```
 python train.py
 ```
-It will reproduce all of the results related to the training model.
+It will reproduce all of the results related to the training model and the results of the testing data.
 Moreover, to use the model created from the training model, from the terminal:
 ```
 python predict.py

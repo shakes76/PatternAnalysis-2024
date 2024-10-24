@@ -1,3 +1,8 @@
+'''
+Does inference on VQ-VAE model checkpoint by doing two passes through of the model on the test set: one for SSIM calculations and the other for reconstructing images
+
+Author: Arpon Sarker (s4745413)
+'''
 import torch
 from torchvision import transforms
 from dataset import NiftiDataset
@@ -10,10 +15,13 @@ from modules import VQVAE
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Training, validation and test set directories of HipMRI data
 hipmri_train_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_train"
 hipmri_val_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_validate"
 hipmri_test_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/keras_slices_test"
+# Where to save reconstructed images
 save_dir = "PatternAnalysis-2024/recognition/VQVAE_s4745413/codebook_images2"
+# Checkpoint of model from train.py
 model_checkpoint = 'PatternAnalysis-2024/recognition/VQVAE_s4745413/vqvae_model.pth'
 
 base_dir = os.getcwd()
@@ -23,13 +31,15 @@ hipmri_test_dir = os.path.join(base_dir, hipmri_test_dir)
 hipmri_save_dir = os.path.join(base_dir, save_dir)
 model_checkpoint = os.path.join(base_dir, model_checkpoint)
 
-h_dim = 64
-res_h_dim = 32
-n_res_layers = 2
-n_emb = 512
-e_dim = 64
-commit_cost = 0.25
+# Hyperparameters
+h_dim = 64 # Hidden dimension of VQ-VAE
+res_h_dim = 32 # Residual Stack Hidden Dimension
+n_res_layers = 2 # Number of residual layers
+n_emb = 512 # Number of embeddings
+e_dim = 64 # Dimensions of each embedding
+commit_cost = 0.25 # Commitment Cost
 
+# Pre-processing
 input_transf = transforms.Compose([
     transforms.Resize((256, 128)),
     transforms.Normalize((0.5,), (0.5,))
@@ -53,8 +63,8 @@ os.makedirs(save_dir, exist_ok=True)
 ssim_scores = []
 ssim_threshold = 0.6
 
+# Saves images from tensor images to .png files for 'num_samples' times
 def save_images(tensor_images, save_dir, prefix='recon', num_samples=10):
-    # Make sure to clamp the images to the range [0, 1]
     tensor_images = torch.clamp(tensor_images, 0, 1)
     
     # Unnormalize and save each image
@@ -93,6 +103,7 @@ with torch.no_grad():
         save_images(batch, save_dir, prefix=f'original_{batch_idx}', num_samples=1)
         save_images(x_hat, save_dir, prefix=f'reconstructed_{batch_idx}', num_samples=1)
 
+# SSIM statistics
 ssim_mean = np.mean(ssim_scores)
 ssim_min = np.min(ssim_scores)
 ssim_max = np.max(ssim_scores)

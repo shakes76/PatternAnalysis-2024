@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import kagglehub
 import os
+import time
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from modules import CNN, SiameseNetwork, ContrastiveLoss
@@ -49,4 +50,7 @@ if __name__ == "__main__":
 
     isic_dataset = ISICDataset(dataset_path=dataset_image_path, metadata_path=meta_data_path)
 
-    train_siamese_network(dataset=isic_dataset, transform=transform, epochs=10)
+    start_time = time.time()
+    train_siamese_network(dataset=isic_dataset, transform=transform, epochs=1)
+    elapsed_time = time.time() - start_time
+    print(f'Training completed in {elapsed_time // 60:.0f}m {elapsed_time % 60:.0f}s')

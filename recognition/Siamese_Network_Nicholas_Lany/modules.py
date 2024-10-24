@@ -38,12 +38,12 @@ class CNN(nn.Module):
             nn.Linear(1024, 256),
             nn.ReLU(inplace=True),
             
-            nn.Linear(256,2)
+            nn.Linear(256, num_classes)
         )
 
     def _get_conv_output_size(self, shape):
         x = torch.zeros(1, 3, *shape)
-        x = self.conv(x)
+        x = self.cnn(x)
         x = self.flatten(x)
         return x.numel()
 

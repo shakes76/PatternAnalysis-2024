@@ -8,13 +8,16 @@ import os
 from dataset import load_data_3D, Custom3DDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
+from predict import test_and_visualize
 
-
+# Model params
 num_epochs = 1
 learning_rate = 0.01
 batch_size = 4
+# Check which device to use for model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Get the dataset and split into train, test, validate
 dataset = Custom3DDataset()
 train_len = int(0.7 * len(dataset))  # fix percentages
 val_len = int(0.2*len(dataset))
@@ -26,7 +29,7 @@ train_loader = DataLoader(train_loader)
 validate_loader = DataLoader(validate_loader)
 test_loader = DataLoader(test_loader)
 
-
+# initialise Unet and loss/optimizer
 model = Basic3DUNet(in_channels=1, out_channels=4).to(device)
 loss_func = DiceLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=5e-4)
@@ -48,15 +51,17 @@ def train():
     print("> Training")
     start = time.time()
 
+    # Iterate through Epochs
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0.0
-
+        # Iterate through images and masks
         for i, (images, masks) in enumerate(train_loader):
             images, masks = images.to(device), masks.to(device)
 
             optimizer.zero_grad()
             outputs = model(images)
+            # Apply Loss
             loss = loss_func(outputs, masks)
             loss.backward()
             optimizer.step()
@@ -112,40 +117,6 @@ def calculate_dice(y_pred, y_true):
     union = y_pred.sum(dim=(2, 3, 4)) + y_true.sum(dim=(2, 3, 4))
     dice = (2. * intersection + 1e-5) / (union + 1e-5)
     return dice.mean().item()
-
-# Testing function with visualization
-
-
-def test_and_visualize():
-    model.eval()
-    with torch.no_grad():
-        for test_images, test_masks in test_loader:
-            test_images, test_masks = test_images.to(
-                device), test_masks.to(device)
-            test_outputs = model(test_images)
-            predicted_masks = torch.argmax(test_outputs, dim=1)
-
-            # Visualize the first example in the batch
-            plt.figure(figsize=(12, 6))
-
-            # Input image
-            plt.subplot(1, 3, 1)
-            plt.imshow(test_images[0].cpu().squeeze(), cmap='gray')
-            plt.title("Input Image")
-
-            # Ground truth mask
-            plt.subplot(1, 3, 2)
-            plt.imshow(test_masks[0].cpu().squeeze(), cmap='gray')
-            plt.title("Ground Truth Mask")
-
-            # Predicted mask
-            plt.subplot(1, 3, 3)
-            plt.imshow(predicted_masks[0].cpu().squeeze(), cmap='gray')
-            plt.title("Predicted Mask")
-
-            plt.tight_layout()
-            plt.show()
-            break
 
 
 if __name__ == "__main__":

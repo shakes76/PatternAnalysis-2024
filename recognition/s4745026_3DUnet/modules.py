@@ -92,6 +92,7 @@ class DiceLoss(nn.Module):
         self.smooth = smooth
 
     def forward(self, y_pred, y_true):
+        # Check shape sizes match
         assert y_pred.size() == y_true.size(
         ), f"Shape mismatch: {y_pred.size()} != {y_true.size()}"
 
@@ -100,6 +101,7 @@ class DiceLoss(nn.Module):
         y_pred = y_pred.contiguous().view(batch_size, num_classes, -1)
         y_true = y_true.contiguous().view(batch_size, num_classes, -1)
 
+        # DSC Calculation
         intersection = (y_pred * y_true).sum(2)
         union = y_pred.sum(2) + y_true.sum(2)
         dsc = (2. * intersection + self.smooth) / (union + self.smooth)

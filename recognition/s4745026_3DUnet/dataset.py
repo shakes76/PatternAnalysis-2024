@@ -63,11 +63,12 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
 
 class Custom3DDataset(Dataset):
     def __init__(self):
+        # Unzip images
         self.image_paths = glob.glob(
             f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
         self.label_paths = glob.glob(
             f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
-
+        # Resize the dimensions
         self.upsample = torch.nn.Upsample(
             size=(128, 128, 128), mode="trilinear")
         # self.classes = {i: i for i in range(6)}
@@ -76,14 +77,18 @@ class Custom3DDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
+        # Load the data into respective label and image
         image = load_data_3D([self.image_paths[idx]])
         label = load_data_3D([self.label_paths[idx]])
 
+        # Convert to tensors
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
         label = torch.tensor(label, dtype=torch.long)
 
+        # One-hot encode to assign labels to classes
         label = nn.functional.one_hot(
             label, num_classes=6).permute(3, 1, 0, 2).float()
+        # Upsample
         image = self.upsample(image)
         label = self.upsample(label)
 

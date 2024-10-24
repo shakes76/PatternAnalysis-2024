@@ -49,12 +49,27 @@ For Ultralytics compatability, the masks also needed their information transferr
 ### 3.2 Organisation
 This is all implemented in the dataset.py file, but to use this (and Ultralytics' YOLO models), the files must be organised in a specific way:
 
-ORGANISATION OF FILES (ORIGINAL_ISIC/ISIC/etc)
+![Organisation of dataset.](./figures/dataset_directory.png)
+
+Create folders in the above-specified format in the root directory for the project. From here, save the original ISIC images for the train, test and validation split in their respective **ORIGINAL_ISIC** partition under **images**. Then, save the original ISIC ground truth files into their corresponding **mask** folders (again, in the **ORIGINAL_ISIC** partition). 
 
 ### 3.3 dataset.py usage
-Simply run the dataset.py to process all images and masks into the required format. Prior to training, create a .yaml file in the datasets folder that looks like:
+Simply run the dataset.py to process all images and masks into the required format. The file will re-size all images (from all train/test/val partitions) from the **ORIGINAL_ISIC** folder and save them to the **ISIC** folder, ready for use. It will also create the described .txt files in the **label** folders (for each partition) in the **ISIC** folder. 
 
-YAML FILE
+Prior to training, create a .yaml file in the **datasets** folder that looks like:
+
+<pre>
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ./ISIC/ # path to processed dataset from root directory
+train: train/images/ # path to training images FROM path
+val: val/images/ # path to validation images FROM path
+test: test/images/ # path to test images FROM path
+
+# Classes (1 lesion)
+nc: 1
+names:
+    0: lesion
+</pre>
 
 modifying any file directories if necessary.
 
@@ -62,14 +77,19 @@ modifying any file directories if necessary.
 ### 4.1 Running train.py
 The train.py file contains three methods: run_train() and run_test(). By default, running the file runs both of them which trains the model (using YOLOv11 as a base) using the supplied data.
 
-The training will output the results of training (graphs and .csv containing metrics) in a directory named runs/detect/trainX (where X is the train number). The trained model is located within this directory in the weights folder (under best.pt) - this can then be used to run further inference and testing on the model
+The training will create and save the output of the training results (graphs and .csv containing metrics) in a directory named runs/detect/trainX (where X is the train number) in the root directory. The trained model's weights are located within this directory in the weights folder (under best.pt, so runs/detect/trainX/weights/best.pt) - this can then be used to run further inference and testing on the model
 
-IMAGE WITH EXAMPLE DIRECTORY
+![Structure of results output.](./figures/results_directory.png)
 
 ### 4.2 Results from training
 The result graphs for training can be seen below:
 
-GRAPHS
+![Confusion matrix](./figures/confusion_matrix_normalized.png)
+![F1 curve](./figures/F1_curve.png)
+![Precision curve](./figures/P_curve.png)
+![Recall curve](./figures/R_curve.png)
+![Precision-recall curve](./figures/PR_curve.png)
+![Metrics plot](./figures/results.png)
 
 ## 5. Testing model results
 ### 5.1 Running test.py

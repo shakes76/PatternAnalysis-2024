@@ -4,7 +4,7 @@ The test driver script, runs the Unet and saves the output
 @author Carl Flottmann
 """
 import torch
-from utils import cur_time, ModelFile, save_loss_figures, ModelState
+from utils import cur_time, ModelFile, save_loss_figures, ModelState, save_visualise_figures
 from modules import Improved3DUnet
 from metrics import DiceLoss, Accuracy
 from dataset import *
@@ -12,9 +12,9 @@ import time
 import matplotlib.pyplot as plt
 
 LOCAL = True
-LOAD_FILE_PATH = ".\\model15\\validated_model.pt"
+LOAD_FILE_PATH = ".\\local_model\\model56_train.pt"
 # make sure to include the directory separator as a suffix here
-OUTPUT_PATH = ".\\model15\\"
+OUTPUT_PATH = ".\\output\\"
 BATCH_SIZE = 1
 SHUFFLE = False
 WORKERS = 0
@@ -92,6 +92,8 @@ def main() -> None:
     criterion = DiceLoss(num_classes, device, old_criterion.get_smooth())
 
     print(f"[{cur_time(script_start_t)}] Testing...")
+    # output images every 20% increment
+    output_steps = int(math.ceil(0.2 * data_loader.test_size()))
     model.eval()
     accuracy = Accuracy()
 
@@ -107,6 +109,15 @@ def main() -> None:
 
             print(f"[{cur_time(script_start_t)}] iteration {step} complete, with total loss: {
                   total_loss.item()} and class loss {[loss.item() for loss in class_loss]}")
+
+            if step % output_steps == 0:
+                image_plot = image.detach().squeeze(0).squeeze(0).cpu().numpy()
+                mask_plot = mask.detach().squeeze(0).cpu().numpy()
+                output = torch.argmax(output, dim=1)
+                output_plot = output.detach().cpu().numpy()
+
+                save_visualise_figures(image_plot, mask_plot, output_plot,
+                                       num_classes, OUTPUT_PATH, f"predict_visualise_{step}")
 
         print(f"[{cur_time(script_start_t)}] Test accuracy: {
               accuracy.accuracy()}%")

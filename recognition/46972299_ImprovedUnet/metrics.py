@@ -310,7 +310,7 @@ class FocalLoss(LossClass):
 
 
 class FLDice(LossClass):
-    DEFAULT_BETA = 8
+    DEFAULT_BETA = 10
     DEFAULT_ALPHA = 1
     DEFAULT_GAMMA = 2
     SMOOTH_FACTOR = 1e-7
@@ -324,7 +324,7 @@ class FLDice(LossClass):
                              smooth_factor, tracking=False)
 
     def name(self) -> str:
-        return "beta * Focal loss - log(Dice loss) Loss"
+        return "beta * Focal loss + Dice loss Loss"
 
     def forward(self, prediction: torch.Tensor, truth: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -333,7 +333,7 @@ class FLDice(LossClass):
         total_focal, class_focal = self.focal(prediction, truth)
         total_dice, class_dice = self.dice(prediction, truth)
 
-        total_loss = self.beta * total_focal - torch.log(total_dice)
+        total_loss = self.beta * total_focal + total_dice
 
         class_losses = []
         for i in range(self.num_classes):

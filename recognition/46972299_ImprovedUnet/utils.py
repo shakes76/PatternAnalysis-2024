@@ -10,6 +10,7 @@ from tqdm import tqdm
 import time
 from enum import Enum
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from metrics import LossClass
 
 
@@ -27,6 +28,43 @@ class ModelFile(Enum):
     DATA_LOADER = "data_loader"
     TRAINED_LOCALLY = "trained_locally"
     STATE = "state"
+
+
+def save_visualise_figures(input: np.array, truth: np.array, prediction: np.array, num_classes: int, output_path: str, name: str) -> None:
+    viewed_slice = input.shape[-1] // 2
+    colourmap = plt.get_cmap('Paired', num_classes)
+
+    plt.figure(figsize=(30, 20))
+
+    plt.subplot(1, 3, 1)
+    plt.imshow(input[:, :, viewed_slice], cmap="gray")
+    plt.title('Input')
+    plt.axis("off")
+
+    truth = truth[0, :, :, viewed_slice]
+    truth = colourmap(truth / truth.max())
+    plt.subplot(1, 3, 2)
+    plt.imshow(truth, cmap="gray")
+    plt.title('Truth')
+    plt.axis("off")
+
+    prediction = prediction[0, :, :, viewed_slice]
+    prediction = colourmap(prediction / prediction.max())
+    plt.subplot(1, 3, 3)
+    plt.imshow(prediction, cmap="gray")
+    plt.title('Prediction')
+    plt.axis("off")
+
+    colourmap_legend = []
+    for i in range(num_classes):
+        colourmap_legend.append(mpatches.Patch(color=colourmap(
+            i / (num_classes-1)), label=f'Class {i + 1}'))
+
+    plt.legend(handles=colourmap_legend, loc='upper right',
+               bbox_to_anchor=(1.2, 1), fontsize=12)
+
+    plt.savefig(output_path + name + ".png")
+    plt.close()
 
 
 def save_loss_figures(criterion: LossClass, output_path: str, mode: str) -> None:

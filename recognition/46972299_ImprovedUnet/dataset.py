@@ -76,7 +76,7 @@ class ProstateLoader(DataLoader):
         if num_load is not None:
             if num_load < self.MIN_LOAD:
                 raise ValueError(f"Must load at least {
-                                self.MIN_LOAD} images and masks")
+                    self.MIN_LOAD} images and masks")
 
         self.start_t = start_t
         self.kwargs = kwargs
@@ -123,6 +123,9 @@ class ProstateLoader(DataLoader):
         dataset = ProstateDataset(
             self.images, self.masks, self.num_train_images + self.num_validate_images, self.num_load, self.start_t)
         return DataLoader(dataset, **self.kwargs)
+
+    def test_size(self) -> int:
+        return self.num_load - self.num_validate_images - self.num_train_images
 
     def __match_dataset_names(self, filename: str) -> str:
         match = re.search(self.PREFIX_MATCH, filename)

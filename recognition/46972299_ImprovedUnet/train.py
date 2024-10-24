@@ -49,11 +49,13 @@ def main() -> None:
                                      LOCAL_DATA_DIR + SEMANTIC_LABELS + WINDOWS_SEP, num_load=NUM_LOADED, start_t=script_start_t, batch_size=BATCH_SIZE,
                                      shuffle=SHUFFLE, num_workers=WORKERS)
         sep = WINDOWS_SEP
+        print(f"[{cur_time(script_start_t)}] Running on local machine")
     else:  # on rangpur
         data_loader = ProstateLoader(RANGPUR_DATA_DIR + SEMANTIC_MRS + LINUX_SEP,
                                      RANGPUR_DATA_DIR + SEMANTIC_LABELS + LINUX_SEP, num_load=NUM_LOADED, start_t=script_start_t, batch_size=BATCH_SIZE,
                                      shuffle=SHUFFLE, num_workers=WORKERS)
         sep = LINUX_SEP
+        print(f"[{cur_time(script_start_t)}] Running on rangpur")
 
     # create output directory
     output_dir = OUTPUT_DIR

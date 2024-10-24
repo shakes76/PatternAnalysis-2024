@@ -9,7 +9,6 @@ it saves the segmentation results for visualization.
 Key Components:
 - **Data Loading**: Utilizes a custom `NiftiDataset` class to load and preprocess NIfTI image files.
 - **Model Architecture**: Employs the `UNet3D` model defined in the `modules` module.
-- **Loss Function**: Implements Dice Loss to measure the overlap between predicted and true segmentations.
 - **Evaluation**: Computes validation and test losses, and saves the first batch of predictions for inspection.
 - **Dice Score**: Accumulates and calculates average per-class Dice score
 
@@ -192,6 +191,7 @@ def train_loop():
 
             optimizer.zero_grad()
             outputs = model(batch_images)  # Output shape: (batch_size, num_classes, D, H, W)
+            # Use custom weighted Dice loss function 
             loss = weighted_dice_loss(outputs, batch_labels)
             loss.backward()
             optimizer.step()
@@ -227,10 +227,9 @@ def train_loop():
     print('Training complete and model saved.')
     # print('Training Complete.')
 
-    # Initialize accumulators
+    # Initialise accumulators for Dice score calcluations
     total_intersection = torch.zeros(6)
     total_union = torch.zeros(6)
-
     # Move accumulators to the appropriate device
     total_intersection = total_intersection.to(device)
     total_union = total_union.to(device)
@@ -239,7 +238,6 @@ def train_loop():
     is_first = True
     model.eval()
     test_loss = 0.0
-    dice_score = np.zeros(6)
     with torch.no_grad():
         for batch_images, batch_labels in test_loader:
             batch_images = batch_images.to(device)
@@ -248,15 +246,14 @@ def train_loop():
             outputs = model(batch_images)
 
             # Extract predicted and actual labels for visual comparison
+            # only for the first image in the test set
             if is_first:
-
                 pred_class = torch.argmax(outputs, dim=1)[0]
-                # pred_class = pred_class.squeeze(0)
                 pred_class = pred_class.detach().cpu().numpy().astype(np.int16)
                 pred_image = nib.Nifti1Image(pred_class, np.eye(4))
                 nib.save(pred_image, "predicted_seg.nii.gz")
 
-                actual = batch_labels[0]#.squeeze(0)
+                actual = batch_labels[0]
                 actual = actual.detach().cpu().numpy().astype(np.int16)
                 actual = nib.Nifti1Image(actual, np.eye(4))
                 nib.save(actual, "actual_seg.nii.gz")

@@ -28,7 +28,7 @@ parser.add_argument("-sp", "--saveplots", action="store_true", default=False, he
 args = parser.parse_args()
 # TODO verify argument handling is correct
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if device == "cpu":
+if not torch.cuda.is_available():
     print("WARNING: Using the CPU to train...")
 
 # Make disjoint sets of data
@@ -218,7 +218,7 @@ with torch.no_grad():
 
     print('\nTest Accuracy for Classification: {} %'.format(100 * correct / total))
 
-    # Generate a confusion matrix ti visualise accuracy
+    # Generate a confusion matrix to visualise accuracy
     plt.close() # As ConfusionMatrixDisplay uses it's own figure
     cm_display = ConfusionMatrixDisplay.from_predictions(all_labels, all_predictions, display_labels=["Benign", "Malignant"])
     cm_display.plot(colorbar=False)

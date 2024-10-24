@@ -23,7 +23,7 @@ parser.add_argument("classifier", help="Path to classifier to be used for infere
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if device == "cpu":
+if not torch.cuda.is_available():
     print("WARNING: Using the CPU...")
 
 _, _, sample = split_data(DATAPATH + "/train-metadata.csv")

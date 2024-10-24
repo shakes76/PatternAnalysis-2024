@@ -1,3 +1,11 @@
+"""
+
+@file dataset.py
+@author Matt Hoffman
+@date 24/10/2024 (lmao)
+
+"""
+
 import os
 import random
 
@@ -12,6 +20,9 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 class DataPairenator(Dataset):
+
+	""" The goal is to find two images with
+		the same label for our network to compare """
 
 	def __init__(self, image_dir, label_file, image_transform=None):
 
@@ -82,4 +93,5 @@ if __name__ == "__main__":
 		transforms.ToTensor(),
 	])
 
-	paired_dataset = DataPairenator(image_dir=image_dir, label_file=label_csv, image_transform=image_transform)[1]
+	paired_dataset = DataPairenator(image_dir=image_dir, label_file=label_csv, image_transform=image_transform)
+

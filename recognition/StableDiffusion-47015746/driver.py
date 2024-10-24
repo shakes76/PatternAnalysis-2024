@@ -1,3 +1,8 @@
+"""
+This file calls the all the necessary methods to train the Stable Diffusion model and then use it to generate images
+"""
+
+#s4701574
 from dataset import *
 from modules import *
 from predict import *

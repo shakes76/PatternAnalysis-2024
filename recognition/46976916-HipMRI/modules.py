@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torchvision.transforms.functional as TF
 
+#Code inspired by Aladdin Persson's tutorial on binary image segmentation using a U-Net model, 
+#   adapted for multi-class segmentation and specific project requirements.
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()

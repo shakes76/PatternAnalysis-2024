@@ -36,12 +36,13 @@ The model was run for 100 epochs with a batch size of 2. The model is saved as `
 
 ## Dependencies
 
-The following dependencies were used to run the algorithm
+The following dependencies were used to run the algorithm. They can all be installed with `pip install -r requirements.txt`
 
+- Matplotlib 3.9.2
+- Nibabel 5.3.1
+- Numpy 1.26.3
 - PyTorch 2.4.0
 - TorchIO 0.20.1
-- Nibabel 5.3.1
-- Matplotlib 3.9.2
 - tqdm 4.66.5
 
 To ensure reproducibility of results, random seeds are set within the dataset splitting, data loading, and model training steps using a manual seed in PyTorch. This ensures that the same training/validation splits are used and results can be replicated.

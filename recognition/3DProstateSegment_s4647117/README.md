@@ -138,7 +138,7 @@ As above, colored are the predicted labels, and greyscale is actual label
 </div>
 
 
-## Plots:
+## Plots an values:
 
 ### Training and Validation loss:
 <div align="left">
@@ -151,6 +151,12 @@ We observed a spike in the validation loss during training, which is not surpris
     <img src="https://github.com/JosephSav/Markdown/blob/main/learning_rate_new.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
 </div>
 We can observe how our learning rate scheduler works from this graph.
+
+### Per-class Dice scores over the test set:
+```plaintext
+[0.9981201  0.9883934  0.92527676 0.96453923 0.87255245 0.88465655]
+```
+The Dice score is a metric used to evaluate the similarity between predicted and actual data, commonly in image segmentation tasks. It ranges from 0 (no overlap) to 1 (perfect overlap), where higher values indicate better performance. These scores are good because they show strong overlap between the model's predictions and the actual data, with most scores above 0.9. Even the lowest scores (around 0.87 and 0.88) are still considered strong, indicating that the model performs well across different classes.
 
 ## Preprocessing and data splits:
 

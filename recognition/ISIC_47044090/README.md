@@ -29,6 +29,8 @@ To train the model, a dataset from the 2017 ISIC challenge was used: this includ
     1. 2000 training samples
     2. 200 testing samples
     3. 150 validation samples
+This training validation split was used since it was the one provided by the ISIC challenge, and the approximately 80/10/10 split is seen to be optimal for large scale training. 
+
 Each of the samples contains and image and a ground truth, where the image is a dermoscopic picture in .jpg file of varying sizes, and the ground truth is the corresponding mask in black and white which segments the image. These can be downloaded from the ISIC Challenge datasets website (2017), which is linked in Appendix 1.
 
 However, these cannot directly be plugged into YOLOv11, as Ultralytics' YOLO models require a specific file format and file structure. Firstly, it requires that all images are of equal and even dimensions. Secondly, all labels must be in the form of a .txt file which contains (for each bounding box identified): its class, centre x-coordinate, centre y-coordinate, width and height.
@@ -52,15 +54,40 @@ This is all implemented in the dataset.py file, but to use this (and Ultralytics
 ORGANISATION OF FILES (ORIGINAL_ISIC/ISIC/etc)
 
 ### 3.3 dataset.py usage
-Simply run the dataset.py to process all images and masks into the required format. 
+Simply run the dataset.py to process all images and masks into the required format. Prior to training, create a .yaml file in the datasets folder that looks like:
+
+YAML FILE
+
+modifying any file directories if necessary.
 
 ## 4. Training model for lession detection
+### 4.1 Running train.py
+The train.py file contains three methods: run_train() and run_test(). By default, running the file runs both of them which trains the model (using YOLOv11 as a base) using the supplied data.
+
+The training will output the results of training (graphs and .csv containing metrics) in a directory named runs/detect/trainX (where X is the train number). The trained model is located within this directory in the weights folder (under best.pt) - this can then be used to run further inference and testing on the model
+
+IMAGE WITH EXAMPLE DIRECTORY
+
+### 4.2 Results from training
+The result graphs for training can be seen below:
+
+GRAPHS
 
 ## 5. Testing model results
+### 5.1 Running test.py
+The file (by default) also then runs a test on the most recent training batches' weights (the one that was just trained if they are run together).
 
-## 7. Evaluation of test results
+By running inference on each image in the dataset, it calculates intersection-over-union score indepenently (metric used to evaluate the allignment of predicted and true bounding boxes) before outputting the average and number of samples with IoU above 0.8.
+
+### 5.2 Results from testing
+In this case, resulting metrics were found to be:
+
+IMAGE WITH AVE IOU AND N IOU>0.8
 
 ## 6. Predicting using trained model
+predict.py contains a method to visualise inference (example usage) of the trained model. By default, it also runs on the most recent training batch's weights. It plots and displays 9 random samples of the image, the model's predicted lesion and the true lesion from the test set.
+
+IMAGE FROM PREDICT.py
 
 ## 8. Appendix
 ### Appendix 1: ISIC Dataset

@@ -7,77 +7,101 @@ Author: Chiao-Yu Wang (Student No. 48007506)
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torchvision import models
+from constants import DROPOUT_RATE
 
 class GlobalFilterLayer(nn.Module):
-    def __init__(self):
+    """
+    Layer that applies a learnable global filter to the input using Fourier Transform.
+    """
+    def __init__(self, in_channels, height, width):
         super(GlobalFilterLayer, self).__init__()
-        self.layer_norm = nn.LayerNorm(normalized_shape=(512, 16, 16))  # Assuming input size after patch embedding
-        self.learnable_filter = nn.Parameter(torch.randn(512, 16, 16, dtype=torch.float32))  # Learnable filters in spatial domain
+
+        # Layer normalization to stabilise the training
+        self.layer_norm = nn.LayerNorm(normalized_shape=(in_channels, height, width))
+        
+        # Learnable filter initialised with random values
+        self.learnable_filter = nn.Parameter(torch.randn(in_channels, height, width, dtype=torch.float32))
 
     def forward(self, x):
-        x = self.layer_norm(x) # Normalize the input
-        x_fft = torch.fft.fft2(x) # Apply 2D FFT
-        filter_fft = torch.fft.fft2(self.learnable_filter) # Create a complex representation of the learnable filter
-        x_fft_filtered = x_fft * filter_fft # Apply the learnable global filter in frequency domain
-        x = torch.fft.ifft2(x_fft_filtered) # Apply 2D IFFT
-        return x.abs()  # Return the magnitude after IFFT
+        x = self.layer_norm(x)                              # Normalize the input tensor
+        x_fft = torch.fft.fft2(x)                           # Apply 2D Fast Fourier Transform (FFT)
+        filter_fft = torch.fft.fft2(self.learnable_filter)  # Apply FFT to the learnable filter
+        x_fft_filtered = x_fft * filter_fft                 # Element-wise multiplication of the input FFT and the filter FFT
+        x = torch.fft.ifft2(x_fft_filtered)                 # Apply 2D Inverse Fast Fourier Transform (IFFT) to recover the filtered spatial domain
+        return x.abs()                                      # Return the magnitude of the resulting tensor after IFFT
+
+class MLP(nn.Module):
+    """
+    Multi-layer perceptron (MLP) that consists of linear layers, batch normalization,
+    activation functions, and dropout for regularization.
+    """
+    def __init__(self, input_dim, hidden_dims, output_dim, dropout_rate):
+        super(MLP, self).__init__()
+        layers = []
+        # Build MLP layers dynamically based on provided hidden dimensions
+        for hidden_dim in hidden_dims:
+            layers.append(nn.Linear(input_dim, hidden_dim))  # Add a linear layer
+            layers.append(nn.BatchNorm1d(hidden_dim))        # Add batch normalization
+            layers.append(nn.GELU())                         # Add GELU activation function
+            layers.append(nn.Dropout(dropout_rate))          # Add dropout for regularisation
+            input_dim = hidden_dim                           # Update input dimension for the next layer
+        layers.append(nn.Linear(hidden_dim, output_dim))     # Final output layer
+        self.model = nn.Sequential(*layers)                  # Sequential model from the list of layers
+
+    def forward(self, x):
+        return self.model(x)  # Pass input through the MLP layers
 
 class GFNet(nn.Module):
-    def __init__(self, num_classes):
+    """
+    Main class for GFNet model, which incorporates a pretrained ResNet backbone,
+    a global filter layer, and a feed-forward network for classification.
+    """
+    def __init__(self, num_classes=2):
         super(GFNet, self).__init__()
+        
+        # Load a pretrained ResNet-18 model for feature extraction and patch embedding
+        resnet = models.resnet18(pretrained=True)
 
-        # Patch embedding layer
-        self.patch_embedding = nn.Conv2d(in_channels=3, out_channels=256, kernel_size=8, stride=8)  
+        # Remove the classification head but keep the feature extractor
+        self.backbone = nn.Sequential(*list(resnet.children())[:-2])
 
-        # Convolutional layers with Batch Normalization
-        self.conv1 = nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(512)
-        self.conv2 = nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(512)
-        self.conv3 = nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(512)
-        self.conv4 = nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
-        self.bn4 = nn.BatchNorm2d(512)
+        # Global Filter Layer (Learnable Filter in Frequency Domain)
+        self.global_filter = GlobalFilterLayer(in_channels=512, height=4, width=4)
 
-        self.global_filter1 = GlobalFilterLayer()
-        self.global_filter2 = GlobalFilterLayer()
+        # Feed Forward Network (LayerNorm + MLP)
+        self.ffn_norm = nn.LayerNorm(512 * 4 * 4)
+        self.ffn_mlp = MLP(512 * 4 * 4, hidden_dims=[1024, 512, 256], output_dim=512 * 4 * 4, dropout_rate=DROPOUT_RATE)
 
-        # Dropout layer to reduce overfitting
-        self.dropout = nn.Dropout(p=0.6) 
+        # Global Average Pooling to reduce dimensionality
+        self.global_avg_pooling = nn.AdaptiveAvgPool2d(1)
 
-        self.ffn = nn.Sequential(
-            nn.LayerNorm(512 * 16 * 16),
-            nn.Linear(512 * 16 * 16, 2048),
-            nn.ReLU(),
-            nn.Linear(2048, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 512),
-            nn.ReLU()
-        )
-        self.global_avg_pooling = nn.AdaptiveAvgPool2d(1) # Global Average Pooling
-        self.classifier = nn.Linear(512, num_classes)     # Linear layer for classification
+        # Classifier layer to output final class probabilities
+        self.classifier = nn.Linear(512, num_classes)
 
     def forward(self, x):
-        x = self.patch_embedding(x)         # Patch embedding
+        # Patch Embedding using ResNet Backbone
+        x = self.backbone(x)
 
-        x = self.bn1(self.conv1(x))         # Convolutional layers
-        x = F.relu(x)
-        x = self.bn2(self.conv2(x))
-        x = F.relu(x)
-        x = self.bn3(self.conv3(x))
-        x = F.relu(x)
-        x = self.bn4(self.conv4(x))
-        x = F.relu(x)
+        # Apply the Global Filter Layer
+        x = self.global_filter(x)
 
-        x = self.global_filter1(x)          # Global Filter Layer 1
-        x = self.global_filter2(x)          # Global Filter Layer 2
-        x = x.view(x.size(0), -1)           # Flatten the output for the feedforward network
-        x = self.ffn(x)                     # Feed Forward Network
-        x =  x.view(x.size(0), 512, 1, 1)   # Reshape for global average pooling        
-        x = self.global_avg_pooling(x)      # Global Average Pooling
-        x = x.view(x.size(0), -1)           # Flatten again for classifier
+        # Flatten the output for Feed Forward Network
+        x = x.view(x.size(0), -1)
 
-        x = self.dropout(x)                 # Dropout before classifier
+        # Pass through the Feed Forward Network (LayerNorm + MLP)
+        x = self.ffn_norm(x)
+        x = self.ffn_mlp(x)
 
-        return self.classifier(x)
+        # Reshape for Global Average Pooling
+        x = x.view(x.size(0), 512, 4, 4)
+        x = self.global_avg_pooling(x)
+
+        # Flatten the pooled output for the classifier
+        x = x.view(x.size(0), -1)
+
+        # Classify the final output
+        x = self.classifier(x)
+
+        return x
+

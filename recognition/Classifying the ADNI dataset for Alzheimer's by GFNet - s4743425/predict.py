@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 from modules import GFNet 
 from dataset import *
+from train import test
 import numpy as np
 import random
 import argparse
@@ -107,9 +108,13 @@ def main():
     # parse the arguments
     args = parser.parse_args()
     # Load the test dataset
-    test_loader, test_dataset = test_dataloader(batch_size=64)
+    test_loader, test_dataset = test_dataloader(batch_size=32)
     # Load trained model
     model = load_model(args.model_path)
+    # Call test function from train.py
+    criterion = nn.CrossEntropyLoss()  # Loss function
+    test(device, args.output_dir, model, criterion, test_loader)
+
     # produce predictions
     predict(model, test_dataset, args.output_dir)
 

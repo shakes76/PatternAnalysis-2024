@@ -227,8 +227,5 @@ def main():
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved to {model_save_path}")
 
-    # Test the model on the test set
-    test(device, asset_dir, model, criterion, test_loader)
-
 if __name__ == "__main__":
     main()

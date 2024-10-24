@@ -71,7 +71,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
-def load_data_tf(image_dir, seg_dir, dtype=np.float32):
+def load_data_tf(image_dir, seg_dir, dtype=np.float32, batch_size=32, shuffle=False):
     image_list = os.listdir(image_dir)
     image_path = []
     seg_path = []
@@ -80,4 +80,9 @@ def load_data_tf(image_dir, seg_dir, dtype=np.float32):
         seg_path.append(os.path.join(seg_dir, image.replace("case", "seg")))
     images = load_data_2D(image_path)
     segs = load_data_2D(seg_path, categorical=True)
-    return images, segs
+
+    dataset = tf.data.Dataset.from_tensor_slices((images, segs))
+    if shuffle:
+        dataset = dataset.shuffle(images.shape[0])
+    dataset = dataset.batch(batch_size)
+    return dataset

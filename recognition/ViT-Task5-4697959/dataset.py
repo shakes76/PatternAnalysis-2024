@@ -33,7 +33,7 @@ class ADNIDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path, label_class = self.data_paths[idx]
-        image = Image.open(img_path).convert('L')  # Convert image to grayscale
+        image = Image.open(img_path).convert('RGB')  # Convert image to RGB
 
         # Encode label: 1 for Alzheimer's (AD), 0 for normal control (NC)
         label = 1 if label_class == 'AD' else 0

@@ -110,6 +110,8 @@ The Facebook Page-Page Network dataset contains:
 - Test set: 15%
 
 The splits are stratified to maintain class distribution across sets.
+
+## Project Directory Structure
 ```
 .
 ├── data/           

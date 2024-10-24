@@ -60,7 +60,7 @@ class Dataset():
 
         transforms = tvtransforms.Compose([
             tvtransforms.Grayscale(), #grascale images 
-            tvtransforms.Resize(self.image_size), #the next two lines decrease the resolution to 64x64
+            tvtransforms.Resize(self.image_size), #the next two lines decrease the resolution to 200x200
             tvtransforms.CenterCrop(self.image_size),
             tvtransforms.ToTensor(), #turn the datat into a tensor if its not already
             tvtransforms.Normalize(0.5,0.5)]) #normilze the data 0.5 beacuse values between 0-1 so 0.5 is just good general value

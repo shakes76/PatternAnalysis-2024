@@ -20,6 +20,12 @@ from modules import SiameseNetwork, BinaryClassifier
 from dataset import ISICKaggleChallengeSet
 from utils import split_data, generate_loss_plot, tsne_plot
 
+# Argument handler
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--nomodels", action="store_false", default=True, help="Flag used if we don't want the trained models to be saved.")
+parser.add_argument("-s", "--saveplots", action="store_true", default=False, help="Save the plots to demonstrate training. If flag not present, plots will be shown.")
+args = parser.parse_args()
+# TODO verify argument handling is correct
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == "cpu":
     print("WARNING: Using the CPU to train...")
@@ -109,7 +115,7 @@ for epoch in range(config.EPOCHS_SIAMESE):
 stop = time.time()
 print(f"Training complete! It took {(stop-start)/60} minutes\n")
 
-generate_loss_plot(train_loss, val_loss, "Siamese Network", save=True)
+generate_loss_plot(train_loss, val_loss, "Siamese Network", save=args.saveplots)
 
 
 # The feature vectors can be stored while testing as the training is done
@@ -214,10 +220,13 @@ with torch.no_grad():
     plt.close() # As it makes it's own figure
     cm_display = ConfusionMatrixDisplay.from_predictions(labelss, predicteds, display_labels=["Benign", "Malignant"])
     cm_display.plot(colorbar=False)
-    # TODO change the saving behaviour
-    plt.savefig("./images/confusion_matrix.png", dpi=80)
+    if args.saveplots:
+        plt.savefig("./ima:ges/confusion_matrix.png", dpi=80)
+    else:
+        plt.show()
 
-generate_loss_plot(train_loss, val_loss, "Binary Classifier", save=True)
+generate_loss_plot(train_loss, val_loss, "Binary Classifier", save=args.saveplots)
 
-torch.save(model.state_dict(), config.MODELPATH + "/siamese_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
-torch.save(model.state_dict(), config.MODELPATH + "/classifier_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
+if not args.nomodels:
+    torch.save(model.state_dict(), config.MODELPATH + "/siamese_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))
+    torch.save(model.state_dict(), config.MODELPATH + "/classifier_"+ datetime.now().strftime('%d-%m-%Y_%H:%M' + ".pth"))

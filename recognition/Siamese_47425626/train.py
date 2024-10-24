@@ -22,9 +22,9 @@ LOCAL = True
 # Parameters
 NUM_EPOCHS = 60 if not LOCAL else 10
 LEARNING_RATE = 0.001
-BATCH_SIZE = 16
+BATCH_SIZE = 1
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps")
-SUBSET_SIZE = 0.01
+SUBSET_SIZE = 1
 
 def train():
     # Load data loaders without sampler for now
@@ -226,22 +226,6 @@ def classify():
     correct_predictions = sum([pred == true for pred, true in zip(predictions, true_labels)])
     accuracy = correct_predictions / len(true_labels) * 100
     print(f"Test Accuracy: {accuracy:.2f}%")
-
-    # Plot ROC curve and Confusion Matrix
-    from sklearn.metrics import roc_curve, auc, confusion_matrix, ConfusionMatrixDisplay
-    import seaborn as sns
-
-    # ROC Curve
-    fpr, tpr, _ = roc_curve(true_labels, predictions)
-    roc_auc = auc(fpr, tpr)
-
-    plt.figure()
-    sns.lineplot(x=fpr, y=tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
-    plt.legend(loc='lower right')
-    plt.savefig('roc_curve.png')
 
     # Confusion Matrix
     cm = confusion_matrix(true_labels, predictions)

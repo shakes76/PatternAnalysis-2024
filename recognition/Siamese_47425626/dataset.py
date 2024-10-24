@@ -111,3 +111,19 @@ def get_data_loaders(batch_size=32):
 
     return train_loader, val_loader, test_loader
 
+
+if __name__ == '__main__':
+    train_loader, val_loader, test_loader = get_data_loaders(batch_size=32)
+    print(f"Train dataset size: {len(train_loader.dataset)}")
+    print(f"Validation dataset size: {len(val_loader.dataset)}")
+    print(f"Test dataset size: {len(test_loader.dataset)}")
+    print(f"Number of batches in train loader: {len(train_loader)}")
+    print(f"Number of batches in val loader: {len(val_loader)}")
+    print(f"Number of batches in test loader: {len(test_loader)}")
+    print(f"Classes in train loader: {train_loader.dataset.img_labels['target'].unique()}")
+    print(f"Classes in val loader: {val_loader.dataset.img_labels['target'].unique()}")
+    print(f"Classes in test loader: {test_loader.dataset.img_labels['target'].unique()}")
+    print(f"Count of each class in train loader:\n{train_loader.dataset.img_labels['target'].value_counts()}")
+    print(f"Count of each class in val loader:\n{val_loader.dataset.img_labels['target'].value_counts()}")
+    print(f"Count of each class in test loader:\n{test_loader.dataset.img_labels['target'].value_counts()}")
+

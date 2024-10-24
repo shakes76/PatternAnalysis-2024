@@ -1,139 +1,130 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import nibabel as nib
+import os
 import numpy as np
-from torch.utils.data import DataLoader, Dataset
-from sklearn.model_selection import train_test_split
-from torchvision.transforms import ToTensor
-from scipy.ndimage import zoom
+import nibabel as nib
+from tqdm import tqdm
+from scipy.ndimage import zoom  # Used to scale the image
 
-# Load Nifti files
-def load_nifti_file(filepath):
-    img = nib.load(filepath)
-    img_data = img.get_fdata()
-    return img_data
 
-# Dice Similarity Coefficient
-def dice_coefficient(pred, target, smooth=1e-5):
-    pred = pred.view(-1)
-    target = target.view(-1)
-    intersection = (pred * target).sum()
-    return (2. * intersection + smooth) / (pred.sum() + target.sum() + smooth)
+def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
+    """
+    Convert the array into one-hot encoded channel representation.
+    Each unique value in the input becomes its own channel.
+    """
+    channels = np.unique(arr)
+    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
 
-# Custom dataset for loading Nifti files
-class ProstateDataset(Dataset):
-    def __init__(self, image_files, mask_files, transform=None):
-        self.image_files = image_files
-        self.mask_files = mask_files
-        self.transform = transform
+    for c in channels:
+        c = int(c)
+        res[..., c:c + 1][arr == c] = 1
 
-    def __len__(self):
-        return len(self.image_files)
+    return res
 
-    def __getitem__(self, idx):
-        image = load_nifti_file(self.image_files[idx])
-        mask = load_nifti_file(self.mask_files[idx])
-        
-        # Resize to 256x256 if necessary
-        if image.shape != (256, 256):
-            image = zoom(image, (256 / image.shape[0], 256 / image.shape[1]), order=1)
-            mask = zoom(mask, (256 / mask.shape[0], 256 / mask.shape[1]), order=0)
-        
-        if self.transform:
-            image = self.transform(image)
-            mask = torch.tensor(mask, dtype=torch.float32)
-        return image, mask
 
-# UNet model
-class UNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1):
-        super(UNet, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2)
-        )
-        self.middle = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2)
-        )
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(64, out_channels, kernel_size=2, stride=2)
-        )
-    
-    def forward(self, x):
-        enc = self.encoder(x)
-        mid = self.middle(enc)
-        dec = self.decoder(mid)
-        return dec
+def resize_image(image, target_shape=(256, 256)):
+    """
+    Resize a 2D image to the target shape using zoom interpolation.
+    Args:
+        image: Input 2D image.
+        target_shape: Target shape to resize the image.
+    Returns:
+        Resized image.
+    """
+    zoom_factors = [t / i for t, i in zip(target_shape, image.shape)]
+    return zoom(image, zoom_factors, order=1)  # Bilinear interpolation
 
-# Train the model
-def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss = 0.0
-        for images, masks in dataloader:
-            images = images.unsqueeze(1).float()
-            masks = masks.unsqueeze(1).float()
 
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, masks)
-            loss.backward()
-            optimizer.step()
-            
-            running_loss += loss.item()
+def load_data_2D(imageNames, normImage=False, categorical=True, dtype=np.float32, getAffines=False, early_stop=False,
+                 target_shape=(256, 256)):
+    """
+    Load 2D medical image data from a list of NIfTI files.
+    Args:
+        imageNames: List of paths to NIfTI image files.
+        normImage: If True, normalize the image.
+        categorical: If True, one-hot encode the image based on unique values.
+        dtype: Data type for the image arrays.
+        getAffines: If True, return affine matrices along with images.
+        early_stop: If True, stop after processing 20 images (for testing).
+        target_shape: The target shape to resize all images to.
+    Returns:
+        A numpy array of loaded images and optionally their affines.
+    """
+    affines = []
+    num = len(imageNames)
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss/len(dataloader)}")
+    # Initialize and store the adjusted image array
+    if categorical:
+        channels = len(np.unique(nib.load(imageNames[0]).get_fdata(caching='unchanged')))
+        images = np.zeros((num, target_shape[0], target_shape[1], channels), dtype=dtype)
+    else:
+        images = np.zeros((num, target_shape[0], target_shape[1]), dtype=dtype)
 
-# Evaluation
-def evaluate_model(model, dataloader):
-    model.eval()
-    dice_scores = []
-    with torch.no_grad():
-        for images, masks in dataloader:
-            images = images.unsqueeze(1).float()
-            masks = masks.unsqueeze(1).float()
+    for i, inName in enumerate(tqdm(imageNames)):
+        niftiImage = nib.load(inName)
+        inImage = niftiImage.get_fdata(caching='unchanged')
+        affine = niftiImage.affine
 
-            outputs = model(images)
-            outputs = torch.sigmoid(outputs)
-            outputs = (outputs > 0.5).float()
+        if len(inImage.shape) == 3:
+            inImage = inImage[:, :, 0]  # Take the first layer as the 2D image
 
-            dice = dice_coefficient(outputs, masks)
-            dice_scores.append(dice.item())
+        inImage = inImage.astype(dtype)
 
-    avg_dice = np.mean(dice_scores)
-    print(f"Average Dice Score: {avg_dice}")
-    return avg_dice
+        # Resize the image
+        inImage = resize_image(inImage, target_shape)
 
-# Data Preparation
-image_files = ['path_to_image1.nii', 'path_to_image2.nii']  # Replace with actual file paths
-mask_files = ['path_to_mask1.nii', 'path_to_mask2.nii']  # Replace with actual file paths
+        if normImage:
+            inImage = (inImage - inImage.mean()) / inImage.std()
 
-# Split into training and testing sets
-train_images, test_images, train_masks, test_masks = train_test_split(image_files, mask_files, test_size=0.2)
+        if categorical:
+            inImage = to_channels(inImage, dtype=dtype)
+            images[i, :, :, :] = inImage
+        else:
+            images[i, :, :] = inImage
 
-train_dataset = ProstateDataset(train_images, train_masks, transform=ToTensor())
-test_dataset = ProstateDataset(test_images, test_masks, transform=ToTensor())
+        affines.append(affine)
 
-train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
+    if getAffines:
+        return images, affines
+    else:
+        return images
 
-# Model, loss function, optimizer
-model = UNet()
-criterion = nn.BCEWithLogitsLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-# Train and evaluate the model
-train_model(model, train_loader, criterion, optimizer, num_epochs=25)
-evaluate_model(model, test_loader)
+def save_nifti(image, affine, out_path):
+    """
+    Save a 2D or 3D image as a NIfTI file.
+    Args:
+        image: numpy array containing image data.
+        affine: affine matrix for the NIfTI image.
+        out_path: Output file path.
+    """
+    nifti_img = nib.Nifti1Image(image, affine)
+    nib.save(nifti_img, out_path)
+
+
+def load_all_data(image_dir, normImage=False, categorical=False, dtype=np.float32, target_shape=(256, 256)):
+    """
+    Load all 2D images from a directory containing NIfTI files.
+    Args:
+        image_dir: Directory containing NIfTI files.
+        normImage: If True, normalize the image.
+        categorical: If True, one-hot encode the image based on unique values.
+        dtype: Data type for the image arrays.
+        target_shape: The target shape to resize all images to.
+    Returns:
+        A numpy array of all loaded images.
+    """
+    # Get the paths of all NIfTI files in the directory
+    imageNames = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if
+                  f.endswith('.nii') or f.endswith('.nii.gz')]
+    return load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype,
+                        target_shape=target_shape)
+
+
+    # Example usage
+if __name__ == "__main__":
+    image_dir = r"C:\Users\舒画\Downloads\HipMRI_study_keras_slices_data\keras_slices_train"
+    image_files = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if
+                   f.endswith('.nii') or f.endswith('.nii.gz')]
+
+    # Load the images
+    images, affines = load_data_2D(image_files, normImage=True, categorical=False, getAffines=True, early_stop=True,
+                                   target_shape=(256, 256))

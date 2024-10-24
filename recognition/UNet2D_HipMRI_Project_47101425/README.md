@@ -91,7 +91,7 @@ model.fit(
     )
 ```
 As can be seen here, with adjustment, the UNet model was able to acheive above 0.75 similarity coefficient on the dataset
-![Example of model training output](model-output.png)
+![Example of model training output](images/model-output.png)
 ![Example of model training metric plot epoch loss](images/epoch-loss-example.png)
 ![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example.png)
 

@@ -10,7 +10,7 @@ VQVAE architecure consits of three main components: an encoder, a decoder and a 
 
 Another key feature of my implementation of the VQVAE model was the use of residual layers in both the encoder and decoder. The residual layer in the encoder allow the encoder and decoder to learn the difference between its input and the current representation by feeding the input values through to the output.
 
-* ![ConventionalVQVAEbasedVC.png](assets/Conventional-VQVAE-based-VC.png)
+![ConventionalVQVAEbasedVC.png](assets/Conventional-VQVAE-based-VC.png)
 
 ## Data Processing
 
@@ -64,15 +64,11 @@ In order to reproduce these results I've listed all the hyperparameters I used o
 - **Learning Rate:** 0.0005
 - **Batch Size:** 32
 
-
 In order to run the model, run the train.py file. This will train a VQVAE model and save its weights in order for further testing. Once the model has been saved the predict.py file can be run to provide testing data for the model.
-
 
 ### Dependencies
 
-
-
-
+Versions for libraries used needed to run the model.
 
 
 | **Library**    | **Version** |

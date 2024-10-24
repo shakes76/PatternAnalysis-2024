@@ -33,7 +33,7 @@ The code requires the following dependencies:
 - **TensorBoard**: 2.10.1+
 - **Nibabel**: 3.2.1 (for handling NIFTI files)
 
-- [Processed 2D Image Data from the HIPMRI Study](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2)
+- Processed 2D Image Data from the [HIPMRI Study](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2) (click the link to download)
 
 The required dependencies can be installed by doing the following (this contributes to model-output reproduction):
 1. Install conda/miniconda (pip can be used if desired but the steps are different)

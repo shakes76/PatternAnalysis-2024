@@ -4,37 +4,20 @@ import gzip
 import shutil  
 import torch  
 from torch.utils.data import Dataset, DataLoader  
+import torchvision.transforms as transforms  # Import transforms for resizing
 
 class NiftiDataset(Dataset):
     """
-    class for loading NIfTI images and their corresponding labels.
-
-    Attributes:
-        image_directory (str): Path to NIfTI images.
-        label_directory (str): Path to NIfTI labels.
-        normImage (bool): Whether to normalize the images.
-        max_images (int): Maximum number of images to load from the directories.
-        image_files (list): List of gzipped image filenames.
-        label_files (list): List of gzipped label filenames.
+    Class for loading NIfTI images and their corresponding labels.
     """
-
     def __init__(self, image_directory, label_directory, normImage=False, max_images=50):
-        """
-        Initializes the NiftiDataset instance.
-
-        Args:
-            image_directory (str): Path to zipped images.
-            label_directory (str): Path to the zipped labels.
-            normImage (bool): Flag indicating whether to normalize the images.
-            max_images (int): Maximum number of images to load.
-        """
-        self.image_directory = image_directory  # Store image directory path
-        self.label_directory = label_directory  # Stor the label directory path
+        self.image_directory = image_directory  
+        self.label_directory = label_directory  
         self.normImage = normImage 
         
-        # List all gzipped image files in the image directory
+        # List all gzipped image files
         self.image_files = [f for f in os.listdir(image_directory) if f.endswith('.gz')]
-        # List all gzipped label files in the label directory
+        # List all gzipped label files
         self.label_files = [f for f in os.listdir(label_directory) if f.endswith('.gz')]
 
         # Ensure the number of images matches the number of labels
@@ -44,28 +27,24 @@ class NiftiDataset(Dataset):
         self.image_files = self.image_files[:max_images]
         self.label_files = self.label_files[:max_images]
 
+        # Define the transform for resizing
+        self.resize_transform = transforms.Compose([
+            transforms.ToPILImage(),  # Convert the tensor to PIL Image
+            transforms.Resize((256, 128)),  # Resize to 256x128
+            transforms.ToTensor()  # Convert back to tensor
+        ])
+
     def decompress_gz(self, file_path):
-        """
-        Decompress a gzipped file.
-
-        Args:
-            file_path (str): The path to the gzipped file.
-
-        Returns:
-            str: The path to the decompressed file.
-        """
-        # Create the path for the decompressed file by removing the .gz extension
+        """Decompress a gzipped file."""
         decompressed_file = file_path.replace('.gz', '')
-        # Open the gzipped file for reading and the decompressed file for writing
         with gzip.open(file_path, 'rb') as f_in:
             with open(decompressed_file, 'wb') as f_out:
-                # Copy the contents from the gzipped file to the decompressed file
                 shutil.copyfileobj(f_in, f_out)
-        return decompressed_file  # Return the path of the decompressed file
+        return decompressed_file  
 
     def __len__(self):
         """Return the total number of images in the dataset."""
-        return len(self.image_files)  # Return the length of the image files list
+        return len(self.image_files)  
 
     def __getitem__(self, idx):
         """
@@ -102,27 +81,18 @@ class NiftiDataset(Dataset):
         # Apply a threshold to the label data to create binary labels
         label[label >= 6] = 0  # Set all labels greater than or equal to 6 to 0
 
-        # Convert the image and label data to PyTorch tensors
+        # Ensure the image has the correct shape (C, H, W)
         img_tensor = torch.tensor(img, dtype=torch.float32).unsqueeze(0)  # Add a channel dimension for grayscale images
-        label_tensor = torch.tensor(label, dtype=torch.long)  # Convert labels to long type for classification
+        label_tensor = torch.tensor(label, dtype=torch.long)  # Convert label to tensor
+
+        # Resize the image and label to 256x128
+        img_tensor = transforms.Resize((256, 128))(img_tensor)  # Resize the image
+        label_tensor = transforms.Resize((256, 128))(label_tensor.unsqueeze(0)).squeeze(0)  # Resize labels and remove extra dimension
 
         return img_tensor, label_tensor  # Return the image and label tensors
+ 
 
-def create_dataloader(image_directory, label_directory, batch_size=4, max_images=50, normImage=True):
-    """
-    Create a DataLoader for the NiftiDataset.
-
-    Args:
-        image_directory (str): Path to the directory containing gzipped images.
-        label_directory (str): Path to the directory containing gzipped labels.
-        batch_size (int): Number of samples per batch to load.
-        max_images (int): Maximum number of images to load.
-        normImage (bool): Flag indicating whether to normalize the images.
-
-    Returns:
-        DataLoader: A DataLoader object for the dataset.
-    """
-    # Create an instance of the NiftiDataset with the provided parameters
+def create_dataloader(image_directory, label_directory, batch_size=4, max_images=1000000, normImage=True):
+    """Create a DataLoader for the NiftiDataset."""
     dataset = NiftiDataset(image_directory, label_directory, normImage, max_images)
-    # Return a DataLoader for the dataset, which allows for easy batch processing and shuffling
-    return DataLoader(dataset, batch_size=batch_size, shuffle=True)  # Shuffle the data for each epoch
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)  

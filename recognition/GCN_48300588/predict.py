@@ -1,3 +1,12 @@
+'''
+Author: Kangqi Wang
+Student Number: 48300588
+
+This script is about predicting the labels for nodes 
+in Facebook Large Page-Page Network dataset and 
+visualizes the learned node embeddings using t-SNE. 
+'''
+
 import torch
 from modules import GNNModel
 from dataset import load_data

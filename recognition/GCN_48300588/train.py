@@ -1,3 +1,12 @@
+'''
+Author: Kangqi Wang
+Student Number: 48300588
+
+This script trains a Graph Neural Network (GNN) model on 
+the Facebook Large Page-Page Network dataset using 
+stochastic gradient descent (SGD) with a learning rate scheduler and cross-entropy loss. 
+'''
+
 import torch
 from torch.optim import SGD
 from torch.optim.lr_scheduler import StepLR

@@ -1,3 +1,11 @@
+'''
+Author: Kangqi Wang
+Student Number: 48300588
+
+This script is about building a Graph Convolutional Network (GCN) 
+model using PyTorch and PyTorch Geometric.
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

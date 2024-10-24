@@ -1,6 +1,6 @@
 """
 Author: Yucheng Wang
-Student ID: 47914111
+Student ID: 47914111 
 modules.py: Implementations of Graph Convolutional Network (GCN) layers and models
 This script implements a 3-layer Graph Convolutional Network (GCN) for semi-supervised 
 node classification. It includes:

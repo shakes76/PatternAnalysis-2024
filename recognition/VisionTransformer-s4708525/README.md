@@ -46,8 +46,6 @@ Below is a visualization of the Convolutional Transformer Block, which includes 
 [Wu et al., 2021]
 
 ## ADNI brain data
-Alzheimer’s disease (AD) is a progressive neurodegenerative disorder that leads to cognitive decline due to brain tissue deterioration, affecting millions globally. The ADNI study monitors the progression of AD by tracking biomarkers (such as chemicals in the blood and brain changes in MRI/PET scans) along with clinical measures. These assessments are conducted across three disease stages: cognitively normal, mild cognitive impairment, and dementia (Alzheimer's Disease Neuroimaging Initiative, n.d.). 
-
 The ADNI dataset is an extensive and widely utilized resource that includes longitudinal data across multiple domains such as clinical, imaging, genetic, and biomarker information. It contains diverse data types, including structural, functional, and molecular brain imaging, biofluid biomarkers, cognitive evaluations, genetic data, and demographic details (Alzheimer's Disease Neuroimaging Initiative, n.d.).
 
 This dataset contains two classes which are Normal Control (NC) and Alzheimer's disease (AD). In addition, this dataset contains:

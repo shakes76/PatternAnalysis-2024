@@ -4,7 +4,7 @@ The introduction of the You-Only-Look-Once (YOLO) algorithm for image detection 
 
 The YOLO architecture is a convolutional neural network that prioritises speed over accuracy by using a single-stage detection process, as opposed to the two-step process utilised by many of the more accurate object detection algorithms.
 
-![Comparison of one and two stage detectors.](/figures/detectors.jpg)
+![Comparison of one and two stage detectors.](recognition/ISIC_47044090/figures/detectors.jpg)
 
 YOLO's algorithm can be better understood by analysing its architecture:
 

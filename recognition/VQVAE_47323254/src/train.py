@@ -70,10 +70,10 @@ if __name__ == '__main__':
     train_commitment_losses = []
     train_recon_losses = []
     train_total_losses = []
+    train_ssim_scores = []
     val_commitment_losses = []
     val_recon_losses = []
     val_total_losses = []
-    train_ssim_scores = []
     val_ssim_scores = []
     
     best_val_loss = float('inf')
@@ -206,55 +206,55 @@ if __name__ == '__main__':
     
     # Evaluation
     model.eval()
-    losses = []
-    ssim_values = []
+    test_losses = []
+    test_ssim_values = []
     with torch.no_grad():
-        for batch in tqdm(test_loader, desc="Evaluation"):
-            batch = batch.to(device).float()
-            reconstructed, commitment_loss = model(batch)
-            recon_loss = criterion(reconstructed, batch)
+        for test_batch in tqdm(test_loader, desc="Evaluation"):
+            test_batch = test_batch.to(device).float()
+            test_reconstructed, test_commitment_loss = model(test_batch)
+            test_recon_loss = criterion(test_reconstructed, test_batch)
             
-            original_image = batch[0, 0].cpu().detach().numpy()
-            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            test_original_image = test_batch[0, 0].cpu().detach().numpy()
+            test_reconstructed_image = test_reconstructed[0, 0].cpu().detach().numpy()
             
-            losses.append(recon_loss.item() + commitment_loss.item())
-            ssim_values.append(calculate_ssim(original_image, reconstructed_image))
+            test_losses.append(test_recon_loss.item() + test_commitment_loss.item())
+            test_ssim_values.append(calculate_ssim(test_original_image, test_reconstructed_image))
         
-    logging.info(f"Test Loss: {sum(losses) / len(losses)}, Test SSIM: {sum(ssim_values) / len(ssim_values)}")
+    logging.info(f"Test Loss: {sum(test_losses) / len(test_losses):.4f}, Test SSIM: {sum(test_ssim_values) / len(test_ssim_values):.4f}")
     
     # Display distribution of scores
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs = axs.flatten()
     
-    axs[0].hist(losses, bins=20, color='blue', alpha=0.7)
+    axs[0].hist(test_losses, bins=20, color='blue', alpha=0.7)
     axs[0].set_title("Loss Distribution")
     axs[0].set_xlabel("Loss")
     axs[0].set_ylabel("Frequency")
     
-    axs[1].hist(ssim_values, bins=20, color='green', alpha=0.7)
+    axs[1].hist(test_ssim_values, bins=20, color='green', alpha=0.7)
     axs[1].set_title("SSIM Distribution")
     axs[1].set_xlabel("SSIM")
     axs[1].set_ylabel("Frequency")
     
     plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, f'evaluation_metrics.png'))
+    plt.savefig(os.path.join(log_dir, f'test_metrics.png'))
     plt.close()
     
     # Display some images
     fig, axs = plt.subplots(2, 3, figsize=(12, 8))
     axs = axs.flatten()
     with torch.no_grad():
-        for i, batch in enumerate(test_loader):
+        for i, test_batch in enumerate(test_loader):
             if i == 6:
                 break
-            batch = batch.to(device).float()
-            reconstructed, _ = model(batch)
-            original_image = batch[0, 0].cpu().detach().numpy()
-            reconstructed_image = reconstructed[0, 0].cpu().detach().numpy()
+            test_batch = test_batch.to(device).float()
+            test_reconstructed, _ = model(test_batch)
+            test_original_image = test_batch[0, 0].cpu().detach().numpy()
+            test_reconstructed_image = test_reconstructed[0, 0].cpu().detach().numpy()
             
-            combined_image = combine_images(original_image, reconstructed_image)
+            test_combined_image = combine_images(test_original_image, test_reconstructed_image)
 
-            axs[i].imshow(combined_image, cmap='gray')
+            axs[i].imshow(test_combined_image, cmap='gray')
             axs[i].axis('off')
         
     plt.tight_layout()

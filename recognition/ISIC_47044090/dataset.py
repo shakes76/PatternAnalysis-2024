@@ -10,11 +10,12 @@ modified_filepath = "./datasets/ISIC"
 
 def resize_mask(file, partition):
     """ 
-    Re-sizes mask to (512, 512)
-
+    Re-sizes mask to (512, 512) by:
     1. Adds black letterbox to the smaller between x/y until x=y 
     2. Scales images down to (512, 512) (there can be 1 pixel stretching in 
         either direction due to rounding values, but this is negligible)
+    
+    then saves it in modified_file_path
     """
     image = Image.open(f'{original_filepath}/{partition}/labels/ISIC_{file}_segmentation.png')    
     width, height = image.size
@@ -29,11 +30,12 @@ def resize_mask(file, partition):
 
 def resize_image(file, partition):
     """ 
-    Re-sizes image to (512, 512)
-
+    Re-sizes image to (512, 512) by:
     1. Adds black letterbox to the smaller between x/y until x=y 
     2. Scales images down to (512, 512) (there can be 1 pixel stretching in 
         either direction due to rounding values, but this is negligible)
+    
+    then saves it in modified_file_path
     """
     image = Image.open(f'{original_filepath}/{partition}/images/ISIC_{file}.jpg')    
     width, height = image.size
@@ -48,9 +50,13 @@ def resize_image(file, partition):
 
 def convert_mask_to_txt(file, partition):
     """
-    Extracts bounding box information from mask, creates txt file 
+    Extracts bounding box information from mask, creates .txt file
 
     mask must be resized first using resize_mask
+
+    Parameters:
+        file: code of sample
+        partition: test/train/val
     """
     image = Image.open(f'{modified_filepath}/{partition}/masks/ISIC_{file}_segmentation.png')
     ys, xs = np.where(image == 255) # extract x and y coordinates of white pixels (=255)
@@ -64,7 +70,9 @@ def convert_mask_to_txt(file, partition):
 
 def process_dataset():
     """
-    Runs resize and mask_to_text for each image in directory for a single partition
+    Runs resize_image, resize_mask and convert_mask_to_text for each image in directory for each partition.
+
+    End result is fully processed dataset ready for Ultralytics
     """
     for partition in ["train", "test", "val"]:
         for file in scan_directory(partition):

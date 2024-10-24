@@ -7,7 +7,11 @@ from utils import scan_directory, get_newest_item, iou_torch
 modified_filepath = "./datasets/ISIC" # file path for processed dataset
 
 def run_train():
-    model = yolo_model("yolov8s.pt") # initial weights
+    """
+    Loads model yolov11s and trains it (32 batchsize, 200 epoch) on gpu if available
+    Saves results (plots, weights, etc.) under runs/detect/trainX <- train number
+    """
+    model = yolo_model("yolo11s.pt") # initial weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     results = model.train(batch=16, device=device, data=f"datasets/isic.yaml", epochs=2, imgsz=512)
     # results = model.train(batch=32, device=device, data=f"{yaml_path}/isic.yaml", epochs=200, imgsz=512) # used
@@ -15,12 +19,12 @@ def run_train():
 
 def run_test(run_number=-1, partition="test"):
     """
+    Runs test on the newest trainings' weights (or on a specific run's weights) and calculates
+    IoU average and number above 0.8
+
     Parameters:
-        trained_model: path to the trained model .pt file
-        partition: 'train'/'test'/'val'
-    
-    to run test, just run inference on test set - get the bounding boxes and compare?
-    makes the most sense to me
+        run_number: -1 if most recent, set to the training batch number (e.g. train4->4)
+        partition: run IoU testing on which partition'train'/'test'/'val'
     """
     if run_number == -1: # most recent training run's best weights
         path = get_newest_item("./runs/detect/") + "/weights/best.pt"
@@ -49,11 +53,10 @@ def run_test(run_number=-1, partition="test"):
             ious.append(iou)
 
     print(f"\naverage IoU={np.array(ious).mean()}")
-    # print()
     print(f"{sum(1 for v in ious if v >= 0.8)} out of {len(ious)} samples had IoU>=0.8")
 
 
 
 if __name__ == '__main__':
-    # run_train()
+    run_train()
     run_test()

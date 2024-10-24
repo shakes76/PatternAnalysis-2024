@@ -10,7 +10,13 @@ modified_filepath = "./datasets/ISIC"
 
 def visualise_testcase(ax, file, true_bbox, pred_bbox):
     """
-    Visualises 
+    Visualises a given testcase onto an axis
+
+    Parameters:
+        ax: axes on which to plot
+        file: code of testcase
+        true_bbox: the correct bounding box
+        pred_bbox: bounding box predicted by model
     """
     image = Image.open(f'{modified_filepath}/test/images/ISIC_{file}.jpg')
     x_center1, y_center1, width1, height1 = true_bbox
@@ -24,11 +30,12 @@ def visualise_testcase(ax, file, true_bbox, pred_bbox):
 
 def run_predict(run_number=-1, n_rows=3, partition='test'):
     """
+    Runs the prediction and visualisation of a number of random samples
+
     Parameters:
-        trained_model: path to the trained model .pt file
-    
-    to run test, just run inference on test set - get the bounding boxes and compare?
-    makes the most sense to me
+        run_number: -1 if most recent, set to the training batch number (e.g. train4->4)
+        n_rows: number of rows of 3 to visualise
+        partition: partition from which to predict from 'train'/'test'/'val'
     """
     if run_number == -1:
         path = list(os.scandir(f"./runs/detect"))[-1].path + "/weights/best.pt"

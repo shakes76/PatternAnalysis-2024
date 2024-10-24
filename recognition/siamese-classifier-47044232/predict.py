@@ -70,4 +70,5 @@ with torch.no_grad():
     # Generate a confusion matrix to visualise accuracy
     cm_display = ConfusionMatrixDisplay.from_predictions(all_labels, all_predictions, display_labels=["Benign", "Malignant"])
     cm_display.plot(colorbar=False)
+    plt.close()
     plt.show()

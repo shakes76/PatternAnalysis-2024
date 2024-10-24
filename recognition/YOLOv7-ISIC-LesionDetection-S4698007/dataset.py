@@ -1,67 +1,53 @@
-import numpy as np
+# dataset.py
+import os
 import nibabel as nib
-from tqdm import tqdm
+import gzip
+import shutil
 
-def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
-    channels = np . unique ( arr )
-    res = np . zeros ( arr . shape + ( len ( channels ) ,) , dtype = dtype )
-    for c in channels :
-        c = int( c )
-        res [... , c : c +1][ arr == c ] = 1
+class NiftiDataset:
+    def __init__(self, image_directory, label_directory, max_images=50):
+        self.image_directory = image_directory
+        self.label_directory = label_directory
+        
+        # Gather all gzipped image and label files
+        self.image_files = [f for f in os.listdir(image_directory) if f.endswith('.gz')]
+        self.label_files = [f for f in os.listdir(label_directory) if f.endswith('.gz')]
 
-    return res
+        # Ensure that the number of images and labels match
+        assert len(self.image_files) == len(self.label_files), "The number of images and labels must match."
 
-# load medical image functions
-def load_data_2D ( imageNames , normImage = False , categorical = False , dtype = np . float32 ,
-                   getAffines = False , early_stop = False ) :
-    '''
-    Load medical image data from names , cases list provided into a list for each .
+        # Limit the number of files to load
+        self.image_files = self.image_files[:max_images]
+        self.label_files = self.label_files[:max_images]
 
-    This function pre - allocates 4D arrays for conv2d to avoid excessive memory &
-    usage .
+    def decompress_gz(self, file_path):
+        """Decompress a .gz file."""
+        decompressed_file = file_path.replace('.gz', '')
+        with gzip.open(file_path, 'rb') as f_in:
+            with open(decompressed_file, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        return decompressed_file
 
-    normImage : bool ( normalise the image 0.0 -1.0)
-    early_stop : Stop loading pre - maturely , leaves arrays mostly empty , for quick &
-    loading and testing scripts .
-    '''
-    affines = []
+    def load_data(self):
+        """Load NIfTI images and labels."""
+        images, labels = [], []
+        for image_file, label_file in zip(self.image_files, self.label_files):
+            # Decompress the images and labels
+            decompressed_image_path = self.decompress_gz(os.path.join(self.image_directory, image_file))
+            decompressed_label_path = self.decompress_gz(os.path.join(self.label_directory, label_file))
 
-    # get fixed size
-    num = len( imageNames )
-    first_case = nib . load ( imageNames [0]) . get_fdata ( caching = 'unchanged ')
-    if len( first_case . shape ) == 3:
+            # Load NIfTI images
+            img = nib.load(decompressed_image_path).get_fdata()
+            label = nib.load(decompressed_label_path).get_fdata()
+            
+            images.append(img)
+            labels.append(label)
 
-        first_case = first_case [: ,: ,0] # sometimes extra dims , remove
-    if categorical :
-        first_case = to_channels ( first_case , dtype = dtype )
-        rows , cols , channels = first_case . shape
-        images = np . zeros (( num , rows , cols , channels ) , dtype = dtype )
-    else :
-        rows , cols = first_case . shape
-        images = np . zeros (( num , rows , cols ) , dtype = dtype )
+        return images, labels
 
-    for i , inName in enumerate ( tqdm ( imageNames ) ) :
-        niftiImage = nib . load ( inName )
-        inImage = niftiImage . get_fdata ( caching = 'unchanged ') # read disk only
-        affine = niftiImage . affine
-        if len( inImage . shape ) == 3:
-            inImage = inImage [: ,: ,0] # sometimes extra dims in HipMRI_study data
-            inImage = inImage . astype ( dtype )
-        if normImage :
-            #~ inImage = inImage / np. linalg . norm ( inImage )
-            #~ inImage = 255. * inImage / inImage . max ()
-            inImage = ( inImage - inImage . mean () ) / inImage . std ()
-        if categorical :
-            inImage = utils . to_channels ( inImage , dtype = dtype )
-            images [i ,: ,: ,:] = inImage
-        else :
-            images [i ,: ,:] = inImage
-
-            affines . append ( affine )
-        if i > 20 and early_stop :
-            break
-
-    if getAffines :
-        return images , affines
-    else :
-        return images
+# Example usage
+image_path = r"C:\Users\sophi\Downloads\HipMRI_study_keras_slices_data\keras_slices_train"
+label_path = r"C:\Users\sophi\Downloads\HipMRI_study_keras_slices_data\keras_slices_seg_train"
+dataset = NiftiDataset(image_path, label_path)
+images, labels = dataset.load_data()
+print(f"Loaded {len(images)} images and {len(labels)} labels.")

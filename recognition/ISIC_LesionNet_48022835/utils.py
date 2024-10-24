@@ -1,3 +1,10 @@
+"""
+Allows adjustments to be made to file paths to raw image and mask directories.
+Recommended adjustment before running any other scripts.
+
+@author Ewan Trafford
+"""
+
 raw_training_images_path = 'C:/Users/ewani/Downloads/ISIC2018_Task1-2_Training_Input_x2'
 raw_training_masks_path = 'C:/Users/ewani/Downloads/ISIC2018_Task1_Training_GroundTruth_x2'
 

@@ -1,3 +1,10 @@
+"""
+Used to run inference on either the test dataset or a specified image.
+Returns pertinent result metrics alongside inference outcomes.
+
+@author Ewan Trafford
+"""
+
 import modules
 import dataset
 import argparse

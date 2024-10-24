@@ -1,3 +1,10 @@
+"""
+Prepares all datasets specified into a format understandable by YOLOv11.
+Converts masks into bounding boxes and downscales images for faster training and inference.
+
+@author Ewan Trafford
+"""
+
 import os
 import torch
 import numpy as np

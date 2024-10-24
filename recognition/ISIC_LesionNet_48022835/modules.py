@@ -1,3 +1,10 @@
+"""
+Can be called explicitly to install commonly used weights for different model sizes.
+Imported into other scripts to access a YOLO model w/ given weights.
+
+@author Ewan Trafford
+"""
+
 from ultralytics import YOLO
 
 def YOLOv11(weights_path):

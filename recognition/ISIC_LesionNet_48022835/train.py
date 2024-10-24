@@ -1,3 +1,10 @@
+"""
+Used to train, validate, test and save a model. 
+Option to just test or perform all processes.
+
+@author Ewan Trafford
+"""
+
 import modules
 import dataset
 import argparse

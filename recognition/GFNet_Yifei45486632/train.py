@@ -1,25 +1,16 @@
 from modules import build_model
-from dataset import load_images_with_labels
+from dataset import get_train_validation_dataset, get_test_dataset, extract_labels_from_dataset
 import tensorflow as tf
-from sklearn.preprocessing import LabelEncoder
-import numpy as np
 import matplotlib.pyplot as plt
 
-print("Loading training data and test data...")
-train_images, train_labels = load_images_with_labels('train')
-test_images, test_labels = load_images_with_labels('test')
-print(f"Loaded {len(train_images)} traing images.")
-print(f"Shape of the first training image: {train_images[0].shape}")
-print(f"Total number of training labels: {len(train_labels)}")
+# Load training, validation and test datasets using the custom dataloader
+print("Loading training, validation and test datasets...")
+train_dataset, val_dataset = get_train_validation_dataset()
+test_dataset = get_test_dataset()
 
-train_images = np.array(train_images)
-test_images = np.array(test_images)
+train_labels = extract_labels_from_dataset(train_dataset)
+test_labels = extract_labels_from_dataset(test_dataset)
 
-print("Converting labels to integers...")
-encoder = LabelEncoder()
-# 只有第一次处理数据的时候使用fit
-train_labels = encoder.fit_transform(train_labels)
-test_labels = encoder.transform(test_labels)
 
 print("Converting labels to one-hot encoding...")
 # encoder.OneHotEncoder()
@@ -32,30 +23,30 @@ print(f"test_labels shape: {test_labels.shape}")
 
 print("Building model...")
 model = build_model()
-model.compile(optimizer='adam', loss='categorical_crossentroy',
+model.compile(optimizer='adam', loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-# Define callback function
+# Define callback functions
 print("Setting up callbacks...")
 callbacks = [
     tf.keras.callbacks.EarlyStopping(patience=5, monitor='val_loss'),
-    tf.keras.callbacks.ModelCheckpoint('best_model.h5', save_best_only=True, monitor='val_accuracy')
+    tf.keras.callbacks.ModelCheckpoint('best_model.keras', save_best_only=True, monitor='val_accuracy')
 ]
 
-# Training model
+# Training the model
 print("Start model training...")
 history = model.fit(
-    train_images, train_labels,
+    train_dataset,  # Training dataset from the custom dataloader
+    validation_data=val_dataset,  # Validation dataset from the custom dataloader
     epochs=50,
-    batch_size=30,
-    validation_split=0.2, #around 0.1-0.3
     callbacks=callbacks,
     verbose=1
 )
 print("Model training completed.")
 
-print("Rvaluating model on test data...")
-test_loss, test_accuracy = model.evaluate(test_images, test_labels)
+# Evaluating the model on test dataset
+print("Evaluating model on test data...")
+test_loss, test_accuracy = model.evaluate(test_dataset)
 print(f"Test loss: {test_loss}")
 print(f"Test accuracy: {test_accuracy}")
 
@@ -77,6 +68,6 @@ plt.plot(history.history['accuracy'], label='train accuracy')
 plt.plot(history.history['val_accuracy'], label='val accuracy')
 plt.title('Accuracy Curve')
 plt.xlabel('Epochs')
-plt.ylabel('Loss')
+plt.ylabel('Accuracy')
 plt.legend()
 plt.show()

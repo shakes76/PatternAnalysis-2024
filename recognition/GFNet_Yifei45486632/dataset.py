@@ -5,81 +5,96 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
-# Define the image size
-IMAGE_SIZE = (224, 224)
-BATCH_SIZE = 32  # You can adjust this according to your GPU memory
+# Define the image size and batch size
+IMAGE_SIZE = (224, 224)  # GFNet 输入通常是 224x224 的大小
+BATCH_SIZE = 32
 
 # Load and preprocess images using tf.data.Dataset
-def load_images_with_labels(directory):
+def load_images(directory):
     images = []
     labels = []
-    # Read the image data and convert it into an array to store the labels associated with the image
+    # 遍历目录并存储文件路径
     for label in os.listdir(directory):
         label_folder = os.path.join(directory, label)
         if os.path.isdir(label_folder):
             for filename in os.listdir(label_folder):
                 file_path = os.path.join(label_folder, filename)
-                try:
-                    images.append(file_path)  # Store file paths instead of image data
-                    labels.append(label)
-                except Exception as e:
-                    print(f"Error loading {file_path}: {e}")
+                images.append(file_path)  # 存储文件路径
+                labels.append(label)      # 存储标签
     return images, labels
 
-# TensorFlow data loader
+# TensorFlow 数据加载器 - 用于预处理图像
 def preprocess_image(file_path, label):
     img = tf.io.read_file(file_path)
     img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, IMAGE_SIZE)  # Resize the image
-    img = img / 255.0  # Normalize pixel values
+    img = tf.image.resize(img, IMAGE_SIZE)  # 调整图像大小以匹配 GFNet 输入
+    # 对于label的定义
+    label = tf.cast(label, tf.int32)
+    img = img / 255.0  # 归一化像素值
+    # 
     return img, label
 
+# 构建用于 GFNet 的数据集
 def build_dataset(image_paths, labels, shuffle=True):
-    # Convert string labels to numerical indices
+    # 将字符串标签转换为数值索引
     unique_labels = list(set(labels))
     label_to_index = {label: index for index, label in enumerate(unique_labels)}
     numerical_labels = [label_to_index[label] for label in labels]
 
-    # Create a TensorFlow Dataset from file paths and labels
+    # 从文件路径和标签中创建 TensorFlow 数据集
     dataset = tf.data.Dataset.from_tensor_slices((image_paths, numerical_labels))
     
-    # Map the dataset to apply the preprocess_image function
+    # 映射数据集以应用预处理函数
     dataset = dataset.map(preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
 
     if shuffle:
-        dataset = dataset.shuffle(buffer_size=len(image_paths))
+        dataset = dataset.shuffle(buffer_size=1000)
 
-    # Batch and prefetch for better performance
+    # 批处理和预取以提高性能
     dataset = dataset.batch(BATCH_SIZE).prefetch(buffer_size=tf.data.AUTOTUNE)
     return dataset
 
-# Get the test dataset
+# 获取测试集
 def get_test_dataset():
-    test_images, test_labels = load_images_with_labels('test')
-    test_dataset = build_dataset(test_images, test_labels, shuffle=False)
+    test_images, test_labels = load_images('test')
+    # test_dataset = build_dataset(test_images, test_labels, shuffle=False)
+    test_dataset = build_dataset(test_images, test_labels)
     return test_dataset
 
-# Split and get the train and validation datasets
+# 切分并获取训练和验证集 -- 每个类别的分布要趋近于一致且具有随机性
 def get_train_validation_dataset():
-    train_images, train_labels = load_images_with_labels('train')
+    train_images, train_labels = load_images('train')
+
+    # 将字符串标签转换为数值索引
+    # 随机性划分，使其不具有偏向性
+    unique_labels = list(set(train_labels))
+    label_to_index = {label: index for index, label in enumerate(unique_labels)}
+    numerical_labels = [label_to_index[label] for label in train_labels]
+
     train_images, val_images, train_labels, val_labels = train_test_split(
-        train_images, train_labels, test_size=0.15, random_state=42, stratify=train_labels
+        train_images, numerical_labels, test_size=0.15, random_state=42, stratify=numerical_labels 
     )
     train_dataset = build_dataset(train_images, train_labels)
     val_dataset = build_dataset(val_images, val_labels, shuffle=False)
     return train_dataset, val_dataset
 
-# Test the data loading and visualization
+def extract_labels_from_dataset(dataset):
+    all_labels = []
+    for _, labels in dataset.unbatch():
+        all_labels .append(labels.numpy())
+    return np.array(all_labels)
+
+# 测试数据加载器的功能
 if __name__ == "__main__":
     train_dataset, val_dataset = get_train_validation_dataset()
     test_dataset = get_test_dataset()
 
-    # Display a batch of images
-    for images, labels in train_dataset.take(1):  # Just take one batch of images
+    # 显示一批图像
+    for images, labels in train_dataset.take(1):  # 仅获取一批图像 (?)
         plt.figure(figsize=(10, 10))
         for i in range(9):
             plt.subplot(3, 3, i + 1)
-            plt.imshow(images[i].numpy())
-            plt.title(f"Label: {labels[i].numpy()}")
+            plt.imshow(images[i])
+            plt.title(f"Label: {labels[i]}")
             plt.axis('off')
         plt.show()

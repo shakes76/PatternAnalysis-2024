@@ -60,6 +60,9 @@ def split_val_set(original_dataset_path, new_dataset_path, split_ratio):
 
 
 def load_model(model, optimizer, filepath):
+    """
+    load the model parameters.
+    """
     checkpoint = torch.load(filepath)
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

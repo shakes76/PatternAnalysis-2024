@@ -22,6 +22,9 @@ ANDI dataset:
 The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a longitudinal, multi-center, observational study. The overall goal of ADNI is to validate biomarkers for Alzheimer’s disease (AD) clinical trials.
 
 Use the 2D brain scan slice data from ANDI dataset to train and test this model. The preprocessed version of this data set can be found here https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24.  
+All samples are brain scan slice image like follow:  
+
+![388726_93](https://github.com/user-attachments/assets/c9a32634-5c5e-499e-822b-3df24bf2d7eb)
 
 two classes: Alzheimer’s disease (AD) and Cognitive Normal (CN). File structure is like follow with the images account:  
 
@@ -71,6 +74,8 @@ transforms.Normalize(mean=[0.1174], std=[0.2163])
 ```
 mean and standard deviation is calculated by the overall dataset.  
 CropBrainRegion is a function that use cv2 to cut the black area of a brain image. By this way we can let the model focus on the brain area.  
+
+## Traning process
 
 
 

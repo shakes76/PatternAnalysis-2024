@@ -74,7 +74,7 @@ Alzheimer's Disease Brains:
 <br/>
 Normal Cognition Brains:
 <br/>
-![NC TSNE](images/nc_tsne.png)
+<img src="images/tsne_NC.png" alt="NC TSNE" width="400"/>
 <br/>
 <br/>
 

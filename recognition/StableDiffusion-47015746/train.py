@@ -1,3 +1,8 @@
+"""
+This file contains the method to train the VQ-VAE and the denoising U-Net separately (the U-net is labeled as the diffusion model)
+"""
+
+
 #s4701574
 
 #CHATGPT was used to assist with writing some of this code

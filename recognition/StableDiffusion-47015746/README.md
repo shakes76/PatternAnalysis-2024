@@ -76,25 +76,6 @@ PIL
 math
 ```
 
-
-## File Structure
-
-- StableDiffusion-47015746
-  - resources
-    - generation_with_simple_AE.gif
-    - results2.gif
-    - stablediffusion_overview.jpg
-    - u-net-architecture.png
-    - unet_loss.png
-    - VQ-VAE-arch.png
-    - vqvae_loss.png
-  - README.md
-  - dataset.py
-  - modules.py
-  - train.py
-  - predict.py
-  - driver.py
-
 ## Usage
 
 A driver file was made to facilitate the use of this model. The file trains the VQ-VAE and the Unet if they haven't been trained before, then it uses the final stable diffusion model to generate images. The generated images are showcased in a gif that will be saved in the repository folder (this can be changed in predict.py if necessary). All that needs to be done is simply run driver.py. Before doing so, however, make sure:

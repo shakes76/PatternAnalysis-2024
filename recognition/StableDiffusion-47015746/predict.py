@@ -1,3 +1,9 @@
+"""
+This file contains the image generation method given a trained Stable Diffusion mode.
+"""
+
+
+
 #s4701574
 
 #CHATGPT was used to assist with writing some of this code

@@ -1,3 +1,8 @@
+"""
+This file contains the model architecture of the Stable Diffusion model (includes architecture of VQ-VAE and denoising U-Net)
+"""
+
+
 #s4701574
 
 #CHATGPT was used to assist with writing some of this code

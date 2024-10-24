@@ -23,6 +23,8 @@ def train_model(model, dataloader, optimizer, criterion, num_epochs):
         
         accuracy = correct / total * 100
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss:.4f}, Accuracy: {accuracy:.2f}%')
-    
-    return model
+        
+    # Save model after training
+    torch.save(model.state_dict(), '/Users/gghollyd/comp3710/report/module_weights.pth')
+
 

@@ -8,12 +8,15 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix 
 import seaborn as sns
 
-
 def train_model(data, model, epochs=40, learning_rate=0.0012, weight_decay=2e-4, patience=20):
     """
     This function trains the given model on the given data.
     The training loop is run for the specified number of epochs.
     The model is trained using the Adam optimiser with the given learning rate.
+    Different loss functions were used to train the model.
+    1. basic cross entropy loss - not in use
+    2. focal loss - in use
+    The focal loss function is used to train the model.
     The learning rate is reduced by a factor of 0.4 if the validation accuracy does not improve for 7 epochs.
     The training loss and validation accuracy are tracked for each epoch and plotted at the end.
 
@@ -47,8 +50,15 @@ def train_model(data, model, epochs=40, learning_rate=0.0012, weight_decay=2e-4,
     # optimiser
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay= weight_decay)
 
-    # basic cross entropy loss
-    loss_fn = torch.nn.CrossEntropyLoss()     
+    # basic cross entropy loss - not in use
+    # loss_fn = torch.nn.CrossEntropyLoss()     
+
+    # class weights
+    class_weights = torch.tensor([2.3, 1.1, 1.4, 1.3])
+
+    # loss function - focal loss 
+    loss_fn = FocusLoss()
+    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
 
     # learning rate scheduler
     scheduler = ReduceLROnPlateau(optimiser, mode='max', factor=0.4, patience=7, verbose=True)
@@ -192,6 +202,60 @@ def test_model(data, model):
 
     return test_acc
 
+class FocusLoss(torch.nn.Module):
+
+    """
+    This class implements the focal loss function to train the GNN model.
+    The focal loss function is defined as:
+    loss = (1-pt)^gamma * CE_loss
+    where pt = exp(-CE_loss)
+    CE_loss is the cross entropy loss.
+    gamma is a hyperparameter that controls the focus of the loss function.
+
+    """
+
+    def __init__(self, weight=None, gamma=2):
+        """
+        This function initialises the focal loss function.
+        The weight parameter is used to reweight the classes.
+        The gamma parameter is used to control the focus of the loss function.
+        
+        Parameters:
+        -----------
+        weight : torch.tensor, optional (default=None)
+            The class weights for the loss function
+        gamma : float, optional (default=2)
+            The gamma parameter for the focal loss function
+
+        Returns:
+        --------
+        None
+        """
+        super(FocusLoss, self).__init__()
+        self.register_buffer('weight', weight)
+        self.gamma = gamma
+        self.weight = weight
+
+    def forward(self, input, target):
+        """
+        This function computes the focal loss for the given input and target.
+
+        Parameters:
+        -----------
+        input : torch.tensor
+            The input tensor from the model
+        target : torch.tensor
+            The target tensor for the model
+
+        Returns:
+        --------
+        loss : torch.tensor
+            The focal loss for the given input and target
+        """
+        ce_loss =  F.cross_entropy(input, target, weight=self.weight) 
+        pt = torch.exp(-ce_loss)
+        loss = (1-pt)**self.gamma * ce_loss
+        return loss.mean()
 
 if __name__ == '__main__':
     """

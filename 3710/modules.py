@@ -1,3 +1,8 @@
+"""
+Author: Xiangxu Zhang
+student number: 47643439
+This script defines a graphical convolutional network (GCN).
+"""
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, BatchNorm

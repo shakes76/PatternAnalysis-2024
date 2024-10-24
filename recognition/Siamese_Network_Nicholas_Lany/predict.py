@@ -15,7 +15,7 @@ def evaluate_model(dataset, model_path, transform=None):
     model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.eval()
 
-    dataloader = DataLoader(SiameseDataset(dataset, transform=transform), batch_size=16, shuffle=False)
+    dataloader = DataLoader(SiameseDataset(dataset, transform=transform, num_pairs=1000), batch_size=16, shuffle=False)
     
     correct_predictions = 0
     total_pairs = 0

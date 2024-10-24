@@ -1,3 +1,18 @@
+"""
+Author: Yucheng Wang
+Student ID: 47914111
+This script handles the training and evaluation of a Graph Convolutional Network (GCN) 
+on a node classification task. It includes functions to:
+
+1. Train the GCN model using training and validation data.
+2. Evaluate the validation and test accuracy.
+3. Plot and save metrics such as training/validation accuracy and loss.
+4. Implement early stopping based on validation accuracy.
+5. Save the trained model.
+
+The main function `train()` orchestrates the complete process of model training, 
+evaluation, and visualization.
+"""
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,6 +37,9 @@ model = GCN(feature_matrix.size(1), 16, len(torch.unique(labels)), 0.5)
 
 
 def train_epoch(model, optimizer, criterion, data, clip=1.0):
+    """
+    Perform one training epoch.
+    """
     # 1. Set the model to training mode
     model.train()
     
@@ -50,6 +68,9 @@ def train_epoch(model, optimizer, criterion, data, clip=1.0):
 
 
 def evaluate_validation_loss(model, criterion, data):
+    """
+    Evaluate the validation loss for the current model.
+    """
     model.eval()  # Set the model to evaluation mode
     
     with torch.no_grad():  # Disable gradient computation
@@ -60,6 +81,9 @@ def evaluate_validation_loss(model, criterion, data):
 
 
 def test_accuracy(model, mask, data):
+    """
+    Compute the accuracy of the model on the given dataset.
+    """
     model.eval()  # Set the model to evaluation mode
 
     with torch.no_grad():  # Disable gradient computation
@@ -79,6 +103,9 @@ def test_accuracy(model, mask, data):
 
 
 def train(model, data, epochs=100, patience=5, clip=1.0):
+    """
+    Train the GCN model over multiple epochs with early stopping and learning rate scheduling.
+    """
     # Initialize optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
@@ -135,6 +162,9 @@ def train(model, data, epochs=100, patience=5, clip=1.0):
 
 
 def plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validation_loss_list):
+    """
+    Plot and save the training/validation accuracy and loss over epochs.
+    """
     # Accuracy plot
     plt.figure(figsize=(12, 6))
     plt.plot(np.arange(1, len(train_acc_list) + 1), train_acc_list, label="Train Accuracy")

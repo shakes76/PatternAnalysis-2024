@@ -83,9 +83,9 @@ names:
     0: Lesion
 ```
 
-To use dataset.py, run on the command line w/ the optional argument -d following by any up to all of these three: test train val. Any dataset specified after -d will **not** be installed. Example usage:
+To use dataset.py, run on the command line w/ the optional argument -d followed by any up to all of these three: test train val. Any dataset specified after -d will **not** be installed. Example usage:
 ```
-python dataset.py    # installs all datasets
+python dataset.py                 # installs all datasets
 python dataset.py -d train val    # only installs testing dataset
 ```
   
@@ -93,10 +93,50 @@ The main process of dataset.py is to get the raw images and masks from the speci
 
 
 ### Training
-Talk about train.py. Talk about plots, metrics, results.
+The process of training, validating, testing and saving a mdoel is all performed in train.py. You can elect to run the whole training process or just evaluate a model, as discussed below. Both Training and Validation datasets are required to run train.py, and to run evaluation in train.py, split = 'test' will have to be changed to split = 'val' if no test set is installed. Once the script has run, regardless of run type, the results, metrics, best weights and validation outcomes will all be saved to a new folder in runs/detect (will be automatically created if it doesn't exist)
+
+
+To use train.py, run on the command line w/ the required arguments -t followed by either train or eval, and -w followed by the relative path to weights wanted. Example usage:
+```
+python train.py -t train -w yolo/yolo11m.pt    # recommended if no model is already installed
+python train.py -t eval -w yolo/best_tuned.pt  # evaluate and test a trained model
+```
+
+The results from training are:
+![Training data](./README_figures/results.png)
+![Training data](./README_figures/confusion_matrix.png)
+![Training data](./README_figures/F1_curve.png)
+![Training data](./README_figures/P_curve.png)
+![Training data](./README_figures/F1_curve.png)
+  
+A main takeaway here is that the trained model was able to detect the lesion in 961 images out of the test dataset of 1000 images.   
+The validation process gave the results (ground truth labels below):
+  
+![Training data](./README_figures/val_batch0_labels.jpg)
+
+(model predictions below)
+
+![Training data](./README_figures/val_batch0_pred.jpg)
+  
 
 ### Predicting
-Talk about predict.py. Talk about results, inference, etc.
+To showcase and further anaylse the performance of a trained model, use predict.py. The option to run inference on the whole test dataset (adjustable in code) to calculate metrics such as average IoU and confidence scores exist, but is particularly resource exhaustive. The option to run inference on a single image which is then subsequently shown and saved also exists, allowing the model to give a prediction on a new image. 
+
+To use predict.py, run on the command line w/ the required arguments -p followed by either testset or image, and -w followed by the relative path to weights wanted. If -p image is given, -img must also be given w/ the path to image. Example usage:
+```
+python predict.py -p testset -w yolo/best_tuned.pt                                       # run inference on test dataset
+python predict.py -p image -img Data/Testing/images/image56.png -w yolo/best_tuned.pt    # run inference on a single image
+```
+
+The resultant metrics from predicting on the testset are:
+```
+Average IoU across all predicted images is: 0.8195305661403173
+Average confidence score across all predicted images is: 0.7560070771343854
+```
+  
+Note these metrics are particularly relevant to the task goal.  
+An example outcome of running inference on an image is:  
+![Inference Example](./README_figures/InferencePrediction.jpg)
 
 ## Appendix
 ### ISIC Challenge dataset (2018):

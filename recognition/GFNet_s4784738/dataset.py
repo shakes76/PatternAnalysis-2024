@@ -1,5 +1,5 @@
 """
-Data loader for brain images from the ADNI brain data
+Creates data loaders for brain images from the ADNI dataset.
 
 Benjamin Thatcher 
 s4784738    
@@ -31,7 +31,7 @@ class ADNIDataset(Dataset):
             label = 1 if label_name == 'AD' else 0
             
             for image_name in sorted(os.listdir(label_dir)):
-                # Ensure the images are all valid (they should all be .jpeg)
+                # Ensure the images are all valid (all ADNI images should be .jpeg)
                 if image_name.endswith(('.png', '.jpg', '.jpeg')):
                     self.image_paths.append(os.path.join(label_dir, image_name))
                     self.labels.append(label)
@@ -67,36 +67,23 @@ def get_data_loader(root_dir, dataset='train', batch_size=32, shuffle=True, spli
     Gets a dataloader with characteristics specified by the user.
 
     root_dir: The root directory in which ADNI images can be found
-    dataset: Specifies if the dataloader is for a training or validation/testing split
+    dataset: Specifies if the dataloader is for a training/validation or testing split
     batch_size: The batch size for images 
     shuffle: True is images should be shuffled, and False otherwise
     split: The split between training and validation datasets
     num_workers: The number of workers
     """
-    # Set up different transforms for training and testing splits
+    # Set up different transforms for training/validating and testing splits
     if dataset == 'train':
         transform = transforms.Compose([
             # Resize to 224x224 from the default size of 256x240 pixels
             transforms.Resize((224, 224)),
             transforms.Grayscale(),
-            #transforms.RandomHorizontalFlip(),
-            #transforms.RandomVerticalFlip(),
-            #transforms.RandomRotation(10),
 
-            #60%
             transforms.ColorJitter(brightness=0.3, contrast=0.3),
-            #64
             transforms.RandomAffine(degrees=10, translate=(0.15, 0.15), scale=(0.9, 1.1)),
-            #60
             transforms.RandomResizedCrop(size=(224, 224), scale=(0.9, 1.1)),
-            #58
             transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.15, 3)),
-            #60
-
-            #transforms.RandomAffine(degrees=10, translate=(0.15, 0.15), scale=(0.9, 1.1)),
-            #transforms.RandomResizedCrop(size=(224, 224), scale=(0.9, 1.1)),
-            #transforms.ColorJitter(brightness=0.4, contrast=0.4),
-            #transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.15, 2.0)),
 
             transforms.ToTensor(),
             transforms.Normalize([0.5], [0.5]),
@@ -111,8 +98,8 @@ def get_data_loader(root_dir, dataset='train', batch_size=32, shuffle=True, spli
 
     adni_dataset = ADNIDataset(root_dir=root_dir, transform=transform)
     
-    # Split the train dataset into training and validation sets
     if dataset == 'train':
+        # Split the train dataset into training and validation sets
         train_size = int((1 - split) * len(adni_dataset))
         val_size = len(adni_dataset) - train_size
         train_dataset, val_dataset = random_split(adni_dataset, [train_size, val_size])
@@ -122,6 +109,6 @@ def get_data_loader(root_dir, dataset='train', batch_size=32, shuffle=True, spli
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,  num_workers=num_workers)
         return train_loader, val_loader
     else:
-        # For testing or validation dataset (i.e., after training)
+        # The testing dataset
         data_loader = DataLoader(adni_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         return data_loader

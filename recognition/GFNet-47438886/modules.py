@@ -1,30 +1,24 @@
 """
 Written based on the work of Rao, Yongming and Zhao, Wenliang and Zhu, 
 Zheng and Lu, Jiwen and Zhou, Jie in their research paper - 'Global Filter 
-Networks for Image Classification' - published in 2021 in 'Advances in Neural 
-Information Processing Systems (NeurIPS)'
+Networks for Image Classification' - released in 2021 and presented at
+'Advances in Neural Information Processing Systems (NeurIPS)'
 
 Original source code:
 https://github.com/raoyongming/GFNet/ 
 """
 
 import math
-import logging
 from functools import partial
 from collections import OrderedDict
-from copy import Error, deepcopy
 from re import S
 from numpy.lib.arraypad import pad
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import torch.fft
-from torch.nn.modules.container import Sequential
-
-_logger = logging.getLogger(__name__)
 
 
 class Mlp(nn.Module):
@@ -44,6 +38,7 @@ class Mlp(nn.Module):
         x = self.fc2(x)
         x = self.drop(x)
         return x
+
 
 class GlobalFilter(nn.Module):
     def __init__(self, dim, h=14, w=8):
@@ -71,6 +66,7 @@ class GlobalFilter(nn.Module):
         x = x.reshape(B, N, C)
 
         return x
+    
 
 class Block(nn.Module):
 
@@ -86,23 +82,7 @@ class Block(nn.Module):
     def forward(self, x):
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
-
-class BlockLayerScale(nn.Module):
-
-    def __init__(self, dim, mlp_ratio=4., drop=0., drop_path=0., act_layer=nn.GELU, 
-                norm_layer=nn.LayerNorm, h=14, w=8, init_values=1e-5):
-        super().__init__()
-        self.norm1 = norm_layer(dim)
-        self.filter = GlobalFilter(dim, h=h, w=w)
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
-        self.norm2 = norm_layer(dim)
-        mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.gamma = nn.Parameter(init_values * torch.ones((dim)),requires_grad=True)
-
-    def forward(self, x):
-        x = x + self.drop_path(self.gamma * self.mlp(self.norm2(self.filter(self.norm1(x)))))
-        return x
+    
 
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
@@ -126,24 +106,6 @@ class PatchEmbed(nn.Module):
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
-
-class DownLayer(nn.Module):
-    """ Image to Patch Embedding
-    """
-    def __init__(self, img_size=56, dim_in=64, dim_out=128):
-        super().__init__()
-        self.img_size = img_size
-        self.dim_in = dim_in
-        self.dim_out = dim_out
-        self.proj = nn.Conv2d(dim_in, dim_out, kernel_size=2, stride=2)
-        self.num_patches = img_size * img_size // 4
-
-    def forward(self, x):
-        B, N, C = x.size()
-        x = x.view(B, self.img_size, self.img_size, C).permute(0, 3, 1, 2)
-        x = self.proj(x).permute(0, 2, 3, 1)
-        x = x.reshape(B, -1, self.dim_out)
-        return x
 
 class GFNet(nn.Module):
     

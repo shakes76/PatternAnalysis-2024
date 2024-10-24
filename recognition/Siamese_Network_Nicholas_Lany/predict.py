@@ -12,7 +12,7 @@ prediction_threshold = 0.5
 
 def evaluate_model(dataset, model_path, transform=None):
     model = SiameseNetwork().to(device)
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.eval()
 
     dataloader = DataLoader(SiameseDataset(dataset, transform=transform), batch_size=16, shuffle=False)
@@ -24,11 +24,12 @@ def evaluate_model(dataset, model_path, transform=None):
         for img1, img2, labels in dataloader:
             img1, img2, labels = img1.to(device), img2.to(device), labels.to(device)
 
-            similarity_scores = model(img1, img2)
+            similarity_scores, _ = model(img1, img2)
 
             predicted_labels = (similarity_scores > prediction_threshold).float() 
+            predicted_classes = predicted_labels.argmax(dim=1)
 
-            correct_predictions += (predicted_labels == labels).sum().item()
+            correct_predictions += (predicted_classes == labels).sum().item()
             total_pairs += labels.size(0)
 
     accuracy = correct_predictions / total_pairs

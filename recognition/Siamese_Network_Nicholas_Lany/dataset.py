@@ -43,7 +43,7 @@ class SiameseDataset(Dataset):
         self.dataset = dataset
         self.transform = transform
         # self.pairs = self.generate_pairs(num_pairs)
-        self.len = num_pairs*256*256*3*2 # Can be arbitrary since pairs can keep being generated
+        self.len = num_pairs # Can be arbitrary since pairs can keep being generated
 
     def generate_pair(self, index):
         index = index % len(self.dataset)

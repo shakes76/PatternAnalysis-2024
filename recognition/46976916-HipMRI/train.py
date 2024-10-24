@@ -31,35 +31,34 @@ from utils import (
 #HyperParameters
 LEARN_RATE = 0.0001
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 8
-NUM_EPOCHS = 2
-NUM_WORKERS = 1
+BATCH_SIZE = 16
+NUM_EPOCHS = 1
+NUM_WORKERS = 2
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 256
 PIN_MEMORY = True
 LOAD_MODEL = False
+'''
+TRAIN_IMG_DIR = 'recognition/46976916-HipMRI/keras_slices_train'
+TRAIN_SEG_DIR = 'recognition/46976916-HipMRI/keras_slices_seg_train'
+VAL_IMG_DIR =  'recognition/46976916-HipMRI/keras_slices_validate'
+VAL_SEG_DIR = 'recognition/46976916-HipMRI/keras_slices_seg_validate'
+'''
 
 TRAIN_IMG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
 TRAIN_SEG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
 VAL_IMG_DIR =  'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_validate'
 VAL_SEG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_validate'
-
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
-
     for batch_idx, (data, targets) in enumerate(loop):
-        #print("1")
         data = data.to(device=DEVICE)
-        #print("2")
         targets = targets.to(device=DEVICE)
-        #print("3")
 
         if targets.dim() == 4 and targets.shape[-1] == 5:  # Check if targets are one-hot encoded
             targets = torch.argmax(targets, dim=-1)
-        #print("4")
         #forward
         with torch.autocast(DEVICE):
-            #print("5")
             predictions = model(data)
             #print(f"Predictions shape: {predictions.shape}")
             #print(f"Targets shape before squeezing: {targets.shape}")
@@ -77,6 +76,9 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
     
 
 def main():
+    print(torch.version.cuda)
+    print(torch.cuda.is_available())
+    print(f"Using device: {DEVICE}")
     '''
     train_transform = A.Compose(
         [
@@ -131,26 +133,27 @@ def main():
     )
 
     scaler = torch.amp.GradScaler(device = DEVICE)
-
+    
     for epoch in range(NUM_EPOCHS):
-        print("started an epoch")
+        #print("started an epoch")
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
-        print("completed an epoch")
+        #print("completed an epoch")
 
         #save model
         #check accuracy
         #print example
+    
 
-    dataset = ProstateCancerDataset(TRAIN_IMG_DIR, TRAIN_SEG_DIR)
+    #dataset = ProstateCancerDataset(TRAIN_IMG_DIR, TRAIN_SEG_DIR)
 
-    image, segImage = dataset[0]
+    #image, segImage = dataset[0]
 
-    print("Images type:", type(dataset))
-    print("Image type:", type(image))
-    print("SegImages type:", type(segImage))
+    #print("Images type:", type(dataset))
+    #print("Image type:", type(image))
+    #print("SegImages type:", type(segImage))
 
-    print("Image shape:", image.shape)  # Should print something like (1, H, W) where H, W are image dimensions
-    print("Ground truth shape:", segImage.shape)
+    #print("Image shape:", image.shape)  # Should print something like (1, H, W) where H, W are image dimensions
+    #print("Ground truth shape:", segImage.shape)
     #plt.imshow(image, cmap='gray')  # Use cmap='gray' for grayscale display
     #plt.title(f'Image 0')
     #plt.axis('off')  # Turn off axis labels

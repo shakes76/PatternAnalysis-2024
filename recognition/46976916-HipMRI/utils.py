@@ -2,6 +2,7 @@ import torch
 import torchvision
 from dataset import ProstateCancerDataset
 from torch.utils.data import DataLoader
+import pickle
 
 def save_checkpoint(state, filename = "my_checkpoint.pth.tar"):
     print("--Saving Checkpoint--")
@@ -26,7 +27,6 @@ def get_loaders(
     train_loader = DataLoader(train_ds, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory, shuffle=True)
     val_ds = ProstateCancerDataset(image_dir=val_dir, seg_dir=val_seg_dir, transform=val_transform)
     val_loader = DataLoader(val_ds, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory, shuffle=False)
-
     return train_loader, val_loader
     
 def check_accuracy(loader, model, device="cuda"):

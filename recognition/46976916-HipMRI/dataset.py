@@ -21,7 +21,7 @@ def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
 
 # load medical image functions
 def load_data_2D ( imageNames , normImage = False , categorical = False , dtype = np . float32 ,
-    getAffines = False , early_stop = True ) :
+    getAffines = False , early_stop = False ) :
     '''
     Load medical image data from names , cases list provided into a list for each .
 
@@ -33,7 +33,8 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
     loading and testing scripts .
     '''
     affines = []
-
+    num_to_load = int(len(imageNames) * 0.3)
+    imageNames = imageNames[:num_to_load]
     # get fixed size
     num = len ( imageNames )
     first_case = nib . load ( imageNames [0]) . get_fdata ( caching = "unchanged")
@@ -124,6 +125,9 @@ class ProstateCancerDataset(Dataset):
             augmentations = self.transform(image=image, mask=segImage)
             image = augmentations["image"]
             segImage = augmentations["mask"]
+
+        #print(f"Image Type: {type(image)}, Image Shape: {image.shape}")
+        #print(f"Mask Type: {type(segImage)}, Mask Shape: {segImage.shape}")
 
         # Convert to PyTorch tensors (adding a channel dimension if necessary)
         #image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension

@@ -200,7 +200,7 @@ if __name__ == "__main__":
             generate_examples(gen, mapping_network, total_epochs, 12)
             # generate_umap_plot(critic, loader, total_epochs)
             save_model(gen, critic, mapping_network, path_length_penalty, opt_gen, opt_critic, opt_mapping_network,
-                       f"model_epoch_{total_epochs}")
+                       f"{args.model_dir}_epoch_{total_epochs}")
 
         total_epochs += 1
         json_data["epochs"] += 1

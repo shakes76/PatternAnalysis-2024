@@ -388,7 +388,7 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
       - `Target area`: The prostate or other targets are highlighted and clearly segmented from the background, with slightly blurred edges.
       - `Background area`: The background pixels remain close to black because they do not belong to the target area.
       - `Prediction error`: When the loss is 0.2, there are some false positive or false negative areas (i.e. the model incorrectly predicts certain backgrounds as target areas or misses a part of the target), but the overall effect is still close to the true target.<br />
-      ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/Prediction%20figure.png "DBSCAN Performance Comparison")
+      ![image text](https://github.com/yanghan8458/COMP3710-Report/blob/main/Figure_3.png "DBSCAN Performance Comparison")
 In the prediction results, the prostate area seems to be well identified and segmented by the model, especially the white area in the middle should be the target area. The background parts of other areas were not misclassified, as expected, indicating that the model has good ability to distinguish between the background and the target area. Although there are slight differences and noise, especially on some bright spots in the lower right corner (white spots), the overall segmentation effect is reasonable.
   - **Evaluation**: <br />The Dice score is computed to evaluate the quality of the segmentation. The predicted segmentation mask is compared to the ground truth mask (if available) to compute this metric[^8].
     - The `Dice score` (or `Dice similarity coefficient`) measures how well the predicted segmentation mask matches the ground truth mask. It ranges between 0 and 1, where:

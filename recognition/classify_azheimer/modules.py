@@ -1,14 +1,12 @@
 import math
 from functools import partial
-from numpy.lib.arraypad import pad
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from timm.layers import DropPath, to_2tuple, trunc_normal_
+from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import torch.fft
-from torch.nn.modules.container import Sequential
 
 
 class Mlp(nn.Module):
@@ -38,18 +36,20 @@ class Mlp(nn.Module):
 
 
 class GlobalFilter(nn.Module):
-    def __init__(self, dim, h, w):
+    def __init__(self, dim, h=14, w=8):
         super().__init__()
-        
+        self.complex_weight = nn.Parameter(
+            torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02
+        )
         self.w = w
         self.h = h
-        self.complex_weight = nn.Parameter(
-            torch.randn(self.h, w // 2 + 1, dim, 2, dtype=torch.float32) * 0.02
-        )
-        
-    def forward(self, x):
+
+    def forward(self, x, spatial_size=None):
         B, N, C = x.shape
-        a, b = self.h, self.w
+        if spatial_size is None:
+            a = b = int(math.sqrt(N))
+        else:
+            a, b = spatial_size
 
         x = x.view(B, a, b, C)
 
@@ -103,7 +103,7 @@ class BlockLayerScale(nn.Module):
 class PatchEmbed(nn.Module):
     """Image to Patch Embedding"""
 
-    def __init__(self, img_size, patch_size, in_chans, embed_dim):
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
         super().__init__()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
@@ -129,18 +129,17 @@ class PatchEmbed(nn.Module):
 class DownLayer(nn.Module):
     """Image to Patch Embedding"""
 
-    def __init__(self, img_size, dim_in, dim_out):
+    def __init__(self, img_size=56, dim_in=64, dim_out=128):
         super().__init__()
         self.img_size = img_size
         self.dim_in = dim_in
         self.dim_out = dim_out
         self.proj = nn.Conv2d(dim_in, dim_out, kernel_size=2, stride=2)
-        self.num_patches = (img_size[0] // 2) * (img_size[1] // 2)
+        self.num_patches = img_size * img_size // 4
 
     def forward(self, x):
         B, N, C = x.size()
-        H, W = self.img_size
-        x = x.view(B, H, W, C).permute(0, 3, 1, 2)
+        x = x.view(B, self.img_size, self.img_size, C).permute(0, 3, 1, 2)
         x = self.proj(x).permute(0, 2, 3, 1)
         x = x.reshape(B, -1, self.dim_out)
         return x
@@ -150,16 +149,16 @@ class GFNetPyramid(nn.Module):
 
     def __init__(
         self,
-        img_size=(256, 240),
+        img_size=224,
         patch_size=4,
         num_classes=2,
         embed_dim=[96, 192, 384, 768],
         depth=[3, 3, 27, 3],
         mlp_ratio=[4, 4, 4, 4],
-        drop_rate=0.0,
+        drop_rate=0.1,
         drop_path_rate=0.4,
         init_values=1e-6,
-        dropcls=0,
+        dropcls=0.05,
     ):
         super().__init__()
         self.num_classes = num_classes
@@ -178,9 +177,13 @@ class GFNetPyramid(nn.Module):
 
         self.patch_embed.append(patch_embed)
 
-        sizes = [(256 // (2**i), 240 // (2**i)) for i in range(2, 6)]
+        sizes = [56, 28, 14, 7]
+        for i in range(4):
+            sizes[i] = sizes[i] * img_size // 224
+
         for i in range(3):
             patch_embed = DownLayer(sizes[i], embed_dim[i], embed_dim[i + 1])
+            num_patches = patch_embed.num_patches
             self.patch_embed.append(patch_embed)
 
         self.pos_drop = nn.Dropout(p=drop_rate)
@@ -191,7 +194,9 @@ class GFNetPyramid(nn.Module):
         ]  # stochastic depth decay rule
         cur = 0
         for i in range(4):
-            w,h = sizes[i]
+            h = sizes[i]
+            w = h // 2 + 1
+
             blk = nn.Sequential(
                 *[
                     BlockLayerScale(
@@ -232,6 +237,19 @@ class GFNetPyramid(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {"pos_embed", "cls_token"}
+
+    def get_classifier(self):
+        return self.head
+
+    def reset_classifier(self, num_classes, global_pool=""):
+        self.num_classes = num_classes
+        self.head = (
+            nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        )
 
     def forward_features(self, x):
         for i in range(4):

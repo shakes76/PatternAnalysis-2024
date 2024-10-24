@@ -41,7 +41,7 @@ class AlzheimerDataset(Dataset):
 def get_dataloaders(data_dir, batch_size=32):
     
     transform = transforms.Compose([
-        transforms.Resize((256, 240)),
+        transforms.Resize((224,224)),
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])

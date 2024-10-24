@@ -2,7 +2,8 @@
 ## Author
 ### Xinyue Yuan (Student ID: 48792286)
 ## Project Overview
-#### In this project, we aim to develop a multi-layer Graph Neural Network (GNN) model to perform semi-supervised multi-class node classification using the Facebook Large Page-Page Network dataset. This dataset (https://graphmining.ai/datasets/ptg/facebook.npz)contains nodes representing Facebook pages, with features in the form of 128-dimensional vectors that describe various attributes of each page.
+#### In this project, we aim to develop a multi-layer Graph Neural Network (GNN) model to perform semi-supervised multi-class node classification using the Facebook Large Page-Page Network dataset. 
+#### This dataset (https://graphmining.ai/datasets/ptg/facebook.npz)contains nodes representing Facebook pages, with features in the form of 128-dimensional vectors that describe various attributes of each page.
 ## Environment Dependencies
 ### This packages/software need to be installed
 #### python 3.12

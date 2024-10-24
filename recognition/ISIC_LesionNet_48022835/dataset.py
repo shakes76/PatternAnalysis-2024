@@ -2,6 +2,8 @@
 Prepares all datasets specified into a format understandable by YOLOv11.
 Converts masks into bounding boxes and downscales images for faster training and inference.
 
+Usage example: python dataset.py -d test | to install all datasets except the test dataset
+
 @author Ewan Trafford
 """
 
@@ -37,10 +39,16 @@ class ISICDataset(Dataset):
         self.img_filenames.sort()
 
     def __len__(self):
+        """
+        Returns the size of the specified dataset
+        """
         return len(self.img_filenames)
 
     def __getitem__(self, idx):
-        # Load image and mask
+        """
+        Loads and returns both the image and mask
+        """
+        
         img_path = os.path.join(self.img_dir, self.img_filenames[idx])
 
         # Get the corresponding mask filename
@@ -76,6 +84,9 @@ class ISICDataset(Dataset):
 
 
 class SegmentationTransform:
+    """
+    Specifies transforms to be made to each dataset
+    """
     def __init__(self, resize=(640, 640), normalize=True):
         self.resize = resize
         self.normalize = normalize
@@ -161,6 +172,12 @@ def overlay_mask_on_image(image, mask, alpha=0.45):
     return Image.alpha_composite(img_rgba, colored_mask_image)
 
 def resize_image(image):
+    """
+    Resizes a passed in image relative to its dimensions.
+
+    Args:
+        image (PIL Image): The original image to be resized.
+    """
     if image.width > 4000 or image.height > 4000:   
         new_size = (image.width // 7, image.height // 7)
     elif image.width > 2000 or image.height > 2000:   
@@ -177,9 +194,9 @@ def resize_image(image):
 
 
 def prepare_train():       
-    # prepare training data -----------------------------------------
-
-    print("Preparing training data")
+    """
+    Prepares the training dataset in its respective directory
+    """
 
     for i in range(0, train_dataset.__len__()):
 
@@ -228,7 +245,9 @@ def prepare_train():
     return
 
 def prepare_val():
-    # prepare validation data -----------------------------------------
+    """
+    Prepares the validation dataset in its respective directory
+    """
 
     print("Preparing validation data")
 
@@ -278,7 +297,9 @@ def prepare_val():
     print ("Validation dataset prepared")
 
 def prepare_test():
-    # prepare testing data -----------------------------------------
+    """
+    Prepares the testing dataset in its respective directory
+    """
 
     print("Preparing testing data")
 
@@ -329,6 +350,9 @@ def prepare_test():
 
 
 def install_dataset(datasets):
+    """
+    Calculates what datasets to install based on passed in command line arguments.
+    """
     if 'train' in datasets:
         prepare_train()
     if 'val' in datasets:
@@ -338,6 +362,14 @@ def install_dataset(datasets):
     print("All data processing finished")
 
 def create_folder(name, path):
+    """
+    Creates an empty folder at the specified path with the given name.
+
+    Args:
+        name (string): The name of the new folder.
+        path (string): Relative path to new folder.
+    """
+
     print("Preparing " + name + " folder...")
     if not os.path.exists(path):
         os.makedirs(path)
@@ -350,6 +382,10 @@ def create_folder(name, path):
 
 
 def prepare_directories():
+    """
+    Creates all required folders and directories. Should only be called once.
+    """
+
     create_folder('Data', 'Data')
     create_folder('Training', 'Data/Training')
     create_folder('Validation', 'Data/Validation')

@@ -2,6 +2,8 @@
 Used to train, validate, test and save a model. 
 Option to just test or perform all processes.
 
+Usage example: python train.py -t eval -w yolo/best_tuned.pt | to run testing/evaluation on a model with trained weights.
+
 @author Ewan Trafford
 """
 
@@ -11,6 +13,13 @@ import argparse
 
 # trains the model and validates it
 def run_training(weights_path):
+    """
+    Trains an instance of a YOLOv11 model with weights specified. 
+    Doing so will save a new train folder containing weights, plots and validation results.
+
+    Args:
+        weights_path (string): The absolute or relative path to the .pt file containing model weights.
+    """
 
     model = modules.YOLOv11(weights_path)
     results = model.train(data = "Data/lesion_detection.yaml", epochs = 50, save = True)
@@ -18,6 +27,13 @@ def run_training(weights_path):
 
 # evaluates model performance 
 def run_testing(weights_path):
+    """
+    Evaluates or tests an instance of a YOLOv11 model with weights specified. 
+    Will calculate mAP75 as well as plots and results
+
+    Args:
+        weights_path (string): The absolute or relative path to the .pt file containing model weights.
+    """
 
     model = modules.YOLOv11(weights_path)
     metrics = model.val(plots = True, split = 'test', max_det = 1)

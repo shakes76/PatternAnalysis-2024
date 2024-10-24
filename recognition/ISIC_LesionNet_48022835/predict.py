@@ -2,6 +2,8 @@
 Used to run inference on either the test dataset or a specified image.
 Returns pertinent result metrics alongside inference outcomes.
 
+Usage example: python predict.py -p image -img Data/Testing/images/image0.png -w yolo/best_tuned.pt
+
 @author Ewan Trafford
 """
 
@@ -11,6 +13,15 @@ import argparse
 
 
 def IoUTotalUpdate(label_bbox, inference_bbox):
+    """
+    Calculates updates made to the running total intersection over union. 
+    Compares the corner coordinates of the target bounding box w/ the predicted bounding box.
+
+    Args:
+        label_bbox (array): Four normalised coordinates of target bounding box.
+        inference_bbox (array): Four normalised coordinates of predicted bounding box.
+    """
+
     x1_min, y1_min, x1_max, y1_max = bbox_to_corners(label_bbox)
     if inference_bbox:
         x2_min, y2_min, x2_max, y2_max = bbox_to_corners(inference_bbox[0])
@@ -40,6 +51,12 @@ def IoUTotalUpdate(label_bbox, inference_bbox):
     return IoUAdded
 
 def LabelReader(index):
+    """
+    Used to extract the bounding box coordinates for the image at the index passed in.
+
+    Args:
+        Index (int): The position of the image of concern in its dataset.
+    """
     with open('Data/Testing/labels/image'+str(index)+'.txt', 'r') as file:
         # Read the contents of the file
         line = file.readline().strip()  # Read the first line and remove any leading/trailing whitespace
@@ -49,6 +66,12 @@ def LabelReader(index):
     return numbers
 
 def bbox_to_corners(bbox):
+    """
+    Converts the standard formula of centreX, centreY, width, height all normalised into the four corner coordinates.
+
+    Args:
+        bbox (array): An array with four elements, entries representing the standard values above.
+    """
     # Convert (center_x, center_y, width, height) to (x_min, y_min, x_max, y_max)
     center_x, center_y, width, height = bbox
     x_min = center_x - width / 2
@@ -58,6 +81,12 @@ def bbox_to_corners(bbox):
     return x_min, y_min, x_max, y_max
 
 def inference_on_testset(model):
+    """
+    Runs inference on the test dataset, calculating the average confidence score and intersection over union once finished
+
+    Args:
+        model (YOLO): A specified model that has been trained on weights passed into it.
+    """
     testset = dataset.test_dataset
     prediction_array = []
     IoUTotal = 0
@@ -85,6 +114,14 @@ def inference_on_testset(model):
     print("Average confidence score across all predicted images is: " + str(confTotal / index))
 
 def inference_on_image(image_path, model):
+    """
+    Runs inference on a single image using YOLOv11's predict mode.
+    Saves and displays results
+
+    Args:
+        image_path: The relative or absolute path to the image that inference is run on. 
+        model (YOLO): A specified model that has been trained on weights passed into it.
+    """
     model.predict(image_path, save = True, show = True)
 
 

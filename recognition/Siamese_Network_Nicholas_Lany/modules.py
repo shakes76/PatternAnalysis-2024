@@ -17,39 +17,50 @@ def PCA_transform(input_data, n_components, shape):
 class CNN(nn.Module):
     def __init__(self, shape, num_classes):
         super(CNN, self).__init__()
-        self.conv = nn.ModuleList([None] * 4)
-        self.conv[0] = nn.Conv2d(3, 64, kernel_size=10)
-        self.conv[1] = nn.Conv2d(64, 128, kernel_size=7)
-        self.conv[2] = nn.Conv2d(128, 128, kernel_size=4)
-        self.conv[3] = nn.Conv2d(128, 128, kernel_size=4)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(kernel_size=2, padding=1)
+        self.cnn = nn.Sequential(
+            nn.Conv2d(3, 96, kernel_size=11,stride=4),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(3, stride=2),
+            
+            nn.Conv2d(96, 256, kernel_size=5, stride=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+
+            nn.Conv2d(256, 384, kernel_size=3,stride=1),
+            nn.ReLU(inplace=True)
+        )
+
         self.flatten = nn.Flatten()
-        self.fc = nn.Linear(self._get_conv_output_size(shape), num_classes)
+        self.fc = nn.Sequential(
+            nn.Linear(self._get_conv_output_size(shape), 1024),
+            nn.ReLU(inplace=True),
+            
+            nn.Linear(1024, 256),
+            nn.ReLU(inplace=True),
+            
+            nn.Linear(256,2)
+        )
 
     def _get_conv_output_size(self, shape):
         x = torch.zeros(1, 3, *shape)
-        for conv in self.conv:
-            x = self.pool(self.relu(conv(x)))
+        x = self.conv(x)
+        x = self.flatten(x)
         return x.numel()
 
     def forward(self, x):
-        for conv in self.conv:
-            x = self.pool(self.relu(conv(x)))
+        x = self.cnn(x)
         x = self.flatten(x)
         x = self.fc(x)
         return x
 
 class SiameseNetwork(nn.Module):
-    def __init__(self, num_classes=2):
+    def __init__(self):
         super(SiameseNetwork, self).__init__()
-        self.resnet = resnet50(pretrained=True)
-
-        self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)
-
+        self.cnn = CNN((256,256), 2)
+    
     def forward(self, input1, input2):
-        output1 = self.resnet(input1)
-        output2 = self.resnet(input2)
+        output1 = self.cnn.forward(input1)
+        output2 = self.cnn.forward(input2)
 
         return output1, output2
 

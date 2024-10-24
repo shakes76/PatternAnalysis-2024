@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from modules import yolo_model
-from dataset import scan_directory, get_newest_item, iou_torch
+from utils import scan_directory, get_newest_item, iou_torch
 
 
 modified_filepath = "./datasets/ISIC" # file path for processed dataset

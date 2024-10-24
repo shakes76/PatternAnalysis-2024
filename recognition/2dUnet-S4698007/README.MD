@@ -12,6 +12,8 @@ The architecture of U-Net is based on an **encoder-decoder** design. The encoder
 
 Once trained, the model takes MRI slices as input and outputs segmentation masks.
 
+PLEASE ADD PATHS IN FOR YOU
+
 ## Dependencies
 
 To reproduce the results in this project, you will need the following dependencies:

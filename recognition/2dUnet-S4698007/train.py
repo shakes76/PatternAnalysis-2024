@@ -50,3 +50,4 @@ def train_model():
 
 if __name__ == "__main__":
     train_model()
+    torch.save(model.state_dict(), r"")  ########ADD PATH TO SAVE MODEL TO

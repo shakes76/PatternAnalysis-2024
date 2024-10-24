@@ -2,100 +2,71 @@ import os
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+import cv2  # Image processing using OpenCV
+
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
-    """
-    Convert the array into one-hot encoded channel representation.
-    Each unique value in the input becomes its own channel.
-    """
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
-    
+
     for c in channels:
         c = int(c)
-        res[..., c:c+1][arr == c] = 1
-    
+        res[..., c:c + 1][arr == c] = 1
+
     return res
 
-def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
-    """
-    Load 2D medical image data from a list of NIfTI files.
-    Args:
-        imageNames: List of paths to NIfTI image files.
-        normImage: If True, normalize the image.
-        categorical: If True, one-hot encode the image based on unique values.
-        dtype: Data type for the image arrays.
-        getAffines: If True, return affine matrices along with images.
-        early_stop: If True, stop after processing 20 images (for testing).
-    Returns:
-        A numpy array of loaded images and optionally their affines.
-    """
+
+# Use OpenCV for image scaling
+def resize_image(image, target_shape=(256, 256)):
+    return cv2.resize(image, target_shape, interpolation=cv2.INTER_LINEAR)
+
+
+def load_data_2D(imageNames, normImage=False, categorical=True, dtype=np.float32, getAffines=False, early_stop=False,
+                 target_shape=(256, 256), batch_size=32):
     affines = []
-
-    # Get image dimensions from the first image
     num = len(imageNames)
-    first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
-    
-    if len(first_case.shape) == 3:
-        first_case = first_case[:, :, 0]  # remove extra dimensions if present
-    
-    if categorical:
-        first_case = to_channels(first_case, dtype=dtype)
-        rows, cols, channels = first_case.shape
-        images = np.zeros((num, rows, cols, channels), dtype=dtype)
-    else:
-        rows, cols = first_case.shape
-        images = np.zeros((num, rows, cols), dtype=dtype)
 
-    for i, inName in enumerate(tqdm(imageNames)):
-        niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged')
-        affine = niftiImage.affine
+    if early_stop:
+        num = min(20, num)  # Only 20 images were processed during the test
 
-        if len(inImage.shape) == 3:
-            inImage = inImage[:, :, 0]  # remove extra dimensions
-        
-        inImage = inImage.astype(dtype)
-
-        if normImage:
-            inImage = (inImage - inImage.mean()) / inImage.std()
+    # Load images in bulk
+    for batch_start in range(0, num, batch_size):
+        batch_end = min(batch_start + batch_size, num)
+        current_batch = imageNames[batch_start:batch_end]
 
         if categorical:
-            inImage = to_channels(inImage, dtype=dtype)
-            images[i, :, :, :] = inImage
+            channels = len(np.unique(nib.load(current_batch[0]).get_fdata(caching='unchanged')))
+            images = np.zeros((len(current_batch), target_shape[0], target_shape[1], channels), dtype=dtype)
         else:
-            images[i, :, :] = inImage
+            images = np.zeros((len(current_batch), target_shape[0], target_shape[1]), dtype=dtype)
 
-        affines.append(affine)
-        
-        if i > 50 and early_stop:
-            break
+        for i, inName in enumerate(tqdm(current_batch)):
+            niftiImage = nib.load(inName)
+            inImage = niftiImage.get_fdata(caching='unchanged')
+            affine = niftiImage.affine
 
-    if getAffines:
-        return images, affines
-    else:
-        return images
+            if len(inImage.shape) == 3:
+                inImage = inImage[:, :, 0]  # Take the first layer as the 2D image
 
-def save_nifti(image, affine, out_path):
-    """
-    Save a 2D or 3D image as a NIfTI file.
-    Args:
-        image: numpy array containing image data.
-        affine: affine matrix for the NIfTI image.
-        out_path: Output file path.
-    """
-    nifti_img = nib.Nifti1Image(image, affine)
-    nib.save(nifti_img, out_path)
+            inImage = resize_image(inImage, target_shape)
 
-# Example usage
-if __name__ == "__main__":
-    image_dir = r"C:\Users\舒画\Downloads\HipMRI_study_keras_slices_data\keras_slices_train"
-    image_files = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.nii') or f.endswith('.nii.gz')]
+            if normImage:
+                inImage = (inImage - inImage.mean()) / inImage.std()
 
-    # Load the images
-    images, affines = load_data_2D(image_files, normImage=True, categorical=False, getAffines=True, early_stop=True)
+            if categorical:
+                inImage = to_channels(inImage, dtype=dtype)
+                images[i, :, :, :] = inImage
+            else:
+                images[i, :, :] = inImage
 
-    # Save the first loaded image as an example
-    output_path = "output_image.nii.gz"
-    save_nifti(images[0], affines[0], output_path)
-    print(f"First image saved to {output_path}")
+            affines.append(affine)
+
+        yield images
+
+
+def load_all_data(image_dir, normImage=False, categorical=False, dtype=np.float32, target_shape=(256, 256),
+                  batch_size=32):
+    imageNames = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if
+                  f.endswith('.nii') or f.endswith('.nii.gz')]
+    return load_data_2D(imageNames, normImage=normImage, categorical=categorical, dtype=dtype,
+                        target_shape=target_shape, batch_size=batch_size)

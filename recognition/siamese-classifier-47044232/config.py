@@ -11,6 +11,7 @@ Made by Joshua Deadman
 #               all images
 DATAPATH = "./data"
 MODELPATH = "./models"
+IMAGEPATH = "./images"
 
 # The percent of malignant data in each set (should add up to 1).
 TRAINING = 0.7
@@ -21,9 +22,8 @@ VALIDATION = 0.1
 BATCH_SIZE = 32
 WORKERS = 4
 EPOCHS_SIAMESE = 140
-EPOCHS_CLASSIFIER = 64
-LEARNING_RATE = 0.0002
+EPOCHS_CLASSIFIER = 50
+LR_SIAMESE = 0.0002
+LR_CLASSIFIER = 0.002
 BETAS = (0.9,0.999)
 LOSS_MARGIN = 1
-BENIGN_LABEL = 0
-MALIGNANT_LABEL = 1

@@ -53,7 +53,7 @@ val_loader = DataLoader(val_set, batch_size=config.BATCH_SIZE, num_workers=confi
 # Initialise the Siamese Network
 model = SiameseNetwork().to(device)
 tripletloss = TripletMarginLoss(margin=config.LOSS_MARGIN)
-optimiser = Adam(model.parameters(), lr=config.LEARNING_RATE, betas=config.BETAS)
+optimiser = Adam(model.parameters(), lr=config.LR_SIAMESE, betas=config.BETAS)
 
 def processes_batch(anchor, positive, negative) -> torch.Tensor:
     """ Takes a triplet and returns the calculated loss.
@@ -169,7 +169,7 @@ Using a binary classifier to learn the feature vectors of the Siame Network.
 """
 model = BinaryClassifier().to(device)
 cross_entropy = CrossEntropyLoss()
-optimiser = Adam(model.parameters(), 0.001, (0.9, 0.999))
+optimiser = Adam(model.parameters(), config.LR_CLASSIFIER, config.BETAS)
 
 train_loss = []
 val_loss = []

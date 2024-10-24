@@ -91,8 +91,8 @@ model.fit(
     )
 ```
 )
-![Example of model training metric plot epoch loss](images/epoch-loss-example)
-![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example)
+![Example of model training metric plot epoch loss](images/epoch-loss-example.png)
+![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example.png)
 
 To help better visualize the model's accuracy, here is an example of the plot of an actual image, the ground truth and a model's prediction put side-by-side to better present the model's accuracy after training
 ![Example of UNet model output](images/model-output-example.png)

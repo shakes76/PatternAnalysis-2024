@@ -28,10 +28,8 @@ warmup_epochs = 5
 t_max = 30
 
 # Load test data
-train_dataset_path = "../dataset/AD_NC/train"
-test_dataset_path = "../dataset/AD_NC/test"
-#test_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/test"
-#train_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/train"
+test_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/test"
+train_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/train"
 
 seed = 20 #! make sure use the same seed as the train.py
 data_preprocessor = CombinedPreprocessing(

@@ -1,3 +1,11 @@
+"""
+This script executes the training, validating, testing and saving process of the 3D Improved UNet Model. Additionally,
+accuracy, loss, multiclass dice coefficient and dice similarity coefficient plots are created and saved to visualise
+the performance of the model.
+
+@author Nathan King
+"""
+
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np

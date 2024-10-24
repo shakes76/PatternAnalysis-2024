@@ -94,8 +94,6 @@ def load_data_tf(image_dir, seg_dir, dtype=np.float32, batch_size=32, shuffle=Fa
         seg_path.append(os.path.join(seg_dir, image.replace("case", "seg")))
     images = load_data_2D(image_path, normImage=True)
     segs = load_data_2D(seg_path, categorical=True)
-    print(images.min())
-    print(images.max())
     # dataset = tf.data.Dataset.from_tensor_slices((images, segs))
     # if shuffle:
     #     dataset = dataset.shuffle(images.shape[0])

@@ -19,6 +19,7 @@ Functions:
     write_log_file: Write train/test messages to log file
     train_model: Train UNet on training data
     test_model: Test trained UNet on testing data
+    plot_training_metrics: Plot the training loss and dice score
     main: Perform the training and testing and plot the results
 
 Dependencies:
@@ -57,11 +58,11 @@ NUM_EPOCHS = 24
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 12
 
-# Model name - Change name for each training
+# Model name and directory - Change name for each training
 MODEL_NAME = "2D_UNet"
+MODEL_DIR = os.path.join(os.getcwd(), "trained_models", MODEL_NAME)
 
-# Model, dice score and log file directories
-MODEL_DIR = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "trained_models", MODEL_NAME)
+# Paths to model-specific files
 MODEL_CHECKPOINT_DIR = os.path.join(MODEL_DIR, "checkpoint.pth")
 TRAIN_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "training_dice_score.pth")
 TEST_DICE_SCORE_DIR = os.path.join(MODEL_DIR, "testing_dice_score.pth")
@@ -70,7 +71,7 @@ LOG_DIR = os.path.join(MODEL_DIR, "log.txt")
 VERBOSE = True
 
 # Image directories - Change if data is stored differently
-MAIN_IMG_DIR = os.path.join(os.getcwd(), "recognition", "46982775_2DUNet", "HipMRI_study_keras_slices_data")
+MAIN_IMG_DIR = os.path.join(os.getcwd(), "HipMRI_study_keras_slices_data")
 TRAIN_IMG_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_train")
 TRAIN_MASK_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_seg_train")
 TEST_IMG_DIR = os.path.join(MAIN_IMG_DIR, "keras_slices_test")
@@ -156,7 +157,7 @@ def train_model(
             # Write losses and dice scores to log periodically
             if (i+1) % 100 == 0:
                 write_log_file(f"Step: {i+1}/{len(loader)}, Loss: {loss.item()}")
-                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(train_dice_scores / (i+1))}")
+                write_log_file(f"Step: {i+1}/{len(loader)}, Dice score: {(train_dice_scores[epoch] / (i+1))}")
 
         # Epoch finished. Record average loss for that epoch
         epoch_loss = epoch_running_loss / len(loader)
@@ -193,9 +194,7 @@ def test_model(
 
     Returns:
         list[float]: Final dice scores of all classes
-    """
-    start_time = time.time()
-    
+    """   
     # Storage for plotting Cross Entropy Loss and Dice Score
     test_dice_scores = torch.zeros(len(CLASSES_DICT))
     test_dice_scores = test_dice_scores.to(device)
@@ -226,9 +225,43 @@ def test_model(
         for key, label in CLASSES_DICT.items():
             write_log_file(f"Dice score for {label} is {average_test_dice_scores[key]:.4f}")
 
-    end_time = time.time()
-    write_log_file(f"Testing took {(end_time - start_time)/60:.1f} minutes")
     return average_test_dice_scores
+
+
+def plot_training_metrics(loss: list[float], dice_score: list[list[float]]):
+    """ 
+    Plot the training metrics after completing training.
+    
+    Parameters:
+        loss: List of cross entropy training losses per epoch
+        dice_score: Average dice scores of all classes per epoch
+
+    Returns:
+        None, plots the cross entropy loss and dice score vs epoch
+    """
+    # Plot cross entropy losses
+    loss_fig = plt.figure()
+    plt.plot(loss)
+    plt.title('Cross Entropy Training Loss vs Epoch')
+    plt.ylabel('Training Loss')
+    plt.xlabel('Epoch')
+    plt.xticks(np.arange(1, NUM_EPOCHS), rotation=90)
+    # Training prostate dice similarity coefficient
+    prostate_dice_scores = []
+    for epoch_dice_score in dice_score:
+        prostate_dice_scores.append(epoch_dice_score[5])
+    dice_fig = plt.figure()
+    plt.plot(prostate_dice_scores, label='Training Dice Score')
+    plt.axhline(0.75, color='r', label='Target Dice Score')
+    plt.title('Prostate Dice Score vs Epoch')
+    plt.ylabel('Dice Score')
+    plt.xlabel('Epoch')
+    plt.xticks(np.arange(1, NUM_EPOCHS), rotation=90)
+    plt.legend()
+    # Show and save figures
+    plt.show()
+    loss_fig.savefig('training_loss_plot')
+    dice_fig.savefig('training_dice_score_plot')
 
 
 def main():
@@ -262,7 +295,7 @@ def main():
     model = model.to(device)
     
     # Weights for loss function from calculate_class_weights in dataset.py
-    weights = torch.tensor([0.9679, 0.2466, 1.3312, 8.9319, 44.2907, 39.6628])
+    weights = torch.tensor([0.9679, 0.2466, 1.3312, 8.9319, 44.2907, 39.6628]).to(device)
     # Loss function and optimiser algorithm
     criterion = nn.CrossEntropyLoss(weight=weights)
     optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -274,29 +307,10 @@ def main():
         weight_type = "linear"
         ).to(device)
     
-    # Training and testing
+    # Training, testing, then plotting
     train_losses, train_dice_scores = train_model(model, train_loader, criterion, optimiser, gds, device)
     test_model(model, test_loader, gds, device)
-    
-    # Plotting
-    # Training loss
-    plt.plot(train_losses)
-    plt.title('Cross Entropy Training Loss vs Epoch')
-    plt.ylabel('Training Loss')
-    plt.xlabel('Epoch')
-    plt.xticks(np.arange(1, NUM_EPOCHS))
-    plt.show()
-    # Training prostate dice similarity coefficient
-    prostate_dice_scores = []
-    for epoch_dice_score in train_dice_scores:
-        prostate_dice_scores.append(epoch_dice_score[5])
-    plt.plot(prostate_dice_scores, label='Training Dice Score')
-    plt.axhline(0.75, label='Target Dice Score')
-    plt.title('Prostate Dice Score vs Epoch')
-    plt.ylabel('Dice Score')
-    plt.xlabel('Epoch')
-    plt.xticks(np.arange(1, NUM_EPOCHS))
-    plt.show()
+    plot_training_metrics(train_losses, train_dice_scores)
 
 
 if __name__ == "__main__":

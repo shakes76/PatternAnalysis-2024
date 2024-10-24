@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from dataset import MRIDataset, train_transforms, val_transforms  # 确保这些在 dataset.py 中正确定义
-from modules import UNet3D  # 确保 UNet3D 定义在 modules.py 中
+from dataset import MRIDataset, train_transforms, val_transforms  # Ensure these are correctly defined in dataset.py
+from modules import UNet3D  # Ensure UNet3D is defined in modules.py
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.cuda.amp import autocast, GradScaler
@@ -17,13 +17,13 @@ from sklearn.model_selection import train_test_split
 import nibabel as nib
 import csv
 
-# 设置随机种子以保证结果可复现
+# Set random seed for reproducibility
 seed = 42
 torch.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
 
-# 解析命令行参数
+# Parse command-line arguments
 parser = argparse.ArgumentParser(description='3D UNet Training Script')
 parser.add_argument('--lr', type=float, default=0.001)
 parser.add_argument('--epoch', type=int, default=20)
@@ -38,12 +38,12 @@ def split_data(dataset_root, seed=42, train_size=0.6, val_size=0.2, test_size=0.
 
     assert len(image_paths) == len(label_paths)
 
-    # 划分训练集和临时集
+    # Split data into training and temporary set
     train_image_paths, temp_image_paths, train_label_paths, temp_label_paths = train_test_split(
         image_paths, label_paths, test_size=(1 - train_size), random_state=seed
     )
 
-    # 划分验证集和测试集
+    # Split temporary set into validation and test sets
     val_image_paths, test_image_paths, val_label_paths, test_label_paths = train_test_split(
         temp_image_paths, temp_label_paths, test_size=(test_size / (test_size + val_size)), random_state=seed
     )
@@ -58,7 +58,7 @@ splits = split_data(args.dataset_root, seed=seed, train_size=0.6, val_size=0.2, 
 train_image_paths, train_label_paths = splits['train']
 val_image_paths, val_label_paths = splits['val']
 
-# 初始化训练和验证数据集
+# Initialize training and validation datasets
 train_dataset = MRIDataset(
     image_paths=train_image_paths,
     label_paths=train_label_paths,
@@ -75,10 +75,9 @@ val_dataset = MRIDataset(
     dtype=np.float32
 )
 
-# 使用 DataLoader 进行数据加载
+# Load data using DataLoader
 train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
-
 
 def save_best_dice(best_class_dice, file_path='best_class_dice.csv'):
     with open(file_path, mode='w', newline='') as csv_file:
@@ -88,7 +87,6 @@ def save_best_dice(best_class_dice, file_path='best_class_dice.csv'):
         writer.writeheader()
         for class_name, dice_score in best_class_dice.items():
             writer.writerow({'Class': class_name, 'Best_Dice_Score': dice_score})
-
 
 def compute_class_weights(label_paths, num_classes):
     class_counts = np.zeros(num_classes)
@@ -100,8 +98,7 @@ def compute_class_weights(label_paths, num_classes):
     class_weights = class_counts.max() / class_counts
     return torch.tensor(class_weights, dtype=torch.float32).to(args.device)
 
-
-# 定义DiceLoss
+# Define DiceLoss
 class DiceLoss(nn.Module):
     def __init__(self, smooth=1):
         super(DiceLoss, self).__init__()
@@ -109,23 +106,22 @@ class DiceLoss(nn.Module):
 
     def forward(self, inputs, targets):
         num_classes = inputs.shape[1]
-        # 使用Softmax获取每个类别的概率
+        # Use Softmax to get the probability of each class
         inputs = F.softmax(inputs, dim=1)
-        # 将targets转换为one-hot编码
+        # Convert targets to one-hot encoding
         targets_one_hot = F.one_hot(targets, num_classes).permute(0, 4, 1, 2, 3).float()
-        # 计算每个类别的Dice损失
+        # Calculate Dice loss for each class
         intersection = (inputs * targets_one_hot).sum(dim=(2, 3, 4))
         union = inputs.sum(dim=(2, 3, 4)) + targets_one_hot.sum(dim=(2, 3, 4))
         dice = (2. * intersection + self.smooth) / (union + self.smooth)
-        # 排除背景类别（索引为0）
+        # Exclude background class (index 0)
         dice = dice[:, 1:]
-        # 计算平均Dice损失
+        # Calculate average Dice loss
         dice_loss = 1 - dice.mean()
         return dice_loss
 
-
 class CombinedLoss(nn.Module):
-    def __init__(self, weight_ce=1.0, weight_dice=1.0):
+    def __init__(self, weight_ce, weight_dice):
         super(CombinedLoss, self).__init__()
         self.weight_ce = weight_ce
         self.weight_dice = weight_dice
@@ -133,20 +129,19 @@ class CombinedLoss(nn.Module):
         self.dice = DiceLoss()
 
     def forward(self, inputs, targets):
-        # 直接使用 targets，不需要 argmax
+        # Directly use targets, no need for argmax
         loss_ce = self.ce(inputs, targets.squeeze(1))
         loss_dice = self.dice(inputs, targets)
         return self.weight_ce * loss_ce + self.weight_dice * loss_dice
 
-
-# 初始化模型并移动到设备
+# Initialize model and move to device
 model = UNet3D().to(args.device)
 
-# 计算类别权重
+# Compute class weights
 num_classes = model.final_conv.out_channels
 class_weights = compute_class_weights(train_label_paths, num_classes)
 
-# 定义损失函数
+# Define loss function
 if args.loss == 'dice':
     criterion = DiceLoss().to(args.device)
 elif args.loss == 'ce':
@@ -154,31 +149,30 @@ elif args.loss == 'ce':
 elif args.loss == 'combined':
     criterion = CombinedLoss(weight_ce=0.5, weight_dice=1.0).to(args.device)
 
-# 定义优化器
+# Define optimizer
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-# 初始化GradScaler用于混合精度训练
+# Initialize GradScaler for mixed precision training
 scaler = torch.cuda.amp.GradScaler()
 
-# 初始化损失和指标记录列表
+# Initialize lists for tracking loss and metrics
 train_losses = []
 valid_losses = []
 
-# 新增的初始化列表
+# Additional lists for validation
 val_losses = []
 val_dices = []
 
 train_dice_scores = {f'Class_{i}': [] for i in range(num_classes)}
 val_dice_scores = {f'Class_{i}': [] for i in range(num_classes)}
 
-
 def plot_metrics(train_losses, val_losses, train_dice_scores, val_dice_scores, num_classes, save_path='metrics.png'):
-    """绘制训练和验证损失以及每个类别的Dice系数"""
+    """Plot training and validation loss as well as Dice coefficient for each class"""
     epochs = range(1, len(train_losses) + 1)
 
     plt.figure(figsize=(20, 10))
 
-    # 绘制损失
+    # Plot loss
     plt.subplot(2, 1, 1)
     plt.plot(epochs, train_losses, 'b-', label='Training Loss')
     plt.plot(epochs, val_losses, 'r-', label='Validation Loss')
@@ -187,7 +181,7 @@ def plot_metrics(train_losses, val_losses, train_dice_scores, val_dice_scores, n
     plt.title('Loss During Training')
     plt.legend()
 
-    # 绘制每个类别的Dice系数
+    # Plot Dice coefficient for each class
     plt.subplot(2, 1, 2)
     for class_index in range(num_classes):
         class_name = f'Class_{class_index}'
@@ -201,7 +195,6 @@ def plot_metrics(train_losses, val_losses, train_dice_scores, val_dice_scores, n
     plt.savefig(save_path)
     plt.show()
 
-
 def evaluate(model, val_loader, criterion, device, num_classes):
     model.eval()
     val_loss = 0
@@ -210,10 +203,10 @@ def evaluate(model, val_loader, criterion, device, num_classes):
     with torch.no_grad():
         for batch in val_loader:
             images = batch['image'].to(device, dtype=torch.float32)  # [B, 1, D, H, W]
-            labels = batch['label'].to(device, dtype=torch.long)  # [B, D, H, W] 或 [B, 1, D, H, W]
+            labels = batch['label'].to(device, dtype=torch.long)  # [B, D, H, W] or [B, 1, D, H, W]
 
             if labels.dim() == 5 and labels.size(1) == 1:
-                labels = labels.squeeze(1)  # 现在 labels 是 [B, D, H, W]
+                labels = labels.squeeze(1)  # Now labels is [B, D, H, W]
 
             with autocast():
                 outputs = model(images)  # [B, num_classes, D, H, W]
@@ -221,13 +214,13 @@ def evaluate(model, val_loader, criterion, device, num_classes):
 
             val_loss += loss.item()
 
-            # 计算预测结果
+            # Calculate predictions
             preds = torch.argmax(outputs, dim=1)  # [B, D, H, W]
 
-            # 现在 preds 和 labels 都是 [B, D, H, W]
+            # Now preds and labels are both [B, D, H, W]
             targets = labels
 
-            # 计算每个类别的 Dice 系数
+            # Calculate Dice coefficient for each class
             for class_index in range(num_classes):
                 pred_class = (preds == class_index).float()
                 target_class = (targets == class_index).float()
@@ -235,34 +228,32 @@ def evaluate(model, val_loader, criterion, device, num_classes):
                 intersection = (pred_class * target_class).sum().item()
                 union = pred_class.sum().item() + target_class.sum().item()
                 if union == 0:
-                    dice = 1.0  # 如果分母为0，表示没有该类别，设定 dice 为1
+                    dice = 1.0  # If the denominator is 0, it means there is no such class, set dice to 1
                 else:
                     dice = (2. * intersection) / (union + 1e-8)
                 class_dice[class_index] += dice
                 if union > 0:
                     class_counts[class_index] += 1
 
-    # 计算每个类别的平均 Dice 系数
+    # Calculate average Dice coefficient for each class
     avg_class_dice = class_dice / np.maximum(class_counts, 1)
     avg_loss = val_loss / len(val_loader)
     return avg_loss, avg_class_dice
 
-
 def main():
     start_time = time.time()
     num_epochs = args.epoch
-    best_val_dice = 0
     save_path = 'best_model.pth'
     num_classes = model.final_conv.out_channels
 
-    # 初始化一个字典来存储每个类别的最佳Dice分数
+    # Initialize a dictionary to store the best Dice score for each class
     best_class_dice = {f'Class_{i}': 0.0 for i in range(num_classes)}
 
-    # 早停参数
+    # Early stopping parameters
     patience = 10
     counter = 0
 
-    print("begin training")
+    print("Begin training")
     for epoch in range(1, num_epochs + 1):
         model.train()
         epoch_train_loss = []
@@ -287,7 +278,7 @@ def main():
 
             epoch_train_loss.append(loss.item())
 
-            # 计算每个类别的 Dice 系数
+            # Calculate Dice coefficient for each class
             preds = torch.argmax(outputs, dim=1)
             targets = labels
 
@@ -303,7 +294,7 @@ def main():
                     dice = (2. * intersection) / (union + 1e-8)
                 epoch_train_dice[f'Class_{class_index}'].append(dice)
 
-            # 打印训练进度
+            # Print training progress
             if (idx + 1) % max(1, len(train_dataloader) // 2) == 0:
                 elapsed = time.time() - start_time
                 print(
@@ -311,21 +302,21 @@ def main():
                     f"Loss: {loss.item():.4f}, Elapsed Time: {elapsed:.2f}s"
                 )
 
-        # 在每个 epoch 结束时记录平均损失和 Dice 系数
+        # Record average loss and Dice coefficient at the end of each epoch
         avg_train_loss = np.mean(epoch_train_loss)
         avg_train_dice = {class_name: np.mean(dice_list) for class_name, dice_list in epoch_train_dice.items()}
         train_losses.append(avg_train_loss)
         for class_name, dice in avg_train_dice.items():
             train_dice_scores[class_name].append(dice)
 
-        # 验证阶段
+        # Validation phase
         avg_val_loss, avg_val_dice = evaluate(model, val_loader, criterion, args.device, num_classes)
         val_losses.append(avg_val_loss)
         for class_index, dice in enumerate(avg_val_dice):
             class_name = f'Class_{class_index}'
             val_dice_scores[class_name].append(dice)
 
-        # 检查每个类别是否有改进
+        # Check if there is an improvement for each class
         improved = False
         for class_index in range(num_classes):
             class_name = f'Class_{class_index}'
@@ -337,28 +328,27 @@ def main():
             torch.save(model.state_dict(), save_path)
             print(f"Saved the best model at epoch {epoch}")
             print(f"Best Class Dice Scores: {best_class_dice}")
-            counter = 0  # 重置早停计数器
+            counter = 0  # Reset early stopping counter
         else:
             counter += 1
             if counter >= patience:
                 print("Early stopping triggered")
                 break
 
-        # 打印当前epoch的验证结果
+        # Print validation results for the current epoch
         print(f"Epoch [{epoch}/{num_epochs}], Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
         print("Validation Dice Scores:")
         for class_index, dice in enumerate(avg_val_dice):
             print(f"  Class {class_index}: {dice:.4f}")
 
-    # 绘制损失和Dice系数
+    # Plot loss and Dice coefficient
     plot_metrics(train_losses, val_losses, train_dice_scores, val_dice_scores, num_classes,
                  save_path='training_metrics.png')
 
-    # 保存每个类别的最佳Dice分数
+    # Save the best Dice score for each class
     save_best_dice(best_class_dice)
 
     print("Finished Training")
-
 
 if __name__ == '__main__':
     main()

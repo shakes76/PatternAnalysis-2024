@@ -12,7 +12,7 @@ in_chanel = 1 # grey
 out_chanel = 6 # background, body outline, bone, bladder, rectum, prostate
 
 class DoubleConv(nn.Module):
-    """包含残差连接的两个连续卷积层"""
+    """Two consecutive convolutional layers with residual connection"""
 
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
@@ -38,7 +38,7 @@ class DoubleConv(nn.Module):
         return out
 
 class AttentionBlock(nn.Module):
-    """注意力门"""
+    """Attention gate"""
 
     def __init__(self, F_g, F_l, F_int):
         super(AttentionBlock, self).__init__()
@@ -69,7 +69,7 @@ class AttentionBlock(nn.Module):
         return out
 
 class DownSample(nn.Module):
-    """下采样层，通过 MaxPool3d 减少空间尺寸"""
+    """Downsampling layer to reduce spatial dimensions using MaxPool3d"""
 
     def __init__(self, kernel_size=2, stride=2):
         super(DownSample, self).__init__()
@@ -80,7 +80,8 @@ class DownSample(nn.Module):
 
 
 class UpSample(nn.Module):
-    """上采样层，包含注意力机制"""
+    """Upsampling layer with attention mechanism"""
+
 
     def __init__(self, in_channels, out_channels, attention_channels, kernel_size=2, stride=2):
         super(UpSample, self).__init__()
@@ -91,20 +92,20 @@ class UpSample(nn.Module):
         x = self.up(x)
         if x.shape != skip.shape:
             x = F.interpolate(x, size=skip.shape[2:], mode='trilinear', align_corners=True)
-        # 应用注意力机制
+        # Apply attention mechanism
         skip = self.attention(g=x, x=skip)
         x = torch.cat((x, skip), dim=1)
         return x
 
 
 class UNet3D(nn.Module):
-    """3D UNet 模型"""
+    """improved 3D UNet model"""
 
     def __init__(self, in_channels=in_chanel, out_channels=out_chanel, features=[32, 64, 128, 256]):
         super(UNet3D, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        # 编码器部分
+        # Encoder part
         self.encoder1 = DoubleConv(in_channels, features[0])
         self.pool1 = DownSample()
 
@@ -117,10 +118,10 @@ class UNet3D(nn.Module):
         self.encoder4 = DoubleConv(features[2], features[3])
         self.pool4 = DownSample()
 
-        # 瓶颈部分
+        # Bottleneck part
         self.bottleneck = DoubleConv(features[3], features[3] * 2)
 
-        # 解码器部分，添加 attention_channels 参数
+        # Decoder part, adding attention_channels parameter
         self.upconv4 = UpSample(features[3] * 2, features[3], attention_channels=features[3])
         self.decoder4 = DoubleConv(features[3] * 2, features[3])
 
@@ -133,13 +134,13 @@ class UNet3D(nn.Module):
         self.upconv1 = UpSample(features[1], features[0], attention_channels=features[0])
         self.decoder1 = DoubleConv(features[0] * 2, features[0])
 
-        # 最终输出层保持不变
+        # Decoder part, adding attention_channels parameter
         self.final_conv = nn.Conv3d(features[0], out_channels, kernel_size=1)
-        # 移除 Softmax
+        # Remove Softmax
         # self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        # 编码器
+        # Encoder
         enc1 = self.encoder1(x)  # [B, 16, D, H, W]
         enc2 = self.encoder2(self.pool1(enc1))  # [B, 32, D/2, H/2, W/2]
         enc3 = self.encoder3(self.pool2(enc2))  # [B, 64, D/4, H/4, W/4]
@@ -147,7 +148,7 @@ class UNet3D(nn.Module):
 
         bottleneck = self.bottleneck(self.pool4(enc4))  # [B, 256, D/16, H/16, W/16]
 
-        # 解码器
+        # Decoder
         dec4 = self.upconv4(bottleneck, enc4)  # [B, 128, D/8, H/8, W/8]
         dec4 = self.decoder4(dec4)  # [B, 128, D/8, H/8, W/8]
 
@@ -161,24 +162,24 @@ class UNet3D(nn.Module):
         dec1 = self.decoder1(dec1)  # [B, 16, D, H, W]
 
         out = self.final_conv(dec1)  # [B, out_channels, D, H, W]
-        # 移除 Softmax
+        # Remove Softmax
         # out = self.softmax(out)
         return out
 
 if __name__ == '__main__':
-    # 指定图像和标签的文件夹路径
+    # Specify the folder paths for images and labels
     train_image_folder = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_MRs_anon"
     train_label_folder = r"C:\Users\YG\Documents\course\COMP3710\Report\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1\semantic_labels_anon"
 
-    # 获取所有图像和标签路径
+    # Get all image and label paths
     train_image_paths = sorted(glob.glob(os.path.join(train_image_folder, "*.nii*")))
     train_label_paths = sorted(glob.glob(os.path.join(train_label_folder, "*.nii*")))
 
-    # 打印一些路径来验证（可选）
-    print("Image paths:", train_image_paths[:3])  # 打印前三个路径，检查路径是否正确
-    print("Label paths:", train_label_paths[:3])  # 打印前三个路径，检查路径是否正确
+    # Print some paths to verify
+    print("Image paths:", train_image_paths[:3])
+    print("Label paths:", train_label_paths[:3])
 
-    # 构建数据集
+    # Create dataset
     train_dataset = MRIDataset(
         image_paths=train_image_paths,
         label_paths=train_label_paths,
@@ -188,10 +189,10 @@ if __name__ == '__main__':
     )
     train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     model = UNet3D()
-    # 验证 DataLoader 和 Transform 是否正确工作
+    # Verify if DataLoader and Transform work correctly
     for batch in train_loader:
         images, labels = batch['image'], batch['label']
-        # 确保图像形状是符合模型的输入要求
+        # Ensure the image shape matches the model input requirements
         print(f"Image batch shape: {images.shape}")
         print(f"Label batch shape: {labels.shape}")
 

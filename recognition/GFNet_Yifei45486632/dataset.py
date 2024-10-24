@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 # Define the image size and batch size
 IMAGE_SIZE = (224, 224)  # The normal size of GFNet is 224x224
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 
 # Load and preprocess images using tf.data.Dataset
 def load_images(directory):

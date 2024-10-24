@@ -103,6 +103,15 @@ timm
 scikit-learn（sklearn）
 tqdm
 ```
+You can use the following code to download these dependencies.
+If you have cuda:  
+```
+pip install opencv-python torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 numpy Pillow timm scikit-learn tqdm
+```
+If you don't have cuda:  
+```
+pip install opencv-python torch torchvision torchaudio numpy Pillow timm scikit-learn tqdm
+```
 
 ## Run this Project
 You can easily run this project and change any parameters you want by using train.py. The 'split_val_set' function in train.py only need to run once. It will cover the previous new dataset if you run multiple times. Nothing terrible will happend but better don't waste 3 min.

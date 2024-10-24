@@ -54,7 +54,7 @@ This class defines the structure of each transformer block, consisting of a mult
 
 This is the main class for the Vision Transformer model. It integrates all the components mentioned above and defines the forward pass for the entire architecture, from patch embedding to the classification head. 
 
-## Implementation Details in `dataset.py`
+## Data and Implementation Details in `dataset.py`
 
 This file is responsible for data loading and preprocessing. It includes the following components [4]:
 
@@ -70,9 +70,11 @@ Several image transformations are applied to preprocess the data, including resi
 
 Handling class imbalance is a critical aspect when training machine learning models, especially in medical datasets like ADNI. In medical imaging datasets, it is common for one class (e.g., healthy controls, `NC`) to be overrepresented compared to another (e.g., diseased cases, `AD`). This creates a risk where the model might become biased, performing well on the majority class while failing to correctly identify the minority class. To address this, `dataset.py` computes `class_weights` to guide the model during training. It uses `class_weight.compute_class_weight` from `sklearn.utils` to calculate weights for each class based on their frequency, helping to balance the influence of each class in training.
 
-4. **Data Pipeline**:
+4. **Handling Data Leakage**:
 
-The dataset is split into training (80%) and validation (20%) sets. An independent test set is used to evaluate the final model’s performance. The function `get_data_loaders` returns PyTorch DataLoader objects for training, validation, and testing. It accepts parameters like batch size and validation split ratio.
+A patient-level split was employed using metadata to ensure all images from a single patient are grouped together in the same dataset split (train, validation, or test). This approach was made possible by using the `meta_data_with_label.json` file, which indicates the patient IDs associated with each image. By grouping images based on patient IDs and splitting them accordingly, we ensured that no patient data overlapped between the different dataset partitions.
+
+This method is crucial because it prevents data leakage, where the same patient's images could appear in both training and test sets, leading to overfitting and inflated performance metrics. The patient-level split enhances the model's generalizability, as it simulates a realistic scenario in which the model must make predictions on unseen patients, making the results more reliable for clinical applications.
 
 ## Data Configuration and Data Example
 
@@ -247,7 +249,7 @@ The training and validation accuracies are relatively close together, indicating
 
 Both the training and validation losses generally follow a downward trend, indicating that the model is learning to minimize errors. At around the 20th epoch, the curves align closely, suggesting that the model's performance is balanced between training and validation at this stage. Beyond this point, the validation loss starts fluctuating significantly, with no clear trend. This variability implies that while the model performs well on the training set, it struggles with generalizing to unseen data. The wild fluctuations and lack of trend in the validation loss curve highlight potential overfitting, as the model may be adapting too specifically to the training data.
 
-Overall, the **best test accuracy of 67%** is slightly lower than the best validation accuracy of 72%, meaning that there is still overfitting.
+Overall, the **best test accuracy of 67.2%** is slightly lower than the best validation accuracy of 72%, meaning that there is still overfitting.
 
 ### Evaluation in `predict.py`
 

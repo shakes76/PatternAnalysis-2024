@@ -1,7 +1,8 @@
 # GFNet Vision Transformer for Alzheimer's Classification of the ADNI Brain dataset
 
 
-This Repository contains the code of a pytorch implementation of a custom Global Filter Network (GFnet) based on identifying Alzheimer's disease from 2D MRI scans of the brain. Alzheimer's disease is a progressive neurodegenerative disease that destroys memory and many other important mental functions. Early detection of Alzheimer's is a critical step for providing proper treatment to patients. This project's aim is to address the problem of fast classification of Alzheimer’s Disease from brain scans using the Alzheimer’s Disease Neuroimaging Initiative(ADNI) dataset. The dataset contains a number of sliced MRI brain scan images separated into Cognitive Normal (NC) and Alzheimer's disease(AD) images. This model is built upon from the original GFnet design "Global Filter Networks for Image Classification" [3].
+This repository contains the code of a pytorch implementation of a custom Global Filter Network (GFnet) based on identifying Alzheimer's disease from 2D MRI scans of the brain. Alzheimer's disease is a progressive neurodegenerative disease that destroys memory and many other important mental functions. Early detection of Alzheimer's is a critical step for providing proper treatment to patients. This project's aim is to address the problem of fast classification of Alzheimer’s Disease from brain scans using the Alzheimer’s Disease Neuroimaging Initiative(ADNI) dataset. The dataset contains a number of sliced MRI brain scan images separated into Cognitive Normal (NC) and Alzheimer's disease(AD) images. This model is built upon from the original GFnet design "Global Filter Networks for Image Classification" [3].
+
 
 ## The Model Architecture
 The GFnet is a deep learning architecture originally designed for image classification created by Tsinghua University from their release of "Global Filter Networks for Image Classification" [3]. The GFNet has a transformer-style architecture which replaces the self-attention layer in vision transformers(ViTs) with three main components: 
@@ -21,6 +22,7 @@ _Image Reference: [Rao, Y., & Zhao, W. (2021). Global Filter Networks for Image 
 
 ### Why Use GFNet?
 The GFNet is designed for image classification and has preformed significantly well on the large visual database ImageNet. For the ADNI dataset the task is very similar, to learn the underlining data structures of the images and to classify a given image to have alzheimer's or not. A major benefit of the GFNet compared to other deep learning options is its scalability which is no doubt an important aspect in the medical research industry. For this problem space we want a fast and accurate solution with the ability of the model to expand to more complex data in the future. 
+
 
 ## About the Dataset
 The ADNI dataset has been used in this project to train and test our model. ADNI is a well known Alzheimer's disease research dataset which includes thousands of Magnetic Resonance Imaging (MRI) brain scans. The data has been separated into two groups; Normal Control (NC), which are brain images of heathy individuals, and Alzheimer's Disease (AD), which are individuals which have been diagnosed with Alzheimer disease.
@@ -77,33 +79,69 @@ The ADNI dataset structure will require to have the following:
         └── NC/
 ```
 
+
 ### Training
 
-To Train the GFNet on the ADNI dataset from scratch run the following:
+To train the GFNet on the ADNI dataset from scratch, run the following:
 ```
 python train.py
 ```
-This will save the training model to your source directory as 'trained_model.pth'.
+This will save the trained final model to your source directory as 'trained_model.pth'.
+
 
 ### Predictions
 
-To Run predictions run the following: 
+To create predictions from the model, run the following: 
 
+```
 python predict.py --model_path /path/to/trained_model.pth --output-dir /path/to/image_dir
+```
 
-The parsed arguments --model_path is to the trained_model.pth, and --output-dir is to where you want to store your predicted images.
+-  **--model_path** is to the 'trained_model.pth' file.
+-  **--output-dir** is to where you want to store your predictions
 
-If no arguments are parsed, the model will assume that 'trained_model.pth' is in your source directory and the output predicted images will be saved in a folder named 'prediction_outputs' in the source directory.
+If no arguments are parsed, the model will assume that 'trained_model.pth' is in your source directory and the predicted images will create and save the images in a directory called 'prediction_outputs' in the source directory.
 
-The predicted images are 4 randomly selected images from the testing directory to show the results. Here is a example output:
+The predicted images are 4 randomly selected images from the testing directory. 
+
+Here is a example output:
 
 ![Prediction](assets/prediction_image.png)
 
 
 ## Results
 
-Figures ect
-accuracy
+This GFNet model had reached a final accuracy of % 70.63 and test loss of 1.2090 on the ADNI test dataset. This accuracy was reached after training the model over 300 Epochs which took a total of 10.9 hours on the UQ Rangpur HPC.
+
+Below are two graphs showing the training and validation loss over the 300 epochs, as well as the validation accuracy.
+
+![Train](assets/training_and_validation_losses.png) ![Test](assets/validation_accuracies.png)
+
+We can see that the validation loss follows quiet closely to the training, only lagging behind by approximately 0.05 at the end of training. The graphs show a fast decrease in the first 50 epochs than followed by a more gradual decrease. further training of the model could have been conducted, 
+however during the development of the model, the model showed signs of over fitting and no increase in accuracy was made.
+
+Below is the resulting confusion matrix of the testing data:
+
+![confusion](assets/confusion_matrix.png)
+
+The model design used here on the ADNI dataset was chosen following the base of the original GFNet design as well as through trialing a variety of different hyperparameter which resutled in the most success.
+
+
+```
+        img_size=256,
+        patch_size= 16,
+        embed_dim=512,
+        num_classes=2,
+        in_channels=1,
+        drop_rate=0.5,
+        depth=19,
+        mlp_ratio=4.,
+        drop_path_rate=0.25,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6)
+```
+
+The results do show a relatively high success rate of correct predictions of Alzheimer's disease, however there is still room for improvement. Further
+testing  of the GFnet with a greater depth and/or number of embedded dimensions may yield a higher test accuracy, however this will likely increase the training time significantly. Variants of the GFnet may also work well on ADNI, such as the CNN-style hierarchical models which may capture the underlining data structure better.
 
 
 ## References
@@ -121,5 +159,3 @@ https://github.com/raoyongming/GFNet/tree/master
 
 [5] Tsang, S.-H. (2023, January 8). Review — GFNet: Global Filter Networks for Image Classification. Medium. https://sh-tsang.medium.com/review-gfnet-global-filter-networks-for-image-classification-6c35c426ab51
 
-‌
-‌

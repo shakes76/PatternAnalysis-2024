@@ -11,12 +11,12 @@ from dataset import get_dataloaders
 from tqdm import tqdm
 from modules import GFNetPyramid
 import os
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import CosineAnnealingLR
 import matplotlib.pyplot as plt
 import time
 import csv
 from functools import partial
-
+import argparse
 
 def train_model(epochs=10):
     if os.path.exists("recognition/classify_azheimer/AD_NC"):
@@ -27,13 +27,14 @@ def train_model(epochs=10):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GFNetPyramid()  # Model
     if os.path.exists("./alzheimer_classifier.pth"):
+        print("Loading model from checkpoint")
         model.load_state_dict(torch.load("./alzheimer_classifier.pth"))
     # model = torch.load("./alzheimer_classifier.pth")
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.975)
-    scheduler = StepLR(optimizer, step_size=2, gamma=0.3)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=5e-4)
+    scheduler = CosineAnnealingLR(optimizer, T_max=20, eta_min=1e-6)
 
     train_loader, test_loader = get_dataloaders(data_dir, 128)
 
@@ -84,3 +85,16 @@ def train_model(epochs=10):
         for epoch in range(epochs):
             writer.writerow([epoch + 1, epoch_losses[epoch], epoch_accuracies[epoch]])
     return model
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Alzheimer's Disease Classification")
+    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train the model')
+    args = parser.parse_args()
+
+    epochs = args.epochs
+    train_model(epochs)
+
+
+if __name__ == "__main__":
+    main()

@@ -4,7 +4,7 @@ import os
 from dataset import *
 from modules import UNet2D
 from utils import *
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, History
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -18,7 +18,7 @@ image_height = 256
 image_width = 128
 batch_size = 16
 learning_rate = 1e-3
-epochs = 100
+epochs = 5
 channels = 6
 
 
@@ -33,17 +33,16 @@ model = UNet2D((image_height, image_width, 1), 1024, channels=channels, activati
 # model.summary()
 model.compile(optimizer='adam', loss=dsc_loss, metrics=[dsc])
 
-callbacks = [ModelCheckpoint('unet.hdf5', verbose=1, save_best_only=True)]
-
 history = model.fit(train_dataset, 
                     epochs=epochs, 
-                    callbacks=callbacks,
                     validation_data=test_dataset)
+
+model.save('model.keras')
 
 history_post_training = history.history
 
-train_dice_coeff_list = history_post_training['dice_coefficients']
-test_dice_coeff_list = history_post_training['val_dice_coefficients']
+train_dice_coeff_list = history_post_training['dsc']
+test_dice_coeff_list = history_post_training['val_dsc']
 
 train_loss_list = history_post_training['loss']
 test_loss_list = history_post_training['val_loss']
@@ -52,15 +51,15 @@ plt.figure(1)
 plt.plot(test_loss_list, 'b-')
 plt.plot(train_loss_list, 'r-')
 
-plt.xlabel('iterations')
+plt.xlabel('epochs')
 plt.ylabel('loss')
-plt.title('loss graph', fontsize=12)
+plt.title('Loss graph', fontsize=12)
 
 plt.figure(2)
 plt.plot(train_dice_coeff_list, 'b-')
 plt.plot(test_dice_coeff_list, 'r-')
 
-plt.xlabel('iterations')
-plt.ylabel('accuracy')
-plt.title('Accuracy graph', fontsize=12)
+plt.xlabel('epochs')
+plt.ylabel('dice similarity coefficient')
+plt.title('DSC graph', fontsize=12)
 plt.show()

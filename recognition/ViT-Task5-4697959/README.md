@@ -72,9 +72,9 @@ Handling class imbalance is a critical aspect when training machine learning mod
 
 4. **Handling Data Leakage**:
 
-A patient-level split was employed using metadata to ensure all images from a single patient are grouped together in the same dataset split (train, validation, or test). This approach was made possible by using the `meta_data_with_label.json` file, which indicates the patient IDs associated with each image. By grouping images based on patient IDs and splitting them accordingly, we ensured that no patient data overlapped between the different dataset partitions.
+A patient-level split was employed using metadata to ensure all images from a single patient are grouped together in the same dataset split (train, validation). This approach was made possible by using the name of the image file, for example: `1003730_100.jpeg`, which indicates the patient IDs associated with each image. By grouping images based on patient IDs and splitting them accordingly, we ensured that no patient data overlapped between the different dataset partitions.
 
-This method is crucial because it prevents data leakage, where the same patient's images could appear in both training and test sets, leading to overfitting and inflated performance metrics. The patient-level split enhances the model's generalizability, as it simulates a realistic scenario in which the model must make predictions on unseen patients, making the results more reliable for clinical applications.
+This method is crucial because it prevents data leakage, where the same patient's images could appear in both training and validation sets, leading to overfitting and inflated performance metrics. The patient-level split enhances the model's generalizability, as it simulates a realistic scenario in which the model must make predictions on unseen patients, making the results more reliable for clinical applications.
 
 ## Data Configuration and Data Example
 

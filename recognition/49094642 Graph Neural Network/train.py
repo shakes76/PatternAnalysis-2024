@@ -1,7 +1,5 @@
 import torch
-import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from torch.optim import Adam
 from modules import GCN
 from dataset import DataLoader
 
@@ -9,7 +7,7 @@ def train(model, data, optimizer, scheduler):
     model.train()
     optimizer.zero_grad()
     out = model(data)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = torch.nn.functional.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
     scheduler.step()
@@ -43,6 +41,7 @@ def plot_metrics(losses, accuracies):
     plt.show()
 
 def main():
+    # Configuration parameters
     edge_path = r"C:\Users\wuzhe\Desktop\musae_facebook_edges.csv"
     features_path = r"C:\Users\wuzhe\Desktop\musae_facebook_features.json"
     target_path = r"C:\Users\wuzhe\Desktop\musae_facebook_target.csv"
@@ -64,15 +63,10 @@ def main():
         accuracies.append(acc)
         if epoch % 10 == 0:
             print(f'Epoch: {epoch}, Loss: {loss:.4f}, Accuracy: {acc:.4f}')
-
+            
     plot_metrics(losses, accuracies)
 
-    torch.save(model.state_dict(), 'gcn_model.pth')
-
-if __name__ == "__main__":
-    main()
-
-    torch.save(model.state_dict(), 'gcn_model.pth')
+    torch.save(model.state_dict(), "trained_model.pth")
 
 if __name__ == "__main__":
     main()

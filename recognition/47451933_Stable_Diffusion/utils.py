@@ -121,7 +121,7 @@ def generate_sample(label, model, vae_decoder, vae_encoder, latent_dim, num_time
     with torch.no_grad():
         #generate ranom latent
         x = torch.randn(num_samples, latent_dim).to(device)
-        #turn increae form the 2 dim to 3 dim version
+        #turn latent form the 2 dim to 3 dim version
         x = vae_encoder.decode(x)
         for t in reversed(range(num_timesteps)):
             #predict noise for the timestep

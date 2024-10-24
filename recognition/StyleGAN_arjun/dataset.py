@@ -11,7 +11,7 @@ ADNI_TRAIN_PATH = "ADNI/AD_NC/train"
 ADNI_TEST_PATH = "ADNI/AD_NC/test"
 CIFAR_PATH = "cifar10/"
 
-ADNI_IMG_SIZE = 240
+ADNI_IMG_SIZE = 128
 CIFAR_IMG_SIZE = 32
 
 def process_adni(batch_size, rangpur=False):

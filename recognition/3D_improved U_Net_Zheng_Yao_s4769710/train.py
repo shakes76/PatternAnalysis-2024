@@ -22,10 +22,10 @@ train_imgs, val_imgs, train_labels, val_labels = train_test_split(
     train_imgs, train_labels, test_size=0.1, random_state=42)  # 10% of training data for validation
 
 # Define parameters
-batch_size = 4
+batch_size = 2
 input_dim = (128, 128, 64)
 num_classes = 6  # Run a code trough all the data and found out the value 6.
-epochs = 50
+epochs = 100
 
 # Build and compile the model
 input_shape = (*input_dim, 1)

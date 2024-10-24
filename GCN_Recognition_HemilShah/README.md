@@ -55,6 +55,8 @@ Loss Function: CrossEntropyLoss for multi-class classification.
 -------------Results and Performance-------------
 The model shows a steady decrease in loss, indicating successful learning. By the end of 160 epochs, the loss converges to 0.1093.
 
+![Epoch Iterations with Decreasing Loss](Epoch_Iterations.png)
+
 
 -------------Evaluation Results-------------
 
@@ -65,8 +67,12 @@ Overall Accuracy: 96%
 Macro Average: Precision = 0.96, Recall = 0.95, F1-Score = 0.95
 Weighted Average: Precision = 0.96, Recall = 0.96, F1-Score = 0.96
 
+![Evaluation Results](Evaluation_results.png)
+
 The results indicate that the model performs well across all classes with minimal variance in precision, recall, and F1-score.
 
 -------------Embedding Visualization-------------
 
 Using UMAP, we project the high-dimensional embeddings into a 2D space for visualization.This visualization helps confirm that the model has learned meaningful representations for the node categories.
+
+![Embedding Visualization](Umap_Visualisation.png)

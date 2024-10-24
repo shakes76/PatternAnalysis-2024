@@ -15,6 +15,7 @@ from utils import calculate_ssim, read_yaml_file, combine_images
     
  
 if __name__ == '__main__':
+    # Load configuration
     parser = argparse.ArgumentParser(description='Train VQVAE model.')
     parser.add_argument('--config', type=str, required=True, 
                         help='Path to the configuration YAML file.')
@@ -47,6 +48,7 @@ if __name__ == '__main__':
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # Set up logging
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(image_log_dir, exist_ok=True)
     logging.basicConfig(filename=os.path.join(log_dir, 'training.log'), level=logging.INFO, 
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     train_transform = get_transforms(train_transforms)
     val_test_transform = get_transforms(val_test_transforms)
     
-    # Dataset loaders
+    # Data Loaders
     train_loader = get_dataloader(train_dataset_dir, batch_size, train_transform, train_num_samples, shuffle=True)
     val_loader = get_dataloader(val_dataset_dir, batch_size, val_test_transform, val_num_samples, shuffle=False)
     test_loader = get_dataloader(test_dataset_dir, 1, val_test_transform, test_num_samples, shuffle=False)
@@ -120,7 +122,7 @@ if __name__ == '__main__':
                 val_total_ssim += calculate_ssim(val_batch[0, 0].cpu().detach().numpy(), 
                                         val_reconstructed[0, 0].cpu().detach().numpy())
         
-        # Save original and reconstructed images every 10 epochs
+        # Save original and reconstructed images
         if epoch % image_frequency == 0:
             with torch.no_grad():
                 train_original_image = train_batch[0, 0].cpu().detach().numpy()
@@ -156,10 +158,12 @@ if __name__ == '__main__':
         val_recon_losses.append(val_total_recon_loss / len(val_loader))
         val_total_losses.append(val_loss)
         val_ssim_scores.append(val_total_ssim / len(val_loader))
-            
+        
+        # Log
         if epoch % log_frequency == 0:
             logging.info(f"Epoch [{epoch}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train SSIM: {train_total_ssim / len(train_loader):.4f}, Val SSIM: {val_total_ssim / len(val_loader):.4f}")
             
+        # Save best model
         if val_loss < best_val_loss:
             torch.save(model.state_dict(), os.path.join(log_dir, 'best_model.pth'))
             best_val_loss = val_loss
@@ -167,6 +171,7 @@ if __name__ == '__main__':
     end_time = time.time()
     logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes\n")
         
+    # Save metrics
     train_metrics = [
         train_commitment_losses, 
         train_recon_losses,
@@ -201,7 +206,7 @@ if __name__ == '__main__':
     plt.savefig(os.path.join(log_dir, 'train_metrics.png'))
     plt.close()
     
-    # Save model
+    # Save latest model
     torch.save(model.state_dict(), os.path.join(log_dir, 'latest_model.pth'))
     
     # Evaluation
@@ -222,7 +227,7 @@ if __name__ == '__main__':
         
     logging.info(f"Test Loss: {sum(test_losses) / len(test_losses):.4f}, Test SSIM: {sum(test_ssim_values) / len(test_ssim_values):.4f}")
     
-    # Display distribution of scores
+    # Save distribution of scores
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs = axs.flatten()
     
@@ -240,7 +245,7 @@ if __name__ == '__main__':
     plt.savefig(os.path.join(log_dir, f'test_metrics.png'))
     plt.close()
     
-    # Display some images
+    # Save test images
     fig, axs = plt.subplots(2, 3, figsize=(12, 8))
     axs = axs.flatten()
     with torch.no_grad():

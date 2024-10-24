@@ -9,7 +9,7 @@ model_parameters:
   downscale_factor: 4
 
 # Log 
-logs_root: /path/to/logs/train
+logs_root: /path/to/logs
 log_dir_name:  # If empty, the current time will be used 
 log_frequency: 1
 image_frequency: 1
@@ -18,12 +18,12 @@ image_frequency: 1
 batch_size: 64
 num_epochs: 30
 learning_rate: 0.001
-weight_decay: 0.0
+weight_decay: 0.0005
 
 # Dataset 
-train_dataset_dir: /path/to/HipMRI_study_keras_slices_data/keras_slices_train
-val_dataset_dir: /path/to/HipMRI_study_keras_slices_data/keras_slices_validate
-test_dataset_dir: /path/to/HipMRI_study_keras_slices_data/keras_slices_test
+train_dataset_dir: /path/to/train_dataset
+val_dataset_dir: /path/to/validation_dataset
+test_dataset_dir: /path/to/test_dataset
 
 # Number of samples to use. If empty, all samples will be used
 train_num_samples:

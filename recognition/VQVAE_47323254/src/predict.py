@@ -13,6 +13,7 @@ from utils import calculate_ssim, read_yaml_file, combine_images
 
 
 if __name__ == '__main__':
+    # Load configuration
     parser = argparse.ArgumentParser(description='Predict using VQVAE model.')
     parser.add_argument('--config', type=str, required=True, 
                         help='Path to the configuration YAML file.')
@@ -37,6 +38,7 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
     
     # Prediction
+    # Save the original and reconstructed images
     model.eval()
     image_count = 1
     with torch.no_grad():

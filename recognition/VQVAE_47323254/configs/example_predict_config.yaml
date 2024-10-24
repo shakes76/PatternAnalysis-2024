@@ -8,6 +8,7 @@ model_parameters:
   nb_entries: 512
   downscale_factor: 4
 
+# Pretrained model path
 pretrained_path: path/to/model/path.pth
 
 # Dataset 

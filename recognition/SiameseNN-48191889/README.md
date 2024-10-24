@@ -1,5 +1,5 @@
 # Siamese Neural Networks on the Classification of Melanoma
-_By Ainul Malik Zaidan Ismail - 48191889_
+By Ainul Malik Zaidan Ismail - 48191889
 
 This algorithm trains a Siamese Neural Network to classify between cases of melanoma. The algorithm takes two 256 pixel x 256 pixel sized RGB images of skin lesions as input and predicts if the two images are of the same class or not. This can be utilized in the prediction of benign or malignant cases of melanoma through the comparison between pre-labelled pictures. The solution to this classification problem can be beneficial in the field of medicine, aiding doctors in providing accurate diagnoses.
 
@@ -7,6 +7,8 @@ This algorithm trains a Siamese Neural Network to classify between cases of mela
 ### Network Architecture
 
 The Siamese Neural Network is constructed based on the architecture given by G. Koch, R. Zemel, R. Salakhutdinov et al. in their paper "Siamese neural networks for one-shot image recognition" depicted in the diagram below.
+
+![Screenshot 2024-10-24 at 5 58 33 PM](https://github.com/user-attachments/assets/0ca9be1c-fd3f-4c5a-bc05-8b362549ca53)
 
 The diagram describes one of the two twin channels of the Siamese Neural Network, through which the two images will be encoded into smaller feature maps. Since the twin channels will contain the same weighted features, the encoded result of each channel will be able to provide class information of the image, and be processed through a sigmoid function to determine if the two images belong in the same class or not.
 
@@ -36,6 +38,9 @@ The dataset will be trained on 80% of the dataset, while the other 20% is utiliz
 ## Usage
 ### train.py
 The `train.py` module trains a Siamese Neural Network defined in `modules.py` on the training dataset. Running the module stores the trained model as `siamese_model_final.pth` alongside the loss plot of the training process. The loss plot is as follows.
+
+![snn_final](https://github.com/user-attachments/assets/3a934bb8-4b48-4112-a4c4-1df285c4a833)
+
 
 ### predict.py
 The `predict.py` file contains a testing script based on the training/testing split of the dataset. It uses the model trained in `train.py` and evaluates its performance on the testing dataset. Running the code will display evaluation metrics of the model. 

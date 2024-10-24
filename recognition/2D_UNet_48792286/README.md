@@ -6,10 +6,10 @@
 ## Environment Dependencies
 ### This packages/software need to be installed
 #### -python 3.12
-#### -numpy 1.26.4
-#### -matplotlib 3.8.4
+#### *numpy 1.26.4
+#### +matplotlib 3.8.4
 #### -torch 2.3.1
-#### -Nibabel 5.3.1
+#### *Nibabel 5.3.1
 ## MOdel
 ### ![UNET ARCHITECTURE](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*lvXoKMHoPJMKpKK7keZMEA.png)
 ## Data Set

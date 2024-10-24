@@ -10,10 +10,12 @@ import nibabel as nib
 from tqdm import tqdm
 import torchio as tio
 import torch
+import torch.utils.data as data
+import torchvision.transforms as transforms
 
 # Dataset path
 # root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/keras_slices_' # Local path
-root_path = ' /home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_ ' # Rangpur path
+root_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_' # Rangpur path
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
@@ -53,7 +55,7 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
         rows, cols = first_case.shape
         images = np.zeros((num, rows, cols), dtype = dtype)
 
-    for i, inName in enumerate(tqdm(imageNames)):
+    for i, inName in enumerate(imageNames):
         niftiImage = nib.load(inName)
         inImage = niftiImage.get_fdata(caching = 'unchanged') # read disk only
         affine = niftiImage.affine
@@ -66,19 +68,8 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
             inImage = to_channels(inImage, dtype = dtype)
-            print(f'Image shape: {inImage.shape}')
-            # Crop images to ensure they are all (256, 128) - some are originally (256, 144)
-            # Raise exception if tha image is not (256, 128) or (256, 144)
-            if inImage.shape != (256, 128, inImage.shape[2]) and inImage.shape != (256, 144, inImage.shape[2]):
-                raise ValueError(f'Image format not (256, 128, {inImage.shape[2]}) or (256, 144, {inImage.shape[2]}).' +  'Shape: {}'.format(inImage.shape))
-            inImage = inImage[:, (inImage.shape[1] - 128) // 2:(inImage.shape[1] + 128) // 2, :]
             images[i,:,:,:] = inImage
         else:
-            # Crop images to ensure they are all (256, 128) - some are originally (256, 144)
-            # Raise exception if tha image is not (256, 128) or (256, 144)
-            if inImage.shape != (256, 128) and inImage.shape != (256, 144):
-                raise ValueError('Image format not (256, 128) or (256, 144). Shape: {}'.format(inImage.shape))
-            inImage = inImage[:, (inImage.shape[1] - 128) // 2:(inImage.shape[1] + 128) // 2]
             images[i,:,:] = inImage
 
         affines.append(affine)
@@ -91,29 +82,74 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
         return torch.tensor(images, dtype = torch.float32)
 
 
-def load_img_seg_pair(dataset_type="train"):
-    assert dataset_type in ["train", "test", "validate"], "Invalid dataset type. Must be 'train', 'test' or 'validate'."
+# def load_img_seg_pair(dataset_type="train"):
+#     assert dataset_type in ["train", "test", "validate"], "Invalid dataset type. Must be 'train', 'test' or 'validate'."
 
-    img_path = root_path + dataset_type + '/'
-    seg_path = root_path + 'seg_' + dataset_type + '/'
-    images_paths = sorted([os.path.join(img_path, img) for img in os.listdir(img_path) if img.endswith('.nii.gz')])
-    segmentations_paths =  sorted([os.path.join(seg_path, seg) for seg in os.listdir(seg_path) if seg.endswith('.nii.gz')])
-    images = load_data_2D(images_paths, normImage=True)
-    segmentations = load_data_2D(segmentations_paths)
+#     img_path = root_path + dataset_type + '/'
+#     seg_path = root_path + 'seg_' + dataset_type + '/'
+#     images_paths = sorted([os.path.join(img_path, img) for img in os.listdir(img_path) if img.endswith('.nii.gz')])
+#     segmentations_paths =  sorted([os.path.join(seg_path, seg) for seg in os.listdir(seg_path) if seg.endswith('.nii.gz')])
+#     images = load_data_2D(images_paths[342:350], normImage=True)
+#     segmentations = load_data_2D(segmentations_paths[342:350])
 
-    return images, segmentations
-
-
-# ### Unit test
-# import os
-# set_path = 'keras_slices_seg_' + 'test' + '/'
-# imageNames = os.listdir(root_path + set_path)
+#     return images, segmentations
 
 
-# images = load_data_2D([root_path + set_path + i for i in imageNames])
+class MRIDataset(data.Dataset):
+    def __init__(self, dataset_type):
+        self.image_paths = sorted([os.path.join(root_path + dataset_type + '/', img) for img in os.listdir(root_path + dataset_type + '/') if img.endswith('.nii.gz')])
+        self.label_paths = sorted([os.path.join(root_path + 'seg_' + dataset_type + '/', seg) for seg in os.listdir(root_path + 'seg_' + dataset_type + '/') if seg.endswith('.nii.gz')])
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image = load_data_2D([self.image_paths[idx]], normImage=True)
+        label = load_data_2D([self.label_paths[idx]])
+        image = transforms.Resize((64, 64))(image)
+        label = transforms.Resize((64, 64))(label)
+
+        return image, label
+
+
+class MRIDataLoader(data.DataLoader):
+    def __init__(self, dataset_type, batch_size=1, shuffle=True):
+        self.dataset = MRIDataset(dataset_type)
+        super(MRIDataLoader, self).__init__(self.dataset, batch_size=batch_size, shuffle=shuffle)
+
+
+
+### Unit test
+
 # from matplotlib import pyplot as plt
 
-# for i, image in enumerate(images[::1000]):
+# test_dataset = MRIDataset('train')
+
+# plt.figure()
+# cols, rows = 2, 2
+# for i in range(rows*cols):
+#     img, seg = test_dataset[i]
+#     plt.subplot(rows, cols, i+1)
+#     plt.imshow(img[0], cmap='gray')
+#     plt.imshow(seg[0], cmap='gray', alpha=0.5)
+
+# plt.show()
+
+
+# for i, image in enumerate(images):
 #     plt.figure(i)
-#     plt.imshow(image, cmap = 'gray')
+#     plt.subplot(1, 7, 1)
+#     plt.imshow(torch.eq(image, 0), cmap='gray')
+#     plt.subplot(1, 7, 2)
+#     plt.imshow(torch.eq(image, 1), cmap='gray')
+#     plt.subplot(1, 7, 3)
+#     plt.imshow(torch.eq(image, 2), cmap='gray')
+#     plt.subplot(1, 7, 4)
+#     plt.imshow(torch.eq(image, 3), cmap='gray')
+#     plt.subplot(1, 7, 5)
+#     plt.imshow(torch.eq(image, 4), cmap='gray')
+#     plt.subplot(1, 7, 6)
+#     plt.imshow(torch.eq(image, 5), cmap='gray')
+#     plt.subplot(1, 7, 7)
+#     plt.imshow(image, cmap='gray')
 #     plt.show()

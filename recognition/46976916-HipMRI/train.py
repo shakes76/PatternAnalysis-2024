@@ -26,18 +26,13 @@ from utils import (
 LEARN_RATE = 0.0001
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
-NUM_EPOCHS = 3
+NUM_EPOCHS = 6
 NUM_WORKERS = 1
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 256
 PIN_MEMORY = True
 LOAD_MODEL = False
-'''
-TRAIN_IMG_DIR = 'recognition/46976916-HipMRI/keras_slices_train'
-TRAIN_SEG_DIR = 'recognition/46976916-HipMRI/keras_slices_seg_train'
-VAL_IMG_DIR =  'recognition/46976916-HipMRI/keras_slices_validate'
-VAL_SEG_DIR = 'recognition/46976916-HipMRI/keras_slices_seg_validate'
-'''
+
 
 TRAIN_IMG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_train'
 TRAIN_SEG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/keras_slices_seg_train'
@@ -69,10 +64,6 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
     
 
 def main():
-    print(torch.version.cuda)
-    print(torch.cuda.is_available())
-    print(f"Using device: {DEVICE}")
-    '''
     train_transform = A.Compose(
         [
             A.Resize(height=256, width=128),
@@ -84,11 +75,11 @@ def main():
                 std=[1.0],
                 max_pixel_value=255.0,
             ),
-            ToTensorV2,
+            ToTensorV2(),
         ],
     )
 
-    val_transforms = A.compose(
+    val_transforms = A.Compose(
         [
             A.Resize(height=256, width=128),
             A.Normalize(
@@ -96,18 +87,9 @@ def main():
                 std=[1.0],
                 max_pixel_value=255.0,
             ),
-            ToTensorV2,
+            ToTensorV2(),
         ],
     )
-    '''
-    train_transform = A.Compose([
-        ToTensorV2(),  # Only convert to tensor without any other transformations
-    ])
-
-    val_transforms = A.Compose([
-        ToTensorV2(),  # Only convert to tensor without any other transformations
-    ])
-
 
     model = UNET(in_channels=1, out_channels=5).to(DEVICE)
     loss_fn = nn.CrossEntropyLoss()
@@ -129,11 +111,15 @@ def main():
     
     for epoch in range(NUM_EPOCHS):
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
-        check_accuracy(val_loader, model, DEVICE)
-        visualize_predictions(val_loader, model, device=DEVICE, num_images=3)
+        #check_accuracy(val_loader, model, DEVICE)
+        if epoch == (NUM_EPOCHS-1):
+            check_accuracy(val_loader, model, DEVICE)
+            checkpoint = {"state_dict":model.state_dict(), "optimizer":optimizer.state_dict(),}
+            save_checkpoint(checkpoint)
+            visualize_predictions(val_loader, model, device=DEVICE, num_images=3)
 
         #save model
-        #check accuracy
+        
         #print example
     
 

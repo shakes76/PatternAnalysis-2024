@@ -64,20 +64,10 @@ def check_accuracy(loader, model, device="cuda"):
 
         dice_score_per_class = dice_score_per_class / len(loader)  # Average over the batches
         avg_dice_score = dice_score_per_class.mean().item()
-        print(f"Got {num_correct}/{num_pixels} pixels correct with accuracy {(num_correct/num_pixels)*100:.2f}")
-        print(f"Dice score: {avg_dice_score:.4f}")
+        print(f"Pixel Accuracy {(num_correct/num_pixels)*100:.2f} and Dice score: {avg_dice_score:.4f}")
         model.train()
 
 def visualize_predictions(loader, model, device, num_images=3):
-    """
-    Visualizes the input image, ground truth mask, and predicted mask side by side.
-    
-    Parameters:
-    - loader: DataLoader object for validation or test set.
-    - model: Your segmentation model.
-    - device: torch.device object (e.g., 'cuda' or 'cpu').
-    - num_images: Number of images to visualize (default is 3).
-    """
     model.eval()
     images_shown = 0
 
@@ -123,4 +113,4 @@ def visualize_predictions(loader, model, device, num_images=3):
                 plt.show()
                 images_shown += 1
 
-    model.train()  # Return to train mode after validatio
+    model.train()  # Return to train mode after validation

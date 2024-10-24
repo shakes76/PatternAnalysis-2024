@@ -1,10 +1,26 @@
+"""
+Author: Yucheng Wang
+Student ID: 47914111
+modules.py: Implementations of Graph Convolutional Network (GCN) layers and models
+This script implements a 3-layer Graph Convolutional Network (GCN) for semi-supervised 
+node classification. It includes:
+
+1. A GCNLayer class representing a single GCN layer that aggregates node features 
+   from neighboring nodes using a normalized adjacency matrix.
+2. A GCN class that constructs a 3-layer GCN model with batch normalization and dropout, 
+   designed for node classification tasks. The final layer outputs class scores for each node, 
+   which are converted to probabilities using log softmax.
+
+The model can be used for semi-supervised learning tasks where some node labels are known 
+for training, while the remaining nodes need to be classified.
+"""
 import torch
 import torch.nn.functional as F
 from torch.nn import Parameter
 
 class GCNLayer(torch.nn.Module):
     """
-    A single GCN layer with optional activation function
+    A single Graph Convolutional Network (GCN) layer with an optional activation function.
     """
     def __init__(self, in_features, out_features):
         super(GCNLayer, self).__init__()
@@ -14,6 +30,9 @@ class GCNLayer(torch.nn.Module):
         torch.nn.init.xavier_uniform_(self.weight)
 
     def forward(self, features, adj, activation=True):
+        """
+        Forward pass of the GCN layer.
+        """
         # Multiply input features with weights
         support = torch.mm(features, self.weight)
         # Multiply adjacency matrix with transformed features
@@ -45,6 +64,9 @@ class GCN(torch.nn.Module):
         self.dropout = torch.nn.Dropout(p=dropout_prob)
 
     def forward(self, features, adj):
+        """
+        Forward pass of the GCN model.
+        """
         # First GCN layer with batch normalization and dropout
         x = self.conv1(features, adj)
         x = self.bn1(x)

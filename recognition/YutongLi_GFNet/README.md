@@ -117,5 +117,5 @@ pip install opencv-python torch torchvision torchaudio numpy Pillow timm scikit-
 You can easily run this project and change any parameters you want by using train.py. The 'split_val_set' function in train.py only need to run once. It will cover the previous new dataset if you run multiple times. Nothing terrible will happend but better don't waste 3 min.
 
 
-## Reference:
+## Reference
 [1] Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification. In Advances in Neural Information Processing Systems (NeurIPS).

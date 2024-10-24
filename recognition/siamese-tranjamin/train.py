@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_addons as tfa
 
-from dataset import BalancedMelanomaDataset
+from dataset import BalancedMelanomaDataset, FullMelanomaDataset
 
 from Modules import NeuralNetwork
 
@@ -20,8 +20,15 @@ df = BalancedMelanomaDataset(
     validation_split=0.2
 )
 
-dataset = df.training_dataset()
-dataset_val = df.validation_dataset()
+df_full = FullMelanomaDataset(    
+    image_shape=image_shape,
+    batch_size=batch_size,
+    validation_split=0.001,
+    balance_split=0.5
+)
+
+dataset = df_full.dataset
+dataset_val = df_full.dataset_val
 
 base_model = NeuralNetwork.FunctionalNetwork()
 base_model.add_generic_layer(tf.keras.layers.Input(shape=(*image_shape, 3)))

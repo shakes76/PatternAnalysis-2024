@@ -1,7 +1,7 @@
 # PageGCN: Semi-Supervised Node Classification for Facebook Pages
 
 ## Data background
-This project uses the Facebook Large Page - Page Network dataset (https://snap.stanford.edu/data/facebook-large-page-page-network.html) to perform semi-supervised multi-class node classification using a graph convolutional network (GCN). The dataset consists of connections between Facebook pages, which are divided into the following four categories: (0) Politicians, (1) Governmental Organizations, (2) Television Shows, and (3) Companies.
+This project uses the [Facebook Large Page - Page Network dataset](https://snap.stanford.edu/data/facebook-large-page-page-network.html) to perform semi-supervised multi-class node classification using a graph convolutional network (GCN). The dataset consists of connections between Facebook pages, which are divided into the following four categories: (0) Politicians, (1) Governmental Organizations, (2) Television Shows, and (3) Companies.
 
 ## Dataset preprocessing
 This section describes the preprocessing of the Facebook large-scale Page-Page network dataset for training a graph convolutional network (GCN) model. The preprocessing ensures that the input features, labels, and adjacency matrices are properly formatted and normalized to be compatible with the GCN model.

@@ -9,6 +9,7 @@ The aim of this project is to produce a model that is able to achieve an 'accura
 As noted above the data set is highly unbalanced (1.8% melanoma images and 98.2% normal images). Thus using the standard accuracy score metric to gauge the performance of the model is very misleading. As,for example we could just have our model predict all images as normal thus achieving an 'accuracy' of 98.2% whilst learning nothing about the data and being unable to predict melanomas.
 
 Therefore it was decided that AUR ROC should be used as the metric to gauge the performance of the model. This metric was chosen as it provides a balance between sensitivity (True Positive Rate) and specificity (True Negative Rate) ensuring that both classes are considered (REFERENCE!!!). This metric is very commonly used for imbalanced datasets such as this (REFERENCE!!!). Thus this project will aim to maximise AUR ROC on the testing set. (See ed post #253 for support of this approach (REFERENCE!!!)). Additionally it should be noted that the official kaggle challenge that this dataset originated from used AUR ROC as the metric to determine accuracy of test predictions (REF https://www.kaggle.com/c/siim-isic-melanoma-classification/overview).
+[[1](#References)]
 
 ## File Structure
 ### Current Structure
@@ -303,11 +304,12 @@ Note that due to the inescapable randomness of GPUs (REF) there may be some vari
 
 
 ## Future Work and Improvements
--augemnation test predictions
-
+- Test Time Augmentation (TTA) could be applied when making predictions (i.e. applying each combination of augmentations used on the train set to the test / validation set and then using a voting system to decide the prediction). This may improve accuracy of predictions as model was trained on augmented data. (REF)
+- Gain access to more powerful compute to allow the model to be trained for more epochs (Train without cluster timing out) to ensure that the model has fully learnt all it can from the data set.
+- Domain specific knowledge - via consultation with dermatologists - could be applied to the problem to help the model focus on certain areas that are predictive of melanoma e.g. apply a colour filter or similar. (REF)
 
 ## References
-
+- 
 
 
 

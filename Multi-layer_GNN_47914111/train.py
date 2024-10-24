@@ -157,7 +157,6 @@ def train(model, data, epochs=100, patience=5, clip=1.0):
     # Plot training and validation accuracy, loss
     plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validation_loss_list)
 
-    # Return training and validation accuracy, loss, and test accuracy
     return train_acc_list, validation_acc_list, train_loss_list, validation_loss_list, test_acc
 
 
@@ -187,8 +186,6 @@ def plot_metrics(train_acc_list, validation_acc_list, train_loss_list, validatio
     plt.savefig("C:/Users/Wangyucheng/Desktop/comp3710a3/PatternAnalysis-2024/Multi-layer_GNN_47914111/plots/GCN_loss.png")
     plt.show()
 
-
-# Train the model and plot metrics
 train(model, data, epochs=100, patience=10)
 
 # Save the trained model

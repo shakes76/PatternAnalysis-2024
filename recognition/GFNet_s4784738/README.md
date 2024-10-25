@@ -26,13 +26,13 @@ To run this code, the following dependencies must be installed:
 
 ## Installation
 The dependencies above can be installed by running:
-'''
+```
 pip install torch torchvision numpy matplotlib timm pillow
-'''
+```
 
 
 ## Directory Structure
-'''
+```
 recognition/
 ├── GFNet_s4784738/ 
 │   ├── assets/
@@ -48,16 +48,16 @@ recognition/
 │   ├── utils.py
 │   └── README.md 
 └── README.md
-'''
+```
 Note that the /train/ and /test/ image folders (whose paths are specified in utils.py) should have /AD/ and /NC/ subfolders containing Alzheimers and normal control brain images, repectively.
-'''
+```
 ├── train/
 |   ├── AD/
 |   └── NC/
 └── test/
     ├── AD/
     └── NC/
-'''
+```
 
 
 ## Data Pre-processing
@@ -77,7 +77,7 @@ The only pre-processing these images recieved was being resized to 224x224 pixel
 ## Configuration settings
 Before running the code, it's important to ensure that you have the desired configuration settings. The model configurations and hyperparameters are stored and retrieved from 
 utils.py. They can also be found below:
-''''
+```
 epochs = 30
 learning_rate = 1e-4
 patch_size = (16, 16)
@@ -88,37 +88,37 @@ drop_rate = 0.1
 drop_path_rate = 0.1
 weight_decay = 1e-2
 t_max = 6
-'''
+```
 The image paths are set up to run on UQ's rangpur cluster by default. If you are running the model anywhere else, please adjust the paths to the training and testing image directories as necessary in utils.py.
-'''
+```
 def get_path_to_images():
     train_path = '/home/groups/comp3710/ADNI/AD_NC/train'
     test_path = '/home/groups/comp3710/ADNI/AD_NC/test'
 
     return train_path, test_path
-'''
+```
 When running inference, you can set a specific image to be tested by setting the img_path variable in the get_prediction_image() function in utils.py.
-'''
+```
 def get_prediction_image():
     # A set image path to be returned
     img_path = _Your image path here_
-'''
+```
 
 
 ## Running the Code
 ### Training the Model
 The model can be trained by running
-'''
+```
 python train.py
-'''
+```
 This will also save both the model and plots of the training and validation, as well as run one epoch of inference on all images in the /test/ folder.
 Model parameters and image sources can be changed as desired in utils.py.
 
 ### Predicting the Classification of an Image
 You can run inference on a single image by running
-'''
+```
 python predict.py
-'''
+```
 By default, a random image will be chosen from the /test/ folder. You can set a specific image to be tested in utils.py.
 
 

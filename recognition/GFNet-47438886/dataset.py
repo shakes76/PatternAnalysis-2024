@@ -1,18 +1,16 @@
 """ 
 Dataset Loaders
 Set of functions and classes to load the ADNI dataset.
+
 Author: Kevin Gu
 """
 import os
 import re
-import torch
-from torchvision import datasets, transforms
 from torchvision.transforms import v2
+import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 from PIL import Image
-import pandas as pd
-from collections import Counter 
 
 # Mean and std for the ADNI dataset
 ADNI_MEAN = 0.1156
@@ -121,7 +119,8 @@ def ADNI_split_validation_set(image_paths: list, labels: list):
 
 def load_adni_data(root_dir, batch_size=32, testing=False):
     """
-    Load the ADNI dataset and ensure no leakage by splitting data subject-wise.
+    Load the ADNI dataset and ensure no leakage by splitting on patient level 
+    and also ensuring equal class distribution.
     
     Parameters:
         root_dir (str): Root directory containing the 'train' folder with NC and AD subfolders.

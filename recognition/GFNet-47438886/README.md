@@ -60,12 +60,13 @@ python -m pip install -r requirements.txt
 ```
 python train.py
 ```
-This will train the model on 100 epochs. Every time the model improves in accuracy, it will be saved to `model_weights.pth`, which can be used with `predict.py` to obtain a classification accuracy on the test set. 
+This will train the model on 210 epochs. Every time the model improves in accuracy, it will be saved to `model_checkpoint.pth`, which can be used with `predict.py` to obtain a classification accuracy on the test set. 
 
 5. Run inference on test dataset:
 ```
 python predict.py
 ```
+This will print the test accuracy based on the ADNI test set.
 
 
 ## Dataset
@@ -98,7 +99,7 @@ The ADNI dataset is already split into two sets for training and testing. Since 
 The training data contained multiple slices of the same brain of patients.
 To ensure no data leakage between the training and validation sets, the data had to be split on a patient level. This was done by looking at the names of the files, extracting the `patientID`, and assigning patients to either the training or validation set. 
 
-After this, another split had to be done to ensure the equivalent distribution of classes in the training and validation set. This gives the model a better chance to learn the difference between the two classes. After performing all of the above splits, the validation set contained a equal mix of 460 images for both AD and NC classes. For the training set, the NC class contained 4080 images, while the AD class contained 4000, roughly 50-50.
+After this, another split had to be done to ensure the equivalent distribution of classes in the training and validation set. This gives the model a better chance to learn the difference between the two classes. After performing all of the above splits, the validation set contained a roughly equal mix of 1120 and 1040 images for the AD and NC classes respectively. For the training set, the NC class contained 10000 images, while the AD class contained 9360.
 
 ### Pre-processing
 Pre-processing was then performed on the data before training. Augmentation was necessary as the ADNI dataset is not particularly large, and generally for deep learning models, the more data there is, the better the outcome. The following transformations were done on the training data:
@@ -125,7 +126,7 @@ The `ReduceLROnPlateau` learning rate scheduler from Pytorch was used to adjust 
 
 ### Training and Validation Loss and Accuracy Plots
 ![Training and Validation Loss and Accuracy](assets/training_figures.png)
-The maximum validation accuracy from training was **82.7%**, which is impressive, as it was based on unseen data. From the plots, it appears the validation accuracy has somewhat plateaued, however, training the model for more epochs may yield higher accuracies. Due to limitations with compute resources, this was not achieved. 
+The model was trained for 210 epochs. The maximum validation accuracy from training was **82.7%**, which is impressive, as it was based on unseen data. From the plots, it appears the validation accuracy has somewhat plateaued, however, training the model for longer may yield higher accuracies. Due to limitations with compute resources, this was not achieved. 
 
 ## Results
 After training, the model was tested on the ADNI test dataset. This contained 4460 images of AD classes, and 4540 images of NC classes. It was found from running `predict.py` that the accuracy of the model tested on the unseen test set was **62.4%**. 

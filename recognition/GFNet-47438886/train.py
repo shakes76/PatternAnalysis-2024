@@ -9,12 +9,11 @@ Author: Kevin Gu
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from modules import GFNet
 from dataset import load_adni_data
 from functools import partial
 import time
-from timm.scheduler import create_scheduler
 import matplotlib.pyplot as plt
 
 from utils import get_dataset_root, get_device
@@ -42,9 +41,6 @@ def initialise_scheduler(optimizer: torch.optim):
     """
     Intialises the scheduler
     """
-    # Cosine Annealing Learning Rate Scheduler with minimum learning rate (eta_min)
-    # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
-    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=10, verbose=True)
     return scheduler
 
@@ -196,13 +192,18 @@ def train_and_validate_one_epoch(train_loader, val_loader, model, optimizer,
     return training_loss, training_accuracy, validation_loss, validation_accuracy
 
 def main():
+    """
+    Main loop to train and plot results afterwards. The model is also saved on 
+    the best validation accuracies.
+
+    No parameters or returns.
+    """
 
     device = get_device()
     root_dir = get_dataset_root()
 
     train_loader, val_loader = load_adni_data(root_dir=root_dir)
 
-    # Assuming you already have a model and dataloaders (train_loader, val_loader)
     model = initialise_model(device)
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()  # Use the appropriate loss function
@@ -210,13 +211,12 @@ def main():
     scheduler = initialise_scheduler(optimizer)
 
     # Training loop
-    n_epochs = 100
+    n_epochs = 210
 
     train_loss_list = []
     validation_loss_list = []
     train_accuracy_list = []
     validation_accuracy_list = [] 
-    
 
     best_validation_accuracy = 0
 

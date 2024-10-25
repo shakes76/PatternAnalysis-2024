@@ -6,14 +6,20 @@ Author: Kevin Gu
 """
 import torch
 import time
+
 from dataset import load_adni_data
 from utils import get_device, get_dataset_root
-from train import initialise_model, initialise_optimizer, initialise_scheduler
+from train import initialise_model
 
-MODEL_PATH = "model_checkpoint_actual_split.pth"
+MODEL_PATH = "model_checkpoint.pth"
 
 # Testing loop
 def test_existing_model():
+    """
+    Test the model by first importing the relevant pth file.
+
+    No parameters or returns.
+    """
     device = get_device()
     root_dir = get_dataset_root()
 
@@ -23,7 +29,7 @@ def test_existing_model():
         checkpoint = torch.load(MODEL_PATH, map_location=torch.device('cpu'))
     else:
         checkpoint = torch.load(MODEL_PATH)
-
+    
     # Load the values from checkpoint
     model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -47,6 +53,7 @@ def test_existing_model():
     
     print(f"Testing took {testing_time} seconds or {testing_time / 60} minutes")
     print("Accuracy", accuracy)
+
 
 if __name__ == "__main__":
     test_existing_model()

@@ -1,5 +1,6 @@
 """
 This file holds on to the modules that are necessary in creating the GFNet model.
+The module structures are basically directly taken from the original repo listed below.
 
 Got inspiration from gfnet.py file of the following github repo:
 https://github.com/shakes76/GFNet
@@ -12,7 +13,6 @@ from functools import partial
 from collections import OrderedDict
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-# The module structures are basically directly taken from the original repo listed in the header.
 class mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()

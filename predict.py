@@ -7,19 +7,20 @@ import matplotlib.pyplot as plt
 from modules import VQVAE
 import os
 from skimage.metrics import structural_similarity as ssim
+from utils import predict_and_reconstruct
 import dataset
 
 # Define command-line arguments for dataset directory and model save path
 parser = argparse.ArgumentParser()
-epochs = 1
+epochs = 100
 learning_rate = 1e-3
 batch_size = 16
 weight_decay = 1e-5
 
 # Model architecture parameters
 n_hiddens = 512
-n_residual_hiddens = 256
-n_residual_layers = 16
+n_residual_hiddens = 512
+n_residual_layers = 32
 embedding_dim = 512
 n_embeddings = 1024
 beta = 0.1
@@ -35,22 +36,13 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load model with specified checkpoint path
+# had to include load_model function within predict.py since it used many variables
 def load_model(model_path):
     model = VQVAE(n_hiddens, n_residual_hiddens, n_residual_layers,
                   n_embeddings, embedding_dim, beta).to(device)
     checkpoint = torch.load(model_path, map_location=device)
     model.load_state_dict(checkpoint['model'])
     return model
-
-# Generate predictions and reconstructions without updating gradients
-def predict_and_reconstruct(model, data_loader):
-    model.eval()
-    with torch.no_grad():
-        for x in data_loader:
-            x = x.to(device)
-            _, x_hat, _ = model(x)
-            yield x.cpu().numpy(), x_hat.cpu().numpy() 
-
 
 def main():
     # Load test data from dataset directory

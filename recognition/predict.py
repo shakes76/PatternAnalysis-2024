@@ -10,6 +10,7 @@ import numpy as np
 
 def main():
     # call train
+    
     training = Train()
     train_loss_list = training.start_training()
     # plot loss graph

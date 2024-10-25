@@ -2,7 +2,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from modules import Yolov7
-from dataset import DataSetProcessorTrainingVal, DataSetProcessorTest
+from dataset import DataSetProcessorTrainingVal, DataSetProcessorTest, make_labels
 from torchvision import transforms
 from yolov7.utils.loss import smooth_BCE, FocalLoss, is_parallel, bbox_iou
 import matplotlib
@@ -153,8 +153,9 @@ class Train:
     
     def __init__(self):
         # Varibles
-        BATCH_SIZE = 32
-        self.epochs = 8
+        make_labels()
+        BATCH_SIZE = 16
+        self.epochs = 10
         LEARNING_RATE = 0.001
 
         # Paths

@@ -1,8 +1,7 @@
-import os
 import torch
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader, Subset, SubsetRandomSampler
+from torch.utils.data import DataLoader, SubsetRandomSampler
 
 '''
 Gets the mean and standard deviations values from a dataloader

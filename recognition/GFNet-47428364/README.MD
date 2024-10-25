@@ -22,9 +22,9 @@ The following dependencies are required: m
 To train the model, run `train.py`
 These are the parameters specified for the model:
 ```
-GFNet(embed_dim=768, img_size=224, patch_size=16, in_chans=3, mlp_ratio=4, depth=12, drop_rate=0., num_classes=1000)
+GFNet(embed_dim=256, img_size=224, patch_size=8, in_chans=3, mlp_ratio=4, depth=12, drop_rate=0.1, drop_path=0.1, num_classes=1000)
 ```
-*Note:* These parameters are the defaults for the GFNet.
+*Note:* These parameters can be changed to adjust the model.
 
 ### Outputs
 [Example Model Output](readme_support/train_output.txt)

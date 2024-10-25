@@ -85,3 +85,13 @@ After fine-tuning, the model demonstrated significant improvement, with the foll
 - **Box Loss**: 0.54229
 - **Class Loss**: 0.30157
 - **Distribution Focal Loss (DFL)**: 0.97581
+
+## Validation
+Validation metrics were monitored throughout training on the 150 images to ensure the model wasn't overfitting.
+
+- **Precision**: 0.872   Precision measures how many predicted positive were actually correct.
+- **Recall**: 0.860   Recall measures the proportion of actual positives that were correctly identified by the model.
+
+![Plotted Results from Training](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/results_train.png)
+
+The training and validation curves allow us to analyse model performance over time. A good model should be decreasing loss values in both the training and validation sets. Showing that the model is learning effectively without overfitting. The box loss measures the difference between the predicted and actual bounding box coordinates the lower the best as it corralted to a higher Iou when decreasing . 

@@ -92,7 +92,7 @@ Unfortunately the model was not able to get up to the desired 80%, but it was ab
 
 An output from the training is a measure of the loss and accuracy.
 
-![![alt text](https://)](image.png)
+![alt text](graphs/image.png)
 
 <br>
 

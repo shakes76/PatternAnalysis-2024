@@ -3,7 +3,14 @@
 The aim of of this problem is to create a generative model of the HipMRI Study on Prostate Cancer using the processed 2D slices using a Vector Quantized Variational Autoencoder (VQ-VAE) and pixel CNN. 
 
 ## VQ-VAE
-A VQ-VAE model is a generative model which combines elements from VQ and VAE. There are three key parts to this model: encoder, decoder, codebook layer.
+A VQ-VAE model is a generative model which combines elements from vector quantization (VQ) and Variational Autoencoders(VAE). There are three key parts to this model: encoder, decoder, codebook layer.
+
+The encoder is a neural network that processes the input images to transform it into a latent representation, capturing the essential features of the imput and reducing its dimentionality. 
+
+Codebook Layer uses a nearest neighbor search algorithm to quantise the continuous latent vectors produced by the encoder. Each continuous latent vector is replaced by the closest vector from a finite set of embeddings called the codebook.
+The aim here is to reduce the complexity of the latent space allowing the model to learn discrete representations. This allows us to enhance both training stability and sample quality.
+
+
 Input data is loaded into the encoder, a neural network, and transformed into latent representation. The latent vectors are quantised into a finite set of embeddings by using nearest neighbour search to replace continous latent presentations with the closest vector from the codebook (a finite set of vectors).The final part is the decoder which essentially attempts to decode the now quantised latent variables and reconstruct the image to its original form. 
 
 ![image](https://github.com/user-attachments/assets/9ff9b52a-d84c-4b0c-9047-ea78389c3ddd)
@@ -29,10 +36,8 @@ After the model is trained, PixelCNN can now generate new latent codes that alig
 | Matplotlib| 3.9.2|
 
 ## Results:
-To train pixelCNN use:
-``` python train.py  ```
-To train VQ-VAE:
-``` python train.py -mode vq_vae ```
+
+``` python train.py -mode vq_vae # mode: vq_vae , pixelcnn ```
 To run predict:
 ``` python predict.py ```
 The arguments can be customised, otherwise the default will be used when running in terminal.

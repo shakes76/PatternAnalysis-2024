@@ -13,7 +13,7 @@ from monai.data import DataLoader, Dataset
 from monai.transforms import (AsDiscrete, Compose, CastToType)
 
 # import from local files  
-from train import trained_model, CRITERION, compute_dice_segments, DEVICE
+from train import trained_model, CRITERION, compute_dice_segments, DEVICE, CRITERION_NAME
 from dataset import test_dict, test_transforms
 
 __author__ = "Ryuto Hisamoto"
@@ -24,13 +24,13 @@ __maintainer__ = "Ryuto Hisamoto"
 __email__ = "s4704935@student.uq.edu.au"
 __status__ = "Committed"
 
-def visualise_ground_truths(images: list, ground_truths: list, criterion):
+def visualise_ground_truths(images: list, ground_truths: list, criterion_name: str):
     """ Visualises the ground truths and their images by overlaying them on the same 3 x 3 plot.
 
     Args:
         images (list): Images to overlay labels on.
         ground_truths (list): Labels to overlay on top of images.
-        criterion (callable): Loss function used during the training to name the plot.
+        criterion_name (str): Name of the loss function used during the training to name the plot.
 
     Returns:
         None: The function only plots, so it does not return any value.
@@ -66,16 +66,16 @@ def visualise_ground_truths(images: list, ground_truths: list, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'ground_truths_{str(criterion)}.png')
+    plt.savefig(f'ground_truths_{str(CRITERION_NAME)}.png')
     plt.close()
 
-def visualise_predictions(images: list, predictions: list, criterion):
+def visualise_predictions(images: list, predictions: list, criterion_name : str):
     """Visualises the predictions and their images by overlaying them on the same 3 x 3 plot.
 
     Args:
         images (list): A list of images to lay predicted labels on
         predictions (list): A list of predicted labels proeuced by the model
-        criterion (callable): Loss function used during the training to name the plot.
+        criterion (str): The name of loss function used during the training to name the plot.
 
     Returns:
         None: The function only plots, so it does not return any value.
@@ -104,7 +104,7 @@ def visualise_predictions(images: list, predictions: list, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'predictions_{str(criterion)}.png')
+    plt.savefig(f'predictions_{str(CRITERION_NAME)}.png')
     plt.close()
 
 def test(model: nn.Module, test_loader: DataLoader, device: torch.device | str):
@@ -184,18 +184,18 @@ def test(model: nn.Module, test_loader: DataLoader, device: torch.device | str):
                 
             test_dice_coefs = np.append(test_dice_coefs, test_dice)
     
-    visualise_ground_truths(images, ground_truths, CRITERION)
-    visualise_predictions(images, predictions, CRITERION)
+    visualise_ground_truths(images, ground_truths, CRITERION_NAME)
+    visualise_predictions(images, predictions, CRITERION_NAME)
 
     return test_dice_coefs, seg_0_dice_coef, seg_1_dice_coef, seg_2_dice_coef, seg_3_dice_coef, seg_4_dice_coef, seg_5_dice_coef
 
-def plot_dice(criterion, segment_coefs: np.array):
+def plot_dice(criterion_name : str, segment_coefs: np.array):
     """ A method that plots a bar chart to visualise the performance of model on unseen data
     for each label. It is meant to demonstrated how accurately the model produces segmentations
     for each lebel.
 
     Args:
-        criterion (callable): Loss function used during the training to name the plot.
+        criterion (str): The name of loss function used during the training to name the plot.
         segment_coefs (np.array): an array containing dice scores for each segment at corresponding indices.
     """
 
@@ -209,7 +209,7 @@ def plot_dice(criterion, segment_coefs: np.array):
     plt.title("Dice Score for Each Segment")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_coefs_test_{str(criterion)}.png')
+    plt.savefig(f'dice_coefs_test_{str(criterion_name)}.png')
     plt.close()
 
 
@@ -258,4 +258,4 @@ if __name__ == "__main__":
                       average_s4, average_s5])
 
     # plot dice scores across the dataset.
-    plot_dice(CRITERION, segment_coefs)
+    plot_dice(CRITERION_NAME, segment_coefs)

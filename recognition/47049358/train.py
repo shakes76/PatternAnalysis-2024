@@ -27,15 +27,19 @@ __maintainer__ = "Ryuto Hisamoto"
 __email__ = "s4704935@student.uq.edu.au"
 __status__ = "Committed"
 
-NUM_EPOCHS = 300
+NUM_EPOCHS = 1
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
 LR_INITIAL = 0.985
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-CRITERION = DiceLoss(include_background=False, batch=True).to(DEVICE)
-# CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2).to(DEVICE) # Based on Thyroid Tumor Segmentation Report
+# CRITERION = DiceLoss(include_background=False, batch=True).to(DEVICE)
+# CRITERION_NAME = 'dice_loss'
+CRITERION = DiceCELoss(include_background=False, batch = True, lambda_ce = 0.2).to(DEVICE) # Based on Thyroid Tumor Segmentation Report
+CRITERION_NAME = 'dice_ce_loss'
 # CRITERION = DiceFocalLoss(include_background=False, batch = True).to(DEVICE) # Default gamma = 2
+# CRITERION_NAME = 'dice_focal_loss'
+
 
 def compute_dice_segments(predictions: torch.Tensor, ground_truths: torch.Tensor, device: torch.device | str):
     """The method calculates the dice scores for each segment. The score computed
@@ -184,10 +188,10 @@ plt.plot(epochs, seg2, label='Segment 2 Dice Coefficient')
 plt.plot(epochs, seg3, label='Segment 3 Dice Coefficient')
 plt.plot(epochs, seg4, label='Segment 4 Dice Coefficient')
 plt.plot(epochs, seg5, label='Segment 5 Dice Coefficient')
-plt.title(f'Dice Coefficient Over Epochs for {str(CRITERION)}')
+plt.title(f'Dice Coefficient Over Epochs for {str(CRITERION_NAME)}')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'unet_dice_coefs_over_epochs_{str(CRITERION)}.png')
+plt.savefig(f'unet_dice_coefs_over_epochs_{str(CRITERION_NAME)}.png')
 plt.close()

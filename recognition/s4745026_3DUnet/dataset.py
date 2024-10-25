@@ -4,7 +4,6 @@ from tqdm import tqdm
 import utils
 import torch
 from torch.utils.data import Dataset
-import torchvision.transforms as transforms
 import glob
 import torch.nn as nn
 
@@ -62,16 +61,22 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
 
 
 class Custom3DDataset(Dataset):
-    def __init__(self):
+    def __init__(self, transform=None):
         # Unzip images
         self.image_paths = glob.glob(
             f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
         self.label_paths = glob.glob(
             f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
+        """self.image_paths = glob.glob(
+            r'C:\Users\nroug\Documents\PatternAnalysis-2024\recognition\s4745026_3DUnet\data\semantic_MRs/**/*.nii.gz', recursive=True)
+        self.label_paths = glob.glob(
+            r'C:\\Users\\nroug\\Documents\\PatternAnalysis-2024\\recognition\\s4745026_3DUnet\\data\\semantic_labels_only/**/*.nii.gz', recursive=True)"""
         # Resize the dimensions
+
         self.upsample = torch.nn.Upsample(
             size=(128, 128, 128), mode="trilinear")
         self.classes = {i: i for i in range(6)}
+        self.transform = transform
 
     def __len__(self):
         return len(self.image_paths)
@@ -90,7 +95,11 @@ class Custom3DDataset(Dataset):
         label = nn.functional.one_hot(
             label.squeeze(0), num_classes=6).permute(3, 1, 0, 2).float()
         # Upsample
+        label = label.unsqueeze(0)
         image = self.upsample(image)
         label = self.upsample(label)
+
+        if self.transform is not None:
+            image = self.transform(image)
 
         return image.squeeze(0), label.squeeze(0)

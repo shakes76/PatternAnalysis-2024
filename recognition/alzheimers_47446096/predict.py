@@ -4,16 +4,19 @@ import torch
 from torchsummary import summary
 import matplotlib.pyplot as plt
 from torch.cuda.amp import GradScaler
+from sklearn.metrics import confusion_matrix, f1_score
 
-MODEL_PATH = "./model15/model_epoch_266"
+MODEL_PATH = "./model_epoch_16"
 
 def predict(modelPath:str = MODEL_PATH, device: str = "cpu"):
     
-    model = torch.load(modelPath).to(device)
-    testLoader = getTestLoader(batchSize=128)
+    print("Beginning testing")
 
-    pred = []
-    true = []
+    model = torch.load(modelPath, weights_only=False).to(device)
+    testLoader = getTestLoader(batchSize=64)
+
+    pred = torch.tensor([], device = device)
+    true = torch.tensor([], device = device)
     
     with torch.no_grad():
         model.eval()
@@ -23,13 +26,22 @@ def predict(modelPath:str = MODEL_PATH, device: str = "cpu"):
             trueLabels = trueLabels.to(device)
             outputs = model(imgs)
             a, predLabels = torch.max(outputs.data, 1)
-            pred.append(predLabels)
-            true.append(trueLabels)
+            pred = torch.cat((pred, predLabels), 0)
+            true = torch.cat((true, trueLabels), 0)
     
-    tAcc += (trueLabels == predLabels).sum().item()
-    tAcc /= len(testLoader.dataset)
+    tAcc = (true == pred).sum().item()
+    tAcc /= len(pred)
+    
     print(f"Test Accuracy = {100 * tAcc} %")
+
+    true = true.cpu()
+    pred = pred.cpu()
+
+    print(f"F1 Score: {f1_score(true, pred)}")
+
+    print(f"Confusion Matrix:\n {confusion_matrix(true, pred, labels=[0, 1])}")
+
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    predict(device)
+    predict(device = device)

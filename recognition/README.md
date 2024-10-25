@@ -90,26 +90,117 @@ cd .\recognition\alzheimers_47446096\
 /recognition *
     |--/alzheimers_47446096 *
 ```
-### Data Processing
-Before training the data, two major preprocessing steps were taken. Creating a validation using a patient level split to ensure there
+### Data Pre Processing
+#### 'Manual' Steps
+Before training the data, two major manual preprocessing steps were taken. Creating a validation using a patient level split to ensure there
 is no data leakage between the validation set and test set, and calculate the mean and standard deviation of the training data as this
 is used in transforms applied to the data.
-1. To 
+1. The first data preprocessing step was to create the validation set as follows. The functions in this repo designed to execute 
+train/val/test split perform a 70/15/15 split. This is a common split ratio for smaller datasets. Due to the fact that the entire ADNI
+dataset only contains around 30000 files it can be classified as a smaller dataset, and therefor it is suitable for this split.
+    
+    1.1 Ensure that the folder structure matches the pattern specified above
+
+    1.2 Execute the 'formatByPatient' function which is located in the 'dataset.py' file. An example of this can be seen below.
+    _Note, ROOT\_PATH and NEW\_ROOT\_PATH are relative paths from inside recognition\alzheimers\_47446096\\_
+    ```
+        > cd .\recognition\alzheimers_47446096\ 
+        > python
+        >>> from dataset import *
+        >>> formatByPatient(path = ROOT_PATH, newPath = NEW_ROOT_PATH)
+    ```
+2. Calculate the mean and standard deviation of the training set.
+    
+    2.1 This is done by running the 'meanStdCalc' function which is also located in the 'dataset.py' file
+    _Note, PATH is the relative path from inside recognition\alzheimers\_47446096\ to the train folder_
+    ```
+        > cd .\recognition\alzheimers_47446096\ 
+        > python
+        >>> from dataset import *
+        >>> meanStdCalc(path = PATH)
+    ```
+    This will return the mean and standard deviation of each of the 3 channels in the original RGB images, however they should
+    all be the same as the MRI photos are grey-scale already. To ensure that these values are being used for the normalisation
+    transforms when the data is being loaded, change the global variables 'MEAN' and 'STD' in 'dataset.py'.
+
+#### Transformations on Data Loading
+When the data is loaded using the defined methods for getting dataLoaders for each dataset, several transforms are applied
+in a effort to increase the performance of the models. The transforms applied are as follows
+
+Transforms on training data (_All methods are pytorch transforms from torchvision.transforms_)
+1. A random crop on the image of the predefined IMG_SIZE is performed using RandomResizedCrop((IMG_SIZE, IMG_SIZE)),
+2. 3 random augmentations to the image using RandAugment() (A list of the included augmentations can be found [here](https://pytorch.org/vision/main/_modules/torchvision/transforms/autoaugment.html#RandAugment))
+3. Convert the image into a single channel grey-scale format using Grayscale()
+4. Convert the image into a torch tensor using ToTensor()
+5. Normalize the images using the mean and standard deviation calculated above using Normalize(mean = MEAN, std = STD)
+
+Transforms on test/val data (_All methods are pytorch transforms from torchvision.transforms_)
+1. A center crop on the image of the predefined IMG_SIZE is performed using CenterCrop((IMG_SIZE, IMG_SIZE)),
+3. Convert the image into a single channel grey-scale format using Grayscale()
+4. Convert the image into a torch tensor using ToTensor()
+5. Normalize the images using the mean and standard deviation calculated above using Normalize(mean = MEAN, std = STD)
+
+These transform were chosen in an attempt to increase the performance of the model in various ways. The normalization, 
+random crop and random augmentations were added in an attempt to create more variation in the dataset, thus giving 
+the model 'more' samples to learn from, this gave a notable performance/accuracy increase compared to initial 
+testing of the model without any transforms implemented. Additionally the decision to convert to grey-scale was made
+for optimization purposes as since the image is inherently grey-scale and all RGB values are the same it allows for
+reduced computation without loss of detail. 
+
 ### Training
-### Testing
+Once the data processing steps listed above are completed, the model is then ready to be trained. To train the model first 
+ensure that the correct model/hyperparameters are defined at the beginning of the 'train' function in 'train.py'. An exert from
+'train.py' can be seen below highlighting where the model is defined. If desired other modifications to the optimiser, loss function,
+mixed precision, etc. can also be changed within this file.
+```python
+def train(device: str = "cpu"):
+    NUM_EPOCH = 1000
+    LEARNING_RATE = 0.00003
+    BATCH_SIZE = 64
+    WEIGHT_DECAY = 0.02
+    TRAIN_WORKERS = 4
+
+    #* Define Model Here ------------------------------------
+    model = ConvolutionalVisionTransformer(device).to(device)
+```
+The file can then by run to begin training the model. _Note ensure you have navigated to the same directory where you relative paths for 'dataset.py' are based from. Otherwise getting the dataLoaders will error._
+
+```
+> cd .\recognition\alzheimers_47446096\ 
+> cd python .\train.py
+```
+An example of the first few lines of output can be seen below
+```
+Beginning Training
+Epoch 1/1000: Training Loss = 0.6941055584732079, Training Accuracy = 0.5199349442379182
+Validation Loss = 0.6975890823772976, Validation Accuracy = 50.73660714285714 %
+Epoch 2/1000: Training Loss = 0.6923188280634781, Training Accuracy = 0.5276486988847584
+Validation Loss = 0.6800375240189689, Validation Accuracy = 60.04464285714286 %
+```
+### Testing / Predicting
+To test a saved model
+
+```
+Test Accuracy = 73.49557522123894 %
+F1 Score: 0.7711993888464477
+Confusion Matrix:
+ [[1303  937]
+ [ 261 2019]]
+```
+
 ## Results
 When testing with both the 
 <p align="center">
-  <img src="alzheimers_47446096/model17/trainAccuracyPlot.jpg" />
+  <img src="alzheimers_47446096/model15/trainAccuracyPlot.jpg" />
 </p>
 <p align="center">
-  <img src="alzheimers_47446096/model17/trainLossPlot.jpg" />
+  <img src="alzheimers_47446096/model15/trainLossPlot.jpg" />
 </p>
 <p align="center">
-  <img src="alzheimers_47446096/model17/valAccuracyPlot.jpg" />
+  <img src="alzheimers_47446096/model15/valAccuracyPlot.jpg" />
 </p>
 <p align="center">
-  <img src="alzheimers_47446096/model17/valLossPlot.jpg" />
+  <img src="alzheimers_47446096/model15/valLossPlot.jpg" />
 </p>
 
 ## References

@@ -31,7 +31,7 @@ def main(args):
     """
     Constants
     """
-    IMAGESIZE = 240
+    IMAGESIZE = 180
     ROOTDATAPATH = "/home/groups/comp3710/ADNI/"
     MODELPATH = "./model.pth"
     GOAL_ACCURACY = 0.8 # Goal accuracy to achieve

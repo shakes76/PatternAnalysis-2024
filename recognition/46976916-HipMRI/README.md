@@ -28,7 +28,15 @@ The final model had the input parameters:
 - Matplotlib 3.9.2
 
 ### Example Prediction Results
-Using a model trained for 16 epochs with the inputs (??)
+The model trained using the parameters above
 The model was then used on an never seen before testing set which resulted in the following:
 Pixel Accuracy: 96.62 and Dice Score: 0.9058
--insert images
+
+![Example Segmentation 1](images/PredictImage1.png)
+![Example Segmentation 2](images/PredictImage2.png)
+![Example Segmentation 3](images/PredictImage3.png)
+
+These visualisations show:
+- The raw input image on the left
+- The target segmentation mask for the image in the middle
+- The models predicted segmentation mask

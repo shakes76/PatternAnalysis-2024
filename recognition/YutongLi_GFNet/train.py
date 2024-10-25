@@ -70,6 +70,7 @@ if __name__ == "__main__":
         end_time = time.time()
         run_time = end_time - start_time
         print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. val Loss: {val_loss:.4f}, val Acc: {val_acc:.4f}. time: {run_time}")
+        append_training_log(train_loss, train_acc, val_loss, val_acc, run_time)
 
     print("saving model parameters")
     torch.save({
@@ -79,5 +80,5 @@ if __name__ == "__main__":
 
     print("testing the model")
     final_validate(model, test_loader, criterion, device)
-
+    draw_training_log()
     print("finish model train, save and test")

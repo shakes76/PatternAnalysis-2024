@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def load_model(model_path):
     """Loads the trained U-Net model from the specified path."""
     model = UNet()  # Initialize the model
-    model.load_state_dict(torch.load(model_path))  # Load the model weights
+    model.load_state_dict(torch.load(model_path), strict=False)  # Load the model weights, ignoring mismatches
     model.eval()  # Set the model to evaluation mode
     return model
 
@@ -18,6 +18,7 @@ def predict_image(model, image):
     """Runs the model on a single image and returns the predicted mask."""
     with torch.no_grad():  # Disable gradient calculation
         image_tensor = image.unsqueeze(0)  # Add batch dimension
+        image_tensor = image_tensor.squeeze(2)  # Removes the extra dimension if it's size 1
         prediction = model(image_tensor)  # Get model prediction
         predicted_mask = torch.argmax(prediction, dim=1).squeeze(0).cpu().numpy()  # Get the predicted class labels
     return predicted_mask
@@ -64,10 +65,10 @@ def process_and_evaluate(model, dataloader, output_dir, num_classes):
 
 def main():
     """Main function to run inference and evaluate the model on test data."""
-    model_path = r""  # Path to the trained model                                  PLEASE ADD  #################
-    test_images_dir = r""  # Directory containing test MRI images                  PLEASE ADD  #################
-    test_labels_dir = r""  # Directory containing ground truth labels              PLEASE ADD  #################
-    output_dir = r""  # Directory to save predicted masks                          PLEASE ADD  #################
+    model_path = r"C:\Users\sophi\Downloads\PatternAnalysis-2024\recognition\2dUnet-S4698007\model"  # Path to the trained model                                  PLEASE ADD  #################
+    test_images_dir = r"C:\Users\sophi\Downloads\HipMRI_study_keras_slices_data\keras_slices_test"  # Directory containing test MRI images                  PLEASE ADD  #################
+    test_labels_dir = r"C:\Users\sophi\Downloads\HipMRI_study_keras_slices_data\keras_slices_seg_test"  # Directory containing ground truth labels              PLEASE ADD  #################
+    output_dir = r"C:\Users\sophi\Downloads\PatternAnalysis-2024\recognition\2dUnet-S4698007\graphs"  # Directory to save predicted masks                          PLEASE ADD  #################
     
     # Create DataLoader for test images and labels
     test_dataloader = create_dataloader(test_images_dir, test_labels_dir, batch_size=1, max_images=1000000, normImage=False)

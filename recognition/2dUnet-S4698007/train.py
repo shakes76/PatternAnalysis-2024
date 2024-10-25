@@ -10,8 +10,8 @@ from dataset import create_dataloader
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
-num_epochs = 25
-batch_size = 4
+num_epochs = 15
+batch_size = 5
 learning_rate = 1e-3
 num_classes = 6  # Adjust this based on your specific number of classes
 
@@ -50,4 +50,4 @@ def train_model():
 
 if __name__ == "__main__":
     train_model()
-    torch.save(model.state_dict(), r"")  ########ADD PATH TO SAVE MODEL TO
+    torch.save(model.state_dict(), r"C:\Users\sophi\Downloads\PatternAnalysis-2024\recognition\2dUnet-S4698007\model")  ########ADD PATH TO SAVE MODEL TO

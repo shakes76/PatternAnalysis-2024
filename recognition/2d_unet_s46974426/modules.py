@@ -80,7 +80,9 @@ class Up(nn.Module):
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
-
+'''
+    Definition of a OutConv class
+'''
 class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(OutConv, self).__init__()
@@ -89,7 +91,9 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-
+'''
+    Definition of a Pytorch UNet to be trained on the loaded 2d segmentation dataset
+'''
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=False):
         super(UNet, self).__init__()
@@ -134,6 +138,15 @@ class UNet(nn.Module):
         self.up4 = torch.utils.checkpoint(self.up4)
         self.outc = torch.utils.checkpoint(self.outc)
 
+'''
+    Handles calculating dice coefficent between a predicted mask and a true mask
+
+    Parameters:
+    -input: predicted mask (as a tensor)
+    -target: true mask (as a tensor)
+    -reduce_batch_first: wheater to average over batch dimension
+    -epsilon: small value to prevent division by 0
+'''
 def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, epsilon: float = 1e-6):
     # Average of Dice coefficient for all batches, or for a single mask
     assert input.size() == target.size()
@@ -148,17 +161,38 @@ def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, 
     dice = (inter + epsilon) / (sets_sum + epsilon)
     return dice.mean()
 
+'''
+    Calculates dice coefficient across multiple classes
 
+    Parameters:
+    -input: predicted mask (as a tensor)
+    -target: true mask (as a tensor)
+    -reduce_batch_first: wheater to average over batch dimension
+    -epsilon: small value to prevent division by 0
+'''
 def multiclass_dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, epsilon: float = 1e-6):
     # Average of Dice coefficient for all classes
     return dice_coeff(input.flatten(0, 1), target.flatten(0, 1), reduce_batch_first, epsilon)
 
+'''
+    Calculates dice loss for an image segmentation
 
+    Parameters:
+    -input: predicted mask (as a tensor)
+    -target: true mask (as a tensor)
+    -multiclass: is multiclass?
+'''
 def dice_loss(input: Tensor, target: Tensor, multiclass: bool = False):
     # Dice loss (objective to minimize) between 0 and 1
     fn = multiclass_dice_coeff if multiclass else dice_coeff
     return 1 - fn(input, target, reduce_batch_first=True)
 
+'''
+    Combines two datasets, in this case used to combine the mask and segmetation datasets
+
+    Initialisation:
+    -takes two datasets to intialise the class and returns them in a tuple
+'''
 class CombinedDataset(Dataset):
     def __init__(self, images, image_masks, transform=None):
         """
@@ -198,6 +232,12 @@ class CombinedDataset(Dataset):
 
         return image, mask
     
+'''
+    Loads a specified image
+
+    Parameters:
+    -filename: path to the image being loaded
+'''
 def load_image(filename):
     ext = splitext(filename)[1]
     if ext == '.npy':
@@ -207,7 +247,14 @@ def load_image(filename):
     else:
         return Image.open(filename)
 
+'''
+    Identifies unique values in a mask
 
+    Parameters:
+    -idx: string identifier of a mask
+    -mask_dir: directory contianing the masks
+    -mask_suffix: identifies the mask by combining this and the idx
+'''
 def unique_mask_values(idx, mask_dir, mask_suffix):
     mask_file = list(mask_dir.glob(idx + mask_suffix + '.*'))[0]
     mask = np.asarray(load_image(mask_file))
@@ -219,7 +266,9 @@ def unique_mask_values(idx, mask_dir, mask_suffix):
     else:
         raise ValueError(f'Loaded masks should have 2 or 3 dimensions, found {mask.ndim}')
 
-
+'''
+    Defines a BasicDatabase class
+'''
 class BasicDataset(Dataset):
     def __init__(self, images_dir: str, mask_dir: str, scale: float = 1.0, mask_suffix: str = ''):
         self.images_dir = Path(images_dir)
@@ -297,11 +346,20 @@ class BasicDataset(Dataset):
         }
 
 
+'''
+    Defines a CarvanaDataset class
+'''
 class CarvanaDataset(BasicDataset):
     def __init__(self, images_dir, mask_dir, scale=1):
         super().__init__(images_dir, mask_dir, scale, mask_suffix='_mask')
 
+'''
+    Funtion to plot image and its corrolated mask
 
+    Paramters:
+    -img: image
+    -mask: mask
+'''
 def plot_img_and_mask(img, mask):
     classes = mask.max() + 1
     fig, ax = plt.subplots(1, classes + 1)

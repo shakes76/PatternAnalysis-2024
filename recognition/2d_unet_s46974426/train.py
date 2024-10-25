@@ -21,6 +21,7 @@ import seaborn as sns
 
 import wandb
 
+#setting dataset paths and empty arrays for plotting
 dir_img = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_test')
 dir_mask = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_seg_test')
 dir_img_val = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_validate')
@@ -31,6 +32,15 @@ batch_losses = []
 val_dice_scores = []
 conf_matrix_total = None
 
+'''
+    Computes the dice score of the UNet, a measure of how well the model segments images by comparing the predicted and true masks
+
+    Parameters:
+    -net: the UNet 
+    -dataloader: dataloader that provides validation data in batches
+    -device: the device where the model is run on (in this case cuda)
+    -amp: depricated from reference code
+'''
 def evaluate(net, dataloader, device, amp):
     net.eval()
     num_val_batches = len(dataloader)
@@ -74,6 +84,22 @@ def evaluate(net, dataloader, device, amp):
     
     return dice_score / max(num_val_batches, 1)
 
+'''
+    Main training model for training the segmentation model (UNet)
+
+    Parameters:
+    -model: the UNet model
+    -device: device the model is run on (cuda)
+    -epochs: the number of epochs run
+    -batch_size: the size of the batch
+    -learning_rate: the learning rate of the model
+    -save_checkpoint: boolean to determine if the model is saves based on progress
+    -img_scale: scaling factor for images (default seems to be typically 0,5)
+    -amp: boolean to determine use of automatic mixed precision (amp)
+    -weight_decay: regularisation parameter to prevent overfitting
+    -momentum: hyperparam for optimiser to accelerate SGD
+    -gradient_clipping: clips back progogation to prevent exploding gradients
+'''
 def train_model(
         model,
         device,
@@ -262,7 +288,20 @@ def train_model(
     # plt.ylabel('True')
     # plt.show()
 
+'''
+    Command-line interface to train the UNet model on images and corresponding target masks
 
+    Parameters:
+    --epochs: number of epochs run
+    --batch-size: size of each batch
+    --learning-rate: learning rate of model
+    --load: specifies path to pre-trained model
+    --scale: downscaling factor
+    --validation: dataset percentage used for validation
+    --amp: whether to use automatic mixed precision (amp)
+    --bilinear: whether to use bilinear upsampling
+    --classes: number of classes for the segmentation task
+'''
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E', type=int, default=50, help='Number of epochs')

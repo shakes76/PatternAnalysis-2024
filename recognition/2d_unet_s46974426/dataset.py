@@ -6,6 +6,14 @@ import os  # Ensure you have this to work with file paths
 import torch
 from torch.utils.data import Dataset  # Add this import for Dataset
 
+
+'''
+    Resizes the images to all be consistent (this is required for the data loading process in load_data_2d)
+
+    Parameters:
+    - image: image that is being resized
+    - target_shape: shape the image is being resized too e.g. 256*128 pixels 
+'''
 def resize_image(image, target_shape):
     """Resize image to the target shape using OpenCV."""
     return cv2.resize(image, (target_shape[1], target_shape[0]), interpolation=cv2.INTER_LINEAR)

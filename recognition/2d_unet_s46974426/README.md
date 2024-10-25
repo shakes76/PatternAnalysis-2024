@@ -45,3 +45,24 @@ dice score can both be seen in the images folder. I then ran it for 50 epochs an
 above are in the images folder. The console running progress can also be seen in the console_running image 
 in the images folder.
 
+This final part will outline a description of working principles of the algorithm and the problem it solves. 
+The Pytorch UNet is comprised of four parts, an encoder, decoder, bottleneck and a convolutional layer. 
+The modules script contains the UNet’s definition. It also includes the dice coefficient handling to calculate 
+dice loss which measures the overlap of two images in order to quantify a segmentation model’s accuracy. 
+I also added a function to combine two datasets (the segment images and masks), this is because datasets 
+what include both segments and masks are typically used in UNet algorithms. The modules script also included 
+some basic dataset classes, a method to load images, check uniqueness of masks and some basic plotting logic.
+
+The train script initialises and loads the UNet model defined in the modules and then trains it on the 
+segmentation dataset. Before this is done however, it is transformed and loaded as 2d data using the provided 
+load_data_2d function in the task appendix. The train script handles defining the main train loop, iterating 
+over the data in batches, calculating losses and dice scores, which are then plotted after the algorithm has 
+completed. It also handles saving progress while the training loop completes each epoch, which is made up of 
+a number of batches (typically 5-6 in this case).
+
+The dataset script just contains the load_data_2d method as seen in the appendix of the task sheet. It also 
+contains a data transformation function to make the image dimensions consistent.
+
+Finally, the predict script’s purpose is to generate mask predictions of new images on a trained and saved UNet model.
+
+

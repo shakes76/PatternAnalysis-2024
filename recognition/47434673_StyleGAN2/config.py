@@ -4,9 +4,12 @@ import torch
 # Hyperparameters
 
 # UPDATE HERE to the file path to your data
-#data_root = "C:\Users\kylie\OneDrive\Documents\keras_png_slices_data\keras_png_slices_data\keras_png_slices_seg_train"
-data_root = "/content/drive/My Drive/COMP3710/assignment-two/keras_png_slices_data/keras_png_slices_data"
+data_root = "C:\Users\kylie\OneDrive\Documents\keras_png_slices_data\keras_png_slices_data\keras_png_slices_seg_train"
 
+# Google colab residue
+#data_root = "/content/drive/My Drive/COMP3710/assignment-two/keras_png_slices_data/keras_png_slices_data"
+
+# Note that some of these hyperparams are redundant, but have not yet been phased out
 workers = 2 # Number of workers for dataloader
 nz = 100 # Size of z latent vector (i.e. size of generator input)
 ngf = 64 # Size of feature maps in generator
@@ -26,7 +29,9 @@ w_dim = 256 # asdf
 lambda_gp = 10 # asdf
 interpolation = "bilinear" # asdf
 save = "save" # asdf
+load_model = False # Set to True if you want to load a pre-trained model
 
+# CHANGE HERE the seed if wanted
 # Set random seed for reproducibility
 manualSeed = 999
 #manualSeed = random.randint(1, 10000) # use if you want new results

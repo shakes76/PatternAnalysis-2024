@@ -27,12 +27,16 @@ map the noise to an intermediate latent space first. Random vectors from this sp
 the style vectors are directly embedded into the intermediate layers of the generator. Stochastic variation control adds 
 much finer details into the image through the addition of noise input into the generator similarly using AdaIN blocks.
 The StyleGAN allows for style mixing, since the styles are separated across different layers which are progressively trained 
-using different data sources. This allowing for better control over high-level and low-level features independently, making it possible to blend, interpolate, or adjust specific aspects of the generated image. 
+using different data sources. This allowing for better control over high-level and low-level features independently, making it possible to blend, interpolate, or adjust specific aspects of the generated image.
+
+![StyleGAN](assets/StyleGAN%20general%20architecture.png)
+
 
 ### StyleGAN2
 StyleGAN2 builds upon the original StyleGAN architecture by addressing several limitations, such as visible blob-like artifacts on the images and the progressive growing problem. StyleGAN2 removes the blob-like artifacts by replacing the AdaIN layer with weight modulation. Instead of manipulating the feature maps using AdaIN, the convolution kernel weights are scaled
 with a style vector in weight modulation and then the kernel is normalised in weight demodulation. This removes the progressive growing problem which introduces the blob-like artifacts. The resulting architecture produces higher quality images than the StyleGAN.
 
+![StyleGAN2](assets/styleGAN2%20architecture.png)
 
 ## Data
 The dataset that this model is trained on is the publicly available OASIS brain dataset. This dataset contains 2D MRI image slices of brains. The directory structure of this dataset is the following:
@@ -47,7 +51,9 @@ The dataset that this model is trained on is the publicly available OASIS brain 
     └───keras_png_slices_validate
 ```
 
-This model trains on images taken from all the folders, i.e. the dataloader does not discriminate between images in the train, test, or validate directories. This is so that this model can train on more diverse images and so be able to generate a wider range of images.
+This model trains on images taken from all the folders, i.e. the dataloader does not discriminate between images in the train, test, or validate directories. This is so that this model can train on more diverse images and so be able to generate a wider range of images. It is a potential limitation that this solution has not been implemented such that the model trains exclusively on the training data.
+
+The OASIS brains dataset is already pre-processed so the only preprocessing included was dataset augmentation to the reduce the risk of over-fitting and random vertical flip transform, grayscale (not strictly necessary as the images are already black and white), normalise the images, and resize using bicubic interpolation.
 
 ## Requirements
 
@@ -63,9 +69,9 @@ matplotlib
 tqdm
 ```
 
-Libraries may use newer versions.
+Libraries should use the latest versions.
 
-This should ideally be run with a NVIDIA A100 GPU with 128GB of DRAM. Testing on other GPUs has not been performed.
+Ideally run with a NVIDIA A100 GPU with 128GB of DRAM. Testing on other GPUs has not been performed.
 
 ## Code Structure
 
@@ -89,30 +95,25 @@ train.py
 
 Note that `assets` directory contains images and graphs for this report. Also, the models are saved in this directory once training is complete under `netD.pth`, `netG.pth` and `netM.pth` for the discriminator, generator and mapping network respectively.
 
-
 To use pre-trained models instead of training new models, please set the `load_models` hyperparameter in `utils.py` to `True`.
-That is: `load_models = True`.
+That is: `load_models = True`. Note that no pretrained models have been included in this repository.
 
-Optionally, a seed for training the model can be set by changing the `seed` hyperparameter in `config.py`. Otherwise, a random `seed` will be chosen.
+Optionally, a seed for training the model can be set by changing the `manualseed` hyperparameter in `config.py`. Otherwise, a random `manualseed` will be chosen.
 
 ## Running the project
-
 To run this project clone the repository and 
 
 
 ## Results
-The images for the 
-
-### Regular Training
-
-
-### Extended Training
 
 ### Input
 Below are a sample of the training images that the model was trained on.
 ![Train_imgs](assets/training_images.png)
 
 ### Output
+When the training is occuring, the output should look something like this:
+![Train_tracking](assets/training_track.png)
+
 #### Epoch 0
 ![Epoch_10](assets/epoch0_img_2.png)
 
@@ -130,6 +131,11 @@ Below are a sample of the training images that the model was trained on.
 
 #### Epoch 50
 ![Epoch_50](assets/epoch_4.png)
+
+Comparing this to a real image from the dataset below, we can see that the generated image at the 50th epoch is reasonably clear by comparison.
+![Real_img](assets/aug_img_4.png)
+
+
 
 Hence we can see that by the 50th epoch, the requirement for reasonably clear image generation has been met.
 
@@ -151,9 +157,15 @@ The graphs below show the loss of the generator and discriminator during their t
 
 
 
-
 ## Conclusion
+### Limitations
+This StyleGAN2 model was trained for a maximum of 50 epochs (35500 iterations), and while this did satisfy the task by generating reasonably clear images, it is expected that had the training been continued even more clarity could have been achieved. Based on similar models, 150 epochs appears to the the point of maximum clarity in the generated images. This is not a fundamental flaw in the implemented solution, it is merely that this number of epochs was not investigated due to the limitations of training time. 
+That being said, the images generated after 50 epochs of training were reasonably clear and there would not be significant improvment at 150 epochs. This can be seen from the loss graphs, which indicate that the Discriminator and Generator loss functions are relatively low by 50 epochs.
 
-## References
+It is a potential limitation that this solution has not been implemented such that the model trains exclusively on the training data. In future, better data preprocessing is recommended to avoid the model training on all the OASIS data.
 
+## References and Acknowledgements
+The model was implmented based on the [StyleGAN2 paper](https://arxiv.org/pdf/1912.04958).
+
+For the code architecture of the StyleGAN2, this [repository](https://github.com/shakes76/PatternAnalysis-2023/tree/topic-recognition/recognition/StyleGAN2-OASIS_45711110) was referred to by [4vir4l](https://github.com/4vir4l).
 

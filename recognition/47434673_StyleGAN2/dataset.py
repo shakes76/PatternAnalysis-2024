@@ -1,34 +1,15 @@
 from __future__ import print_function
 #%matplotlib inline
-import argparse
-import os
-import random
 import torch
-import torch.nn as nn
 import torch.nn.parallel
-import torch.backends.cudnn as cudnn
-import torch.optim as optim
 import torch.utils.data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-import torchvision.utils as vutils
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-import torchvision.utils as vutils
-from IPython.display import HTML
-from torch.utils.data import DataLoader
 from torchvision.utils import save_image
-import torch.nn.functional as F
-from math import sqrt
-from tqdm import tqdm
 
-import modules
-import utils
-import predict
-import train
 from config import *
 
 #############################################

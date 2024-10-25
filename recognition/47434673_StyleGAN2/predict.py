@@ -42,21 +42,6 @@ def generate_examples(gen, mapping_network, epoch, device):
             w = utils.get_w(1, mapping_network, device)
             noise = utils.get_noise(1, device)
             img = gen(w, noise)
-            if not os.path.exists(f'saved_examples_{save}'):
+            if not os.path.exists(f'saved_examples_{save}'): # Make a directory in which to store saved images
                 os.makedirs(f'saved_examples_{save}')
             save_image(img*0.5+0.5, f"saved_examples_{save}/epoch{epoch}_img_{i}.png")
-
-
-# def generate_examples(gen, epoch, n=100):
-#         '''
-#         Saves n number of sample images generated from random noise at a specified training epoch.
-#         '''
-#         gen.eval()
-#         for i in range(n):
-#             with torch.no_grad():
-#                 w = get_w(1, log_resolution, mapping_network)
-#                 noise = get_noise(1)
-#                 img = gen(w, noise)
-#                 if not os.path.exists(f'saved_examples_{modelName}/epoch{epoch}'):
-#                     os.makedirs(f'saved_examples_{modelName}/epoch{epoch}')
-#                 save_image(img*0.5+0.5, f"saved_examples_{modelName}/epoch{epoch}/img_{i}.png")

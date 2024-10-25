@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 #define training variables
 BATCH_SIZE = 16
-EPOCHS = 30
+EPOCHS = 40
 n_classes = 6
-learning_rate = 0.0005
+learning_rate = 0.0003
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -140,4 +140,4 @@ def plot_training(history):
     plt.ylabel('Loss Value')
     plt.ylim([0, 1])
     plt.legend()
-    plt.savefig('training_loss.png')
+    plt.savefig('training_loss_.png')

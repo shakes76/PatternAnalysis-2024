@@ -7,7 +7,10 @@ import tensorflow as tf
 
 def augment_image_and_mask(image, mask, class_index=5, heavy_augment=True, zoom_factor=0.2):
     # Check if the weak class is present in the mask
-    class_present = tf.reduce_sum(mask[..., class_index]) > 0
+    class_present = tf.reduce_sum(mask[..., 5]) > 0
+
+    if not class_present:
+        class_present = tf.reduce_sum(mask[..., 4]) > 0
 
     if heavy_augment and class_present:
         # Apply heavier augmentations
@@ -127,7 +130,7 @@ def load_data():
     seg_test_files = sorted(glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test/*.nii.gz'))
     seg_validate_files = sorted(glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate/*.nii.gz'))
 
-    early = True
+    early = False
 
     # Load the images using the load_data_2D function
     images_train = load_data_2D(train_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128), early_stop=early)

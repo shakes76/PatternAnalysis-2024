@@ -72,7 +72,7 @@ def save_validation_image(image, mask, prediction, index):
     plt.axis('off')
     
     # Save the figure
-    plt.savefig(f'validation_image_2{index}.png')
+    plt.savefig(f'validation_image__{index}.png')
     plt.close()
 
 
@@ -93,7 +93,7 @@ model = unet_model1(n_classes, input_size=(256, 128, 1))
 # Train the U-Net model
 history = train_unet_model(model, images_train, images_seg_train, 
                            images_validate, images_seg_validate, 
-                           model_save_path="best_unet_model2.h5",
+                           model_save_path="best_unet_model_.h5",
                            class_weights=class_weights)
 
 

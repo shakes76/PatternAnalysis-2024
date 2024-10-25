@@ -155,10 +155,10 @@ class GFNetPyramid(nn.Module):
         embed_dim=[96, 192, 384, 768],
         depth=[3, 3, 27, 3],
         mlp_ratio=[4, 4, 4, 4],
-        drop_rate=0.1,
+        drop_rate=0.3,
         drop_path_rate=0.4,
         init_values=1e-6,
-        dropcls=0.05,
+        dropcls=0.3,
     ):
         super().__init__()
         self.num_classes = num_classes

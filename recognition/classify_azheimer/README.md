@@ -96,6 +96,8 @@ The model did not reach the target accuracy of 0.8. Potential reasons include:
 Below is the training plot showing the train accuracy and loss over epochs:
 ![Training Plot](training_plot.png)
 
+We can see that the training set has an accuracy of almost 100, which is evidence that the model is overfitting, and it might be better to use a simpler network, but for time reasons it is currently at 65%.
+
 ## Dependencies
 - Python: 3.12
 - PyTorch: 1.10

@@ -16,7 +16,11 @@ Input data is loaded into the encoder, a neural network, and transformed into la
 
 ## Pixel CNN
 
-Pixel CNN is another generative model used for creating images. It does this on a pixel to pixel basis through auto-regression. More specifically, it models the joint probability of all the pixels in that image and generates pixels based on pixels before teh current pixel.
+Pixel CNN is another generative model used for creating images. It does this on a pixel to pixel basis through auto-regression. More specifically, it models the joint probability of all the pixels in that image and generates pixels based on pixels before the current pixel.
+
+![image](https://github.com/user-attachments/assets/59e73fd1-6e3a-41de-a8eb-3cd1e39511ba)
+
+
 
 PixelCNN models the distribution of latent codes. VQ-VAE encodes images into a discrete latent space represented by a finite codebook. PixelCNN captures spatial patterns within this latent space by predicting each latent code based on those previously generated pixels This enhances the model's ability to produce coherent sequences.
 
@@ -80,3 +84,8 @@ Here are two examples of the quantised samples:
 </p>
 
 The pixelCNN will be trained on the quantised outputs:
+
+## reference
+https://www.google.com/search?sca_esv=640dfa46d8859720&rlz=1C1GCEB_enAU1024AU1024&sxsrf=ADLYWIKlgn8pA_TD7EEt8MO8HtBIdIzdlA:1729856418859&q=vqvae+diagram&udm=2&fbs=AEQNm0CrHVBV9axs7YmgJiq-TjYcvrKLYvLdNLLD2b8MCfaxte6rE3yH_shvJRqV-Iqr8JJvO9luGxMyf8tABHRE_ER5WVi_ouuYD0ZGCgonp8RpBmOUpTB-X6dVFbJc8KMdvjlHxs0_OJiYCY4-Y60oHTMiC_1a9mkGkMIYHO4XqP68ipa4P5rJaQCtA4WPne6f0aAKhdyAMTPbTsWJEdFYpNvI5RzOgw&sa=X&ved=2ahUKEwj-6O6quamJAxX4lFYBHYUHIN0QtKgLegQIDxAB&biw=2089&bih=1270&dpr=1#vhid=FKT-mO4RzQzIIM&vssid=mosaic
+
+https://paperswithcode.com/method/pixelrnn

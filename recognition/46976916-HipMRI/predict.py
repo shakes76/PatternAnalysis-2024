@@ -19,9 +19,11 @@ def load_model(model_path, model):
 def predict():
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+    MODEL_PATH = "my_checkpoint.pth.tar"
+
     # Load model
     model = UNET(in_channels=1, out_channels=5).to(DEVICE)
-    model = load_model("my_checkpoint.pth.tar", model)
+    model = load_model(MODEL_PATH, model)
     model.eval()
 
     # Load the test dataset
@@ -45,7 +47,7 @@ def predict():
 
     # Visualize predictions
     visualize_predictions(test_loader, model, device=DEVICE, num_images=3)
-    check_accuracy(test_loader, model, "cuda")
+    check_accuracy(test_loader, model, DEVICE)
 
 
 

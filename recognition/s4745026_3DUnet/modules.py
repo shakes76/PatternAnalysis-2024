@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class Basic3DUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=4, init_features=32):
+    def __init__(self, in_channels=1, out_channels=1, init_features=32):
         super(Basic3DUNet, self).__init__()
 
         features = init_features

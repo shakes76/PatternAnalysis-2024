@@ -1,4 +1,7 @@
 """
+Obsolete file that is left as proof of progress.
+Nothing in this file is used in the training progress.
+
 Got inspiration from main_gfnet.py file of the following github repo:
 https://github.com/shakes76/GFNet
 """

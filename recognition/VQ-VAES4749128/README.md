@@ -40,7 +40,8 @@ The arguments can be customised, otherwise the default will be used when running
 The VQVAE model was trained with the whole training set because the model is generative. The model has 5000 updates and a batch size of 32. The loss components consists of three key types: reconstruction Loss (MSE), embedding loss and total loss. The reconstruction loss is measured as the mean squared error between the original input data and reconstructed data. The total loss is the sum of embedding loss and reconstruction loss. It is used for backpropagation.
 SSIM over time for VQ-VAE is shown to satisfy the requirement of SSIM> 60, the SSIM is measured using cikit-image's structural_similarity function. 
 <p align="center">
-![image](https://github.com/user-attachments/assets/1fcb31a8-0276-4aa9-867b-70d921406ecc) />
+  
+![image](https://github.com/user-attachments/assets/1fcb31a8-0276-4aa9-867b-70d921406ecc) 
 </p>
 
 
@@ -54,9 +55,9 @@ After 5000 updates, here are a few samples of the outputs from the VQ-VAE:
 Here are two examples of the quantised samples:
 <p align="center">
   
-![image](https://github.com/user-attachments/assets/d0bfb478-1fc7-477d-932b-81c06a751d51) />
+![image](https://github.com/user-attachments/assets/d0bfb478-1fc7-477d-932b-81c06a751d51)
   
-![image](https://github.com/user-attachments/assets/6a32f6f6-e4f8-4ab6-b59d-1b563f130e18) />
+![image](https://github.com/user-attachments/assets/6a32f6f6-e4f8-4ab6-b59d-1b563f130e18)
 </p>
 
 The pixelCNN will be trained on the quantised outputs:

@@ -121,17 +121,49 @@ Final Test Accuracy: 0.6458
 
 Testing accuracy was 6458% which is well below the training and Validation tests. This was due to the low samples for training a ViT. With in the next major run i added data augmentation techniques like horizontal Flip and rotate to increase the gernalisability in hopes the model can learn better. I also changed from 30 epochs to 150 with a batch size of 64 instead of 128 to get find better minimas. 
 
+Epoch 150/150
+----------
+Train Loss: 0.0401 Acc: 0.9869
+Val   Loss: 0.1066 Acc: 0.9644
+
+Best Validation Accuracy: 0.9650
+Training completed.
+
+=== Evaluating Model on Test Set ===
+Test Accuracy: 0.6667
+Final Test Accuracy: 0.6667
+
+THis is after the second run. With no significant change in my test accuracy this leads me to believe that my model is over fitting. WHich leads me wanting to decrease the dimension and depth wihtin my GFNet to not over learn the feature.
+
+This code is able to be run on rangpur potentiall with greater epochs, more augmentation, other hyper parameter fine tuning to get desired accuracy. 
+
+
 This code is able to be run on rangpur potentiall with greater epochs, more augmentation, other hyper parameter fine tuning to get desired accuracy. 
 
 
 ## Accuracy & Loss
- # Caveat of small test 30 EPochs - i had rangpur dependency issue for 5 days 
+- Caveat of small test 30 EPochs - i had rangpur dependency issue for 5 days 
 Train Loss: 0.0024 Acc: 0.9998
 Val   Loss: 0.1377 Acc: 0.9616
 
 === Evaluating Model on Test Set ===
 Test Accuracy: 0.6458
 Final Test Accuracy: 0.6458
+
+Second Run 
+
+Epoch 150/150
+----------
+Train Loss: 0.0401 Acc: 0.9869
+Val   Loss: 0.1066 Acc: 0.9644
+
+Best Validation Accuracy: 0.9650
+Training completed.
+
+=== Evaluating Model on Test Set ===
+Test Accuracy: 0.6667
+Final Test Accuracy: 0.6667
+
 
 
 

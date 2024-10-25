@@ -18,18 +18,17 @@ batch_size = 16
 weight_decay = 1e-5
 
 # define model architecture
-#
 n_hiddens = 512
 n_residual_hiddens = 256
 n_residual_layers = 16
 embedding_dim = 512
 n_embeddings = 1024
 beta = 0.1
+categorical = False
+normal_image = False
 
 # Add dataset and model save arguments for easier use and storage
 parser.add_argument("--dataset_dir", type=str, default='HipMRI_study_keras_slices_data')  
-parser.add_argument("--norm_image", type=bool, default=False)
-parser.add_argument("--categorical", type=bool, default=False)
 parser.add_argument("-save", action="store_true")
 
 args = parser.parse_args() # argument parser 
@@ -51,8 +50,8 @@ nii_files_train = [os.path.join(train_path, img) for img in os.listdir(train_pat
 nii_files_validate = [os.path.join(validate_path, img) for img in os.listdir(validate_path) if img.endswith(('.nii', '.nii.gz'))]
 
 # extract data from the .nii files
-x_train = dataset.load_data_2D(nii_files_train, normImage=args.norm_image, categorical=args.categorical)
-x_val = dataset.load_data_2D(nii_files_validate, normImage=args.norm_image, categorical=args.categorical)
+x_train = dataset.load_data_2D(nii_files_train, normImage=normal_image, categorical=categorical)
+x_val = dataset.load_data_2D(nii_files_validate, normImage=normal_image, categorical=categorical)
 
 # convert data to tensors for use in torch, plus adding channel dimension
 x_train_tensor = torch.from_numpy(x_train).float().unsqueeze(1) 

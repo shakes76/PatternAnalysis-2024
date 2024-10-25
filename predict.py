@@ -4,6 +4,14 @@
 @author Matt Hoffman
 @date 25/10/2024 (lmao)
 
+$ pylint predict.py
+
+************* Module predict
+predict.py:57:0: C0301: Line too long (116/100) (line-too-long)
+
+------------------------------------------------------------------
+Your code has been rated at 9.67/10 (previous run: 9.00/10, +0.67)
+
 """
 
 import torch
@@ -17,18 +25,17 @@ from train import SAVE_FILE
 
 TRAIN_DEVICE = device("cuda" if cuda.is_available() else "cpu")
 
-TARGET_SAMPLES = 100
+TARGET_SAMPLES = 1000
 BATCH_SIZE = 32
 
 if __name__ == "__main__":
 
-	my_dataloader = DataLoader(create_preset_dataloader(),
-		batch_size=BATCH_SIZE, shuffle=True)
+	my_dataloader = DataLoader(create_preset_dataloader(dataset_type=1), batch_size=16, shuffle=False)
 
 	siamese_model = TheTwins().to(TRAIN_DEVICE)
-	siamese_model.load_state_dict(load(SAVE_FILE, map_location=TRAIN_DEVICE), strict=False)
+	siamese_model.load_state_dict(load(SAVE_FILE, map_location=TRAIN_DEVICE))
 
-	siamese_model._my_cnn.eval()
+	siamese_model.get_cnn().eval()
 
 	predict_stats = {
 
@@ -39,20 +46,23 @@ if __name__ == "__main__":
 	i = 0
 
 	with no_grad():
-		for image_a, image_b, labels in my_dataloader:
-			if i == TARGET_SAMPLES:
+		for image, label in my_dataloader:
 
+			if i == TARGET_SAMPLES:
 				break
 
-			image_a, image_b, labels = image_a.to(TRAIN_DEVICE), image_b.to(TRAIN_DEVICE), labels.to(TRAIN_DEVICE)
+			image, label = image.to(TRAIN_DEVICE), label.to(TRAIN_DEVICE)
 
-			outputs = siamese_model._my_cnn(image_a)
+			outputs = siamese_model.get_cnn()(image)
 			_, predicted = torch.max(outputs, 1)
 
-			predict_stats["correct"] += (predicted == labels).sum().item()
-			predict_stats["total"] += labels.size(0)
+			predict_stats["correct"] += (predicted == label).sum().item()
+			predict_stats["total"] += label.size(0)
 
 			i += 1
 
-	accuracy = (predict_stats['correct'] / predict_stats['total']) * 100
-	print(f'ISIC test data accuracy: {predict_stats['correct']} / {predict_stats['total']} - {accuracy}%')
+			acc = (predict_stats['correct'] / predict_stats['total']) * 100
+			print(f"{i} / {TARGET_SAMPLES}, stats: {predict_stats['correct']} / {predict_stats['total']} - {acc}%", end="\r")
+
+	acc = (predict_stats['correct'] / predict_stats['total']) * 100
+	print(f'ISIC test data accuracy: {predict_stats['correct']} / {predict_stats['total']} - {acc}%')

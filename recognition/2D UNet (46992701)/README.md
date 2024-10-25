@@ -23,11 +23,17 @@ Images were read using provided NifTI load_data_2D function. All images where no
 To create predictions and evaluate the model, set the values of `TRAIN_IMG_DIR, TRAIN_MASK_DIR, TEST_IMG_DIR, TEST_MASK_DIR, VAL_IMG_DIR, VAL_MASK_DIR` in `params.py` to the appropriate file directories of the corresponding images/masks. Run `train.py` to train the model. If a pre-trained checkpoint is available, set variable `CHECKPOINT_DIR` in `params.py` to the directory of the pre-trained checkpoint, and run `predict.py`.
 
 ## Model:
-The Improved UNet uses the architecture shown in the diagram below:
+The 2D UNet uses the architecture shown in the diagram below:
 
-*Figure 1: UNet model architecture*
 ![UNet network architecture](readme-images/u-net-architecture.png)
+*Figure 1: UNet model architecture*
 
+The UNet is a convolution neural network architecture that consists of an encoder and a decoder, joined by skip connections. The encoder (shown on the left side of the figure) is a contracting path that repeatedly applies two 3x3 convolution layers followed by a RELU activation and a 2x2 max pooling operation with a stride of 2 for downsampling. This reduces the spatial dimension of the data and extracts important features. The decoder (shown on the right side of the figure) then upsamples the input at each step, followed by a 2x2 convolution which halves the number of features and a concatenation with the skip connections to re-introducs the spatial details lost during downsampling. This enables a more detailed, accurate segmetation masks to be determined and improves results.  
+
+This contracting and expanding architecture gives the model its characteristc U-shape which gives its the name.
+
+## Training:
+The model has been trained for 40 epochs, using an ADAM optimiser with an initial learning rate of 1e-4. The learning rate is reduced by a factor of 0.1 if mean epoch loss plateaus over 2 epochs (i.e. patience = 2).
 
 
 ## References:

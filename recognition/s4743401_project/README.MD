@@ -87,4 +87,8 @@ TheDeepHub. (2022, March 10). Building Vision Transformer from Scratch using PyT
 
 Schmid, P. (2022, April 6). Image Classification with Huggingface Transformers and Keras. https://www.philschmid.de/image-classification-huggingface-transformers-keras
 
+<<<<<<< HEAD
 Pulfer, B. (2022, June 1). Vision Transformers from Scratch (PyTorch) – A Step-by-Step Guide. Medium. https://medium.com/@brianpulfer/vision-transformers-from-scratch-pytorch-a-step-by-step-guide-96c3313c2e0c
+=======
+Pulfer, B. (2022, June 1). Vision Transformers from Scratch (PyTorch) – A Step-by-Step Guide. Medium. https://medium.com/@brianpulfer/vision-transformers-from-scratch-pytorch-a-step-by-step-guide-96c3313c2e0c
+>>>>>>> e6db96e1a2bd823ad250851a2ff4c3f2f8717569

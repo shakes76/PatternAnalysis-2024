@@ -6,6 +6,8 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 
+#Remember to remove early_stop=True
+
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
@@ -189,7 +191,7 @@ def load_and_resize_images(image_paths, target_shape, normImage=False, categoric
 
     for image_path in image_paths:
         # Load image one at a time using load_data_2D
-        image = load_data_2D([image_path], normImage=normImage, categorical=categorical)  # Loading one image at a time
+        image = load_data_2D([image_path], normImage=normImage, categorical=categorical, early_stop=True)  # Loading one image at a time
         resized_image = resize_image(image[0], target_shape)  # Resize the single image
 
         # If categorical, pad the channels to the target number of channels
@@ -236,7 +238,7 @@ train_labels_resized = load_and_resize_images(train_label_paths, target_shape, n
 val_labels_resized = load_and_resize_images(val_label_paths, target_shape, normImage=False, categorical=True)
 test_labels_resized = load_and_resize_images(test_label_paths, target_shape, normImage=False, categorical=True)
 
-
+"""
 #debug
 print(f"Resized shape of train_images: {train_images_resized.shape}")
 print(f"Resized shape of train_labels: {train_labels_resized.shape}")
@@ -244,7 +246,7 @@ print(f"Resized shape of val_images: {val_images_resized.shape}")
 print(f"Resized shape of val_labels: {val_labels_resized.shape}")
 print(f"Resized shape of test_images: {test_images_resized.shape}")
 print(f"Resized shape of test_labels: {test_labels_resized.shape}")
-
+"""
 
 """
 def find_max_channels(image_paths):
@@ -268,3 +270,204 @@ print(f"Maximum number of channels in validation labels: {max_val_channels}")
 max_test_channels = find_max_channels(test_label_paths)
 print(f"Maximum number of channels in test labels: {max_test_channels}")
 """
+
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+
+        def conv_block(in_channels, out_channels):
+            return nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True)
+            )
+
+        def up_block(in_channels, out_channels):
+            return nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+
+        # Encoder (Reduced depth)
+        self.conv1 = conv_block(1, 64)
+        self.conv2 = conv_block(64, 128)
+        self.conv3 = conv_block(128, 256)
+
+        # Bottleneck (Remove)
+        self.bottleneck = conv_block(256, 512)
+
+        # Decoder (Reduced depth)
+        self.upconv3 = up_block(512, 256)
+        self.conv3_1 = conv_block(512, 256)
+
+        self.upconv2 = up_block(256, 128)
+        self.conv2_1 = conv_block(256, 128)
+
+        self.upconv1 = up_block(128, 64)
+        self.conv1_1 = conv_block(128, 64)
+
+        # Output
+        self.out_conv = nn.Conv2d(64, 6, kernel_size=1)
+
+    def forward(self, x):
+        # Encoder
+        conv1 = self.conv1(x)
+        conv2 = self.conv2(nn.MaxPool2d(2)(conv1))
+        conv3 = self.conv3(nn.MaxPool2d(2)(conv2))
+        conv4 = self.conv4(nn.MaxPool2d(2)(conv3))
+
+        # Bottleneck
+        bottleneck = self.bottleneck(nn.MaxPool2d(2)(conv4))
+
+        # Decoder
+        upconv4 = self.upconv4(bottleneck)
+        conv4_1 = self.conv4_1(torch.cat([upconv4, conv4], dim=1))
+
+        upconv3 = self.upconv3(conv4_1)
+        conv3_1 = self.conv3_1(torch.cat([upconv3, conv3], dim=1))
+
+        upconv2 = self.upconv2(conv3_1)
+        conv2_1 = self.conv2_1(torch.cat([upconv2, conv2], dim=1))
+
+        upconv1 = self.upconv1(conv2_1)
+        conv1_1 = self.conv1_1(torch.cat([upconv1, conv1], dim=1))
+
+        output = self.out_conv(conv1_1)
+        return output
+
+
+# Convert ===Resized=== NumPy arrays to PyTorch tensors
+train_images_tensor = torch.Tensor(train_images_resized).unsqueeze(1)  # Add channel dimension
+train_labels_tensor = torch.Tensor(train_labels_resized).unsqueeze(1)  # Add channel dimension
+
+val_images_tensor = torch.Tensor(val_images_resized).unsqueeze(1)
+val_labels_tensor = torch.Tensor(val_labels_resized).unsqueeze(1)
+
+test_images_tensor = torch.Tensor(test_images_resized).unsqueeze(1)  # Add channel dimension for test images
+test_labels_tensor = torch.Tensor(test_labels_resized).unsqueeze(1)  # Add channel dimension for test labels
+
+
+# Create DataLoaders for batching
+train_dataset = TensorDataset(train_images_tensor, train_labels_tensor)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+
+val_dataset = TensorDataset(val_images_tensor, val_labels_tensor)
+val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+
+test_dataset = TensorDataset(test_images_tensor, test_labels_tensor)
+test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+
+
+# Initialize the UNet model, optimizer, and loss function
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Using device: {device}")
+# Previous assignment used
+# device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
+model = UNet().to(device)
+
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+criterion = nn.CrossEntropyLoss()
+
+# Training loop
+num_epochs = 50
+
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        """
+         # Print original labels shape
+        print(f"Original labels shape: {labels.shape}")
+
+        # Step 1: Remove the extra dimension with squeeze (if present)
+        labels_squeezed = torch.squeeze(labels, dim=1)  # If shape is [8, 1, 256, 128], it becomes [8, 256, 128, 6]
+        print(f"After squeeze, labels shape: {labels_squeezed.shape}")
+
+        # Step 2: Convert one-hot encoded labels to class indices
+        labels_argmax = torch.argmax(labels_squeezed, dim=2)  # Now, it should collapse the last dimension to [8, 256, 128]
+        print(f"After argmax, labels shape: {labels_argmax.shape}")
+
+        # You can also check if the operation correctly modified the tensor by verifying some of the values
+        print(f"Sample labels (argmax): {labels_argmax[0, :, :]}")  # Print the class indices for the first image
+        """
+
+        # Remove extra dimension
+        labels = torch.squeeze(labels, dim=1)
+
+        # Convert one-hot encoded labels to class indices (Required by Cross Entropy Loss)
+        labels = torch.argmax(labels, dim=3)
+        
+        # Zero the gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        outputs = model(images)
+
+        # Debugging: print output and label shapes
+        #print(f"Outputs shape: {outputs.shape}")
+        #print(f"Labels shape: {labels.shape}")
+
+        loss = criterion(outputs, labels)
+
+        # Backward pass and optimize
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+
+    print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss/len(train_loader)}")
+
+    # Validation step (optional but recommended)
+    model.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for val_images, val_labels in val_loader:
+            val_images = val_images.to(device)
+            val_labels = val_labels.to(device)
+
+            val_labels = torch.squeeze(val_labels, dim=1)  # Remove extra dimension, shape becomes [8, 256, 128, 6]
+            val_labels = torch.argmax(val_labels, dim=3)   # Convert one-hot encoding to class indices, shape becomes [8, 256, 128]
+
+            outputs = model(val_images)
+            loss = criterion(outputs, val_labels)
+            val_loss += loss.item()
+
+    print(f"Validation Loss: {val_loss/len(val_loader)}")
+
+
+def dice_coefficient(pred, target, smooth=1e-6):
+    pred_flat = pred.view(-1)
+    target_flat = target.view(-1)
+    intersection = (pred_flat * target_flat).sum()
+
+    if pred_flat.sum() == 0 and target_flat.sum() == 0:
+        return 1.0  # If both are empty, Dice score is 1
+    return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+
+# Evaluate on the test set
+model.eval()
+dice_scores = []
+
+with torch.no_grad():
+    for test_images, test_labels in test_loader:
+        test_images = test_images.to(device)
+        test_labels = test_labels.to(device)
+
+        outputs = model(test_images)  # Add batch dimension here
+        outputs = (outputs > 0.5).float()  # Threshold to binary mask
+
+        dice = dice_coefficient(outputs, test_labels.unsqueeze(0))  # Add batch dimension here
+        dice_scores.append(dice.item())
+
+# Calculate average Dice coefficient
+average_dice = np.mean(dice_scores)
+print(f"Average Dice Coefficient: {average_dice}")

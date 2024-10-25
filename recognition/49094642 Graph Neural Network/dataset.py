@@ -7,10 +7,9 @@ from torch_geometric.data import Data
 def load_data():
     edges = pd.read_csv(r"C:\Users\wuzhe\Desktop\musae_facebook_edges.csv")
     labels = pd.read_csv(r"C:\Users\wuzhe\Desktop\musae_facebook_target.csv")
-    
     with open(r"C:\Users\wuzhe\Desktop\musae_facebook_features.json") as f:
         features = json.load(f)
-    
+
     node_features = torch.zeros((len(features), 128))
     for node, feats in features.items():
         feats = feats[:128]
@@ -25,6 +24,5 @@ def load_data():
     data = Data(x=node_features, edge_index=edge_index, y=y)
     data.train_mask = torch.rand(data.num_nodes) < 0.8
     data.test_mask = ~data.train_mask
-
-    return data
+    return data, len(labels['page_type'].unique())
 

@@ -125,6 +125,10 @@ Simplified Graph Convolution (SGC) reduces the complexity of graph convolutional
 
 SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
 
+[FORMULA]
+
+SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
+
 ## Training Process
 ### Data Splits
 Before training, the data is prepared using a GNNDataLoader, which takes in numpy data from the file facebook.npz and divides it into three subsets:

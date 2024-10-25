@@ -7,17 +7,8 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import umap
-
-RANGPUR_PATH = "/home/groups/comp3710/" # Dataset path on Rangpur Cluster
-PATH = '/Volumes/Acasis WD_Black/Documents/Deep Learning/Datasets/' # Dataset path on personal machine
-
-# -- Dataset Attributes --
-ADNI_TRAIN_PATH = "ADNI/AD_NC/train"
-ADNI_TEST_PATH = "ADNI/AD_NC/test"
-CIFAR_PATH = "cifar10/"
-
-ADNI_IMG_SIZE = 128
-CIFAR_IMG_SIZE = 32
+from config import RANGPUR_PATH, PATH, ADNI_IMG_SIZE, ADNI_TRAIN_PATH, ADNI_TEST_PATH
+from config import CIFAR_PATH, CIFAR_IMG_SIZE
 
 def process_adni(batch_size, rangpur=False):
     """

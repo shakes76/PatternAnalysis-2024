@@ -1,7 +1,7 @@
 # test_driver.py
 import os
 import torch
-from dataset import CustomDataset, Resize3D, Normalize3D
+from dataset import *
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from train import Trainer
@@ -24,9 +24,11 @@ def main():
     
     # Define transformations
     transform = transforms.Compose([
-        Resize3D((64, 64, 32)),  # Resize to (depth, height, width)
-        Normalize3D()  # Normalize the images
+        Resize3D((64, 64, 32)), 
+        Normalize3D(),
+        RandomFlip3D(axes=[0,1,2]), RandomRotate3D(angle_range=30)
     ])
+
     
     # Create dataset
     dataset= CustomDataset(image_filenames, img_dir, labels_dir, transform = transform)
@@ -45,7 +47,7 @@ def main():
     train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
     
     # DataLoader for batching
-    batch_size = 1
+    batch_size = 32
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -53,7 +55,7 @@ def main():
     # Train the model
     print("Starting model training...")
     trainer = Trainer(train_loader, val_loader)
-    trained_model = trainer.train(n_epochs=1)
+    trained_model = trainer.train(n_epochs=20)
     
     # Test the model
     print("\nStarting model testing...")

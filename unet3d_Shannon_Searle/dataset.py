@@ -3,9 +3,11 @@ import os
 import numpy as np
 import nibabel as nib
 import torch
-from torch.utils.data import Dataset
+from scipy.ndimage import rotate
 from tqdm import tqdm
 from scipy.ndimage import zoom
+import random 
+
 # Function to convert labels to one-hot encoded channels
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     # Get unique values (assuming categorical data)
@@ -76,9 +78,8 @@ class Resize3D:
         
         # Calculate zoom factors
         zoom_factors = [s / o for s, o in zip(self.size, image.shape[1:])]
-        image = zoom(image, (1, *zoom_factors), order=1)  # Use bilinear interpolation
-        label = zoom(label, (1, *zoom_factors), order=0)  # Nearest-neighbor for labels
-        
+        image = zoom(image, (1, *zoom_factors), order=1)  
+        label = zoom(label, (1, *zoom_factors), order=0)  
         return {'image': image, 'label': label}
 
 # Normalize the image (assuming image is already resized)
@@ -93,7 +94,62 @@ class Normalize3D:
 
         return {'image': image, 'label': label}
 
+class RandomFlip3D:
+    def __init__(self, axes = [0,1,2]):
+        self.axes = axes  # Axes to flip (e.g., [0] for depth, [1] for height, [2] for width)
 
+    def __call__(self, sample):
+        images, labels = sample['image'], sample['label']
+        
+        # Randomly flip images and labels along specified axes
+        if random.random() > 0.5:
+            images = np.flip(images, axis=self.axes)
+            labels = np.flip(labels, axis=self.axes)
+
+        # Ensure the images and labels are contiguous
+        images = np.ascontiguousarray(images)
+        labels = np.ascontiguousarray(labels)
+
+        return {'image': images, 'label': labels}
+class RandomRotate3D:
+    def __init__(self, angle_range):
+        self.angle_range = angle_range
+
+    def __call__(self, sample):
+        images, labels = sample['image'], sample['label']
+        
+        # Rotate images and labels randomly
+        angle_d = random.uniform(-self.angle_range, self.angle_range)  # Rotation angle for depth axis
+        angle_h = random.uniform(-self.angle_range, self.angle_range)  # Rotation angle for height axis
+        angle_w = random.uniform(-self.angle_range, self.angle_range)  # Rotation angle for width axis
+
+        images = self.rotate_3d(images, (angle_d, angle_h, angle_w))
+        labels = self.rotate_3d(labels, (angle_d, angle_h, angle_w))
+
+        return {'image': images, 'label': labels}
+
+    def rotate_3d(self, volume, angles):
+        """
+        Rotate the 3D volume by specified angles around each axis.
+
+        Parameters:
+        volume (ndarray): The 3D volume to rotate (shape: [C, D, H, W])
+        angles (tuple): Angles for rotation around (depth, height, width) axes.
+
+        Returns:
+        ndarray: Rotated volume.
+        """
+        # Unpack angles
+        angle_d, angle_h, angle_w = angles
+        
+        # Rotate the volume
+        # The order of rotation can affect the final orientation. Adjust as needed.
+        volume = rotate(volume, angle_d, axes=(2, 1), reshape=False)  # Rotate around depth (D)
+        volume = rotate(volume, angle_h, axes=(1, 0), reshape=False)  # Rotate around height (H)
+        volume = rotate(volume, angle_w, axes=(0, 2), reshape=False)  # Rotate around width (W)
+
+        return volume
+   
 # Custom dataset class for PyTorch with transformations for 3D data
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, image_filenames, img_dir, labels_dir, transform=None):

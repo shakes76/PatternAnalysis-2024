@@ -1,7 +1,7 @@
 # train.py
 import torch
 import torch.nn as nn
-from modules import UNet3D
+from modules import Improved3DUNet
 from tqdm import tqdm
 import time 
 import os
@@ -30,7 +30,7 @@ class DiceLoss(nn.Module):
 class Trainer:
     def __init__(self, train_loader, val_loader):
         # Initialize the 3D U-Net model
-        self.model = UNet3D(in_channels=4, out_channels=6, init_features=32)
+        self.model = Improved3DUNet(in_channels=4, out_channels=6)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = self.model.to(self.device)
 
@@ -42,7 +42,7 @@ class Trainer:
         self.train_loader = train_loader
         self.val_loader = val_loader
 
-    def train(self, n_epochs=1):
+    def train(self, n_epochs=50):
         for epoch in range(n_epochs):
             start_time = time.time()
             print(f"\nEpoch {epoch + 1}/{n_epochs}:")

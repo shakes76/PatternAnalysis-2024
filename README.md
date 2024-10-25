@@ -1,19 +1,16 @@
-## Prostate 3D Segmentation with 3D U-Net
+## Prostate 3D Segmentation with Improved 3D U-Net
 
 ## Description
-This project implements a 3D U-Net for segmenting 3D medical images of prostate data. 
-The algorithm trains and tests a model on volumetric MRI data. 
-It attempts to accurately predict the segmentation masks for multiple labels. 
-The goal is to achieve a minimum Dice similarity coefficient of 0.7 for all labels 
-in the test set, ensuring high segmentation accuracy.
+This project implements an enhanced 3D U-Net architecture for segmenting 3D medical images of prostate MRI data. The goal is to accurately predict segmentation masks for multiple labels and achieve a minimum Dice similarity coefficient of 0.7 across all labels in the test set. This ensures high accuracy in the segmentation of prostate regions.
 
 ## How It Works
-The 3D U-Net architecture takes 4D volumetric MRI data as input 
-and outputs segmentation maps for multiple classes. 
-The model is trained using Dice Loss to maximize the overlap between predicted segmentation 
-and ground truth. Key components include downsampling, bottleneck, and upsampling paths, 
-which help capture spatial features at different scales. The network learns to extract 
-and refine these features through convolutional layers and skip connections.
+The improved 3D U-Net utilizes a combination of residual blocks and dropout regularization to enhance learning and generalization. The network processes 4D volumetric MRI inputs and outputs multi-class segmentation maps. Key components include:
+
+- Residual Blocks: Enhance feature extraction with skip connections and dropout, ensuring deeper representations without vanishing gradients.
+- Dropout Regularization: Applied to intermediate layers to reduce overfitting and improve robustness.
+- Dice Loss: Used during training to maximize the overlap between predicted segmentations and the ground truth.
+
+The architecture follows a U-shaped structure with downsampling (encoder), bottleneck, and upsampling (decoder) paths to capture spatial features at multiple scales. Skip connections ensure finer details from the downsampling path are retained during reconstruction.
 
 ## Dependencies
 - Python >= 3.7

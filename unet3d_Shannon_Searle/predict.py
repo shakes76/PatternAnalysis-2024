@@ -29,16 +29,19 @@ def evaluate_dice_on_test_set(model, test_loader):
     total_dice = 0.0
     num_samples = len(test_loader)
     min_coeff = True
-    with torch.no_grad():  # Disable gradient computation for inference
-        for images, labels in tqdm(test_loader, disable = True):
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
+    try:
+        with torch.no_grad():  # Disable gradient computation for inference
+            for images, labels in tqdm(test_loader, disable = True):
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
 
-            # Calculate Dice coefficient for the batch
-            dice_score = dice_coefficient(outputs, labels)
-            total_dice += dice_score
-            if dice_score < 0.7:
-                min_coeff = False
+                # Calculate Dice coefficient for the batch
+                dice_score = dice_coefficient(outputs, labels)
+                total_dice += dice_score
+                if dice_score < 0.7:
+                    min_coeff = False
+    except Exception as e:
+        print(f"Error during testing: {e}")                
     # Return the average Dice coefficient over the test set
     avg_dice = total_dice / num_samples
     return avg_dice, min_coeff

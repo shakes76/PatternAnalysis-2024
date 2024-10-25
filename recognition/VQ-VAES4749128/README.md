@@ -30,7 +30,7 @@ After the model is trained, PixelCNN can now generate new latent codes that alig
 
 | Dependency | Version |
 | ------------- | ------------- |
-| python| 2.5.0+cu121 |
+| python|3.11.2 |
 | torch| 2.5.0+cu121 |
 | torchvision| 0.20.0+cu121 |
 | numpy| 1.26.4 |

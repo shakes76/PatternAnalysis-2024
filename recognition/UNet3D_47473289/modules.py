@@ -111,3 +111,41 @@ class ImprovedUNet3D(nn.Module):
 
         return self.final_conv(u1)
     
+class DSC(nn.Module):
+    """
+        Implementation of Dice-Sorensen Coefficient loss
+        2 * |predict * target|/|predict|+|target|
+    """
+    def __init__(self):
+        super(DSC, self).__init__()
+        # Smooth to avoid 0 division
+        self.smooth = 1.0 
+
+    def forward(self, y_pred, y_true):
+        assert y_pred.size() == y_true.size()
+        # Flattening tensors
+        #y_pred = y_pred[:, 0].contiguous().view(-1)
+        #y_true = y_true[:, 0].contiguous().view(-1)
+        intersection = (y_pred * y_true).sum(dim=[2,3,4])
+        # Calculate DSC
+        dsc = (2. * intersection + self.smooth) / (
+            y_pred.sum(dim=[2,3,4]) + y_true.sum(dim=[2,3,4]) + self.smooth
+        )
+        """
+        # Returning DSC Loss
+
+        assert y_pred.size() == y_true.size(), "Input sizes must be the same"
+
+        # Compute intersection and sums directly on the original tensors
+        intersection = (y_pred * y_true).sum(dim=[2, 3, 4])  # Sum along spatial dimensions
+
+        # Compute the Dice Score
+        dsc = (2. * intersection + self.smooth) / (
+            y_pred.sum(dim=[2, 3, 4]) + y_true.sum(dim=[2, 3, 4]) + self.smooth
+        ) READ THISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS SUM ALONG SPATIAL DIMENSIONS
+
+        # Average over the batch
+        dsc = dsc.mean()"""
+        dsc = dsc.mean()
+        print(1. - dsc)
+        return 1. - dsc

@@ -153,13 +153,14 @@ distributions and proper gradient flow throughout the network.
 
 ```
 StyleGAN_arjun/
-├── dataset.py      # Dataset loading and preprocessing pipeline
-├── modules.py      # StyleGAN2 architecture implementation (Generator, Discriminator, Mapping)
-├── train.py        # Training loop and optimization logic
-├── predict.py      # Inference code for generating synthetic scans
-├── config.py       # Configuration parameters and hyperparameters
-├── models/         # Directory for storing trained model checkpoints
-└── assets/         # README images and documentation resources
+├── dataset.py          # Dataset loading and preprocessing pipeline
+├── modules.py          # StyleGAN2 architecture implementation (Generator, Discriminator, Mapping)
+├── train.py            # Training loop and optimization logic
+├── predict.py          # Inference code for generating synthetic scans
+├── config.py           # Configuration parameters and hyperparameters
+├── requirements.txt    # Python dependencies
+├── models/             # Directory for storing trained model checkpoints
+└── assets/             # README images and documentation resources
 ```
 
 ### Key Components
@@ -290,14 +291,11 @@ a third of the total training process.
 Our StyleGAN2 implementation demonstrates progressive improvement in the quality of generated brain scan images throughout the
 training process. Below are samples of generated images at different training milestones:
 
-<p align="center">
-<figure style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/model_outputs_50.png" width=30% height=30%>
-    <img src="./assets/model_outputs_100.png" width=30% height=30%>
-    <img src="./assets/model_outputs_150.png" width=30% height=30%>
-    <figcaption align="center">Left to right: Generated images at 50, 100, and 150 epochs</figcaption>
-</figure>
-</p>
+<div align="center" style="display: flex; justify-content: center;">
+    <img src="./assets/model_outputs_50.png" width="30%" style="margin: 0 10px;">
+    <img src="./assets/model_outputs_100.png" width="30%" style="margin: 0 10px;">
+    <img src="./assets/model_outputs_150.png" width="30%" style="margin: 0 10px;">
+</div>
 
 The progression shows clear improvement in image quality across training phases:
 

@@ -13,8 +13,11 @@ train_dataloader, _ = get_dataloaders(None)
 
 images, labels = next(iter(train_dataloader))
 
+# This value should be modified to the same value as the normalisation value
+# in dataset.py's transformations.
 images = images * 0.2385 + 0.1415 
 
+# Below code puts the images in a grid to show them at once
 grid_img = vutils.make_grid(images, nrow=4, padding=2)
 
 np_grid_img = grid_img.numpy()

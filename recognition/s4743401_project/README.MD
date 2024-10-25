@@ -76,10 +76,22 @@ Similarly, the test dataset, being as large as 28% of the training set, is suffi
 ### Dependencies:
 
 Python: 3.8 or later 
+
 PyTorch: 1.9.0 or later
+
 torchvision: 0.10.0 or later
+
 scikit-learn: 0.24.2 
+
 matplotlib: 3.4.3 
+
+### Reproducability 
+To reproduce my results of 60% accuracy, it would be necessary to download AD_NC data into the correct filepaths provided in graphs folder that has been committed to this repository. 
+
+Upon setting filepaths for the model to save in modules.py, predict.py and train.py, and setting data_dir in dataset.py and predict.py
+(and also setting the filepath for a chosen image within the data_dir)
+run predict.py. It will train the model, and print a loss graph, confusion matrix and accuracy stats as well as a prediction for the given image.
+Upon running train from within predict.py once, it is possible to comment out the training and just work with the saved model.
 
 
 ### References

@@ -73,6 +73,9 @@ Libraries should use the latest versions.
 
 Ideally run with a NVIDIA A100 GPU with 128GB of DRAM. Testing on other GPUs has not been performed.
 
+### Running the project
+To run this project clone the repository and install all the necessary dependencies. Change the path to the `data_root` folder in `config.py` as well as any of the other optionally changeable hyperparams (such as `manual_seed`). Change the path to save the trained models in `train.py`.
+
 ## Code Structure
 
 The following files are included in this repository:
@@ -99,10 +102,6 @@ To use pre-trained models instead of training new models, please set the `load_m
 That is: `load_models = True`. Note that no pretrained models have been included in this repository.
 
 Optionally, a seed for training the model can be set by changing the `manualseed` hyperparameter in `config.py`. Otherwise, a random `manualseed` will be chosen.
-
-## Running the project
-To run this project clone the repository and 
-
 
 ## Results
 

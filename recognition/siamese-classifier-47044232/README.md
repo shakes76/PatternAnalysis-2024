@@ -200,11 +200,13 @@ When installing dependencies, conda as it will ensure that there are no dependen
 
 
 ## Future Recommendations
-There are two things that would be recommend to further improve what has been done:
+There are three recommendations for what could further improve what has been done:
 
 1. To improve seperation of the features extracted, it is recommended to add hard positive and hard negative mining so that the triplets formed are maximising their difference in their distance to the anchor. This will also help the binary classifier in determining the difference between the extracted features.
 
 2. It would be recommended to add an argument and method to only retrain the classifier using a saved Siamese network model. This would make it easier to retrain the classifier when needed. As currently the siamese training cycle would have to be commented out to get this functionality.
+
+3. It would be interesting to also generate t-SNE scatterplots for the features extracted on the validation and testing sets. Unfortunately, this wasn't done due to deadline.
 
 
 ## References

@@ -110,6 +110,28 @@ The training script relies on [data set structure](#structure-of-data) being sat
 
 The training script will create a checkpoint of the best performing iteration so far, and also create a checkpoint every 20 epochs. Since the default setting for Epochs is 300, the script will create 16+ checkpoints (1 best, 15 interval) in the directory `test/model/run/`.
 
+The training script also prints the results to `stdout` after each epoch, looking like this:
+
+```
+Epoch: [251]  [  0/337]  eta: 0:01:44  lr: 0.000043  loss: 0.0509 (0.0509)  time: 0.3102  data: 0.2525  max mem: 3558
+Epoch: [251]  [336/337]  eta: 0:00:00  lr: 0.000043  loss: 0.0328 (0.0270)  time: 0.1512  data: 0.1042  max mem: 3558
+Epoch: [251] Total time: 0:00:52 (0.1545 s / it)
+Averaged stats: lr: 0.000043  loss: 0.0328 (0.0270)
+Test:  [  0/141]  eta: 0:00:35  loss: 2.1723 (2.1723)  acc1: 68.7500 (68.7500)  time: 0.2485  data: 0.2170  max mem: 3558
+Test:  [100/141]  eta: 0:00:05  loss: 0.3720 (1.9997)  acc1: 90.6250 (74.1491)  time: 0.1423  data: 0.0995  max mem: 3558
+Test:  [140/141]  eta: 0:00:00  loss: 0.4723 (1.5649)  acc1: 89.0625 (78.4000)  time: 0.1427  data: 0.0979  max mem: 3558
+Test: Total time: 0:00:19 (0.1402 s / it)
+* Acc@1 78.400 loss 1.565
+Accuracy of the network on the 141 test images: 78.4%
+Max accuracy: 78.40%
+```
+
+Furthermore, the script creates a file called `log.txt` which has 1 line per epoch that looks like this:
+
+```
+{"train_lr": 4.2823776072812744e-05, "train_loss": 0.026965036172487494, "test_loss": 1.5648742771529136, "test_acc1": 78.4, "epoch": 251}
+```
+
 ### Predicting
 
 ```
@@ -175,6 +197,10 @@ The following are the hyperparameters present in the model, with their default v
 - Cooldown Epochs: 10 (`--cooldown-epochs`)
 - Patience epochs: 10 (`--patience-epochs`)
 - Learning Rate Decay Rate: 0.1 (`--decay-rate`)
+
+## Reproducability
+
+Due to the nature of machine learning and augmentation having varying effects on the training of the model, the model was able to consistently reach a similar accuracy/output of around mid~high 70%, but the consistency of training in terms of running the same hyperparameter and getting the exact same result was unmeasured due to time constraints. However, the prediction is reasonably consistent - given the same model, results returned have been always the exact same as expected in the tests I have conducted.
 
 ## Why the PR has 2 LICENSE files
 

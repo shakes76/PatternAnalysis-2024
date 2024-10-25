@@ -9,15 +9,6 @@ from scipy.ndimage import zoom
 import torch.nn as nn
 import torchvision.transforms as transforms
 import glob
-import sklearn
-import scipy
-import sys
-
-print("PyTorch version:", torch.__version__)
-print("Numpy version:", np.__version__)
-print("Tqdm version:", tqdm.__version__)
-print("Nibabel version:", nib.__version__)
-print("Python version:", sys.version)
 
 
 def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
@@ -28,14 +19,6 @@ def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :
         res [... , c : c +1][ arr == c ] = 1
 
     return res
-
-transform = transforms.Compose([
-    transforms.Resize((128, 128)),
-   # transforms.Normalize(0.5, 0.5),
-])
-l_transform = transforms.Compose([
-    transforms.Resize((128, 128)),
-])
 
 
 def load_data_3D(imageNames, normImage=False , categorical=False, dtype=np.float32, 
@@ -55,7 +38,6 @@ def load_data_3D(imageNames, normImage=False , categorical=False, dtype=np.float
     loading and testing scripts .
     '''
     affines = []
-
 
     # ~ interp = ' continuous '
     interp = 'linear'
@@ -103,12 +85,9 @@ def load_data_3D(imageNames, normImage=False , categorical=False, dtype=np.float
             inImage = to_channels(inImage, dtype=dtype)
             # ~ images [i,:,:,:,:] = inImage
             images [i,:inImage.shape[0],:inImage.shape[1],:inImage.shape [2],:inImage.shape[3]] = inImage # with pad
-
-
       
         else :
             # ~ images [i,:,:,:] = inImage
-
             images [i,:inImage.shape[0],:inImage.shape[1],:inImage.shape[2]] = inImage # with pad
             
         affines.append(affine)
@@ -129,11 +108,8 @@ class MyCustomDataset(Dataset):
         #self.label_paths = glob.glob(f'{"/Users/charl/Documents/3710Report/PatternAnalysis-2024/recognition/semantic_labels_only"}/**/*.nii.gz', recursive=True)
         self.label_paths = glob.glob(f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
         self.image_paths = glob.glob(f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
-        print(len(self.image_paths))
-        print(len(self.label_paths))
   
- 
-        self.resize = transforms.Compose([transforms.Resize((256, 128))])
+        self.transform = transforms.Compose([transforms.Resize((256, 128))])
         self.up = torch.nn.Upsample(size=(128,128,128))
 
         self.classes = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}

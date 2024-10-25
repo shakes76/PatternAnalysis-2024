@@ -41,36 +41,21 @@ for epoch in range(n_epochs):
     running_loss = 0.0
     print(len(train))
     for i, (inputs, labels) in enumerate(train):
-        itstart = time.time()
 
-        print(inputs.shape)
-        print(labels.shape)
-        print(labels.size)
-        print(inputs.size)
-        #if (i > 2):
-         #   break
         inputs = inputs.cuda()
         labels = labels.cuda()
-        
+
         optimizer.zero_grad()
-        #print("ZERO")
         output = model(inputs)
-        #print("OUTPUT")
-        # Using dsc class to calculate loss
-        print(output.shape)
+
         loss = criterion(output, labels)
-        # Backward pass
-        #print("CRIT")
-        
+
         loss.backward()
-        #print("BACK")
+
         optimizer.step()
-        print("STEP")
-        itend = time.time()
-        print(f"Iteration #{i} took {itend - itstart} seconds")
+
         running_loss += loss.item()
     scheduler.step()
-    print("SCEDSTEP")
     # Set evaluation mode for validation
     train_loss = running_loss / len(train)
     train_losses.append(train_loss)

@@ -83,7 +83,7 @@ Hyper-parameters chosen include:
 
 ### Data Preprocessing
 
-All Nifti files were chosen to be resized to 256 x 256. This was opted for since the previously designed architecture would not work for the previously smaller width of 128 pixels (the image would become reduced to nothing). A size of 256 x 256 would allow for a relatively sized image by the end 68 x 68. This is still not ideal or perhaps even sufficient, but the trade-off between memory and accuracy was considered and it was decided to not enlarge the images moreso.
+All Nifti files were chosen to be resized to 256 x 256. This was opted for since the previously designed architecture would not work for the previously smaller width of 128 or 144 pixels (the image would become reduced to nothing). A size of 256 x 256 would allow for a relatively sized image by the end 68 x 68. This is still not ideal or perhaps even sufficient, but the trade-off between memory and accuracy was considered and it was decided to not enlarge the images moreso.
 
 The image data was chosen to be normalised with mean 0 and standard deviation 1 as to faciliate quicker and more efficient learning. This is a widely known performance boost in machine learning, and many studies have backed this.
 
@@ -97,9 +97,11 @@ The optimiser chosen was Adam, and the evaluation metric was the Dice Similarity
 
 ### Example Inputs
 
-Inputs to the model include 256 x 256 image and mask data. The inputs are from each of the three splits: train, test and validate, depending on the situation. This is expanded upon in the next section but for now, an example input is shown below.
+Inputs to the model include 256 x 256 image and mask data. The inputs are from each of the three splits: train, test and validate, depending on the situation. This is expanded upon in the next section but for now, an example input (image and mask) is shown below.
 
-EDIT ME
+![Example image input](image_assets/example_input_image.png)
+
+![Example mask input](image_assets/example_input_mask.png)
 
 ### Choice of Data Splits
 
@@ -113,19 +115,68 @@ Finally, since the validation set was not being used for any other purpose in my
 
 ## Results
 
-### Outputs
-
-The UNet model outputs a one hot encoded predicted mask of size 6 x 256 x 256, where the image size is 256 x 256 and there are 6 channels for the 6 different classes in the data. This has been resized up from a 68 x 68 image after all the convolutions, which is likely a major source of error in the model which should be fixed in future iterations. The one hot encoded data can either be kept as is, or decoded depending on what is needed for the application (e.g. computing dice scores, visualising, improving memory, etc.)
-
 ### Training Metrics
 
 During training, the predicted labels are compared to the true labels and the cross entropy loss is optimised, with the aim of improving the class dice scores. Due to this, training metrics including the cross entropy loss and prostate dice score were recorded for each epoch. These plots are shown below, with the objective dice score depicted in red in the second image.
 
-### Example prediciton
+![Cross Entropy Training Loss vs Epoch](image_assets/cross_entropy_training_loss.png)
 
-`predict.py` visualises and compares a true mask with the predicted mask for that sample. This is helpful to understand what the model is doing, how it is performing, how to improve it, and to determine if there are any significant errors in the scripts. An example prediction of one sample from the validation dataset is shown as follows.
+![Prostate Dice Score vs Epoch](image_assets/prostate_dice_score_during_training.png)
 
-EDIT ME
+After finishing training, the recorded dice scores for the test data were:
+```
+Dice score for BACKGROUND is 0.9294
+Dice score for BODY is 0.9298
+Dice score for BONES is 0.7801
+Dice score for BLADDER is 0.6142
+Dice score for RECTUM is 0.2278
+Dice score for PROSTATE is 0.2313
+```
+
+As can be seen in the figures, while the cross entropy training loss becomes quite low at high epochs, the same cannot be said for the prostate dice score. It stops increasing at around 20-25%, suggesting that the model has found ways to reduce the cross entropy loss without needing to accurately learn about the prostate class. In the next section however, it can be seen that it can somewhat accurately represent the regions of interest, and that the dice score may in fact be wrong.
+
+### Outputs
+
+The UNet model outputs a one hot encoded predicted mask of size 6 x 256 x 256, where the image size is 256 x 256 and there are 6 channels for the 6 different classes in the data. This has been resized up from a 68 x 68 image after all the convolutions, which is likely a major source of error in the model which should be fixed in future iterations. This is too small an image size for variations in data to be accurately represented. Hence, this model would greatly benefit from either implementing padding to keep the image size large after all the convolutions, or from resizing the image to a greater size before passing it through the model. Unfortunately, due to time, resource and memory constraints, this could not be looked into. The one hot encoded data can either be kept as is, or decoded depending on what is needed for the application (e.g. computing dice scores, visualising, improving memory, etc.)
+
+### Example Prediction
+
+`predict.py` visualises and compares a true mask with the predicted mask for that sample. This is helpful to understand what the model is doing, how it is performing, how to improve it, and to determine if there are any significant errors in the scripts. Several significant example predictions from the validation dataset are shown below, alongside their true masks. The class dice scores follow afterwards:
+
+#### Figure 1: Decent prediction with Dice Score: 0.55
+
+![Example mask output with decent prostate dice score](image_assets/example_output_good.png)
+```
+Dice score for BACKGROUND is 0.9195
+Dice score for BODY is 0.8355
+Dice score for BONES is 0.7742
+Dice score for BLADDER is 0.0000
+Dice score for RECTUM is 0.0000
+Dice score for PROSTATE is 0.5481
+```
+#### Figure 2: Worst prediction with Dice Score: 0.00
+![Example mask output with worst recorded dice scores](image_assets/example_output_bad.png)
+```
+Dice score for BACKGROUND is 0.7959
+Dice score for BODY is 0.7716
+Dice score for BONES is 0.5696
+Dice score for BLADDER is 0.5613
+Dice score for RECTUM is 0.0000
+Dice score for PROSTATE is 0.0000
+```
+#### Figure 3: Best prediction with Dice score: 0.78 > 0.75
+![Example mask output with amazing prostate dice score](image_assets/example_output_best.png)
+```
+Dice score for BACKGROUND is 0.9382
+Dice score for BODY is 0.9169
+Dice score for BONES is 0.8141
+Dice score for BLADDER is 0.8819
+Dice score for RECTUM is 0.0000
+Dice score for PROSTATE is 0.7805
+```
+These results show that the predicted masks are actually quite well representative of the true mask. It is likely that the dice scores appear low due to a default value of zero when the class does not appear in the sample, when it should definitely be 1.
+
+This does not mean it is perfect or reliable however, since while the final figure has a sufficient prostate dice score of 0.78, the first figure only has a prostate dice score of 0.55. Unfortunately, since this was found quite late into the assignment timeline, it could not be further looked into. The dice score is not used in the training optimisation, so the predictions would not be better after fixing this issue, but the dice scores would much greater reflect the true accuracy of the model.
 
 ## Usage
 

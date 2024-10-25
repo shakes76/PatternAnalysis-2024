@@ -11,6 +11,53 @@ Yadav, S. (2019, September 1). Understanding Vector Quantized Variational Autoen
     https://shashank7-iitd.medium.com/understanding-vector-quantized-variational-autoencoders-vq-vae-323d710a888a 
 """
 
+
+"""
+A residual block involves skip connections in the neural network i.e.,
+the input before the activation function is added to the output after 
+a neuron is activated. In this case, the activation function is ReLU.
+The encoder's residual block activates the neuron first before commencing
+a convolution operation.
+"""
+class EncoderResBlock(nn.Module):
+    def __init__(self, dim, kernelSize1, kernelSize2, padding1, padding2):
+        super().__init__()
+        self.conv1 = nn.Conv2d(dim, dim, kernel_size=kernelSize1, padding=padding1)
+        self.conv2 = nn.Conv2d(dim, dim, kernel_size=kernelSize2, padding=padding2)
+
+    def forward(self, inp):
+        inp = nn.ReLU()(inp)
+        out = self.conv1(inp)
+        out += inp
+
+        inp = nn.ReLU()(out)
+        out = self.conv2(inp)
+        out += inp
+
+        return out
+
+"""
+Unlike the encoder's residual block, the decoder's residual block
+performs the convolution operation first, before activating a neuron
+on the output of the convolution operation.
+"""
+class DecoderResBlock(nn.Module):
+    def __init__(self, dim, kernelSize1, kernelSize2, padding1, padding2):
+        super().__init__()
+        self.conv1 = nn.Conv2d(dim, dim, kernel_size=kernelSize1, padding=padding1)
+        self.conv2 = nn.Conv2d(dim, dim, kernel_size=kernelSize2, padding=padding2)
+
+    def forward(self, inp):
+        out = self.conv1(inp)
+        out += inp
+        inp = nn.ReLU()(out)
+
+        out = self.conv2(inp)
+        out += inp
+        out = nn.ReLU()(out)
+
+        return out
+
 """Encodes the images into latent space,
     with lower granularity, by parameterising the a categorical
     posterior distribution over the latent space.
@@ -26,8 +73,7 @@ class Encoder(nn.Module):
         self.stridedConv1 = nn.Conv2d(inputDim, hiddenDim, kernel_size=k1, stride=stride, padding=1)
         self.stridedConv2 = nn.Conv2d(hiddenDim, hiddenDim, kernel_size=k2, stride=stride, padding=1)
         
-        self.residualConv1 = nn.Conv2d(hiddenDim, hiddenDim, kernel_size=k3, padding=1)
-        self.residualConv2 = nn.Conv2d(hiddenDim, hiddenDim, kernel_size=k4, padding=0)
+        self.resConv = EncoderResBlock(dim=hiddenDim, kernelSize1=k3, kernelSize2=k4, padding1=1, padding2=0)
 
         self.proj = nn.Conv2d(hiddenDim, out_channels=outputDim, kernel_size=1)
 
@@ -35,13 +81,7 @@ class Encoder(nn.Module):
         inp = self.stridedConv1(inp)
         inp = self.stridedConv2(inp)
 
-        inp = nn.ReLU()(inp)
-        out = self.residualConv1(inp)
-        out += inp
-
-        inp = nn.ReLU()(inp)
-        out = self.residualConv2(inp)
-        out += inp
+        out = self.resConv(inp)
 
         out = self.proj(out)
 
@@ -146,8 +186,7 @@ class Decoder(nn.Module):
         k1, k2, k3, k4 = kernels
         self.inner_proj = nn.Conv2d(inputDim, hiddenDim, kernel_size=1)
 
-        self.residualConv1= nn.Conv2d(hiddenDim, hiddenDim, kernel_size=k1, padding=0)
-        self.residualConv2 = nn.Conv2d(hiddenDim, hiddenDim, kernel_size=k2, padding=1)
+        self.resConv = DecoderResBlock(dim=hiddenDim, kernelSize1=k1, kernelSize2=k2, padding1=0, padding2=1)
         
         self.stridedConv1 = nn.ConvTranspose2d(hiddenDim, hiddenDim, kernel_size=k3, stride=stride, padding=0)
         self.stridedConv2 = nn.ConvTranspose2d(hiddenDim, outputDim, kernel_size=k4, stride=stride, padding=0)
@@ -155,13 +194,7 @@ class Decoder(nn.Module):
     def forward(self, inp):
         inp = self.inner_proj(inp)
 
-        out = self.residualConv1(inp)
-        out += inp
-        inp = nn.ReLU()(out)
-
-        out = self.residualConv2(inp)
-        out += inp
-        out = nn.ReLU()(out)
+        out = self.resConv(inp)
 
         out = self.stridedConv1(out)
         out = self.stridedConv2(out)

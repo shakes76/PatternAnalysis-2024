@@ -9,6 +9,7 @@ from dataset import load_data_3D, Custom3DDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from predict import test_and_visualize
+import torchvision.transforms as transforms
 
 # Model params
 num_epochs = 1
@@ -16,6 +17,30 @@ learning_rate = 0.01
 batch_size = 4
 # Check which device to use for model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+class RandomFlip3D:
+    def __init__(self, flip_depth=True, flip_height=True, flip_width=True):
+        self.flip_depth = flip_depth
+        self.flip_height = flip_height
+        self.flip_width = flip_width
+
+    def __call__(self, x):
+        # Flip DImensions
+        if self.flip_depth and torch.rand(1).item() > 0.5:
+            x = torch.flip(x, dims=[2])
+        if self.flip_height and torch.rand(1).item() > 0.5:
+            x = torch.flip(x, dims=[3])
+        if self.flip_width and torch.rand(1).item() > 0.5:
+            x = torch.flip(x, dims=[4])
+        return x
+
+
+# Transformations
+transform_train = transforms.Compose([
+    RandomFlip3D(flip_depth=True, flip_height=True, flip_width=True),
+    transforms.Normalize((0.5,), (0.5,))
+])
 
 # Get the dataset and split into train, test, validate
 dataset = Custom3DDataset()
@@ -30,12 +55,12 @@ validate_loader = DataLoader(validate_loader)
 test_loader = DataLoader(test_loader)
 
 # initialise Unet and loss/optimizer
-model = Basic3DUNet(in_channels=1, out_channels=4).to(device)
+model = Basic3DUNet(in_channels=1, out_channels=6).to(device)
 loss_func = DiceLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=5e-4)
 
 sched_linear_1 = optim.lr_scheduler.CyclicLR(
-    optimizer, base_lr=0.0005, max_lr=learning_rate, step_size_up=15, step_size_down=15, mode='triangular', verbose=False)
+    optimizer, base_lr=0.0005, max_lr=learning_rate, step_size_up=15, step_size_down=15, mode='triangular', verbose=False, cycle_momentum=False)
 sched_linear_2 = optim.lr_scheduler.LinearLR(
     optimizer, start_factor=min(1, max(0, 0.1)), end_factor=0.001, verbose=False)
 scheduler = optim.lr_scheduler.SequentialLR(
@@ -111,14 +136,14 @@ def validate(epoch):
 
 
 def calculate_dice(y_pred, y_true):
-    y_pred = torch.argmax(y_pred, dim=1)  # Convert predictions to binary mask
+    assert y_true.size() == y_pred.size()
     # Calculate intersection
-    intersection = (y_pred * y_true).sum(dim=(2, 3, 4))
-    union = y_pred.sum(dim=(2, 3, 4)) + y_true.sum(dim=(2, 3, 4))
+    intersection = (y_pred * y_true).sum(dim=[2, 3, 4])
+    union = y_pred.sum(dim=[2, 3, 4]) + y_true.sum(dim=[2, 3, 4])
     dice = (2. * intersection + 1e-5) / (union + 1e-5)
     return dice.mean().item()
 
 
 if __name__ == "__main__":
     train()
-    test_and_visualize()
+    test_and_visualize(model, test_loader)

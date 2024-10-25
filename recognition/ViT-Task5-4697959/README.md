@@ -159,7 +159,8 @@ Dropout is a regularization technique that helps prevent overfitting by randomly
 
 Weight decay adds a penalty to the loss function based on the magnitude of the model weights, encouraging the network to learn simpler, more generalizable patterns. The initial value was set to `1e-5`, and various values (`1e-4`, `5e-5`, `1e-6`) were tested to reduce overfitting and improve test performance by regulating model complexity.
 
-Addtional Notes:
+**Addtional Notes**:
+
 I also experimented with the SGD (Stochastic Gradient Descent) optimizer as a brief initial experiment. However, the results weren't as promising, leading to lower validation accuracy and slower convergence. Consequently, I reverted to using Adam, which offered more stability and faster convergence.
 
 ## Training Results and Evaluation

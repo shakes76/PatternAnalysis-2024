@@ -59,9 +59,10 @@ def get_data(data, log_res, batchSize):
     Data Loader
 
     Resize: Resize images to a lower resolution as set in config, uses bicubic interpolation
-    RandomHorizontalFlip: Augment data by applying random horizontal flips [probability=50%]
+    RandomVerticalFlip: Augment data by applying random vertical flips [probability=50%]
     ToTensor: Convert images to PyTorch Tensors
-    Normalize: Normalize pixel value to have a mean and standard deviation of 0.5
+    Normalize: Normalise pixel value to have a mean and standard deviation of 0.5
+    Grayscale: B&W images appropriate for the OASIS dataset
     '''
     # Create dataset
     dataset = dset.ImageFolder(root=data_root,

@@ -311,7 +311,7 @@ class EqualizedConv2d(nn.Module):
 
 class PathLengthPenalty(nn.Module):
     """
-    This regularization encourages a fixed-size step in $w$ to result in a fixed-magnitude change in the image.
+    This regularization encourages a fixed-size step in w to result in a fixed-magnitude change in the image.
     """
     def __init__(self, beta):
         super().__init__()

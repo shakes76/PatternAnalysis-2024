@@ -18,15 +18,19 @@ The [HipMRI dataset](https://data.csiro.au/collection/csiro:51392v2?redirected=t
 
 ## Results
 
-After 50 epochs of training, my model achieved an average SSIM of 0.76 when tested using the test dataset. The following graphs show the SSIM and losses during the 50 epochs of training.
+After 50 epochs of training, my model achieved an average SSIM of 0.81 when tested using the test dataset. The following graphs show the SSIM and losses during the 50 epochs of training.
+
+![average_ssim_over_epochs.png](assets/average_ssim_over_epochs.png)
 
 
 
-You can clearly see a very sharp rise in SSIM and a sharp decrease in loss over the first 5-10 epochs. This may have been because both the learning rate and decay rate were too high. After only about 15-20 epochs there was only marginal improve in SSIM and loss indicating that learning decay may have started too soon.
+![loss_over_epochs.png](assets/loss_over_epochs.png)
+
+You can clearly see a very sharp rise in SSIM and a sharp decrease in loss over the first 4 epochs. This may have been because both the learning rate and decay rate were too high. After only about 15-20 epochs there was only marginal improve in SSIM indicating that learning decay may have started too soon.
 
 Despite this, the images produced by the decoder are more than clear enough. While the images may be more 'blurry' than the originals, the shapes and patterns in the hip MRI's were learned incredibly well. 
 
-To visualise the progression of the model, I've made images showing the reconstructed images next to their real counterparts throughout various epochs of training.
+To visualise the progression of the model, I've made images showing the reconstructed images next to their real counterparts throughout various epochs of training. The images also show the embeddings used for vector quantization.
 
 ![epoch_1.png](assets/epoch_1.png)
 
@@ -41,7 +45,7 @@ The following images take a look at the the worst four reconstructed images and 
 ![test_best_reconstructed_images.png](assets/test_best_reconstructed_images.png)
 
 
-In conclusion, the results and generated images show that the model was able to generalise the data quite well with SSIM scores of over 0.75 with unseen test images. It must be noted that if you were to increase the number epochs (and maybe decreased the decay rate), the images would be come marginally more clear, but since SSIM remained between 0.7 and 0.75 for over half of the training process, I decided to limit epochs to 50.
+In conclusion, the results and generated images show that the model was able to generalise the data quite well with SSIM scores of over 0.81 with unseen test images. It must be noted that if you were to increase the number epochs (and maybe decreased the decay rate), the images would be come marginally more clear, but since SSIM remained between 0.7 and 0.75 for over half of the training process, I decided to limit epochs to 50.
 
 ## Reproduction of Results
 
@@ -64,7 +68,7 @@ In order to reproduce these results I've listed all the hyperparameters I used o
 - **Learning Rate:** 0.0005
 - **Batch Size:** 32
 
-In order to run the model, run the train.py file. This will train a VQVAE model and save its weights in order for further testing. Once the model has been saved the predict.py file can be run to provide testing data for the model.
+In order to run the model, run the train.py file. This will train a VQVAE model and save its weights in order for further testing. Once the model has been saved the predict.py file can be run to provide testing data for the model. Additionally, the data must be downloaded and data filepaths must be changed.
 
 ### Dependencies
 

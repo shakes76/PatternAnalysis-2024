@@ -1,3 +1,7 @@
+"""
+This code tests whether the dataset loader is loading in the data correctly.
+The verification is done by manual, visual inspection of the images.
+"""
 import torch
 import torchvision.utils as vutils
 import matplotlib.pyplot as plt

@@ -91,6 +91,9 @@ F1 Score: 0.7903
 ```
 On one NVIDIA a100 graph card, the total traning time is 2:06:36.  
 
+## How to Test
+You can use 'final_validate(model, test_loader, criterion, device)' and 'draw_training_log()' function in the end of train.py. They are already there. And you can also run predict.py solo. If you use this way, don't forget to edit the path of your model and dataset inside the predict.py
+
 ## Dependency Library
 Make sure your environment have following dependency:
 ```

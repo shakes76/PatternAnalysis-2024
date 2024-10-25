@@ -97,11 +97,15 @@ Using the hyperparameters hard-coded into the argsparser (i.e. running `python t
     <img src="/recognition/ADNI-GFNet-47430004/images/Accs.png" alt="Test Accuracy vs Epochs">
 </p>
 
+This graph represents progression of the accuracy of the model, measured after every epoch. For the best case, the highest accuracy of **78.4%** was achieved in Epoch 251.
+
 ### Losses over epochs
 
 <p align="center">
     <img src="/recognition/ADNI-GFNet-47430004/images/Losses.png" alt="Training and Test Loss vs Epochs">
 </p>
+
+This graph represents the training loss and the test loss of the model measured after every epoch.
 
 ### Test performance
 
@@ -109,7 +113,35 @@ Using the hyperparameters hard-coded into the argsparser (i.e. running `python t
     <img src="/recognition/ADNI-GFNet-47430004/images/test.png" alt="Test Accuracy per batch, in best case">
 </p>
 
+This graph represents the performance of the model in the best-performing test per batch, where the model achieved an accuracy of **78.4%**.
+
 ## Hyperparameters
+
+The following are the hyperparameters present in the model, with their default values and the argument to change their value. The parameters that are in **bold** are the ones that had many values tested to improve performance. The parameters with a strikethrough were not considered, but are present as they were present in the original code:
+
+- **Batch size: 64 (`--batch-size`)**
+- **Epochs: 300 (`--epochs`)**
+- Input size: 224 (`--input-size`)
+- **Dropout rate: 0.05 (`--drop`)**
+- **Drop path rate: 0.3 (`--drop-path`)**
+- Optimizer: adamw (`--opt`)
+- Optimizer Epsilon: 1e-8 (`--opt-eps`)
+- ~~Optimizer Betas: None (`--opt-betas`)~~
+- Clip gradient norm: 1 (`--clip-grad`)
+- SGD momentum: 0.9 (`--momentum`)
+- **Weight decay: 0.05 (`--weight-decay`)**
+- LR Scheduler: cosine (`--sched`)
+- **Learning Rate: 5e-4 (`--lr`)**
+- ~~Learning Rate Noise: None (`--lr-noise`)~~
+- ~~Learning rate noise: 0.67 (`--lr-noise-pct`)~~
+- ~~Learning rate noise std-dev: 1.0 (`--lr-noise-std`)~~
+- **Warmup Learning Rate: 1e-5 (`--warmup-lr`)**
+- Lower bound for Learning Rate: 1e-5 (`--min-lr`)
+- **Epoch interval to decay Learning Rate: 30 (`--decay-epochs`)**
+- **Warmup Epochs: 5 (`--warmup-epochs`)**
+- Cooldown Epochs: 10 (`--cooldown-epochs`)
+- Patience epochs: 10 (`--patience-epochs`)
+- Learning Rate Decay Rate: 0.1 (`--decay-rate`)
 
 ## Why the PR has 2 LICENSE files
 

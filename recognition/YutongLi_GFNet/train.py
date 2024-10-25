@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from modules import GFNet
 from dataset import get_data_loaders
-from utils import split_val_set, load_model
+from utils import split_val_set, load_model, append_training_log, draw_training_log
 from predict import validate, final_validate
 
 

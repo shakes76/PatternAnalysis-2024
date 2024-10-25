@@ -123,7 +123,7 @@ if __name__ == "__main__":
             top_val_acc = val_acc
             bad_val_count = 0
             best_model = copy.deepcopy(model)
-            torch.save(best_model.state_dict(), '/Users/rorymacleod/Desktop/Uni/sem 2 24/COMP3710/Report/')
+            torch.save(best_model.state_dict(), '/Users/rorymacleod/Desktop/Uni/sem 2 24/COMP3710/Report/GFNet.pt')
         else:
             bad_val_count += 1
         if bad_val_count >= EARLY_STOP:

@@ -177,7 +177,7 @@ class ADNITest(Dataset):
             self.process_dir(self.nc_path, self.nc_processed_path)
 
     def process_dir(self, in_path, out_path):
-         for filename in tqdm(os.listdir(in_path), disable=self.tdqm_disabled):
+         for filename in tqdm(os.listdir(in_path), disable=self.tqdm_disabled):
             if filename.lower().endswith('.jpeg'):
                 input_path = osP.join(in_path, filename)
                 output_path = osP.join(out_path, filename)

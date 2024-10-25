@@ -7,10 +7,17 @@ import tqdm as tqdm
 from sklearn.model_selection import train_test_split
 from scipy.ndimage import zoom
 import torch.nn as nn
-import os
 import torchvision.transforms as transforms
 import glob
+import sklearn
+import scipy
+import sys
 
+print("PyTorch version:", torch.__version__)
+print("Numpy version:", np.__version__)
+print("Tqdm version:", tqdm.__version__)
+print("Nibabel version:", nib.__version__)
+print("Python version:", sys.version)
 
 
 def to_channels ( arr : np . ndarray , dtype = np . uint8 ) -> np . ndarray :

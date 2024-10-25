@@ -30,12 +30,13 @@ BATCH_SIZE = 32
 
 if __name__ == "__main__":
 
-	my_dataloader = DataLoader(create_preset_dataloader(dataset_type=1), batch_size=16, shuffle=False)
+	my_dataloader = DataLoader(create_preset_dataloader(dataset_type=1), batch_size=BATCH_SIZE, shuffle=False)
 
-	siamese_model = TheTwins().to(TRAIN_DEVICE)
-	siamese_model.load_state_dict(load(SAVE_FILE, map_location=TRAIN_DEVICE))
+	# load up the model
+	siam_net = TheTwins().to(TRAIN_DEVICE)
+	siam_net.load_state_dict(load(SAVE_FILE, map_location=TRAIN_DEVICE))
 
-	siamese_model.get_cnn().eval()
+	siam_net.get_cnn().eval()
 
 	predict_stats = {
 
@@ -48,13 +49,15 @@ if __name__ == "__main__":
 	with no_grad():
 		for image, label in my_dataloader:
 
+			# dont want to test any more
 			if i == TARGET_SAMPLES:
 				break
 
 			image, label = image.to(TRAIN_DEVICE), label.to(TRAIN_DEVICE)
 
-			outputs = siamese_model.get_cnn()(image)
-			_, predicted = torch.max(outputs, 1)
+			# run the test image through the trained cnn
+			out = siam_net.get_cnn()(image)
+			_, predicted = torch.max(out, 1)
 
 			predict_stats["correct"] += (predicted == label).sum().item()
 			predict_stats["total"] += label.size(0)

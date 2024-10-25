@@ -26,7 +26,7 @@ TRAIN_DEVICE = device("cuda" if cuda.is_available() else "cpu")
 
 # Adam optimiser apparently likes 0.001 so i wont question
 TARGET_LEARNING_RATE = 0.001
-TARGET_EPOCHS = 2
+TARGET_EPOCHS = 5
 
 SAVE_FILE = f"snet{TARGET_EPOCHS}.pth"
 

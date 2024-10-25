@@ -2,9 +2,9 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import datasets, transforms
 
-data_dir = '/Users/gghollyd/comp3710/report/AD_NC/'
+data_dir = '/Users/georg/OneDrive/Documents/comp3710/report/AD_NC/'
 
-def dataloader(data_dir, val_split=0.2, batch_size=128):
+def dataloader(data_dir, val_split=0.2, batch_size=64):
     
     data_transforms = {
         'train': transforms.Compose([
@@ -37,4 +37,3 @@ def dataloader(data_dir, val_split=0.2, batch_size=128):
     test_loader = DataLoader(image_datasets['test'], batch_size=batch_size, shuffle=False, num_workers=4)
 
     return train_loader, val_loader, test_loader, image_datasets['train'].classes
-

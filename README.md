@@ -133,12 +133,10 @@ Training completed.
 Test Accuracy: 0.6667
 Final Test Accuracy: 0.6667
 
-THis is after the second run. With no significant change in my test accuracy this leads me to believe that my model is over fitting. WHich leads me wanting to decrease the dimension and depth wihtin my GFNet to not over learn the feature.
+After the second run 3ith no significant change in my test accuracy this leads me to believe that my model is over fitting. Leads me to believe that the dimensions and/or depth of this network needs to be adjusted to counteract this over fitting or somehow my dataset is biasing during training. 
 
 This code is able to be run on rangpur potentiall with greater epochs, more augmentation, other hyper parameter fine tuning to get desired accuracy. 
-
-
-This code is able to be run on rangpur potentiall with greater epochs, more augmentation, other hyper parameter fine tuning to get desired accuracy. 
+ 
 
 
 ## Accuracy & Loss

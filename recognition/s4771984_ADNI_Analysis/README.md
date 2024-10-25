@@ -84,7 +84,7 @@ The confusion matrix shows the number of correct and incorrect classifications f
 
 - **3018** Cognitive Normal(CN) were rightly classified and **1442** were misclassified as AD.
 - **4092** Alzheimer's Disease(AD) patients were classified correctly, while **458** were misclassified as Cognitive Normal(CN).
-  
+
 ## Requirements
 - **Python**: 3.8+
 - **TensorFlow or PyTorch**: Depending on your implementation choice (GFNet6 model in PyTorch)
@@ -92,3 +92,16 @@ The confusion matrix shows the number of correct and incorrect classifications f
 - **Matplotlib**: 3.3+
 - **Scikit-learn**: 0.24+
 - **Google Colab Pro+**: Recommended for faster training and inference.
+
+## Environment & Hardware Setup
+- The project is developed and trained in **Google Colab Pro+** to make use of enhanced computational resources with high-performance GPUs. This has allowed for not only faster training but also faster experimentation with the model, enabling to iterate efficiently to achieve high accuracy in a much shorter period of time.
+- It was trained for **200 epochs**, using a GPU instance from **Colab Pro+**. This drastically reduced the time taken to run the model when compared to local machines or basic Colab environments. This high-performance environment was important to train deep learning models like the GFNet, which require extensive computational power while processing large image datasets like those of the ADNI dataset.
+
+## References
+- Giuliano Giacaglia. (Mar 11, 2019). How Transformers Work. Towards Data Science. https://towardsdatascience.com/transformers-141e32e69591
+- Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification [ArXiv preprint arXiv:2107.00645].  
+https://arxiv.org/abs/2107.0064
+- OpenAI. (2024). ChatGPT [AI language model]. Available from https://www.openai.com
+
+
+

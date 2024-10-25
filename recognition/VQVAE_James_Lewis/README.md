@@ -10,7 +10,7 @@ VQVAE architecure consits of three main components: an encoder, a decoder and a 
 
 Another key feature of my implementation of the VQVAE model was the use of residual layers in both the encoder and decoder. The residual layer in the encoder allow the encoder and decoder to learn the difference between its input and the current representation by feeding the input values through to the output.
 
-![ConventionalVQVAEbasedVC.png](assets/Conventional-VQVAE-based-VC.png)
+![ConventionalVQVAEbasedVC.png](assets/Conventional-VQVAE-based-VC.png)Source: https://www.researchgate.net/figure/Conventional-VQVAE-based-VC_fig1_346248936
 
 ## Data Processing
 

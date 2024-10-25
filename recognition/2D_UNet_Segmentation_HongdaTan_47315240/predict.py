@@ -13,8 +13,8 @@ model.load_state_dict(torch.load('unet_model.pth', map_location=device))  # Ensu
 model.eval()
 
 # Load your test dataset (replace with actual paths)
-test_image_dir = r'C:/Users/11vac/Desktop/3710 Report/HipMRI_study_keras_slices_data/keras_slices_test'
-test_mask_dir = r'C:/Users/11vac/Desktop/3710 Report/HipMRI_study_keras_slices_data/keras_slices_seg_test'
+test_image_dir = r'1HipMRI_study_keras_slices_data/keras_slices_test'
+test_mask_dir = r'1HipMRI_study_keras_slices_data/keras_slices_seg_test'
 
 test_dataset = ProstateCancerDataset(test_image_dir, test_mask_dir)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)

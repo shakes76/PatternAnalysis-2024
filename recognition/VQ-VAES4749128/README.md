@@ -36,12 +36,13 @@ To run test:
 # VqVae Training
 
 The VQVAE model was trained with the whole training set because the model is generative. The model has 5000 updates and a batch size of 32. The loss components consists of three key types: reconstruction Loss (MSE), embedding loss and total loss. The reconstruction loss is measured as the mean squared error between the original input data and reconstructed data. The total loss is the sum of embedding loss and reconstruction loss. It is used for backpropagation.
+SSIM over time for VQVAE:
+![image](https://github.com/user-attachments/assets/1fcb31a8-0276-4aa9-867b-70d921406ecc)
 
+
+VQVAE training and validation loss function: 
+![image](https://github.com/user-attachments/assets/7049951d-7db5-490e-a876-a4fd5d8807fb)
 
 This is an example of an image that has been passed through the VQVAE: 
 
 ![image](https://github.com/user-attachments/assets/4b8f3313-842a-4ff9-84ed-320aab53b73e)
-
-VQVAE loss function: 
-
-

@@ -3,6 +3,7 @@
 **Table of Contents**
 - [Model and Problem Description](#model-and-problem-description)
 - [Model Architecture](#model-architecture)
+- [Dependencies](#dependencies)
 - [Model Usage](#model-usage)
 - [Results](#results)
 - [References](#references)
@@ -68,6 +69,14 @@ In each forward iteration, the model:
 6. Passes through to the classifier layer.
 
 This model uses the standard Cross Entropy Loss and Adam Optimizer.
+## Dependencies
+For successful execution of the model, the following dependencies are requried
+* numpy
+* pytorch
+* matplotlib
+* scikit-learn
+* umap-learn
+
 ## Model Usage
 
 1. Download the .npz data from [here](https://graphmining.ai/datasets/ptg/facebook.npz) and store it in your local directory where you have the code. This is a partially processed dataset where the features are in the form of 128 dimesion vectors

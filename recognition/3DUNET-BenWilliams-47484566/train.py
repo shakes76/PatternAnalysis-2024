@@ -8,23 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# Example setup
-#model = UNet3D(in_channels=3, out_channels=3)
-
-#criterion = crossEntropyLoss(weight=torch.tensor([1.0, 1.0, 1.0]))
-#optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-#epochs = 1
-
-#device='cuda'
-
-
-
-#inputs =  load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False)
-#labels =  load_data_3D(imageNames, normImage=False, categorical=False, dtype = np.uint8, getAffines=False, orient=False, early_stop=False)
-
-
-# Training loop (simplified)
+# Training loop
 def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cuda'):
     model = model.to(device)
     model.train()
@@ -35,7 +19,7 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cud
         running_loss = 0.0
         epoch_dice = 0.0
         total_samples = 0
-
+        dice_scores_epoch = []
         for inputs, labels in dataloader:
             inputs = inputs.to(device)
             labels = labels.to(device)
@@ -52,15 +36,16 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs, device='cud
 
             running_loss += loss.item() * inputs.size(0)    
 
-            dice_score = modules.dice_coefficient(outputs, labels)
-            epoch_dice += dice_score.item() * inputs.size(0)
+            #dice_score = modules.dice_coefficient(outputs, labels)
+            #epoch_dice += dice_score.item() * inputs.size(0)
             total_samples += inputs.size(0)
 
-            dice_scores = dice_coefficient_per_label(outputs, labels, num_classes=6)  # Change num_classes if needed
-            dice_scores.append(dice_scores)
+            dice_scores = modules.dice_coefficient_per_label(outputs, labels, num_classes=6)  # Change num_classes if needed
+            dice_scores_epoch.append(dice_scores)
         
         epoch_loss = running_loss / total_samples
         all_losses.append(epoch_loss)
+        dice_scores.append(dice_scores_epoch)
         #torch.save(model.state_dict(), f'model_weights_epoch_{epoch + 1}.pth')
         avg_dice = {label: sum(dice[label] for dice in dice_scores_overall) / len(dice_scores_overall) for label in range(6)}
         print(f'Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, Dice: {avg_dice:.4f}')

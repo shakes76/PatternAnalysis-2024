@@ -82,6 +82,14 @@ for epoch in range(num_epochs):
     # Calculate average validation loss for this epoch
     val_losses.append(val_loss / len(val_loader))
 
+
+# Path to save the trained model
+model_save_path = "/home/Student/s4838078/model_saves"
+os.makedirs(model_save_path, exist_ok=True)  # Create directory if it doesn't exist
+# Save the model after training
+torch.save(model.state_dict(), os.path.join(model_save_path, "unet_model.pth"))
+print(f"Model saved to {model_save_path}/unet_model.pth")
+
 # Plot the loss
 image_save_path = "/home/Student/s4838078/2DUNet_loss/loss_plot.png"
 

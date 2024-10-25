@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 from modules import GCN
 from dataset import load_data
+import matplotlib.pyplot as plt
 
 def train(model, data, optimizer, class_weights):
     model.train()
@@ -47,20 +47,30 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.005, weight_decay=1e-5)
 
     best_acc = 0
+    patience = 20
+    patience_counter = 0
+
     losses, train_accuracies, test_accuracies = [], [], []
 
     for epoch in range(200):
         loss = train(model, data, optimizer, class_weights)
         train_acc = accuracy(model, data, data.train_mask)
         test_acc = accuracy(model, data, data.test_mask)
-        
+
         losses.append(loss)
         train_accuracies.append(train_acc)
         test_accuracies.append(test_acc)
 
         if test_acc > best_acc:
             best_acc = test_acc
+            patience_counter = 0
             torch.save(model.state_dict(), "best_model.pth")
+        else:
+            patience_counter += 1
+
+        if patience_counter >= patience:
+            print(f"Early stopping at epoch {epoch}")
+            break
 
         if epoch % 10 == 0:
             print(f'Epoch: {epoch} Loss: {loss:.4f} Train Accuracy: {train_acc:.4f}, Test Accuracy: {test_acc:.4f}')
@@ -70,5 +80,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 

@@ -1,11 +1,11 @@
 # Classifying Alzheimer's Disease with a Vision Transformer
 
-As the life expectancy of humans across the world rise, the chances of Alzheimer's Disease have also increased, putting an extra burden on doctors and specialists. The advent of AI has brought many new methods to assist with diagnoses. This repository contains the code used to train one of the latest vision transformers, known as the GFNet, to identify Alzheimer's Disease in 2D slices of MRI brain scans. The data used comes from the [ADNI dataset](https://adni.loni.usc.edu/), which is split into two classes: AD (Alzheimer's Disease) and NC (Normal Control). The model architecture is based on the innovative work of Rao, et al [1].
+As the life expectancy of humans across the world rises, the chances of Alzheimer's Disease has also increased, putting an extra burden on doctors and specialists. The advent of AI has brought many new methods to assist with diagnoses. This repository contains the code used to train one of the latest vision transformers, known as the GFNet, to identify Alzheimer's Disease in 2D slices of MRI brain scans. The data used comes from the [ADNI dataset](https://adni.loni.usc.edu/), which is split into two classes: AD (Alzheimer's Disease) and NC (Normal Control). The model architecture is based on the innovative work of Rao, et al [1].
 
 ## The Global Filter Network (GFNet)
 In a typical vision transformer, an image is broken up into smaller patches, representing the tokens that are fed into the transformer. A self-attention block then seeks to learn the relationship between all the patches, in a way that is free from inductive biases. Traditional methods like convolutional neural networks (CNNs) often contained spatial biases, a product of the convolution operation, making them less generalisable. While vision transformers are effective at learning the true distribution without inductive biases, the self-attention block is computationally expensive, running at $O(n^2)$ complexity.
 
-The Global Filter Network improves this upon this. The self-attention layer is replaced with the global filter layer, which includes a Fast Fourier transform to convert the patches to the frequency domain. A learnable filter with weights across different frequencies is multiplied to the result, and finally an inverse Fourier Transform is used to return it to the spatial domain. The filter can be thought of as emphasising relevant features in the frequency domain, and attenuating other less relevant features. This layer is summarised in the pseudocode shown below:
+The Global Filter Network improves upon this. The self-attention layer is replaced with the global filter layer, which includes a Fast Fourier transform to convert the patches to the frequency domain. A learnable filter with weights across different frequencies is multiplied to the result, and finally an inverse Fourier Transform is used to return it to the spatial domain. The filter can be thought of as amplifying relevant features in the frequency domain, and attenuating other less relevant features. This layer is summarised in the pseudocode shown below:
 ```
 X = rfft2(x, dim=(1, 2))
 X_tilde = X * K
@@ -37,7 +37,7 @@ The typical features associated with vision transformers like dense linear layer
 This repository contains the following files:
 - `modules.py`: This file contains the source code for the GFNet model. It is largely based on the code written by Rao., et al. [[2]](https://github.com/raoyongming/GFNet/blob/master/gfnet.py)
 - `dataset.py`: This file contains the data loader for the ADNI dataset. It also performs pre-processing on the dataset, detailed [here](#pre-processing).
-- `train.py`: This file contains the code used to train, validate and test the GFNet model. The best model is also saved to be used in inference in desired. Relevant plots are also generated here.
+- `train.py`: This file contains the code used to train, validate and test the GFNet model. The best model is also saved to be used in inference if desired. Relevant plots are also generated here.
 - `predict.py`: This file contains the code used to run inference on the trained model on unseen test data.
 - `utils.py`: This file contains utility functions useful across the multiple files. Specifically, functions to get the current device and also dataset root.
 
@@ -49,7 +49,7 @@ git clone https://github.com/Kevin-Gu-2022-UQ/PatternAnalysis-2024.git
 cd PatternAnalysis-2024/recognition/GFNet-4743888
 ```
 
-2. Download the [dataset](https://adni.loni.usc.edu/), ensuring it matches the structure shown above.
+2. Download the [dataset](https://adni.loni.usc.edu/), ensuring it matches the structure shown [below](#dataset).
 
 3. Setup the environment. To quickly install all relevant dependencies, run the following command.
 ```
@@ -103,10 +103,10 @@ After this, another split had to be done to ensure the equivalent distribution o
 
 ### Pre-processing
 Pre-processing was then performed on the data before training. Augmentation was necessary as the ADNI dataset is not particularly large, and generally for deep learning models, the more data there is, the better the outcome. The following transformations were done on the training data:
-1. The images were centre cropped to 224 x 224, to align with the suggested sizes proposed by Rao., et al. [1]. 
+1. The images were centre cropped to 224 x 224, to align with the default sizes proposed by Rao., et al. [1]. 
 2. Random vertical flips were added to the data. This helps the model be more generalisable, improving upon its accuracy on unseen data.
-3. Gaussian noise was added to the images. Again, this helps with generalisability, but it also represents something that occurs in real life. Practical signals like those from MRIs are will always have some degree of noise associated with it.
-4. Finally, the data was also normalised. A simple script (not in repository) was used to estimate the mean and standard deviation of the ADNI dataset. The mean was found to be  ~0.1156 and the standard deviation ~0.2199.
+3. Gaussian noise was added to the images. Again, this helps with generalisability, but it also represents something that occurs in real life. Practical signals like those from MRIs will always have some degree of noise associated with them.
+4. Finally, the data was normalised. A simple script (not in repository) was used to estimate the mean and standard deviation of the ADNI dataset. The mean was found to be  ~0.1156 and the standard deviation ~0.2199.
 
 Note: The augmentation techniques applied above only applied to the training set. The validation and test sets only had the centre crop and normalisation applied.
 

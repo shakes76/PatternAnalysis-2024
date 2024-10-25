@@ -42,7 +42,7 @@ To run predict:
 ``` python predict.py ```
 
 The arguments can be customised, otherwise the default will be used when running in terminal:
-'''
+```
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--n_updates", type=int, default=5000)
     parser.add_argument("--n_hiddens", type=int, default=128)
@@ -53,7 +53,7 @@ The arguments can be customised, otherwise the default will be used when running
     parser.add_argument("--beta", type=float, default=.25)
     parser.add_argument("--learning_rate", type=float, default=3e-4)
     parser.add_argument("--log_interval", type=int, default=50)
-'''
+```
 
 # VqVae Training
 

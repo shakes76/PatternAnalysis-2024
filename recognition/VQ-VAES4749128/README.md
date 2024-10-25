@@ -4,7 +4,7 @@ The aim of of this problem is to create a generative model of the HipMRI Study o
 
 ## VQ-VAE
 A VQ-VAE model is a generative model which combines elements from VQ and VAE. There are three key parts to this model: encoder, decoder, codebook layer.
-Input data is loaded into the encoder, a neural network, and trasnformed into latent representation. The latent vectors are quantised into a finite set of embeddings by using nearest neighbour search to replace continous latent presentations with the closest vector from the codebook (a finite set of vectors).The final part is the decoder which essentially attempts to decode the now quantised latent variables and reconstruct the image to its original form. 
+Input data is loaded into the encoder, a neural network, and transformed into latent representation. The latent vectors are quantised into a finite set of embeddings by using nearest neighbour search to replace continous latent presentations with the closest vector from the codebook (a finite set of vectors).The final part is the decoder which essentially attempts to decode the now quantised latent variables and reconstruct the image to its original form. 
 
 ## Pixel CNN
 

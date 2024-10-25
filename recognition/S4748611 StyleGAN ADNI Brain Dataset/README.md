@@ -106,11 +106,11 @@ Normal Cognition Brains:
 <br/>
 
 ### Training Hyperparameters:
-Epochs: 100
-Batch Size: 16
-Image Size: (128,128)
-Generator Learning Rate: 0.0002, increasing very slowly
-Discriminator Learning Rate: 0.0001, decreasing very slowly
+Epochs: 100 <br/>
+Batch Size: 16 <br/>
+Image Size: (128,128) <br/>
+Generator Learning Rate: 0.0002, increasing very slowly <br/>
+Discriminator Learning Rate: 0.0001, decreasing very slowly <br/>
 
 ### Discriminator and Generator Losses
 <img src="images/Discriminator Loss AD.png" alt="AD Disc Loss" width="400"/>

@@ -124,6 +124,7 @@
 
 #     siamese = SiameseDataset(dataset=isic_dataset, transform=transform)
 import os
+import random
 import pandas as pd
 import kagglehub
 import torch
@@ -137,17 +138,14 @@ class ISICDataset(Dataset):
         self.transform = transform
         self.augment_transform = augment_transform
         self.num_augmentations = num_augmentations
-        self.labels = self.load_labels(metadata_path)  # Load labels first
-        self.data, self.malignant_data = self.load_data()  # Store image paths and malignant subset
+        self.labels = self.load_labels(metadata_path) 
+        self.data, self.malignant_data = self.load_data()
 
     def load_labels(self, metadata_path):
-        """Load the labels from the metadata file."""
         metadata = pd.read_csv(metadata_path)
-        # Return a dictionary mapping the image filenames to their labels
         return {row['isic_id'] + '.jpg': row['target'] for _, row in metadata.iterrows()}
 
     def load_data(self):
-        """Load image paths, and split into benign and malignant subsets."""
         image_files = []
         malignant_files = []
         
@@ -161,11 +159,9 @@ class ISICDataset(Dataset):
         return image_files, malignant_files
 
     def __len__(self):
-        """Total length includes both original data and augmented malignant images."""
         return len(self.data) + (self.num_augmentations * len(self.malignant_data))
 
     def __getitem__(self, index):
-        """Load and return image along with its label."""
         if index < len(self.data):
             # Return original image
             img_name = self.data[index]
@@ -179,21 +175,55 @@ class ISICDataset(Dataset):
 
         img_path = os.path.join(self.dataset_path, img_name)
 
-        # Load the image from disk
         img = Image.open(img_path).convert('RGB')
 
-        # Apply augmentations only for malignant images
         if augmentation and self.augment_transform:
             img = self.augment_transform(img)
 
-        # Apply the main transformation (resize, normalization, etc.)
         if self.transform:
             img = self.transform(img)
 
-        # Get the label based on the filename
         label = self.labels[img_name]
 
         return img, label
+
+class SiameseDataset(Dataset):
+    def __init__(self, dataset, num_pairs=50000, transform=None):
+        self.dataset = dataset
+        self.transform = transform
+        self.num_pairs = num_pairs
+
+    def generate_pair(self, index):
+        index = index % len(self.dataset)
+        img0, label0 = self.dataset[index]
+        should_get_same_class = random.randint(0, 1)
+
+        if should_get_same_class:
+            # Positive pair: Find another image with the same label
+            while True:
+                img1, label1 = random.choice(self.dataset)
+                if label0 == label1:
+                    break
+        else:
+            # Negative pair: Find an image with a different label
+            while True:
+                img1, label1 = random.choice(self.dataset)
+                if label0 != label1:
+                    break
+
+        if self.transform is not None:
+            img0 = self.transform(img0)
+            img1 = self.transform(img1)
+
+        similarity_label = torch.tensor(int(label0 != label1), dtype=torch.float32)
+
+        return img0, img1, similarity_label
+
+    def __len__(self):
+        return self.num_pairs
+
+    def __getitem__(self, index):
+        return self.generate_pair(index)
 
 if __name__ == "__main__":
     dataset_path = kagglehub.dataset_download("nischaydnk/isic-2020-jpg-256x256-resized")

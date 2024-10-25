@@ -31,6 +31,8 @@ def load_data_2D(imageNames, normImage=False, dtype=np.float32, getAffines=False
 
     normImage: bool (normalise the image 0.0 to 1.0 then distribute to zero mean and unit variance)
     early_stop: Stop loading pre-maturely which leaves array mostly empty. For quick loading and testing scripts.
+
+    REFERENCE: Code provided in COMP3710 Project Task Sheet.
     """
     num = len(imageNames)
     images = np.zeros((num, IMAGE_HEIGHT, IMAGE_WIDTH), dtype=dtype)

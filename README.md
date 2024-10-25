@@ -20,7 +20,7 @@ The dataset used in this project consists of processed MRI slices and their corr
 
 A visualization of how the model works is shown below:
 
-![Improved 2D U-Net architecture diagram. | Download Scientific Diagram](https://www.researchgate.net/publication/334064694/figure/fig2/AS:782433737789440@1563558148120/mproved-2D-U-Net-architecture-diagram.ppm)
+![download](C:\Users\11vac\Desktop\download.jpg)
 
 
 
@@ -161,13 +161,14 @@ Once the model is trained, predictions can be made on the test dataset using the
 
 The following dependencies are required to run this project:
 
-- Python 3.10
-- PyTorch 1.12
-- Torchvision 0.13
-- Nibabel 3.2
+- Python >= 3.8
+- PyTorch >= 1.8.0
+- nibabel (for handling MRI `.nii.gz` files)
+- matplotlib (for visualization)
+- torchvision (for image transformations)
+
 - NumPy 1.22
 - Scikit-learn 1.1.1
-- Matplotlib 3.5.2
 
 You can install all dependencies via `pip`:
 
@@ -185,15 +186,10 @@ The model is reproducible given the same dataset and preprocessing steps. The ra
 
 ## Example Inputs, Outputs, and Results
 
-Below is an example of an input MRI slice and its corresponding predicted mask:
+Example MRI slice and its segmentation output:
 
-### Input (MRI Slice):
-
-`python file.py`
-
-### Output (Predicted Mask):
-
-
+- **Input:** 256x256 MRI image slice (grayscale).
+- **Output:** 256x256 binary mask (1 - cancerous region, 0 - background).
 
 ### Training Loss:
 

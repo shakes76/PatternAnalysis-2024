@@ -27,11 +27,11 @@ The final model had the input parameters:
 - Numpy 2.1.2
 - Matplotlib 3.9.2
 
-### Example Prediction Results
+## Example Prediction Results
 The model trained using the parameters above
-The model was then used on an never seen before testing set which resulted in the following:
+The model was then used on an unseen testing set which resulted in the following:
 Pixel Accuracy: 96.62 and Dice Score: 0.9058
-
+The models predictions, visualised:
 ![Example Segmentation 1](images/PredictImage1.png)
 ![Example Segmentation 2](images/PredictImage2.png)
 ![Example Segmentation 3](images/PredictImage3.png)
@@ -40,3 +40,9 @@ These visualisations show:
 - The raw input image on the left
 - The target segmentation mask for the image in the middle
 - The models predicted segmentation mask
+
+When recording the training function loss and dice score accuracy results after each epoch the following graph can be constructed:
+![Example Segmentation 3](images/graphs.png)
+These graphs show how the model improves over time. The slight dip in dice score around epoch 13 indicates some over fitting in the model, but it overcomes this and bounces back
+
+### Each file in project

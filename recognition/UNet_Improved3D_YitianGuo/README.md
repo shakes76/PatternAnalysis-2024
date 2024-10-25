@@ -162,6 +162,7 @@ The table below shows the best validated Dice scores for the model on each categ
 | Class_3  | 0.80           |
 | Class_4  | 0.88           |
 | Class_5  | 0.76           |
+
 There are differences in the Best Dice Score (BDS) for each category. For example, Class_4 has the highest Dice Score of 0.88, while Class_2 has a lower score of 0.72. This indicates that the model performs differently when dealing with different classes.
 For categories with lower scores, such as Class_2 and Class_5, consider adding data augmentation or adjusting the weights of the loss function so that these categories receive more attention in the training
 
@@ -170,7 +171,10 @@ The hyperparameters used during model training were: learning rate (lr) of 0.001
 ```
 python train.py --lr 0.001 --epoch 40 --device cuda --loss combined
 ```
-
+Run the prediction file with the default parameters
+```
+python predict.py
+```
 ## Result
 
 Below are the best segmentation results for each category, including the original image, Ground Truth labels and model predictions

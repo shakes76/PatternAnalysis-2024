@@ -9,6 +9,7 @@ ADNI_DataLoader handles all data loaded to pass to the neural network
 class ADNI_DataLoader():
     rootDataPath: str
     imageSize: int
+    dataTransforms : transforms.Compose
     
     __gotTrain : bool
     trainDataset : datasets.ImageFolder
@@ -21,8 +22,18 @@ class ADNI_DataLoader():
     def __init__(self, rootData = "", imageSize = 240):
         self.rootDataPath = rootData
         self.imageSize = imageSize
+        self.dataTransforms = self.__create_transforms__()
         self.__gotTrain = False
         self.__gotTest = False
+        
+    def __create_transforms__(self):
+        all_transforms = transforms.Compose(
+                [transforms.Resize(self.imageSize),
+                transforms.CenterCrop(self.imageSize),
+                transforms.Grayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize(0.0385, 0.0741)])
+        return all_transforms
 
     def __calc_mean_and_std(self):
         # Initialize sums
@@ -46,33 +57,16 @@ class ADNI_DataLoader():
     def get_dataloader(self, data_type: str):
         if (data_type == "train"):
             if (not self.__gotTrain):
-                transform = v2.Compose([
-                    v2.CenterCrop(self.imageSize),
-                    v2.ColorJitter(brightness = 0.4, contrast = 0.1),
-                    #v2.RandomPosterize(bits = 3, p = 0.5),
-                    v2.Grayscale(),
-                    v2.ToTensor(),
-                    v2.RandomErasing(p=0.5),
-                    v2.GaussianNoise(0.1,0.05),
-                    #v2.Normalize([0.0385], [0.0741]),
-                    ])
-                
                 path_to_dataset = join(self.rootDataPath, 'train')
-                self.trainDataset = datasets.ImageFolder(path_to_dataset, transform=transform)
+                self.trainDataset = datasets.ImageFolder(path_to_dataset, transform=self.dataTransforms)
                 self.trainLoader = DataLoader(self.trainDataset, batch_size=64, shuffle=True)
                 self.__gotTrain = True
             return self.trainLoader
             
         elif (data_type == "test"):
             if (not self.__gotTest):
-                transform = v2.Compose(
-                    [v2.CenterCrop(self.imageSize),
-                    #v2.Grayscale(),
-                    v2.ToTensor(),
-                    #v2.Normalize([0.0385], [0.0741]),
-                    ])
                 path_to_dataset = join(self.rootDataPath, 'test')
-                self.testDataset = datasets.ImageFolder(path_to_dataset, transform=transform)
+                self.testDataset = datasets.ImageFolder(path_to_dataset, transform=self.dataTransforms)
                 self.testLoader = DataLoader(self.testDataset, batch_size=64, shuffle=True)
                 self.__gotTest = True
             return self.testLoader

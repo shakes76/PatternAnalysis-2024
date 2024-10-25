@@ -43,6 +43,8 @@ The file named `edges.npy`, where all edges are stored in the format `(edge_id, 
 
 The model is using 3 Graph Convolutional layers, utilizing batch normalization and ReLU between the layers. At the end, Softmax function is used for prediction. Cross entropy function is used to calculate the loss. Dropout with probability 0.5 was introduced in earlier stages of development, but it reduced the validation accuracy by several percent while the test accuracy remained unchanged, so it was discarded from the final version of the model.
 
+![Model Architecture](./images/model_architecture.png)
+
 The Hyperparameters used by the model are:
 
 - Learning rate: 0.01
@@ -59,7 +61,10 @@ The situation with loss is similar:
 ![loss plot](./images/loss.png)
 The model’s learning is going well until epoch 200\. After that loss is not really decreasing much. Again, validation loss is slightly higher than training.
 
+Accuracy, achieved during testing was **92.65%**.  
+Below is a plot of t-distributed stochastic neighbor embedding in 2-Dimensional space, which was created after performing the testing:
 ![t-SNE plot](./images/scatter.png)
+It can be seen that the model successfully separates the 4 classes with some minor misclassifications.
 
 ## Usage
 
@@ -68,3 +73,8 @@ To test the model, run the command: `python predict.py`, which will load the pre
 **Don’t change the `SEED` variable between these steps\!**
 
 ## References
+
+Code for `GNNLayer` was taken from: [https://github.com/gayanku/SCGC/blob/main/models.py](https://github.com/gayanku/SCGC/blob/main/models.py)
+
+Data loading and preprocessing inspiration was take from:  
+[https://github.com/tkipf/pygcn/blob/master/pygcn/utils.py](https://github.com/tkipf/pygcn/blob/master/pygcn/utils.py)

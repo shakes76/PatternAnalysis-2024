@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Install requirements
+pip install -r requirements.txt
+
 # Preprocess the dataset
 python3 dataset.py
 

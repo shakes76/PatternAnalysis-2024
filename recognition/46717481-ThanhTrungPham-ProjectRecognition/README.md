@@ -44,6 +44,9 @@ These are some detections predicted by the fine-tuned YOLOv8-segmentation visual
 ![Alt text](figures/prediction_test.jpg?raw=true "Sample prediction 1")
 ![Alt text](figures/prediction_test2.jpg?raw=true "Sample prediction 2")
 
+# To run the algorithm
+Run: ./test_script.sh in order to run the algorithm, note that the algorithm assumes the position of the dataset being the location it is situated in Rangpur and the current location for training is '/home/Student/s4671748/comp3710-project/'. If the location differs, changes inside 'dataset.py' for data loading and 'train.py' must be made in order to run properly
+
 ## Acknowledgments
 
 - ISIC 2018 Challenge organizers

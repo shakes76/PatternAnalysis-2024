@@ -12,9 +12,9 @@ from predict import test_and_visualize
 import torchvision.transforms as transforms
 
 # Model params
-num_epochs = 1
-learning_rate = 0.01
-batch_size = 4
+num_epochs = 10
+learning_rate = 0.001
+batch_size = 2
 # Check which device to use for model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -39,25 +39,28 @@ class RandomFlip3D:
 # Transformations
 transform_train = transforms.Compose([
     RandomFlip3D(flip_depth=True, flip_height=True, flip_width=True),
-    transforms.Normalize((0.5,), (0.5,))
+    # transforms.Normalize((0.5,), (0.5,))
 ])
 
 # Get the dataset and split into train, test, validate
-dataset = Custom3DDataset()
+dataset = Custom3DDataset(transform_train)
 train_len = int(0.7 * len(dataset))  # fix percentages
 val_len = int(0.2*len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_loader, validate_loader, test_loader = random_split(
     dataset, [train_len, val_len, test_len])
 
-train_loader = DataLoader(train_loader)
-validate_loader = DataLoader(validate_loader)
-test_loader = DataLoader(test_loader)
+train_loader = DataLoader(train_loader, batch_size=2,
+                          shuffle=True, num_workers=4)
+validate_loader = DataLoader(
+    validate_loader, batch_size=2, shuffle=True, num_workers=4)
+test_loader = DataLoader(test_loader, batch_size=2,
+                         shuffle=True, num_workers=4)
 
 # initialise Unet and loss/optimizer
 model = Basic3DUNet(in_channels=1, out_channels=6).to(device)
 loss_func = DiceLoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=5e-4)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
 
 sched_linear_1 = optim.lr_scheduler.CyclicLR(
     optimizer, base_lr=0.0005, max_lr=learning_rate, step_size_up=15, step_size_down=15, mode='triangular', verbose=False, cycle_momentum=False)
@@ -120,28 +123,43 @@ def train():
 
 def validate(epoch):
     model.eval()
-    dice_scores = []
+    class_dice_scores = []
     with torch.no_grad():
         for val_images, val_masks in validate_loader:
             val_images, val_masks = val_images.to(device), val_masks.to(device)
             val_outputs = model(val_images)
-            dice_score = calculate_dice(val_outputs, val_masks)
-            dice_scores.append(dice_score)
+            dice_scores_per_class = calculate_dice(val_outputs, val_masks)
+            class_dice_scores.append(dice_scores_per_class)
+    avg_class_dice_scores = torch.mean(
+        torch.stack(class_dice_scores), dim=0).cpu().numpy()
 
-    avg_dice_score = sum(dice_scores) / len(dice_scores)
+    for class_idx, dice_score in enumerate(avg_class_dice_scores):
+        print(
+            f"Epoch [{epoch+1}/{num_epochs}], Class {class_idx} Dice Score: {dice_score:.4f}")
+
+    avg_dice_score = avg_class_dice_scores.mean()
     print(
-        f"Epoch [{epoch+1}/{num_epochs}], Validation Dice Score: {avg_dice_score:.4f}")
-
-# Dice Score calculation (for validation)
+        f"Epoch [{epoch+1}/{num_epochs}], Average Validation Dice Score: {avg_dice_score:.4f}")
 
 
-def calculate_dice(y_pred, y_true):
-    assert y_true.size() == y_pred.size()
-    # Calculate intersection
-    intersection = (y_pred * y_true).sum(dim=[2, 3, 4])
-    union = y_pred.sum(dim=[2, 3, 4]) + y_true.sum(dim=[2, 3, 4])
-    dice = (2. * intersection + 1e-5) / (union + 1e-5)
-    return dice.mean().item()
+def calculate_dice(y_pred, y_true, num_classes=6):
+    assert y_true.size() == y_pred.size(
+    ), f"Shape mismatch: {y_pred.size()} != {y_true.size()}"
+
+    y_pred = torch.argmax(y_pred, dim=1)
+    y_true = torch.argmax(y_true, dim=1)
+
+    dice_scores = []
+    for cls in range(num_classes):
+        y_pred_cls = (y_pred == cls).float()
+        y_true_cls = (y_true == cls).float()
+
+        intersection = (y_pred_cls * y_true_cls).sum(dim=[1, 2, 3])
+        union = y_pred_cls.sum(dim=[1, 2, 3]) + y_true_cls.sum(dim=[1, 2, 3])
+        dice = (2. * intersection + 1e-5) / (union + 1e-5)
+        dice_scores.append(dice.mean().item())
+
+    return torch.tensor(dice_scores, device=y_pred.device)
 
 
 if __name__ == "__main__":

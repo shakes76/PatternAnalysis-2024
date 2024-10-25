@@ -144,6 +144,7 @@ if __name__ == '__main__':
     criterion = torch.nn.CrossEntropyLoss().cuda()
     acc1list = validate(test_loader, model, criterion)
     plt.figure(1)
+    # Labelling the created graph
     plt.title('Result')
     plt.xlabel('Batch Number')
     plt.ylabel('Acc @ 1')

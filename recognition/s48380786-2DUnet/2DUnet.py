@@ -320,16 +320,12 @@ class UNet(nn.Module):
         conv1 = self.conv1(x)
         conv2 = self.conv2(nn.MaxPool2d(2)(conv1))
         conv3 = self.conv3(nn.MaxPool2d(2)(conv2))
-        conv4 = self.conv4(nn.MaxPool2d(2)(conv3))
 
         # Bottleneck
-        bottleneck = self.bottleneck(nn.MaxPool2d(2)(conv4))
+        bottleneck = self.bottleneck(nn.MaxPool2d(2)(conv3))
 
         # Decoder
-        upconv4 = self.upconv4(bottleneck)
-        conv4_1 = self.conv4_1(torch.cat([upconv4, conv4], dim=1))
-
-        upconv3 = self.upconv3(conv4_1)
+        upconv3 = self.upconv3(bottleneck)
         conv3_1 = self.conv3_1(torch.cat([upconv3, conv3], dim=1))
 
         upconv2 = self.upconv2(conv3_1)

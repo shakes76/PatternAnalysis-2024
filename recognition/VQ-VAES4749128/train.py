@@ -109,6 +109,7 @@ def train(args, train_loader, val_loader, optimizer, model):
 def train_pixel_cnn(args):
     """
     Trains the pixel cnn model
+    REFERENCE:https://github.com/anordertoreclaim/PixelCNN/tree/master/pixelcnn
     """
     train_loader, test_loader = dataset.load_latent_block(batch_size=8)
     args.img_dim1 = 32

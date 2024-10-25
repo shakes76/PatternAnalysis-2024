@@ -82,7 +82,7 @@ def append_training_log(train_loss, train_acc, val_loss, val_acc, run_time, file
             writer.writerow(['Index', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'Run Time'])
 
         # Calculate current index (row number)
-        index = sum(1 for _ in open(file_name)) - 1  # Subtracting 1 for the header row
+        index = sum(1 for _ in open(file_name))
 
         writer.writerow([index, f"{train_loss:.4f}", f"{train_acc:.4f}", f"{val_loss:.4f}", f"{val_acc:.4f}", run_time])
 

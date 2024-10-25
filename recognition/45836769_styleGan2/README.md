@@ -171,14 +171,14 @@ This was still unable to stabilise training and the discriminator is overpowerin
 <p align="center">
     <img src="images/final_loss_plot.png" width="80%">
     <br>
-    Loss plot of failed training
+    Loss plot of final failed training
 </p>
 
 Below is an example image that was generated. Obviously there isn't much to see.
 <p align="center">
     <img src="images/fake_e5_s1.png" width="40%">
     <br>
-    Loss plot of failed training
+    Image created by failed training
 </p>
 
 A potential issue was found in the saving of images thrugh matplotlib. The library by default treats 0 valued pixels as black, whereas the tanh final activation in the generator would mean values of -1 should be black. So perhaps the image visualisations are not appearing as they should - though the generator still isn't learning to produce brain images. 

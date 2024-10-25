@@ -22,15 +22,17 @@ else:
 
 if __name__ == "__main__":
     test_data = ADNITest()
-    model = GFNet(in_channels=1, embed_dim=384)
+    model = GFNet(in_channels=1, patch_size=14, embed_dim=384).to(device)
 
-    model.load_state_dict(torch.load(MODEL_PATH)).to(device)
+    model.load_state_dict(torch.load(MODEL_PATH))
     model.eval()
     
+    test_loader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True)
+
     preds = []
     true = []
 
-    for data, labels in tqdm(test_data, disable=False):
+    for data, labels in tqdm(test_loader, disable=False):
         data, labels = data.to(device), labels.float().to(device)
 
         outputs = model(data)

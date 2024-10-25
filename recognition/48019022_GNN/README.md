@@ -4,7 +4,7 @@ Author: Anthony Ngo
 Student Number: 48019022
 
 ## Project Overview
-This project implements a variety of Graph Neural Network (GNN) architectures for node classification, specifically for the Facebook Large Page-Page Network dataset. The goal of the project was to sufficiently classify nodes of the graph data into 4 categories: politicians, governmental organizations, television shows and companies. 
+This project implements a variety of Graph Neural Network (GNN) architectures for node classification, specifically for the Facebook Large Page-Page Network dataset. The goal of the project was to sufficiently classify nodes of the graph data into 4 categories: politicians, governmental organisations, television shows and companies. 
 A potential use of this model would be to improve content recommendations for Facebook users, or categorise and moderate Facebook pages.
 
 ## Table of Contents
@@ -82,7 +82,7 @@ The repository implements 4 GNN architectures:
    python predict.py
    ```
 
-5. To visualize the embeddings, again, change the model name in plotting.py, then execute:
+5. To visualise the embeddings, again, change the model name in plotting.py, then execute:
    ```bash
    python plotting.py
    ```
@@ -98,13 +98,31 @@ As state above, this project implements the following GNN architectures:
 Each model has been encapsulated in the `modules.py` file, with a defined forward pass and relevant layers. The next sections contain brief descriptions of how each model functions.
 
 ### Graph Convolutional Networks (GCN)
+Graph Convolutional Networks (GCN) leverage the principles of convolutional neural networks to operate directly on graph-structured data. The key idea is to use the spectral domain of the graph to learn a transformation of node features. GCNs are designed to perform node classification tasks by aggregating features from a node's neighbourhood in the graph, effectively capturing local structures. The propagation rule can be expressed as:
 
+[FORMULA]
+
+GCNs are particularly effective for semi-supervised learning, where only a small subset of nodes has labeled information.
 
 ### Graph Attention Networks (GAT)
+Graph Attention Networks (GAT) introduce an attention mechanism to the graph convolution process, allowing nodes to weigh their neighbours' contributions based on their importance. GATs utilise self-attention to learn the coefficients for each edge, thereby adapting the influence of connected nodes dynamically. The attention coefficients can be computed as:
 
+[FORMULA]
+
+By focusing on relevant neighbours, GATs enhance the model's expressiveness and robustness against noise in the graph structure.
 
 ### Graph Sample and Aggregation (GraphSAGE)
+Graph Sample and Aggregation (GraphSAGE) is designed to handle large graphs by sampling a fixed-size neighbourhood of each node rather than considering the entire graph. It employs various aggregation functions (mean, LSTM, pooling) to merge information from sampled neighbours into the target node's representation. The update rule is as follows:
+
+[FORMULA]
+
+GraphSAGE enables inductive learning, allowing the model to generalize to unseen nodes during training.
 
 
-### Simplified Graph Convolution
+### Simplified Graph Convolution (SGC)
+Simplified Graph Convolution (SGC) reduces the complexity of graph convolutional operations by removing non-linearities and employing a single linear transformation. The key innovation is the simplification of the message-passing framework into a single matrix multiplication, effectively treating the graph structure as a single layer. The transformation can be expressed as:
+
+[FORMULA]
+
+SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
 

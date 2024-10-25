@@ -1,4 +1,3 @@
-# Import necessary modules and functions from the 'train' module 
 from train import Generator, get_w, get_noise, LOG_RESOLUTION,W_DIM,DEVICE 
 import torch
 from torchvision.utils import save_image

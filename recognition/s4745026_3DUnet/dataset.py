@@ -67,10 +67,10 @@ class Custom3DDataset(Dataset):
             f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
         self.label_paths = glob.glob(
             f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
-        """self.image_paths = glob.glob(
-            r'C:\Users\nroug\Documents\PatternAnalysis-2024\recognition\s4745026_3DUnet\data\semantic_MRs/**/*.nii.gz', recursive=True)
-        self.label_paths = glob.glob(
-            r'C:\\Users\\nroug\\Documents\\PatternAnalysis-2024\\recognition\\s4745026_3DUnet\\data\\semantic_labels_only/**/*.nii.gz', recursive=True)"""
+        # self.image_paths = glob.glob(
+        #    r'C:\Users\nroug\Documents\PatternAnalysis-2024\recognition\s4745026_3DUnet\data\semantic_MRs/**/*.nii.gz', recursive=True)
+        # self.label_paths = glob.glob(
+        #    r'C:\\Users\\nroug\\Documents\\PatternAnalysis-2024\\recognition\\s4745026_3DUnet\\data\\semantic_labels_only/**/*.nii.gz', recursive=True)
         # Resize the dimensions
 
         self.upsample = torch.nn.Upsample(
@@ -87,19 +87,19 @@ class Custom3DDataset(Dataset):
         label = load_data_3D([self.label_paths[idx]])
 
         # Convert to tensors
-        image = torch.tensor(image, dtype=torch.float32).unsqueeze(1)
-        label = torch.tensor([self.classes.get(category.item(), 0)
-                             for category in label.flatten()]).reshape(label.shape)
+        image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
+        # label = torch.tensor([self.classes.get(category.item(), 0)
+        #                     for category in label.flatten()]).reshape(label.shape)
+        label = torch.tensor(label, dtype=torch.long)
+        if self.transform is not None:
+            image = self.transform(image)
 
         # One-hot encode to assign labels to classes
         label = nn.functional.one_hot(
-            label.squeeze(0), num_classes=6).permute(3, 1, 0, 2).float()
+            label, num_classes=6).permute(0, 4, 1, 2, 3).float()
         # Upsample
-        label = label.unsqueeze(0)
+        # label = label.unsqueeze(0)
         image = self.upsample(image)
         label = self.upsample(label)
-
-        if self.transform is not None:
-            image = self.transform(image)
 
         return image.squeeze(0), label.squeeze(0)

@@ -33,7 +33,6 @@ model = UNet(in_channels=1, out_channels=1).to(device)  # Example: Grayscale in,
 criterion = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
-# Function to plot training loss
 def plot_training_loss(train_loss):
     plt.plot(train_loss, label="Train Loss")
     plt.xlabel("Epoch")

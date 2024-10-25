@@ -35,7 +35,8 @@ When the encoder produces a continuous representation, the quantizer uses Euclid
 _Loss:_
 
 Quantization loss is the squared difference between the input and embedding vector:
-$$ \text{loss} = \frac{1}{N} \sum\_ {i=1}^{N}(\text{quantize}\_i - \text{input}\_i)^2$$
+
+$$\text{loss} = \frac{1}{N} \sum\_ {i=1}^{N}(\text{quantize}\_i - \text{input}\_i)^2$$
 
 The input representations assigned to embedding vectors (cluster size) is updated using exponential decay:
 

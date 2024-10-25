@@ -168,6 +168,8 @@ Another potential route I began to work on is the idea of breaking up the batche
 
 This was done by preprocessing the data such that each batch called by the dataloader would give back all the images for the number of patients. The data was then flattened into a 4D vector that corresponded to (images, channels, height, width) from all patient images. For example, a batch size of 3 would get the images for 3 random patients, then the model would train on all the images for those patients at once for that batch.
 
+Due to time constraints, I was unable to further test additional methods, like longer learning times or other preprocessing or changing the model parameters, etc further. 
+
 ## License
 MIT License
 

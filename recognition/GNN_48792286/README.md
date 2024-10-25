@@ -22,12 +22,12 @@
 #### Features: Each node is associated with a 128-dimensional feature vector. These features capture properties of the Facebook pages.
 #### Target Labels: Each node has a corresponding label that denotes its category. The task is to classify these nodes into one of the given categories.
 ## Model
-#### ![Fig. 1: 2D Convolution vs. Graph Convolution.] (https://miro.medium.com/v2/resize:fit:1400/format:webp/1*0rj1Pxlzyqkg_rrZiyRDNw.png)
+#### ![ Fig. 1: 2D Convolution vs. Graph Convolution. ](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*0rj1Pxlzyqkg_rrZiyRDNw.png)
 #### Fundamentally, a GCN takes as input a graph together with a set of feature vectors where each node is associated with its own feature vector. The GCN is then composed of a series of graph convolutional layers (to be discussed in the next section) that iteratively transform the feature vectors at each node. The output is then the graph associated with output vectors associated with each node. These output vectors can be (and often are) of different dimension than the input vectors. 
 #### when performing classification on the nodes, then these per-node vectors can be treated as the model’s final outputs.Node-level classification, these output vectors could, for example, encode the probabilities that each node is associated with each class.
 ## Results
-### (./loss and accuracy.png)
-### (./t-SNE.png)
+### !(./loss and accuracy.png)
+### !(./t-SNE.png)
 ## Conclusion
 ###
 ## Discussion

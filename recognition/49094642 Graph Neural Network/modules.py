@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
+# Define GCN model as a class
 class GCN(torch.nn.Module):
     def __init__(self, num_features, hidden_dim, num_classes):
         super(GCN, self).__init__()

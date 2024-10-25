@@ -44,7 +44,7 @@ Although the current code functions and runs, unfortunately it does not produce 
 
 ![training loss](./report_assets/hipmri_loss_plot_24-10-24.png)
 
-The following dice coefficients in testing:
+It also produced following dice coefficients in testing, with an average Dice coefficient of 0.34 and a max of about 0.36:
 
 ![training dice](./report_assets/test_dice_24-10-24.png)
 

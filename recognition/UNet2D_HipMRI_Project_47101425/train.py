@@ -98,7 +98,7 @@ def plot_sample_images(dataset, model):
         ax[1].axis('off') 
 
         # Plot predicted mask 
-        ax[2].imshow(pred_mask, cmap='gray', vmin=0.4, vmax=0.9)
+        ax[2].imshow(pred_mask, cmap='gray', vmin=0, vmax=1)
         ax[2].set_title("Predicted Mask")
         ax[2].axis('off') 
 
@@ -143,7 +143,7 @@ def main(base_dir, image_dir, mask_dir):
     # Train model
     model.fit(
         dataset, 
-        epochs=25, 
+        epochs=65, 
         steps_per_epoch=len(dataset),
         callbacks=[tensorboard_callback],
         verbose=1

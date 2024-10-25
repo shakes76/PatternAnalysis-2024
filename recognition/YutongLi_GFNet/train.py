@@ -42,6 +42,8 @@ def train(model, train_loader, criterion, optimizer, device):
 
 
 if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # split the val set first, you only need to run this once. It will create AD_NC_new.
     split_val_set('your_original_data_path/AD_NC', 'new_store_data_path/AD_NC_new', 0.1)
 

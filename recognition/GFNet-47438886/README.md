@@ -126,6 +126,7 @@ The `ReduceLROnPlateau` learning rate scheduler from Pytorch was used to adjust 
 
 ### Training and Validation Loss and Accuracy Plots
 ![Training and Validation Loss and Accuracy](assets/training_figures.png)
+
 The model was trained for 210 epochs. The maximum validation accuracy from training was **82.7%**, which is impressive, as it was based on unseen data. From the plots, it appears the validation accuracy has somewhat plateaued, however, training the model for longer may yield higher accuracies. Due to limitations with compute resources, this was not achieved. 
 
 ## Results

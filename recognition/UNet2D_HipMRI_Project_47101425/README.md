@@ -1,16 +1,18 @@
 # Medical Image Segmentation with UNet
+by: Karan Vijay Shankar (Student No. 47101425)
 
+## Purpose
 This repository implements a **medical image segmentation** pipeline using the **UNet architecture** in PyTorch. Medical image segmentation plays a critical role in diagnosing, planning, and treatment in medical imaging tasks by helping isolate regions of interest, such as organs or abnormalities, from medical images. This model is designed to solve segmentation problems on processed 2D slices stored as NIFTI files, specifically for the HIPMRI study on Prostate Cancer, using the Dice coefficient as the main evaluation metric. 
 
 ## Algorithm Description
 
 This algorithm takes input from the HIPMRI dataset, and passes through the *encoder* block of the UNet architecture. An example of which can be seen below:
 ![Example of UNet model architecture](images/u-net-architecture.png)
-This architecture is comprised of 2D convolutional layers (with 3x3 kernel size and ReLU activation), followed by a 2x2 max pooling layer to downsample the input; extract features and patterns from the input image, while max pooling layers reduce spatial dimensions, allowing the network to focus on higher-level features. After reaching the latent layer, the output is passed through the *decoder* block; consists of two 2D convolutional layers (with 3x3 kernel size and ReLU activation), followed by a 2D transpose convolution layer (ConvTranspose2D) to upsample the feature map. *Concatenation* is used to combine upsampled features with their corresponding encoder features, enabling the retention of spatial details from previous layers. This process helps the network recover fine-grained information while ensuring gradients flow smoothly through the network during backpropagation, facilitating better learning and improved segmentation accuracy.
+This architecture is comprised of 2D convolutional layers (with 3x3 kernel size and ReLU activation), followed by a 2x2 max pooling layer to downsample the input; extract features and patterns from the input image, while max pooling layers reduce spatial dimensions, allowing the network to focus on higher-level features. After reaching the latent layer, the output is passed through the *decoder* block; consists of two similar 2D convolutional layers, followed by a 2D transpose convolution layer (ConvTranspose2D) to upsample the feature map. *Concatenation* is used to combine upsampled features with their corresponding encoder features, enabling the retention of spatial details from previous layers. This process helps the network recover fine-grained information while ensuring gradients flow smoothly through the network during backpropagation, facilitating better learning and improved segmentation accuracy.
 
 ## How It Works
 
-The code first takes the data found in the HIPMRI folders (specifically the training data), processing them into a dataset to be used by the UNet model. The model is then trained on this dataset; with the goal of minimizing **Dice Loss**. The Dice coefficient is calculated to assess overlap between the predicted segmentations and ground truth labels. The model is then trained, ensuring the model is able to maintain/reach the Dice similarity coefficient of 0.75. After training, a plot of actual images vs. model output is produced to visualize model accuracy; the trained model is saved
+The code first takes the data found in the HIPMRI folders (specifically the training data), processing them (`utils.py`) into a dataset (`dataset.py`) to be used by the UNet model (`modules.py`). The UNet model is then trained on this dataset (`train.py`), with the goal of minimizing **Dice Loss**. The Dice coefficient is calculated to assess overlap between the predicted segmentations and ground truth labels. The model is then trained, ensuring the model is able to maintain/reach the Dice similarity coefficient of 0.75. After training, the trained model is saved; can be validated through running the saved model on the validation dataset; checking the images produced (`predict.py`).
 
 ## Project Dependencies
 
@@ -20,7 +22,7 @@ The code requires the following dependencies:
 - **Matplotlib**: 3.4.3+
 - **TensorFlow**: 2.10.0+
 - **TensorBoard**: 2.10.1+
-- **Nibabel**: 3.2.1+ (for handling NIFTI files)
+- **Nibabel**: 3.2.1+
 - **TQDM**: 4.66.5+
 - **SciKit-Image**: 0.24.0+
 
@@ -62,6 +64,7 @@ The model can be used by running the included test driver script via
 python test_driver_script.py
 ```
 This creates and trains the model; runs the model on the validation dataset after testing. The script allows optional custom paths to the dataset via updating `data_directory`, `train_image_directory`, `train_mask_directory`, and `validate_image_directory`, `validate_mask_directory`
+Alternatively, `train.py` and `predict.py` can be ran individually to either train/validate the model (`train.py` must be run first if a model has not been generated yet for `predict.py` to function)
 
 ## Figures and Visualizations
 An example of the model's predictions alongside the original MRI image and the ground truth mask is shown below:
@@ -84,7 +87,7 @@ model.fit(
         verbose=1
     )
 ```
-As can be seen here, with adjustment, the UNet model was able to acheive above 0.75 similarity coefficient on the dataset
+As can be seen here, with fine-tuning of hyperparameters, the UNet model was able to acheive above 0.75 similarity coefficient on the dataset
 ![Example of model training output](images/model-output.png)
 ![Example of model training metric plot epoch loss](images/epoch-loss-example.png)
 ![Example of model training metric plot dice similarity coefficient](images/dice-coeff-example.png)

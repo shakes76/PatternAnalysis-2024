@@ -134,8 +134,33 @@ Probability of being Malignant: 0.6622
 ## Results and Visualisations
 
 ### ROC Curve
+*Figure 1: Receiver Operating Characteristic Curve*
+![ROC Curve](images/roc_curve.png)
 
 ### Confusion Matrix
+*Figure 2: Confusion Matrix*
+![Confusion Matrix](images/confusion_matrix.png)
+
+## Results
+
+### Test Performance
+
+- **Test Loss**: `0.0470`
+- **Test Accuracy**: `95.11%`
+- **AUC-ROC**: `0.8492`
+- **AUC-PR**: `0.1134`
+
+### Classification Report
+```
+              precision    recall  f1-score   support
+
+      Benign       0.99      0.96      0.97      6509
+   Malignant       0.12      0.28      0.17       117
+
+    accuracy                           0.95      6626
+   macro avg       0.55      0.62      0.57      6626
+weighted avg       0.97      0.95      0.96      6626
+```
 
 ## References
 ChatGPT o1 was used in the construction of this report including help with the software and documentation. It was prompted with my original solutions/ ideas and asked to guide/improve them.
@@ -144,4 +169,5 @@ ISIC 2020: Skin Lesion Analysis Towards Melanoma Detection 256x256 RESIZED data:
 
 
 ## Contact Information
-
+Harrison Martin-
+s46972691

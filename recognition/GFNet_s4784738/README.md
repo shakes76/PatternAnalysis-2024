@@ -3,14 +3,14 @@
 
 
 ## Overview (Classifying Brain Images)
-The ADNI dataset contains thousands of human brain images. Some of them are from people who have Alzheimer's disease (AD) and some are from people who don't (normal control, or NC). This project aims to detect whether a patient has Alzheimer's disease or not using image classification techniques. Using the Global Filter Network, or GFNET, I trained a model on the brain images in the ADNI dataset that classifies brain images as Alzheimer's positive or negative.
+The ADNI dataset contains thousands of human brain images obtained via MRI scans. Some of them are from people who have Alzheimer's disease (AD) and some are from people who don't (normal control, or NC). This project aims to detect whether a patient has Alzheimer's disease or not using image classification techniques. Using the Global Filter Network, or GFNet, I trained a model on the brain images in the ADNI dataset that classifies brain images as Alzheimer's positive or negative with 73% accuracy.
 
 
 ## How a GFNet Works
 The Global Filter Network is a neural architecture that replaces traditional convolutional layers with frequency-domain filters to capture global spatial relationships in images. Instead of relying on local receptive fields like in standard CNNs, the GFNet applies global filters using the fast Fourier transform, enabling it to model long-range dependencies more efficiently. This allows the GFNet to capture both local and global features, making it well suited for tasks where global structure is important, such as image classification.
 
 ![GFNet Architecture](./assets/GFnet_structure.gif)
-_See references for more information on GFNet_
+_(Rao, 2024)_
 
 
 ## Dependencies
@@ -61,25 +61,48 @@ Note that the /train/ and /test/ image folders (whose paths are specified in uti
 
 
 ## Data Pre-processing
+The images in the ADNI dataset are pre-processed in dataset.py.
 ### Training and Validation Images
+Images in the train directory of the AD_NC folder were used to construct the training and validation sets. The training-validation split I chose was 80-20.
+These images were resized to 224x224 pixels, converted to greyscale, normalized, and converted to tensors.
+To improve the model's ability to learn the brain image features, I tested transformations such as flipping and rotating the images at random, but the 
+images already had a lot of this kind of variability in them, so these transformations had very little impact on the model's accuracy. I then tried some 
+transformations that more directly impacted the image quality (ColourJitter, RandomAffine, RandomResizedCrop, and GaussianBlur) and found significantly more success. For this reason, these 4 transformations were applied to the training and validation images.
 
 ### Testing Images
-
-
-The images in the ADNI dataset are pre-processed in dataset.py. This process involves resizing them to 224x224 pixels, converting them to 3-chanel greyscale, and normalizing them. The training and validation splits recieve additional augmentations to help the model learn their features. These augmentations include random horizontal flips, vertical flips, and rotations.
-Images in the train directory of the AD_NC folder where used to construct the training and validation splits, while test directory was the source of the testing split. This ensured that model could not learn the features of the testing data beforehand. The training-validation split I chose was 80-20.
+Images in the test directory of the AD_NC folder were used to construct the testing split. This ensured that model could not learn the features of the testing data beforehand. 
+The only pre-processing these images recieved was being resized to 224x224 pixels, converted to greyscale tensors, and normalization.
 
 
 ## Configuration settings
-Before running the code, it's important to ensure that you have the desired configuration settings. The model configurations are stored and retreived from utils.py. They can also be found below:
+Before running the code, it's important to ensure that you have the desired configuration settings. The model configurations and hyperparameters are stored and retrieved from 
+utils.py. They can also be found below:
 ''''
-here
+epochs = 30
+learning_rate = 1e-4
+patch_size = (16, 16)
+embed_dim = 512
+depth = 19
+mlp_ratio = 4
+drop_rate = 0.1
+drop_path_rate = 0.1
+weight_decay = 1e-2
+t_max = 6
 '''
-The image paths are set up to run on UQ's rangpur system by default. If you are running the model anywhere else, please adjust the paths to the training and testing image directories as necessary.
+The image paths are set up to run on UQ's rangpur cluster by default. If you are running the model anywhere else, please adjust the paths to the training and testing image directories as necessary in utils.py.
 '''
-image paths
-'''
+def get_path_to_images():
+    train_path = '/home/groups/comp3710/ADNI/AD_NC/train'
+    test_path = '/home/groups/comp3710/ADNI/AD_NC/test'
 
+    return train_path, test_path
+'''
+When running inference, you can set a specific image to be tested by setting the img_path variable in the get_prediction_image() function in utils.py.
+'''
+def get_prediction_image():
+    # A set image path to be returned
+    img_path = _Your image path here_
+'''
 
 
 ## Running the Code
@@ -88,18 +111,19 @@ The model can be trained by running
 '''
 python train.py
 '''
-This will also run one epoch of inference on all images in the /test/ folder.
+This will also save both the model and plots of the training and validation, as well as run one epoch of inference on all images in the /test/ folder.
 Model parameters and image sources can be changed as desired in utils.py.
 
 ### Predicting the Classification of an Image
-You can run inference on an image by running
+You can run inference on a single image by running
 '''
 python predict.py
 '''
-You can change the default image in utils.py.
+By default, a random image will be chosen from the /test/ folder. You can set a specific image to be tested in utils.py.
 
 
 ## Plots
+These plots were obtained by running training for 40 epochs with the default hyperparameters.
 ![Training Accuracy](./assets/training_accuracy.png)
 Training Accuracy of the Model
 
@@ -113,8 +137,9 @@ Validation Accuracy of the Model
 Validation Loss of the Model
 
 
-## Reproducability
-To make the training reproducible, it is possible to set a seed at the start of the training loop. This could be done as follows:
+## Results
+When running inference on the test images, the model was able to predict the correct classification of the brain images with 73.0% accuracy.
+When running predict.py with random images from the test set, similar behavior was observed. About 3/4 of the images were classified correctly, and most of the incorrectly classified images looked noticably different to other images of their kind when inspected.
 
 
 ## References

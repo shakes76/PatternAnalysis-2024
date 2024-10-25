@@ -5,13 +5,46 @@ from skimage.transform import resize
 import glob
 import tensorflow as tf
 
+def augment_image_and_mask(image, mask, class_index=5, heavy_augment=True, zoom_factor=0.2):
+    # Check if the weak class is present in the mask
+    class_present = tf.reduce_sum(mask[..., class_index]) > 0
+
+    if heavy_augment and class_present:
+        # Apply heavier augmentations
+        if tf.random.uniform(()) > 0.5:
+            image = tf.image.flip_left_right(image)
+            mask = tf.image.flip_left_right(mask)
+
+        # Apply zoom augmentation
+        """if tf.random.uniform(()) > 0.5:
+            # Determine the zoom-in size (based on the zoom factor)
+            zoom_in_size = [int(image.shape[0] * (1 + zoom_factor)),
+                            int(image.shape[1] * (1 + zoom_factor))]
+            
+            # Resize to a zoomed-in version
+            image = tf.image.resize(image, zoom_in_size, method='bilinear')
+            mask = tf.image.resize(mask, zoom_in_size, method='nearest')  # Use nearest for mask
+            
+            # Crop back to the original size
+            image = tf.image.resize_with_crop_or_pad(image, image.shape[0], image.shape[1])
+            mask = tf.image.resize_with_crop_or_pad(mask, mask.shape[0], mask.shape[1])"""
+        
+
+    # Apply standard augmentations
+    if tf.random.uniform(()) > 0.5:
+        image = tf.image.random_brightness(image, max_delta=0.1)
+    if tf.random.uniform(()) > 0.5:
+        image = tf.image.random_contrast(image, lower=0.9, upper=1.1)
+
+    return tf.squeeze(image, axis=-1), mask
+
 
 def to_channels(arr: np.ndarray , dtype = np.uint8) -> np.ndarray :
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (6,), dtype = dtype)
     for c in channels:
-        c1 = int(c)
-        res[..., c1:c1+1][arr == c] = 1
+        c = int(c)
+        res[..., c:c+1][arr == c] = 1
     return res
 
 def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False, target_shape=(256, 128)):
@@ -94,16 +127,16 @@ def load_data():
     seg_test_files = sorted(glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test/*.nii.gz'))
     seg_validate_files = sorted(glob.glob(r'/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate/*.nii.gz'))
 
-    early = False
+    early = True
 
     # Load the images using the load_data_2D function
     images_train = load_data_2D(train_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128), early_stop=early)
     images_test = load_data_2D(test_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128), early_stop=early)
     images_validate = load_data_2D(validate_files, normImage=True, categorical=False, dtype=np.float32, target_shape=(256, 128), early_stop=early)
 
-    images_seg_train = load_data_2D(seg_train_files, normImage=True, categorical=True, dtype=np.float32, target_shape=(256, 128), early_stop=early)
-    images_seg_test = load_data_2D(seg_test_files, normImage=True, categorical=True, dtype=np.float32, target_shape=(256, 128), early_stop=early)
-    images_seg_validate = load_data_2D(seg_validate_files, normImage=True, categorical=True, dtype=np.float32, target_shape=(256, 128), early_stop=early)
+    images_seg_train = load_data_2D(seg_train_files, normImage=False, categorical=True, dtype=np.float32, target_shape=(256, 128), early_stop=early)
+    images_seg_test = load_data_2D(seg_test_files, normImage=False, categorical=True, dtype=np.float32, target_shape=(256, 128), early_stop=early)
+    images_seg_validate = load_data_2D(seg_validate_files, normImage=False, categorical=True, dtype=np.float32, target_shape=(256, 128), early_stop=early)
 
     # print the shapes of the loaded datasets
     print(f"Training data shape: {images_train.shape}")
@@ -112,7 +145,28 @@ def load_data():
     print(f"Segement Training data shape: {images_seg_train.shape}")
     print(f"Segement Test data shape: {images_seg_test.shape}")
     print(f"Segement Validation data shape: {images_seg_validate.shape}")
+    
+    '''
+    num_samples = images_train.shape[0]
+    augmented_images = []
+    augmented_masks = []
+    
 
+
+    for i in range(num_samples):
+        image = images_train[i]  # Shape: (256, 128)
+        image = np.expand_dims(image, axis=-1)
+        mask = images_seg_train[i]    # Shape: (256, 128, 6)
+        
+        augmented_image, augmented_mask = augment_image_and_mask(image, mask, class_index=5, heavy_augment=True)
+       
+        augmented_images.append(augmented_image)
+        augmented_masks.append(augmented_mask)
+
+    # Convert augmented lists back to numpy arrays
+    images_train = np.array(augmented_images)
+    images_seg_train = np.array(augmented_masks)
+    '''
 
     return images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate
 

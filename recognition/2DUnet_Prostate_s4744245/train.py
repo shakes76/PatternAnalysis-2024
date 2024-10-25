@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 #define training variables
 BATCH_SIZE = 16
-EPOCHS = 50
+EPOCHS = 30
 n_classes = 6
-learning_rate = 0.001
+learning_rate = 0.0005
 
 # Define the Dice similarity coefficient
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
@@ -43,7 +43,7 @@ def weighted_dice_loss(class_weights):
     def wdl(y_true, y_pred):
         # Calculate the Dice coefficient for each class
         dice_scores = []
-        for i in range(y_true.shape[-1]):  # Iterate over the number of classes
+        for i in range(n_classes):  # Iterate over the number of classes
             class_dice = dice_coefficient(y_true[..., i], y_pred[..., i])
             dice_scores.append(class_dice)
 
@@ -98,8 +98,10 @@ def train_unet_model(model, train_images, train_labels,
     #    on_epoch_end=lambda epoch, logs: weightsBiasDict.update({epoch: model.get_weights()}))
     
 
-    #loss = weighted_categorical_crossentropy(class_weights)
-    loss = weighted_dice_loss(class_weights)
+    loss = weighted_categorical_crossentropy(class_weights)
+    print("weighted_cc_loss")
+    #loss = weighted_dice_loss(class_weights)
+    #print("weighted_dice_loss")
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
 
 
@@ -119,6 +121,8 @@ def train_unet_model(model, train_images, train_labels,
     plot_training(history)
 
     #wandb.finish()
+
+    print("LR:", learning_rate, "/nEPOCHS:", EPOCHS, "/nBATCHSIZE:", BATCH_SIZE)
 
     return history
 

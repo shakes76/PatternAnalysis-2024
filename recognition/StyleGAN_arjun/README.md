@@ -1,3 +1,9 @@
+---
+title: "Generating Synthetic Brain Scans with StyleGAN"
+author: "Arjun Srikanth"
+date: "2024"
+---
+
 # Generating Synthetic Brain Scans with StyleGAN (COMP3710)
 
 This project implements StyleGAN (Generative Adversarial Network) to create high-quality, synthetic
@@ -118,14 +124,14 @@ the following structure:
 
 ```
 ADNI/
-└── AD_NC/
-    ├── train/
-    │   ├── AD/    # Alzheimer's Disease training scans
-    │   └── NC/    # Normal Control training scans
-    │
-    └── test/
-        ├── AD/    # Alzheimer's Disease test scans
-        └── NC/    # Normal Control test scans
+|-- AD_NC/
+    |-- train/
+    |   |-- AD/    # Alzheimer's Disease training scans
+    |   |-- NC/    # Normal Control training scans
+    |
+    |--test/
+        |-- AD/    # Alzheimer's Disease test scans
+        |-- NC/    # Normal Control test scans
 ```
 
 The dataset is organized into a hierarchical structure with separate directories for training and test sets. Each set contains
@@ -153,14 +159,13 @@ distributions and proper gradient flow throughout the network.
 
 ```
 StyleGAN_arjun/
-├── dataset.py          # Dataset loading and preprocessing pipeline
-├── modules.py          # StyleGAN2 architecture implementation (Generator, Discriminator, Mapping)
-├── train.py            # Training loop and optimization logic
-├── predict.py          # Inference code for generating synthetic scans
-├── config.py           # Configuration parameters and hyperparameters
-├── requirements.txt    # Python dependencies
-├── models/             # Directory for storing trained model checkpoints
-└── assets/             # README images and documentation resources
+|-- dataset.py          # Dataset loading and preprocessing pipeline
+|-- modules.py          # StyleGAN2 architecture implementation (Generator, Discriminator, Mapping)
+|-- train.py            # Training loop and optimization logic
+|-- predict.py          # Inference code for generating synthetic scans
+|-- config.py           # Configuration parameters and hyperparameters
+|-- requirements.txt    # Python dependencies
+|-- assets/             # README images and documentation resources
 ```
 
 ### Key Components
@@ -268,7 +273,7 @@ Gradient Penalty) loss. The process involves several key components:
 
 - **Discriminator Loss**: Combination of:
   - Wasserstein distance: `-(torch.mean(D(real)) - torch.mean(D(fake)))`
-  - Gradient penalty: Applied with weight λ=10
+  - Gradient penalty: Applied with weight lambda=10
   - R1 regularization: Small penalty (0.001) on real gradients
 
 - **Optimization**: Adam optimizer used for all networks (Generator, Discriminator, and Mapping Network)
@@ -291,11 +296,15 @@ a third of the total training process.
 Our StyleGAN2 implementation demonstrates progressive improvement in the quality of generated brain scan images throughout the
 training process. Below are samples of generated images at different training milestones:
 
-<div align="center" style="display: flex; justify-content: center;">
-    <img src="./assets/model_outputs_50.png" width="30%" style="margin: 0 10px;">
-    <img src="./assets/model_outputs_100.png" width="30%" style="margin: 0 10px;">
-    <img src="./assets/model_outputs_150.png" width="30%" style="margin: 0 10px;">
-</div>
+<p align="center">
+<img src="./assets/model_outputs_50.png" alt="50 Epochs" style="width: 75%; display: inline-block;">
+</p>
+<p align="center">
+    <img src="./assets/model_outputs_100.png" alt="100 Epochs" style="width: 75%; display: inline-block;">
+</p>
+<p align="center">
+    <img src="./assets/model_outputs_150.png" alt="150 Epochs" style="width: 75%; display: inline-block;">
+</p>
 
 The progression shows clear improvement in image quality across training phases:
 

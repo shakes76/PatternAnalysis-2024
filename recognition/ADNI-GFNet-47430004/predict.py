@@ -1,4 +1,9 @@
 """
+This file is used to assess the accuracy of a pre-trained model stored in
+test/model/GFNet.pth, by letting the model run through test set once.
+The script then plots graphs representing the accuracy of the model over
+one test set, with the y value representing accuracy per batch.
+
 Got inspiration from infer.py file of the following github repo:
 https://github.com/shakes76/GFNet
 """

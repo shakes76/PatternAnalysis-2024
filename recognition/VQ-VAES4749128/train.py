@@ -4,7 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 import argparse
 import time
-from modules import VQVAE, GatedPixelCNN
+
+from modules import VQVAE, PixelCNN
 import dataset
 from skimage.metrics import structural_similarity as ssim
 
@@ -96,13 +97,48 @@ def train(args, train_loader, val_loader, optimizer, model):
                   np.mean(results["train_recon_errors"][-args.log_interval:]),
                   'Loss', np.mean(results["train_loss"][-args.log_interval:]),
                   'Perplexity:', np.mean(results["train_perplexities"][-args.log_interval:]))
+            
 
+def train_pixel_cnn(args):
+    train_loader, test_loader = dataset.load_latent_block(batch_size=64)
+    args.img_dim1 = 64
+    args.img_dim2 = 32
+    args.n_layers = 15
+    # model = GatedPixelCNN(args.n_embeddings, args.img_dim1 * args.img_dim2, args.n_layers).to(args.device)
+    model = PixelCNN().to(args.device)
+    criterion = nn.CrossEntropyLoss().cuda()
+    opt = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
+    for epoch in range(1, 50):
+        train_loss = []
+        for batch_idx, (x, label) in enumerate(train_loader):
+            start_time = time.time()
+            x = (x[:, 0]).cuda()
+            # x = x.cuda()
+            label = label.cuda()
+            # print(label)
+            logits = model(x.unsqueeze(1).float(), label).squeeze()
+            # logits = model(x)
+            # logits = logits.permute(0, 2, 3, 1).contiguous()
 
+            # loss = criterion(
+            #     logits.view(-1, args.n_embeddings),
+            #     x.view(-1)
+            # )
+            # loss = criterion(logits, x)
+            # print(x.shape)
+            # print(logits.shape)
+            # print(logits)
+            # print(x)
+            loss = torch.nn.functional.cross_entropy(logits, x)
 
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
 
-
-
+            train_loss.append(loss.item())
+        print(f'Epoch {epoch}: train loss is {sum(train_loss) / len(train_loader)}')
+    torch.save(model.state_dict(), './pixel_cnn.pt')
 
 
 def main(args):
@@ -132,7 +168,10 @@ def main(args):
     """
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, amsgrad=True)
 
-    train(args, training_loader, validation_loader, optimizer, model)
+    if args.mode == 'vq_vae':
+        train(args, training_loader, validation_loader, optimizer, model)
+    elif args.mode == 'pixel_cnn':
+        train_pixel_cnn(args)
 
 
 
@@ -143,7 +182,7 @@ def main(args):
 if __name__ == "__main__":
     timestamp = readable_timestamp()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", type=str, default='/home/zijian/Selena/Vq_vae_comp3710/results/vqvae_data_thu_oct_24_16_06_56_2024.pth')
+
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--n_updates", type=int, default=5000)
     parser.add_argument("--n_hiddens", type=int, default=128)
@@ -155,11 +194,13 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=3e-4)
     parser.add_argument("--log_interval", type=int, default=50)
     parser.add_argument("--dataset",  type=str, default='mri')
-    parser.add_argument('--train_dir', type=str, default='Comp3710_A3/HipMRI_study_keras_slices_data/keras_slices_train')
-    parser.add_argument('--test_dir', type=str, default='Comp3710_A3/HipMRI_study_keras_slices_data/keras_slices_test')
+    parser.add_argument('--train_dir', type=str, default='/home/zijian/Selena/Comp3710_A3/HipMRI_study_keras_slices_data/keras_slices_train')
+    parser.add_argument('--test_dir', type=str, default='/home/zijian/Selena/Comp3710_A3/HipMRI_study_keras_slices_data/keras_slices_test')
     # whether or not to save model
     parser.add_argument("-save", action="store_true")
     parser.add_argument("--filename",  type=str, default=timestamp)
+
+    parser.add_argument('--mode', type=str, choices=['va_vae', 'pixel_cnn'], default='pixel_cnn')
 
     args = parser.parse_args()
     main(args)

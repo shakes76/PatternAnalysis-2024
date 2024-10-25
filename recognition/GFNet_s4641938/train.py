@@ -83,7 +83,7 @@ def main(args):
         acc = acc.item()
         if acc > max_accuracy:
             max_accuracy = acc
-            torch.save(model.state_dict(), 'model.pth')
+            torch.save(model.state_dict(), 'best_model.pth')
             print("New best model", end = " || ")
         accuracy.append(acc)
         print("Loss: ", test_loss, "test", total_loss/N_BATCHES, "train")

@@ -129,7 +129,6 @@ The code includes seed setting which allows the reported results to be reproduce
 ## References
 1. **UNet Original Paper:**
    * https://arxiv.org/abs/1505.04597
-   * https://lmb.informatik.uni-freiburg.de/people/ronneber/u-net/
 
 2. **Dataset:**
    * https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2

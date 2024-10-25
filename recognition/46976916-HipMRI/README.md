@@ -1,5 +1,5 @@
 # Prostate Cancer Segmentation using UNet
-** Bailey Jarrett - Student Number: 4697691 **
+**Bailey Jarrett - Student Number: 46976916**
 
 ## Description
 This project implements a UNet based deep learning algorithm to perform multiclass segmentation on prostate MRI scans.
@@ -25,7 +25,11 @@ The final model had the input parameters:
 - Albumentations 1.4.19
 - Torchvision 0.20.0
 - Numpy 2.1.2
+- Nibabel 5.3.1
 - Matplotlib 3.9.2
+- Tqdm 4.66.5
+- Scikit-image (skimage) 0.24.0
+
 
 ## Example Prediction Results
 The model trained using the parameters above
@@ -43,6 +47,14 @@ These visualisations show:
 
 When recording the training function loss and dice score accuracy results after each epoch the following graph can be constructed:
 ![Example Segmentation 3](images/graphs.png)
-These graphs show how the model improves over time. The slight dip in dice score around epoch 13 indicates some over fitting in the model, but it overcomes this and bounces back
+These graphs show how the model improves over time. The slight dip in dice score around epoch 13 indicates some overfitting in the model, but the model readjusts
 
-### Each file in project
+## Files in project
+The project folder includes the python files:
+- modules.py : contains UNET class and DoubleConv2D class
+- dataset.py : contains to_channels and load_data_2D from Appendix B and ProstateCancerDataset class
+- train.py : contains main function and train_fn. To run modify DIR variables to desired path to data
+- predict.py : contains predict and load_model functions. To run modify saved model path and data paths
+- utils.py : contains several functions and used by train.py and predict.py
+
+Images folder: contains the png images used in this README document

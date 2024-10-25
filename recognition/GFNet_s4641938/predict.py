@@ -3,16 +3,21 @@ from dataset import ADNI_DataLoader
 from modules import GFNet
 from functools import partial
 from sys import argv
+import torch.nn as nn
 
-def getAccuracy(test_dataloader, model, device, max_subset : int = -1):
+def getAccuracy(test_dataloader, model, device, criterion, max_subset : int = -1):
+    model.eval()
     with torch.no_grad():
         total_correct = 0
         total_images = 0
+        total_loss = 0
         for batch, (images, targets) in enumerate(test_dataloader):
             images = images.to(device)
             targets = targets.to(device)
             outputs = model(images)
             most_likely = torch.max(outputs, dim=1).indices #get class with highest score
+            loss = criterion(outputs, targets)
+            total_loss += loss.item()
             correct = most_likely == targets
             total_correct += correct.sum()
             total_images += len(images)
@@ -20,8 +25,7 @@ def getAccuracy(test_dataloader, model, device, max_subset : int = -1):
             #print(f"[{batch}/{len(test_dataloader)}] Ongoing accuracy: {total_correct/total_images}")
             if max_subset != -1 and batch > max_subset:
                 break
-        return total_correct/total_images
-
+        return total_correct
 
 def main(args):
     """
@@ -49,7 +53,7 @@ def main(args):
 
     # Create model
     print("Creating GFNet model for testing")
-    model = GFNet(img_size=IMAGESIZE, patch_size=16, embed_dim=384, depth=12, num_classes=2, mlp_ratio=4, norm_layer=partial(torch.nn.LayerNorm, eps=1e-6))
+    model = GFNet(img_size=IMAGESIZE, in_chans=1, patch_size=16, embed_dim=512, depth=18, num_classes=2, mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.25)
     model.to(device)
 
     model.load_state_dict(torch.load(MODELPATH, map_location=device))

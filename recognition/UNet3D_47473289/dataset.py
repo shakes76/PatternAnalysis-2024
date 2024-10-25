@@ -115,3 +115,41 @@ def load_data_3D(imageNames, normImage=False , categorical=False, dtype=np.float
         print("Returned images")
         return images
 
+class MyCustomDataset(Dataset):
+    def __init__(self):
+        # load all nii handle in a list
+        #self.image_paths = glob.glob(f'{"/Users/charl/Documents/3710Report/PatternAnalysis-2024/recognition/semantic_MRs_anon"}/**/*.nii.gz', recursive=True)
+        #self.label_paths = glob.glob(f'{"/Users/charl/Documents/3710Report/PatternAnalysis-2024/recognition/semantic_labels_only"}/**/*.nii.gz', recursive=True)
+        self.label_paths = glob.glob(f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
+        self.image_paths = glob.glob(f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
+        print(len(self.image_paths))
+        print(len(self.label_paths))
+  
+ 
+        self.resize = transforms.Compose([transforms.Resize((256, 128))])
+        self.up = torch.nn.Upsample(size=(128,128,128))
+
+        self.classes = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, i):
+        image = load_data_3D([self.image_paths[i]],early_stop=True)
+        label = load_data_3D([self.label_paths[i]],early_stop=True)
+        print(image.shape)
+        image = torch.tensor(image).float().unsqueeze(1)
+        label = torch.tensor([self.classes.get(cla.item(), 0) for cla in label.flatten()]).reshape(label.shape)
+        label = nn.functional.one_hot(label.squeeze(0), num_classes=6).permute(3,1,0,2).float()
+        label = label.unsqueeze(0)
+        image = self.up(image).squeeze(0)
+        label = self.up(label).squeeze(0)
+        print(image.shape)
+        print(label.shape)
+
+        return image, label
+
+
+
+dataset = MyCustomDataset()
+print(dataset[10])
+print(dataset[10][1].shape)

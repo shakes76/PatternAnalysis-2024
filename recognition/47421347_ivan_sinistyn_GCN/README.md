@@ -7,11 +7,11 @@ This is a PyTorch implementation for solving the Facebook large page-page Networ
 
 ## Dependencies
 
-Apart from \`pytorch\` here is the list of required dependencies:
+Apart from `pytorch` here is the list of required dependencies:
 
-- \`scipy.sparse\` [SciPy \- Installation](https://scipy.org/install/)
-- \`sklearn\` [Installing scikit-learn](https://scikit-learn.org/stable/install.html)
-- \`matplotlib\` [Installation — Matplotlib 3.9.2 documentation](https://matplotlib.org/stable/install/index.html)
+- `scipy.sparse` [SciPy \- Installation](https://scipy.org/install/)
+- `sklearn` [Installing scikit-learn](https://scikit-learn.org/stable/install.html)
+- `matplotlib` [Installation — Matplotlib 3.9.2 documentation](https://matplotlib.org/stable/install/index.html)
 
 ## About the Dataset
 
@@ -37,7 +37,7 @@ First, the data was separated into three parts:
 - Testing \- 10%
 
 Before separation, the dataset was shuffled using the seed 31\.  
-The file named \`edges.npy\`, where all edges are stored in the format \`(edge_id, edge_id)\`, was used to create an adjacency matrix with the size 22,470 x 22,470, which will later be used in the Graph Convolutional layers.
+The file named `edges.npy`, where all edges are stored in the format `(edge_id, edge_id)`, was used to create an adjacency matrix with the size 22,470 x 22,470, which will later be used in the Graph Convolutional layers.
 
 ## Model Architecture and Hyperparameters
 
@@ -63,8 +63,8 @@ The model’s learning is going well until epoch 200\. After that loss is not re
 
 ## Usage
 
-To train the model, first modify the \`FILE_PATH\` variables that lead to the location of the .npz dataset in \`train.py\` and \`predict.py\`. After that run the command: \`python train.py\`, which will perform the training, create and save plots with loss and save the model's best parameters for inference.  
-To test the model, run the command: \`python predict.py\`, which will load the previously saved model and test it on the test set, and then display the accuracy.  
-**Don’t change the \`SEED\` variable between these steps\!**
+To train the model, first modify the `FILE_PATH` variables that lead to the location of the .npz dataset in `train.py` and `predict.py`. After that run the command: `python train.py`, which will perform the training, create and save plots with loss and save the model's best parameters for inference.  
+To test the model, run the command: `python predict.py`, which will load the previously saved model and test it on the test set, and then display the accuracy.  
+**Don’t change the `SEED` variable between these steps\!**
 
 ## References

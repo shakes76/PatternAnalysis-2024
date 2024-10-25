@@ -22,6 +22,7 @@ out_dir = 'test/model/run/figs/'
 model_path = "test/model/GFNet.pth"
 
 class AverageMeter(object):
+    # This class is taken from the original source
     def __init__(self, name, fmt=':f'):
         self.name = name
         self.fmt = fmt
@@ -44,6 +45,7 @@ class AverageMeter(object):
         return fmtstr.format(**self.__dict__)
 
 class ProgressMeter(object):
+    # This class is taken from the original source
     def __init__(self, num_batches, meters, prefix=""):
         self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
         self.meters = meters
@@ -60,6 +62,7 @@ class ProgressMeter(object):
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
 def accuracy(output, target, topk=(1,)):
+    # This function is taken from the original source
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
         maxk = max(topk)
@@ -76,6 +79,7 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 def validate(test_loader, model, criterion):
+    # This function is taken from the original source
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -116,6 +120,7 @@ def validate(test_loader, model, criterion):
     return acc1list
 
 if __name__ == '__main__':
+    # This function was written by me, getting some inspiration from the original source
     print("Main of Predict")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)

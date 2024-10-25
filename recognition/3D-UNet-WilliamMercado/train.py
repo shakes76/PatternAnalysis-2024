@@ -22,10 +22,11 @@ if not torch.cuda.is_available():
 print(device)
 
 # Sum Training Options
-NUM_EPOCHS = 30
+NUM_EPOCHS = 20
 LEARNING_RATE = 0.001
 BATCH_SIZE = 1
 NUM_CLASSES = 6
+USE_ROTATION = False
 
 files_train, files_test, files_validate = mri_split(data_path=DATASET_PATH,proportions=[0.9, 0.05, 0.05])
 # print(len(files_train + files_test + files_validate))
@@ -72,16 +73,21 @@ for epoch in range(NUM_EPOCHS):
         labels = torch.tensor(labels,device=device)
         b_size = images.size(0)
         print(images.shape)
-        x, y, z = UNIQUE_ROTATION_COMBOS[randrange(len(UNIQUE_ROTATION_COMBOS))]
-        for _ in range(x):
-            images = rotate(images,2,3)
-            labels = rotate(labels,2,3)
-        for _ in range(y):
-            images = rotate(images,2,4)
-            labels = rotate(labels,2,4)
-        for _ in range(z):
-            images = rotate(images,3,4)
-            labels = rotate(labels,3,4)
+
+        # Add Image Rotation
+        if USE_ROTATION:
+            x, y, z = UNIQUE_ROTATION_COMBOS[randrange(len(UNIQUE_ROTATION_COMBOS))]
+            for _ in range(x):
+                images = rotate(images,2,3)
+                labels = rotate(labels,2,3)
+            for _ in range(y):
+                images = rotate(images,2,4)
+                labels = rotate(labels,2,4)
+            for _ in range(z):
+                images = rotate(images,3,4)
+                labels = rotate(labels,3,4)
+        else:
+            x, y, z = (0,0,0)
 
         # --- Train ---
         # Forward pass

@@ -3,7 +3,7 @@ import random
 import cv2
 import numpy as np
 
-model = YOLOSegmentation("yolov8n-seg.pt")
+model = YOLOSegmentation("~/weights/best.pt")
 img = cv2.imread("data/images/train/ISIC_0015071.jpg")
 conf = 0.4
 results = model.predict(img, conf)

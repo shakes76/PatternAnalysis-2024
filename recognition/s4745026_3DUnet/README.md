@@ -23,12 +23,12 @@ The 3D model expects input as follows:
 
 - Nifti files (.nii or .nii.gz)
 - 1 grayscale input channel
-- Preprocessing
+- Preprocessing (resizing)
 
 The output is expected to be:
 
 - a tensor with dimensions (128, 128, 128)
-- 6 channels representing the different classs
+- 6 channels representing the different prostate classes
 - Post-processing to assign probabilities to classes
 
 ## Preprocessing

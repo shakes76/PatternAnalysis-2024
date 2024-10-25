@@ -1,4 +1,7 @@
 """
+This file loads all the data into sets and dataloaders,
+applying the relevant transformations.
+
 Got inspiration from datasets.py file of the following github repo:
 https://github.com/shakes76/GFNet
 and my demo 2 brain gan data-loading code
@@ -53,6 +56,7 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         data_dir = "/home/groups/comp3710/ADNI/AD_NC"
         # Local
         # data_dir = "../../resources/AD_NC"
+    # Apply a ton of augmentation
     train_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
         # tf.CenterCrop(crop_size),
@@ -69,6 +73,7 @@ def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
         tf.RandomHorizontalFlip(),
         tf.RandomVerticalFlip(),
     ])
+    # Don't apply augmentation
     test_transform = tf.Compose([
         tf.Grayscale(num_output_channels=1),
         # tf.CenterCrop(crop_size),

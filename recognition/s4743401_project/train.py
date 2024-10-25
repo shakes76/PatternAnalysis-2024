@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 def train_model(model, train_loader, val_loader, optimizer, criterion, num_epochs):
-    device = torch.device("mps")# if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda")# if torch.cuda.is_available() else "cpu")
     model.to(device)
     
     # Lists to store the loss values for each epoch
@@ -47,7 +47,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
         print(f"Epoch {epoch+1}, Validation Loss: {val_loss:.4f}")
 
     plot_loss_curve(train_losses, val_losses)
-    torch.save(model.state_dict(), '/Users/gghollyd/comp3710/report/module_weights.pth')
+    torch.save(model.state_dict(), '/Users/georg/OneDrive/Documents/comp3710/module_weights.pth')
 
 #plot this in train.py
 def plot_loss_curve(train_losses, val_losses):
@@ -61,4 +61,5 @@ def plot_loss_curve(train_losses, val_losses):
     plt.legend()
     plt.grid(True)
     plt.show()
+
 

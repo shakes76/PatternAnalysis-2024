@@ -34,6 +34,16 @@ The dataset provided has ground truth labels being a binary mask, however, YOLOv
 
 The train-validation/test split is 80-20.
 
+# Results
+![Alt text](figures/results.png?raw=true "Training results")
+
+It is observed that the loss for the algorithm decreases steadily over 30 epochs. 
+The metric mAP50-95(M) is mean average precision where a 'true' positive is defined by having Intersection over Union (IoU) with the ground truth mask from 0.5-0.95, the algorithm is able to reach 0.7318 mAP50-95 on the test set after 30 epochs. 
+
+These are some detections predicted by the fine-tuned YOLOv8-segmentation visualized.
+![Alt text](figures/prediction_test.jpg?raw=true "Sample prediction 1")
+![Alt text](figures/prediction_test2.jpg?raw=true "Sample prediction 2")
+
 ## Acknowledgments
 
 - ISIC 2018 Challenge organizers

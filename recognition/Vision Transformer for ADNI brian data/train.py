@@ -13,10 +13,10 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
 ### Model hyperparams
-EPOCHS = 50
+EPOCHS = 30
 LEARNING_RATE = 1e-3
 LEARNING_RATE_MIN = 1e-6
-LR_EPOCHS = 25
+LR_EPOCHS = 10
 WEIGHT_DECAY = 5e-4
 EARLY_STOP = 15
 BATCH_SIZE = 32
@@ -79,17 +79,28 @@ def test(model, dl, crit, tqdm_enabled=False):
     
     return avg_loss, acc
 
-def plot(train_accs, test_acc):
-    epochs = range(1, EPOCHS+1)
-    plt.figure(figsize=(18, 8))
+def plot(epochs, train_accs, val_acc, train_loss, val_loss):
+    plt.figure(figsize=(18, 6))
 
-    plt.plot(epochs, train_accs, label="Average Training Accuracy per Epoch", colour="blue")
-    plt.axhline(test_acc, label="Average Test Accuracy", linestyle='--', colour="green")
-
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, train_accs, label="Average Training Accuracy", colour="blue")
+    plt.plot(epochs, val_acc, label="Average Validation Accuracy", colour="green")
+    plt.title("Accuracy over Epochs")
     plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
+    plt.ylabel("Accuracy (%)")
     plt.legend()
-    plt.show()
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, train_loss, label="Average Training Loss", colour="blue")
+    plt.plot(epochs, val_loss, label="Average Validation Loss", colour="green")
+    plt.title("Loss over Epochs")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(f"Training plots.png")
+
 
 if __name__ == "__main__":
     train_data = dataset.ADNI(val=False, type="train", transform="train")
@@ -107,23 +118,34 @@ if __name__ == "__main__":
     top_val_acc = 0
     bad_val_count = 0
 
+    epoch_count = 0
+    train_losses = [] 
+    train_accs = []
+    val_losses = []
+    val_accs = []
+
     print("~ Training start")
 
     for epoch in range(EPOCHS):
         train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, True)
         val_loss, val_acc = test(model, val_loader, criterion, True)
 
-        print(f'Epoch [{epoch}/{EPOCHS}], '
+        print(f'Epoch [{epoch + 1}/{EPOCHS}], '
               f'Train Loss: {train_loss:.4f}, '
               f'Train Acc: {train_acc:.2f}%, '
               f'Val Loss: {val_loss:.4f}, '
               f'Val Acc: {val_acc:.2f}%')
         
+        train_losses.append(train_loss)
+        train_accs.append(train_acc)
+        val_losses.append(val_loss)
+        val_accs.append(val_acc)
+        epoch_count += 1
         if val_acc > top_val_acc:
             top_val_acc = val_acc
             bad_val_count = 0
             best_model = copy.deepcopy(model)
-            torch.save(best_model.state_dict(), '/Users/rorymacleod/Desktop/Uni/sem 2 24/COMP3710/Report/GFNet.pt')
+            torch.save(best_model.state_dict(), '/Users/rorymacleod/Desktop/Uni/sem 2 24/COMP3710/Report/GFNet2.pt')
         else:
             bad_val_count += 1
         if bad_val_count >= EARLY_STOP:
@@ -131,6 +153,7 @@ if __name__ == "__main__":
             break
 
     print("~ Training finished")
+    plot(epoch_count, train_accs, val_accs, train_losses, val_losses)
 
     print("~~ Testing Start")
     test_data = dataset.ADNITest()

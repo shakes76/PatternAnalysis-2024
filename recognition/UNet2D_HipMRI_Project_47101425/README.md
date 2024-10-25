@@ -10,18 +10,7 @@ This architecture is comprised of 2D convolutional layers (with 3x3 kernel size 
 
 ## How It Works
 
-The code first takes the data found in the HIPMRI folders (specifically the training data), processing them into a dataset to be used by the UNet model. The model is then trained on this dataset; with the goal of minimizing **Dice Loss**. The Dice coefficient is calculated to assess overlap between the predicted segmentations and ground truth labels. The model is then trained, ensuring the model is able to maintain/reach the Dice similarity coefficient of 0.75. An example of training output can be seen as below:
-
-Here is an example of training output with the loss scores and Dice Similarity Coefficient during trianing:
-```bash
-Epoch 1/10
-1433/1433 [==============================] - 651s 451ms/step - loss: 0.3108 - dice_coefficient: 0.6892
-Epoch 2/10
-1433/1433 [==============================] - 631s 440ms/step - loss: 0.3011 - dice_coefficient: 0.6989
-Epoch 3/10
-1433/1433 [==============================] - 633s 442ms/step - loss: 0.2987 - dice_coefficient: 0.7013
-```
-After training, a plot of actual images vs. model output is produced to visualize model accuracy; the trained model is saved
+The code first takes the data found in the HIPMRI folders (specifically the training data), processing them into a dataset to be used by the UNet model. The model is then trained on this dataset; with the goal of minimizing **Dice Loss**. The Dice coefficient is calculated to assess overlap between the predicted segmentations and ground truth labels. The model is then trained, ensuring the model is able to maintain/reach the Dice similarity coefficient of 0.75. After training, a plot of actual images vs. model output is produced to visualize model accuracy; the trained model is saved
 
 ## Project Dependencies
 

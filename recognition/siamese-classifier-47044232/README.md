@@ -3,7 +3,8 @@
 
 ## Introduction
 The goal of this project was to make use of a Siamese network to determine the similarity between images in the ISIC 2020 Kaggle Challenge dataset.
-Then making use of the Siamese network's feature extraction, to train a binary classification model to determine whether the mole in the image is benign or malignant.
+Then making use of the Siamese network's feature extraction, to train a binary classification model to determine whether the mole in the image is benign or malignant.\
+The goal for accuracy was to be around 80%.
 
 
 ## The File Structure
@@ -47,7 +48,7 @@ For the feature extraction, a pre-modelled resnet50 was used from pytorch. This 
 After the training cycle, all of the images had their features extracted and passed onto the binary classifier.
 
 **Hyperparameter Fine Tuning** \
-See [Results](#results) for the loss plot and t-SNE graph.
+See [Results](#siamese-network-results) for the loss plot and t-SNE graph.
 
 It was chosen to be trained for 180 epochs as anymore and overfitting was started to be seen. \
 The margin used in the triplet loss was 1 as it seemed to work well for the seperation of the features. \
@@ -55,7 +56,7 @@ For optimisation, Adam was used with a learning rate of 0.0001.
 When a higher learning rate was used, the loss would keep going down to 0 indefinitely, suggesting that it was passing the weights minima.
 The betas used were just the standard (0.9, 0.999) as it seemed to cause no problems.
 
-### Implementing a Binary Classifier
+### Implementing the Binary Classifier
 A basic binary classifier was implemented with four fully connected layers and ReLU as the activation function after each layer.
 The classifier reduced the features recieved from the siamese netowrk from 1000 down to two.
 The first being its prediction of it being benign and the second being its prediction of it being malignant.
@@ -63,7 +64,7 @@ To train it, cross entropy loss was used to maximise of each prediction. \
 When performing inference, argmax was used to see which of the two predictions was greater and suggesting more likely to be of that class.
 
 **Hyperparameter Fine Tuning** \
-See [Results](#results) for the loss plot and the confusion matrix.
+See [Results](#binary-classifier-results) for the loss plot and the confusion matrix.
 
 These values were fine tuned by seeing whether they maxmised the average accuracy of inference. \
 It was chosen to be trained for 140 epochs as going beyond this lead to overfitting and hence lower accuracy. \
@@ -75,7 +76,7 @@ Also again, the standard betas were used as the training worked well.
 ## The Dataset
 For this, the preprocessed version of the dataset is used (it can be found [here](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data)).
 This one is used, mainly to reduce system storage. Additonally, it is easier to train as all of the images have been resized to be of the same 256x256 resolution. \
-This dataset was highly imbalanced as it contained 32543 benign images but only 585 that were malignant.
+This dataset was highly imbalanced as it has 2 classes of of which 32543 were of the benign class while only 585 were malignant.
 To handle this, each of the splits took a sample of the malignant images and then a unique matching number of benign images. 
 This meant that there was a 1:1 ratio of the classes in each set so that neither dominated the other in training.\
 To account for the low number of samples in each split, the following augmentions are applied (with a 50% possibility of it applying for the first 3):
@@ -91,6 +92,41 @@ See below for for some sample data with no augmentations followed by some others
 ![images with no augmentions](./images/sample_images_no_augs.png) ![images with augmentations](./images/sample_images_w_augs.png) \
 For the data split, it was chosen to take 70% for train, 10% for validation and 20% for testing. 
 It was chosen to have as much information as possible go to the training split, but it couldn't be increased anymore as the number of images in the other two would be too low for consisntent validation and testing.
+
+
+## Results
+### Siamese Network Results
+**Loss Plot** \
+![Siamese network loss plot](./images/loss_siamesenetwork.png) \
+After the 180th epoch, it would coninue to flatten out. But as seen, the validation set stated to get very unpredictable.
+This suggests that there may have been a loss of generalisation in the training.
+
+**t-SNE Scatterplot** \
+![t-SNE scatter plot](./images/tsne_scatterplot.png) \
+This grpah shows the feature seperation on the training set.\
+Evidently there was fairly effective seperation of features between the benign and malignant classes. But, there was some overlap in the middle. \
+Please see [Future Improvements](#future-improvements) on what can be done to further improve the seperation.
+
+### Binary Classifier Results
+**Loss Plot** \
+![Binary classification loss plot](./images/loss_binaryclassifier.png) \
+At first validation loss was lower than the training, this can be assumed to be due to the small size of the validation set.
+After this they do start to converge, but with a bit of variation in the loss.
+
+**Confusion Matrix/ Accuracy of Prediction** \
+![Confusion matrix](./images/confusion_matrix.png) \
+This confusion matrix represents a total accuracy of 81.7% on the test set of data. And hence achieved the goal of this project.
+It also seems that the malignant was more frequently predicted than the benign class. This caused the correct benign predictions to be a bit low.\
+Please note this was one of the better confusion matrix's generated (see below for more details on accuracy).
+
+
+### Reproducability of Results
+The siamese network was very consitent in training as training it multiple times yielded similar loss plots and t-SNE scatterplots each time.
+However, the classifier was rather unpredictable in its results. This meant it had to be fine tuned based off of a saved siamese network.
+This meant that one run through of the whole of `train.py` yielded a lower accuracy (typically in the lower half of 70%).
+But after fine tuning the classifier to the saved siamese network, the accuracy would go up to an average of between 79% and 80% (this accuracy was calculated by rerunning the binary classifer part of the code 10 times and taking the average of the accuracy outputted.)
+As the accuracy was still getting to the target of around 80%, this should be considered successful but could have some improvements made to increase the consistency of the resulting classifier.
+Please see the section [Future Improvements](#future-improvements) on recommendations to resolve this.
 
 
 ## References

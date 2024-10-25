@@ -5,6 +5,7 @@ from torchvision.utils import save_image
 from skimage.metrics import structural_similarity as compute_ssim
 import numpy as np
 import matplotlib.pyplot as plt
+from train_PixelCNN import *
 
 
 

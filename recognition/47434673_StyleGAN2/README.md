@@ -139,7 +139,7 @@ The graphs below show the loss of the generator and discriminator during their t
 
 ![Disc_loss_15](assets/disc_loss_5.png)
 
-![Gen_loss_15](assets/disc_loss_5.png)
+![Gen_loss_15](assets/gen_loss_5.png)
 
 #### Epochs = 50
 The graphs below show the loss of the generator and discriminator during their training cycles for 50 epochs (35500 iterations).

@@ -30,6 +30,7 @@ Since YOLOv7 was used all the requirements to run that model are needed these in
 - ipython
 - psutil
 - thop
+I dont know if this is allowed but I have done it. You need to download Yolov7 and place that folder in the recognition folder. Furthermore, I modified the ComputeLoss function in yolov7/utils/loss.py to best suit my problem. Since, I can't commit my verison of yolov7 to the fork I just copied my verision of the class in train.py and used it from there.
 
 # Extra:
 NOTE: classfication was not done in this project as no labelled data of the types of lesions in the images. Also, test data was not used as the test data given had no labels and there was no ground truth data to be able to calculate such labels.

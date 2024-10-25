@@ -130,7 +130,7 @@ Through multiple attempts at fixes the training was unable to be stabilised. Aft
     Loss plot of failed training
 </p>
 
-A number of fixes were attempted. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the number of convolution layers in the residual blocks. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
+A number of fixes were attempted - see commit history. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the number of convolution layers in the residual blocks. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
 
 - W stats - min: -0.5029, max: 2.3184, mean: 0.3291
 - Const stats - min: -4.3558, max: 3.9382, mean: -0.0023
@@ -158,10 +158,48 @@ Looking later in that same epoch shows:
 
 So later in the epoch the network starts producing larger values with significant growth across the blocks. The pre-tanh values are very large (e.g. -28.8438 to 0.0753) indicating the tanh activation is being saturated by exploding gradients, causing most values to be -1 (black) with occasional small positive values. 
 
-The final attempt at fixing this issue was to implement group normalisation after each convolution layer in the generator synthesis blocks. Group normalisation will divide the channels into 8 groups and calculate the mean and standard deviation across the channels in each group. It then normalises to have mean 0 and stddev of 1. The goal was to have group normalisation ensure each block's output maintains a consistent scale to help backwards flow of gradients. 
+The final attempt at fixing this issue was to implement group normalisation after each convolution layer in the generator synthesis blocks (has not been added to network architecture graph). Group normalisation will divide the channels into 8 groups and calculate the mean and standard deviation across the channels in each group. It then normalises to have mean 0 and stddev of 1. The goal was to have group normalisation ensure each block's output maintains a consistent scale to help backwards flow of gradients. 
 
 GroupNorm is particularly useful here because:
 1. Independent of batch size (unlike BatchNorm)
 2. Preserves spatial information (unlike LayerNorm)
 3. Provides stable statistics even when spatial dimensions change due to upsampling
 4. Grouping helps maintain feature relationships while still normalising
+
+This was still unable to stabilise training and the discriminator is overpowering the generator.
+
+<p align="center">
+    <img src="images/final_loss_plot.png" width="80%">
+    <br>
+    Loss plot of failed training
+</p>
+
+Below is an example image that was generated. Obviously there isn't much to see.
+<p align="center">
+    <img src="images/fake_e5_s1.png" width="40%">
+    <br>
+    Loss plot of failed training
+</p>
+
+A potential issue was found in the saving of images thrugh matplotlib. The library by default treats 0 valued pixels as black, whereas the tanh final activation in the generator would mean values of -1 should be black. So perhaps the image visualisations are not appearing as they should - though the generator still isn't learning to produce brain images. 
+
+## References
+(1) This code was developed with assistance from the Claude AI assistant,
+    created by Anthropic, PBC. Claude provided guidance on implementing
+    StyleGAN2 architecture and training procedures.
+
+    Date of assistance: 8-24/10/2024
+    Claude version: Claude-3.5 Sonnet
+    For more information about Claude: https://www.anthropic.com
+
+(2) GitHub Repository: stylegan2-ada-pytorch
+    URL: https://github.com/NVlabs/stylegan2-ada-pytorch/tree/main
+    Accessed on: 29/09/24 - 21/10/24
+    
+(3) Karras, T., Laine, S., Aittala, M., Hellsten, J., Lehtinen, J., & Aila, T. (2020). 
+    Analyzing and improving the image quality of StyleGAN.
+    arXiv. https://arxiv.org/abs/1912.04958
+
+(4) Karras, T., Laine, S., & Aila, T. (2019).
+    A Style-Based Generator Architecture for Generative Adversarial Networks.
+    arXiv. https://arxiv.org/abs/1812.04948

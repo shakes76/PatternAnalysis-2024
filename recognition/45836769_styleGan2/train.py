@@ -55,7 +55,7 @@ beta1 = 0.5
 beta2 = 0.999  # Adam betas
 r1_gamma = 50.0  # R1 regularisation weight
 d_reg_interval = 16  # Discrim regularisation interval
-max_grad_norm_d = 1.0  # Maximum norm for gradient clipping
+max_grad_norm_d = 1.0  # Maximum norms for grad clipping
 max_grad_norm_g = 10.0
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -77,16 +77,16 @@ class ADAStats:
 
     def update(self, real_signs):
         """Update ADA statistics with new batch of real image signs."""
-        self.rt += real_signs.sum().item()
-        self.num += real_signs.numel()
-        self.avg = self.rt / self.num if self.num > 0 else 0
+        self.rt += real_signs.sum().item() # sum of signs
+        self.num += real_signs.numel() # Count total samples
+        self.avg = self.rt / self.num if self.num > 0 else 0 # Calc running avg
 
 # Create results dir
 for dir in ["results/AD", "results/NC", "results/UMAP", "checkpoints"]:
     os.makedirs(dir, exist_ok=True)
 
 # Init dataset and loader
-dataset = ADNIDataset(root_dir="/home/groups/comp3710/ADNI/AD_NC", split="train") # CHANGE DIR
+dataset = ADNIDataset(root_dir="/home/groups/comp3710/ADNI/AD_NC", split="train")
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
 # Init generator and discriminator
@@ -101,7 +101,7 @@ d_optim = optim.Adam(discriminator.parameters(), lr=lr_d, betas=(beta1, beta2))
 # criterion = nn.BCEWithLogitsLoss()
 
 # Init GradScaler
-scaler = amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5, growth_interval=2000)
+scaler = amp.GradScaler()
 
 # Helper funcs
 def requires_grad(model, flag=True):
@@ -110,25 +110,30 @@ def requires_grad(model, flag=True):
         p.requires_grad = flag
 
 def d_r1_loss(real_pred, real_img):
-    """R1 regularisation for discriminator"""
+    """R1 regularisation for discriminator - penalises high gradients on real images"""
     grad_real, = torch.autograd.grad(outputs=real_pred.sum(), inputs=real_img, create_graph=True)
     return grad_real.pow(2).reshape(grad_real.shape[0], -1).sum(1).mean()
 
 def save_images(generator, z, labels, epoch, batch=None):
-    """Save generated images, categorise AD and NC"""
-    with torch.no_grad(), amp.autocast(device_type='cuda'):
-        fakes = generator(z, labels)
+    """
+    Save generated images, categorise AD and NC.
+    Handles tanh activation output range (-1 to 1) by rescaling to (0 to 1).
+    """
+    with torch.no_grad(), amp.autocast(device_type='cuda'):  # No grads - inference
+        fakes = generator(z, labels)  # Gen fakes (output in [-1, 1] from tanh)
+        # Rescale from [-1, 1] to [0, 1] range to suit matplotlib
+        fakes = (fakes + 1) / 2.0
         for i, (img, lbl) in enumerate(zip(fakes, labels)):
-            label_str = "AD" if lbl == 0 else "NC"
+            label_str = "AD" if lbl == 0 else "NC"  # Convert label to str
             filename = f"results/{label_str}/fake_e{epoch+1}_" + (f"b{batch}_" if batch else "") + f"s{i+1}.png"
-            save_image(img.float(), filename, normalize=True)  # Ensure float32 for save_image
+            save_image(img.float(), filename, normalize=False)  # Save
 
 def plot_losses(d_losses, g_losses):
     """Plot and save the discriminator and generator losses."""
     plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")
-    plt.plot(g_losses, label="Generator", alpha=0.5)
-    plt.plot(d_losses, label="Discriminator", alpha=0.5)
+    plt.plot(g_losses, label="Generator", alpha=0.5) # Plot G loss
+    plt.plot(d_losses, label="Discriminator", alpha=0.5) # plot D loss
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()
@@ -137,22 +142,24 @@ def plot_losses(d_losses, g_losses):
 
 def clear_cache():
     """Clear CUDA cache and run garbage collection."""
-    torch.cuda.empty_cache()
-    gc.collect()
+    torch.cuda.empty_cache() # clear gpu mem
+    gc.collect() # Python garbage collect
     
 # ADA augmentation function
 def ada_augment(images, p):
     """Apply adaptive discriminator augmentation to images."""
     if p > 0:
+        # Define augmentation pipeline
         augment_pipe = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomVerticalFlip(p=0.5),
-            transforms.RandomAffine(degrees=(-30, 30), translate=(0.2, 0.2), scale=(0.8, 1.2), shear=(-15, 15)),
-            transforms.RandomApply([transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0))], p=0.5),
-            transforms.RandomApply([transforms.ElasticTransform(alpha=250.0, sigma=10.0)], p=0.5),
-            transforms.RandomApply([transforms.RandomAdjustSharpness(sharpness_factor=2)], p=0.5),
-            transforms.RandomApply([transforms.RandomAutocontrast()], p=0.5),
+            transforms.RandomHorizontalFlip(p=0.5), # Left-right flip
+            transforms.RandomVerticalFlip(p=0.5), # Up-down flip
+            transforms.RandomAffine(degrees=(-30, 30), translate=(0.2, 0.2), scale=(0.8, 1.2), shear=(-15, 15)), # Geometric transforms
+            transforms.RandomApply([transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0))], p=0.5), # Blur
+            transforms.RandomApply([transforms.ElasticTransform(alpha=250.0, sigma=10.0)], p=0.5), # Elastic distortion
+            transforms.RandomApply([transforms.RandomAdjustSharpness(sharpness_factor=2)], p=0.5), # Sharpness
+            transforms.RandomApply([transforms.RandomAutocontrast()], p=0.5), # contrast
         ])
+        # Apply augs with prob p
         mask = torch.rand(images.size(0), 1, 1, 1, device=images.device) < p
         augmented = augment_pipe(images)
         images = torch.where(mask, augmented, images)
@@ -160,33 +167,35 @@ def ada_augment(images, p):
 
 def update_ada(ada_stats, real_pred, ada_target, ada_interval, batch_idx, ada_kimg):
     """Update ADA statistics and adjust augmentation probability."""
-    ada_stats.update(real_pred.sign().to(torch.float32))
+    ada_stats.update(real_pred.sign().to(torch.float32)) # Update running stats
     adjust_p = None
-    if batch_idx % ada_interval == 0:
-        ada_r = ada_stats.avg
-        if ada_r > ada_target:
-            adjust_p = min(ada_stats.p + (1 / ada_kimg), 1)
+    if batch_idx % ada_interval == 0: #  Time to adjust p
+        ada_r = ada_stats.avg # Current avg
+        if ada_r > ada_target: # D too good
+            adjust_p = min(ada_stats.p + (1 / ada_kimg), 1) # increase p
         else:
-            adjust_p = max(ada_stats.p - (1 / ada_kimg), 0)
+            adjust_p = max(ada_stats.p - (1 / ada_kimg), 0) # Decrease p
         ada_stats.p = adjust_p
     return ada_stats, adjust_p
     
 def d_loss_fn(real_pred, fake_pred):
-    real_loss = F.softplus(-real_pred).mean()
-    fake_loss = F.softplus(fake_pred).mean()
+    """Non-saturating GAN loss for discriminator"""
+    real_loss = F.softplus(-real_pred).mean() # oss for reals
+    fake_loss = F.softplus(fake_pred).mean() # Loss for fakes
     return real_loss + fake_loss
 
 def g_loss_fn(fake_pred):
+    """Non-saturating GAN loss for generator"""
     return F.softplus(-fake_pred).mean()
 
-# Training loop
+# Training loop setup
 total_batches = len(dataloader)
-print_interval = 50
+print_interval = 50 # Progress print interval
 save_interval = 5 # Every 5 epochs save and gen progress images
-fixed_z = torch.randn(16, z_dim).to(device)
+fixed_z = torch.randn(16, z_dim).to(device) # Fixed noise for progress images
 fixed_labels = torch.cat([torch.zeros(8), torch.ones(8)], dim=0).long().to(device)
-d_losses = []
-g_losses = []
+d_losses = [] # track D loss
+g_losses = [] # Track G loss
 ada_stats = ADAStats(ada_start_p)
 d_update_freq = 1 # Update D every x G updates 
 

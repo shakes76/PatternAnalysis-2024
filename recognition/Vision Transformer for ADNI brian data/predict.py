@@ -27,10 +27,12 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(MODEL_PATH))
     model.eval()
     
+    test_loader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True)
+
     preds = []
     true = []
 
-    for data, labels in tqdm(test_data, disable=False):
+    for data, labels in tqdm(test_loader, disable=False):
         data, labels = data.to(device), labels.float().to(device)
 
         outputs = model(data)

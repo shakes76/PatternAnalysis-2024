@@ -18,27 +18,27 @@ class CNN(nn.Module):
     def __init__(self, shape, num_classes):
         super(CNN, self).__init__()
         self.cnn = nn.Sequential(
-            nn.Conv2d(3, 96, kernel_size=11,stride=4),
+            nn.Conv2d(3, 64, kernel_size=9, stride=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(3, stride=2),
             
-            nn.Conv2d(96, 256, kernel_size=5, stride=1),
+            nn.Conv2d(64, 128, kernel_size=4, stride=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
 
-            nn.Conv2d(256, 384, kernel_size=3,stride=1),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1),
             nn.ReLU(inplace=True)
         )
 
         self.flatten = nn.Flatten()
         self.fc = nn.Sequential(
-            nn.Linear(self._get_conv_output_size(shape), 1024),
+            nn.Linear(self._get_conv_output_size(shape), 512),
             nn.ReLU(inplace=True),
             
-            nn.Linear(1024, 256),
+            nn.Linear(512, 128),
             nn.ReLU(inplace=True),
             
-            nn.Linear(256, num_classes)
+            nn.Linear(128, num_classes)
         )
 
     def _get_conv_output_size(self, shape):

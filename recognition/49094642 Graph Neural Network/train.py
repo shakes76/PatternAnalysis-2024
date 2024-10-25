@@ -4,27 +4,16 @@ import matplotlib.pyplot as plt
 from modules import GCN
 from dataset import load_data
 
-data, class_weights = load_data()
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = GCN(num_features=128, hidden_dim=256, num_classes=len(torch.unique(data.y))).to(device)
-data = data.to(device)
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.005, weight_decay=1e-5)
-
-train_losses = []
-test_accuracies = []
-best_acc = 0
-
-def train():
+def train(model, data, optimizer, class_weights):
     model.train()
     optimizer.zero_grad()
     out = model(data)
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask], weight=class_weights)
     loss.backward()
     optimizer.step()
-    train_losses.append(loss.item())
+    return loss.item()
 
-def accuracy(mask):
+def accuracy(model, data, mask):
     model.eval()
     with torch.no_grad():
         pred = model(data).argmax(dim=1)
@@ -32,30 +21,54 @@ def accuracy(mask):
         acc = correct / int(mask.sum())
     return acc
 
-for epoch in range(200):
-    train()
-    train_acc = accuracy(data.train_mask)
-    test_acc = accuracy(data.test_mask)
+def plot_metrics(losses, train_accuracies, test_accuracies):
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(losses, label='Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(train_accuracies, label='Train Accuracy')
+    plt.plot(test_accuracies, label='Test Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
 
-    test_accuracies.append(test_acc)
+    plt.show()
 
-    if test_acc > best_acc:
-        best_acc = test_acc
-        torch.save(model.state_dict(), 'best_model.pth')
+def main():
+    data, class_weights, num_classes = load_data()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = GCN(num_features=128, hidden_dim=256, num_classes=num_classes).to(device)
+    data = data.to(device)
+    
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.005, weight_decay=1e-5)
 
-    if epoch % 10 == 0:
-        print(f'Epoch: {epoch} Train Accuracy: {train_acc:.4f}, Test Accuracy: {test_acc:.4f}')
+    best_acc = 0
+    losses, train_accuracies, test_accuracies = [], [], []
 
-plt.figure()
-plt.plot(train_losses, label='Training Loss')
-plt.plot(test_accuracies, label='Test Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Loss/Accuracy')
-plt.title('Training Loss and Test Accuracy over Epochs')
-plt.legend()
-plt.show()
+    for epoch in range(200):
+        loss = train(model, data, optimizer, class_weights)
+        train_acc = accuracy(model, data, data.train_mask)
+        test_acc = accuracy(model, data, data.test_mask)
+        
+        losses.append(loss)
+        train_accuracies.append(train_acc)
+        test_accuracies.append(test_acc)
 
-model.load_state_dict(torch.load('best_model.pth'))
-plot_umap(data, model)
-print(f"Best Test Accuracy: {best_acc:.4f}")
+        if test_acc > best_acc:
+            best_acc = test_acc
+            torch.save(model.state_dict(), "best_model.pth")
+
+        if epoch % 10 == 0:
+            print(f'Epoch: {epoch} Loss: {loss:.4f} Train Accuracy: {train_acc:.4f}, Test Accuracy: {test_acc:.4f}')
+
+    plot_metrics(losses, train_accuracies, test_accuracies)
+    print(f"Best Test Accuracy: {best_acc:.4f}")
+
+if __name__ == '__main__':
+    main()
+
 

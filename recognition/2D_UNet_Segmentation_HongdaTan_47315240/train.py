@@ -33,6 +33,14 @@ model = UNet(in_channels=1, out_channels=1).to(device)  # Example: Grayscale in,
 criterion = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
+def plot_training_loss(train_loss):
+    plt.plot(train_loss, label="Train Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training Loss Over Time")
+    plt.legend()
+    plt.show()
+
 # Training loop
 def train():
     for epoch in range(epochs):
@@ -50,7 +58,12 @@ def train():
             if i % 100 == 0:
                 print(f"Epoch [{epoch+1}/{epochs}], Step [{i}/{len(train_loader)}], Loss: {loss.item():.4f}")
                 
+        # Calculate and store average loss for the epoch
+        avg_loss = running_loss / len(train_loader)
+        train_loss_per_epoch.append(avg_loss)
         print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {running_loss / len(train_loader):.4f}")
+    # Plot training loss after completing all epochs
+    plot_training_loss(train_loss_per_epoch)
 
 if __name__ == "__main__":
     train()

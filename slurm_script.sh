@@ -3,7 +3,9 @@
 #SBATCH --nodes=1                   # Run on single node
 #SBATCH --ntasks-per-node=1         # Single task per node
 #SBATCH --gres=gpu:1
-#SBATCH --partition=a100 # GPU partition
+
+#SBATCH --partition=comp3710 # GPU partition
+#SBATCH --account=comp3710 
 #SBATCH --job-name="yolov8-victor"          # Job name
 #SBATCH --mail-user=phamtrung0633@email.com  # Email address for notifications
 #SBATCH --mail-type=BEGIN          # Email at start

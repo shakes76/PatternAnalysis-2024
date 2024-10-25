@@ -30,11 +30,11 @@ def main():
         'data': 'dataset.yaml',
         'epochs': 80,
         'imgsz': 640,
-        'batch': 8,
+        'batch': 4,
         'device': 0,  # Use GPU if available
         'name': 'isic2018_run_victor',
-        'save': True,
-        'cache': True,
+        'save': False,
+        'cache': False,
     }
     
     # Start training

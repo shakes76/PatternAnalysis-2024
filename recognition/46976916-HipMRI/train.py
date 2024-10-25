@@ -15,6 +15,7 @@ from utils import (
     get_loaders,
     check_accuracy,
     visualize_predictions,
+    plot_metrics
 )
 
 #HyperParameters
@@ -33,6 +34,7 @@ VAL_SEG_DIR = 'C:/Users/baile/OneDrive/Desktop/HipMRI_study_keras_slices_data/ke
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
+    epoch_loss = 0
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device=DEVICE)
         targets = targets.to(device=DEVICE)
@@ -49,9 +51,10 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-
+        epoch_loss += loss.item()
         #Update tqdm loop
         loop.set_postfix(loss = loss.item())
+    return epoch_loss/len(loop)
             
     
 
@@ -103,16 +106,22 @@ def main():
 
     scaler = torch.amp.GradScaler(device = DEVICE)
     
+    train_losses = []
+    train_dice_scores = []
+
     for epoch in range(NUM_EPOCHS):
-        train_fn(train_loader, model, optimizer, loss_fn, scaler)
-        
+        train_loss = train_fn(train_loader, model, optimizer, loss_fn, scaler)
+        train_losses.append(train_loss)
+        dice_score = check_accuracy(val_loader, model, DEVICE)
+        train_dice_scores.append(dice_score)
         #At the end of training does an accuracy check and displays predictions, and then saves model
         if epoch == (NUM_EPOCHS-1):
-            check_accuracy(val_loader, model, DEVICE)
+            #dice_score = check_accuracy(val_loader, model, DEVICE)
             visualize_predictions(val_loader, model, device=DEVICE, num_images=3)
             checkpoint = {"state_dict":model.state_dict(), "optimizer":optimizer.state_dict(),}
             save_checkpoint(checkpoint)
-
+    
+    plot_metrics(train_losses, train_dice_scores)
 
 if __name__ == "__main__":
     main()

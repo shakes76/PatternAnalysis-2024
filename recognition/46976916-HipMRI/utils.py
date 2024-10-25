@@ -64,7 +64,8 @@ def check_accuracy(loader, model, device="cuda"):
 
         dice_score_per_class = dice_score_per_class / len(loader)  # Average over the batches
         avg_dice_score = dice_score_per_class.mean().item()
-        print(f"Pixel Accuracy {(num_correct/num_pixels)*100:.2f} and Dice score: {avg_dice_score:.4f}")
+        #print(f"Pixel Accuracy {(num_correct/num_pixels)*100:.2f} and Dice score: {avg_dice_score:.4f}")
+        return avg_dice_score
         model.train()
 
 #Creates num_images (default 3) figures, each one showing the input image, ground truth mask and the models segmented output
@@ -115,3 +116,26 @@ def visualize_predictions(loader, model, device, num_images=3):
                 images_shown += 1
 
     model.train()  # Return to train mode after validation
+
+def plot_metrics(train_losses, dice_scores):
+    epochs = range(1, len(train_losses) + 1)
+
+    # Plot Loss
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, train_losses, label="Train Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title("Training Loss Over Epochs")
+    plt.legend()
+
+    # Plot Dice Score
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, dice_scores, label="Dice Score", color='orange')
+    plt.xlabel("Epochs")
+    plt.ylabel("Dice Score")
+    plt.title("Training Dice Score Over Epochs")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()

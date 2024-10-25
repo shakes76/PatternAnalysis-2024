@@ -116,6 +116,9 @@ transforms = tvtransforms.Compose([
 - the grey scale takes the images from 3 channels to 1 channel reducing the size of each image without loss of information because there grey scale anyway
 - resize to 200x200 since there originally 256x240 so cropped to 200x200 to make them square to simplify things and slightly reduce the size of each image
 - normalize the images otherwise this could cause poor performance
+
+### Batchs
+The data was batched into batches of size 128 useing dataloaders, this was chosen as its large enough that it should include most of the different layers of slices in each batch and was the largest that would fit on an 8Gb Vram GPU during training.
 # Usage
 before running either the training or predicting run the setup.py first to make sure all the correct folders are created for the models to save to when completed and it also check to make sure the dataset is present and in the right location and format
 

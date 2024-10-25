@@ -60,7 +60,7 @@ Data augmentation (flipping, scaling, and cropping) was applied to improve gener
 
 | **Train Batch 1** | **Train Batch 2** | **Train Batch 3** |
 |-------------------|-------------------|-------------------|
-| ![Train Batch 1](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch0.png) | ![Train Batch 2](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch1.png) | ![Train Batch 3](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch2.png) |
+| ![Train Batch 1](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch0.jpg) | ![Train Batch 2](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch1.jpg) | ![Train Batch 3](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch2.jpg) |
 
 </div>
 

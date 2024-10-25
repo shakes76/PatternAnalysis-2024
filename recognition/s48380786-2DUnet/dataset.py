@@ -96,7 +96,7 @@ def load_and_resize_images(image_paths, target_shape, normImage=False, categoric
 
     for image_path in image_paths:
         # Load image one at a time using load_data_2D
-        image = load_data_2D([image_path], normImage=normImage, categorical=categorical)  # Loading one image at a time
+        image = load_data_2D([image_path], normImage=normImage, categorical=categorical, early_stop=False)  # Loading one image at a time
         resized_image = resize_image(image[0], target_shape)  # Resize the single image
 
         # If categorical, pad the channels to the target number of channels

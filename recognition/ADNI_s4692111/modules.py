@@ -66,6 +66,10 @@ class GFNet(nn.Module):
         return x
 
 class Block(nn.Module):
+    '''
+    A basic module of the Transformer, 
+    combining Mlp and the global filter for feature extraction and processing.
+    '''
     def __init__(self, dim, ff_ratio=4., drop=0., drop_path=0., norm_layer=nn.LayerNorm, h=14, w=8):
         super().__init__()
         self.norm1 = norm_layer(dim)
@@ -73,13 +77,17 @@ class Block(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * ff_ratio)
-        self.feedForward = FeedFowardNetwork(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop)
+        self.feedForward = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop)
 
     def forward(self, x):
         x = x + self.drop_path(self.feedForward(self.norm2(self.filter(self.norm1(x)))))
         return x
 
 class PatchEmbed(nn.Module):
+    '''
+    Splits the input image into 16x16 patches and embeds them 
+    into a high-dimensional vector space for processing.
+    '''
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768):
         super().__init__()
         img_size = to_2tuple(img_size)
@@ -96,7 +104,10 @@ class PatchEmbed(nn.Module):
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
-class FeedFowardNetwork(nn.Module):
+class Mlp(nn.Module):
+    '''
+    Applies non-linear transformations to the extracted features.
+    '''
     def __init__(self, in_features, hidden_features=None, drop=0.):
         super().__init__()
         hidden_features = hidden_features or in_features
@@ -114,6 +125,10 @@ class FeedFowardNetwork(nn.Module):
         return x
 
 class GlobalFilter(nn.Module):
+    '''
+    Applies a global filter using Fourier Transforms (FFT) 
+    to capture long-range dependencies in the image.
+    '''
     def __init__(self, dim, h=14, w=8):
         super().__init__()
         self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)

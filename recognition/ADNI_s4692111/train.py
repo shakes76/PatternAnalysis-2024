@@ -12,11 +12,11 @@ def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # get the test and train dataset
-    train_loader, test_loader = get_data_loaders(
-        "D:/UQ Study/Y2 S2/COMP3710/Assesment/Report/PatternAnalysis-2024/recognition/ADNI_s4692111/AD_NC",
-        batch_size=16,
-    )
-    # train_loader, test_loader = get_data_loaders("/home/groups/comp3710/ADNI/AD_NC/", batch_size=128)
+    # train_loader, test_loader = get_data_loaders(
+    #     "D:/UQ Study/Y2 S2/COMP3710/Assesment/Report/PatternAnalysis-2024/recognition/ADNI_s4692111/AD_NC",
+    #     batch_size=16,
+    # )
+    train_loader, test_loader = get_data_loaders("/home/groups/comp3710/ADNI/AD_NC/", batch_size=128)
 
     model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2, embed_dim=768, depth=12).to(device)
     

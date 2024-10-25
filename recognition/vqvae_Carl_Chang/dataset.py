@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import nibabel as nib
+import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 
@@ -12,6 +14,22 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
         c = int(c)
         res[..., c:c+1][arr == c] = 1
     return res
+
+def pad_to_fixed_size(img, target_size=(256, 144)):
+    c, h, w = img.shape
+    target_h, target_w = target_size
+
+    # Calculate padding values
+    pad_h = max(0, target_h - h)
+    pad_w = max(0, target_w - w)
+    
+    # Calculate padding on left/right evenly
+    pad_left = pad_w // 2
+    pad_right = pad_w - pad_left
+    
+    # Apply padding to the width, padding both sides equally
+    padding = (pad_left, pad_right, 0, 0)  # (left, right, top, bottom)
+    return F.pad(img, padding, mode='constant', value=0)  # Pad with zeros
 
 class HipMRI2DDataset(Dataset):
     def __init__(self, data_dir, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, early_stop=False):
@@ -36,6 +54,12 @@ class HipMRI2DDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_files[idx]
         img, affine = self.load_nifti_image(img_path)
+
+        # Convert to tensor
+        img = torch.tensor(img, dtype=torch.float32).unsqueeze(0)
+
+        # Pad to a fixed size (256x144)
+        img = pad_to_fixed_size(img, target_size=(256, 144))
 
         # If affines are needed, return them as well
         if self.get_affines:

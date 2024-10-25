@@ -35,6 +35,14 @@ Older versions of below dependencies may work, but the following was the version
 - scikit-learn: 1.5.1
 - torchvision: 0.19.1+cu118
 
+The yaml file, `ADNI_GFNet_47430004.yaml` was created just in case these dependencies were not enough - the yaml file can be found in this repo, and can be used using the conda command
+
+```
+conda env create -f ADNI_GFNet_47430004.yaml
+```
+
+to create a new conda environment.
+
 ## Structure of Data
 
 The code requires that the directory structures to the images are as follows:
@@ -60,6 +68,28 @@ An image in the data set may look like this (This is an image if the NC set, wit
 <p align="center">
     <img src="/recognition/ADNI-GFNet-47430004/images/Sample_train_data_808819_88.jpeg" alt="Example ADNI brain data">
 </p>
+
+## Files in the Repo
+
+`images/` - Directory that contains all the figures and images necessary for visually showing something.
+
+`ADNI_GFNet_47430004.yaml` - yaml file which can be used to create a conda environment that is able to run the train.py. Details on using it are in [Dependencies](#dependencies).
+
+`dataset.py` - Python file that handles all the dataset/dataloader processes.
+
+`LICENSE` - License file containing the MIT License of the original repo found in [Inspiration](#inspiration).
+
+`main.py` - Obsolete python file that was created and does not serve a purpose in the repo structure. Left as proof of progress.
+
+`predict.py` - Python file used to test the accuracy of a given model, which should be located at `test/model/GFNet.pth`
+
+`README.md` - This markdown file which describes everything about the repo.
+
+`test_dataset.py` - Python file used to visually inspect that the dataset.py file is working correctly, especially the normalising transform.
+
+`train.py` - Python file used to train the GFNet model, and save figures relating to its accuracy over epochs, losses over epochs and the best-case accuracy.
+
+`utils.py` - Python file containing miscellaneous functions that help the training and predict process work. This file was taken directly from the repo listed in [Inspiration](#inspiration), and the source is also listed in the header of the python file.
 
 ## Usage
 

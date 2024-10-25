@@ -6,14 +6,23 @@ This repository contains code to train computer vision neural network designed t
 
 ## About the Model
 
-[GFNet](https://ieeexplore.ieee.org/document/10091201) is a cutting-edge vision transformer neural network that prizes itself on efficiently capturing spatial interactions through its use of the fast fourier transform. GFNet adapts the well-known ViT Transformer models by replacing the self-attention layer with a global filter layer. 
+[GFNet](https://ieeexplore.ieee.org/document/10091201) is a cutting-edge vision transformer neural network that prizes itself on efficiently capturing spatial interactions through its use of the fast fourier transform.
 
-'SHOW GLOBAL FILTER'
+![GFNet Structure](https://github.com/user-attachments/assets/b8e67323-a4d2-4427-ac7c-0e3720ccc62a)
+
+GFNet adapts the well-known vision transformer (ViT) models by replacing the self-attention layer with a global filter layer. 
+GFNet contains:
+- **Patch Embedding**: Initial input images are split into several smaller size patches, which are then flattened into a lower-dimensional space.
+- **Global Filter Layer**: The fast fourier transform is used to find the spatial interactions between the data.
+- **Feed Forward Network**: A Multi-Layer Perceptron processes the results from the global filter layer through a activation function to  learn non-linear transformations, improving the model's ability to learn features
+- **Global Average Pooling and Classification**: After the N sections of Global Filter Layer & Feed Forward Network, the resulting information is pooled together then used to classify.
+- **Normalisation layers**: Optional normalisation layers to normalise the values between each section, helping improve generalisability.
+
 
 ### Model Architecture
 - **Base Model**: GFNet
 - **Input Shape**: 240x240
-- **Output Classes**: AD, ND
+- **Output Classes**: Alzheimer's (AD), Normal Cognition (NC)
 - **Framework**: PyTorch
 
 ### How to use
@@ -47,10 +56,10 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 
 ### Dataset
 - **Source**: Alzheimer's Disease Neuroimaging Initiative (ADNI)
-- **Training** 25120 images
-- **Test** 9000 images
+- **Training** 25120 (256x240) images
+- **Test** 9000 (256x240) images
 - **Preprocessing**: Images were resized, normalized, and augmented to enhance model robustness.
-- **Train/Validation Split from Train** 90/10
+- **Train/Validation Split from Training data** 90/10
 - **Train/Validation/Test Split** 66.26/7.36/26.37
 
 ### Training Configuration
@@ -62,9 +71,9 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 - **Loss Function**: Cross-Entropy Loss
 
 ### Training Procedure
-1. **Load the Dataset**: Use `torchvision.datasets` to load and preprocess the ADNI dataset.
-2. **Define the Model**: Instantiate the GFNet model.
-3. **Train the Model**: Execute training loops, monitor loss, and save best performing model.
+1. **Load the Dataset**: Use `torchvision.datasets` and `torch.utils.data.DataLoader` to load and preprocess the ADNI dataset using torchvision transforms.
+2. **Define the Model**: Instantiate the GFNet model following the given model parameters.
+3. **Train the Model**: Execute training loops, monitor accuracy and loss, saving the best performing model after each epoch.
 
 ### Dependencies
 - **Python**
@@ -79,7 +88,13 @@ The model achieved the following results on the validation set:
 - **Epochs**: 50
 
 ## Loss/Accuracy Plot
+![accuracyPlot](https://github.com/user-attachments/assets/ef0e3191-245a-4026-a393-0347dc81562c)
 
+Here it is evident that the current model suffers from a significant amount of overfitting. 
+In the report documentation below I discuss the methods I used to attempt to improve/fix this.
+Inherently, this would be a large issue given the size of the dataset. ViT models are built to derive
+spatial and image information from extremally large datasets (often 1+ million), while the training data
+available only contains around ~25000 images. 
 
 # Report & Process Documentation
 ###

@@ -65,8 +65,9 @@ def check_accuracy(loader, model, device="cuda"):
         dice_score_per_class = dice_score_per_class / len(loader)  # Average over the batches
         avg_dice_score = dice_score_per_class.mean().item()
         #print(f"Pixel Accuracy {(num_correct/num_pixels)*100:.2f} and Dice score: {avg_dice_score:.4f}")
-        return avg_dice_score
         model.train()
+        return avg_dice_score
+        
 
 #Creates num_images (default 3) figures, each one showing the input image, ground truth mask and the models segmented output
 def visualize_predictions(loader, model, device, num_images=3):
@@ -93,7 +94,7 @@ def visualize_predictions(loader, model, device, num_images=3):
             # Loop through the batch and plot images
             for i in range(x.shape[0]):  # x.shape[0] is the batch size
                 if images_shown >= num_images:
-                    return  # Exit once we've shown the desired number of images
+                    return  # Exit once has shown the desired number of images
 
                 fig, ax = plt.subplots(1, 3, figsize=(15, 5))
 
@@ -115,7 +116,7 @@ def visualize_predictions(loader, model, device, num_images=3):
                 plt.show()
                 images_shown += 1
 
-    model.train()  # Return to train mode after validation
+    model.train()
 
 def plot_metrics(train_losses, dice_scores):
     epochs = range(1, len(train_losses) + 1)

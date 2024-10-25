@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from modules import GFNet
 from dataset import get_data_loaders
-from utils import draw_training_log
+from utils import draw_training_log, load_model
 
 
 def validate(model, test_loader, criterion, device):

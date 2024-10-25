@@ -12,11 +12,12 @@ import random
 import torch.nn.parallel
 import torch.optim as optim
 from tqdm import tqdm
-from modules import Generator, Discriminator, FCBlock
-from dataset import ADNI_IMG_SIZE, process_adni, process_cifar
+from modules import Generator, Discriminator, MappingNetwork
+from dataset import process_adni, process_cifar
 import math
 import cv2
 import os
+from config import ADNI_IMG_SIZE, z_dim, w_dim, num_epochs, lr, batch_size, channels
 
 ADNI_DATA = "adni"
 CIFAR_DATA = "cifar"
@@ -198,19 +199,11 @@ def main():
 
     print("> Device:", device)
 
-    # -- Hyper-parameters --
-    num_epochs = 50
-    lr = 1e-4 # Use 1e-3 for Adam
-    batch_size = 64
-    channels = 3
-    z_dim = 512
-    w_dim = 512
     image_size = ADNI_IMG_SIZE
     num_layers = int(math.log2(image_size))
     data_name = ADNI_DATA # or CIFAR_DATA
     load_models = False
     save_models = False
-    test = True
 
     if data_name == ADNI_DATA:
         dataset, dataloader = process_adni(batch_size=batch_size)
@@ -218,7 +211,7 @@ def main():
         dataset, dataloader = process_cifar(batch_size=batch_size)
 
     # -- Initialise Models --
-    latent_net = FCBlock(z_dim, w_dim)
+    latent_net = MappingNetwork(z_dim, w_dim)
     model_G = Generator(num_layers, w_dim).to(device)
     model_D = Discriminator(num_layers).to(device)
 
@@ -238,12 +231,6 @@ def main():
     # Train model
     model_G, model_D = train(model_G, model_D, latent_net, num_epochs, dataloader, lr,
         z_dim, w_dim, channels, num_layers, image_size, device)
-
-    if test:
-        # Test model
-        w = get_w(w_dim, 16, num_layers, latent_net, device)
-        noise = get_noise(num_layers, 16, device)
-        generate_and_save_imgs(model_G, 0, w, noise)
 
     if save_models:
         torch.save(model_G.state_dict(), './models/model_G.pth')

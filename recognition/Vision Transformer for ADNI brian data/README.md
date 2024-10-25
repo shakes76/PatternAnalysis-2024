@@ -1,4 +1,4 @@
-# Using a Vision Transfomer (GFNet?) to classify Alzheimer's diseased brains 
+# Using a Global Filter Network to classify Alzheimer's diseased brains 
 
 ## Repo Description
 This repository contains code to implement a machine learning Global Filter Network (GFNet) model on the problem of classifying MRI brain scans as either "Alzheimer's Diseased" or "Cognitive Normal" using data supplied by the Alzheimer's Disease Neuroimaging Initiative (ADNI). Through data pre-processing and model tuning this problem was able to be slolved with a final test accuracy of 98.24% 
@@ -67,15 +67,16 @@ The following outputs and results were produced by running 'train.py'
 
 ### Model hyperparameters & More
 The following specific hyper parameters and auxilary functions/algorithms were used for the model to achieve the above results:
-EPOCHS = 30
-LEARNING_RATE = 1e-3
-LEARNING_RATE_MIN = 1e-6
-LR_EPOCHS = 10
-WEIGHT_DECAY = 5e-4
-EARLY_STOP = 15
-BATCH_SIZE = 32
-**AdamW optimizer**: a weighted Adam optimizer with the above weight decay.
-**CosineAnnealing Learning Rate**: A learning rate scheduler to adjust the learning rate of the model over multiple epochs.
+- EPOCHS = 30
+- LEARNING_RATE = 1e-3
+- LEARNING_RATE_MIN = 1e-6
+- LR_EPOCHS = 10
+- WEIGHT_DECAY = 5e-4
+- EARLY_STOP = 15
+- BATCH_SIZE = 32
+<br>
+**AdamW optimizer**: a weighted Adam optimizer with the above weight decay. <br>
+**CosineAnnealing Learning Rate**: A learning rate scheduler to adjust the learning rate of the model over multiple epochs.<br>
 **Early Stopping**: If validation accuracy doesn't increase for more than 10 epochs in a row, the training stops early.
 ### Summary
 The results indicate that the model is overfitting to the data and further/different steps are required during data-preprocessing and augmentation phase in order better generalise the model. 

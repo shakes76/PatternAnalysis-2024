@@ -62,8 +62,8 @@ Resizing: All images are resized to 240x256 pixels in dataset.py. This is largel
 Normalization: The images were normalized using a mean and standard deviation of 0.5, which helps stabilize training.
 
 ### Data Splits:
-We have around 22000 training images and around 8800 test images. 
-Training images were split such that 80% were used in training and 20% were used in validation. The test images (which were 28% of the total training set before splitting) were used for testing
+Around 22000 training images and around 8800 test images were used. 
+Training images were split such that 80% were used in training and 20% were used in validation. The test images (which were 28% of the total training set before splitting) were used for testing.
 
 ### Justification for Data Splits:
 Given the plentiful dataset and the fact that we are using a deep learning model (not shallow), focusing more on training to make sure subtle medical details are properly recongised was very important. Large amounts of data are required to learn the complex patterns, and insufficient training data could cause overfitting.

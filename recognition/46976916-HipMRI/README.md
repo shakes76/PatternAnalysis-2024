@@ -8,9 +8,9 @@ The goal is to accurately identify and seperate various regions of interest with
 The algorith processes 2D slices of MRI scans and predicts segmentation masks, which can aid in diagnosis and treatment planning
 
 ### How It Works
-The UNet model consists of a contracting path to capture context and a symmetric expanding path for precise localization. The model takes in 2D grayscale MRI images of size 256x128 and outputs a segmentation mask with five classes. Each pixel in the output represents a different region of interest, such as different parts of the background, the body or prostate.
+The UNet model consists of a contracting path to capture context and a symmetric expanding path for precise localization. The model takes in 2D grayscale MRI images and outputs a segmentation mask with five classes. Each pixel in the output represents a different region of interest, such as different parts of the background, the body or prostate.
 
-The model was trained on labeled MRI data using cross-entropy loss and Dice similarity coefficient for evaluation. After training, the model can predict segmentation masks for new MRI scans, which are used to assess the extent and location of prostate cancer.
+The model was trained on labeled MRI data using cross-entropy loss and Dice similarity coefficient for evaluation. After training, the model can predict segmentation masks for new MRI scans, which can be used to assess the extent and location of prostate cancer.
 
 ### The model parameters
 The final model had the input parameters:
@@ -34,7 +34,7 @@ The final model had the input parameters:
 ## Example Prediction Results
 The model trained using the parameters above
 The model was then used on an unseen testing set which resulted in the following:
-Pixel Accuracy: 96.62 and Dice Score: 0.9058
+Pixel Accuracy: 96.62 and **Dice Score: 0.9058**
 The models predictions, visualised:
 ![Example Segmentation 1](images/PredictImage1.png)
 ![Example Segmentation 2](images/PredictImage2.png)
@@ -43,9 +43,9 @@ The models predictions, visualised:
 These visualisations show:
 - The raw input image on the left
 - The target segmentation mask for the image in the middle
-- The models predicted segmentation mask
+- The models predicted segmentation mask on the right
 
-When recording the training function loss and dice score accuracy results after each epoch the following graph can be constructed:
+When recording the training function loss and dice score accuracy results after each epoch during training the following graphs can be constructed:
 ![Example Segmentation 3](images/graphs.png)
 These graphs show how the model improves over time. The slight dip in dice score around epoch 13 indicates some overfitting in the model, but the model readjusts
 

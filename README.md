@@ -1,4 +1,4 @@
-## Prostate 3D Segmentation with Improved 3D U-Net
+# Prostate 3D Segmentation with Improved 3D U-Net
 
 ## Description
 This project implements an enhanced 3D U-Net architecture for segmenting 3D medical images of prostate MRI data. The goal is to accurately predict segmentation masks for multiple labels and achieve a minimum Dice similarity coefficient of 0.7 across all labels in the test set. This ensures high accuracy in the segmentation of prostate regions.

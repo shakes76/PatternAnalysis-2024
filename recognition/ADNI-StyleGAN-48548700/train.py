@@ -1,10 +1,71 @@
-﻿# Import dataset and network models
+﻿"""
+=======================================================================
+File Name: train.py
+Author: Baibhav Mund
+Student ID: 48548700
+Description:
+    This script is responsible for training a StyleGAN2 
+    model. It loads a dataset, initializes a generator, discriminator (critic), and 
+    mapping network, and performs adversarial training over a number of epochs.
+    The training loop applies gradient penalties for better convergence and 
+    employs automatic mixed precision (AMP) to optimize speed.
+
+    Key Features:
+    - Generator and Critic (Discriminator) training with gradient penalty.
+    - Mapping network for latent vector transformation.
+    - Path Length Penalty (PLP) for regularizing generator training.
+    - Loss visualization saved as images and losses stored as CSV files.
+    - Periodic model checkpointing during training.
+
+Usage:
+    1. Set the path to your dataset in `DATASET` and adjust the hyperparameters 
+       (e.g., `EPOCHS`, `BATCH_SIZE`, `LEARNING_RATE`, etc.) as needed.
+    2. Ensure that your GPU is available, or training will default to CPU.
+    3. Run the script using:
+       `python train.py`
+    4. During training, the script will save the generator and critic models every 
+       5 epochs, along with optimizer states. Losses are logged in a CSV file and 
+       plotted at the end of training.
+
+Dependencies:
+    - PyTorch: Install via `pip install torch torchvision`
+    - tqdm: Progress bar library, install via `pip install tqdm`
+    - matplotlib: For loss plotting, install via `pip install matplotlib`
+
+Key Parameters:
+    - DATASET: Path to the dataset directory.
+    - DEVICE: Device to run the training on (GPU if available, else CPU).
+    - EPOCHS: Number of training epochs.
+    - LEARNING_RATE: Learning rate for optimizers.
+    - BATCH_SIZE: Number of images per batch.
+    - LOG_RESOLUTION: Logarithmic resolution for images (2^7 = 128x128 in this case).
+    - Z_DIM: Latent space dimensionality for input noise vectors.
+    - W_DIM: Dimension of the mapping network output.
+    - LAMBDA_GP: Weight for the gradient penalty term in the critic's loss function.
+
+Functions:
+    - gradient_penalty(): Computes the gradient penalty for the discriminator.
+    - get_w(): Generates latent vectors (w) from random noise.
+    - get_noise(): Generates noise inputs for the generator.
+    - train_fn(): The main training loop for training the generator and discriminator.
+    - save_losses_to_csv(): Logs and saves the generator and discriminator losses to a CSV file.
+
+Output:
+    - Model checkpoints saved every 5 epochs (generator, critic, and optimizer states).
+    - Loss values saved to a CSV file (`total_losses.csv`).
+    - Loss plots saved as PNG images (`gen_loss.png`, `dis_loss.png`).
+
+=======================================================================
+"""
+
+
 from dataset import *  
 from modules import *  
 import torch 
 from tqdm import tqdm 
 from torch import optim
 import matplotlib.pyplot as plt
+import csv
 
 # Define constants and hyperparameters
 DATASET                 = "./train"  # Path to the dataset
@@ -128,18 +189,27 @@ def train_fn(
         
     
     return (D_losses, G_losses)
-    
-import csv
 
+# Function to save Gen and critic losses to csv file for each iteration    
 def save_losses_to_csv(g_losses, d_losses, filename="losses.csv"):
+    # Open the CSV file in append mode ("a"), and ensure that newline characters are handled correctly
     with open(filename, mode="a", newline="") as f:
+        # Create a CSV writer object to write rows to the file
         writer = csv.writer(f)
+        
+        # Write the header row: "Epoch", "Generator Loss", and "Discriminator Loss"
         writer.writerow(["Epoch", "Generator Loss", "Discriminator Loss"])
         
+        # Iterate over the length of the generator losses (or discriminator losses)
         for i in range(len(g_losses)):
+            # Retrieve the generator loss at index i, or use an empty string if it's out of range
             gen_loss = g_losses[i] if i < len(g_losses) else ""
+            # Retrieve the discriminator loss at index i, or use an empty string if it's out of range
             disc_loss = d_losses[i] if i < len(d_losses) else ""
+            
+            # Write a new row to the CSV file with the epoch number, generator loss, and discriminator loss
             writer.writerow([i, gen_loss, disc_loss])
+
 
 # Initialize the mapping network, generator, and critic on the specified device
 mapping_network     = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)  # Initialize mapping network
@@ -157,34 +227,47 @@ opt_critic          = optim.Adam(critic.parameters(), lr=LEARNING_RATE, betas=(0
 opt_mapping_network = optim.Adam(mapping_network.parameters(), lr=LEARNING_RATE, betas=(0.0, 0.99))
 
 if __name__ == "__main__":
+    # Set the generator, critic, and mapping network to training mode
     gen.train()
     critic.train()
     mapping_network.train()
 
+    # Initialize lists to store total losses for the generator and discriminator (critic)
     Total_G_Losses = []
     Total_D_Losses = []
 
+    # Loop over the number of epochs
     for epoch in range(EPOCHS):
-        G_Losses , D_Losses = train_fn(
-            critic,
-            gen,
-            path_length_penalty,
-            loader,
-            opt_critic,
-            opt_gen,
-            opt_mapping_network,
+        # Train the generator and discriminator for one epoch, 
+        # and return the losses for each batch in G_Losses and D_Losses
+        G_Losses, D_Losses = train_fn(
+            critic,                  # Critic (discriminator) model
+            gen,                     # Generator model
+            path_length_penalty,      # Path length penalty function
+            loader,                  # DataLoader for the dataset
+            opt_critic,              # Optimizer for the critic
+            opt_gen,                 # Optimizer for the generator
+            opt_mapping_network,      # Optimizer for the mapping network
         )
-        
+
+        # Extend the total loss lists with the losses from the current epoch
         Total_G_Losses.extend(G_Losses)
         Total_D_Losses.extend(D_Losses)
 
+        # Save the generator and discriminator losses to a CSV file after every epoch
         save_losses_to_csv(Total_G_Losses, Total_D_Losses, filename="total_losses.csv")
 
+        # Save model checkpoints every 5 epochs
         if epoch % 5 == 0:
+            # Save the generator's state
             torch.save(gen.state_dict(), f'generator_epoch{epoch}.pt')
+            # Save the critic's state
             torch.save(critic.state_dict(), f'critic_epoch{epoch}.pt')
+            # Save the state of the generator optimizer
             torch.save(opt_gen.state_dict(), f'opt_gen_epoch{epoch}.pt')
+            # Save the state of the critic optimizer
             torch.save(opt_critic.state_dict(), f'opt_critic_epoch{epoch}.pt')
+            # Save the state of the mapping network optimizer
             torch.save(opt_mapping_network.state_dict(), f'opt_mapping_network_epoch{epoch}.pt')
 
     plt.figure(figsize=(10,5))

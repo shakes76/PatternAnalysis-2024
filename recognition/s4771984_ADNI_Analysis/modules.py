@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import warning as w
+import warnings as w
 w.filterwarnings('ignore')
 
 class GFNet(nn.Module):

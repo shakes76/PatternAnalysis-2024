@@ -32,7 +32,7 @@ def train_model(model, train_loader, criterion, optimizer, epochs):
         for batch_idx, (images, labels) in enumerate(train_loader):
             images = images.to(device).float() 
             labels = labels.to(device).float()  
-
+    
             # Forward pass
             outputs = model(images)
             

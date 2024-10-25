@@ -1,3 +1,7 @@
+PLEASE NOTE: the version is different from pdf submission because could not re-submit?
+
+COMP3710 2D UNet Report
+
 Using 2D UNet to segment the HipMRI Study on Prostate Cancer dataset
 
 The task for this report was to create 4 files, modules.py, train.py, dataset.py and predict.py to 

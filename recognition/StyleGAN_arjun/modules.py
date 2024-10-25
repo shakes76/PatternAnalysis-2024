@@ -38,13 +38,13 @@ class EQLinearLayer(nn.Module):
     def forward(self, x: torch.Tensor):
         return F.linear(x, self.weight().to(x.device), bias=self.bias.to(x.device))
 
-class FCBlock(nn.Module):
+class MappingNetwork(nn.Module):
     """
     Fully Connected Noise Mapping Network.
     """
     def __init__(self, z_dim, w_dim) -> None:
-        super(FCBlock, self).__init__()
-        self.net = nn.Sequential(
+        super(MappingNetwork, self).__init__()
+        self.mapping = nn.Sequential(
             EQLinearLayer(z_dim, w_dim),
             nn.ReLU(),
             EQLinearLayer(z_dim, w_dim),
@@ -65,7 +65,7 @@ class FCBlock(nn.Module):
     def forward(self, x):
         # Pixel-wise normalisation for input
         x = x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
-        return self.net(x)
+        return self.mapping(x)
 
 class AdaIN(nn.Module):
     """

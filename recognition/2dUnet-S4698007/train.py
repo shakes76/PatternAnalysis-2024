@@ -10,8 +10,8 @@ from dataset import create_dataloader
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
-num_epochs = 15
-batch_size = 5
+num_epochs = 25
+batch_size = 4
 learning_rate = 1e-3
 num_classes = 6  # Adjust this based on your specific number of classes
 

@@ -36,8 +36,8 @@ train_dataset = ProstateCancerDataset(image_dir, mask_dir)
 val_dataset = ProstateCancerDataset(image_dir, mask_dir)
 
 # Create DataLoader instances
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
 # Training loop
 def train():

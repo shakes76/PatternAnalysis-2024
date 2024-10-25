@@ -3,14 +3,16 @@ import torch
 from torch.utils.data import Dataset
 import nibabel as nib
 import numpy as np
+from torchvision import transforms
 
 class ProstateCancerDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, transform=None):
+    def __init__(self, image_dir, mask_dir, transform=None, target_size=(256, 256)):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.image_filenames = sorted([f for f in os.listdir(image_dir) if f.endswith('.nii.gz')])
         self.mask_filenames = sorted([f for f in os.listdir(mask_dir) if f.endswith('.nii.gz')])
         self.transform = transform
+        self.resize = transforms.Resize(target_size)
 
     def __len__(self):
         return len(self.image_filenames)
@@ -22,7 +24,7 @@ class ProstateCancerDataset(Dataset):
 
         image = nib.load(image_path).get_fdata()  # Load the image data
         mask = nib.load(mask_path).get_fdata()    # Load the segmentation mask
-        
+
         # Normalize the mask to be binary (0 or 1)
         mask = (mask > 0).astype(np.float32)  # Convert mask to binary (0, 1)
 
@@ -33,6 +35,10 @@ class ProstateCancerDataset(Dataset):
         # Convert to PyTorch tensors
         image = torch.tensor(image, dtype=torch.float32)
         mask = torch.tensor(mask, dtype=torch.float32)
+
+        # Resize both image and mask
+        image = self.resize(image)
+        mask = self.resize(mask)
 
         # Apply any optional transformations
         if self.transform:

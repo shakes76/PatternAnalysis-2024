@@ -41,6 +41,12 @@ The data is split as follows:
 - Validation: 20%
 - Testing: 10%
 
+## Dataset Access
+
+The 3D Prostate MRI dataset used in this project is stored in `/home/groups/comp3710/HipMRI_Study_open` on the Rangpur HPC cluster.
+
+If you want to run the code locally, download the dataset from [this link](https://data.csiro.au/collection/csiro:51392v2?redirected=true) and modify the path in dataset.py
+
 ## Dependencies
 
 To run this project, you will need the following dependencies:

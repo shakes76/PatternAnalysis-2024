@@ -33,7 +33,7 @@ def load_data_2D ( imageNames , normImage = False , categorical = False , dtype 
     loading and testing scripts .
     '''
     affines = []
-    num_to_load = int(len(imageNames) * 0.35) #A smaller dataset size was required due to computing power limitations
+    num_to_load = int(len(imageNames) * 0.3) #A smaller dataset size was required due to computing power limitations
     imageNames = imageNames[-num_to_load:]
     # get fixed size
     num = len ( imageNames )

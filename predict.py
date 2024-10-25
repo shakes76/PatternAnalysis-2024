@@ -59,15 +59,17 @@ def main():
     # Generate reconstructions and display comparison images
     for original, reconstructed in predict_and_reconstruct(model, test_loader):
         print(f"Original shape: {original.shape}, Reconstructed shape: {reconstructed.shape}")
-        
-        # Display the first few original and reconstructed images with SSIM scores
-        for i in range(min(5, len(original))):
-            fig, axs = plt.subplots(1, 2)
 
+        # Create a single figure for displaying all images horizontally
+        fig, axs = plt.subplots(5, 2, figsize=(15, 10))  # 5 rows, 2 columns
+
+        # Display the first 5 original and reconstructed images
+        for i in range(min(5, len(original))):
             # Original image
             original_img = np.squeeze(original[i], axis=0)
-            axs[0].imshow(original_img, cmap='gray')
-            axs[0].set_title('Original')
+            axs[i, 0].imshow(original_img, cmap='gray')
+            axs[i, 0].set_title(f'Original #{i}')
+            axs[i, 0].axis('off')  # Hide axis for clarity
 
             # Reconstructed image
             if reconstructed[i].shape[0] == 1:
@@ -77,15 +79,17 @@ def main():
 
             # Compute SSIM score and plot
             ssim_score = ssim(original_img, reconstructed_img, data_range=reconstructed_img.max() - reconstructed_img.min())
-            axs[1].imshow(reconstructed_img, cmap='gray')
-            axs[1].set_title(f'SSIM Score: {ssim_score:.4f}')
+            axs[i, 1].imshow(reconstructed_img, cmap='gray')
+            axs[i, 1].set_title(f'#{i} SSIM Score: {ssim_score:.4f}')
+            axs[i, 1].axis('off')  # Hide axis for clarity
 
-            # only save the results if the argument exists
-            if (args.save):
-                 plt.savefig(f"reconstructed_{i}")
-            
-           
-            plt.show()
+            # Save each individual reconstructed image separately
+            if args.save:
+                plt.imsave(f"reconstructed_{i}.png", reconstructed_img, cmap='gray')  # Save each reconstructed image
+
+        plt.tight_layout()  # Adjust layout for better spacing
+        plt.show()  # Show all images together
+
         break  # Stop after first batch for demo
 
 if __name__ == "__main__":

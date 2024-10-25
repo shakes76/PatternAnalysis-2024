@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-from modules import UNet, dice_coefficient  # Importing the UNet model and Dice coefficient
+from modules import UNet, dice_coefficient, combined_loss  # Importing the UNet model and Dice coefficient
 from dataset import load_and_preprocess_data
 
 # Set up the device
@@ -25,6 +25,10 @@ train_loader, val_loader, test_loader = load_and_preprocess_data()
 num_epochs = 10
 train_losses = []
 val_losses = []
+
+# Initialize weights for each loss component
+weight_ce = 0.5 
+weight_dice = 0.5
 
 for epoch in range(num_epochs):
     model.train()
@@ -50,7 +54,8 @@ for epoch in range(num_epochs):
         #print(f"Outputs shape: {outputs.shape}")
         #print(f"Labels shape: {labels.shape}")
 
-        loss = criterion(outputs, labels)
+        #loss = criterion(outputs, labels)
+        loss = combined_loss(outputs, labels, weight_ce, weight_dice)
 
         # Backward pass and optimize
         loss.backward()
@@ -106,13 +111,14 @@ plt.savefig(image_save_path, dpi=300)
 model.eval()
 dice_scores = []
 
+threshold = 0.3 #0.5
 with torch.no_grad():
     for test_images, test_labels in test_loader:
         test_images = test_images.to(device)
         test_labels = test_labels.to(device)
 
         outputs = model(test_images)  # Add batch dimension here
-        outputs = (outputs > 0.5).float()  # Threshold to binary mask
+        outputs = (outputs > threshold).float()  # Threshold to binary mask
 
         dice = dice_coefficient(outputs, test_labels.unsqueeze(0))  # Add batch dimension here
         dice_scores.append(dice.item())
@@ -120,3 +126,29 @@ with torch.no_grad():
 # Calculate average Dice coefficient
 average_dice = np.mean(dice_scores)
 print(f"Average Dice Coefficient: {average_dice}")
+
+"""
+Most recent
+Epoch 1/10, Loss: 0.23343075289854368
+Validation Loss: 0.10325150577777839
+Epoch 2/10, Loss: 0.05923678628991138
+Validation Loss: 0.08438672075968191
+Epoch 3/10, Loss: 0.045439146195238735
+Validation Loss: 0.07679702478449747
+Epoch 4/10, Loss: 0.0403826468080199
+Validation Loss: 0.08032583369009466
+Epoch 5/10, Loss: 0.03544798415006039
+Validation Loss: 0.071999570915857
+Epoch 6/10, Loss: 0.03195893731870313
+Validation Loss: 0.07201780349644551
+Epoch 7/10, Loss: 0.029479183186435734
+Validation Loss: 0.09865361703447549
+Epoch 8/10, Loss: 0.027338157029041275
+Validation Loss: 0.08031065272818129
+Epoch 9/10, Loss: 0.025521949547117437
+Validation Loss: 0.09325386251670768
+Epoch 10/10, Loss: 0.023376164121445418
+Validation Loss: 0.09752481881843274
+Model saved to /home/Student/s4838078/model_saves/unet_model.pth
+Average Dice Coefficient: 0.17170812781242764
+"""

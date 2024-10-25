@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class UNet(nn.Module):
     def __init__(self):
@@ -49,6 +50,8 @@ class UNet(nn.Module):
         bottleneck = self.bottleneck(nn.MaxPool2d(2)(conv3))
 
         # Decoder
+        # Skip connections are implemented by concatenating the feature maps from the encoder path 
+        # with the corresponding decoder path layers
         upconv3 = self.upconv3(bottleneck)
         conv3_1 = self.conv3_1(torch.cat([upconv3, conv3], dim=1))
 
@@ -69,3 +72,26 @@ def dice_coefficient(pred, target, smooth=1e-6):
     if pred_flat.sum() == 0 and target_flat.sum() == 0:
         return 1.0  # If both are empty, Dice score is 1
     return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+
+
+def dice_loss(pred, target, smooth=1e-6):
+    # Flatten predictions and target
+    pred_flat = pred.reshape(-1)
+    target_flat = target.reshape(-1)
+    intersection = (pred_flat * target_flat).sum()
+    return 1 - ((2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth))
+
+
+def combined_loss(pred, target, weight_ce=0.5, weight_dice=0.5):
+    # Cross-Entropy Loss
+    ce_loss = F.cross_entropy(pred, target)
+    
+    # Dice Loss
+    # Apply softmax to predictions and create one-hot encoding for dice loss
+    pred_softmax = F.softmax(pred, dim=1)  # Assuming `pred` has shape (batch, classes, H, W)
+    target_one_hot = F.one_hot(target, num_classes=pred.shape[1]).permute(0, 3, 1, 2).float()  # Convert to (batch, classes, H, W)
+    
+    dice_loss_value = dice_loss(pred_softmax, target_one_hot)
+
+    # Combined Loss
+    return weight_ce * ce_loss + weight_dice * dice_loss_value

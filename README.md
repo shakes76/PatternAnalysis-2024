@@ -20,8 +20,7 @@ The dataset used in this project consists of processed MRI slices and their corr
 
 A visualization of how the model works is shown below:
 
-![download](C:\Users\11vac\Desktop\download.jpg)
-
+![download](https://github.com/user-attachments/assets/89c7786e-8808-4b77-8d04-8d74491760ca)
 
 
 ## Usage

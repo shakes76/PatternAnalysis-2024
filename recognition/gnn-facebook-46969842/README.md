@@ -15,7 +15,7 @@ A graph is a data structure that containts nodes and edges. Nodes can represent 
 <div style="text-align: center;">
     <img src="assets/graphexample.png" alt="Graph Example" style="width: 40%">
 </div>
-
+[1]
 Due to the nature of graph data structures, they are hard to analyse. Reasons why include
   1. Graphs exist in non-euclidean space, not 2D or 3D, making visualisation and interpretation difficult
   2. Graphs are dyanmic - two very visually different graphs can have similar adjacency matrix representations
@@ -48,7 +48,7 @@ This graph is a page-page graph of verified Facebook sites, where nodes represen
     - Governmental Organizations
     - Television Shows
     - Companies
-
+[2]
 The task related to this dataset is multi-class node classification for the 4 site categories.
 
 ## Model Architecture
@@ -122,7 +122,7 @@ Based on the proximity of the clusters, we can potentially draw conclusions abou
 However, due to the techniques performing dimensionality reduction and the inherent qualitative analysis of the data, there are limitations as to how much reliable information these plots can provide.
 
 ## References
-[1] A Comprehensive Introduction to Graph Neural Networks (GNNs). https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial
-[2] Facebook Large Page-Page Network https://snap.stanford.edu/data/facebook-large-page-page-network.html
+- [1] Awan, A. A. (2022, July 21). A Comprehensive Introduction to Graph Neural Networks (GNNs). Datacamp.com; DataCamp. https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial 
+- [2] SNAP: Network datasets: Wikipedia Article Networks. (2017). Stanford.edu. https://snap.stanford.edu/data/facebook-large-page-page-network.html
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

@@ -32,3 +32,12 @@ def save_model_and_results(model, results, hyperparameters):
     }
     torch.save(results_to_save,
                SAVE_MODEL_PATH + '\\vqvae_data.pth')
+
+# Generate predictions and reconstructions without updating gradients
+def predict_and_reconstruct(model, data_loader):
+    model.eval()
+    with torch.no_grad():
+        for x in data_loader:
+            x = x.to(device)
+            _, x_hat, _ = model(x)
+            yield x.cpu().numpy(), x_hat.cpu().numpy() 

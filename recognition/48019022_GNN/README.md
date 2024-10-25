@@ -55,14 +55,13 @@ pip install torch torchvision torchaudio torch-geometric numpy matplotlib scikit
 2. Install the dependencies as mentioned above.
 
 ## Data Preparation
-The dataset can be obtained from (https://graphmining.ai/datasets/ptg/facebook.npz) in a partially processed format where features are in the form of 128 dim vectors. 
-After downloading, save the dataset in the following structure:
-    ```bash
-    PATTERNANALYSIS-2024/
-        recognition/
-            48019022_GNN/
-                facebook.npz
-    ```
+The dataset can be obtained from [this link](https://graphmining.ai/datasets/ptg/facebook.npz) in a partially processed format, where the features are represented as 128-dimensional vectors. After downloading, save the dataset in the following directory structure:
+```bash
+PATTERNANALYSIS-2024/
+    recognition/
+        48019022_GNN/
+            facebook.npz
+```
 
 ## Usage
 The repository implements 4 GNN architectures:
@@ -71,7 +70,7 @@ The repository implements 4 GNN architectures:
 - GraphSAGE (SAGE)
 - Simple Graph Convolution (SGC)
 
-1. To select a model to train, change line 133 of train.py to one of the above bracketed model types.
+1. To select a model to train, change train.py to one of the above bracketed model types.
 
 2. To train the model, run the following command:
    ```bash

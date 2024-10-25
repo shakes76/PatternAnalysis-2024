@@ -113,10 +113,15 @@ class MRIDataset(data.Dataset):
 
 
 class MRIDataLoader(data.DataLoader):
-    def __init__(self, dataset_type, batch_size=1, shuffle=True):
+    def __init__(self, dataset_type, batch_size=1, shuffle=False):
         self.dataset = MRIDataset(dataset_type)
         super(MRIDataLoader, self).__init__(self.dataset, batch_size=batch_size, shuffle=shuffle)
 
+    def __shuffle__(self):
+        # Shuffle images and labels equally to maintain correspondence
+        perm = torch.randperm(len(self.dataset))
+        self.dataset.image_paths = [self.dataset.image_paths[i] for i in perm]
+        self.dataset.label_paths = [self.dataset.label_paths[i] for i in perm]
 
 
 ### Unit test

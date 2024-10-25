@@ -34,6 +34,9 @@ The first working run of this model took 45 minutes for very mediocre results:
 
 The loss was very low, which was good, but the validation loss was very high and the dice coefficient extremely low. No plot was generated for this output.
 
+Here is a different generated plot on 10 epochs, before the dice coefficient has been able to be improved:
+![Loss plot over epochs](./loss_plot.png)
+
 ---
 
 # Preprocessing and Data Splits

@@ -2,8 +2,11 @@
 # All rights reserved.
 """
 Misc functions, including distributed helpers.
+Functions and classes that help tracking and logging the training process.
 
-Directly taken from: https://github.com/shakes76/GFNet/blob/master/utils.py
+This code was directly taken from: https://github.com/shakes76/GFNet/blob/master/utils.py
+Explicit disclaimer: I did not write any of this code, I have referenced the original authors
+via the github link above, which is a fork of the original repository.
 """
 import io
 import os

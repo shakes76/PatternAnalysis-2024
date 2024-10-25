@@ -65,8 +65,26 @@ The following image shows the training and validation loss and accuracy over 200
 - It appears to be going well with an approximate accuracy of 90% on both the training and validation sets.
 - A proper learning would be with a loss decrease with increased accuracy, but the fluctuations in validation loss might reflect overfitting and require further tuning for generalization, which may involve early stopping or regularization.
 
+## Classification Report and Confusion Matrix
+The following classification report and confusion matrix illustrate the performance of the model on the test dataset. The model achieved an overall accuracy of **79%** with a test loss of **0.9818**.
 
+### Classification Report
+- **CN(Cognitive Normal)** : Precision = 0.87, Recall = 0.68, F1-Score = 0.76
+- **AD(Alzheimer's Disease)** : Precision = 0.74, Recall = 0.90, F1-Score = 0.81
 
+| Class | Precision | Recall | F1-Score | Support |
+|-------|-----------|--------|----------|---------|
+| NC    | 0.87      | 0.68   | 0.76     | 4460    |
+| AD    | 0.74      | 0.90   | 0.81     | 4550    |
+| **Accuracy** |  |        | 0.79     | 9010    |
+
+### Confusion Matrix
+The confusion matrix shows the number of correct and incorrect classifications for each class.
+![Confusion Matrix & Classification Report](https://drive.google.com/uc?export=view&id=1BQiFRU75TPWbFZArv8u9WKXDfmNE8DNU)
+
+- **3018** Cognitive Normal(CN) were rightly classified and **1442** were misclassified as AD.
+- **4092** Alzheimer's Disease(AD) patients were classified correctly, while **458** were misclassified as Cognitive Normal(CN).
+  
 ## Requirements
 - **Python**: 3.8+
 - **TensorFlow or PyTorch**: Depending on your implementation choice (GFNet6 model in PyTorch)

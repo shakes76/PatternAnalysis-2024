@@ -11,3 +11,32 @@ The 2D UNet model solves the problem of medical image segmentation, which is par
 The left half of this figure depicts the encoder of the 2D UNet model, and the right half the decoder. This model is symmetrical, hence the U shape, and the connections between each symmetric part are the skip connections.
 
 *Reference Video: The U-Net (actually) explained in 10 minutes [YouTube Video](https://www.youtube.com/watch?v=NhdzGfB1q74)*
+
+---
+
+# Dependencies
+- Python 3.x
+- PyTorch 2.0
+- NumPy 1.22
+- nibabel 3.2
+- scikit-image 0.18
+- tqdm 4.60
+- Matplotlib 3.3
+
+---
+
+# Plots
+The first working run of this model took 45 minutes for very mediocre results:
+
+*Epoch 50/50, Loss: 0.005778507029752079*
+*Validation Loss: 0.1750896299280316*
+*Average Dice Coefficient: 0.16860544484327822*
+
+The loss was very low, which was good, but the validation loss was very high and the dice coefficient extremely low. No plot was generated for this output.
+
+---
+
+# Preprocessing and Data Splits
+The data was loaded using a provided load_data_2d() function. This function was called individually on each image due to varying sizes of data. Once each image was loaded individually it was resized via scikit-image, before being turned into pytorch tensors and provided to a dataloader.
+
+The data was split prior to implementation within the dataset.

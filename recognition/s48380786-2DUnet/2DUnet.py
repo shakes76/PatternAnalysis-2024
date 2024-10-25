@@ -370,8 +370,14 @@ model = UNet().to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 criterion = nn.CrossEntropyLoss()
 
+import matplotlib.pyplot as plt
+
+# Initialize lists to store the loss values
+train_losses = []
+val_losses = []
+
 # Training loop
-num_epochs = 50
+num_epochs = 10
 
 for epoch in range(num_epochs):
     model.train()
@@ -422,6 +428,9 @@ for epoch in range(num_epochs):
 
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss/len(train_loader)}")
 
+    # Calculate average loss for this epoch
+    train_losses.append(running_loss / len(train_loader))
+
     # Validation step (optional but recommended)
     model.eval()
     val_loss = 0.0
@@ -438,6 +447,20 @@ for epoch in range(num_epochs):
             val_loss += loss.item()
 
     print(f"Validation Loss: {val_loss/len(val_loader)}")
+    # Calculate average validation loss for this epoch
+    val_losses.append(val_loss / len(val_loader))
+
+# Plot the loss
+save_path = "/home/Student/s4838078/2DUNet_loss/loss_plot.png"
+
+plt.figure()
+plt.plot(range(1, num_epochs + 1), train_losses, label="Training Loss")
+plt.plot(range(1, num_epochs + 1), val_losses, label="Validation Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Training and Validation Loss over Epochs")
+plt.legend()
+plt.savefig("loss_plot.png", dpi=300)
 
 
 def dice_coefficient(pred, target, smooth=1e-6):

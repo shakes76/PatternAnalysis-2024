@@ -101,8 +101,35 @@ python predict.py --image_path path/to/image.jpg --model_path results/your_resul
 ## Example Inputs and Outputs
 
 ### Inputs
+Example input for Benign case:
+
+![Example Skin Lesion](images/example_benign.jpg)
+
+```bash
+python predict.py --image_path images/example_benign.jpg --model_path results/your_results_dir/best_classifier_model.pth
+```
 
 ### Outputs
+
+```bash
+Predicted Class: Benign
+Probability of being Malignant: 0.0114
+```
+
+Example input for Malignant case:
+
+![Example Skin Lesion](images/example_malignant.jpg)
+
+```bash
+python predict.py --image_path images/example_malignant.jpg --model_path results/your_results_dir/best_classifier_model.pth
+```
+
+### Outputs
+
+```bash
+Predicted Class: Malignant
+Probability of being Malignant: 0.6622
+```
 
 ## Results and Visualisations
 

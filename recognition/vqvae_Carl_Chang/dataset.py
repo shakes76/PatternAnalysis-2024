@@ -64,21 +64,10 @@ class HipMRI2DDataset(Dataset):
         if self.categorical:
             in_image = to_channels(in_image, dtype=self.dtype)
 
-        # Store affine if needed
-        if self.get_affines:
-            self.affines.append(affine)
-
         return in_image, affine
 
 def get_data_loader(data_dir, batch_size=16, shuffle=True, norm_image=False, categorical=False, get_affines=False, early_stop=False):
     """Create a DataLoader for the dataset."""
     dataset = HipMRI2DDataset(data_dir, norm_image=norm_image, categorical=categorical, get_affines=get_affines, early_stop=early_stop)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-
-
-# For testing purposes, limit to 20 images
-train_loader = get_data_loader('./data/keras_slices_train', batch_size=4, norm_image=True, early_stop=True)
-
-for img in train_loader:
-    print(img.shape)
 

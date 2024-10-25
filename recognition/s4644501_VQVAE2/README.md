@@ -4,7 +4,7 @@
 
 ### Algorithm and the Problem Solved
 
-The model chosen is the VQVAE model from the VQVAE2 paper, without the additional PixelCNN layer post-training. This model encodes both a top and bottom latent representation of the input image. The bottom level goes through a single encoder, while the top is derived from a second encoding of the bottom level. Both of these are then vector quantized using the nearest discrete embedding vectors in a learned codebook. Finally, the top and bottom quantizations are concatenated and decoded, producing an output image.
+The model chosen is the Vector Quantized Variational Autoencoder VQVAE model from the VQVAE2 paper, without the additional PixelCNN module post-training. This model encodes both a top and bottom latent representation of the input image. The bottom level goes through a single encoder, while the top is derived from a second encoding of the bottom level. Both of these are then vector quantized using the nearest discrete embedding vectors in a learned codebook. Finally, the top and bottom quantizations are concatenated and decoded, producing an output image.
 
 The model training process minimizes the difference between the input and reconstruction through a combination of reconstruction loss as well as quantization loss. Reconstruction loss is derived from the reconstruction approximation of the input, while quantization loss penalizes deviations from original latent vector during quantizaton.
 
@@ -36,7 +36,7 @@ _Loss:_
 
 Quantization loss is the squared difference between the input and embedding vector:
 
-$$\text{loss} = \frac{1}{N} \sum\_ {i=1}^{N}(\text{quantize}\_i - \text{input}\_i)^2$$
+$$\text{loss} = \frac{1}{N} \sum_i ^{N}(\text{quantize}_i - \text{input}_i)^2$$
 
 The input representations assigned to embedding vectors (cluster size) is updated using exponential decay:
 
@@ -66,7 +66,7 @@ Finally, paths (1) and (2) are concatenated and decoded to produce the final out
 
 This architecture is distinct from traditional VQVAEs as it has a top and bottom level quantization. This allows the model to learn finer details and generate images with higher-fidelity.
 
-The loss in the outputted images is measures by the reconstruction loss times the quantization loss with a scaling factor that reduces quantization influence [1].
+The loss in the outputted images is measured by the reconstruction loss times the quantization loss with a scaling factor, $\lambda$, that reduces quantization influence [1].
 
 Both of these loss functions are Mean Squared Error which is the difference in the input image and output image for reconstruction loss and the input representation and vector embedding for quantization loss. The total loss function is therefore:
 
@@ -151,9 +151,9 @@ The training will output to the following directories:
 
 #### Model Perfomance
 
-The task required a SSIM of >0.6. As in the SSIM plot, the model was able to reconstruct images with an SSIM of ~75% for both the training and validation set. This aligns with the reconstruction loss converging toward zero for both sets. At no point during the training process does the training performance diverge from the validation performance, indicating that the model is not overfitting to training data. The model appears to have stable convergence with no oscillations or spikes indicating appropriate learning rates, regularization techniques, and balance between reconstruction and commitment loss.
+The task required a SSIM of >0.6. As in the SSIM plot, the model was able to reconstruct images with an SSIM of ~75% for both the training and validation set. This aligns with the reconstruction loss converging toward zero for both sets. At no point during the training process does the training performance diverge from the validation performance, indicating that the model is not overfitting to training data. The model appears to have stable convergence with no oscillations or spikes indicating appropriate learning rates, regularization techniques, and balance between reconstruction and quantization loss.
 
-It is also noteworthy that the validation performance is greater than the training performance throughout the entire process. This would seem to indicate seem leakage, however, the only interactions the model has with the validation set are in no gradient contexs (see `avg_ssim()` and `avg_loss()` in `metrics.py`). It is possible that the validation set is incidentally dominated by samples the model reconstructs with strong performance and so _modified splits and regularization techniques_ should be used to explore this relationship.
+It is also noteworthy that the validation performance is greater than the training performance throughout the entire process. This would seem to indicate leakage, however, the only interactions the model has with the validation set are in no gradient contexs (see `avg_ssim()` and `avg_loss()` in `metrics.py`). It is possible that the validation set is incidentally dominated by samples the model reconstructs with strong performance, but this would need to be investigates. _Modified splits and regularization techniques_ should be used to explore this occurence.
 
 <center> <i> Training and Validation Loss Plot </i> </center>
 
@@ -167,7 +167,7 @@ It is also noteworthy that the validation performance is greater than the traini
 
 The following are reconstruction samples from the training execution. The top images represent the input image and the bottom represent the reconstruction.
 
-By the final epoch the reconstructed images closely resemble the input images, providing a visual confirmation of strong performance.
+By the final epoch the reconstructed images closely resemble the input images, providing a visual confirmation of model performance.
 
 <center> <i> Epoch 1 </i> </center>
 
@@ -223,3 +223,10 @@ As discussed previously, a more traditional training, test, validation split cou
 ---
 
 ## References
+
+[1] A. v. d. Oord, O. Vinyals, and K. Kavukcuoglu, “Neural Discrete Representation Learning,”
+arXiv:1711.00937 [cs], May 2018, arXiv: 1711.00937. [Online]. Available: http://arxiv.org/abs/1711.00937
+
+[2] A. Razavi, A. v. d. Oord, and O. Vinyals, “Generating Diverse High-Fidelity Images with
+VQ-VAE-2,” arXiv:1906.00446 [cs, stat], Jun. 2019, arXiv: 1906.00446. [Online]. Available: http:
+//arxiv.org/abs/1906.00446

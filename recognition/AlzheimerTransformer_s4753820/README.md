@@ -88,7 +88,16 @@ All these were applied before normalisation. The aggressive data augmentation wa
 ```
 
 ### Install
+
 **Set up your environment**:
+
+The main dependencies used were:
+- [torch](https://pytorch.org/)
+- [pandas](https://pandas.pydata.org/)
+- [numpy](https://numpy.org/)
+- [scikit-learn](https://scikit-learn.org/)
+
+All libraries used can be easily installed by using the following:
 - Create a virtual environment using venv or conda.
 - Install the necessary dependencies:
 ```bash

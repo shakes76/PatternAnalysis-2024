@@ -15,7 +15,7 @@ from torch import optim
 from dataset import MRIDataloader
 from modules import VQVAE
 from metrics import avg_ssim, avg_loss, batch_ssim
-from utils import load_config, setup_logging, save_samples, plot_results, save_model
+from utils import load_config, plot_results, setup_logging, save_model, save_samples, set_seed
 
 class VQVAETrainer:
     def __init__(self, config):
@@ -80,7 +80,7 @@ class VQVAETrainer:
   
         logging.info('Dataloaders Initialized')
     
-    def _save_results(self, images, outputs, training_loss, training_ssim, total_iterations, epoch):
+    def _save_results(self, training_loss, training_ssim, epoch, total_iterations):
         """Helper function to log and output training results at 
         specified intervals.
 
@@ -101,6 +101,7 @@ class VQVAETrainer:
         self.training_ssims.append(avg_training_ssim)
 
         # Average validation loss and ssim
+        # NOTE avg_loss and avg_ssim are run with no grad
         avg_validation_loss = avg_loss(self.device, self.model, self.criterion, self.llw, self.validate_loader)
         avg_validation_ssim = avg_ssim(self.device, self.model, self.validate_loader)
         self.validation_losses.append(avg_validation_loss)
@@ -113,11 +114,6 @@ class VQVAETrainer:
             save_model(epoch, avg_validation_ssim, self.model, self.optimizer, self.model_dir)
             
             logging.info(f'Saved Model')
-
-        # Save training samples
-        save_samples(images, outputs, self.sample_size, self.sample_dir, title=f'epoch_{epoch}_iter_{total_iterations}')
-
-        logging.info('Saved Training Samples')
 
     def _training_step(self, images):
         """Forward pass and back-propogation for a single training batch.
@@ -154,10 +150,10 @@ class VQVAETrainer:
 
         # Training metrics
         total_iterations = 0
-        
-        for epoch in range(self.epochs):
-            self.model.train()
 
+        self.model.train()
+
+        for epoch in range(self.epochs):
             interval_training_losses = []
             interval_training_ssims = []
 
@@ -165,13 +161,20 @@ class VQVAETrainer:
                 total_iterations += 1
                 images = images.to(self.device)
 
+                # Forward and backward pass
                 outputs, loss, ssim = self._training_step(images)
+
                 interval_training_losses.append(loss.item())
                 interval_training_ssims.append(ssim.item())
 
-                if i % self.interval  == 0:
-                    self._save_results(images, outputs, interval_training_losses, interval_training_ssims, total_iterations, epoch+1)
-        
+                if i % self.interval == 0:
+                    # NOTE all functions are run with no grad
+                    self._save_results(interval_training_losses, interval_training_ssims, epoch+1, total_iterations)
+                    interval_training_losses.clear()
+                    interval_training_ssims.clear()
+
+            save_samples(images, outputs, self.sample_size, self.sample_dir, title=f'epoch_{epoch}')
+
         plot_results(self.iterations, self.training_losses, self.training_ssims, self.validation_losses, self.validation_ssims, self.visual_dir)
 
 def main():
@@ -183,6 +186,8 @@ def main():
     config = load_config(args.config)
     setup_logging(config['output']['log_dir'], 'training.log')
 
+    # Seed randomness
+    set_seed(config['training']['seed'])
     trainer = VQVAETrainer(config)
     trainer.train()
 

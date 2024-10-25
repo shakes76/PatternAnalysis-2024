@@ -6,6 +6,8 @@ Utility files for the training and prediction scripts.
 import logging
 from pathlib import Path
 import yaml
+import numpy as np
+import random
 
 import matplotlib.pyplot as plt
 import torch
@@ -26,7 +28,7 @@ def load_config(config_path):
     
     return config
 
-def setup_logging(log_dir: str):
+def setup_logging(log_dir: str, title: str):
     """Global logging setup for all modules.
 
     Args:
@@ -40,12 +42,25 @@ def setup_logging(log_dir: str):
         level=logging.INFO,
         format='[%(asctime)s] %(levelname)s:%(name)s:%(message)s',
         handlers=[
-            logging.FileHandler(log_dir / 'training.log'),
+            logging.FileHandler(log_dir / title),
             logging.StreamHandler()
         ]
     )
 
-def save_samples(images, sample_size, device, model, output_dir, title):
+def set_seed(seed):
+    """Seed randomness for result reproducibility.
+
+    Args:
+        seed (int): integer to seed randomness
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+
+def save_samples(images, outputs, sample_size, output_dir, title):
     """Generate and save image samples for a given model.
 
     Args:
@@ -56,12 +71,10 @@ def save_samples(images, sample_size, device, model, output_dir, title):
         output_dir (str): directory to save images to
         title (str): the title of the sample set
     """
-    sample_images = images[:sample_size]
-
-    with torch.no_grad():
-        outputs, _ = model(sample_images.to(device))
+    sample_images = images[:sample_size].cpu()
+    sample_outputs = outputs[:sample_size].cpu()
     
-    combined = torch.cat([sample_images.cpu(), outputs.cpu()], 0)
+    combined = torch.cat([sample_images, sample_outputs], 0)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_dir = output_dir / f'{title}.png'
@@ -92,31 +105,51 @@ def save_model(epoch, ssim, model, optimizer, model_dir):
         'ssim': ssim
     }, model_dir)
 
-    logging.info('Model saved')
+def _plot_loss(iterations, training_losses, validation_losses, loss_dir):
+    fig, ax1 = plt.subplots()
 
-def plot_results(iterations, ssim_scores, losses, visual_dir):
+    # Plot losses
+    ax1.plot(iterations, training_losses, label='Training Loss', color='blue')
+    ax1.plot(iterations, validation_losses, label='Validation Loss', color='orange')
+
+    ax1.set_title('Training and Validation Loss')
+    ax1.set_xlabel('Iterations')
+    ax1.set_ylabel('Reconstruction Loss')
+    ax1.legend()
+
+    ax1.grid(True)
+
+    plt.savefig(loss_dir)
+
+def _plot_ssim(iterations, training_ssims, validation_ssims, ssim_dir):
+    fig, ax1 = plt.subplots()
+
+    # Plot losses
+    ax1.plot(iterations, training_ssims, label='Training SSIM', color='blue')
+    ax1.plot(iterations, validation_ssims, label='Validation SSIM', color='orange')
+
+    ax1.set_title('Training and Validation SSIM')
+    ax1.set_xlabel('Iterations')
+    ax1.set_ylabel('Structured Similarity Index')
+    ax1.legend()
+
+    ax1.grid(True)
+
+    plt.savefig(ssim_dir)
+
+def plot_results(iterations, training_losses, training_ssims, validation_losses, validation_ssims, visual_dir):
     """Plot SSIM and reconstruction loss over training proces.
 
     Args:
-        iterations (int): iteration of loss and ssim
+        iterations (int): iteration for each loss and ssim
         ssim_scores (float): ssim score at given iteration
         losses (float): recon loss at given iteration
         visual_dir (str): directory to save the plot
     """
-    visual_dir = Path(visual_dir)
+    loss_dir = Path(visual_dir) / 'losses.png'
+    ssim_dir = Path(visual_dir) / 'ssims.png'
 
-    fig, ax1 = plt.subplots()
+    _plot_loss(iterations, training_losses, validation_losses, loss_dir)
+    _plot_ssim(iterations, training_ssims, validation_ssims, ssim_dir)
 
-    ax1.plot(iterations, ssim_scores, color='orange', label='SSIM')
-    ax1.set_xlabel('Iteration')
-    ax1.set_ylabel('SSIM', color='orange')
-    ax1.tick_params(axis='y', labelcolor='orange')
-
-    ax2 = ax1.twinx()
-    ax2.plot(iterations, losses, color='b', label='Loss')
-    ax2.set_ylabel('Loss', color='b')
-    ax2.tick_params(axis='y', labelcolor='b')
-
-    plt.title('SSIM and Loss over Model Training')
-    ax1.grid(True)
-    plt.savefig(visual_dir / 'ssim_loss_plot.png')
+    

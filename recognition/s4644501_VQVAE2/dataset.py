@@ -1,3 +1,9 @@
+"""
+Dataset and dataloader classes for loading and pre-processing
+the HIPMRI prostate cancer dataset.
+
+@author George Reid-Smith
+"""
 import os
 
 import numpy as np
@@ -13,14 +19,15 @@ class MRIDataset(Dataset):
     """
     def __init__(self, directory: str, norm_image: bool=True, target_shape=(256, 128),
                  get_affines: bool=False, early_stop: bool=False, dtype = torch.float32):
-        """Initialize the image dataset
+        """Initialize dataset attributes.
 
         Args:
-            directory (string): directory of the nifti files
-            normImage (bool, optional): normalize the images to between 1.0 and 0.0. Defaults to True.
-            getAffines (bool, optional): data contains affines. Defaults to False.
-            early_stop (bool, optional): stops loading prematurely for testing. Defaults to False.
-            dtype (any, optional): datatype to be converted to. Defaults to np.float32.
+            directory (int): directory of the nifti files
+            norm_image (bool, optional): normalize the image. Defaults to True.
+            target_shape (tuple, optional): shape to resize input image. Defaults to (256, 128).
+            get_affines (bool, optional): get affines. Defaults to False.
+            early_stop (bool, optional): early stoppage for testing. Defaults to False.
+            dtype (_type_, optional): target datatype. Defaults to torch.float32.
         """
         self.directory = directory
         self.image_names = [os.path.join(directory, fname) for fname in os.listdir(directory)]
@@ -66,3 +73,34 @@ class MRIDataset(Dataset):
             return in_image, affine
 
         return in_image
+
+class MRIDataloader:
+    """Loads HipMRI prostate cancer images into a dataset and then 
+    into a dataloader container.
+    """
+    def __init__(self, directory: str, batch_size: int, shuffle: bool, 
+                 norm_image: bool=True, target_shape=(256, 128),
+                 get_affines: bool=False, early_stop: bool=False, 
+                 dtype = torch.float32):
+        """Load the dataset and build a DataLoader container.
+
+        Args:
+            directory (int): directory of the nifti files
+            batch_size (int): batch size for the loader
+            shuffle (bool):  shuffle the images in the loader
+            norm_image (bool, optional): normalize the image. Defaults to True.
+            target_shape (tuple, optional): shape to resize input image. Defaults to (256, 128).
+            get_affines (bool, optional): get affines. Defaults to False.
+            early_stop (bool, optional): early stoppage for testing. Defaults to False.
+            dtype (_type_, optional): target datatype. Defaults to torch.float32.
+        """
+        self.dataset = MRIDataset(directory, norm_image, target_shape, get_affines, early_stop, dtype)
+        self.loader = DataLoader(dataset=self.dataset, batch_size=batch_size, shuffle=shuffle)
+
+    def load(self):
+        """Return the dataloader container of the dataset.
+
+        Returns:
+            DataLoader: the HIPMRI dataloader container
+        """
+        return self.loader

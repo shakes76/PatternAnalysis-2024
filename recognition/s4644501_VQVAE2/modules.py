@@ -64,10 +64,10 @@ class Quantize(nn.Module):
             + self.embed.pow(2).sum(0, keepdim=True)
         )
 
-        # Find closest codebook entries for each latent vector
+        # Find closest codebook entry for each latent vector
         _, embed_ind = (-dist).max(1)
 
-        # Convert indices to one-hot encodings for embedding lookup
+        # Convert index to one-hot encoding for embedding lookup
         embed_onehot = F.one_hot(embed_ind, self.n_embed).type(flatten.dtype)
         
         # Quantize latent vectors by looking up nearest codebook
@@ -158,7 +158,7 @@ class Encoder(nn.Module):
             ]
 
         # Append residual blocks
-        for i in range(n_res_block):
+        for _ in range(n_res_block):
             blocks.append(ResBlock(channel, n_res_channel))
 
         blocks.append(nn.ReLU(inplace=True))
@@ -189,8 +189,9 @@ class Decoder(nn.Module):
         super().__init__()
         blocks = [nn.Conv2d(in_channel, channel, 3, padding=1)]
 
-        for i in range(n_res_block):
+        for _ in range(n_res_block):
             blocks.append(ResBlock(channel, n_res_channel))
+        
         blocks.append(nn.ReLU(inplace=True))
 
         # Define deconvolutions for given strides
@@ -336,7 +337,7 @@ class VQVAE(nn.Module):
         """
         # Upsample quantized top representation
         upsample_t = self.upsample_t(quant_t)
-
+    
         # Combine upsampled top representation with quantized bottom representation
         quant = torch.cat([upsample_t, quant_b], 1)
 

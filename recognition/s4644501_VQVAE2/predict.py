@@ -1,5 +1,5 @@
 """
-Runs prediction on a a trained VQVAE model.
+Runs prediction on a VQVAE model.
 
 @author George Reid-Smith
 """
@@ -14,7 +14,7 @@ from metrics import avg_ssim
 from dataset import MRIDataloader
 
 class VQVAEPredict:
-    """Runs inference on trained VQVAE model.
+    """Runs inference on a trained VQVAE.
     """
     def __init__(self, config):
         self._config(config)

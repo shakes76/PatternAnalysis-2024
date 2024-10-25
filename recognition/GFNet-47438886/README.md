@@ -36,7 +36,7 @@ The typical features associated with vision transformers like dense linear layer
 ### Files
 This repository contains the following files:
 - `modules.py`: This file contains the source code for the GFNet model. It is largely based on the code written by Rao., et al. [[2]](https://github.com/raoyongming/GFNet/blob/master/gfnet.py)
-- `dataset.py`: This file contains the data loader for the ADNI dataset. It also performs pre-processing on the dataset, detailed [here](###preprocessing).
+- `dataset.py`: This file contains the data loader for the ADNI dataset. It also performs pre-processing on the dataset, detailed [here](#pre-processing).
 - `train.py`: This file contains the code used to train, validate and test the GFNet model. The best model is also saved to be used in inference in desired. Relevant plots are also generated here.
 - `predict.py`: This file contains the code used to run inference on the trained model on unseen test data.
 - `utils.py`: This file contains utility functions useful across the multiple files. Specifically, functions to get the current device and also dataset root.
@@ -119,14 +119,18 @@ The following images show some examples of input images fed into the model.
 #### Example Input for Brain without Alzheimer's Disease
 ![Example input of brain with no Alzheimer's Disease](assets/808819_88_NC.jpeg)
 
+## Training
+### Learning Rate Scheduler
+The `ReduceLROnPlateau` learning rate scheduler from Pytorch was used to adjust the learning rate depending on the validation loss. Starting at a learning rate of 0.00001, when the validation loss plateaued, the learning rate was multiplied by a factor of 0.6, slowly decreasing it as it got closer to the minimum.
 
+### Training and Validation Loss and Accuracy Plots
+![Training and Validation Loss and Accuracy](assets/training_figures.png)
+The maximum validation accuracy from training was **82.7%**, which is impressive, as it was based on unseen data. From the plots, it appears the validation accuracy has somewhat plateaued, however, training the model for more epochs may yield higher accuracies. Due to limitations with compute resources, this was not achieved. 
 
 ## Results
-### Training and Validation Loss and Accuracy Plots
+After training, the model was tested on the ADNI test dataset. This contained 4460 images of AD classes, and 4540 images of NC classes. It was found from running `predict.py` that the accuracy of the model tested on the unseen test set was **62.4%**. 
 
-
-### Test Accuracy Plot
-After testing, it was found that the accuracy of the model was **75%**.
+To improve this, some of the data from the test set could have been allocated to training, exposing the model to more variation. 
 
 
 # References

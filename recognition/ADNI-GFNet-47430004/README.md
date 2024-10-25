@@ -21,11 +21,7 @@ The following is a gif created by Rao et al. [1] that demonstrates how GFNet wor
 
 ## Global Filter Layer
 
-GFNet consists of stacking several Global Filter Layers and Feedforward Networks [1].
-
-## Why the PR has 2 LICENSE files
-
-Since the original repo (found in [Inspiration](#inspiration)) used the MIT License, a copy of the MIT License has also been included in this sub-folder, while also containing the Apache license of Shakes' repo.
+GFNet consists of stacking Global Filter Layers and Feedforward Networks [1]. The Global Filter Layer uses the efficient Fast Fourier Transform algorithm to mix the tokens [1].
 
 ## Dependencies:
 
@@ -65,14 +61,66 @@ An image in the data set may look like this (This is an image if the NC set, wit
     <img src="/recognition/ADNI-GFNet-47430004/images/Sample_train_data_808819_88.jpeg" alt="Example ADNI brain data">
 </p>
 
+## Usage
+
+This section assumes that all dependencies are met.
+
+### Training
+
+```
+python train.py
+```
+
+Many optional arguments can be found in the [train.py](/recognition/ADNI-GFNet-47430004/train.py) file, under the `get_args_parser()` function, and also under the [Hyperparameters](#hyperparameters) section.
+
+The default execution of `train.py` allows the model to be trained using hyperparameters that I found useful in the context of the problem - classifying ADNI data. These hyperparameters can be found in [Hyperparameters](#hyperparameters).
+
+The training script relies on [data set structure](#structure-of-data) being satisfied - otherwise, it will fail trying to load the data.
+
+### Predicting
+
+```
+python predict.py
+```
+
+I did not add an argsparser to predict.py. As a result, it relies on the model being used to predict existing in the directory `"test/model/GFNet.pth"`, relative to the location the script is run.
+
+When the predict script is run, it loads the model and performs the test using the test set. This test set is normalised, but not augmented or shuffled unlike the training set, for consistent performance.
+
+## Best Case Observed
+
+Using the hyperparameters hard-coded into the argsparser (i.e. running `python train.py` with no arguments), the best test set accuracy of the model is **78.4%**.
+
+### Accuracy over epochs
+
+<p align="center">
+    <img src="/recognition/ADNI-GFNet-47430004/images/Accs.png" alt="Test Accuracy vs Epochs">
+</p>
+
+### Losses over epochs
+
+<p align="center">
+    <img src="/recognition/ADNI-GFNet-47430004/images/Losses.png" alt="Training and Test Loss vs Epochs">
+</p>
+
+### Test performance
+
+<p align="center">
+    <img src="/recognition/ADNI-GFNet-47430004/images/test.png" alt="Test Accuracy per batch, in best case">
+</p>
+
+## Hyperparameters
+
+## Why the PR has 2 LICENSE files
+
+Since the original repo (found in [Inspiration](#inspiration)) used the MIT License, a copy of the MIT License has also been included in this sub-folder, while also containing the Apache license of Shakes' repo.
+
 ## Inspiration
 
 Significant portions of the code were taken from the following github repo:
 https://github.com/shakes76/GFNet
 
 This github repo is a fork of the official github repo of the original GFNet code by the authors of “GFNet: Global Filter Networks for Visual Recognition” [1].
-
-## Hyperparameters
 
 ## Official References/Bibliography
 

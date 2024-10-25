@@ -130,7 +130,7 @@ Through multiple attempts at fixes the training was unable to be stabilised. Aft
     Loss plot of failed training
 </p>
 
-A number of fixes were attempted - see commit history. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the number of convolution layers in the residual blocks. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
+A number of fixes were attempted - see commit history. Some of these were: lowering discriminator learning rate; gradient clipping the discriminator; reducing the power of the discriminator by lowering number of convolution layers in the residual blocks, adding adaptive discriminator augmentation. None of which worked. Putting debugging print statements in the generators forward pass function has revealed some information. Here is an example from the first forward pass in the first epoch:  
 
 - W stats - min: -0.5029, max: 2.3184, mean: 0.3291
 - Const stats - min: -4.3558, max: 3.9382, mean: -0.0023

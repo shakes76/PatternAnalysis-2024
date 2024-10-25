@@ -13,8 +13,9 @@ The following image provides a highlevel overview of the GFNet Architecture spec
 
 ## Problem Details
 The ADNI dataset contains a total of 30,520 brain MRI images broken into a training and testing set, both of which are also broken into Alzheimer's Diseased (AD) images and Cognitive Normal (NC) images. There are a total of 21,520 training images and 9,000 testing images, each image is titled with the naming convention "PatientID__MRISliceID.jpeg" (e.g. 808819_89.jpeg) with a total of 20 images per patients. Each image is greyscale and has a size of 256 x 240 pixels, domain professionals commonly use a small sample of a patients brain MRI scan's to determine if they have any neurodegerative diseases, such as Alzheimer's in this case. This machine learning model acts to simulate the role of the professional in classifying patient brain scans into one of two classes, AD or NC.
-The following image is an individual example of an MRI brain scan from the dataset:
+The following images are individual examples of an MRI brain scan from the dataset before and after processing:
 ![Single Brain Scan](./images/brain_scan.jpeg) 
+![Single Altered Brain Scan](./images/brain_scan2.jpeg)
 
 
 ## Dependencies

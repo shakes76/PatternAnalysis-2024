@@ -10,6 +10,9 @@ from torchvision import transforms
 
 from modules import BasicDataset, UNet, plot_img_and_mask
 
+'''
+    This script is unaltered from the example UNet usage (referenced in the report) as I was not super sure what to do with it and ran out of time to implement for this segmentation example.
+'''
 def predict_img(net,
                 full_img,
                 device,

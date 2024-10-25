@@ -3,7 +3,7 @@ from dataset import GNNDataLoader
 from modules import *
 
 # Load data
-data, train_idx, valid_idx, test_idx  = GNNDataLoader('/Users/anthonyngo/Documents/UQ/24sem2/COMP3710/project/PatternAnalysis-2024/facebook.npz')
+data, train_idx, valid_idx, test_idx  = GNNDataLoader('recognition/48019022_GNN/facebook.npz')
 
 # Initialize model
 # Initialize model

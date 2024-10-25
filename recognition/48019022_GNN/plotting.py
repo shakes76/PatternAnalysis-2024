@@ -27,7 +27,7 @@ def plot_tsne(architecture, model, data):
 
 if __name__ == "__main__":
     # Load data
-    data, train_idx, valid_idx, test_idx = GNNDataLoader('/Users/anthonyngo/Documents/UQ/24sem2/COMP3710/project/PatternAnalysis-2024/facebook.npz')
+    data, train_idx, valid_idx, test_idx = GNNDataLoader('recognition/48019022_GNN/facebook.npz')
 
     # Select model
     architecture = "SAGE"

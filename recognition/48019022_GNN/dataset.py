@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 
-def GNNDataLoader(filepath='facebook.npz'):
+def GNNDataLoader(filepath='recognition/48019022_GNN/facebook.npz'):
     """
     Custom dataloader for loading processed node data from file 'facebook.npz'
     We load the Facebook Large Page-Page Network dataset 
@@ -15,6 +15,11 @@ def GNNDataLoader(filepath='facebook.npz'):
 
     Then split the data into train, validation and test sets
     """
+    # Set seed for reproducible results
+    seed = 42
+    
+    torch.manual_seed(seed)
+
     # Load in data from file path as some object
     # From the original dataset, keys are: 'edges', 'features', 'target'
     data = np.load(filepath)

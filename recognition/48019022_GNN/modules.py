@@ -1,6 +1,6 @@
 """
 A file containing the Graph Neural Network architectures to be used.
-These include: GCN, GAT, SGC, JK-Nets
+These include: GCN, GAT, SGC, GraphSAGE
 @author Anthony Ngo
 @date 21/10/2024
 """

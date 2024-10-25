@@ -1,34 +1,35 @@
-import torch
 import pandas as pd
+import torch
 import json
 from torch_geometric.utils import to_undirected
-from torch_geometric.data import Data
-from sklearn.utils.class_weight import compute_class_weight
 
-def load_data():
-    edges = pd.read_csv(r"C:\Users\wuzhe\Desktop\musae_facebook_edges.csv")
-    labels = pd.read_csv(r"C:\Users\wuzhe\Desktop\musae_facebook_target.csv")
-    with open(r"C:\Users\wuzhe\Desktop\musae_facebook_features.json") as f:
-        features = json.load(f)
+class DatasetPreparation:
+    def __init__(self, edges_path, labels_path, features_path):
+        self.edges_path = edges_path
+        self.labels_path = labels_path
+        self.features_path = features_path
 
-    node_features = torch.zeros((len(features), 128))
-    for node, feats in features.items():
-        feats = feats[:128]
-        if len(feats) < 128:
-            feats += [0] * (128 - len(feats))
-        node_features[int(node)] = torch.tensor(feats, dtype=torch.float)
+    def load_data(self):
+        edges = pd.read_csv(self.edges_path)
+        labels = pd.read_csv(self.labels_path)
+        with open(self.features_path) as f:
+            features = json.load(f)
+        return edges, labels, features
 
-    edge_index = to_undirected(torch.tensor(edges.values.T, dtype=torch.long))
-    labels['page_type'], _ = pd.factorize(labels['page_type'])
-    y = torch.tensor(labels['page_type'].values, dtype=torch.long)
+    def prepare_node_features(self, features):
+        node_features = torch.zeros((len(features), 128))
+        for node, feats in features.items():
+            feats = feats[:128]
+            if len(feats) < 128:
+                feats += [0] * (128 - len(feats))
+            node_features[int(node)] = torch.tensor(feats, dtype=torch.float)
+        return node_features
 
-    class_weights = compute_class_weight('balanced', classes=np.unique(labels['page_type']), y=labels['page_type'])
-    class_weights = torch.tensor(class_weights, dtype=torch.float).to('cuda' if torch.cuda.is_available() else 'cpu')
+    def convert_to_undirected(self, edges):
+        return to_undirected(torch.tensor(edges.values.T, dtype=torch.long))
 
-    data = Data(x=node_features, edge_index=edge_index, y=y)
-    data.train_mask = torch.rand(data.num_nodes) < 0.8
-    data.test_mask = ~data.train_mask
-
-    return data, class_weights, len(labels['page_type'].unique())
+    def prepare_labels(self, labels):
+        labels['page_type'], _ = pd.factorize(labels['page_type'])
+        return torch.tensor(labels['page_type'].values, dtype=torch.long)
 
 

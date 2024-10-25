@@ -1,5 +1,10 @@
 """
-Contain constants and hyperparameters for codebase.
+Contains constants and hyperparameters for StyleGAN2 implementation.
+
+This file defines:
+    - Dataset paths and attributes
+    - Model hyperparameters
+    - Training configuration
 """
 
 RANGPUR_PATH = "/home/groups/comp3710/" # Dataset path on Rangpur Cluster

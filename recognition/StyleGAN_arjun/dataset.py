@@ -1,3 +1,6 @@
+"""
+Contains data processing and visualization functions for StyleGAN2.
+"""
 import torch
 from torchvision import datasets
 from torchvision import transforms

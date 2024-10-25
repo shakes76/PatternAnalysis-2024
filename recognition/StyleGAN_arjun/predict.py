@@ -1,5 +1,9 @@
 """
-Contains code to test trained StyleGAN2 model on ADNI.
+Contains code to test and visualize output from trained StyleGAN2 model on ADNI dataset.
+This file provides:
+    - Functions to generate and save synthetic brain MRI images
+    - Model loading and inference pipeline
+    - Visualization utilities for generated images
 """
 import torch
 from modules import Generator, MappingNetwork

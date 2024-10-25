@@ -76,12 +76,10 @@ class VisionTransformer(nn.Module):
     def __init__(self, num_layers, img_size, emb_size, patch_size, num_head, num_class):
         super().__init__()
         self.patchembedding = PatchEmbedding(patch_size=patch_size, img_size=img_size)
-        # for non-square images
-        #self.num_patches = (img_size[0] // patch_size) * (img_size[1] // patch_size)  # Height * Width
         height, width = img_size
         self.num_patches = (height // patch_size) * (width // patch_size)
         self.pos_embed = nn.Parameter(PositionEmbedding(self.num_patches + 1, emb_size))  
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, emb_size))  # Shape: (1, 1, emb_size)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, emb_size)) 
         self.attention = nn.Sequential(*[Block(emb_size, num_head) for _ in range(num_layers)])
         self.ff = nn.Linear(emb_size, num_class)
 

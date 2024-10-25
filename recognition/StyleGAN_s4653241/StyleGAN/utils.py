@@ -3,6 +3,7 @@
 
 import torch
 import config
+from config import log_resolution
 
 def save_model(epoch,G,D,optimizer_G,optimizer_D, gen_loss, disc_loss,path = config.path + 'checkpoint.pth'):
     checkpoint = {
@@ -45,3 +46,10 @@ def devicer():
 
     print(f'Using device: {device}', flush=True)
     return device
+
+def get_w(batch_size, mapping_network, device):
+
+    z = torch.randn(batch_size, config.w_dim).to(device)
+    w = mapping_network(z)
+    # Expand w from the generator blocks
+    return w[None,:,:].expand(log_resolution, -1, -1)

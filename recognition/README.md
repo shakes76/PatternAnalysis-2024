@@ -41,20 +41,20 @@ The model requests for 3 parameters which are input, hidden and output channels.
 # Figures and Results 
 - TSNE plot (pre - training)
   This TSNE plot illustrates the initial distribution of the data before training. The points from different classes appear scattered chaotically, with no discernible clusters or structure.
-  ![TSNE_original_PLOT](TSNE_original_plot.png)
-
+  ![[TSNE_original_PLOT](recognition/TSNE_original_plot.png)](https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/c4aa6031fa32b2dbd0cc2b2f0eb2ad7c450b87a2/recognition/TSNE_original_plot.png)
+  
 - TSNE plot (post - training)
   This TSNE plot shows how the data has been classified after 350 epochs of training. 
   It is observed that each class has been clearly seperated into 4 groups after training the model. However, there seems to be minor misslcassification and overlaps occured for each classes. These missclassification were mostly located at the boundary of each classes.
-  ![TSNE_PLOT](TSNE_plot.png)
+  ![[TSNE_PLOT](recognition/TSNE_plot.png)](https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/c4aa6031fa32b2dbd0cc2b2f0eb2ad7c450b87a2/recognition/TSNE_plot.png)
 
 - Test, validation accuracy plot 
   The accuracy plot shows that both test and validation accuracies follow a similar trend, which is encouraging. The accuracy remains below 90% until about 50 epochs, after which it rises above 90%. However, a slight gap between test and validation accuracies emerges around 350 epochs, likely due to overfitting.
-  ![Accuracyplot](Training_and_Validation_Accuracy.png)
+  ![Accuracy plot](https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/c4aa6031fa32b2dbd0cc2b2f0eb2ad7c450b87a2/recognition/Training%20and%20Validation%20Accuracy.png)
 
 - test, validation loss plot 
   The loss plot describes the loss values of test and validation datasets as the model is trained. The graph shows that both loss values decreases as the model is trained and this shows that model is being trained preperly. However, it there seems to be a gap between each test and validation loss as from around 200 epochs. This is assumed to be caused by overfitting of the model. 
-  ![Lossplot](Training_and_Validation_Loss_graph.png)
+  ![[Lossplot](recognition/Training and Validation Loss graph.png)](https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/c4aa6031fa32b2dbd0cc2b2f0eb2ad7c450b87a2/recognition/Training%20and%20Validation%20Loss%20graph.png)
 
 Conclusion: The model achieves an average test accuracy of 93.5%, which is reasonable. It performs well in classifying nodes according to their true labels, although there are room for improvement in reducing overfitting. IIn terms of models, dropout layer and  batch normalisation could be applied to the model to reduce overfitting. Also, Early stopping may be effective to overfitting. Overall, the model successfully classifies nodes in the Facebook dataset with high accuracy.
 

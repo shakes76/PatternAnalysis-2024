@@ -16,3 +16,24 @@ in the images folder.
 The data loader was run in a simple for to check that it worked, it was ~50% successful when it errorred due
 to image sizing issue. To resolve this, an image resizing function was added to be called by the data
 loader. The completed data_loader test output can be seen in data_loader_test.png in the images folder.
+
+After messing around with fixing errors from the original versions of modules, dataset, predict and train I 
+eventually gave up on those versions as they would not run.
+
+I went online and found a similar example of a 2d UNet implemented using pytorch and adapted the code to suit
+my problem and reference to this can be seen below.
+
+Author: milesial
+Date: 11/02/2024
+Title of program/source code: U-Net: Semantic segmentation with PyTorch
+Code version: 475
+Type (e.g. computer program, source code): computer program
+Web address or publisher (e.g. program publisher, URL): https://github.com/milesial/Pytorch-UNet
+
+Also during this process I discovered that the masks were inb the segment datasets and the images were in the 
+datasets not suffixed with 'seg' (I had it the wrong way around originally).
+
+I ran the train code just for the first 5 epochs and a graph showing the batch loss and a graph showing the dice 
+score can both be seen in the images folder.
+
+I then ran it for 50 epochs and the graphs similar to above are in the images folder.

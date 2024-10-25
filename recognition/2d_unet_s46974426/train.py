@@ -15,6 +15,9 @@ from tqdm import tqdm
 from modules import dice_coeff, multiclass_dice_coeff, UNet, CombinedDataset, dice_loss
 from dataset import load_data_2D
 import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 import wandb
 
@@ -23,6 +26,10 @@ dir_mask = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_seg_test')
 dir_img_val = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_validate')
 dir_mask_val = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_seg_validate')
 dir_checkpoint = Path('./checkpoints')
+
+batch_losses = []
+val_dice_scores = []
+conf_matrix_total = None
 
 def evaluate(net, dataloader, device, amp):
     net.eval()
@@ -33,36 +40,44 @@ def evaluate(net, dataloader, device, amp):
     with torch.autocast(device_type = 'cuda'):
         for batch in tqdm(dataloader, total=num_val_batches, desc='Validation round', unit='batch', leave=False):
             image, mask_true = batch
-
-            # move images and labels to correct device and type
             image = image.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
-            mask_true = mask_true.to(device=device, dtype=torch.long)
-            mask_true = mask_true.squeeze(1)
+            mask_true = mask_true.to(device=device, dtype=torch.long).squeeze(1)
             mask_true = torch.clamp(mask_true, min=0, max=1)
 
-            # predict the mask
             mask_pred = net(image)
 
             if net.n_classes == 1:
-                assert mask_true.min() >= 0 and mask_true.max() <= 1, 'True mask indices should be in [0, 1]'
                 mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
-                # compute the Dice score
                 dice_score += dice_coeff(mask_pred, mask_true, reduce_batch_first=False)
+
+                # Confusion matrix for binary classification
+                # preds_flat = mask_pred.view(-1).cpu().numpy()
+                # labels_flat = mask_true.view(-1).cpu().numpy()
+                # conf_matrix = confusion_matrix(labels_flat, preds_flat)
+
             else:
-                assert mask_true.min() >= 0 and mask_true.max() < net.n_classes, 'True mask indices should be in [0, n_classes['
-                # convert to one-hot format
                 mask_true = F.one_hot(mask_true, net.n_classes).permute(0, 3, 1, 2).float()
                 mask_pred = F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2).float()
-                # compute the Dice score, ignoring background
                 dice_score += multiclass_dice_coeff(mask_pred[:, 1:], mask_true[:, 1:], reduce_batch_first=False)
 
+                # Confusion matrix for multi-class classification
+                # preds_flat = mask_pred.argmax(dim=1).view(-1).cpu().numpy()
+                # labels_flat = mask_true.argmax(dim=1).view(-1).cpu().numpy()
+                # conf_matrix = confusion_matrix(labels_flat, preds_flat)
+
+            # if conf_matrix_total is None:
+            #     conf_matrix_total = conf_matrix
+            # else:
+            #     conf_matrix_total += conf_matrix
+
     net.train()
+    
     return dice_score / max(num_val_batches, 1)
 
 def train_model(
         model,
         device,
-        epochs: int = 5,
+        epochs: int = 50,
         batch_size: int = 1,
         learning_rate: float = 1e-5,
         val_percent: float = 0.1,
@@ -179,7 +194,7 @@ def train_model(
                 #     'epoch': epoch
                 # })
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
-
+                batch_losses.append(loss.item())
                 # Evaluation round
                 division_step = (n_train // (5 * batch_size))
                 if division_step > 0:
@@ -195,6 +210,7 @@ def train_model(
                         val_score = evaluate(model, val_loader, device, amp)
                         scheduler.step(val_score)
 
+                        val_dice_scores.append(val_score)
                         logging.info('Validation Dice score: {}'.format(val_score))
                         try:
                             pass
@@ -220,10 +236,36 @@ def train_model(
             torch.save(state_dict, str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch)))
             logging.info(f'Checkpoint {epoch} saved!')
 
+    plt.figure(figsize=(10, 5))
+    plt.plot(batch_losses, label='Batch Loss')
+    plt.title('Batch Loss During Training')
+    plt.xlabel('Batch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
+    val_dice_scores_cpu = [score.cpu().item() for score in val_dice_scores]
+    # Plot validation Dice scores
+    plt.figure(figsize=(10, 5))
+    plt.plot(val_dice_scores_cpu, label='Validation Dice Score')
+    plt.title('Validation Dice Score')
+    plt.xlabel('Epoch')
+    plt.ylabel('Dice Score')
+    plt.legend()
+    plt.show()
+
+    # # Confusion Matrix Plot
+    # plt.figure(figsize=(8, 6))
+    # sns.heatmap(conf_matrix_total, annot=True, fmt='d', cmap='Blues')
+    # plt.title('Confusion Matrix')
+    # plt.xlabel('Predicted')
+    # plt.ylabel('True')
+    # plt.show()
+
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
-    parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
+    parser.add_argument('--epochs', '-e', metavar='E', type=int, default=50, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-5,
                         help='Learning rate', dest='lr')
@@ -232,7 +274,7 @@ def get_args():
     parser.add_argument('--validation', '-v', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
     parser.add_argument('--amp', action='store_true', default=False, help='Use mixed precision')
-    parser.add_argument('--bilinear', action='store_true', default=False, help='Use bilinear upsampling')
+    parser.add_argument('--bilinear', action='store_true', default=False, help='Use bilinear upksampling')
     parser.add_argument('--classes', '-c', type=int, default=2, help='Number of classes')
 
     return parser.parse_args()

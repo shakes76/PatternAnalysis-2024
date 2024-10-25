@@ -52,9 +52,9 @@ def train_unet_model():
     """
     
     # Hyperparameters
-    batch_size = 64
-    learining_rate = 0.05
-    num_epochs = 50
+    batch_size = 2**6
+    learining_rate = 0.005
+    num_epochs = 100
     # output_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/outputs/' # Local path
     output_dir = '/home/Student/s4904983/COMP3710/project/outputs/' # Rangpur path
 
@@ -66,11 +66,9 @@ def train_unet_model():
     
     # Load the data
     print("Initializing datasets and dataloaders")
-    TrainData = MRIDataset('train')
-    TrainDataLoader = MRIDataLoader("train", batch_size=batch_size, shuffle=True)
+    TrainDataLoader = MRIDataLoader("train", batch_size=batch_size)
     print("Training data initialized")
-    ValData = MRIDataset('validate')
-    ValDataLoader = MRIDataLoader("validate", batch_size=batch_size, shuffle=True)
+    ValDataLoader = MRIDataLoader("validate", batch_size=batch_size)
     print("Validation data initialized")
 
 
@@ -92,84 +90,81 @@ def train_unet_model():
     print('\nStarting training:\n')
 
     for epoch in range(num_epochs):
-        print_image = True
         model.train()
         running_loss, running_dice = 0.0, 0.0
 
-        with tqdm(total=8, desc=f'Epoch {epoch + 1}/{num_epochs}', unit='img') as pbar:
-            for images, labels in TrainDataLoader:
-                images, labels = images.to(device), labels.to(device).long()
+        # tqdm(total=num_epochs, desc=f'Epoch {epoch + 1}/{num_epochs}', unit='img') as pbar:
+        for i, (images, labels) in enumerate(tqdm(TrainDataLoader, desc=f'Epoch {epoch + 1:>3}/{num_epochs:<3}', unit='batch')):
+            images, labels = images.to(device), labels.to(device).long()
 
-                optimizer.zero_grad()
+            optimizer.zero_grad()
+            outputs = model(images)
+            dice = dice_coefficient(outputs, labels[:,0,:,:])
+            loss = criterion(outputs, labels[:,0,:,:])
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+            running_dice += dice
+
+        train_loss.append(running_loss / len(TrainDataLoader.dataset))
+        train_dice.append(running_dice / len(TrainDataLoader.dataset))
+
+        model.eval()
+        running_loss, running_dice = 0.0, 0.0
+
+
+        with torch.no_grad():
+            for i, (images, labels) in enumerate(ValDataLoader):
+                images, labels = images.to(device), labels.to(device).long()
                 outputs = model(images)
                 loss = criterion(outputs, labels[:,0,:,:])
-                loss.backward()
-                optimizer.step()
+                
+                # if (epoch + 1 ) % 10 == 0:
+                #     for i in range(256):
+                #         string = ""
+                #         l = ['{0:.1f}'.format(float(outputs[0][i][j].cpu().numpy())) for j in range(128)]
+                #         string += " ".join(l)
+                #         print(string)
+                #     plt.figure(1)
+                #     plt.imshow(outputs[0].cpu().numpy())
+                #     plt.figure(2)
+                #     plt.imshow(labels[0].cpu().numpy())
+                #     plt.figure(3)
+                #     plt.imshow(images[0].cpu().numpy())
+                #     plt.show()
 
-                pbar.update(images.shape[0])
+
                 running_loss += loss.item()
                 running_dice += dice_coefficient(outputs, labels[:,0,:,:])
-
-                pbar.set_postfix(**{'loss (batch)': loss.item()})
-
-            train_loss.append(running_loss / len(TrainData))
-            train_dice.append(running_dice / len(TrainData))
-
-            model.eval()
-            running_loss, running_dice = 0.0, 0.0
-
-
-            with torch.no_grad():
-                for i, (images, labels) in enumerate(ValDataLoader):
-                    images, labels = images.to(device), labels.to(device).long()
-                    outputs = model(images)
-                    loss = criterion(outputs, labels[:,0,:,:])
-                    
-                    # if (epoch + 1 ) % 10 == 0:
-                    #     for i in range(256):
-                    #         string = ""
-                    #         l = ['{0:.1f}'.format(float(outputs[0][i][j].cpu().numpy())) for j in range(128)]
-                    #         string += " ".join(l)
-                    #         print(string)
-                    #     plt.figure(1)
-                    #     plt.imshow(outputs[0].cpu().numpy())
-                    #     plt.figure(2)
-                    #     plt.imshow(labels[0].cpu().numpy())
-                    #     plt.figure(3)
-                    #     plt.imshow(images[0].cpu().numpy())
-                    #     plt.show()
+                if (epoch+1) % 10 == 0 and i % 5 == 0:
+                    # Save output images
+                    for j in range(0, batch_size, int(batch_size/2+0.5)):
+                        image_index = i*batch_size + j
+                        save_image(
+                            torch.cat(
+                                (images[j], 
+                                outputs[j,0,:,:].unsqueeze(0),
+                                outputs[j,1,:,:].unsqueeze(0),
+                                outputs[j,2,:,:].unsqueeze(0),
+                                outputs[j,3,:,:].unsqueeze(0),
+                                outputs[j,4,:,:].unsqueeze(0),
+                                outputs[j,5,:,:].unsqueeze(0),
+                                (labels[j]/4)), 
+                                dim=2),
+                                os.path.join(output_dir, f'e{epoch + 1}_im{image_index}.png')
+                            )
+                        # save_image(images[j], os.path.join(output_dir, f'e{epoch + 1}_{i+j}_image.png'))
+                        # save_image((labels[j]/4), os.path.join(output_dir, f'e{epoch + 1}_{i+j}_segmentation.png'))
+                        # save_image((torch.round(torch.mul(outputs[j], 4))/4), os.path.join(output_dir, f'e{epoch + 1}_{i+j}_output.png'))
 
 
-                    running_loss += loss.item()
-                    running_dice += dice_coefficient(outputs, labels[:,0,:,:])
-                    if (epoch + 1) % 10 == 0 and print_image:
-                        # Save output images
-                        for j in range(batch_size):
-                            save_image(
-                                torch.cat(
-                                    (images[j].unsqueeze(0), 
-                                    outputs[j,0,:,:].unsqueeze(0),
-                                    outputs[j,1,:,:].unsqueeze(0),
-                                    outputs[j,2,:,:].unsqueeze(0),
-                                    outputs[j,3,:,:].unsqueeze(0),
-                                    outputs[j,4,:,:].unsqueeze(0),
-                                    outputs[j,5,:,:].unsqueeze(0),
-                                    (labels[j]/4).unsqueeze(0)), 
-                                    dim=2),
-                                    os.path.join(output_dir, f'e{epoch + 1}_im{i+j}.png')
-                                )
-                        print_image = False
-                            # save_image(images[j], os.path.join(output_dir, f'e{epoch + 1}_{i+j}_image.png'))
-                            # save_image((labels[j]/4), os.path.join(output_dir, f'e{epoch + 1}_{i+j}_segmentation.png'))
-                            # save_image((torch.round(torch.mul(outputs[j], 4))/4), os.path.join(output_dir, f'e{epoch + 1}_{i+j}_output.png'))
+            val_loss.append(running_loss / len(ValDataLoader.dataset))
+            val_dice.append(running_dice / len(ValDataLoader.dataset))
 
-
-            val_loss.append(running_loss / len(ValData))
-            val_dice.append(running_dice / len(ValData))
-
-            print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss[-1]:.4f}, Val Loss: {val_loss[-1]:.4f}, Train Dice: {train_dice[-1]:.4f}, Val Dice: {val_dice[-1]:.4f}')
+            print(f'{" ":>19}{"|":<8}Train Loss: {train_loss[-1]:.4f} {"|":^15} Val Loss: {val_loss[-1]:.4f} {"|":^15} Train Dice: {train_dice[-1]:.4f} {"|":^15} Val Dice: {val_dice[-1]:.4f}')
     
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 20 == 0:
             # Save the model
             torch.save(model.state_dict(), model_dir + 'unet_model_ep' + str(epoch + 1) + '.pth')
 
@@ -179,8 +174,8 @@ def train_unet_model():
 
             # Plot the loss and dice coefficient
             plt.figure()
-            plt.plot(train_loss, labels='Train Loss')
-            plt.plot(val_loss, labels='Val Loss')
+            plt.plot(train_loss, label='Train Loss')
+            plt.plot(val_loss, label='Val Loss')
             plt.xlabel('Epoch')
             plt.ylabel('Loss')
             plt.legend()

@@ -2,8 +2,8 @@ import torch
 import torch.nn.functional as F
 import umap.umap_ as umap
 import matplotlib.pyplot as plt
-from dataset import load_data
 from modules import GCN
+from dataset import load_data
 
 def plot_umap(data, model):
     model.eval()
@@ -25,13 +25,13 @@ def plot_umap(data, model):
     plt.show()
 
 def main():
-    data, num_classes = load_data()
+    data, class_weights, num_classes = load_data()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = GCN(num_features=128, hidden_dim=256, num_classes=num_classes).to(device)
     data = data.to(device)
     
-    # Assuming the model is trained and saved
-    model.load_state_dict(torch.load("model.pth"))
+    # Load the trained model
+    model.load_state_dict(torch.load("best_model.pth"))
     
     plot_umap(data, model)
 

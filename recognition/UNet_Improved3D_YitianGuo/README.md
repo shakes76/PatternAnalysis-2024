@@ -134,7 +134,7 @@ In the data preprocessing stage, we employ the following data enhancement techni
 1. **Train**
 - The training process uses the Adam optimiser and a combination of cross-entropy loss and Dice loss to deal with category imbalance.
 - Mixed-precision training ( autocast and GradScaler ) is used to improve training efficiency and reduce memory usage.
-- An early stop mechanism is set up to terminate training early to prevent overfitting if the model performance fails to improve within a set PATIENCE.
+- A progressive early stopping mechanism was utilized to halt the training process early, effectively preventing overfitting when the model's performance ceased improving within a set patience threshold (Bai et al., 2021)​(early stop)
 - The batch size is set to 1 because 3D medical image data usually has a large memory footprint, so training in small batches is done to process the full 3D body data with limited GPU memory
 - Unbalanced data distributions are handled using class weights, which are calculated based on the proportion of pixels in each class in the overall dataset to ensure that the model is not biased in favour of the majority of classes
 - The dataset is divided according to the ratio of 6:2:2, where the training set is used for the training of the model, the validation set is used for tuning and evaluating the performance of the model to avoid overfitting, and the test set is used for the final evaluation of the generalisation ability of the model. The 6:2:2 ratio was chosen to ensure sufficient training data volume while allowing for effective validation and evaluation of the model. The relatively small ratio of validation and test sets ensures that sufficient data is available for training to improve the performance of the model.
@@ -169,11 +169,11 @@ For categories with lower scores, such as Class_2 and Class_5, consider adding d
 ### Running Methods
 The hyperparameters used during model training were: learning rate (lr) of 0.001, number of training rounds (epoch) of 40, device cuda, and loss function combined (combining cross-entropy and Dice loss).
 ```
-python train.py --lr 0.001 --epoch 40 --device cuda --loss combined
+python train.py --lr 0.001 --epoch 40 --device cuda --loss combined --dataset_root /path/to/your/dataset
 ```
-Run the prediction file with the default parameters
+Run the prediction file
 ```
-python predict.py
+python predict.py --model_path /path/to/your/best_model.pth --dataset_root /path/to/your/dataset --device cuda
 ```
 ## Result
 
@@ -222,3 +222,4 @@ Below are the best segmentation results for each category, including the origina
 ## References
 **[1]** Özgün Çiçek, Ahmed Abdulkadir, Soeren S. Lienkamp, Thomas Brox, & Olaf Ronneberger. (2016). 3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation. Lecture Notes in Computer Science. University of Freiburg.
 **[2]** Towards Data Science. (2020, May 4). A detailed explanation of the Attention U-Net. Towards Data Science. https://towardsdatascience.com/a-detailed-explanation-of-the-attention-u-net-b371a5590831
+**[3]** Bai, Y., Yang, E., Han, B., Yang, Y., Li, J., Mao, Y., Niu, G., & Liu, T. (2021). Understanding and Improving Early Stopping for Learning with Noisy Labels. Proceedings of the 35th Conference on Neural Information Processing Systems (NeurIPS 2021). Retrieved from https://github.com/tmllab/PES

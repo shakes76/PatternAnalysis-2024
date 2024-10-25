@@ -24,8 +24,16 @@ YOLO (You Only Look Once) is a fast, accurate, and efficient object detection mo
 ### Architecture
 YOLOv8 consists of several stages involving **Convolutional Layers (Conv), Cross-Stage Partial Networks (C2f), Spatial Pyramid Pooling (SPPF), Upsampling, and Concatenation Operations**. Below are some intermediate visualizations captured during inference, illustrating how features evolve through different stages.
 
-### Example Visualizations
-![Stage 0 - Conv Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage0_Conv_features.png)
-![Stage 9 - SPPF Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage9_SPPF_features.png)
-![Stage 13 - Upsample Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage13_Upsample_features.png)
-![Stage 21 - Final C2f Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage21_C2f_features.png)
+### Example Visualisations
+
+<div align="center">
+
+| **Stage 0 - Conv Features** | **Stage 9 - SPPF Features** |
+|-----------------------------|-----------------------------|
+| ![Stage 0 - Conv Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage0_Conv_features.png) | ![Stage 9 - SPPF Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage9_SPPF_features.png) |
+
+| **Stage 13 - Upsample Features** | **Stage 21 - Final C2f Features** |
+|----------------------------------|------------------------------------|
+| ![Stage 13 - Upsample Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage13_Upsample_features.png) | ![Stage 21 - Final C2f Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage21_C2f_features.png) |
+
+</div>

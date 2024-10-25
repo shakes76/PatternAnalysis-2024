@@ -111,8 +111,8 @@ Testing
 Test Accuracy: 93.99%
 ```
 To better visualise the effectiveness of the model, we can construct a t-SNE embeddings plot and a UMAP embeddings plot. These techniques help us understand the relationships and structures within high-dimensional data by projecting it into a lower-dimensional space.
-- t-SNE (t-distributed Stochastic Neighbor Embedding) is a dimensionality reduction technique particularly well-suited for visualizing high-dimensional datasets. It works by converting the similarities between data points into probabilities, preserving local structures. The result is that similar data points are mapped closer together in the lower-dimensional space, while dissimilar points are placed farther apart.
-- UMAP (Uniform Manifold Approximation and Projection) is another dimensionality reduction method that focuses on maintaining both local and global structures of the data. It models the data as a high-dimensional manifold and tries to preserve the features when projecting it to a lower dimension.
+- t-SNE (t-distributed Stochastic Neighbor Embedding) is a dimensionality reduction technique particularly well-suited for visualizing high-dimensional datasets. It works by converting the similarities between data points into probabilities, preserving local structures. The result is that similar data points are mapped closer together in the lower-dimensional space, while dissimilar points are placed farther apart. [3]
+- UMAP (Uniform Manifold Approximation and Projection) is another dimensionality reduction method that focuses on maintaining structures of the data. It models the data and tries to preserve the features when projecting it to a lower dimension. [4]
 
 <div style="text-align: center;">
     <img src="outputs/tsne_visualization.png" alt="TSNE" style="width: 45%;">
@@ -126,5 +126,5 @@ However, due to the techniques performing dimensionality reduction and the inher
 ## References
 - [1] Awan, A. A. (2022, July 21). A Comprehensive Introduction to Graph Neural Networks (GNNs). Datacamp.com; DataCamp. https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial 
 - [2] SNAP: Network datasets: Wikipedia Article Networks. (2017). Stanford.edu. https://snap.stanford.edu/data/facebook-large-page-page-network.html
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+- [3] Erdem (burnpiro), K. (2020, April 22). t-SNE clearly explained. Medium. https://towardsdatascience.com/t-sne-clearly-explained-d84c537f53a
+- [4] Coenen, A., & Pearce, A. (n.d.). Understanding UMAP. Pair-Code.github.io. https://pair-code.github.io/understanding-umap/

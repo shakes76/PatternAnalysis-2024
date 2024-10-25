@@ -28,13 +28,15 @@ def evaluate(net, dataloader, device, amp):
     dice_score = 0
 
     # iterate over the validation set
-    with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=amp):
+    with torch.autocast(device_type = 'cuda'):
         for batch in tqdm(dataloader, total=num_val_batches, desc='Validation round', unit='batch', leave=False):
-            image, mask_true = batch['image'], batch['mask']
+            image, mask_true = batch
 
             # move images and labels to correct device and type
             image = image.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
             mask_true = mask_true.to(device=device, dtype=torch.long)
+            mask_true = mask_true.squeeze(1)
+            mask_true = torch.clamp(mask_true, min=0, max=1)
 
             # predict the mask
             mask_pred = net(image)
@@ -203,7 +205,7 @@ def train_model(
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
             state_dict = model.state_dict()
-            state_dict['mask_values'] = training_set.mask_values
+            state_dict['mask_values'] = training_set.image_masks
             torch.save(state_dict, str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch)))
             logging.info(f'Checkpoint {epoch} saved!')
 

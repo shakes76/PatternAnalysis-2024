@@ -26,12 +26,12 @@
 #### Fundamentally, a GCN takes as input a graph together with a set of feature vectors where each node is associated with its own feature vector. The GCN is then composed of a series of graph convolutional layers (to be discussed in the next section) that iteratively transform the feature vectors at each node. The output is then the graph associated with output vectors associated with each node. These output vectors can be (and often are) of different dimension than the input vectors. 
 #### When performing classification on the nodes, then these per-node vectors can be treated as the model’s final outputs.Node-level classification, these output vectors could, for example, encode the probabilities that each node is associated with each class.
 ## Results
-### ![loss and accuracy ](/.loss_accuracy.png)
-### ![t-SNE ](./t-SNE.png)
-## Conclusion
-###
-## Discussion
-### 
+#### Below is a plot displaying the model's loss and accuracy over epochs.
+#### ![loss_accuracy ](./loss_accuracy.png)
+#### From the plot, The results show that the model architecture and training process are well optimized for this task. The rapid convergence of the loss function and the early stability of the accuracy reflect a good balance between the learning rate and the complexity of the model. In addition, the regularization technique and epoch number have significant effect on the selection of parameters, and there is no obvious overfitting or underfitting phenomenon in the training process.
+#### Below is a t-SNE plot with ground truth in colors
+#### ![t-SNE ](./t-SNE.png)
+#### t-SNE visualized GNN features show a clear separation of different categories. The clusters of each category (represented by different colors) are well defined and separate, indicating that GNN has successfully captured the structural information of the data and effectively classified the features into meaningful groups. Although some data points are close to the edge of the cluster, indicating that there may be some overlapping or ambiguous data points, overall, the model can effectively classify the data.
 ## References
 #### [1]https://jonathan-hui.medium.com/graph-convolutional-networks-gcn-pooling-839184205692
 #### [2]Z. Wu, S. Pan, F. Chen, G. Long, C. Zhang, and P. S. Yu, "A comprehensive survey on graph neural networks," IEEE Transactions on Neural Networks and Learning Systems, vol. 32, no. 1, pp. 4-24, Jan. 2021, doi: 10.1109/TNNLS.2020.2978386.

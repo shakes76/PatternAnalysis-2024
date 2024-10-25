@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Alzheimer's Disease Classification using ViT
 ## The problem and how I've approached it
 
@@ -15,9 +14,6 @@ how it works in a paragraph and a figure/visualisation.
 The algorithm uses a Vision Transformer (ViT), which processes brain images by splitting them into patches. These patches are passed through transformer layers to capture relationships between the image regions. The model is trained on labeled brain scans to classify the images as either Alzheimer's Disease or Normal Control.
 
 A simple representation of the model structure is as such:
-=======
-#For ViT, we'll need the below for modules. 
->>>>>>> e1e9d491b4f67d4d1dad8166855ae041e430e85b
 
 1. Patch embedding
     - input image is divided into square patches. 
@@ -40,7 +36,6 @@ A simple representation of the model structure is as such:
 
     - Layer Normalization and Residual Connections
         - helps stabilize and speed up training by normalizing the inputs to each sub-layer
-<<<<<<< HEAD
 
 This model is trained in a training loop, where a loss graph is generated. Then further statistics and graphs are generated from the saved model in predict.py.
 
@@ -93,11 +88,3 @@ TheDeepHub. (2022, March 10). Building Vision Transformer from Scratch using PyT
 Schmid, P. (2022, April 6). Image Classification with Huggingface Transformers and Keras. https://www.philschmid.de/image-classification-huggingface-transformers-keras
 
 Pulfer, B. (2022, June 1). Vision Transformers from Scratch (PyTorch) – A Step-by-Step Guide. Medium. https://medium.com/@brianpulfer/vision-transformers-from-scratch-pytorch-a-step-by-step-guide-96c3313c2e0c
-=======
-        - Residual connections(IF WE USE THEM), also known as skip connections, 
-          add the original input embeddings to the output of each sub-layer
-          
-https://medium.com/thedeephub/building-vision-transformer-from-scratch-using-pytorch-an-image-worth-16x16-words-24db5f159e27
-https://www.philschmid.de/image-classification-huggingface-transformers-keras
-https://medium.com/@brianpulfer/vision-transformers-from-scratch-pytorch-a-step-by-step-guide-96c3313c2e0c
->>>>>>> e1e9d491b4f67d4d1dad8166855ae041e430e85b

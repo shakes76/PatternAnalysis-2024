@@ -13,6 +13,11 @@ In addition to having an unbalanced dataset, there were several cases of data le
 Further to this, the image size throughout the dataset was not homogeneous, with some images being up to 2000x4000. Given the length of this that this resolution of dataset would require, a downsize 256x256 replica of the dataset was instead chosen.
 Because of how few positive images there were, heavy data augmentation had to be applied. Random flips and rotations were implemented, as it makes physical sense that changing how the picture of a lesion is taken should not cause the model to break. Other augmentations, such as random brightness, noise and contrast were experimented with but ultimately deemed not beneficial.
 A standard 80/20 split is used for training and testing. However, when doing so special care must be made to stratify this split, as a training dataset with no positive classes could not perform. This also ensures the testing results are representative of the training that occurred. After this stratified split, the training set was further broken down into 70/10 for training and validation.
+
+A representative portion of input images is shown below, after having undergone the above preprocessing. As shown, there are many textures, such as hair follicles and markings, which are common to both classes. Therefore, it will be difficult to mask these out.
+
+![alt text](image-5.png)
+
 ## Siamese Network Implementation
 The ResNet50 model was used as the feature extractor for the melanoma dataset, with several fully connected layers being added after the ResNet to obtain meaningful embeddings. Triplet loss, a common loss function for metric learning, was used as the loss function for the similarity network. This loss function works by comparing a positive and a negative image to a reference anchor, and then trying to minimise the distance to the positive class while maximising the distance to the negative class. Mathematically, it is shown as
 

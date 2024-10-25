@@ -13,10 +13,12 @@ from dataset import BalancedMelanomaDataset, FullMelanomaDataset
 
 from Modules import NeuralNetwork
 
+# hyperparameters
 batch_size = 64
-margin = 1  # Margin for contrastive loss.
-image_shape = (128, 128)
+margin = 1 
+image_shape = (256, 256)
 
+# datasets
 df = BalancedMelanomaDataset(
     image_shape=image_shape,
     batch_size=64,
@@ -30,8 +32,8 @@ df_full = FullMelanomaDataset(
     balance_split=0.5
 )
 
-dataset = df_full.dataset
-dataset_val = df_full.dataset_val
+dataset = df.dataset
+dataset_val = df.dataset_val
 
 pretrained_model = tf.keras.applications.ResNet50(
     include_top=False,
@@ -39,11 +41,12 @@ pretrained_model = tf.keras.applications.ResNet50(
     )
 pretrained_model.trainable = False
 
-for layer in pretrained_model.layers[:-1]:
+for layer in pretrained_model.layers[-1:]:
     layer.trainable = True
 
 inputs = tf.keras.layers.Input(shape=(*image_shape, 3))
 pretrained_output = pretrained_model(inputs)
+pretrained_output
 finetune_output = tf.keras.layers.Dense(512, activation='leaky_relu')(tf.keras.layers.GlobalMaxPool2D()(pretrained_output))
 finetune2_output = tf.keras.layers.Dropout(0.4)(finetune_output)
 finetune3_output = tf.keras.layers.Dense(256, activation='leaky_relu')(finetune2_output)
@@ -60,7 +63,7 @@ base_model.set_optimisation(tf.keras.optimizers.Adam(learning_rate = 0.001))
 base_model.compile_functional_model()
 base_model.summary()
 
-base_model.set_epochs(100)
+base_model.set_epochs(10)
 base_model.enable_wandb("melanoma-balanced-improving-sim")
 base_model.set_early_stopping("val_loss", patience=20, min_delta=0.01)
 base_model.fit_model_batches(dataset, dataset_val, verbose=1, class_weight={0: 1.0, 1: 1.0})

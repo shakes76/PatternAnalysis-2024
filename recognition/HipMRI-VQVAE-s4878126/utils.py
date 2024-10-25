@@ -18,9 +18,9 @@ Dictionary of channel and image dimensions for the VQVAE.
 dimensions = {
     "size":(256, 144),
     "input": 1, 
-    "hidden": 512, 
+    "hidden": 256, 
     "latent": 16,
-    "embeddings": 512,
+    "embeddings": 256,
     "output": 1,
     "commitment_beta": 0.25
 }

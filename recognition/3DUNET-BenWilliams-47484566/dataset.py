@@ -22,60 +22,6 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     return res
 
 # Load medical image functions
-def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
-    '''
-    Load medical image data from names, cases list provided into a list for each.
-
-    This function pre-allocates 4D arrays for conv2d to avoid excessive memory usage.
-
-    Parameters:
-        normImage : bool (normalize the image between 0.0 - 1.0)
-        early_stop : Stop loading prematurely, leaves arrays mostly empty, for quick loading and testing scripts.
-    '''
-    affines = []
-
-    # Get fixed size
-    num = len(imageNames)
-    first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
-    if len(first_case.shape) == 3:
-        first_case = first_case[:, :, 0]  # Sometimes extra dims, remove
-    
-    if categorical:
-        first_case = to_channels(first_case, dtype=dtype)
-        rows, cols, channels = first_case.shape
-        images = np.zeros((num, rows, cols, channels), dtype=dtype)
-    else:
-        rows, cols = first_case.shape
-        images = np.zeros((num, rows, cols), dtype=dtype)
-
-    for i, inName in enumerate(tqdm(imageNames)):
-        niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged')  # Read disk only
-        affine = niftiImage.affine
-        if len(inImage.shape) == 3:
-            inImage = inImage[:, :, 0]  # Sometimes extra dims in HipMRI_study data
-        inImage = inImage.astype(dtype)
-        
-        if normImage:
-            inImage = (inImage - inImage.mean()) / inImage.std()
-        
-        if categorical:
-            inImage = to_channels(inImage, dtype=dtype)
-            images[i, :, :, :] = inImage
-        else:
-            images[i, :, :] = inImage
-        
-        affines.append(affine)
-        
-        if i > 20 and early_stop:
-            break
-
-    if getAffines:
-        return images, affines
-    else:
-        return images
-
-
 def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, orient=False, early_stop=False):
     '''
     Load medical image data from names, cases list provided into a list for each.
@@ -145,22 +91,13 @@ class MRI3DDataset(Dataset):
     def __init__(self, image_folder, label_folder, normImage=False, target_shape=(256, 256, 128)):
         self.image_folder = image_folder
         self.label_folder = label_folder
-        self.image_filenames = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz')]
-        self.label_filenames = [os.path.join(label_folder, f) for f in os.listdir(label_folder) if f.endswith('.nii.gz')]
+        self.image_filenames = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith('.nii.gz') or f.endswith('.nii')]
+        self.label_filenames = [os.path.join(label_folder, f) for f in os.listdir(label_folder) if f.endswith('.nii.gz') or f.endswith('.nii')]
         self.normImage = normImage
         self.target_shape = target_shape
 
     def __len__(self):
         return len(self.image_filenames)
-    def pad_to_shape(self, tensor, target_shape):
-        # Calculate the difference between target and current shape
-        diff = [max(target_shape[i] - tensor.shape[i], 0) for i in range(len(target_shape))]
-    
-        # Pad only where necessary, set padding to 0 otherwise
-        padding = [(0, diff[i]) for i in range(len(diff))]
-    
-        # Pad the tensor using F.pad, ensuring no negative padding
-        return F.pad(tensor, tuple(pad for pair in reversed(padding) for pad in pair))
 
 
     def __getitem__(self, idx):
@@ -169,9 +106,6 @@ class MRI3DDataset(Dataset):
 
         image = torch.tensor(image, dtype=torch.float32)
         label = torch.tensor(label, dtype=torch.long)
-
-        image = self.pad_to_shape(image, self.target_shape)
-        label = self.pad_to_shape(label, self.target_shape)
 
         return image, label
 

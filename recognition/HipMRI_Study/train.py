@@ -4,12 +4,13 @@ import torch.nn as nn
 from modules import UNet, dice_coefficient
 from dataset import load_data_2D
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 
 # Hyperparameters
 epochs = 25
 learning_rate = 0.001
-batch_size = 8
+batch_size = 16
 
 # Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -21,63 +22,56 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 train_images_filenames = [('keras_slices_seg_train/' + f) for f in os.listdir('keras_slices_seg_train') if f.endswith('.nii.gz')]
 train_labels_filenames = [('keras_slices_train/' + f) for f in os.listdir('keras_slices_train') if f.endswith('.nii.gz')]
-# val_images_filenames = [('keras_slices_seg_validate/' + f) for f in os.listdir('keras_slices_seg_validate') if f.endswith('.nii.gz')]
-# val_labels_filenames = [('keras_slices_validate/' + f) for f in os.listdir('keras_slices_validate') if f.endswith('.nii.gz')]
+val_images_filenames = [('keras_slices_seg_validate/' + f) for f in os.listdir('keras_slices_seg_validate') if f.endswith('.nii.gz')]
+val_labels_filenames = [('keras_slices_validate/' + f) for f in os.listdir('keras_slices_validate') if f.endswith('.nii.gz')]
 train_images = load_data_2D(train_images_filenames, normImage=True)
 train_labels = load_data_2D(train_labels_filenames, normImage=True)
-# val_images = load_data_2D(val_images_filenames)
-# val_labels = load_data_2D(val_labels_filenames)
-
+val_images = load_data_2D(val_images_filenames, normImage = True)
+val_labels = load_data_2D(val_labels_filenames, normImage = True)
 # Training loop
-def train_model():
-    train_losses, val_losses, dice_scores = [], [], []
+train_images = torch.tensor(train_images).float().unsqueeze(1)
+train_labels = torch.tensor(train_labels).float().unsqueeze(1)
 
+def train_model():
+    train_losses = []
     for epoch in range(epochs):
         model.train()
         epoch_train_loss = 0
-
-        images = torch.from_numpy(train_images).float().to(device)
-        labels = torch.from_numpy(train_labels).float().to(device)
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-
-        # Backward pass and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        epoch_train_loss += loss.item()
-
-        train_losses.append(epoch_train_loss / len(train_images))
-
-        # Validation
-        model.eval()
         epoch_val_loss = 0
-        """
-        with torch.no_grad():
-            for i in range(len(val_images)):
-                image = val_images[i].to(device)
-                label = val_labels[i].to(device)
-                outputs = model(image)
-                loss = criterion(outputs, label)
-                epoch_val_loss += loss.item()
-        """
-
-        # val_losses.append(epoch_val_loss / len(val_images))
-
-        print(f'Epoch [{epoch + 1}/{epochs}], Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}')
-
-    # Plot losses
-    plt.plot(train_losses, label='Train Loss')
-    plt.plot(val_losses, label='Validation Loss')
+        for i in range(0, len(train_images), batch_size):
+            # Batch Processing
+            batch_images = train_images[i:i + batch_size].to(device)
+            batch_labels = train_labels[i:i + batch_size].to(device)
+            batch_val_images = val_images[i:i + batch_size]
+            batch_val_labels = val_labels[i:i + batch_size]
+            batch_images = np.expand_dims(batch_images, axis=1).astype(np.float16)
+            batch_labels = np.expand_dims(batch_labels, axis=1).astype(np.float16)
+            batch_val_images = np.expand_dims(batch_val_images, axis=1).astype(np.float16)
+            batch_val_labels = np.expand_dims(batch_val_labels, axis=1).astype(np.float16)
+            batch_images = torch.from_numpy(batch_images).float().to(device)
+            batch_labels = torch.from_numpy(batch_labels).float().to(device)
+            batch_val_images = torch.from_numpy(batch_val_images).float().to(device)
+            batch_val_labels = torch.from_numpy(batch_val_labels).float().to(device)
+            optimizer.zero_grad()
+            outputs = model(batch_images)
+            val_output = model(batch_val_images)
+            loss = criterion(outputs, batch_labels)
+            val_loss = criterion(outputs, batch_val_labels)
+            loss.backward()
+            optimizer.step()
+            epoch_train_loss += loss.item()
+            epoch_val_loss += val_loss.item()
+        avg_loses = (epoch_train_loss / len(train_images))
+        train_losses.append(avg_loses)
+        avg_val_losses = (epoch_val_loss / len(val_images))
+        print(f"Epoch [{epoch + 1}/{epochs}], Loss: {avg_loses:.4f}, val Loss: {avg_val_losses:.4f}")
+    # Plot loss history
+    plt.plot(train_losses)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.legend()
+    plt.title('Training Loss')
     plt.show()
-
-    # Save the model
-    torch.save(model.state_dict(), 'unet_model.pth')
-
+    return model
 
 train_model()
+

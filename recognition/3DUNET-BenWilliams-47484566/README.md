@@ -6,12 +6,19 @@ This model is typically used in medical imaging to segment organs or identify tu
 
 ## How it works
 
-!Image Here
+![The 3D u-net architecture. Blue boxes represent feature maps. The number of
+channels is denoted above each feature map.](images/architecture.png)
 
 This image shows the architecture of the U-Net in the U shape. 
 The model takes a 3D volumetric image as an input. In this case i was working with grayscale images so 
 there is 1 in channel. The model outputs a 3D segmentation map where each 3D pixel is assigned a label for a specific class.
 In this case there are 6 classes, so 6 out channels.  
+
+An example input for the model:
+
+
+
+![Example input.](images/image.0003.png)
 > Like the standard u-net, it has an
 > analysis and a synthesis path each with four resolution steps. In the analysis
 > path, each layer contains two 3 × 3 × 3 convolutions each followed by a rectified

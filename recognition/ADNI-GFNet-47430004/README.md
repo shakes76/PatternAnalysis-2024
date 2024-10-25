@@ -17,6 +17,7 @@ The project uses the pytorch with GFNet model and the ADNI brain data set, and a
 Global Filter Networks is a transformer-style architecture, that uses a 2D discrete Fourier transform, an element-wise multiplication between frequency-domain features and learnable global filters, and a 2D inverse Fourier transform to replace the self-attention layer found in vision transformers [1]. According to Rao et al. [1], it "learns long-term spatial dependencies in the frequency with log-linear complexity".
 
 The following is a gif created by Rao et al. [1] that demonstrates how GFNet works:
+
 ![intro](images/original_intro.gif)
 
 ## Global Filter Layer

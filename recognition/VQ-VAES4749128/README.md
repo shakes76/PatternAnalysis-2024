@@ -35,11 +35,12 @@ After the model is trained, PixelCNN can now generate new latent codes that alig
 | scikit-image| 0.24.0 |
 | Matplotlib| 3.9.2|
 
-## Results:
+## Usage:
 
 ``` python train.py -mode vq_vae # mode: vq_vae , pixelcnn ```
 To run predict:
 ``` python predict.py ```
+
 The arguments can be customised, otherwise the default will be used when running in terminal.
 
 
@@ -53,7 +54,7 @@ SSIM over time for VQ-VAE is shown to satisfy the requirement of SSIM> 60, the S
 </p>
 
 
-VQ-VAE training and validation loss function:
+VQ-VAE training and validation loss function. It can be seen that the loss became extremely low towards the end: 
 ![image](https://github.com/user-attachments/assets/7049951d-7db5-490e-a876-a4fd5d8807fb)
 
 After 5000 updates, here are a few samples of the outputs from the VQ-VAE:

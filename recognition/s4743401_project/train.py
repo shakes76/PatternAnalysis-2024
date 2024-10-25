@@ -46,4 +46,19 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, num_epoch
         
         print(f"Epoch {epoch+1}, Validation Loss: {val_loss:.4f}")
 
+    plot_loss_curve(train_losses, val_losses)
+    torch.save(model.state_dict(), '/Users/gghollyd/comp3710/report/module_weights.pth')
+
+#plot this in train.py
+def plot_loss_curve(train_losses, val_losses):
+    epochs = len(train_losses)
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
+    plt.plot(range(1, epochs + 1), val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Curve Over Epochs')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 

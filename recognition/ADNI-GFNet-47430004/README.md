@@ -117,7 +117,7 @@ This graph represents the performance of the model in the best-performing test p
 
 ## Hyperparameters
 
-The following are the hyperparameters present in the model, with their default values and the argument to change their value. The parameters that are in **bold** are the ones that had many values tested to improve performance. The parameters with a strikethrough were not considered, but are present as they were present in the original code:
+The following are the hyperparameters present in the model, with their default values and the argument to change their value. The parameters that are in **bold** are the ones that had many values tested to improve performance. The parameters with a strikethrough were not considered, but are present as they were present in the original code. Some parameters which were related to unused aspects, such as Model_EMA and the mixup function, were simply not included:
 
 - **Batch size: 64 (`--batch-size`)**
 - **Epochs: 300 (`--epochs`)**

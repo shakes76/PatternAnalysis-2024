@@ -1,3 +1,53 @@
+"""
+=======================================================================
+File Name: predict.py
+Author: Baibhav Mund
+Student ID: 48548700
+Description:
+    This script is used to generate example images using a pre-trained StyleGAN2 generator 
+    model. It loads a saved generator checkpoint (based on the specified epoch), 
+    generates images based on randomly sampled latent vectors and noise, and saves 
+    the generated images to a directory. The images are saved for different latent 
+    vector (w-values) and epochs, allowing for a visual inspection of the model's 
+    output.
+
+    Key Features:
+    - Command-line interface for specifying the epoch of the generator checkpoint to load.
+    - Generates a specified number of images (`n` images) using latent vectors (`w-values`)
+      and random noise inputs.
+    - Saves the generated images to a directory structure organized by epoch and w-values.
+    - The images are scaled and saved using `torchvision` utilities for easy visualization.
+
+Usage:
+    1. Set the desired epoch to load the generator checkpoint by passing the `--epoch` argument.
+    2. Optionally, specify the number of images to generate using the `--n` argument (default: 10).
+    3. Run the script using the command:
+       `python predict.py --epoch 45 --n 5`
+    4. The generated images will be saved in the `generated_images/epochX/wY/` folder 
+       (where X is the epoch and Y is the w-value used for generation).
+
+Dependencies:
+    - PyTorch: Install via `pip install torch torchvision`
+    - argparse: For command-line argument parsing (included in Python's standard library).
+    - os: For directory creation and file management.
+    - torchvision: For image saving utilities.
+
+Functions:
+    - generate_examples(): Generates and saves example images using the generator model.
+    - Main block: Parses command-line arguments and calls `generate_examples()`.
+
+Parameters:
+    --epoch: Specifies the epoch number of the generator model checkpoint to load.
+    --n: Specifies the number of images to generate for each w-value (default: 10).
+
+Output:
+    - The generated images are saved in a directory structure organized by epoch and w-values:
+      `generated_images/epochX/wY/img_Z.png`
+      - X is the epoch, Y is the w-value used for generation, Z is the image index.
+
+=======================================================================
+"""
+
 from train import Generator, get_w, get_noise, LOG_RESOLUTION,W_DIM,DEVICE 
 import torch
 from torchvision.utils import save_image
@@ -47,7 +97,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    # Initialize your generator (adjust LOG_RESOLUTION and W_DIM accordingly)
+    # Initialize generator 
     gen = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)
 
     # Call the generate_examples function

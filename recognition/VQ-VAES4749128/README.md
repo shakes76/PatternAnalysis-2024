@@ -83,7 +83,9 @@ Here are two examples of the quantised samples:
 ![image](https://github.com/user-attachments/assets/6a32f6f6-e4f8-4ab6-b59d-1b563f130e18)
 </p>
 
-The pixelCNN will be trained on the quantised outputs:
+The pixelCNN will be trained on the quantised output. The decoded image corresponding to the first of the two quantised samples shown is provided below. I t can be seen that it is still lacking. It could be possible that 200 epochs was not enough to train the pixelCNN. More hyperparameter tuning could be needed.
+![e6137b5a-628a-459f-9c89-115cb1a07dcd](https://github.com/user-attachments/assets/0a5b5433-92fa-4c1d-998a-aedb697fea78)
+
 
 ## reference
 https://www.google.com/search?sca_esv=640dfa46d8859720&rlz=1C1GCEB_enAU1024AU1024&sxsrf=ADLYWIKlgn8pA_TD7EEt8MO8HtBIdIzdlA:1729856418859&q=vqvae+diagram&udm=2&fbs=AEQNm0CrHVBV9axs7YmgJiq-TjYcvrKLYvLdNLLD2b8MCfaxte6rE3yH_shvJRqV-Iqr8JJvO9luGxMyf8tABHRE_ER5WVi_ouuYD0ZGCgonp8RpBmOUpTB-X6dVFbJc8KMdvjlHxs0_OJiYCY4-Y60oHTMiC_1a9mkGkMIYHO4XqP68ipa4P5rJaQCtA4WPne6f0aAKhdyAMTPbTsWJEdFYpNvI5RzOgw&sa=X&ved=2ahUKEwj-6O6quamJAxX4lFYBHYUHIN0QtKgLegQIDxAB&biw=2089&bih=1270&dpr=1#vhid=FKT-mO4RzQzIIM&vssid=mosaic

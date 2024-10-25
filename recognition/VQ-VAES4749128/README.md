@@ -53,10 +53,11 @@ After 5000 updates, here are a few samples of the outputs from the VQ-VAE:
 
 Here are two examples of the quantised samples:
 <p align="center">
-![image](https://github.com/user-attachments/assets/6a32f6f6-e4f8-4ab6-b59d-1b563f130e18)
-
 ![image](https://github.com/user-attachments/assets/d0bfb478-1fc7-477d-932b-81c06a751d51)
 
 </p>
+<p align="center">
+![image](https://github.com/user-attachments/assets/6a32f6f6-e4f8-4ab6-b59d-1b563f130e18)
+</p>
 
-The pixelCNN will be trained on the quantised 
+The pixelCNN will be trained on the quantised outputs:

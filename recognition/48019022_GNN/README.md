@@ -4,7 +4,7 @@ Author: Anthony Ngo
 Student Number: 48019022
 
 ## Project Overview
-This project implements a variety of Graph Neural Network (GNN) architectures for node classification, specifically for the Facebook Large Page-Page Network dataset. The goal of the project was to sufficiently classify nodes of the graph data into 4 categories: politicians, governmental organizations, television shows and companies. 
+This project implements a variety of Graph Neural Network (GNN) architectures for node classification, specifically for the Facebook Large Page-Page Network dataset. The goal of the project was to sufficiently classify nodes of the graph data into 4 categories: politicians, governmental organisations, television shows and companies. 
 A potential use of this model would be to improve content recommendations for Facebook users, or categorise and moderate Facebook pages.
 
 ## Table of Contents
@@ -17,8 +17,6 @@ A potential use of this model would be to improve content recommendations for Fa
 - [Training Process](#training-process)
 - [Results](#results)
 - [Inference](#inference)
-- [Visualisations](#visualisations)
-- [Performance Metrics](#performance-metrics)
 - [References](#references)
 
 ## Project Structure
@@ -62,6 +60,7 @@ PATTERNANALYSIS-2024/
         48019022_GNN/
             facebook.npz
 ```
+In the dataloader, graph data indexes are split in a 80/10/10 split across training, validation and testing indexes.
 
 ## Usage
 The repository implements 4 GNN architectures:
@@ -82,29 +81,163 @@ The repository implements 4 GNN architectures:
    python predict.py
    ```
 
-5. To visualize the embeddings, again, change the model name in plotting.py, then execute:
+5. To visualise the embeddings, again, change the model name in plotting.py, then execute:
    ```bash
    python plotting.py
    ```
    This will generate a TSNE plotting of the model's clustering.
 
-## Model Architectures
+## Model Architecture
 As state above, this project implements the following GNN architectures:
-- Graph Convolutional Network (GCN)
-- Graph Attention Network (GAT)
-- GraphSAGE
-- Simple Graph Convolution (SGC)
+- **Graph Convolutional Network** (GCN)
+- **Graph Attention Network** (GAT)
+- **Graph Sample and Aggregation** (Graph SAGE)
+- **Simple Graph Convolution** (SGC)
 
 Each model has been encapsulated in the `modules.py` file, with a defined forward pass and relevant layers. The next sections contain brief descriptions of how each model functions.
 
 ### Graph Convolutional Networks (GCN)
+Graph Convolutional Networks (GCN) leverage the principles of convolutional neural networks to operate directly on graph-structured data. The key idea is to use the spectral domain of the graph to learn a transformation of node features. GCNs are designed to perform node classification tasks by aggregating features from a node's neighbourhood in the graph, effectively capturing local structures. The propagation rule can be expressed as:
 
+[FORMULA]
+
+GCNs are particularly effective for semi-supervised learning, where only a small subset of nodes has labeled information.
 
 ### Graph Attention Networks (GAT)
+Graph Attention Networks (GAT) introduce an attention mechanism to the graph convolution process, allowing nodes to weigh their neighbours' contributions based on their importance. GATs utilise self-attention to learn the coefficients for each edge, thereby adapting the influence of connected nodes dynamically. The attention coefficients can be computed as:
 
+[FORMULA]
+
+By focusing on relevant neighbours, GATs enhance the model's expressiveness and robustness against noise in the graph structure.
 
 ### Graph Sample and Aggregation (GraphSAGE)
+Graph Sample and Aggregation (GraphSAGE) is designed to handle large graphs by sampling a fixed-size neighbourhood of each node rather than considering the entire graph. It employs various aggregation functions (mean, LSTM, pooling) to merge information from sampled neighbours into the target node's representation. The update rule is as follows:
+
+[FORMULA]
+
+GraphSAGE enables inductive learning, allowing the model to generalise to unseen nodes during training.
 
 
-### Simplified Graph Convolution
+### Simplified Graph Convolution (SGC)
+Simplified Graph Convolution (SGC) reduces the complexity of graph convolutional operations by removing non-linearities and employing a single linear transformation. The key innovation is the simplification of the message-passing framework into a single matrix multiplication, effectively treating the graph structure as a single layer. The transformation can be expressed as:
 
+[FORMULA]
+
+SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
+
+## Training Process
+### Data Splits
+Before training, the data is prepared using a GNNDataLoader, which takes in numpy data from the file facebook.npz and divides it into three subsets:
+- **80% Training Set**: Used to train the model and update weights.
+- **10% Validation Set**: Used to monitor the model's performance during training in methods to alleviate overfitting.
+- **10% Test Set**: Used to evaluate the final model performance after training.
+The 80/10/10 split ratio is a common practice in machine learning.
+
+### Model Initialisation
+The model is selected based on specified architecture (GCN, GAT, GraphSAGE, SGC). Each model is instantiated with the following parameters:
+- **Input dimensions**: The number of input features for each node (in this case, 128).
+- **Hidden Dimension**: The number of neurons in the hidden layer (set to 64).
+- **Output Dimension**: The number of output classes, which is derived from the maximum label in the dataset (in this case, 4 classes).
+
+### Training Loop
+The core of the training process is in the training_loop function, which iterates over a predefined number of epochs to train the model. Here are the detailed steps involved:
+
+**Epoch Loop**: 
+For each epoch, the following steps occur:
+1. **Training Phase**:
+   - The _train_model function is called to perform a forward pass and backpropagation.
+   - The model’s predictions are computed, and the loss is calculated using the cross-entropy criterion.
+   - Gradients are cleared, calculated, and the optimiser updates the model parameters based on these gradients.
+     
+2. **Validation and Testing**:
+   - After training for the current epoch, the _evaluate_model function is called to assess the model’s performance on the validation set.
+   - The validation loss is computed, and accuracy on the test set is evaluated by comparing the predicted and actual labels.
+     
+3. **Logging Metrics**:
+   - The training loss, validation loss, test accuracy, and learning rate are logged to Weights and Biases (WandB) for tracking progress.
+     
+4. **Early Stopping**:
+   - If the validation loss does not improve for a certain number of epochs (set by patience_lim), the training loop terminates early to avoid overfitting.
+     
+5. **Loss Plotting**:
+   - After training, a plot of training and validation loss is generated to visually assess the training process.
+
+**Saving the Model**
+At the end of each epoch, if the validation loss improves, the model’s weights are saved. The weights can be restored later for evaluation or inference. The file is saved with a name that indicates the model architecture.
+
+**Learning Rate Scheduling**
+A learning rate scheduler (StepLR) is employed to adjust the learning rate during training. Every 50 epochs, the learning rate is multiplied by a gamma factor (0.5 in this case) to help the optimiser converge to better minima.
+
+**Final Logging**
+At the end of training, additional metrics such as total training time and the number of parameters in the model are logged to WandB for later analysis.
+
+### Training Details
+- Maximum epochs: **300**
+- Optimiser: **Adam**
+   - The Adam optimiser was chosen and used with weight decay for fast convergence.
+      - Learning Rate (Max): 0.01
+      - Weight Decay: 0.0005 (L2 Regularisation)
+- Loss Function: **Cross Entropy Loss**
+   - Cross Entropy Loss was used as a criterion due to its effectiveness for multi-class problems. CE minimises the loss by aligning its predicted probability distribution with the actual class distribution
+- Scheduler: **StepLR**
+   - The learning rate scheduler StepLR was used for improved convergence and stability, as well as its advantage of better exploration in early stages, allowing it to explore the parameter space more widely and escape local minima.
+
+## Results
+The primary metrics logged and used for the analysis of the GNN architectures were:
+
+- **Test Accuracy**
+    - After the model is trained, test accuracy provides insight into how well the model generalises to unseen data.
+   
+- **Training Loss**
+    - Monitoring the training loss helps in understanding whether the model is learning or overfitting.
+
+- **Validation Loss**
+    - Validation loss is used to tune model hyperparameters, such as learning rate or regularisation techniques, and assess the model’s performance during training.
+
+- **T-SNE Manifold Clustering**
+    - Well-separated clusters in the t-SNE plot imply that the model has learned distinct representations for the different node categories, which indicates good classification performance.
+
+### Testing Methodology
+Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the dataset.py file. Each model was then tested on each seed for a total of 10 runs. The following graphs display the performances of each model.
+
+### GCN Performance
+[GCN Loss Plot]
+[GCN Test Accuracy]
+[GCN Validation Loss]
+[GCN T-SNE Visualisation]
+
+### GAT Performance
+[GAT Loss Plot]
+[GAT Test Accuracy]
+[GAT Validation Loss]
+[GAT T-SNE Visualisation]
+
+### GraphSAGE Performance
+[GraphSAGE Loss Plot]
+[GraphSAGE Test Accuracy]
+[GraphSAGE Validation Loss]
+[GraphSAGE T-SNE Visualisation]
+
+### SGC Performance
+[SGC Loss Plot]
+[SGC Test Accuracy]
+[SGC Validation Loss]
+[SGC T-SNE Visualisation]
+
+### Model Comparisons
+[Comparisons Loss Plot]
+[Comparisons Test Accuracy]
+[Comparisons Validation Loss]
+[Comparisons T-SNE Visualisation]
+
+## Inference
+To test trained models on the graph data, use the predict.py script. This script will load a selected trained model and attempt to classify each node of the dataset.
+
+## References
+- Kipf, T. N., & Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. ArXiv:1609.02907 [Cs, Stat]. https://arxiv.org/abs/1609.02907
+
+- Veličković, P., Cucurull, G., Casanova, A., Romero, A., Liò, P., & Bengio, Y. (2018). Graph Attention Networks. ArXiv:1710.10903 [Cs, Stat]. https://arxiv.org/abs/1710.10903
+
+- Hamilton, W. L., Ying, R., & Leskovec, J. (2018). Inductive Representation Learning on Large Graphs. ArXiv:1706.02216 [Cs, Stat]. https://arxiv.org/abs/1706.02216
+
+- Wu, F., Zhang, T., Souza Jr. , A. H. de, Fifty, C., Yu, T., & Weinberger, K. Q. (2019, June 20). Simplifying Graph Convolutional Networks. ArXiv.org. https://doi.org/10.48550/arXiv.1902.07153

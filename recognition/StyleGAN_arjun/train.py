@@ -203,7 +203,7 @@ def main():
     num_layers = int(math.log2(image_size))
     data_name = ADNI_DATA # or CIFAR_DATA
     load_models = False
-    save_models = False
+    save_models = True
 
     if data_name == ADNI_DATA:
         dataset, dataloader = process_adni(batch_size=batch_size)

@@ -58,13 +58,13 @@ In addition it also produced segment maps that were not ideal. Below is the resu
 
 | Original image						| Expected segment map 							| Predicted segment map							|
 | :---								| :---									| :---									|
-| ![original image](./report_assets/hipMri_test0_orig_img.png)	| ![expected segment](./report_assets/hipMri_test0_orig_seg_map.png)	| ![predicted segment](./report_assets/hipmri_test0_seg_pred_24-10-24.png)	|
+| ![original image](./report_assets/hipMri_test0_orig_img.png)	| ![expected segment](./report_assets/hipMri_test0_orig_seg_map.png)	| ![predicted segment](./report_assets/hipMri_test0_seg_pred_24-10-24.png)	|
 
 As well as for the first image in the validation set:
 
 | Original image						| Expected segment map 							| Predicted segment map							|
 | :---								| :---									| :---									|
-| ![original image](./report_assets/hipMri_val0_orig_img.png)	| ![expected segment](./report_assets/hipMri_val0_seg_orig.png)		| ![predicted segment](./report_assets/hipmri_val0_seg_pred_24-10-24.png)	|
+| ![original image](./report_assets/hipmri_val0_orig_img.png)	| ![expected segment](./report_assets/hipmri_val0_seg_orig.png)		| ![predicted segment](./report_assets/hipMri_val0_seg_pred_24-10-24.png)	|
 
 
 (Note that the code does not extract images as that would blow out my Rangpur disk quota; these were extracted manually by loading up pre-trained model parameters on a lab computer and plotting the results using `testThing.py`.)

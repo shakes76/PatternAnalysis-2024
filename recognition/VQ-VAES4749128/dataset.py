@@ -40,6 +40,30 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
         res[..., c] = (arr == c) * 1
     return res
 
+class LatentBlockDataset(Dataset):
+    """
+    Loads latent block dataset 
+    """
+
+    def __init__(self, file_path, train=True, transform=None):
+        print('Loading latent block data')
+        data = torch.from_numpy(np.load(file_path, allow_pickle=True)).cpu()
+        print('Done loading latent block data')
+        
+        self.data = data[:500] if train else data[-500:]
+        self.transform = transform
+
+    def __getitem__(self, index):
+        img = self.data[index]
+        if self.transform is not None:
+            img = self.transform(img)
+        label = 0
+        return img, label
+
+    def __len__(self):
+        return len(self.data)
+
+
 
 class GrayscaleImageDataset(Dataset):
     def __init__(self, image_dir, transform=None):
@@ -75,8 +99,14 @@ def load_dataset(args):
         transforms.ToPILImage(),
         transforms.Grayscale(num_output_channels=1),  
         transforms.ToTensor(),
-        transforms.Resize((256, 128))
+        transforms.Resize((128, 128))
     ])
+    # transform = transforms.Compose([
+    #     transforms.ToPILImage(),
+    #     transforms.Grayscale(num_output_channels=1),  
+    #     transforms.ToTensor(),
+    #     transforms.Resize((256, 128))
+    # ])
 
     #load training set
     train_dataset = GrayscaleImageDataset(image_dir=args.train_dir, transform=transform)
@@ -107,4 +137,28 @@ def save_model_and_results(model, results, hyperparameters, timestamp):
     torch.save(results_to_save,
                SAVE_MODEL_PATH + '/vqvae_data_' + timestamp + '.pth')
 
+def data_loaders(train_data, val_data, batch_size):
 
+    train_loader = DataLoader(train_data,
+                              batch_size=batch_size,
+                              shuffle=True,
+                              pin_memory=True)
+    val_loader = DataLoader(val_data,
+                            batch_size=batch_size,
+                            shuffle=True,
+                            pin_memory=True)
+    return train_loader, val_loader
+
+def load_latent_block(batch_size):
+    data_folder_path = os.getcwd()
+    # data_file_path = os.path.join(data_folder_path, 'latent_code.npy')
+    data_file_path = '/home/zijian/Selena/Vq_vae_comp3710/latent_code_reshaped.npy'
+
+    train = LatentBlockDataset(data_file_path, train=True,
+                         transform=None)
+
+    val = LatentBlockDataset(data_file_path, train=False,
+                       transform=None)
+    training_loader, validation_loader = data_loaders(
+            train, val, batch_size)
+    return training_loader, validation_loader

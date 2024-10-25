@@ -1,4 +1,4 @@
-For ViT, we'll need the below for modules. 
+#For ViT, we'll need the below for modules. 
 
 1. Patch embedding
     - input image is divided into square patches. 

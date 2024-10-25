@@ -37,3 +37,14 @@ YOLOv8 consists of several stages involving **Convolutional Layers (Conv), Cross
 | ![Stage 13 - Upsample Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage13_Upsample_features.png) | ![Stage 21 - Final C2f Features](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/stage21_C2f_features.png) |
 
 </div>
+
+### How it works:
+Convolutional Layers (Conv): These layers are responsible for learning local patterns and features such as edges and textures from the input image. The convolution operation helps the model reduce spatial dimensions while extracting meaningful representations.
+
+Cross-Stage Partial Networks (C2f): The C2f blocks allow the model to improve gradient flow during backpropagation by splitting feature maps into two parts.One passes through the layers while the other skips them, enhancing information preservation and improving model learning.
+
+Spatial Pyramid Pooling (SPPF): This component aggregates global context from different receptive fields, allowing the model to handle objects of varying sizes and shapes effectively.
+
+Upsampling: This operation increases the resolution of feature maps enabling finer localisation of objects. It allows the network to combine low-level features with high-level features for better predictions.
+
+Concatenation Operations: These operations merge feature maps from different stages allowing the model to combine both high-level and low-level information to make more precise predictions.

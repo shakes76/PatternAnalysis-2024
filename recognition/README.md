@@ -1,5 +1,5 @@
 ## Classification of lesions
-
+Ryan Miles - 47495955
 # Problem:
 This projects aims to implement an object detection algorithm which uses the dectection network YOLOv7. This algorthim is designed to identify and dectect objects within an images by drawing a box around such object. In this project we are using this algorthim to detect lesions within the ISIC 2018 dataset. This Dataset contains images of lesions on patients skin.
 

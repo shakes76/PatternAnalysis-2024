@@ -59,7 +59,7 @@ def training_loop(architecture, num_epochs, model, data, train, valid, test, opt
     # implementing early stopping to reduce change of overfitting model
     best_val_loss = float('inf')
     patience_count = 0
-    patience_lim = 50 #stop training if loss doesn't improve
+    patience_lim = 15 #stop training if loss doesn't improve
 
     for epoch in range(num_epochs):
         loss = _train_model(model=model, data=data, train=train, optimiser=optimiser, criterion=criterion, device=device)
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     epochs = 300 # default, perhaps try 200,400,500 etc
 
     # Change this to change the model
-    architecture = "SAGE"
+    architecture = "SGC"
 
     # loading data
     data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='/Users/anthonyngo/Documents/UQ/24sem2/COMP3710/project/PatternAnalysis-2024/facebook.npz')
@@ -147,6 +147,8 @@ if __name__ == '__main__':
         model = GATModelBasic(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
     elif architecture == "SAGE":
         model = GraphSAGE(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
+    elif architecture == "SGC":
+        model = SGCModel(input_dim=128, output_dim=data.y.max().item()+1, k=2)
 
     model = model.to(device)
 
@@ -169,9 +171,9 @@ if __name__ == '__main__':
 
     start_time = time.time()
     training_loop(architecture=architecture,
-                  num_epochs=epochs, 
-                  model=model, 
-                  data=data, 
+                  num_epochs=epochs,
+                  model=model,
+                  data=data,
                   train=train_idx, 
                   valid=valid_idx, 
                   test=test_idx, 

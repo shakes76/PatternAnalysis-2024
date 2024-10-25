@@ -66,7 +66,7 @@ def visualise_ground_truths(images: list, ground_truths: list, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'ground_truths_{criterion}.png')
+    plt.savefig(f'ground_truths_{str(criterion)}.png')
     plt.close()
 
 def visualise_predictions(images: list, predictions: list, criterion):
@@ -104,7 +104,7 @@ def visualise_predictions(images: list, predictions: list, criterion):
 
     # Show the plot
     plt.tight_layout()
-    plt.savefig(f'predictions_{criterion}.png')
+    plt.savefig(f'predictions_{str(criterion)}.png')
     plt.close()
 
 def test(model: nn.Module, test_loader: DataLoader, device: torch.device | str):
@@ -209,7 +209,7 @@ def plot_dice(criterion, segment_coefs: np.array):
     plt.title("Dice Score for Each Segment")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'dice_coefs_test_{criterion}.png')
+    plt.savefig(f'dice_coefs_test_{str(criterion)}.png')
     plt.close()
 
 

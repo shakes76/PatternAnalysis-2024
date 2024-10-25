@@ -41,7 +41,17 @@ After the model is trained, PixelCNN can now generate new latent codes that alig
 To run predict:
 ``` python predict.py ```
 
-The arguments can be customised, otherwise the default will be used when running in terminal.
+The arguments can be customised, otherwise the default will be used when running in terminal:
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--n_updates", type=int, default=5000)
+    parser.add_argument("--n_hiddens", type=int, default=128)
+    parser.add_argument("--n_residual_hiddens", type=int, default=32)
+    parser.add_argument("--n_residual_layers", type=int, default=2)
+    parser.add_argument("--embedding_dim", type=int, default=64)
+    parser.add_argument("--n_embeddings", type=int, default=512)
+    parser.add_argument("--beta", type=float, default=.25)
+    parser.add_argument("--learning_rate", type=float, default=3e-4)
+    parser.add_argument("--log_interval", type=int, default=50)
 
 
 # VqVae Training

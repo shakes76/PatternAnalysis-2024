@@ -28,13 +28,15 @@ The 2D UNet uses the architecture shown in the diagram below:
 ![UNet network architecture](readme-images/u-net-architecture.png)
 *Figure 1: UNet model architecture*
 
-The UNet is a convolution neural network architecture that consists of an encoder and a decoder, joined by skip connections. The encoder (shown on the left side of the figure) is a contracting path that repeatedly applies two 3x3 convolution layers followed by a RELU activation and a 2x2 max pooling operation with a stride of 2 for downsampling. This reduces the spatial dimension of the data and extracts important features. The decoder (shown on the right side of the figure) then upsamples the input at each step, followed by a 2x2 convolution which halves the number of features and a concatenation with the skip connections to re-introducs the spatial details lost during downsampling. This enables a more detailed, accurate segmetation masks to be determined and improves results.  
+The UNet is a convolution neural network architecture that consists of an encoder and a decoder, joined by skip connections. The encoder (shown on the left side of the figure) is a contracting path that repeatedly applies two 3x3 convolution layers followed by a RELU activation and a 2x2 max pooling operation with a stride of 2 for downsampling. This reduces the spatial dimension of the data and extracts important features. The decoder (shown on the right side of the figure) then upsamples the input at each step, followed by a 2x2 convolution which halves the number of features and a concatenation with the skip connections to re-introduce the spatial details lost during downsampling. This enables a more detailed, accurate segmetation mask to be determined and improves final segmentation results.  
 
-This contracting and expanding architecture gives the model its characteristc U-shape which gives its the name.
+The model's contracting and expanding architecture gives it a characteristc U-shape which lends the model its the name.
 
 ## Training:
-The model has been trained for 40 epochs, using an ADAM optimiser with an initial learning rate of 1e-4. The learning rate is reduced by a factor of 0.1 if mean epoch loss plateaus over 2 epochs (i.e. patience = 2).
+The model has been trained for 40 epochs, using an ADAM optimiser with an initial learning rate of 1e-4. The learning rate is reduced by a factor of 0.1 if mean epoch loss plateaus over 2 epochs (i.e. patience = 2). The model uses Cross-Entropy loss and DICE score as the evaluation metrics.
 
+## Testing and Validation:
+The model's perfromance is assessed using a DICE evaluated on the validation dataset, which is distinct from the training dataset. The training loss at each iteration, the average training losses per epoch and the dice score for each iteration have been plotted to visualise performance of the 2D UNet model.
 
 ## References:
 1. O.Ronneberger, P.Fischer, and T.Brox,"U-Net: Convolutional Networks for Biomedical Image Segmentation," in Medical Image Computing and Computer-Assisted Intervention – MICCAI 2015, ser. Lecture Notes in Computer Science, N.Navab, J.Hornegger, W.M.Wells, and A.F.Frangi,Eds. Cham: Springer International Publishing, 2015, pp.234–241.

@@ -1,4 +1,6 @@
 """
+Main training function for the model.
+
 Got inspiration from engine.py file of the following github repo:
 https://github.com/shakes76/GFNet
 And my train/evaluate code from the brain GAN code.
@@ -64,7 +66,7 @@ def get_args_parser():
                         help='Clip gradient norm (default: None, no clipping)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='SGD momentum (default: 0.9)')
-    parser.add_argument('--weight-decay', type=float, default=1e-1,
+    parser.add_argument('--weight-decay', type=float, default=5e-2,
                         help='weight decay (default: 0.05)')
     # Learning rate schedule parameters
     parser.add_argument('--sched', default='cosine', type=str, metavar='SCHEDULER',

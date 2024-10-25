@@ -132,6 +132,24 @@ Furthermore, the script creates a file called `log.txt` which has 1 line per epo
 {"train_lr": 4.2823776072812744e-05, "train_loss": 0.026965036172487494, "test_loss": 1.5648742771529136, "test_acc1": 78.4, "epoch": 251}
 ```
 
+The dataset.py file applies augmentations such as:
+
+```
+train_transform = tf.Compose([
+        tf.Grayscale(num_output_channels=1),
+        tf.Resize((image_size, image_size)),
+        tf.RandomRotation(degrees=15),
+        tf.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+        tf.ToTensor(),
+        tf.Normalize(mean=[0.1156],
+                     std=[0.2198],),
+        tf.RandomHorizontalFlip(),
+        tf.RandomVerticalFlip(),
+    ])
+```
+
+In an attempt to minimise the model overfitting to the training data and enable generalisation to the test data. The training and test data were split by the task itself, and they were kept that way - they were not mixed around to attempt to keep the test set as consistent as possible.
+
 ### Predicting
 
 ```

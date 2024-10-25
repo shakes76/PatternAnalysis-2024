@@ -77,6 +77,8 @@ The default execution of `train.py` allows the model to be trained using hyperpa
 
 The training script relies on [data set structure](#structure-of-data) being satisfied - otherwise, it will fail trying to load the data.
 
+The training script will create a checkpoint of the best performing iteration so far, and also create a checkpoint every 20 epochs. Since the default setting for Epochs is 300, the script will create 16+ checkpoints (1 best, 15 interval) in the directory `test/model/run/`.
+
 ### Predicting
 
 ```

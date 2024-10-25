@@ -35,10 +35,42 @@ Each convolutional layer in the GFNet model is followed by a max-pooling layer f
 The following image shows the architecture of the GFNet model used for Alzheimer's Disease classification.
 ![GFNet Architecture](https://drive.google.com/uc?export=view&id=1_MtDGSkJuh3BRswejXlqUUzrtikPBpcN)
 
-# Requirements
-- Python 3.8+
-- Tensorflow/PyTorch
-- Numpy
-- Matplotlib
-- Scikit-learn
-- Google Colab Pro+ For Faster Training
+## Pre-Processing Steps
+- **Grayscale Conversion** :  The MRI images are converted into grayscale images. This reduces computational complexity.
+- **Resizing** : Images were resized to 128x128 pixels for the model input.
+- **Normalization** : It normalizes the pixel values to fall in a range with a mean of 0.5 and a standard deviation of 0.5.
+- **Data Augmentation** : This includes augmenting the training data through various random horizontal flips, rotations, and random size crops. The object is to get better generalization for the model.
+
+## Data Splitting Justification
+- **Training Split(70%)** : This set provides training to the model to learn the pattern in the data.
+- **Validation Split(15%)** : This set is used for tuning the hyperparameters to avoid overfitting.
+- **Testing Split(15%)** :  This is a separated, unseen dataset used in order to determine the performance of a model.
+The splitting of data would thereby enable the model to be validated during training, while completely new data are tested with this model, making it robust and generalizable.
+
+## Training & Validation Loss, Training & Validation Accuracy
+These two plots represent the training and validation loss (on the left) and training and validation accuracy (on the right) over the 200 epochs of training the GFNet model on the ADNI dataset.
+
+The following image shows the training and validation loss and accuracy over 200 epochs.
+![Training and Validation Loss & Accuracy](https://drive.google.com/uc?export=view&id=1FmPLCZAj04GeWjKof4ZDv9u1wwmTRhBH)
+
+## Explanations or the Interpretations of the plots 
+### Left Plot : Training & Validation Loss
+- Generally speaking, both the training and validation losses are going down, which means that the model is learning well. However, the oscillations of the validation loss beyond roughly 100 epochs may suggest that the model has begun to memorize the data points from the training dataset and may be overfitting.
+
+### Right Plot : Training & Validation Accuracy
+- Both training and validation accuracies have already increased heavily in the first couple of epochs to a high accuracy of roughly 90% and do not increase further as the training proceeds.
+- The closeness of training and validation accuracies is an excellent omen; this suggests that the model generalizes rather well on this validation set, and not highly overfitting, despite the small jitters in the validation loss.
+
+### Conclusion
+- It appears to be going well with an approximate accuracy of 90% on both the training and validation sets.
+- A proper learning would be with a loss decrease with increased accuracy, but the fluctuations in validation loss might reflect overfitting and require further tuning for generalization, which may involve early stopping or regularization.
+
+
+
+## Requirements
+- **Python**: 3.8+
+- **TensorFlow or PyTorch**: Depending on your implementation choice (GFNet6 model in PyTorch)
+- **NumPy**: 1.19+
+- **Matplotlib**: 3.3+
+- **Scikit-learn**: 0.24+
+- **Google Colab Pro+**: Recommended for faster training and inference.

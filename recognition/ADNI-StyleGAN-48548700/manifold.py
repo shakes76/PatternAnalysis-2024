@@ -1,3 +1,60 @@
+"""
+=======================================================================
+Script Name: tsne_clustering_discriminator.py
+Author: Baibhav Mund
+Student ID: 48548700
+Description:
+    This script performs t-SNE dimensionality reduction and K-Means clustering 
+    on features extracted from a discriminator model (trained using StyleGAN2) 
+    on a dataset of generated brain images.
+
+    The script processes images from multiple epochs, extracts features using 
+    a modified discriminator model, applies t-SNE to reduce dimensionality to 2D, 
+    and clusters the images into two groups ("AD" for Alzheimer's Disease and "CN" 
+    for Cognitively Normal) using K-Means clustering. The resulting clusters are 
+    visualized using a scatter plot with color-coded labels for the two groups.
+
+Usage:
+    1. Ensure that the image dataset is organized in the structure: 
+    `epochX/wY/image.png`, where X represents the epoch and Y represents the 
+    weight index (e.g., w1, w2, etc.).
+    2. Set the `root_dir` to point to the root directory of your dataset.
+    3. Set the `checkpoint_path` to the path of your saved discriminator model 
+    checkpoint (in .pt format).
+    4. Run the script to generate a scatter plot of the t-SNE embeddings, with 
+    the two clusters ("AD" and "CN") visualized.
+
+Dependencies:
+    - Python 3.x
+    - PyTorch
+    - torchvision
+    - PIL (Python Imaging Library)
+    - scikit-learn (for TSNE and KMeans)
+    - matplotlib (for plotting)
+
+Parameters:
+    checkpoint_path : str
+        The path to the discriminator model checkpoint file (e.g., 'critic_epoch45.pt').
+    root_dir : str
+        The root directory containing image datasets in epoch subdirectories (e.g., 'generated_images/').
+    log_resolution : int
+        The resolution exponent for the discriminator input (e.g., log_resolution=7 corresponds to 2^7 = 128x128 resolution).
+    n_clusters : int (default=2)
+        The number of clusters for K-Means (e.g., two clusters: "AD" and "CN").
+
+Functions:
+    - load_discriminator(): Loads the discriminator model from the checkpoint.
+    - load_images_from_epochs(): Recursively loads images from epoch subdirectories.
+    - flatten_features(): Flattens feature maps extracted from the discriminator.
+    - plot_tsne_with_named_clusters(): Plots the t-SNE embeddings with color-coded clusters.
+
+Output:
+    - A scatter plot showing the t-SNE projection of the image features, 
+    with two clusters ("AD" and "CN") visualized in different colors.
+
+=======================================================================
+"""
+
 import os
 import torch
 import numpy as np
@@ -97,7 +154,7 @@ if __name__ == "__main__":
     checkpoint_path = 'critic_epoch45.pt'
 
     # Root directory containing the dataset (epoch0, epoch5, etc.)
-    root_dir = 'path_to_your_dataset'  # Example: 'generated_images/'
+    root_dir = './generated_images/'  
 
     # Load the saved discriminator model from modules.py
     log_resolution = 7  # Adjust this according to your discriminator setup

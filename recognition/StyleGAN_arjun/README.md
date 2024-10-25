@@ -296,15 +296,15 @@ a third of the total training process.
 Our StyleGAN2 implementation demonstrates progressive improvement in the quality of generated brain scan images throughout the
 training process. Below are samples of generated images at different training milestones:
 
-<p align="center">
-<img src="./assets/model_outputs_50.png" alt="50 Epochs" style="width: 75%; display: inline-block;">
-</p>
-<p align="center">
-    <img src="./assets/model_outputs_100.png" alt="100 Epochs" style="width: 75%; display: inline-block;">
-</p>
-<p align="center">
-    <img src="./assets/model_outputs_150.png" alt="150 Epochs" style="width: 75%; display: inline-block;">
-</p>
+<div style="text-align: center;">
+    <img src="./assets/model_outputs_50.png" alt="50 Epochs" style="width: 30%; display: inline-block;">
+    <img src="./assets/model_outputs_100.png" alt="100 Epochs" style="width: 30%; display: inline-block;">
+    <img src="./assets/model_outputs_150.png" alt="150 Epochs" style="width: 30%; display: inline-block;">
+</div>
+<div style="text-align: center;">
+    <em>Left to right: Generated images at 50, 100, and 150 epochs</em>
+</div>
+
 
 The progression shows clear improvement in image quality across training phases:
 

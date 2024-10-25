@@ -133,6 +133,7 @@ When the training is occuring, the output should look something like this:
 ![Epoch_50](assets/epoch_4.png)
 
 Comparing this to a real image from the dataset below, we can see that the generated image at the 50th epoch is reasonably clear by comparison.
+
 ![Real_img](assets/aug_img_4.png)
 
 Hence we can see that by the 50th epoch, the requirement for reasonably clear image generation has been met.
@@ -147,12 +148,12 @@ The graphs below show the loss of the generator and discriminator during their t
 
 #### Epochs = 50
 The graphs below show the loss of the generator and discriminator during their training cycles for 50 epochs (35500 iterations).
+
 ![Disc_loss](assets/Disc_loss.png)
 
 ![Gen_loss](assets/Gen_loss.png)
 
 ![Comb_loss](assets/Combined_loss.png)
-
 
 
 ## Conclusion
@@ -166,5 +167,4 @@ A further limitation is that this model does not contain a UMAP embeddings plot.
 ## References and Acknowledgements
 The model was implmented based on the [StyleGAN2 paper](https://arxiv.org/pdf/1912.04958).
 
-For the code architecture of the StyleGAN2, this [repository](https://github.com/shakes76/PatternAnalysis-2023/tree/topic-recognition/recognition/StyleGAN2-OASIS_45711110) was referred to by [4vir4l](https://github.com/4vir4l).
-
+For the code architecture of the StyleGAN2, this [repository](https://github.com/shakes76/PatternAnalysis-2023/tree/topic-recognition/recognition/StyleGAN2-OASIS_45711110) by [4vir4l](https://github.com/4vir4l) was referred to.

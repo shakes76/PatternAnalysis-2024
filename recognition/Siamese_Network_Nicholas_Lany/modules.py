@@ -3,17 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50
 
-def PCA_transform(input_data, n_components, shape):
-    mean = torch.mean(input_data, dim=0)
-    X -= mean
-
-    U, S, V = torch.linalg.svd(X, full_matrices=False)
-    components = V[:n_components]
-
-    transformed_data = components.view(n_components, shape[0], shape[1])
-
-    return transformed_data
-
+# CNN model for image classification, used later for siamese network
 class CNN(nn.Module):
     def __init__(self, shape, num_classes):
         super(CNN, self).__init__()
@@ -53,6 +43,7 @@ class CNN(nn.Module):
         x = self.fc(x)
         return x
 
+# Siamese Network for learning similarity between two images, consisting of two identical CNNs
 class SiameseNetwork(nn.Module):
     def __init__(self):
         super(SiameseNetwork, self).__init__()
@@ -64,6 +55,7 @@ class SiameseNetwork(nn.Module):
 
         return output1, output2
 
+# Loss function for the Siamese Network
 class ContrastiveLoss(torch.nn.Module):
     def __init__(self, margin=2.0):
         super(ContrastiveLoss, self).__init__()

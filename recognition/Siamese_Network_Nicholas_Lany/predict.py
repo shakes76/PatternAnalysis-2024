@@ -8,14 +8,14 @@ from modules import CNN, SiameseNetwork
 from dataset import ISICDataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-prediction_threshold = 0.5
 
+# Load the trained model
 def load_model(model_path):
     siamese_model = SiameseNetwork().to(device)
     siamese_model.load_state_dict(torch.load(model_path, map_location=device))
     return siamese_model.cnn 
 
-
+# Classify images using the trained model
 def classify_images(model, dataset, transform=None, num_samples=100):
     dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
     
@@ -39,6 +39,7 @@ def classify_images(model, dataset, transform=None, num_samples=100):
     print(f'Accuracy of the model on the test dataset: {accuracy * 100:.2f}%')
 
 if __name__ == "__main__":
+    # Load the dataset and model from kaggle and the local file system
     dataset_path = kagglehub.dataset_download("nischaydnk/isic-2020-jpg-256x256-resized")
     dataset_image_path = os.path.join(dataset_path, "train-image/image")
     meta_data_path = os.path.join(dataset_path, "train-metadata.csv")

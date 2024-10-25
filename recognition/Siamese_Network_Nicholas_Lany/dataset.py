@@ -7,6 +7,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
 
+# This class loads the ISIC dataset and applies augmentations to malignant images
 class ISICDataset(Dataset):
     def __init__(self, dataset_path, metadata_path, transform=None, augment_transform=None, num_augmentations=5):
         self.dataset_path = dataset_path
@@ -36,6 +37,7 @@ class ISICDataset(Dataset):
     def __len__(self):
         return len(self.data) + (self.num_augmentations * len(self.malignant_data))
 
+    # Dynamic data loading based on index, as to not use too much memory
     def __getitem__(self, index):
         if index < len(self.data):
             # Return original image
@@ -62,6 +64,8 @@ class ISICDataset(Dataset):
 
         return img, label
 
+
+# This class loads data and creates pairs of images for the Siamese Network labelled as similar or different
 class SiameseDataset(Dataset):
     def __init__(self, dataset, num_pairs=50000, transform=None):
         self.dataset = dataset

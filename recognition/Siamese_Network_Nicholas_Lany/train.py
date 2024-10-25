@@ -11,6 +11,7 @@ from dataset import ISICDataset, SiameseDataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# Trains the Siamese Network on the ISIC dataset
 def train_siamese_network(dataset, transform=None, epochs=10):
     train_dataloader = DataLoader(SiameseDataset(dataset, transform=transform), batch_size=16, shuffle=True)
     net = SiameseNetwork().to(device)
@@ -39,6 +40,7 @@ def train_siamese_network(dataset, transform=None, epochs=10):
     print(f'Model saved to {os.path.abspath("model.pth")}')
 
 if __name__ == "__main__":
+    # Load the dataset and model from kaggle and the local file system
     dataset_path = kagglehub.dataset_download("nischaydnk/isic-2020-jpg-256x256-resized")
     dataset_image_path = os.path.join(dataset_path, "train-image/image")
     meta_data_path = os.path.join(dataset_path, "train-metadata.csv")
@@ -50,6 +52,7 @@ if __name__ == "__main__":
 
     isic_dataset = ISICDataset(dataset_path=dataset_image_path, metadata_path=meta_data_path)
 
+    # Time the training process
     start_time = time.time()
     train_siamese_network(dataset=isic_dataset, transform=transform, epochs=1)
     elapsed_time = time.time() - start_time

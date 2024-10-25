@@ -2,6 +2,7 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 
+
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
@@ -11,7 +12,9 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
     return res
 
-def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, early_stop=False):
+
+def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False,
+                 early_stop=False):
     """
     Load medical image data from names, cases list provided into a list for each.
 
@@ -57,7 +60,8 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
         if categorical:
             in_image = to_channels(in_image, dtype=dtype)
             # ~ images[i,:,:,:,:] = in_image
-            images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2], :in_image.shape[3]] = in_image  # with pad
+            images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2],
+            :in_image.shape[3]] = in_image  # with pad
         else:
             # ~ images[i,:,:,:] = in_image
             images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2]] = in_image  # with pad
@@ -70,3 +74,28 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
         return images, affines
     else:
         return images
+
+def one_hot_mask(targets):
+    """
+    Convert single-channel target images to one-hot encoded masks.
+
+    Args:
+        targets (torch.Tensor): Input tensor of shape (batch_size, 1, height, width) with segmentation labels.
+
+    Returns:
+        torch.Tensor: One-hot encoded tensor of shape (batch_size, num_classes, height, width).
+    """
+    batch_size, _, height, width = targets.size()
+    targets_flat = targets.view(batch_size, -1) # Flatten the target tensor for unique value extraction
+    unique_values = torch.unique(targets_flat) # Get unique class labels
+    num_classes = unique_values.size(0) # Number of unique classes
+
+    # Initialize one-hot encoded tensor
+    one_hot_targets = torch.zeros(batch_size, num_classes, height, width, device=targets.device)
+
+    # Fill the one-hot encoded tensor
+    for i in range(batch_size):
+        for j, value in enumerate(unique_values):
+            one_hot_targets[i, j, :, :] = (targets[i, 0, :, :] == value).float()
+    return one_hot_targets
+

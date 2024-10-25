@@ -20,6 +20,8 @@ import wandb
 
 dir_img = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_test')
 dir_mask = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_seg_test')
+dir_img_val = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_validate')
+dir_mask_val = Path('C:/Users/rober/Desktop/COMP3710/keras_slices_seg_validate')
 dir_checkpoint = Path('./checkpoints')
 
 def evaluate(net, dataloader, device, amp):
@@ -79,12 +81,21 @@ def train_model(
     # Step 2: Load the images using load_data_2D
     images_mask = load_data_2D(image_files_mask, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False)
 
+    image_files_val = [os.path.join(dir_img_val, f) for f in os.listdir(dir_img_val) if f.endswith('.nii.gz') or f.endswith('.nii')]
+    # Step 2: Load the images using load_data_2D
+    images_val = load_data_2D(image_files_val, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False)
+
+    image_files_mask_val = [os.path.join(dir_mask_val, f) for f in os.listdir(dir_mask_val) if f.endswith('.nii.gz') or f.endswith('.nii')]
+    # Step 2: Load the images using load_data_2D
+    images_mask_val = load_data_2D(image_files_mask_val, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False)
+
 
     training_set = CombinedDataset(images, images_mask)
+    validate_set = CombinedDataset(images_val, images_mask_val)
     # 2. Split into train / validation partitions
     n_val = int(len(images) * val_percent)
     n_train = len(images) - n_val
-    train_set, val_set = random_split(training_set, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    train_set, val_set = training_set, validate_set
     print(len(train_set))
 
     train_loader = DataLoader(train_set, shuffle=True)

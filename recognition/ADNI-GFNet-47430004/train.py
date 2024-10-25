@@ -1,5 +1,7 @@
 """
-Main training function for the model.
+Main training functionality for the model.
+This file handles all the training of the model,
+saving of checkpoints and plots.
 
 Got inspiration from engine.py file of the following github repo:
 https://github.com/shakes76/GFNet
@@ -204,11 +206,6 @@ def train_one_epoch(model: torch.nn.Module, criterion,
 
         optimizer.zero_grad()
 
-        # this attribute is added by timm on one optimizer (adahessian) - use Adam
-        # is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-        # loss_scaler(loss, optimizer, clip_grad=max_norm,
-        #                 parameters=model.parameters(), create_graph=is_second_order)
-
         loss.backward()
         optimizer.step()
 
@@ -336,6 +333,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.output_dir + "figs/"):
         os.makedirs(args.output_dir + "figs/")
     
+    # Plots the data gathered
     plt.figure(figsize=(10,5))
     plt.title("Training and Test Loss per epoch")
     plt.plot(training_losses, label="Training Loss")

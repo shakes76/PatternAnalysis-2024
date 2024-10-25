@@ -35,9 +35,9 @@ This quantized space is then decoded to reconstruct the original image. The key 
 4. Loss Function: The model optimizes a combination of reconstruction loss (MSE) and a commitment loss to ensure the latent vectors stay close to the embeddings.
    
 # A high-level flow:
-Input MRI image -> Encoder -> Latent Space
-Latent Space -> Vector Quantizer -> Quantized Latent Space
-Quantized Latent Space -> Decoder -> Reconstructed MRI image
+* Input MRI image -> Encoder -> Latent Space
+* Latent Space -> Vector Quantizer -> Quantized Latent Space
+* Quantized Latent Space -> Decoder -> Reconstructed MRI image
 
 # Dependencies
 To install all dependecies, run:
@@ -47,9 +47,9 @@ pip install torch torchvision nibabel matplotlib tqdm pathlib
 1. Preprocessing: The .nii MRI image files are sliced into 2D images and resized. Normalization to the range [0, 1] is applied
 2. Training: The dataset is split into 70% for training, 15% for validation, and 15% for testing. This split is chosen to ensure a sufficiently large training set while keeping a balanced validation and test set for hyperparameter tuning and performance evaluation.
 3. To Run the training on current variables and epochs, while saving the model to reconstruct the images later
-python train.py -save
+* python train.py -save
 4. To reconstruct the images after training and save the reconstructed images (top 5)
-python predict.py -save
+* python predict.py -save
 
 # Author
 Harrison Cleland, 2024

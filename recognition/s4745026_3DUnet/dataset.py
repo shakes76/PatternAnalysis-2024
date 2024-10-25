@@ -71,7 +71,7 @@ class Custom3DDataset(Dataset):
         # Resize the dimensions
         self.upsample = torch.nn.Upsample(
             size=(128, 128, 128), mode="trilinear")
-        # self.classes = {i: i for i in range(6)}
+        self.classes = {i: i for i in range(6)}
 
     def __len__(self):
         return len(self.image_paths)
@@ -82,14 +82,15 @@ class Custom3DDataset(Dataset):
         label = load_data_3D([self.label_paths[idx]])
 
         # Convert to tensors
-        image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
-        label = torch.tensor(label, dtype=torch.long)
+        image = torch.tensor(image, dtype=torch.float32).unsqueeze(1)
+        label = torch.tensor([self.classes.get(category.item(), 0)
+                             for category in label.flatten()]).reshape(label.shape)
 
         # One-hot encode to assign labels to classes
         label = nn.functional.one_hot(
-            label, num_classes=6).permute(3, 1, 0, 2).float()
+            label.squeeze(0), num_classes=6).permute(3, 1, 0, 2).float()
         # Upsample
         image = self.upsample(image)
         label = self.upsample(label)
 
-        return image.squeeze(0), label
+        return image.squeeze(0), label.squeeze(0)

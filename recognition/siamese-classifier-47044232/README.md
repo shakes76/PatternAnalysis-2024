@@ -13,8 +13,8 @@ The goal for accuracy was to be around 80%.
 - `utils.py` Contains the code for some helper functions used throughout the project. Mainly used to provide readability in code.
 - `config.py` The goto place for changing any hyperparameters or changing where data is loaded and stored to.
 - `train.py` Contains the code for training, testing and validating both the siamese network and the binary classifier. 
-It also can save the model and plots of loss in either model, a t-SNE scatter plot and a confusion matrix. Please see the section on [usage](#usage) for how to properly run this file.
-- `predict.py` Contains the code for performing inference on a sample set of the dataset. Please also see the [usage](#usage) section before running the file.
+It also can save the model and plots of loss in either model, a t-SNE scatter plot and a confusion matrix. Please see the section on [Usage](#usage) for how to properly run this file.
+- `predict.py` Contains the code for performing inference on a sample set of the dataset. Please also see the [Usage](#usage) section before running the file.
 
 
 ## The Models
@@ -27,7 +27,7 @@ If the images are closer together they are more likely to be from the same class
 
 ### Triplet Loss Basics
 Triplet loss has been seen as very effective in face recognition and other areas where the dataset is not consisten in noise.
-That is, the images can of different perspectives viewing the subject, the camera used to take the image and many other things (see the section regarding [the dataset](#the-dataset) to see why this applies well).
+That is, the images can of different perspectives viewing the subject, the camera used to take the image and many other things (see the section regarding [The Dataset](#the-dataset) to see why this applies well).
 As seen in the image below, triplet loss instead has the Siamese network process three images:
 - **the anchor**: Any image in the dataset.
 - **the positive**: An image of the same class as the anchor.
@@ -75,11 +75,11 @@ Also again, the standard betas were used as the training worked well.
 
 ## The Dataset
 For this, the preprocessed version of the dataset is used (it can be found [here](https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data)).
-This one is used, mainly to reduce system storage. Additonally, it is easier to train as all of the images have been resized to be of the same 256x256 resolution. \
+This one is used mainly to reduce system storage. Additonally, it is easier to train as all of the images have been resized to be of the same 256x256 resolution. \
 This dataset was highly imbalanced as it has 2 classes of of which 32543 were of the benign class while only 585 were malignant.
 To handle this, each of the splits took a sample of the malignant images and then a unique matching number of benign images. 
 This meant that there was a 1:1 ratio of the classes in each set so that neither dominated the other in training.\
-To account for the low number of samples in each split, the following augmentions are applied (with a 50% possibility of it applying for the first 3):
+To account for the low number of samples in each split, the following augmentions are applied (with a 50% possibility of it applying for the first three augmentations listed):
 - Random rotation
 - Random Horizontal Flip
 - Random Vertical Flip
@@ -105,7 +105,7 @@ This suggests that there may have been a loss of generalisation in the training.
 ![t-SNE scatter plot](./images/tsne_scatterplot.png) \
 This grpah shows the feature seperation on the training set.\
 Evidently there was fairly effective seperation of features between the benign and malignant classes. But, there was some overlap in the middle. \
-Please see [Future Improvements](#future-improvements) on what can be done to further improve the seperation.
+Please see [Future Recommendations](#future-recommendations) on what can be done to further improve the seperation.
 
 ### Binary Classifier Results
 **Loss Plot** \
@@ -119,14 +119,75 @@ This confusion matrix represents a total accuracy of 81.7% on the test set of da
 It also seems that the malignant was more frequently predicted than the benign class. This caused the correct benign predictions to be a bit low.\
 Please note this was one of the better confusion matrix's generated (see below for more details on accuracy).
 
-
 ### Reproducability of Results
 The siamese network was very consitent in training as training it multiple times yielded similar loss plots and t-SNE scatterplots each time.
 However, the classifier was rather unpredictable in its results. This meant it had to be fine tuned based off of a saved siamese network.
 This meant that one run through of the whole of `train.py` yielded a lower accuracy (typically in the lower half of 70%).
 But after fine tuning the classifier to the saved siamese network, the accuracy would go up to an average of between 79% and 80% (this accuracy was calculated by rerunning the binary classifer part of the code 10 times and taking the average of the accuracy outputted.)
 As the accuracy was still getting to the target of around 80%, this should be considered successful but could have some improvements made to increase the consistency of the resulting classifier.
-Please see the section [Future Improvements](#future-improvements) on recommendations to resolve this.
+Please see the section [Future Recommendations](#future-recommendations) on recommendations to resolve this.
+
+
+## Usage
+Before running any scripts please ensure the directories in `config.py` are present or changed. This includes:
+- `DATAPATH`: The path to dataset mentioned in [The Dataset](#the-dataset).
+- `MODELPATH`: The path to where trained models should be saved.
+- `IMAGEPATH`: The path to where plots and other images should be stored from training.
+
+Also, ensure all dependencies listed in [Dependencies](#dependencies) are installed.\
+For this, conda is recommended for installing dependencies as it will ensure that there are no dependency erros.
+
+To perform training run the following:
+```
+python train.py [-nm|--nomodels] [-sp|--saveplots]
+```
+Optional arguments:
+- `-nm|--nomodels` - will prevent trained models being saved to `MODELPATH`.
+- `-sp|--saveplots` - will save plots to `IMAGEPATH` instead of showing them straight away.
+
+This will also print a log of the training information like the following:
+```
+Starting training now...
+Epoch: 0, Batch: 0, Loss: 1.0341612100601196
+Epoch: 0, Batch: 6, Loss: 1.0053060054779053
+Epoch: 0, Batch: 12, Loss: 1.222240686416626
+Epoch: 0, Batch: 18, Loss: 0.9875248670578003
+Epoch: 0, Batch: 24, Loss: 1.0720434188842773
+Validation: Batch: 0, Loss: 0.9928829073905945
+Validation: Batch: 2, Loss: 1.0370172262191772
+⋮
+Epoch: 179, Batch: 0, Loss: 0.08213412761688232
+Epoch: 179, Batch: 6, Loss: 0.0037293434143066406
+Epoch: 179, Batch: 12, Loss: 0.010097414255142212
+Epoch: 179, Batch: 18, Loss: 0.0
+Epoch: 179, Batch: 24, Loss: 0.04419383406639099
+Validation: Batch: 0, Loss: 0.7135723233222961
+Validation: Batch: 2, Loss: 1.3651185035705566
+Training complete! It took 277.00923438072203 minutes
+
+Testing the model to see loss...
+Testing: Batch: 0, Loss: 1.6736994981765747
+Testing: Batch: 4, Loss: 1.3294098377227783
+
+Test Accuracy for Classification: 72.23076923076923%
+```
+Note that it only shows full print reporting the siamese network's training as it is a lot longer to train.
+
+To perform inference on trained models:
+```
+python predict.py <siamese model path> <classifier model path>
+```
+This will generate the confusion matrix for predictions of a random sample of images from the dataset with something like the following printed.
+```
+Testing on a sample of 116 images.
+
+Test Accuracy for Classification: 82.05128205128206 %
+```
+
+## Dependencies
+
+
+## Future Recommendations
 
 
 ## References

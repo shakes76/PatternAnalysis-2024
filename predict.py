@@ -1,12 +1,12 @@
-from ultralytics import YOLO
+from modules import YOLOSegmentation
 import random
 import cv2
 import numpy as np
 
-model = YOLO("~/weights/best.pt")
-img = cv2.imread("")
+model = YOLOSegmentation("yolov8n-seg.pt")
+img = cv2.imread("data/images/train/ISIC_0015071.jpg")
 conf = 0.4
-results = model.predict(img, conf=conf)
+results = model.predict(img, conf)
 color = random.choices(range(256), k=3)
 
 for result in results:

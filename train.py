@@ -1,4 +1,4 @@
-from ultralytics import YOLO
+from modules import YOLOSegmentation
 import os
 import shutil
 import yaml
@@ -23,12 +23,12 @@ def main():
     create_dataset_yaml()
     
     # Initialize YOLOv8 model
-    model = YOLO('yolov8n-seg.pt')  # Load YOLOv8 nano segmentation model
+    model = YOLOSegmentation('yolov8n-seg.pt')  # Load YOLOv8 nano segmentation model
     
     # Training configuration
     training_args = {
         'data': 'dataset.yaml',
-        'epochs': 80,
+        'epochs': 1,
         'imgsz': 640,
         'batch': 4,
         'device': 0,  # Use GPU if available
@@ -38,10 +38,10 @@ def main():
     }
     
     # Start training
-    results = model.train(**training_args)
+    results = model.train(training_args)
     
     # Validate the model
-    model.val()
+    model.evaluate()
 
 if __name__ == "__main__":
     main()

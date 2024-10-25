@@ -1,1 +1,9 @@
-temp
+# 2D UNet for Medical Image Segmentation
+
+This project implements a 2D UNet architecture for medical image segmentation. In this case, the model has been applied to prostate segmentation from the HipMRI dataset. 2D UNet models can map high resolution images to segmentation masks, upscale low resolution images to high resolution images, or even be used in diffusion models to transform Gaussian noise to new images. With a set of input images and segmentation masks, images can be passed to the model and used to create an initial guess at a ground truth mask. This guess won't be very accurate at the beginning but can still be compared to the original labels for the loss which can be used to adjust parameters. 2D UNet features an encoder, bottleneck, and decoder. The encoder extracts features from the image, and the decoder upsamples these features to produce a final output. The encoder and decoder are symmetrical, hence making a U shape, thus the name (see figure 1). 2D UNet can also utilise skip connections between the symmetric encoder and decoder, which can be helpful for retaining high resolution information which can be lost during downsampling.
+
+**Figure 1:**
+![UNet Architecture](https://miro.medium.com/v2/resize:fit:1400/1*f7YOaE4TWubwaFF7Z1fzNw.png)
+The left half of this figure depicts the encoder of the 2D UNet model, and the right half the decoder. This model is symmetrical, hence the U shape, and the connections between each symmetric part are the skip connections.
+
+*Reference Video: The U-Net (actually) explained in 10 minutes https://www.youtube.com/watch?v=NhdzGfB1q74 *

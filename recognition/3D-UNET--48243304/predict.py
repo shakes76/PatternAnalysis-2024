@@ -10,7 +10,7 @@ import os
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the trained model
-model = UNet3D(in_channels=1, out_channels=1, init_features=16).to(device)
+model = UNet3D(in_channels=1, out_channels=1, init_features=32).to(device)
 model.load_state_dict(torch.load('unet3d_model.pth'))  # Load saved model weights
 model.eval()  # Set the model to evaluation mode
 

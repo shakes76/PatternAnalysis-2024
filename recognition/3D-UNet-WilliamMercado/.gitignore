@@ -1,3 +1,5 @@
 HipMRI_Study_open/
 const.py
 __pycache__
+*.zip
+net-out/

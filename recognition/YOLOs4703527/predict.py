@@ -25,13 +25,11 @@ def main():
     # Loop through results to calculate IoU statistics
     for result in results:
         if result.boxes:
-            for box in result.boxes.data: # Access box data correctly
-                iou += box[4]
+            for box in result.boxes.data: 
+                iou += box[4] # Access box data correctly
                 total_boxes += 1
 
-    # Calculate and print the proportion of boxes with IoU >= 0.80
-
-
+    
     print(f"IoU avg: {iou/total_boxes}")
 
 

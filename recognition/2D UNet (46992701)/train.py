@@ -37,15 +37,16 @@ train_labels = load_data_2D(train_labels, False, True)
 validation_labels = sorted([os.path.join(VAL_MASK_DIR, img) for img in os.listdir(VAL_MASK_DIR) if img.endswith(('.nii', '.nii.gz'))])
 validation_labels = load_data_2D(validation_labels, True)
 
-transform = tio.CropOrPad(IMAGE_SIZE, mask_name=train_labels)
+train_transform = tio.CropOrPad(IMAGE_SIZE, mask_name=train_labels)
+val_transform = tio.CropOrPad(IMAGE_SIZE, mask_name=validation_labels)
 
 # Create dataloaders
 subject = tio.Subject(train_imgs, train_labels)
-training_set = transform(subject)
+training_set = train_transform(subject)
 train_loader = torch.utils.data.dataLoader(training_set, BATCH_SIZE, True)
 
 val = tio.Subject(validation_imgs, validation_labels)
-validation_set = transform(val)
+validation_set = val_transform(val)
 val_loader = torch.utils.data.dataLoader(validation_set, BATCH_SIZE, True)
 
 # Initialise the model

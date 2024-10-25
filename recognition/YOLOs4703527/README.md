@@ -14,7 +14,7 @@ We used the **ISIC-2017 dataset**, which contains dermoscopic images labeled wit
 - **Validation Set**: 150 images  
 - **Test Set**: 1200 images  
 
-Each image was preprocessed into bounding boxes, normalized for size consistency, and stored in YOLO-readable formats, which we will go more in depth later.
+Each image was preprocessed into bounding boxes from the given ground truth masks, normalized for size consistency, and stored in YOLO-readable formats.
 
 ## Model: YOLOv8
 YOLO (You Only Look Once) is a fast, accurate, and efficient object detection model. It’s suitable for real-time object detection applications. The model used in this project is the **YOLOv8** architecture, optimized for object detection with real-time performance. YOLOv8 allows for fine-tuning on custom datasets and provides the flexibility to balance speed and accuracy.
@@ -48,3 +48,40 @@ Spatial Pyramid Pooling (SPPF): This component aggregates global context from di
 Upsampling: This operation increases the resolution of feature maps enabling finer localisation of objects. It allows the network to combine low-level features with high-level features for better predictions.
 
 Concatenation Operations: These operations merge feature maps from different stages allowing the model to combine both high-level and low-level information to make more precise predictions.
+
+## Training
+To Train the model we must have all the neccesary data.
+Data augmentation (flipping, scaling, and cropping) was applied to improve generalization. The data was already split as:
+- **70%** for training (images and masks)
+- **10%** for validation (images and masks)
+- **20%** for testing (images and masks)
+
+<div align="center">
+
+| **Train Batch 1** | **Train Batch 2** | **Train Batch 3** |
+|-------------------|-------------------|-------------------|
+| ![Train Batch 1](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch0.png) | ![Train Batch 2](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch1.png) | ![Train Batch 3](https://github.com/mraula/PatternAnalysis-2024/blob/topic-recognition/recognition/YOLOs4703527/figures/train_batch2.png) |
+
+</div>
+
+The model learns on the images and given masks seen above. However, the dataset is not very simple so we need to find suitable parameteres.
+
+#### Initial Training Results
+The first round of training revealed opportunities for optimization. Below are the initial loss metrics recorded:
+- **Box Loss**: 1.15822 Measures the error in predicted bounding boxes.
+- **Class Loss**: 1.7165 Ensures correct class prediction.
+- **Distribution Focal Loss (DFL)**: 1.40207 Helps with localization accuracy.
+
+#### Hyperparameters Used for Fine-Tuning
+To further improve the model’s performance, the following hyperparameters were adjusted:
+- **Optimizer**: AdamW  
+- **Batch Size**: 16  
+- **Learning Rate**: 0.001  
+- **Weight Decay**: 0.0005  
+- **Epochs**: 75 
+
+#### Fine-Tuned Loss Metrics
+After fine-tuning, the model demonstrated significant improvement, with the following loss values recorded:
+- **Box Loss**: 0.54229
+- **Class Loss**: 0.30157
+- **Distribution Focal Loss (DFL)**: 0.97581

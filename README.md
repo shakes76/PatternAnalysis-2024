@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pattern Analysis
 Pattern Analysis of various datasets by COMP3710 students in 2024 at the University of Queensland.
 
@@ -54,3 +55,20 @@ pip install torch torchvision nibabel matplotlib tqdm pathlib
 # Author
 Harrison Cleland, 2024
 47433386
+=======
+# Pattern Analysis
+Pattern Analysis of various datasets by COMP3710 students at the University of Queensland.
+
+We create pattern recognition and image processing library for Tensorflow (TF), PyTorch or JAX.
+
+This library is created and maintained by The University of Queensland [COMP3710](https://my.uq.edu.au/programs-courses/course.html?course_code=comp3710) students.
+
+The library includes the following implemented in Tensorflow:
+* fractals 
+* recognition problems
+
+In the recognition folder, you will find many recognition problems solved including:
+* OASIS brain segmentation
+* Classification
+etc.
+>>>>>>> f0b762688b9a777aad0204f369487ca412f1fc5f

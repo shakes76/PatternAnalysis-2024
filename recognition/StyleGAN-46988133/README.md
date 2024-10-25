@@ -7,7 +7,29 @@ An implementation of StyleGAN that is used to generate brain images from the [AD
 
 ## Table of Contents
 
-[StyleGAN](#stylegan)
+* [Code Structure](#code-structure)
+* [The Problem](#the-problem)
+* [The GAN Architecture](#the-gan-architecture)
+* [The StyleGAN Architecture](#the-stylegan-architecture)
+  * [The Generator](#the-generator)
+  * [The Discriminator](#the-discriminator)
+* [This Implementation of StyleGAN](#this-implementation-of-stylegan)
+* [Dataset Structure](#dataset-structure)
+  * [Pre-Processing](#pre-processing)
+* [Results](#results)
+  * [Image Generation](#image-generation)
+  * [UMAP Embeddings](#umap-embeddings)
+* [How To Run](#how-to-run)
+  * [1. Setup Dataset](#1-setup-dataset)
+  * [2. Clone this Repository](#2-clone-this-repository)
+  * [3. Install Required Dependencies](#3-install-required-dependencies)
+  * [4. Specify Dataset Location and Seed](#4-specify-dataset-location-and-seed)
+  * [5. Perform Training of the StyleGAN](#5-perform-training-of-the-stylegan)
+  * [6. Validate the Training](#6-validate-the-training)
+* [Future Improvements](#future-improvements)
+  * [1. No ProGAN Architecture](#1-no-progan-architecture)
+  * [2. WGAN-GP Implementation and Wasserstein Loss](#2-wgan-gp-implementation-and-wasserstein-loss)
+* [References & Acknowledgements](#references--acknowledgements)
 
 ## Code Structure
 
@@ -89,7 +111,42 @@ The only pre-processing that was performed on the ADNI dataset, outside of what 
 
 ## Results
 
-### Example Inputs
+Once the appropriate [dataset structure](#dataset-structure) has been followed, the ADNI dataset images will be able to be loaded into the training loop. The full resolution of these brain scan images are 256x256 pixels, with a sample of them displayed within [Figure 3](#figure-3---sample-256x256-adni-brain-scan-images-7).
+
+#### *Figure 3 - Sample 256x256 ADNI Brain Scan Images*
+
+![ADNI 256x256 Sample Images](Assets/256x256_adni_sample_images.png)
+
+### Image Generation
+In-terms of image generation this StyleGAN implementation was not able to fully progress through the chain of ProGAN image sizes, being 8x8, 32x32, 64x64, 128x128 and lastly 256x256. Instead the furthest this implementation was able to achieve was the 64x64 image size, however, even at this level the image generation was not of great quality (it did however provide great class distinctions as seen in [UMAP Embedding](#umap-embedding)) . Therefore, only the 32x32 image size will be presented with results for the image generation component of this section, see [Figure 4](#figure-4---32x32-image-generation-results). Please see the [Future Improvements](#future-improvements) section for a discussion of why this model was not able to achieve the full desired response, and what could be improved. Lastly, all images presented within this section were created using the `predict.py` file.
+
+#### *Figure 4 - 32x32 Image Generation Results*
+
+![32x32 Image Generation Results](Assets/32x32_real_versus_fake_images.png)
+
+As presented within [Figure 4](#figure-4---32x32-image-generation-results), these are the results of training the StyleGAN model through images sizes of 8x8, 16x16 and finally up to 32x32. It showcases that the Generator is able to effectively mold it's latent space vector into a similar shape as the brain scan images. However, the finer details of the image generation is lacking, with key brain features such as ridges missing. There is also a lack of diversity in the Generator's output, which shows some level of overfitting or mode collapse has occurred. This StyleGAN implementation did suffer from the jumps between the different resolutions, and the Generator sometimes became unstable after ending the fade-in period. It is most likely the result of the Discriminator being more stable around the jumps in resolution, that allowed it to over power the Generator and make it conform to these types of outputs.
+
+Another result to consider from the training is the loss plot, which can be seen in [Figure 5](#figure-5---32x32-image-generation-loss-plot). The Generator starts off with a large loss, then after a while plateaus to a more stable level at around 1.7. Whereas the Discriminator basically stays stable at around 2.3 for most of the training, even from the beginning. There are clear points of interest in this plot, such as just after the 5000 iteration mark, there is an increase in the variability of the Generator's loss. This point marks where the image size increases from 8x8 to 16x16 and highlights that the Generator struggles a bit more than the Discriminator, with the change in resolution. However, it is capable of correcting this behaviour and soon goes back to a more stable level. The last peak of around 22,000 is where the 32x32 image resolution's alpha fade-in period ends, and this is where the Generator struggled the most. But once again, it was able to persevere and remain stable. This stability enabled the output as seen in [Figure 4](#figure-4---32x32-image-generation-results).
+
+#### *Figure 5 - 32x32 Image Generation Loss Plot*
+
+![32x32 Image Generation Loss Plot](Assets/32x32_training_loss_plot.png)
+
+### UMAP Embeddings
+
+As [this Implementation of StyleGAN](#this-implementation-of-stylegan) uses label embeddings, it enforces learnable vector information into both the Discriminator's and Generator's feature maps. This is done in the hope that they start to learn how to distinguish and output images relating to the two ADNI classes, AD and CN. The UMAP embedding plots that will be presented within this section are produced within the `predict.py` file. They are created by passing a class label, such as 0 for CN and 1 for AD, into the Generator and extracting the Generator's last feature map layer to inspect if the feature map was molded with respect to the style/class of the label.
+
+Now in terms of the resolutions of 8x8, 16x16 and 32x32, all UMAP Embedding plots looked like the one displayed in [Figure 6](#figure-6---32x32-umap-embedding-plot), with this figure specifically for the 32x32 resolution. There is evidently no difference between the two classes, AD and CN, which indicates that the Generator at this resolution, and resolutions before, has not learnt how to produce images based on the label/style given. Now this is acceptable to a degree, as with lower resolutions such as the ones mentioned there is less discernable features between the two classes, which makes it a considerably harder task for the Generator to complete. 
+
+#### *Figure 6 - 32x32 UMAP Embedding Plot*
+
+![32x32 UMAP Embedding Plot](Assets/32x32_AD_and_CN_UMAP_plot.png)
+
+This is however, a different story when the UMAP Embedding plot for the 64x64 resolution is observed, see [Figure 7](#figure-7---64x64-umap-embedding-plot). There is a clear disentanglement between the two classes, when compared to [Figure 6](#figure-6---32x32-umap-embedding-plot), which indicates that the resolution of 64x64 provided enough disceranble features between the two classes that the Generator was able to pick up on them. However, this is still not a full classification of the two classes, as it is expected to have both classes UMAP be completely separate from each other, with this only displaying them marginally separated. It is possible that with an improved StyleGAN model, higher resolutions will provide the necessary information to derive such a figure.
+
+#### *Figure 7 - 64x64 UMAP Embedding Plot*
+
+![32x32 UMAP Embedding Plot](Assets/64x64_AD_and_CN_UMAP_plot.png)
 
 ## How to Run
 
@@ -155,14 +212,33 @@ There should also be a new folder called `saved_output` that appears within the 
 
 ### 6. Validate the Training
 
-After training has been completed, all model weights for the Discriminator and Generator will be saved to the `saved_output` folder, with a suffix ending in `.pth`. Each model weight file will be transcribed with the resolution it was trained up to, and whether it is the Discriminator or Generator.
+After training has been completed, all model weights for the Discriminator and Generator will be saved to the `saved_output` folder, with a suffix ending in `.pth`. Each model weight file will be transcribed with the resolution it was trained up to, and whether it is the Discriminator or Generator. To utilise these saved models and validate the training, got to the `predict.py` file. Simply edit the `IMAGE_SIZE` constant to the model resolution that is desired such as 8, 16, 32, 64, 128 or 256 (depending on how much training was completed). Then edit the `SAMPLES_PER_LABEL` constant to alter the amount of samples per class that will be plotted within the UMAP Embedding plot, the default value of 1000 should be sufficient too. Then run the following command to validate the training:
 
+```python
+python predict.py
+```
 
-
-
+This will generate two plots and save them to the `saved_output` folder. The first plot will be the UMAP Embedding plot distinguishing between the two classes, AD and CN. And the second plot is a comparison of real images from the dataset to images created via the Generator.
 
 ## Future Improvements
 
+As briefly discussed in the [results](#results) section, this StyleGAN implementation was not able to produce image's at the full resolution of 256x256, and even suffered training up to smaller resolutions such as 64x64 and 128x128. Now a lot of time and effort went into trying to get the StyleGAN fully functional, but due to the unpredictability in training GAN models and a still developing knowledge of the overall deep neural network ecosystem, it could not happen within the time frame given. It is entirely possible that this StyleGAN model could be tweaked ever so slightly by varying the hyperparameters, to achieve the full resolution result, as the underlying architecture is mostly based on reputable resources such as the [original StyleGAN paper[4]](#references--acknowledgements) and this [StyleGAN PyTorch Tutorial[8]](#references--acknowledgements). The only main difference with those models, and [this implementation of StyleGAN](#this-implementation-of-stylegan) is the addition of label embedding to try and make the StyleGAN conditional. Now see below for some possible recommendations and improvements that could be made to improve this StyleGAN implementation.
+
+### 1. No ProGAN Architecture
+
+During creation of this StyleGAN model various different architectures were developed to test their effectiveness, one such model was a StyleGAN made without the ProGAN architecture, and was fully developed to train entirely on the full 256x256 resolution. This model may be found by traversing the commit logs of this repository and finding the commit labelled "Implements basic mixing ..." with SHA number `2b8239a86c34adc27c039f42ffbbf79e3c9693ee` developed on Oct 7, 2024. At this stage in development, the Generator was actually producing the best images out of all that have been produced. However, it suffered greatly from mode collapse and was not able to be trained for long epochs. The output of training this model only after 5 epochs is displayed in [Figure 8](#figure-8---no-progan-architecture-results-full-256x256-resolution), which showcases a greater level of detail than was possible within [Figure 4](#figure-4---32x32-image-generation-results), and it trained in substantially less time to get a better result. Therefore, a recommendation would be to go back to this type of architecture and develop it further.
+
+#### *Figure 8 - No ProGAN Architecture Results Full 256x256 Resolution*
+
+![No ProGAN Architecture Results](Assets/No_ProGAN_Arch_Result.png)
+
+### 2. WGAN-GP Implementation and Wasserstein Loss
+
+The [StyleGAN PyTorch Tutorial[8]](#references--acknowledgements) that was instrumental in developing this implementation of StyleGAN utislied  Wasserstein loss from the WGAN-GP paper. This type of loss directly calculated the differences between the feature maps of real and fake images, in an attempt to make the Discriminator more effectively learn the difference between the two of them. Which in effect would help the Generator improve it's ability to produce better images. Within the development of this StyleGAN, this type of loss was attempted and even functions such as `calculate_gradient_penalty()` that can still be found in `modules.py`, were utilised. It did however, not work out during training as the images produced were of lower quality than the images seen in [Figure 4](#figure-4---32x32-image-generation-results). Although, the loss plot did provide more adversarial action between the Discriminator and Generator as seen in [Figure 9](#figure-9---training-loss-plot-using-wasserstein-loss), when compared to [Figure 5](#figure-5---32x32-image-generation-loss-plot), which meant the training had the potential to be a more balanced fight. Therefore, a recommendation would be to attempt to use Wasserstein loss again, and try to stabalise the training further to hopefully see better results.
+
+#### *Figure 9 - Training Loss Plot Using Wasserstein Loss*
+
+![ Training Loss Plot Using Wasserstein Loss](Assets/8x8_Wasserstein_Loss.png)
 
 ## References & Acknowledgements
 

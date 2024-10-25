@@ -31,7 +31,6 @@ using different data sources. This allowing for better control over high-level a
 
 ![StyleGAN](assets/StyleGAN%20general%20architecture.png)
 
-
 ### StyleGAN2
 StyleGAN2 builds upon the original StyleGAN architecture by addressing several limitations, such as visible blob-like artifacts on the images and the progressive growing problem. StyleGAN2 removes the blob-like artifacts by replacing the AdaIN layer with weight modulation. Instead of manipulating the feature maps using AdaIN, the convolution kernel weights are scaled
 with a style vector in weight modulation and then the kernel is normalised in weight demodulation. This removes the progressive growing problem which introduces the blob-like artifacts. The resulting architecture produces higher quality images than the StyleGAN.
@@ -56,7 +55,6 @@ This model trains on images taken from all the folders, i.e. the dataloader does
 The OASIS brains dataset is already pre-processed so the only preprocessing included was dataset augmentation to the reduce the risk of over-fitting and random vertical flip transform, grayscale (not strictly necessary as the images are already black and white), normalise the images, and resize using bicubic interpolation.
 
 ## Requirements
-
 This program has been tested to run on Windows. 64-bit Python3.11 or later is recommended. Anaconda3 or later is recommeded. The required libraries are: 
 
 ```
@@ -74,7 +72,10 @@ Libraries should use the latest versions.
 Ideally run with a NVIDIA A100 GPU with 128GB of DRAM. Testing on other GPUs has not been performed.
 
 ### Running the project
-To run this project clone the repository and install all the necessary dependencies. Change the path to the `data_root` folder in `config.py` as well as any of the other optionally changeable hyperparams (such as `manual_seed`). Change the path to save the trained models in `train.py`.
+To run this project clone the repository and install all the necessary dependencies. It is recommended that you use a `conda` enviroment to do so.
+- Change the path to the `data_root` folder in `config.py` as well as any of the other optionally changeable hyperparams (such as `manual_seed`). 
+- Change the path to save the trained models in `train.py`. 
+- Run `train.py`
 
 ## Code Structure
 
@@ -134,8 +135,6 @@ When the training is occuring, the output should look something like this:
 Comparing this to a real image from the dataset below, we can see that the generated image at the 50th epoch is reasonably clear by comparison.
 ![Real_img](assets/aug_img_4.png)
 
-
-
 Hence we can see that by the 50th epoch, the requirement for reasonably clear image generation has been met.
 
 ### Loss Graphs
@@ -162,6 +161,7 @@ This StyleGAN2 model was trained for a maximum of 50 epochs (35500 iterations), 
 That being said, the images generated after 50 epochs of training were reasonably clear and there would not be significant improvment at 150 epochs. This can be seen from the loss graphs, which indicate that the Discriminator and Generator loss functions are relatively low by 50 epochs.
 
 It is a potential limitation that this solution has not been implemented such that the model trains exclusively on the training data. In future, better data preprocessing is recommended to avoid the model training on all the OASIS data.
+A further limitation is that this model does not contain a UMAP embeddings plot. This should be a future extension to this project.
 
 ## References and Acknowledgements
 The model was implmented based on the [StyleGAN2 paper](https://arxiv.org/pdf/1912.04958).

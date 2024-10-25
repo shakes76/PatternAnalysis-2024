@@ -21,10 +21,10 @@ def get_w(batch_size, mapping_network, device):
 def get_noise(batch_size, device):
     """Generates the random noise used in the generator blocks"""
     noise = []
-    #noise res starts from 4x4
+    # Noise resolution initially 4x4
     resolution = 4
 
-    # For each gen block
+    # For each generator block
     for i in range(log_resolution):
         # First block uses 3x3 conv
         if i == 0:
@@ -34,9 +34,9 @@ def get_noise(batch_size, device):
             n1 = torch.randn(batch_size, 1, resolution, resolution, device=device)
         n2 = torch.randn(batch_size, 1, resolution, resolution, device=device)
 
-        # add the noise tensors to the lsit
+        # Add the noise tensors to the lsit
         noise.append((n1, n2))
-        # subsequent block has 2x2 res
+        # Subsequent block has 2x2 resolution
         resolution *= 2
 
     return noise
@@ -55,7 +55,7 @@ def gradient_penalty(discrim, real, fake,device="cpu"):
     # Calculate discriminator scores
     mixed_scores = discrim(interpolated_images)
 
-    # Calculates the gradient of scores of images
+    # Calculate the gradient of scores of images
     gradient = torch.autograd.grad(
         inputs=interpolated_images,
         outputs=mixed_scores,

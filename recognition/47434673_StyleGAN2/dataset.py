@@ -45,7 +45,7 @@ def get_data(data, log_res, batchSize):
     Normalize: Normalise pixel value to have a mean and standard deviation of 0.5
     Grayscale: B&W images appropriate for the OASIS dataset
     '''
-    # Create dataset
+    # Create dataset with preprocessing
     dataset = dset.ImageFolder(root=data_root,
                               transform=transforms.Compose([
                                   transforms.ToTensor(),

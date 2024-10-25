@@ -17,7 +17,7 @@ from config import *
 
 
 class MappingNetwork(nn.Module):
-    """The Mapping Network Class"""
+    """The Mapping Network class maps a latent vector `z` to an intermediate vector `w`, used for style-based image generation."""
     def __init__(self, z_dim, w_dim):
         super().__init__()
 
@@ -41,6 +41,7 @@ class MappingNetwork(nn.Module):
         )
     
     def forward(self, x):
+        # Normalize `z` using PixelNorm, then map to `w`
         # Normalize z
         x = x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)  # for PixelNorm 
         # Maps z to w
@@ -49,29 +50,30 @@ class MappingNetwork(nn.Module):
 
 
 class EqualizedLinear(nn.Module):
+    """Learning-rate equalized linear layer with optional bias."""
     def __init__(self, in_features, out_features, bias=0):
         super().__init__()
-        self.weight = EqualizedWeight([out_features, in_features])
+        self.weight = EqualizedWeight([out_features, in_features]) # Scaled weights
         self.bias = nn.Parameter(torch.ones(out_features) * bias)
 
     def forward(self, x: torch.Tensor):
-        # Linear transformation
+        # Apply linear transformation with the equalized weight
         return F.linear(x, self.weight(), bias=self.bias)
 
 
 class EqualizedWeight(nn.Module):
-    """Weight equalisation layer"""
+    """Weight equalization layer to maintain stable training by scaling weights dynamically."""
     def __init__(self, shape):
         super().__init__()
-        self.c = 1 / sqrt(np.prod(shape[1:]))
-        self.weight = nn.Parameter(torch.randn(shape))
+        self.c = 1 / sqrt(np.prod(shape[1:])) # Normalizing constant based on layer shape
+        self.weight = nn.Parameter(torch.randn(shape)) # Initialize weights
 
     def forward(self):
-        return self.weight * self.c
+        return self.weight * self.c # Scale weights by normalization constant
 
 
 class Generator(nn.Module):
-    """The Generator"""
+    """Style-based Generator class for generating images with configurable resolution and features."""
     def __init__(self, log_resolution, W_DIM, n_features = 32, max_features = 256):
         super().__init__()
 
@@ -112,7 +114,7 @@ class Generator(nn.Module):
 
 
 class GeneratorBlock(nn.Module):
-
+    """Generator block for style-based synthesis, composed of two StyleBlocks and RGB conversion."""
     def __init__(self, W_DIM, in_features, out_features):
         super().__init__()
 
@@ -123,7 +125,6 @@ class GeneratorBlock(nn.Module):
         self.to_rgb = ToRGB(W_DIM, out_features)
 
     def forward(self, x, w, noise):
-
         # Style blocks with Noise tensor
         x = self.style_block1(x, w, noise[0])
         x = self.style_block2(x, w, noise[1])
@@ -135,7 +136,7 @@ class GeneratorBlock(nn.Module):
     
 # Style block has a weight modulation convolution layer.
 class StyleBlock(nn.Module):
-
+    """Applies style modulation and noise to feature maps."""
     def __init__(self, W_DIM, in_features, out_features):
         super().__init__()
         
@@ -150,6 +151,7 @@ class StyleBlock(nn.Module):
         self.activation = nn.LeakyReLU(0.2, True)
 
     def forward(self, x, w, noise):
+        # Apply style modulation and add noise
         s = self.to_style(w)
         x = self.conv(x, s)
         if noise is not None:
@@ -158,7 +160,7 @@ class StyleBlock(nn.Module):
 
     
 class ToRGB(nn.Module):
-
+    """Converts style-modulated feature maps to RGB space."""
     def __init__(self, W_DIM, features):
 
         super().__init__()
@@ -169,16 +171,15 @@ class ToRGB(nn.Module):
         self.activation = nn.LeakyReLU(0.2, True)
 
     def forward(self, x, w):
-
+        # Apply RGB conversion
         style = self.to_style(w)
         x = self.conv(x, style)
         return self.activation(x + self.bias[None, :, None, None])
 
 
 class Conv2dWeightModulate(nn.Module):
-
+    """Convolutional layer with weight modulation and optional demodulation."""
     def __init__(self, in_features, out_features, kernel_size, demodulate = True, eps = 1e-8):
-
         super().__init__()
         self.out_features = out_features
         self.demodulate = demodulate
@@ -189,7 +190,6 @@ class Conv2dWeightModulate(nn.Module):
         self.eps = eps  #epsilon
 
     def forward(self, x, s):
-
         # Get batch size, height and width
         b, _, h, w = x.shape
 
@@ -217,7 +217,7 @@ class Conv2dWeightModulate(nn.Module):
 
 
 class Discriminator(nn.Module):
-    """The Discriminator Class"""
+    """Discriminator class for classifying real or fake images."""
     def __init__(self, log_resolution, n_features = 64, max_features = 256):
         super().__init__()
 
@@ -266,7 +266,7 @@ class Discriminator(nn.Module):
     
 # Discriminator block consists of two $3 \times 3$ convolutions with a residual connection.
 class DiscriminatorBlock(nn.Module):
-
+    """Block used within Discriminator to downsample and process features with a residual connection."""
     def __init__(self, in_features, out_features):
         super().__init__()
 
@@ -298,7 +298,7 @@ class DiscriminatorBlock(nn.Module):
     
 # Learning-rate Equalized 2D Convolution Layer
 class EqualizedConv2d(nn.Module):
-
+    """Learning-rate equalized 2D convolutional layer with optional padding."""
     def __init__(self, in_features, out_features, kernel_size, padding = 0):
         super().__init__()
         self.padding = padding
@@ -322,7 +322,7 @@ class PathLengthPenalty(nn.Module):
         self.exp_sum_a = nn.Parameter(torch.tensor(0.), requires_grad=False)
 
     def forward(self, w, x):
-
+        # Get the device and compute the image size (height * width)
         device = x.device
         image_size = x.shape[2] * x.shape[3]
         y = torch.randn(x.shape, device=device)

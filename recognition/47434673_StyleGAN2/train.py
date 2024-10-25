@@ -22,6 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Main function (and training)
 
 def gpu_warmup(device):
+    """Warm up the GPU so no errors occur"""
     if torch.cuda.is_available():
         # Create a small dummy tensor on the GPU
         dummy = torch.tensor([1.0], device=device)
@@ -38,9 +39,12 @@ gpu_warmup(device) # Warm up the GPU to avoid errors
 # Dataloader
 loader = dataset.get_data(data_root, log_resolution, batch_size)
 
+# Instantiate generator, discriminator and mapping network
 gen = modules.Generator(log_resolution, w_dim).to(device)
 discrim = modules.Discriminator(log_resolution).to(device)
 mapping_network = modules.MappingNetwork(z_dim, w_dim).to(device)
+
+# Intstantiate path length penalty for optimisation
 path_length_penalty = modules.PathLengthPenalty(0.99).to(device)
 
 # Initialise Adam optimisers
@@ -61,7 +65,7 @@ if load_model:
 
 
     print("Loaded pre-trained models.")
-    predict.generate_examples(gen, mapping_network, 14, device)
+    predict.generate_examples(gen, mapping_network, 14, device) # Change epoch from 14 to whatever epoch you want
 
 if not load_model:
     # Train the following modules
@@ -156,6 +160,7 @@ if not load_model:
     torch.save(mapping_network.state_dict(), '/assets/netM.pth')
     print("Saved models.")
 
+    # Plot the loss graphs
     predict.plot_loss(G_Loss, D_Loss)
 
 

@@ -1,30 +1,49 @@
 import torch
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-def train_model(model, dataloader, optimizer, criterion, num_epochs):
+def train_model(model, train_loader, val_loader, optimizer, criterion, num_epochs):
+    device = torch.device("mps")# if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    
+    # Lists to store the loss values for each epoch
+    train_losses = []
+    val_losses = []
+
     for epoch in range(num_epochs):
-        model.train()
-        correct = 0
-        total = 0
-        running_loss = 0.0
-        for images, labels in dataloader:
-            optimizer.zero_grad()
+        model.train() 
+        train_loss = 0.0
+
+        for x, y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training"):
+            x, y = x.to(device), y.to(device)
+            optimizer.zero_grad()  
+            y_hat = model(x)
+            loss = criterion(y_hat, y)
             
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            loss.backward()  
+            optimizer.step() 
             
-            running_loss += loss.item()
-            
-            # Calculate accuracy
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            train_loss += loss.item() * x.size(0)  
         
-        accuracy = correct / total * 100
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss:.4f}, Accuracy: {accuracy:.2f}%')
+        train_loss = train_loss / len(train_loader.dataset)
+        train_losses.append(train_loss)  # store train loss
         
-    # Save model after training
-    torch.save(model.state_dict(), '/Users/gghollyd/comp3710/report/module_weights.pth')
+        print(f"Epoch {epoch+1}, Training Loss: {train_loss:.4f}")
+
+        # Validation 
+        model.eval()  
+        val_loss = 0.0
+        with torch.no_grad():  
+            for inputs, labels in val_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item() * inputs.size(0) 
+
+        # calculate validation loss for the epoch
+        val_loss = val_loss / len(val_loader.dataset)
+        val_losses.append(val_loss)  # store loss
+        
+        print(f"Epoch {epoch+1}, Validation Loss: {val_loss:.4f}")
 
 

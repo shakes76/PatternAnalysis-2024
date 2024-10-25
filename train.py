@@ -7,6 +7,7 @@
 welp - it trains
 """
 
+from datetime import datetime
 from torch import device, save, cuda
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -16,26 +17,13 @@ from modules import TheTwins, CompareAndContrast
 
 TRAIN_DEVICE = device("cuda" if cuda.is_available() else "cpu")
 TARGET_LEARNING_RATE = 0.001
+TARGET_EPOCHS = 5
 
-SAVE_FILE = "snet.pth"
+SAVE_FILE = f"snet{TARGET_EPOCHS}.pth"
 
-if __name__ == "__main__":
+def do_epoch(dataloader, network, optimiser, diff):
 
 	iterz = 0
-
-	my_dataloader = DataLoader(create_preset_dataloader(),
-		batch_size=32, shuffle=True)
-
-	my_dl_size = len(my_dataloader)
-
-	print(f"planning to run for - {my_dl_size} iterz")
-
-	my_differ = CompareAndContrast()
-
-	my_net = TheTwins().to(TRAIN_DEVICE)
-
-	# going to use an Adam optimiser nothing crazy
-	my_optimiser = optim.Adam(my_net.parameters(), lr=TARGET_LEARNING_RATE)
 
 	for data in my_dataloader:
 
@@ -46,18 +34,39 @@ if __name__ == "__main__":
 
 		lbls = data[2].to(TRAIN_DEVICE)
 
-		my_optimiser.zero_grad()
+		optimiser.zero_grad()
 
 		# run the images through the network
 		# grab the difference between the two based on euclidean
-		loss = my_differ(*my_net(x, y), lbls.float())
+		loss = diff(*network(x, y), lbls.float())
 		loss.backward()
 
-		my_optimiser.step()
+		optimiser.step()
 
-		print(f"iter - {iterz} / {my_dl_size} == loss - {loss.item()}")
+		print(f"{datetime.now()} iter - {iterz} / {my_dl_size} == loss - {loss.item()}")
 
 		iterz += 1
+
+if __name__ == "__main__":
+
+	my_dataloader = DataLoader(create_preset_dataloader(),
+		batch_size=32, shuffle=True)
+
+	my_dl_size = len(my_dataloader)
+
+	print(f"{datetime.now()} planning to run for - {my_dl_size} iterz on {TARGET_EPOCHS} epochs.")
+
+	my_differ = CompareAndContrast()
+
+	my_net = TheTwins().to(TRAIN_DEVICE)
+
+	# going to use an Adam optimiser nothing crazy
+	my_optimiser = optim.Adam(my_net.parameters(), lr=TARGET_LEARNING_RATE)
+
+	for i in range(0, TARGET_EPOCHS):
+
+		print(f"{datetime.now()} EPOCH {i} / {TARGET_EPOCHS}")
+		do_epoch(my_dataloader, my_net, my_optimiser, my_differ)
 
 	print("done!")
 

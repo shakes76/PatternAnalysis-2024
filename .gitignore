@@ -1,3 +1,4 @@
 *.kate-swp
 *.directory
 *pycache**
+*.pth

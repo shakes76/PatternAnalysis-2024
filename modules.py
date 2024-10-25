@@ -6,7 +6,8 @@
 
 """
 
-from torch import zeros, mean, pow, clamp
+import torch
+from torch import zeros, mean, clamp
 from torch.nn import Module, Conv2d, ModuleList, Flatten, Linear, ReLU, MaxPool2d
 from torch.nn.functional import pairwise_distance
 
@@ -28,7 +29,7 @@ class CompareAndContrast(Module):
 		euc_dist = pairwise_distance(x, y, keepdim=self._dim)
 		clamp_input = self._marge - euc_dist
 
-		input_to_mean = (1 - label)*pow(euc_dist, 2) + label*pow(clamp(clamp_input, min=self._min_clamp), 2)
+		input_to_mean = (1 - label)*torch.pow(euc_dist, 2) + label*torch.pow(clamp(clamp_input, min=self._min_clamp), 2)
 
 		return mean(input_to_mean)
 

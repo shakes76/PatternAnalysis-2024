@@ -12,8 +12,6 @@ these sources:
 
 """
 
-#### include a learning rate schduler
-
 import torch
 import torch.nn as nn
 import torch.fft
@@ -39,7 +37,7 @@ class MLP(nn.Module):
         x = self.act(x)
         x = self.drop(x)
         x = self.fc2(x)
-        x = self.act(x) #one more
+        x = self.act(x)
         x = self.drop(x)
         return x
     
@@ -109,7 +107,7 @@ class PatchEmbed(nn.Module):
 
 # GFNet main, follows block stacking with dropout
 class GFNet(nn.Module):
-    #images are set 256 x 256 with RGB # change depth ect
+    #images are set 256 x 256 with 1 in channel for greyscale
     def __init__(self, img_size=256, patch_size= 16, embed_dim=512, num_classes=2, in_channels=1, drop_rate=0.5, depth=8, mlp_ratio=4., drop_path_rate=0.15, norm_layer=None):
         super().__init__()
         self.num_classes = num_classes

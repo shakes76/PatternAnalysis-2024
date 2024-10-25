@@ -31,7 +31,6 @@ def initialise():
     return device, asset_dir
 
 # train the model
-### inlcude 
 def train(device, asset_dir, model, criterion, optimizer, scheduler, train_loader, val_loader):
     print("Start Training ...")
      # Start timer for training

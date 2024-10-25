@@ -14,9 +14,7 @@ import random
 import argparse
 from functools import partial
 
-#### make it specific for 1 image form arg parser (if left blank generate a random 4 from testset)
 
-# Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Function to load the trained model
@@ -44,7 +42,7 @@ def visualisations(images, labels, predictions, save_path):
     # change from tensors and plot first few images with labels and predictions
     images_np = images.cpu().numpy()
     fig = plt.figure(figsize=(10, 10))
-    # plot 4 images
+
     for i in range(1, 5):
         # go (channels, height, width) to (height, width, channels)
         img = np.transpose(images_np[i - 1], (1, 2, 0))  
@@ -68,14 +66,12 @@ def predict(model, test_dataset, output_dir):
         rand_indices = random.sample(range(len(test_dataset)), 4)
         selected_samples = [test_dataset[i] for i in rand_indices]
 
-        # Separate images and labels
         selected_images = torch.stack([sample[0] for sample in selected_samples])  # Stack images
         selected_labels = torch.tensor([sample[1] for sample in selected_samples])  # Stack labels
 
         # Move images to device
         selected_images = selected_images.to(device)
         
-        # Forward pass
         outputs = model(selected_images)
         _, selected_predictions = torch.max(outputs, 1)
 
@@ -85,7 +81,6 @@ def predict(model, test_dataset, output_dir):
 
         saved_path = os.path.join(output_dir, 'random_test_predictions.png')
 
-        # Produce visualisations
         visualisations(selected_images, selected_labels.cpu(), selected_predictions.cpu(), saved_path)
         
         # Print selected indices and predictions
@@ -96,10 +91,8 @@ def predict(model, test_dataset, output_dir):
 # Main function to load the model and perform predictions
 def main():
 
-       # Argument parser to handle user inputs
     parser = argparse.ArgumentParser(description="Prediction for Alzheimer's Disease classification")
     
-    # Add arguments for model path and output directory
     parser.add_argument('--model-path', type=str, required=False, default="trained_model.pth",
                         help="Path to the trained model file (default: 'trained_model.pth')")
     parser.add_argument('--output-dir', type=str, required=False, default="prediction_outputs",
@@ -107,12 +100,11 @@ def main():
 
     # parse the arguments
     args = parser.parse_args()
-    # Load the test dataset
+
     test_loader, test_dataset = test_dataloader(batch_size=32)
-    # Load trained model
+
     model = load_model(args.model_path)
     # Call test function from train.py
-    
     criterion = nn.CrossEntropyLoss()  # Loss function
     test(device, args.output_dir, model, criterion, test_loader)
 

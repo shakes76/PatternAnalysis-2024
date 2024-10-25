@@ -21,10 +21,8 @@ transform =   transforms.Compose([
         transforms.ToTensor(),
     ])
 
-# The path when running locally
-data_directory = os.path.join('../../../AD_NC')
 #the path to the directory on Rangpur
-#data_directory = '/home/groups/comp3710/ADNI/AD_NC'
+data_directory = '/home/groups/comp3710/ADNI/AD_NC'
 
 def get_mean_std(dataset):
     """Compute the mean and std value of the dataset"""

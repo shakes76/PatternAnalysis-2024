@@ -1,4 +1,6 @@
 """
+This file holds on to the modules that are necessary in creating the GFNet model.
+
 Got inspiration from gfnet.py file of the following github repo:
 https://github.com/shakes76/GFNet
 """

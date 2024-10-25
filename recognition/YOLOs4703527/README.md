@@ -167,3 +167,11 @@ python train.py
 ```bash
 python predict.py
 ```
+
+## References
+
+- [Detailed Explanation of YOLOv8 Architecture (Part 1)](https://medium.com/@juanpedro.bc22/detailed-explanation-of-yolov8-architecture-part-1-6da9296b954e)  
+- [What is YOLOv8?](https://blog.roboflow.com/what-is-yolov8/)  
+- [YOLOv8 Architecture](https://yolov8.org/yolov8-architecture/)  
+- [Fine-tuning YOLOv8 Using a Custom Dataset](https://medium.com/@yongsun.yoon/fine-tuning-yolov8-using-custom-dataset-generated-by-open-world-object-detector-5724e267645d)  
+

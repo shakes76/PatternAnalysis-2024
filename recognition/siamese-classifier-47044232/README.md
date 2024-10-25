@@ -130,12 +130,11 @@ Please see the section [Future Recommendations](#future-recommendations) on reco
 
 ## Usage
 Before running any scripts please ensure the directories in `config.py` are present or changed. This includes:
-- `DATAPATH`: The path to dataset mentioned in [The Dataset](#the-dataset).
-- `MODELPATH`: The path to where trained models should be saved.
-- `IMAGEPATH`: The path to where plots and other images should be stored from training.
+- `DATAPATH`: The path to the dataset mentioned in [The Dataset](#the-dataset).
+- `MODELPATH`: The path to where the trained models should be saved.
+- `IMAGEPATH`: The path to where the plots and other images should be stored from training.
 
-Also, ensure all dependencies listed in [Dependencies](#dependencies) are installed.\
-For this, conda is recommended for installing dependencies as it will ensure that there are no dependency erros.
+Also, ensure all dependencies listed in [Dependencies](#dependencies) are installed.
 
 To perform training run the following:
 ```
@@ -177,7 +176,7 @@ To perform inference on trained models:
 ```
 python predict.py <siamese model path> <classifier model path>
 ```
-This will generate the confusion matrix for predictions of a random sample of images from the dataset with something like the following printed.
+This will generate a confusion matrix for  the predictions of a random sample of images from the dataset. It will also print the following:
 ```
 Testing on a sample of 116 images.
 
@@ -185,6 +184,19 @@ Test Accuracy for Classification: 82.05128205128206 %
 ```
 
 ## Dependencies
+The following must be installed to be able to use the code in this project.\
+Please have cuda installed to ensure that the code runs efficiently.
+| Dependency   | Version     |
+| ------------ | ----------- |
+| pandas       | 2.2.2       |
+| python       | 3.12.4      |
+| pytorch      | 2.4.0       |
+| matplotlib   | 3.8.4       |
+| numpy        | 1.26.4      |
+| scikit-learn | 1.0.2       |
+| seaborn      | 0.13.2      |
+
+When installing dependencies, conda as it will ensure that there are no dependency conflicts/ errors.
 
 
 ## Future Recommendations
@@ -194,4 +206,8 @@ Test Accuracy for Classification: 82.05128205128206 %
 https://www.kaggle.com/datasets/nischaydnk/isic-2020-jpg-256x256-resized/data \
 https://medium.com/@rinkinag24/a-comprehensive-guide-to-siamese-neural-networks-3358658c0513 \
 https://medium.com/analytics-vidhya/triplet-loss-b9da35be21b8 \
-https://arxiv.org/pdf/1503.03832
+https://arxiv.org/pdf/1503.03832 \
+https://github.com/andreasveit/triplet-network-pytorch/blob/master/triplet_mnist_loader.py \
+https://github.com/sohaib023/siamese-pytorch/blob/master/siamese/siamese_network.py \
+https://github.com/2-Chae/PyTorch-tSNE/blob/main/main.py
+

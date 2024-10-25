@@ -1,5 +1,31 @@
 """
 dataset.py created by Matthew Lockett 46988133
+
+This file contains the function load_ADNI_dataset() that is specifically used to, as you can guess,
+load the ADNI dataset into this program. The required structure of the dataset is described below, and must 
+be followed to ensure that the images are loaded correctly. 
+
+ADNI_DATASET/
+    |--- Training Set/ 
+    |          | --- AD/
+    |          |      |--- img1.png
+    |          |      |--- img2.png
+    |          |      |--- img3.png
+    |          | --- CN/
+    |                 |--- img1.png
+    |                 |--- img2.png
+    |                 |--- img3.png
+    |--- Validate Set/ 
+    |          | --- AD/
+    |          |      |--- img1.png
+    |          |      |--- img2.png
+    |          |      |--- img3.png
+    |          | --- CN/
+    |                 |--- img1.png
+    |                 |--- img2.png
+    |                 |--- img3.png
+
+To set the directory for this dataset, go to hyperparameters.py and set the ROOT constant.
 """
 import os
 import math

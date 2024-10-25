@@ -1,5 +1,14 @@
 """
 train.py created by Matthew Lockett 46988133
+
+This file contains all the code necessary to train the StyleGAN model based on it's implementation 
+in the modules.py file. All images from the ADNI dataset are loaded into this program, via a data loader function
+described in the dataset.py file.
+
+The following resources were a major help in developing the code for this training loop:
+PyTorch DCGAN Tutorial: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html 
+StyleGAN PyTorch Tutorial: https://blog.paperspace.com/implementation-stylegan-from-scratch/ 
+ChatGPT 4o and o1-preview: The prompts utilised are referenced above the training loop.
 """
 import os
 import random
@@ -13,7 +22,6 @@ import torchvision.utils as vutils
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import hyperparameters as hp
 from dataset import load_ADNI_dataset
 from modules import *
@@ -47,7 +55,7 @@ gen_opt = optim.Adam([{"params": [param for name, param in gen.named_parameters(
 disc_opt = optim.Adam(disc.parameters(), lr=hp.DISC_LEARNING_RATE, betas=(0.5, 0.999))
 
 # Initialise Loss Functions
-adversial_criterion = nn.BCELoss()
+adversarial_criterion = nn.BCELoss()
 class_criterion = nn.CrossEntropyLoss()
 
 # Initialise the real and fake labels for training
@@ -146,7 +154,7 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             real_pred, class_real_pred, features_real = disc(real_images, labels=class_labels, depth=current_depth, alpha=alpha)
 
             # Calculate the real image discriminator losses
-            real_loss_disc = adversial_criterion(real_pred.view(-1), real_labels)
+            real_loss_disc = adversarial_criterion(real_pred.view(-1), real_labels)
             real_class_loss_disc = class_criterion(class_real_pred, class_labels)
 
             # Calculate average real prediction value of discriminator
@@ -171,13 +179,13 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
                 latent2 = None
 
             # Generate fake images using the generator and mixing regularisation
-            fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
+            fake_images, _ = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
             # Apply the discriminator to classify fake images
             fake_pred, class_fake_pred, features_fake = disc(fake_images.detach(), labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
             # Calculate the fake image discriminator losses
-            fake_loss_disc = adversial_criterion(fake_pred.view(-1), fake_labels)
+            fake_loss_disc = adversarial_criterion(fake_pred.view(-1), fake_labels)
             fake_class_loss_disc = class_criterion(class_fake_pred, rand_class_labels)
 
             # Calculate average fake prediction value of discriminator
@@ -214,13 +222,13 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
 
                 # Generate fake images and labels
                 rand_class_labels = torch.randint(0, hp.LABEL_DIMENSIONS, (batch_size,), device=device)
-                fake_images = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
+                fake_images, _ = gen(latent1, latent2, mixing_ratio=random.uniform(0.5, 1.0), labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
                 # Forward pass fake images through discriminator (with updated discriminator)
                 fake_pred, class_fake_pred, features_fake = disc(fake_images, labels=rand_class_labels, depth=current_depth, alpha=alpha)
 
                 # Calculate the losses of the generator
-                loss_gen = adversial_criterion(fake_pred.view(-1), real_labels)
+                loss_gen = adversarial_criterion(fake_pred.view(-1), real_labels)
                 loss_class_gen = class_criterion(class_fake_pred, rand_class_labels)
                 l2_reg = l2_regularisation(gen)
 
@@ -252,7 +260,8 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
             # Regularly save an image out of the generator to see progress overtime 
             if (iters % 500 == 0) or (total_steps == total_steps_per_resolution- 1):
                 with torch.no_grad():
-                    fake = gen(fixed_noise, depth=current_depth, alpha=alpha).detach().cpu()
+                    fake, _ = gen(fixed_noise, depth=current_depth, alpha=alpha)
+                    fake = fake.detach().cpu()
                 img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
 
             iters += 1
@@ -264,7 +273,8 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
 
         # Plot after each epoch to visualise training
         with torch.no_grad():
-            fake = gen(fixed_noise, depth=current_depth, alpha=alpha).detach().cpu()
+            fake, _ = gen(fixed_noise, depth=current_depth, alpha=alpha)
+            fake = fake.detach().cpu()
         plt.figure(figsize=(8,8))
         plt.axis("off")
         plt.title(f"Snippet of Image Generation at Resolution {current_resolution}x{current_resolution}")
@@ -279,53 +289,6 @@ for current_depth in range(hp.START_DEPTH, hp.MAX_DEPTH + 1):
     # End of a resolution stage so save the images, loss plot and models
     save_resolution(disc, gen, D_losses, G_losses, current_resolution, current_depth, device)
 
-
 # Total training time 
 total_training_time = ((time.time() - training_start_time) / 60) # In minutes
 print(f"Total training time: {total_training_time:.2f} minutes")
-
-# Save the models for later use in inference 
-torch.save(gen.state_dict(), os.path.join(hp.SAVED_OUTPUT_DIR, "generator_model.pth"))
-torch.save(disc.state_dict(), os.path.join(hp.SAVED_OUTPUT_DIR, "discriminator_model.pth"))
-
-###################################### Training Loop End #################################
-
-# REF: The following lines of code for plotting losses and image outputs was inspired by 
-# REF: the following PyTorch tutorial: 
-# REF: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html?highlight=dcgan.
-
-# Output training loss plot
-plt.figure(figsize=(10,5))
-plt.title(f"Generator and Discriminator Loss During Training for {hp.NUM_OF_EPOCHS} Epochs")
-plt.plot(G_losses,label="Generator")
-plt.plot(D_losses,label="Discriminator")
-plt.xlabel("Iterations")
-plt.ylabel("Loss")
-plt.legend()
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "training_loss_plot.png"), pad_inches=0)
-plt.close()
-
-# Visualise the evolution of the generator 
-fig = plt.figure(figsize=(8,8))
-plt.axis("off")
-ims = [[plt.imshow(np.transpose(i,(1,2,0)), animated=True)] for i in img_list]
-ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-ani.save(os.path.join(hp.SAVED_OUTPUT_DIR, "image_generation_over_time.gif"), writer='pillow', fps=1) 
-
-# Grab a batch of real images from the train_loader
-real_batch = next(iter(train_loader))
-
-# Plot the real images
-plt.figure(figsize=(15,15))
-plt.subplot(1,2,1)
-plt.axis("off")
-plt.title("Real Images")
-plt.imshow(np.transpose(vutils.make_grid(real_batch[0].to(device)[:64], padding=5, normalize=True).cpu(),(1,2,0)))
-
-# Plot the fake images from the last epoch
-plt.subplot(1,2,2)
-plt.axis("off")
-plt.title(f"Generated Images - {hp.NUM_OF_EPOCHS} Epochs")
-plt.imshow(np.transpose(img_list[-1],(1,2,0)))
-plt.savefig(os.path.join(hp.SAVED_OUTPUT_DIR, "real_versus_fake_images.png"), bbox_inches='tight', pad_inches=0)
-plt.close()

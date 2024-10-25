@@ -1,11 +1,13 @@
 """
 utils.py created by Matthew Lockett 46988133
+
+This is a utility file that is meant to contain functions that don't specifically need to be in their original file,
+and was created to modularise the code.
 """
 import os
 import torch
 import numpy as np
 import torchvision.utils as vutils
-import matplotlib
 import matplotlib.pyplot as plt
 import hyperparameters as hp
 

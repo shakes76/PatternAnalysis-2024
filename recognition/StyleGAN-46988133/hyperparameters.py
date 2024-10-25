@@ -1,8 +1,11 @@
 """
 hyperparameters.py created by Matthew Lockett 46988133
+
+Contains all hyperparameters and configuration constants used throughout this StyleGAN implementation.
+Make sure to change the ROOT constant to where the ADNI dataset is located so that it can be properly loaded 
+in. Follow the guide within the README.md or in dataset.py for how to properly structure the dataset.
 """
-# The root directory for where the ADNI dataset is stored
-# See torchvision ImageFolder class for the required dataset structure 
+# Todo: This needs to be set to where the ADNI dataset is located
 ROOT = r"C:\Users\Mathew\ADNI_Dataset"
 
 # The relative path to a folder where all training output will be saved
@@ -37,13 +40,13 @@ EMBED_DIMENSIONS = 8
 GEN_FEATURE_SIZE = 512
 
 # Used to clip the generator's gradient to a certain size
-GEN_GRAD_CLIP = 200
+GEN_GRAD_CLIP = 500
 
 # The amount of features used within the discriminator
 DISC_FEATURE_SIZE = 128
 
 # Used to clip the discriminator's gradient to a certain size
-DISC_GRAD_CLIP = 200
+DISC_GRAD_CLIP = 500
 
 ################################## Progressive Growing ###########################
 
@@ -58,9 +61,6 @@ MAX_DEPTH = 5
 
 # Fade-In percentage used in blending old and new resolutions
 FADE_IN_PERCENTAGE = 0.65
-
-# The amount of steps per resolution
-STEPS_PER_RESOLUTION = 5000
 
 # The amount of epochs per image resolution
 EPOCHS_PER_RESOLUTION = [35, 35, 50, 50, 50, 80]

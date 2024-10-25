@@ -43,7 +43,6 @@ def get_data_loaders(train_dir, test_dir, batch_size=64):
     ad_train_indices = ad_indices[:train_size_ad]
     ad_val_indices = ad_indices[train_size_ad:]
 
-    # Combine indices
     train_indices = np.concatenate([nc_train_indices, ad_train_indices])
     val_indices = np.concatenate([nc_val_indices, ad_val_indices])
 

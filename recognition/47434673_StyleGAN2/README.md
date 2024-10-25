@@ -3,13 +3,13 @@ A StyleGAN2 model trained on the OASIS dataset.
 
 ![head_img](assets/epoch_5.png)
 
+## The Problem
+Accurate brain images are highly valued in such industries as healthcare and in scientific research. However, due to the threat of compromising patient privacy, generating highly realistic brain images offers a promising alternative. However, StyleGAN2 generated images can be used without compromising privacy, and can also allow for data augmentation as well as more advanced anomaly detection. They are also cost effective, and have an architechture well suited to the modelling and generative problem at hand. The 2D image slices of the brains that need to be generated need to be of sufficiently high quality, and the StyleGAN2 model is one of the best models for high quality image generation, as compared with other models such as DCGAN and VQVAE. This is achieved using the style vector, which controls the styles and features of the generated images. This is particularly important with regards to brain image generation, where capturing specific features which correspond to features of the brain is especially important.
+
 ## Objective
 The objective is to create a generative model of the ADNI brain data set using a StyleGAN2
 that has a reasonably clear image. Furthermore, a UMAP embeddings plot with ground truth in colours 
 is included.
-
-### The Problem
-Accurate brain images are highly valued in such industries as healthcare and in scientific research. However, due to the threat of compromising patient privacy, generating highly realistic brain images offers a promising alternative. However, StyleGAN2 generated images can be used without compromising privacy, and can also allow for data augmentation as well as more advanced anomaly detection. They are also cost effective, and have an architechture well suited to the modelling and generative problem at hand. The 2D image slices of the brains that need to be generated need to be of sufficiently high quality, and the StyleGAN2 model is one of the best models for high quality image generation, as compared with other models such as DCGAN and VQVAE. This is achieved using the style vector, which controls the styles and features of the generated images. This is particularly important with regards to brain image generation, where capturing specific features which correspond to features of the brain is especially important.
 
 ## StyleGAN2 - Algorithm Description
 ### GAN
@@ -80,22 +80,20 @@ utils.py
 train.py
 ```
 
--`config.py`: Contains all the hyperparameters. Also contains the path to the data directory.
--`dataset.py`: Contains the `get_data` method which preproccesses the data and creates the dataloader. Also contains the `show_imgs` method which displays some of the training images.
--`utils.py`: Contains methods for data augmentation and optimisation.
--`modules.py`: Contains architecture of the mapping network, discriminator and generator.
--`predict.py`: Contains `plot_loss` method for plotting the discriminator and generator loss as well as `generate_examples` method for generating some images using the trained model.
--`train.py`: The main file of the project. Contains the functionality for training the models, as well as execute all other functionality of the project. This is the file that is called to run the project.
+- `config.py`: Contains all the hyperparameters. Also contains the path to the data directory.
+- `dataset.py`: Contains the `get_data` method which preproccesses the data and creates the dataloader. Also contains the `show_imgs` method which displays some of the training images.
+- `utils.py`: Contains methods for data augmentation and optimisation.
+- `modules.py`: Contains architecture of the mapping network, discriminator and generator.
+- `predict.py`: Contains `plot_loss` method for plotting the discriminator and generator loss as well as `generate_examples` method for generating some images using the trained model.
+- `train.py`: The main file of the project. Contains the functionality for training the models, as well as execute all other functionality of the project. This is the file that is called to run the project.
 
 Note that `assets` directory contains images and graphs for this report. Also, the models are saved in this directory once training is complete under `netD.pth`, `netG.pth` and `netM.pth` for the discriminator, generator and mapping network respectively.
 
 
 To use pre-trained models instead of training new models, please set the `load_models` hyperparameter in `utils.py` to `True`.
 That is: `load_models = True`.
-Also set the `model_path` hyperparameter to the file path of these pretrained models. The pretrained model files 
-should be `.pth` files.
 
-Optionally, a seed for training the model can be set by changing the `seed` hyperparameter in `utils.py`. The `seed` should be an integer. Otherwise, a random `seed` will be chosen.
+Optionally, a seed for training the model can be set by changing the `seed` hyperparameter in `config.py`. Otherwise, a random `seed` will be chosen.
 
 ## Running the project
 
@@ -115,24 +113,35 @@ Below are a sample of the training images that the model was trained on.
 ![Train_imgs](assets/training_images.png)
 
 ### Output
-Epoch 10:
+#### Epoch 0
+![Epoch_10](assets/epoch0_img_2.png)
+
+#### Epoch 10
 ![Epoch_10](assets/epoch_0.png)
 
-Epoch 20:
+#### Epoch 20
 ![Epoch_20](assets/epoch_1.png)
 
-Epoch 30:
+#### Epoch 30
 ![Epoch_30](assets/epoch_2.png)
 
-Epoch 40:
+#### Epoch 40
 ![Epoch_40](assets/epoch_3.png)
 
-Epoch 50:
+#### Epoch 50
 ![Epoch_50](assets/epoch_4.png)
 
 Hence we can see that by the 50th epoch, the requirement for reasonably clear image generation has been met.
 
 ### Loss Graphs
+#### Epochs = 15
+The graphs below show the loss of the generator and discriminator during their training cycles for 15 epochs (10650 iterations).
+
+![Disc_loss_15](assets/disc_loss_5.png)
+
+![Gen_loss_15](assets/disc_loss_5.png)
+
+#### Epochs = 50
 The graphs below show the loss of the generator and discriminator during their training cycles for 50 epochs (35500 iterations).
 ![Disc_loss](assets/Disc_loss.png)
 

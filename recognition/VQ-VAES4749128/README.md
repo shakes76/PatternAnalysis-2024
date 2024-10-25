@@ -32,7 +32,7 @@ To train VQ-VAE:
 ``` python train.py -mode vq_vae ```
 To run predict:
 ``` python predict.py ```
-The argumments can be customised, otherwise the default will be used when running in terminal.
+The arguments can be customised, otherwise the default will be used when running in terminal.
 
 
 # VqVae Training

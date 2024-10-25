@@ -37,3 +37,5 @@ I ran the train code just for the first 5 epochs and a graph showing the batch l
 score can both be seen in the images folder.
 
 I then ran it for 50 epochs and the graphs similar to above are in the images folder.
+
+Proof of the console running progress can also be seen in the console_running image in the images folder.

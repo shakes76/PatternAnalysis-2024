@@ -1,7 +1,6 @@
 # Generative VQ-VAE model on the HipMRI Study on Prostate Cancer using the processed 2D slices
 ## Overview
-The aim of of this problem is to create a generative model of the HipMRI Study on Prostate Cancer using the processed 2D slices using a Vector Quantized Variational Autoencoder (VQ-VAE) and pixel CNN. 
-
+The aim of of this problem is to create a generative model of the HipMRI Study on Prostate Cancer using the processed 2D slices using a Vector Quantized Variational Autoencoder (VQ-VAE) and pixel CNN. We will be using a VQ-VAE to quantize latent codes for training a generative PXELCNN. The outputs from the generative Pixelcnn will be decoded as a way to reconstruct new images.
 ## VQ-VAE
 A VQ-VAE model is a generative model which combines elements from vector quantization (VQ) and Variational Autoencoders(VAE). There are three key parts to this model: encoder, decoder, codebook layer.
 

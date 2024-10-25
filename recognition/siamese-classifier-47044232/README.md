@@ -200,6 +200,11 @@ When installing dependencies, conda as it will ensure that there are no dependen
 
 
 ## Future Recommendations
+There are two things that would be recommend to further improve what has been done:
+
+1. To improve seperation of the features extracted, it is recommended to add hard positive and hard negative mining so that the triplets formed are maximising their difference in their distance to the anchor. This will also help the binary classifier in determining the difference between the extracted features.
+
+2. It would be recommended to add an argument and method to only retrain the classifier using a saved Siamese network model. This would make it easier to retrain the classifier when needed. As currently the siamese training cycle would have to be commented out to get this functionality.
 
 
 ## References
@@ -210,4 +215,3 @@ https://arxiv.org/pdf/1503.03832 \
 https://github.com/andreasveit/triplet-network-pytorch/blob/master/triplet_mnist_loader.py \
 https://github.com/sohaib023/siamese-pytorch/blob/master/siamese/siamese_network.py \
 https://github.com/2-Chae/PyTorch-tSNE/blob/main/main.py
-

@@ -70,6 +70,13 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 - **Weight Decay**: 0.01
 - **Loss Function**: Cross-Entropy Loss
 
+### GFNet Model Parameters:
+- **Patch Size**: 16
+- **Embed Dimensions**: 512
+- **Depth**: 18
+- **MLP ratio**: 4
+- **Drop path rate**: 0.25
+
 ### Training Procedure
 1. **Load the Dataset**: Use `torchvision.datasets` and `torch.utils.data.DataLoader` to load and preprocess the ADNI dataset using torchvision transforms.
 2. **Define the Model**: Instantiate the GFNet model following the given model parameters.
@@ -95,6 +102,8 @@ In the report documentation below I discuss the methods I used to attempt to imp
 Inherently, this would be a large issue given the size of the dataset. ViT models are built to derive
 spatial and image information from extremally large datasets (often 1+ million), while the training data
 available only contains around ~25000 images. 
+
+
 
 # Report & Process Documentation
 ###
@@ -134,20 +143,30 @@ a subset of imageNet, which contains 14 million labelled images in total. The su
 
 Unfortunately none of the attempted changes were able to bring improvements to the overall test performance.
 
-To test if overfitting could be stopped, I shrunk the size of the GFNet to tiny sizes:
-- **Pre-processing**: Gaussian noise, Random Erasure, Color Jitter
-- **Pre-processing**: Gaussian noise, Random Erasure, Color Jitter
+To test if overfitting could be stopped, I shrunk the size of the GFNet to tiny sizes with the following parameters:
+
+- **Learning rate**: 0.005
+- **Epochs**: 100
+- **Patch Size**: 4 (25% of Patch Size in best model)
+- **Embed Dimensions**: 4 (~1% of Embed Dim in best model)
+- **Depth**: 2 (~11.1% of Depth in best model)
+- **MLP ratio**: 1 (25% of MLP ratio in best model)
+- **Drop path rate**: 0.1
 
 This model produced the following results:
 
+![TinyGFNet](https://github.com/user-attachments/assets/df78bbef-4053-47ac-b825-0bec1219ced9)
 
-There is a small reduction in overfitting, but the overall accuracy does not improve. 
-
-
-
-
+It takes notably longer for the training accuracy to increase, but the test accuracy does not improve from decreasing the model.
+Therefore overall there is a minor reduction in overfitting, but the test accuracy does not improve.
 
 To help benefit any further research or investigation into this model, any further work on this model's performance would benefit with this in mind. 
+
+Another potential route I began to work on is the idea of breaking up the batches into patients, since that would potentially help GFNet to understand that these images come from the same patient. This was implemented and run on rangpur, but the performance failed to improve above 60%.
+
+![Large Acc](https://github.com/user-attachments/assets/b52f27a5-266d-432b-9ff7-07eb506934b8)
+
+This was done by preprocessing the data such that each batch called by the dataloader would give back all the images for the number of patients. The data was then flattened into a 4D vector that corresponded to (images, channels, height, width) from all patient images. For example, a batch size of 3 would get the images for 3 random patients, then the model would train on all the images for those patients at once for that batch.
 
 ## License
 MIT License

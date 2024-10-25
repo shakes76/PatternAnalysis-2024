@@ -144,7 +144,7 @@ for feature in training_features:
     cpu_features.append(feature.cpu())
 for label in training_labels:
     cpu_labels.append(label.cpu())
-tsne_plot(cpu_features, cpu_labels, save=True)
+tsne_plot(cpu_features, cpu_labels, "Training Set", save=args.saveplots)
 
 """
 Using a binary classifier to learn the feature vectors of the Siame Network.

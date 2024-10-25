@@ -58,7 +58,7 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 - **Source**: Alzheimer's Disease Neuroimaging Initiative (ADNI)
 - **Training** 25120 (256x240) images
 - **Test** 9000 (256x240) images
-- **Preprocessing**: Images were resized, normalized, and augmented to enhance model robustness.
+- **Preprocessing**: Images were resized, normalized, converted to grayscale, and augmented to enhance model robustness.
 - **Train/Validation Split from Training data** 90/10
 - **Train/Validation/Test Split** 66.26/7.36/26.37
 
@@ -98,18 +98,29 @@ available only contains around ~25000 images.
 
 # Report & Process Documentation
 ###
-I began by using the model code GFNet, attempting to run it using the Adam.
+Given the scale of the problem, while it is possible to add several sets of GFNet blocks together, the first choice was to try 1 GFNet block given the scale of the dataset and problem. Some of the important initial parameters used were:
+- **Learning Rate**: 0.01
+- **Epochs**: 100
+- **Optimizer**: Adam
+- **Loss Function**: Cross-Entropy Loss
+
+A learning rate of 0.01 caused the loss to significantl oscillate during training, and struggled to converge, so the learning rate was reduced to 0.001, then 0.00001.
+
+100 epochs resulted in a model that was capable of perfect accuracy on the training set, but only 54% on the test set, which resulting in a far too overfitted model - therefore the epochs were reduced and models were saved based on the best accuracy at the time.
+
+When the overfitting was still a notable issue, Adam was changed to AdamW to attempt to help the model generalise by making it choose the parameters that generalised the model best.
 
 ### Challenges
 The main challenge with this model has been overfitting.
-This can be seen on the plot of training versus test accuracy.
+Overfitting can easily be seen on the plot above:
+(training accuracy goes to ~1.0, while test accuracy stagnates around ~0.62).
 
 Various methods into data pre-processing and model scaling were investigated:
-- **Pre-processing**: Gaussian noise, Random Erasure, Color Jitter
-- **Model**: Mixture of complex GFNet Pyramid scaling models to simplistic GFNets
-- **Dropout**: Adding dropout layers and adapting
+- **Pre-processing**: Modifying the training data by adding Gaussian noise, Random Erasure, Color Jitter
+- **Model**: Mixture of complex multi-layer GFNet Pyramid models to simplistic single-layer GFNets
+- **Dropout**: Adding dropout and normalisation layers and tested various levels
 
-More complex models did little to help with 
+More complex models did no help convergence, since the issue was overfitting.
 
 Throughout the process I added various different levels of dropout: In GFNet there are 2 values for GFNet (drop_rate and drop_path_rate).
 'drop_rate' refers to a flat dropout rate in each global filter layer, while drop_path_rate refers to a linearly increasing drop rate. 
@@ -117,12 +128,12 @@ Updating the drop_rate or drop_path rate did not increase the overfitting issue.
 There were additional transformations made to the images: random erasure, color jitter, gaussian noise.
 None of the changes made any notable improvement to the test accuracy. 
 
-Unfortunately, this leads into a major issue of a vision transformer. It requires a significant amount of data.
-The training dataset used on this data is ~25000 images, which is much smaller than expected for a visual transformer
-Vision transformers are built to specificially able to find spatial information in complex large datasets. 
-For a small dataset like this ADNI subset it rapidly results in overfitting.
+Unfortunately, this leads into a major issue of a vision transformer mentioned before. 
+It expects a significant amount of divergent data to train on. The original version of GFNet as originally implemented was built to handle
+a subset of imageNet, which contains 14 million labelled images in total. The subset used for the model contains 1000 categories, 100000 training images and 50000 test images. The image information GFNet is expected to learn has significantly more variety in image appearence (dog, cat, house, tree,...) than for the ADNI dataset, containing 25000 MRI brain scan slices. 
 
-Unfortunately none of the attempted changes made any noticable improvements to the model. 
+Unfortunately none of the attempted changes were able to bring improvements to the overall test performance.
+
 To test if overfitting could be stopped, I shrunk the size of the GFNet to tiny sizes:
 - **Pre-processing**: Gaussian noise, Random Erasure, Color Jitter
 - **Pre-processing**: Gaussian noise, Random Erasure, Color Jitter

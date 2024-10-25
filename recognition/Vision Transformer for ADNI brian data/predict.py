@@ -22,9 +22,9 @@ else:
 
 if __name__ == "__main__":
     test_data = ADNITest()
-    model = GFNet(in_channels=1, embed_dim=384)
+    model = GFNet(in_channels=1, patch_size=14, embed_dim=384).to(device)
 
-    model.load_state_dict(torch.load(MODEL_PATH)).to(device)
+    model.load_state_dict(torch.load(MODEL_PATH))
     model.eval()
     
     preds = []

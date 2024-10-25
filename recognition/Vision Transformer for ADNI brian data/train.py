@@ -103,8 +103,8 @@ def plot(epochs, train_accs, val_acc, train_loss, val_loss):
 
 
 if __name__ == "__main__":
-    train_data = dataset.ADNI(val=False, type="train", transform="train")
-    val_data = dataset.ADNI(val=True, type="train", transform="val")
+    train_data = dataset.ADNI(val=False, type="train")
+    val_data = dataset.ADNI(val=True, type="train")
 
     train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True)

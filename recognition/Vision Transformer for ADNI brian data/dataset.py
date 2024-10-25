@@ -53,7 +53,7 @@ TEST_TRANSFORM = transforms.Compose([
 
 
 class ADNI(Dataset):
-    def __init__(self, path=DATASET_PATH, type="train", transform="train", val=False, ratio=0.8, tqdm=False):
+    def __init__(self, path=DATASET_PATH, type="train", val=False, ratio=0.8, tqdm=False):
         root = osP.join(path, type)
         self.path = root
         self.ad_path = osP.join(root, 'AD')
@@ -72,10 +72,8 @@ class ADNI(Dataset):
 
         self.val = val
         self.ratio = ratio
-        if transform == "train":
-            self.transform = TRAIN_TRANSFORM
-        else:
-            self.transform = TEST_TRANSFORM
+        self.transform = TRAIN_TRANSFORM
+
 
         self.mask = self.make_mask()
         

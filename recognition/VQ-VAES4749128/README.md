@@ -3,7 +3,7 @@
 The aim of of this problem is to create a generative model of the HipMRI Study on Prostate Cancer using the processed 2D slices using a Vector Quantized Variational Autoencoder (VQ-VAE) and pixel CNN. 
 
 ## VQ-VAE
-A vq-vae model is a generative model which combines elements from VQ and VAE. There are three key parts to this model: encoder, decoder, codebook layer.
+A VQ-VAE model is a generative model which combines elements from VQ and VAE. There are three key parts to this model: encoder, decoder, codebook layer.
 Input data is loaded into the encoder, a neural network, and trasnformed into latent representation. The latent vectors are quantised into a finite set of embeddings by using nearest neighbour search to replace continous latent presentations with the closest vector from the codebook (a finite set of vectors).The final part is the decoder which essentially attempts to decode the now quantised latent variables and reconstruct the image to its original form. 
 
 ## Pixel CNN
@@ -36,13 +36,19 @@ To run test:
 # VqVae Training
 
 The VQVAE model was trained with the whole training set because the model is generative. The model has 5000 updates and a batch size of 32. The loss components consists of three key types: reconstruction Loss (MSE), embedding loss and total loss. The reconstruction loss is measured as the mean squared error between the original input data and reconstructed data. The total loss is the sum of embedding loss and reconstruction loss. It is used for backpropagation.
-SSIM over time for VQVAE:
+SSIM over time for VQ-VAE is shown to satisfy the requirement of SSIM> 60, the SSIM is measured using cikit-image's structural_similarity function. 
 ![image](https://github.com/user-attachments/assets/1fcb31a8-0276-4aa9-867b-70d921406ecc)
 
-
-VQVAE training and validation loss function: 
+VQ-VAE training and validation loss function:
 ![image](https://github.com/user-attachments/assets/7049951d-7db5-490e-a876-a4fd5d8807fb)
 
-This is an example of an image that has been passed through the VQVAE: 
+After 5000 updates, here are a few samples of the outputs from the VQ-VAE:
 
 ![image](https://github.com/user-attachments/assets/4b8f3313-842a-4ff9-84ed-320aab53b73e)
+
+Here are two examples of the quantised samples:
+![image](https://github.com/user-attachments/assets/6a32f6f6-e4f8-4ab6-b59d-1b563f130e18)
+
+![image](https://github.com/user-attachments/assets/d0bfb478-1fc7-477d-932b-81c06a751d51)
+
+The pixelCNN will be trained on the quantised 

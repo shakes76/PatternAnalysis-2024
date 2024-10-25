@@ -11,6 +11,8 @@ from modules import unet_model, unet_model1
 images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
 
 
+run = "wcc,lr0.00001"
+
 #check if GPU is available
 tf.config.experimental.list_physical_devices('GPU')
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
@@ -72,7 +74,7 @@ def save_validation_image(image, mask, prediction, index):
     plt.axis('off')
     
     # Save the figure
-    plt.savefig(f'validation_image__{index}.png')
+    plt.savefig(f'validation_image_{run}_{index}.png')
     plt.close()
 
 
@@ -93,7 +95,7 @@ model = unet_model1(n_classes, input_size=(256, 128, 1))
 # Train the U-Net model
 history = train_unet_model(model, images_train, images_seg_train, 
                            images_validate, images_seg_validate, 
-                           model_save_path="best_unet_model_.h5",
+                           model_save_path=f"best_unet_model_{run}.h5",
                            class_weights=class_weights)
 
 
@@ -131,6 +133,12 @@ true_labels = np.argmax(images_seg_test, axis=-1)  # Shape (num_samples, height,
 # Calculate Dice coefficients for each class
 dice_scores = calculate_dice_per_class(true_labels, predicted_labels, n_classes)
 
+passed = True
 # Print the Dice coefficients for each class
 for class_id, score in enumerate(dice_scores):
+    if score < 0.75 and passed:
+        passed = False
     print(f"Dice Coefficient for Class {class_id}: {score:.4f}")
+
+if passed:
+    print("WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW")

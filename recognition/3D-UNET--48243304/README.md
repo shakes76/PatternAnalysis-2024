@@ -36,4 +36,3 @@ NumPy			1.19+
 nibabel			3.2.1+
 tqdm			4.61+
 matplotlib		3.4.3
-

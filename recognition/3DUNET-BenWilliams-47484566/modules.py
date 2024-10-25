@@ -49,14 +49,34 @@ class UNet3D(nn.Module):
         # Transposed convolution for upsampling
         return nn.ConvTranspose3d(in_channels, out_channels, kernel_size=2, stride=2)
 
-    def crop_tensor(self, source, target):
-        """Crop source tensor to the shape of target tensor."""
-        diff_depth = (source.size(2) - target.size(2)) // 2
-        diff_height = (source.size(3) - target.size(3)) // 2
-        diff_width = (source.size(4) - target.size(4)) // 2
-        return source[:, :, diff_depth:diff_depth + target.size(2), 
-                         diff_height:diff_height + target.size(3), 
-                         diff_width:diff_width + target.size(4)]
+    def crop_tensor(self, input_tensor, target_tensor):
+        """
+        Crops the input_tensor to match the size of target_tensor along the spatial dimensions.
+        Or pads if smaller
+        """
+        input_shape = input_tensor.shape
+        target_shape = target_tensor.shape
+
+        # Calculate the differences along each spatial dimension
+        diff_depth = target_shape[2] - input_shape[2]
+        diff_height = target_shape[3] - input_shape[3]
+        diff_width = target_shape[4] - input_shape[4]
+    
+        # Pad if the input tensor is smaller than the target tensor
+        pad_depth = (max(0, diff_depth // 2), max(0, diff_depth - diff_depth // 2))
+        pad_height = (max(0, diff_height // 2), max(0, diff_height - diff_height // 2))
+        pad_width = (max(0, diff_width // 2), max(0, diff_width - diff_width // 2))
+
+        if diff_depth > 0 or diff_height > 0 or diff_width > 0:
+            input_tensor = F.pad(input_tensor, (pad_width[0], pad_width[1], pad_height[0], pad_height[1], pad_depth[0], pad_depth[1]))
+
+        # Crop if the input tensor is larger than the target tensor
+        cropped_tensor = input_tensor[:, :,
+                                  max(0, -diff_depth // 2):input_shape[2] - max(0, diff_depth - diff_depth // 2),
+                                  max(0, -diff_height // 2):input_shape[3] - max(0, diff_height - diff_height // 2),
+                                  max(0, -diff_width // 2):input_shape[4] - max(0, diff_width - diff_width // 2)]
+
+        return cropped_tensor
 
 
 
@@ -73,8 +93,10 @@ class UNet3D(nn.Module):
 
         #Upsampling step, with concatenations between each upsample, downsample pair
         dec4 = self.upconv4(bridge)
-        if dec4.shape[1] != enc4.shape[1]:
-            dec4 = nn.Conv3d(dec4.shape[1], enc4.shape[1], kernel_size=1)(dec4)
+
+        #print("dec4 size:", dec4.size())
+        #print("enc4 size:", enc4.size())
+        #print("Crop:", self.crop_tensor(dec4, enc4))
         dec4 = torch.cat((self.crop_tensor(dec4, enc4), enc4), dim=1)
         dec4 = self.decoder4(dec4)
 
@@ -94,7 +116,10 @@ class UNet3D(nn.Module):
         out = self.final_conv(dec1)
         out = F.softmax(out, dim=1)
         return out
-        
+
+
+
+
 #This function was written by Chat GPT
 def dice_coefficient_per_label(preds, targets, num_classes):
     """

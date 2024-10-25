@@ -35,8 +35,16 @@ Once class separation had been attempted, the layers of the embeddings network w
 
 ## Results
 
+The below figure shows the monitored training metrics over the best model run. As seen from the graphs, the accuracy approaches 80% (ending on about 79%), with good scores for precision and recal as well. Because of the unabalanced dataset, accuracy may not be the most ideal metric to monitor, as it puts equal weights on both the positive and negative classes regardless of their proportions. Instead, it is more interesting to monitor the precision and recall. Recall is important in medical settings because we want maligant lesions to be identified at a high rate. However at the same time, precision is important because we don't want to misdiagnose. A good trade off between these two is F1 score (not plotted here), which is the harmonic mean of the two.
+
+![alt text](image-1.png)
+![alt text](image-2.png)
+
+The validation loss is shown below. It follows the same characteristics as the training loss, indicating that there is no presence of overfitting. One discrepancy noted is that the precision of the validation set was slightly lower. This is reasonable because the data has not been fit on the validation set, however it does likely indicate a slight bias of the model towards classifying images as malignant.
+
+![alt text](image-4.png)
 ## Dependencies
 This network relies on the use of tensorflow_addons, which is deprecated as of mid-2024. For compatibility reasons, this model therefore uses an older version of Python (3.11.1) and numpy/tensorflow. To install, you must first have Python 3.11.1, or create a virtual environment that supports it. All relevant packages can then be installed using `pip install -r requirements.txt`
 
-##d Disclaimer
+## Disclaimer
 The commit log admittedly is inconsistent. This is primarily because trials were run on different branches with more than questionable commit history. For a clean history, these incremental changes were copied over to the main branch. 

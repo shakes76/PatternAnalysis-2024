@@ -1,8 +1,14 @@
 import numpy as np
 import torch
+import torch.optim as optim
+import torch.nn as nn
+import os
 from sklearn.metrics import confusion_matrix
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+from modules import GFNet
+from dataset import get_data_loaders
+from utils import draw_training_log
 
 
 def validate(model, test_loader, criterion, device):
@@ -77,3 +83,30 @@ def final_validate(model, test_loader, criterion, device):
     print(f"test Loss: {test_loss:.4f}, test Acc: {test_acc:.4f}")
     print("Confusion Matrix:")
     print(cm)
+
+
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
+
+    if os.path.exists('gfnet_model_latest.pth'):
+        load_model(model, optimizer, 'gfnet_model_latest.pth')
+        criterion = nn.CrossEntropyLoss()
+
+        train_dir = 'new_store_data_path/AD_NC_new/train'
+        val_dir = 'new_store_data_path/AD_NC_new/val'
+        test_dir = 'new_store_data_path/AD_NC_new/test'
+
+        train_loader, val_loader, test_loader = get_data_loaders(train_dir, val_dir, test_dir)
+        model = model.to(device)
+
+        final_validate(model, test_loader, criterion, device)
+    else:
+        print("Can't find model pth")
+
+    if os.path.exists('training_log.csv'):
+        draw_training_log()
+    else:
+        print("Can't find training log")

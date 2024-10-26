@@ -145,6 +145,7 @@ Class 3: Dice = 0.9493
 Class 4: Dice = 0.8975
 Class 5: Dice = 0.8873
 ```
+![Figure_1](https://github.com/user-attachments/assets/5bf47e39-b6ba-4f52-b104-ad6224bdf554)
 
 ## Usage
 

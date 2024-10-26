@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 # Define the image size and batch size
 IMAGE_SIZE = (224, 224)  # The normal size of GFNet is 224x224
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 
 # Load and preprocess images using tf.data.Dataset
 def load_images(directory):
@@ -77,12 +77,14 @@ def get_train_validation_dataset():
     val_dataset = build_dataset(val_images, val_labels, shuffle=False)
     return train_dataset, val_dataset
 
-# Get the labels in dataset after preprocessing
-def extract_labels_from_dataset(dataset):
+# Get the images and labels in dataset after preprocessing
+def extract_from_dataset(dataset):
     all_labels = []
-    for _, labels in dataset.unbatch():
-        all_labels .append(labels.numpy())
-    return np.array(all_labels)
+    all_images = []
+    for images, labels in dataset.unbatch():
+        all_images.append(images.mumpy())
+        all_labels.append(labels.numpy())
+    return np.array(all_images), np.array(all_labels)
 
 # Test the functionality of the data loader
 if __name__ == "__main__":

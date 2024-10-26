@@ -132,12 +132,14 @@ The evaluation script predict.py:
 The model achieved a minimum Dice Similarity Coefficient of 0.75 on the test set for the prostate label. This indicates a high degree of overlap between the predicted segmentation and the ground truth, demonstrating the model's effectiveness in accurately segmenting the prostate region.
 
 Dice Similarity Coefficient for each class on Unseen Test Set:
+```
 Class 0: Dice = 0.9968
 Class 1: Dice = 0.9839
 Class 2: Dice = 0.9194
 Class 3: Dice = 0.9493
 Class 4: Dice = 0.8975
 Class 5: Dice = 0.8873
+```
 
 ## Usage
 

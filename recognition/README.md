@@ -4,7 +4,7 @@ images) available here with the 2D UNet [1] with all labels having a minimum Dic
 of 0.75 on the test set on the prostate label. You will need to load Nifti file format and sample code is
 provided in Appendix B. [Easy Difficulty]
 
-# UNet Segmentation of HipMRI Prostate Cancer Study
+### UNet Segmentation of HipMRI Prostate Cancer Study
 
 This project implements a UNet-based model to perform semantic segmentation on the HipMRI Study dataset for prostate cancer. The goal is to accurately segment the prostate region from 2D MRI slices, achieving a minimum Dice Similarity Coefficient (DSC) of 0.75 on the test set for the prostate label.
 
@@ -128,7 +128,7 @@ The evaluation script predict.py:
 - Computes Dice Coefficient: Calculates the Dice Similarity Coefficient for each class.
 - Outputs Results: Prints the Dice scores, with an emphasis on the prostate label.
 
-# Results
+## Results
 The model achieved a minimum Dice Similarity Coefficient of 0.75 on the test set for the prostate label. This indicates a high degree of overlap between the predicted segmentation and the ground truth, demonstrating the model's effectiveness in accurately segmenting the prostate region.
 
 Dice Similarity Coefficient for each class on Unseen Test Set:
@@ -147,7 +147,7 @@ Class 5: Dice = 0.8873
 ```python train.py```
 3. Monitor Training: Training progress, including loss values, will be displayed in the console. Model checkpoints will be saved after each epoch.
 
-## Evaluating the model
+# Evaluating the model
 1. Ensure Model Checkpoints are Available: The predict.py script will load the latest model checkpoint from the current directory.
 2. Run the Evaluation Script:
 ```python predict.py```

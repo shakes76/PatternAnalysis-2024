@@ -1,32 +1,14 @@
-"""
-Load and preprocess data
-
-"""
-import torch
 import os
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
+from sklearn.model_selection import train_test_split
 
 class ADNIDataset(Dataset):
-    def __init__(self, folder_path, transform=None):
-        self.folder_path = folder_path
+    def __init__(self, image_paths, labels, transform=None):
+        self.image_paths = image_paths
+        self.labels = labels
         self.transform = transform
-
-        # get the path of AD and NC directory
-        self.ad_path = os.path.join(folder_path, "AD")
-        self.nc_path = os.path.join(folder_path, "NC")
-
-        # Create lists for image path and corresponding label
-        self.image_paths = []
-        self.labels = []
-
-        for label, class_dir in enumerate([self.ad_path, self.nc_path]):
-            for img_name in os.listdir(class_dir):
-                if img_name.endswith(".jpeg"):
-                    self.image_paths.append(os.path.join(class_dir, img_name))
-                    self.labels.append(label) # set class AD as 0, class NC as 1
-
 
     def __len__(self):
         return len(self.image_paths) 
@@ -36,45 +18,69 @@ class ADNIDataset(Dataset):
         label = self.labels[idx]
 
         image = Image.open(image_path).convert("RGB")
-
         if self.transform:
             image = self.transform(image)
-
         return image, label
 
+def load_train_val_datasets(folder_path, transform=None, val_split=0.2):
+    # Get paths of AD and NC directories
+    ad_path = os.path.join(folder_path, "AD")
+    nc_path = os.path.join(folder_path, "NC")
 
+    # Create lists for image paths and corresponding labels
+    image_paths = []
+    labels = []
+
+    for label, class_dir in enumerate([ad_path, nc_path]):
+        for img_name in os.listdir(class_dir):
+            if img_name.endswith(".jpeg"):
+                image_paths.append(os.path.join(class_dir, img_name))
+                labels.append(label)  # Set class AD as 0, class NC as 1
+
+    # Split data into training and validation sets
+    train_paths, val_paths, train_labels, val_labels = train_test_split(
+        image_paths, labels, test_size=val_split, stratify=labels
+    )
+
+    # Create dataset objects
+    train_dataset = ADNIDataset(train_paths, train_labels, transform=transform)
+    val_dataset = ADNIDataset(val_paths, val_labels, transform=transform)
+
+    return train_dataset, val_dataset
+
+# Define the transform
 transform = transforms.Compose([
-    transforms.Resize((224,224)),
+    transforms.Resize((128, 128)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# Create train and test dataset
-train_dataset = ADNIDataset(folder_path="./ADNI/AD_NC/train", transform=transform)
-test_dataset =ADNIDataset(folder_path="./ADNI/AD_NC/test", transform=transform)
+# Load train and validation datasets
+train_dataset, val_dataset = load_train_val_datasets("./ADNI/AD_NC/train", transform=transform)
 
-# Load train and test set
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4)
+# Load train and validation data
+train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=1)
+val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=1)
 
+# Load test dataset
+def load_test_dataset(folder_path, transform=None):
+    test_image_paths = []
+    test_labels = []
 
-# # check
-# def check_dataloader(loader, name):
-    
-#     data_iter = iter(loader)
-#     images, labels = next(data_iter)
+    # Get paths of AD and NC directories
+    ad_path = os.path.join(folder_path, "AD")
+    nc_path = os.path.join(folder_path, "NC")
 
-#     print(f"\ncheck {name} dataloader:")
-#     print(f"batch image size: {images.shape}")  # should be [batch_size, 3, 224, 224]
-#     print(f"batch labels: {labels}")  # len should batch_size tensor
+    # Collect all test images and labels
+    for label, class_dir in enumerate([ad_path, nc_path]):
+        for img_name in os.listdir(class_dir):
+            if img_name.endswith(".jpeg"):
+                test_image_paths.append(os.path.join(class_dir, img_name))
+                test_labels.append(label)
 
-#     # ensure image tensor in a range of [0, 1] if necessary
-#     print(f"image tensor min: {torch.min(images)}")
-#     print(f"image tensor max: {torch.max(images)}")
-#     print(f"image tensor avg: {torch.mean(images)}")
+    # Create the test dataset
+    return ADNIDataset(test_image_paths, test_labels, transform=transform)
 
-# # chack training dataloader
-# check_dataloader(train_loader, "training set")
-
-# # check test dataloader
-# check_dataloader(test_loader, "test set")
+# Load the test dataset and create DataLoader
+test_dataset = load_test_dataset("./ADNI/AD_NC/test", transform=transform)
+test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=1)

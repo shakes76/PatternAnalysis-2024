@@ -146,19 +146,19 @@ Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to g
     <td>
       <figure>
         <img src="images/image_slice_73.png" width="400" height="300"/>
-        <figcaption>Original Label Image Slice 73</figcaption>
+        <figcaption>Label Image Slice 73 (expected output)</figcaption>
       </figure>
     </td>
     <td>
       <figure>
         <img src="images/image_slice_97.png" width="400" height="300"/>
-        <figcaption>Original Label Image Slice 97</figcaption>
+        <figcaption>Label Image Slice 97 (expected output)</figcaption>
       </figure>
     </td>
     <td>
       <figure>
         <img src="images/image_slice_75.png" width="400" height="300"/>
-        <figcaption>Original Label Image Slice 75</figcaption>
+        <figcaption>Label Image Slice 75 (expected output)</figcaption>
       </figure>
     </td>
   </tr>

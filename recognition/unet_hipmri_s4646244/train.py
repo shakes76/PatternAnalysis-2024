@@ -25,7 +25,6 @@ def combined_loss(y_true, y_pred):
 
 learn_rate_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=1e-6, verbose=1)
 
-
 early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3, restore_best_weights = True)
 
 # Set up the model from the modules file

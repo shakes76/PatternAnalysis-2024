@@ -5,4 +5,3 @@ wandb
 *.keras
 checkpoints
 checkpoints-classi
-*.png

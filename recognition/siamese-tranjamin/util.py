@@ -8,7 +8,8 @@ def plot_images(square_size=3):
     df = BalancedMelanomaDataset(
         image_shape=(256, 256),
         batch_size=64,
-        validation_split=0.2
+        validation_split=0.2,
+        balance_split=0.5
     )
 
     for batch in df.dataset:
@@ -25,5 +26,5 @@ def plot_images(square_size=3):
 
         break
 
-plot_images(square_size=5)
+plot_images(square_size=8)
 plt.show()

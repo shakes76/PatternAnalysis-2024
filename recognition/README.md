@@ -1,5 +1,7 @@
 # Max Gadd
 Student: 46985431
+Email: mgadd02@gmail.com
+Student Email: s4698543@uq.edu.au
 
 # Elected Task:
 Segment the HipMRI Study on Prostate Cancer (see Appendix for link) using the processed 2D slices (2D

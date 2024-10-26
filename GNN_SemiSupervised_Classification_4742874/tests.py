@@ -9,6 +9,7 @@ Date: 26/10/2024
 import unittest
 
 import dataset
+import utils
 
 DATASET_DIR = "./dataset/"
 
@@ -31,3 +32,12 @@ class TestDataSet(unittest.TestCase):
         assert flpp_dataset.num_features == 128
         assert flpp_dataset.num_classes == 4
         assert flpp_dataset.x.shape[0] == 22470
+
+class TestUtils(unittest.TestCase):
+    def test_utils_display_graph(self):
+        """
+
+        """
+        flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
+
+        utils.display_flpp_network(flpp_dataset)

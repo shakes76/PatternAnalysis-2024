@@ -2,22 +2,19 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
-# GCN model definition
+# Define GCN model
 class GCN(torch.nn.Module):
     def __init__(self, num_features, hidden_dim, num_classes):
         super(GCN, self).__init__()
-        # Define GCN layers
         self.conv1 = GCNConv(num_features, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.conv3 = GCNConv(hidden_dim, hidden_dim)
         self.conv4 = GCNConv(hidden_dim, num_classes)
-        # Define batch normalization layers
         self.bn1 = torch.nn.BatchNorm1d(hidden_dim)
         self.bn2 = torch.nn.BatchNorm1d(hidden_dim)
         self.bn3 = torch.nn.BatchNorm1d(hidden_dim)
 
     def forward(self, data):
-        # Forward pass with ReLU activations, dropout, and batch normalization
         x, edge_index = data.x, data.edge_index
         x = F.relu(self.bn1(self.conv1(x, edge_index)))
         x = F.dropout(x, p=0.5, training=self.training)
@@ -27,11 +24,3 @@ class GCN(torch.nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         return F.log_softmax(self.conv4(x, edge_index), dim=1)
 
-
-# Utility function to calculate accuracy
-def accuracy(model, data, mask):
-    model.eval()
-    with torch.no_grad():
-        pred = model(data).argmax(dim=1)  # Get predictions
-        correct = pred[mask].eq(data.y[mask]).sum().item()  # Count correct predictions
-        return correct / int(mask.sum())  # Return accuracy)

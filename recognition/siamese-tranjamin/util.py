@@ -1,4 +1,4 @@
-from dataset import BalancedMelanomaDataset
+from dataset import FullMelanomaDataset
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,7 +7,7 @@ def plot_images(square_size=3):
     '''
     Plots a selection of preprocessed images.
     '''
-    df = BalancedMelanomaDataset(
+    df = FullMelanomaDataset(
         image_shape=(256, 256),
         batch_size=64,
         validation_split=0.2,

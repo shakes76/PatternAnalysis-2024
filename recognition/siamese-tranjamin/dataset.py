@@ -44,33 +44,53 @@ class BalancedMelanomaDataset():
             batch_size=None,
             class_names=["negative", "positive"]
             )
-        
-        # normalise both datasets
-        dataset = dataset.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
-        dataset_test = dataset_test.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
 
-        data_augmenter = tf.keras.Sequential([
-            tf.keras.layers.RandomFlip("horizontal_and_vertical"),
-            tf.keras.layers.RandomRotation(0.9),
-            tf.keras.layers.RandomBrightness(0.1/255),
-            tf.keras.layers.RandomZoom(0.3),
-            tf.keras.layers.GaussianNoise(0.15)
-        ])
-
-        dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
-
+        # split into training and validation
         num_total = tf.data.Dataset.cardinality(dataset).numpy()
         num_val = int(num_total * validation_split)
         dataset_val = dataset.take(num_val)
         dataset = dataset.skip(num_val).take(num_total - num_val)
 
+        # define the data augmentation
+        data_augmenter = tf.keras.Sequential([
+            tf.keras.layers.RandomFlip("horizontal_and_vertical"),
+            tf.keras.layers.RandomRotation(0.9),
+            tf.keras.layers.RandomZoom(0.3),
+            tf.keras.layers.GaussianNoise(0.15)
+        ])
+
+        # define the data augmentation
+        data_augmenter_aggressive = tf.keras.Sequential([
+            tf.keras.layers.RandomFlip("horizontal_and_vertical"),
+            tf.keras.layers.RandomRotation(0.9),
+            tf.keras.layers.RandomBrightness(0.3),
+            tf.keras.layers.RandomZoom(0.3),
+            tf.keras.layers.GaussianNoise(0.15),
+            tf.keras.layers.RandomTranslation(0.15, 0.1),
+            tf.keras.layers.RandomContrast(0.25)
+        ])
+
         # even out the dataset split
         if balance_split:
-            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(1500)
-            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(1500)
+            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(2000)
+            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(2000)
             
-            dataset = dataset_positive.concatenate(dataset_negative).shuffle(3000)
-            dataset = dataset.take(3000)
+            dataset_positive = dataset_positive.map(lambda x, y: (data_augmenter_aggressive(x, training=True), y))
+            
+            dataset = tf.data.Dataset.sample_from_datasets(
+                [dataset_positive, dataset_negative],
+                weights=[0.5, 0.5]
+            )
+
+            dataset = dataset.take(4000)
+
+        dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
+
+        
+        # normalise both datasets
+        dataset = dataset.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
+        dataset_val = dataset_val.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
+        dataset_test = dataset_test.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
 
         # batch the data
         dataset = dataset.batch(batch_size)
@@ -85,6 +105,11 @@ class BalancedMelanomaDataset():
 class FullMelanomaDataset():
     '''
     The full dataset, resized down to 256x256
+
+    Properties:
+        .dataset: the training dataset
+        .dataset_test: the testing dataset
+        .dataset_val: the validation dataset
     '''
     def __init__(self, 
                  image_shape=(28, 28), # the image size to scale down to
@@ -125,38 +150,53 @@ class FullMelanomaDataset():
             image_size=image_shape,
             batch_size=None
             )
-        
-        # normalise both datasets
-        dataset = dataset.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
-        dataset_test = dataset_test.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
 
-        data_augmenter = tf.keras.Sequential([
-            tf.keras.layers.RandomFlip("horizontal_and_vertical"),
-            tf.keras.layers.RandomRotation(0.9),
-            tf.keras.layers.RandomBrightness(0.1/255),
-            tf.keras.layers.RandomZoom(0.3),
-            tf.keras.layers.GaussianNoise(0.15)
-        ])
-
+        # split into training and validation
         num_total = tf.data.Dataset.cardinality(dataset).numpy()
         num_val = int(num_total * validation_split)
         dataset_val = dataset.take(num_val)
         dataset = dataset.skip(num_val).take(num_total - num_val)
 
+        # define the data augmentation
+        data_augmenter = tf.keras.Sequential([
+            tf.keras.layers.RandomFlip("horizontal_and_vertical"),
+            tf.keras.layers.RandomRotation(0.9),
+            tf.keras.layers.RandomZoom(0.3),
+            tf.keras.layers.GaussianNoise(0.15)
+        ])
+
+        # define the data augmentation
+        data_augmenter_aggressive = tf.keras.Sequential([
+            tf.keras.layers.RandomFlip("horizontal_and_vertical"),
+            tf.keras.layers.RandomRotation(0.9),
+            tf.keras.layers.RandomBrightness(0.3),
+            tf.keras.layers.RandomZoom(0.3),
+            tf.keras.layers.GaussianNoise(0.15),
+            tf.keras.layers.RandomTranslation(0.15, 0.1),
+            tf.keras.layers.RandomContrast(0.25)
+        ])
+
         # even out the dataset split
         if balance_split:
-            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(1500)
-            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(1500)
+            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(2000)
+            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(2000)
             
-            # dataset = dataset_positive.concatenate(dataset_negative)
+            dataset_positive = dataset_positive.map(lambda x, y: (data_augmenter_aggressive(x, training=True), y))
+            
             dataset = tf.data.Dataset.sample_from_datasets(
                 [dataset_positive, dataset_negative],
                 weights=[0.5, 0.5]
             )
 
-            dataset = dataset.take(3000)
+            dataset = dataset.take(4000)
 
         dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
+
+        
+        # normalise both datasets
+        dataset = dataset.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
+        dataset_val = dataset_val.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
+        dataset_test = dataset_test.map(lambda x, y: (tf.cast(x, tf.float32) / 255., y))
 
         # batch the data
         dataset = dataset.batch(batch_size)

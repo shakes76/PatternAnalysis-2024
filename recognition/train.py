@@ -10,6 +10,7 @@ from dataset import SegmentationData  # Ensure this is the path to your Segmenta
 from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
+import numpy as np
 
 # Datasets directories
 train_image_dir = './data/HipMRI_study_keras_slices_data/keras_slices_train'
@@ -25,12 +26,12 @@ print(f"Using device: {device}")
 print("Loading Training Data")
 train_dataset = SegmentationData(
     train_image_dir, train_label_dir,
-    norm_image=False, categorical=True, dtype=torch.float32
+    norm_image=False, categorical=True, dtype=np.float32
 )
 print("Loading Validation Data")
 val_dataset = SegmentationData(
     val_image_dir, val_label_dir,
-    norm_image=False, categorical=True, dtype=torch.float32
+    norm_image=False, categorical=True, dtype=np.float32
 )
 
 # Create dataloaders

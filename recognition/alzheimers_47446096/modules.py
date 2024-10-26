@@ -2,8 +2,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torch import Tensor
-from einops import rearrange, repeat
-import functools
+from einops import rearrange
+
 class VisionTransformer(nn.Module):
     '''
     Vision Transformer Implimentation
@@ -368,12 +368,29 @@ class ConvolutionalTransformerEncBlk(nn.Module):
     
 class ConvolutionalTransformerBlk(nn.Module):
     '''
-    Single block of ConvolutionalVisionTransformer that contains
-    a set of transformer encoder blocks at teh set img dims for the
+    Single block/stage of ConvolutionalVisionTransformer that contains
+    a set of transformer encoder blocks at the set img dims for the
     current scaling of the img.
     '''
     def __init__(self, imgDims: tuple[int, int, int], embChannels:int, kernal:int, stride:int, padding:int, nHeads:int, hiddenMul: int,
                 depth:int, final:bool = False, device: str = "cpu") -> None:
+        '''
+        Inputs:
+            imgDims: tuple[int, int, int] - Image (chanels, height, width)
+            embChannels: int - the number of chanells for the image to be expanded to after the convolutional layer,
+                this is similar to token length in the ViT model
+            kernal: int - the widht/height of the kernal
+            stride: int - stride of convolutional token embedding layer
+            padding: int - padding of convolutional token embedding layer
+            nHeads: int - the number of heads of the MHA layer
+            hiddenMul: int - the multiple factor for the var expansion between the
+                two MLP hidden layers
+            depth: int - the number of encoder blocks in this stage of the CvT
+            final: bool - if true will add the learnable class token and the MLP
+                head for classification at the end
+            device: CUDA device to be computed on
+        Returns: None
+        '''
         super(ConvolutionalTransformerBlk, self).__init__()
         self.imgDims = imgDims
         self.kernal = kernal
@@ -398,6 +415,7 @@ class ConvolutionalTransformerBlk(nn.Module):
         newsize = int((self.imgDims[-1] + 2 * self.padding - self.kernal) / self.stride + 1)
         self.newImgdims = (self.embChannels, newsize, newsize)
         
+        #* MLP head, only used if final is True
         self.mlpHead = nn.Sequential(
             nn.LayerNorm(self.newImgdims[0], device = self.device),
             nn.Linear(self.newImgdims[0], self.newImgdims[0] * self.hiddenMul, device = self.device),
@@ -412,20 +430,32 @@ class ConvolutionalTransformerBlk(nn.Module):
         )
     
     def forward(self, x):
+        '''
+        Compute the forward step of the ConvolutionalTransformerBlk,
+
+        Inputs:
+            x: Tensor - pytorch tensor of the embedded tokens
+        Returns:
+            Tensor - Computed values after set of Convolutional Transformer Blocks in this stage
+        '''
         x = self.enc(x)
         size = int(x.size()[1] ** 0.5)
-        if (self.final):
+        if (self.final): #* Added class token if this is the final stage
             token = nn.Parameter(torch.rand(x.size()[0], 1, x.size()[2], device = self.device))
             x = torch.cat([token, x], dim = 1)
         for block in self.blocks:
             x = block(x)
-        if (self.final):
+        if (self.final): #* Pass the final values from the learnable token to the MLP head if this is the final stage
             x = self.mlpHead(x[:, 0])
         else:
             x = rearrange(x, 'b (h w) c -> b c h w', h = size, w = size)
         return x
     
 class ConvolutionalVisionTransformer(nn.Module):
+    '''
+    CvT model implimentation utilising three ConvolutionalTransformerBlk to perform
+    the progressive downsampling of the images
+    '''
     def __init__(self, device):
         super(ConvolutionalVisionTransformer, self).__init__()
         self.device = device
@@ -434,7 +464,7 @@ class ConvolutionalVisionTransformer(nn.Module):
 
         self.b2 = ConvolutionalTransformerBlk((64, 56, 56), 192, 3, 2, 1, 3, 4, 2, device=self.device)
 
-        self.b3 = ConvolutionalTransformerBlk((192, 28, 28), 384, 3, 2, 1, 6, 4, 6, device=self.device, final=True)
+        self.b3 = ConvolutionalTransformerBlk((192, 28, 28), 384, 3, 2, 1, 6, 4, 10, device=self.device, final=True)
 
         self.smax = nn.Softmax(dim = 1)
 

@@ -31,6 +31,8 @@ The output is expected to be:
 - 6 channels representing the different prostate classes
 - Post-processing to assign probabilities to classes
 
+![alt text](image.png)
+
 ## Preprocessing
 
 The 3D MRI images are resized to dimensions (128, 128, 128) to ensure the model is consistent for all images.

@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class Basic3DUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, init_features=32):
+    def __init__(self, in_channels=1, out_channels=6, init_features=32):
         super(Basic3DUNet, self).__init__()
 
         features = init_features
@@ -93,40 +93,31 @@ class Improved3DUNet(nn.Module):
         features = init_features
 
         # Encoder
-        self.encoder1 = self._residual_block(
-            in_channels, features, name="enc1")
+        self.encoder1 = self._residual_block(in_channels, features)
         self.pool1 = nn.MaxPool3d(kernel_size=2, stride=2)
-        self.encoder2 = self._residual_block(
-            features, features * 2, name="enc2")
+        self.encoder2 = self._residual_block(features, features * 2)
         self.pool2 = nn.MaxPool3d(kernel_size=2, stride=2)
-        self.encoder3 = self._residual_block(
-            features * 2, features * 4, name="enc3")
+        self.encoder3 = self._residual_block(features * 2, features * 4)
         self.pool3 = nn.MaxPool3d(kernel_size=2, stride=2)
-        self.encoder4 = self._residual_block(
-            features * 4, features * 8, name="enc4")
+        self.encoder4 = self._residual_block(features * 4, features * 8)
         self.pool4 = nn.MaxPool3d(kernel_size=2, stride=2)
 
         # Bottleneck
-        self.bottleneck = self._residual_block(
-            features * 8, features * 16, name="bottleneck")
+        self.bottleneck = self._residual_block(features * 8, features * 16)
 
         # Decoder
         self.upconv4 = nn.ConvTranspose3d(
             features * 16, features * 8, kernel_size=2, stride=2)
-        self.decoder4 = self._residual_block(
-            (features * 8) * 2, features * 8, name="dec4")
+        self.decoder4 = self._residual_block(features * 8 * 2, features * 8)
         self.upconv3 = nn.ConvTranspose3d(
             features * 8, features * 4, kernel_size=2, stride=2)
-        self.decoder3 = self._residual_block(
-            (features * 4) * 2, features * 4, name="dec3")
+        self.decoder3 = self._residual_block(features * 4 * 2, features * 4)
         self.upconv2 = nn.ConvTranspose3d(
             features * 4, features * 2, kernel_size=2, stride=2)
-        self.decoder2 = self._residual_block(
-            (features * 2) * 2, features * 2, name="dec2")
+        self.decoder2 = self._residual_block(features * 2 * 2, features * 2)
         self.upconv1 = nn.ConvTranspose3d(
             features * 2, features, kernel_size=2, stride=2)
-        self.decoder1 = self._residual_block(
-            features * 2, features, name="dec1")
+        self.decoder1 = self._residual_block(features * 2, features)
 
         # Final Convolution
         self.conv = nn.Conv3d(in_channels=features,
@@ -161,7 +152,7 @@ class Improved3DUNet(nn.Module):
 
         return torch.softmax(self.conv(dec1), dim=1)
 
-    def _residual_block(in_channels, features, name):
+    def _residual_block(self, in_channels, features):
         return ResidualBlock(in_channels, features)
 
 
@@ -180,24 +171,28 @@ class ResidualBlock(nn.Module):
         self.identity = nn.Conv3d(
             in_channels, features, kernel_size=1, bias=False) if in_channels != features else None
 
-        def forward(self, x):
-            identity = x
-            out = self.relu(self.bn1(self.conv1(x)))
-            out = self.bn2(self.conv2(out))
+    def forward(self, x):
+        identity = x
+        out = self.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
 
-            # Transform input data
-            if self.identity is not None:
-                identity = self.identity(x)
+        # If identity layer is defined, transform the input
+        if self.identity is not None:
+            identity = self.identity(x)
 
-            out += identity
-            out = self.relu(out)
-            return out
+        out += identity
+        out = self.relu(out)
+        return out
 
 
 class DiceLoss(nn.Module):
-    def __init__(self, smooth=1.0):
+    def __init__(self, smooth=1.0, weights=None):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
+        if weights is not None:
+            self.weights = torch.tensor(weights, dtype=torch.float32)
+        else:
+            self.weights = None
 
     def forward(self, y_pred, y_true):
         # Check shape sizes match
@@ -213,5 +208,11 @@ class DiceLoss(nn.Module):
         intersection = (y_pred * y_true).sum(2)
         union = y_pred.sum(2) + y_true.sum(2)
         dsc = (2. * intersection + self.smooth) / (union + self.smooth)
+
+        if self.weights is not None:
+            if len(self.weights) != num_classes:
+                raise ValueError(
+                    f"Expected weights of length {num_classes}, but got {len(self.weights)}")
+            dsc = dsc * self.weights.to(y_pred.device)
 
         return 1. - dsc.mean()

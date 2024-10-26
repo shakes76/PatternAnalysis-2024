@@ -20,13 +20,16 @@ class ADNIDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        image = Image.open(self.image_paths[idx]).convert('RGB')  # Load as RGB
+        try:
+            image = Image.open(self.image_paths[idx]).convert('RGB')  # Load as RGB
+        except Exception as e:
+            print(f'Error loading image {self.image_paths[idx]}: {e}')
+            return None
         label = self.labels[idx]
         if self.transform:
             image = self.transform(image)
         return image, label
-
-# Example usage
+    
 data_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),

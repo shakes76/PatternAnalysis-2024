@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-from modules import UNet, dice_coefficient, combined_loss  # Importing the UNet model and Dice coefficient
+from modules import UNet, dice_coefficient, combined_loss
 from dataset import load_and_preprocess_data
 
 # Set up the device
@@ -107,11 +107,14 @@ plt.title("Training and Validation Loss over Epochs")
 plt.legend()
 plt.savefig(image_save_path, dpi=300)
 
+"""
 # Evaluate on the test set
 model.eval()
 dice_scores = []
+average_dice_scores = []
+num_classes = 6
 
-threshold = 0.3 #0.5
+threshold = 0.5 #0.5
 with torch.no_grad():
     for test_images, test_labels in test_loader:
         test_images = test_images.to(device)
@@ -120,35 +123,47 @@ with torch.no_grad():
         outputs = model(test_images)  # Add batch dimension here
         outputs = (outputs > threshold).float()  # Threshold to binary mask
 
-        dice = dice_coefficient(outputs, test_labels.unsqueeze(0))  # Add batch dimension here
-        dice_scores.append(dice.item())
+        # Calculate Dice scores (per-class and average)
+        dice_scores_batch, avg_dice_score = dice_coefficient(outputs, test_labels, num_classes)
+        dice_scores.extend(dice_scores_batch.tolist())  # Add individual class scores for each sample
+        average_dice_scores.append(avg_dice_score)  # Store batch average Dice score
 
-# Calculate average Dice coefficient
-average_dice = np.mean(dice_scores)
-print(f"Average Dice Coefficient: {average_dice}")
+average_dice = np.mean(average_dice_scores)
+print(f"Average Dice Coefficient (New): {average_dice}")
+"""
 
-"""
-Most recent
-Epoch 1/10, Loss: 0.23343075289854368
-Validation Loss: 0.10325150577777839
-Epoch 2/10, Loss: 0.05923678628991138
-Validation Loss: 0.08438672075968191
-Epoch 3/10, Loss: 0.045439146195238735
-Validation Loss: 0.07679702478449747
-Epoch 4/10, Loss: 0.0403826468080199
-Validation Loss: 0.08032583369009466
-Epoch 5/10, Loss: 0.03544798415006039
-Validation Loss: 0.071999570915857
-Epoch 6/10, Loss: 0.03195893731870313
-Validation Loss: 0.07201780349644551
-Epoch 7/10, Loss: 0.029479183186435734
-Validation Loss: 0.09865361703447549
-Epoch 8/10, Loss: 0.027338157029041275
-Validation Loss: 0.08031065272818129
-Epoch 9/10, Loss: 0.025521949547117437
-Validation Loss: 0.09325386251670768
-Epoch 10/10, Loss: 0.023376164121445418
-Validation Loss: 0.09752481881843274
-Model saved to /home/Student/s4838078/model_saves/unet_model.pth
-Average Dice Coefficient: 0.17170812781242764
-"""
+# Evaluate on the test set
+model.eval()
+num_classes = 6
+dice_scores_per_class = [0] * num_classes  # Initialize a list to store total Dice scores for each class
+class_counts = [0] * num_classes  # To keep track of the number of batches for each class
+average_dice_scores = []
+dice_scores = []  # Initialize to store individual Dice scores for each batch
+threshold = 0.5
+
+with torch.no_grad():
+    for test_images, test_labels in test_loader:
+        test_images = test_images.to(device)
+        test_labels = test_labels.to(device)
+
+        outputs = model(test_images)
+        outputs = (outputs > threshold).float()  # Threshold to binary mask
+
+        # Calculate Dice scores (per-class and average)
+        dice_scores_batch, avg_dice_score = dice_coefficient(outputs, test_labels, num_classes)
+        dice_scores.extend(dice_scores_batch.tolist())
+        average_dice_scores.append(avg_dice_score)
+
+        # Accumulate Dice scores for each class
+        for i, dice_score in enumerate(dice_scores_batch):
+            dice_scores_per_class[i] += dice_score
+            class_counts[i] += 1
+
+# Calculate average Dice coefficient across all classes
+average_dice = np.mean(average_dice_scores)
+print(f"Overall Average Dice Coefficient: {average_dice}")
+
+# Calculate and print the average Dice score per class
+average_dice_per_class = [dice_scores_per_class[i] / class_counts[i] for i in range(num_classes)]
+for class_idx, avg_dice in enumerate(average_dice_per_class):
+    print(f"Average Dice Coefficient for Class {class_idx}: {avg_dice}")

@@ -63,15 +63,6 @@ class UNet(nn.Module):
 
         output = self.out_conv(conv1_1)
         return output
-    
-def dice_coefficient(pred, target, smooth=1e-6):
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
-    intersection = (pred_flat * target_flat).sum()
-
-    if pred_flat.sum() == 0 and target_flat.sum() == 0:
-        return 1.0  # If both are empty, Dice score is 1
-    return (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
 
 
 def dice_loss(pred, target, smooth=1e-6):
@@ -95,3 +86,62 @@ def combined_loss(pred, target, weight_ce=0.5, weight_dice=0.5):
 
     # Combined Loss
     return weight_ce * ce_loss + weight_dice * dice_loss_value
+
+
+def dice_coefficient(pred, target, num_classes, smooth=1e-6):
+    """
+    Calculates the Dice coefficient for multi-channel segmentation.
+    Args:
+        pred (torch.Tensor): Predicted tensor of shape [batch_size, num_classes, height, width]
+        target (torch.Tensor): Ground truth tensor of shape [batch_size, num_classes, height, width]
+        num_classes (int): Number of classes
+        smooth (float): Smoothing term to avoid division by zero
+
+    Returns:
+        dice_scores (torch.Tensor): Dice scores for each class
+        mean_dice (float): Mean Dice score across all classes
+    """
+
+    # Debug check for initial shapes of pred and target
+    print(f"Initial pred shape: {pred.shape}")
+    print(f"Initial target shape: {target.shape}")
+
+    # Ensure `pred` and `target` are in [batch_size, num_classes, height, width] shape
+    if target.dim() == 5:
+        target = target.squeeze(1)  # Remove the extra dimension if present
+        print(f"Target shape after squeeze: {target.shape}")
+
+    # Make sure target has channels in the second dimension
+    if target.shape[1] != num_classes:
+        target = target.permute(0, 3, 1, 2)
+        print(f"Target shape after permute: {target.shape}")
+
+     # Final shape check before computing Dice
+    print(f"Final pred shape: {pred.shape}")
+    print(f"Final target shape: {target.shape}")
+    assert pred.shape == target.shape, "Shapes of pred and target must match for Dice calculation."
+
+    # Ensure binary masks by thresholding predictions
+    pred = (pred > 0.5).float()
+    
+    # Initialize dice scores list
+    dice_scores = []
+    
+    # Calculate Dice for each class
+    for i in range(num_classes):
+        pred_flat = pred[:, i].contiguous().view(-1)
+        target_flat = target[:, i].contiguous().view(-1)
+
+        # Debug check for flattened shapes of each channel
+        print(f"Flattened pred shape for class {i}: {pred_flat.shape}")
+        print(f"Flattened target shape for class {i}: {target_flat.shape}")
+
+        intersection = (pred_flat * target_flat).sum()
+        dice_score = (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+        dice_scores.append(dice_score.item())
+
+    # Convert to tensor for easy averaging
+    dice_scores = torch.tensor(dice_scores)
+    mean_dice = dice_scores.mean().item()
+
+    return dice_scores, mean_dice

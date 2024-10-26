@@ -3,3 +3,4 @@
 data/
 ..bfg-report/
 *.pth
+dataset/

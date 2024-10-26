@@ -23,6 +23,8 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num
 model = GFNet(img_size=224, patch_size=16, num_classes=2, embed_dim=768, depth=8).to(device)  # Initialize GFNet
 criterion = nn.CrossEntropyLoss()
 optimiser = optim.AdamW(model.parameters(), lr=learning_rate)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=num_epochs)
+
 scaler = GradScaler() 
 
 for epoch in range(num_epochs):
@@ -48,6 +50,8 @@ for epoch in range(num_epochs):
         if (i + 1) % 100 == 0:
             print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(train_loader)}], Loss: {running_loss/100:.4f}')
             running_loss = 0.0
+        
+    scheduler.step()
 
     # Testin
     model.eval()

@@ -5,6 +5,7 @@ import torch.fft
 import math
 from functools import partial
 from collections import OrderedDict
+from torch.cuda.amp import GradScaler, autocast
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -31,6 +32,7 @@ class GlobalFilter(nn.Module):
         self.w = w
         self.h = h
 
+    @torch.jit.script
     def forward(self, x, spatial_size=None):
         B, N, C = x.shape
         if spatial_size is None:
@@ -55,8 +57,10 @@ class Block(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-
+        self.mlp = nn.Sequential(
+            self.norm2,
+            Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        )
     def forward(self, x):
         x = x + self.drop_path(self.mlp(self.norm2(self.filter(self.norm1(x)))))
         return x
@@ -114,7 +118,6 @@ class GFNet(nn.Module):
         
         self.norm = norm_layer(embed_dim)
 
-        # Representation layer
         if representation_size:
             self.num_features = representation_size
             self.pre_logits = nn.Sequential(OrderedDict([
@@ -124,7 +127,6 @@ class GFNet(nn.Module):
         else:
             self.pre_logits = nn.Identity()
 
-        # Classifier head
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
         if dropcls > 0:

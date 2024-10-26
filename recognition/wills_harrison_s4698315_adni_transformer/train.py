@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import itertools
 import os
+import yaml
 
 from predict import accuracy
 
@@ -24,12 +25,13 @@ def make_model():
     model = SwinTransformer(
         img_size=224, patch_size=4, in_chans=1, num_classes=2,
         embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
-        window_size=7, mlp_ratio=4, qkv_bias=True, qk_scale=None, drop_rate=0.0, attn_drop_rate=0.0,
-        drop_path_rate=0.2, norm_layer=partial(nn.LayerNorm, eps=1e-6)
+        window_size=7, mlp_ratio=4, qkv_bias=True, qk_scale=None, 
+        drop_path_rate=0.2, norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        drop_rate=0.3, attn_drop_rate=0
     )
     return model
 
-def train(patience=15, lr=1e-4, batch_size=64, show_plots=False, 
+def train(patience=50, lr=1e-4, batch_size=64, show_plots=False, 
           model_type='gfnet-big', num_epochs=20, weight_decay=0.01,
           save_model=True):
     
@@ -60,7 +62,7 @@ def train(patience=15, lr=1e-4, batch_size=64, show_plots=False,
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    model = make_model(model_type)
+    model = make_model()
     
     
     model.to(device)
@@ -69,7 +71,7 @@ def train(patience=15, lr=1e-4, batch_size=64, show_plots=False,
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     
     # cosine scheduler
-    #lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20, eta_min=1e-6)
+    lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50, eta_min=1e-6)
     
     # Lists to store loss values
     loss_values = []
@@ -137,12 +139,16 @@ def train(patience=15, lr=1e-4, batch_size=64, show_plots=False,
             early_stop = True
 
         # Step the learning rate scheduler after each epoch
-        # lr_scheduler.step()
+        lr_scheduler.step()
         
     # Plot the training and validation loss curves
     if show_plots:
         plt.plot(loss_values, label='Training Loss')
         plt.plot(val_loss_values, label='Validation Loss')
+        
+        # add mark where early stopping was triggered
+        plt.axvline(x=epoch-epochs_no_improve, color='r', linestyle='--', label='Early Stopping')
+        
         plt.title('Training and Validation Loss over Time')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
@@ -150,7 +156,7 @@ def train(patience=15, lr=1e-4, batch_size=64, show_plots=False,
         plt.show()
         
         
-    model = make_model(model_type)
+    model = make_model()
     model.load_state_dict(best_model)
     model.to(device)
     acc = accuracy(model, val_loader)
@@ -170,31 +176,30 @@ def train(patience=15, lr=1e-4, batch_size=64, show_plots=False,
         torch.save(best_model, f'models/{model_type}_{lr}_{weight_decay}_{batch_size}.pth')
 
 def main():
-    parameters = {
-        'lr': [1e-5],
-        'batch_size': [32],
-        'weight_decay': [0.005]
-    }
+    # Load configuration from config.yaml
+    with open("config.yaml", "r") as file:
+        config = yaml.safe_load(file)
     
+    parameters = config['parameters']
+    model_type = config.get('model_type', 'swin')
+    num_epochs = config.get('num_epochs', 100)
+    show_plots = config.get('show_plots', False)
+    save_model = config.get('save_model', False)
     
     # Generate all combinations of parameters
     param_values = [v for v in parameters.values()]
     param_combinations = list(itertools.product(*param_values))
-    model_type = 'swin'
     
     for lr, batch_size, weight_decay in param_combinations:
+        model_path = f"models/{model_type}_{lr}_{weight_decay}_{batch_size}.pth"
         
-        # check if the model has already been trained
-        if not os.path.exists(f'models/{model_type}_{lr}_{weight_decay}_{batch_size}.pth'):
-            train(lr=lr, batch_size=batch_size, model_type=model_type, show_plots=False,
-                  num_epochs=100, weight_decay=weight_decay, save_model=True)
-            
+        # Check if the model has already been trained
+        if not os.path.exists(model_path):
+            train(lr=lr, batch_size=batch_size, model_type=model_type, 
+                  show_plots=show_plots, num_epochs=num_epochs, 
+                  weight_decay=weight_decay, save_model=save_model)
         else:
-            print(f"Model with parameters {lr} {batch_size} {weight_decay} already trained.")
-            
-        
-    
-    
+            print(f"Model with parameters lr={lr}, batch_size={batch_size}, weight_decay={weight_decay} already trained.")
 
 if __name__ == '__main__':
     main()

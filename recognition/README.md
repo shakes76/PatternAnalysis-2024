@@ -147,7 +147,7 @@ Class 5: Dice = 0.8873
 ```python train.py```
 3. Monitor Training: Training progress, including loss values, will be displayed in the console. Model checkpoints will be saved after each epoch.
 
-# Evaluating the model
+## Evaluating the model
 1. Ensure Model Checkpoints are Available: The predict.py script will load the latest model checkpoint from the current directory.
 2. Run the Evaluation Script:
 ```python predict.py```

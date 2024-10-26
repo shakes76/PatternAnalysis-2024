@@ -40,7 +40,10 @@ def train(model, data, epochs=200):
 # Function to plot loss and accuracy
 def plot_loss_accuracy(losses, accuracies, epochs):
     fig, ax1 = plt.subplots()  
-
+    '''
+    Two line, blue one is the loss and red one is the accuracy
+    And over  each epoch
+    '''
     ax1.set_xlabel('Epochs')  
     ax1.set_ylabel('Loss', color='tab:blue') 
     ax1.plot(range(1, epochs + 1), losses, color='tab:blue', label='Loss')  
@@ -59,7 +62,7 @@ def plot_loss_accuracy(losses, accuracies, epochs):
 # Main function to run training
 def main():
     # Load the dataset
-    data_path = r"D:\HuaweiMoveData\Users\HUAWEI\Desktop\facebook.npz"  
+    data_path = r"(filename)facebook.npz"  
     graph_data = load_data(data_path)  
 
     # Initialize model
@@ -70,11 +73,7 @@ def main():
 
     # Train the model
     losses, accuracies = train(model, graph_data)
-
-
     plot_loss_accuracy(losses, accuracies, epochs=200)
-
-
     torch.save(model.state_dict(), "trained_gnn_model.pth")
 
 # Run the main function if this script is executed

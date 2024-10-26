@@ -5,8 +5,10 @@ from matplotlib import pyplot
 import numpy as np
 
 l_rate = 0.005
-epochs = 30
+epochs = 40
 
+
+"""
 X_path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_"
 train_X = data.load(X_path + "train")
 validate_X = data.load(X_path + "validate")
@@ -22,6 +24,11 @@ train_Y = data.load(seg_path + "train", label=True)
 validate_Y = data.load(seg_path + "validate", label=True)
 
 test_Y = data.load(seg_path + "test", label=True)
+"""
+
+path = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/"
+train_X, validate_X, test_X = data.get_X_data(path)
+train_Y, validate_Y, test_Y = data.get_Y_data(path)
 print("X shapes")
 print(train_X.shape)
 print(validate_X.shape)
@@ -29,14 +36,14 @@ print(test_X.shape)
 print("X is :")
 print(np.amin(train_X))
 print(np.amax(train_X))
-print(np.amin(test_X))
-print(np.amax(test_X))
+print(np.amin(validate_X))
+print(np.amax(validate_X))
 print(train_X[1,1:5,1:5])
 print("Y is")
-print(np.amin(train_Y))
-print(np.amax(train_Y))
-print(np.amin(test_Y))
-print(np.amax(test_Y))
+print(np.amin(validate_Y))
+print(np.amax(validate_Y))
+print(np.amin(validate_Y))
+print(np.amax(validate_Y))
 print("Labeled shapes")
 print(train_Y.shape)
 print(validate_Y.shape)

@@ -73,7 +73,6 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
         affines.append(affine)
         if i > 20 and early_stop:
             break
-    print("H")
     if getAffines:
         return images, affines
     else:
@@ -108,3 +107,28 @@ class DataGenerator(tf.keras.utils.Sequence):
             batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
             batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
             return batch_x, batch_y
+
+def get_X_data(path, only_test = False):
+    path += "keras_slices_"
+    if not only_test:
+        train_X = load(path + "train")
+        validate_X = load(path + "validate")
+    test_X = load(path + "test")
+    if not only_test:
+        train_X = process_data(train_X)
+        validate_X = process_data(validate_X)
+    test_X = process_data(test_X)
+    if not only_test:
+        return train_X, validate_X, test_X
+    return test_X
+
+def get_Y_data(path, only_test = False):
+    path += "keras_slices_seg_"
+    if not only_test:
+        train_Y = load(path + "train", label=True)
+        validate_Y = load(path + "validate", label=True)
+    test_Y = load(path + "test", label=True)
+    
+    if only_test:
+        return test_Y
+    return train_Y, validate_Y, test_Y

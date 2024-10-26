@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 print("Loading training, validation and test datasets...")
 train_dataset, val_dataset = get_train_validation_dataset()
 test_dataset = get_test_dataset()
-
 train_labels = extract_labels_from_dataset(train_dataset)
 test_labels = extract_labels_from_dataset(test_dataset)
 

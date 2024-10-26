@@ -9,6 +9,9 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import torch
+from torchvision import transforms
+import torchvision.transforms.functional as TF
 
 # Convert an array into categorical channels
 def to_channels(arr: np.ndarray, num_classes: int, dtype=np.uint8) -> np.ndarray:
@@ -99,7 +102,7 @@ class SegmentationData(Dataset):
     """
     A custom dataset class for loading and handling segmentation data.
     """
-    def __init__(self, image_dir, label_dir, norm_image=False, categorical=False, dtype=np.float32):
+    def __init__(self, image_dir, label_dir, norm_image=False, categorical=False, dtype=np.float32, augment=False):
         """
         Initializes the dataset by loading images and labels from specified directories.
 
@@ -110,6 +113,19 @@ class SegmentationData(Dataset):
             categorical (bool): If True, convert labels to one-hot categorical format.
             dtype (numpy data type): Desired data type for images and labels.
         """
+
+        self.augment = augment
+        # Define augmentation transforms
+        if self.augment:
+            self.transforms = transforms.Compose([
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+                transforms.RandomRotation(15),
+                # Additional transforms can be added here
+            ])
+        else:
+            self.transforms = None
+
         self.image_filenames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir)
                                        if f.endswith('.nii') or f.endswith('.nii.gz')])
         self.label_filenames = sorted([os.path.join(label_dir, f) for f in os.listdir(label_dir)
@@ -167,15 +183,21 @@ class SegmentationData(Dataset):
         Returns:
             tuple: A tuple containing the image and label tensors.
         """
-        image = self.images[idx]
-        label = self.labels[idx]
-        # Add channel dimension if missing
-        if len(image.shape) == 2:
-            image = image[np.newaxis, :]
-        if len(label.shape) == 2:
-            label = label[np.newaxis, :]
-        elif len(label.shape) == 3 and self.num_classes > 1:
-            label = label.transpose(2, 0, 1)  # Move channels to first dimension
+        image, label = self.images[idx], self.labels[idx]
+        # Convert numpy arrays to PIL Images for transformations
+        if self.transforms:
+            # Set Random
+            seed = np.random.randint(2147483647)
+            torch.manual_seed(seed)
+            # Change image format
+            image = TF.to_pil_image(image)
+            label = TF.to_pil_image(label)
+            # Transform
+            image = self.transforms(image)
+            label = self.transforms(label)
+            # Convert back to tensors
+            image = np.array(image, dtype=np.float32) / 255.0
+            label = np.array(label, dtype=np.float32) # Categorical, so don't scale values
         return image, label
 
     def plot_img_and_labels(self, idx):

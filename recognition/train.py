@@ -5,7 +5,7 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from modules import UNet
+from modules import SimpleUNet
 from dataset import SegmentationData  # Ensure this is the path to your SegmentationData class
 from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
@@ -26,28 +26,30 @@ print(f"Using device: {device}")
 print("Loading Training Data")
 train_dataset = SegmentationData(
     train_image_dir, train_label_dir,
-    norm_image=False, categorical=True, dtype=np.float32
+    norm_image=False, categorical=True, dtype=np.float32, augment=False
 )
 print("Loading Validation Data")
 val_dataset = SegmentationData(
     val_image_dir, val_label_dir,
-    norm_image=False, categorical=True, dtype=np.float32
+    norm_image=False, categorical=True, dtype=np.float32, augment=False
 )
 
 # Create dataloaders
+print("Creating Training Dataloader")
 train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+print("Creating Training Validation Dataloader")
 val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
 
 # Initialize the model
 n_channels = 1  # Assuming input images are grayscale
 n_classes = train_dataset.num_classes  # Number of classes in the dataset
-model = UNet(n_channels=n_channels, n_classes=n_classes)
+model = SimpleUNet(n_channels=n_channels, n_classes=n_classes, dropout_p=0.3)
 model.to(device)
 
 # Define loss function and optimizer
 criterion = nn.CrossEntropyLoss()  # For multi-class segmentation
-optimizer = Adam(model.parameters(), lr=1e-4)
-scheduler = StepLR(optimizer, step_size=25, gamma=0.1)
+optimizer = Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
 
 # Training loop
 num_epochs = 50

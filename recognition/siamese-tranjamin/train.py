@@ -29,12 +29,12 @@ BALANCE_SPLIT = 0.5
 LAYERS_TO_UNFREEZE = -1
 LEARNING_RATE = 0.001
 EMBEDDINGS_EPOCHS = 20
-CLASSIFICATION_EPOCHS = 80
+CLASSIFICATION_EPOCHS = 50
 
 # similarity_loss = losses.TripletMarginLoss(margin=MARGIN)
 # similarity_optim = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 # miner = miners.TripletMarginMiner(margin=MARGIN, type_of_triplets="semihard")
-similarity_loss = tfa.losses.TripletSemiHardLoss()
+similarity_loss = tfa.losses.TripletSemiHardLoss(margin=MARGIN)
 similarity_optim = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 
 classification_loss = tf.keras.losses.BinaryCrossentropy()
@@ -59,9 +59,9 @@ df_full = FullMelanomaDataset(
 )
 
 # grab the relevent dataset
-dataset = df.dataset
-dataset_val = df.dataset_val
-dataset_test = df.dataset_test
+dataset = df_full.dataset
+dataset_val = df_full.dataset_val
+dataset_test = df_full.dataset_test
 
 # grab the pretrained model
 pretrained_model = tf.keras.applications.InceptionV3(

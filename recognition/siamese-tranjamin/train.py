@@ -6,11 +6,11 @@ from modules import *
 from dataset import BalancedMelanomaDataset, FullMelanomaDataset
 
 # hyperparameters
-BATCH_SIZE = 256
+BATCH_SIZE = 64
 IMAGE_SHAPE = (256, 256)
 VALIDATION_SPLIT = 0.1
 TESTING_SPLIT = 0.2
-BALANCE_SPLIT = 0.98
+BALANCE_SPLIT = True
 
 # datasets
 df = BalancedMelanomaDataset(
@@ -30,9 +30,9 @@ df_full = FullMelanomaDataset(
 )
 
 # grab the relevent dataset
-dataset = df.dataset
-dataset_val = df.dataset_val
-dataset_test = df.dataset_test
+dataset = df_full.dataset
+dataset_val = df_full.dataset_val
+dataset_test = df_full.dataset_test
 
 # define siamese network
 model = SiameseNetwork(image_shape=IMAGE_SHAPE)

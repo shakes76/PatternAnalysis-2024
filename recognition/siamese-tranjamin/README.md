@@ -67,6 +67,10 @@ However, when analysing the embeddings space, it wasn't clear that the metric le
 
 To compare, the TSNE graph of the MNIST classifier in `mnist.py` is shown below. This clearly shows that the classes have been separated into distinct clusters, and this is along the lines of what is to be expected for the Melanoma dataset.
 
+#### A note on accuracy
+
+Technically, the requirements of this model is to meet 80% accuracy. Given how unbalanced the original dataset is, this can be trivially solved by classifying everything as benign. However, this would defeat the purpose of this model. Therefore, this metric for accuracy will instead be evaluated on a 50/50 balanced dataset.
+
 ## Dependencies
 This network relies on the use of tensorflow_addons, which is deprecated as of mid-2024. For compatibility reasons, this model therefore uses an older version of Python (3.11.1) and numpy/tensorflow. To install, you must first have Python 3.11.1, or create a virtual environment that supports it. All relevant packages can then be installed using `pip install -r requirements.txt`. Or, instead, the following key ones need to be installed:
 

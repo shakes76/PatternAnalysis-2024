@@ -65,16 +65,12 @@ class BalancedMelanomaDataset():
         dataset = dataset.skip(num_val).take(num_total - num_val)
 
         # even out the dataset split
-        if balance_split is not None:
-            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1)))
-            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0)))
+        if balance_split:
+            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(1500)
+            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(1500)
             
-
-            dataset = tf.data.Dataset.sample_from_datasets(
-                [dataset_positive, dataset_negative],
-                weights=[balance_split, 1 - balance_split],
-                rerandomize_each_iteration=True
-            )
+            dataset = dataset_positive.concatenate(dataset_negative).shuffle(3000)
+            dataset = dataset.take(3000)
 
         # batch the data
         dataset = dataset.batch(batch_size)
@@ -142,24 +138,25 @@ class FullMelanomaDataset():
             tf.keras.layers.GaussianNoise(0.15)
         ])
 
-        dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
-
         num_total = tf.data.Dataset.cardinality(dataset).numpy()
         num_val = int(num_total * validation_split)
         dataset_val = dataset.take(num_val)
         dataset = dataset.skip(num_val).take(num_total - num_val)
 
         # even out the dataset split
-        if balance_split is not None:
-            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1)))
-            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0)))
+        if balance_split:
+            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(1500)
+            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(1500)
             
-
+            # dataset = dataset_positive.concatenate(dataset_negative)
             dataset = tf.data.Dataset.sample_from_datasets(
                 [dataset_positive, dataset_negative],
-                weights=[balance_split, 1 - balance_split],
-                rerandomize_each_iteration=True
+                weights=[0.5, 0.5]
             )
+
+            dataset = dataset.take(3000)
+
+        dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
 
         # batch the data
         dataset = dataset.batch(batch_size)

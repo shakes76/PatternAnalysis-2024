@@ -15,10 +15,10 @@ class SiameseNetwork():
     '''
     # hyperparameters
     MARGIN = 0.4
-    LAYERS_TO_UNFREEZE = -2
+    LAYERS_TO_UNFREEZE = -1
     LEARNING_RATE = 0.001
     EMBEDDINGS_EPOCHS = 10
-    CLASSIFICATION_EPOCHS = 50
+    CLASSIFICATION_EPOCHS = 20
 
     # loss functions to use for similarity
     similarity_loss = tfa.losses.TripletSemiHardLoss(margin=MARGIN)
@@ -82,11 +82,12 @@ class SiameseNetwork():
         classifier_model.add_metric(tf.keras.metrics.TrueNegatives())
         classifier_model.add_metric(tf.keras.metrics.FalsePositives())
         classifier_model.add_metric(tf.keras.metrics.FalseNegatives())
+        classifier_model.add_metric(tf.keras.metrics.AUC(curve="PR"))
 
         self.classifier = classifier_model
 
         # enable mixed precision
-        NeuralNetwork.NeuralNetwork.enable_mixed_precision()
+        # NeuralNetwork.NeuralNetwork.enable_mixed_precision()
         
     def train_similarity(self, dataset, dataset_val):
         # compile model

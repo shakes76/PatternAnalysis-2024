@@ -1,81 +1,152 @@
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-class DoubleConv(nn.Module):
-    """两次卷积操作：Conv3D -> ReLU -> Conv3D -> ReLU"""
-    def __init__(self, in_channels, out_channels):
-        super(DoubleConv, self).__init__()
-        self.double_conv = nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm3d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm3d(out_channels),
-            nn.ReLU(inplace=True)
+# Hyper parameters
+negativeSlope = 10 ** -2
+pDrop = 0.3
+
+
+class Improved3DUnet(nn.Module):
+    def __init__(self, in_channels=1, out_channels=1, features=[16, 32, 64, 128, 256]):
+        super(Improved3DUnet, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.features = features
+        self.features_reversed = list(reversed(features))
+
+        self.lrelu = nn.LeakyReLU(negative_slope=negativeSlope)
+        self.dropout = nn.Dropout3d(p=pDrop)
+        self.upScale = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True)
+        self.softmax = nn.Softmax(dim=1)
+
+        self.convs_context = nn.ModuleList()
+        self.contexts = nn.ModuleList()
+        self.norm_relus_context = nn.ModuleList()
+        self.convs_norm_relu_local = nn.ModuleList()
+        self.convs_local = nn.ModuleList()
+        self.upSamples = nn.ModuleList()
+
+        for i in range(5):
+            if i == 0:
+                self.convs_context.append(
+                    nn.Conv3d(self.in_channels, self.features[i], kernel_size=3, stride=1, padding=1, bias=False))
+                self.convs_local.append(
+                    nn.Conv3d(self.features_reversed[i + 1], self.features_reversed[i + 1], kernel_size=1, stride=1,
+                              padding=0, bias=False))
+            elif i == 4:
+                self.convs_context.append(
+                    nn.Conv3d(self.features[i - 1], self.features[i], kernel_size=3, stride=2, padding=1, bias=False))
+                self.convs_local.append(
+                    nn.Conv3d(self.features_reversed[i - 1], self.out_channels, kernel_size=1, stride=1, padding=0,
+                              bias=False))
+            else:
+                self.convs_context.append(
+                    nn.Conv3d(self.features[i - 1], self.features[i], kernel_size=3, stride=2, padding=1, bias=False))
+                self.convs_local.append(
+                    nn.Conv3d(self.features_reversed[i - 1], self.features_reversed[i], kernel_size=1, stride=1,
+                              padding=0, bias=False))
+
+            conv = self.norm_lrelu_conv(features[i], self.features[i])
+            self.contexts.append(self.context(conv, conv))
+            if i < 4:
+                norm_lrelu = self.norm_lrelu(self.features[i])
+                self.norm_relus_context.append(norm_lrelu)
+
+        for p in range(4):
+            self.convs_norm_relu_local.append(
+                self.conv_norm_lrelu(self.features_reversed[p], self.features_reversed[p]))
+            self.upSamples.append(self.up_sample(self.features_reversed[p], self.features_reversed[p + 1]))
+
+        self.norm_local0 = nn.InstanceNorm3d(self.features_reversed[1])
+        self.deep_segment_2_conv = nn.Conv3d(self.features_reversed[1], self.out_channels, kernel_size=1, stride=1,
+                                             padding=0, bias=False)
+        self.deep_segment_3_conv = nn.Conv3d(self.features_reversed[2], self.out_channels, kernel_size=1, stride=1,
+                                             padding=0, bias=False)
+
+    def up_sample(self, feat_in, feat_out):
+        return nn.Sequential(
+            nn.InstanceNorm3d(feat_in),
+            self.lrelu,
+            self.upScale,
+            nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.InstanceNorm3d(feat_out),
+            self.lrelu
+        )
+
+    def context(self, conv1, conv2):
+        return nn.Sequential(
+            conv1,
+            self.dropout,
+            conv2
+        )
+
+    def norm_lrelu_conv(self, feat_in, feat_out):
+        return nn.Sequential(
+            nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.InstanceNorm3d(feat_out),
+            self.lrelu
+        )
+
+    def norm_lrelu(self, feat):
+        return nn.Sequential(
+            nn.InstanceNorm3d(feat),
+            self.lrelu
+        )
+
+    def conv_norm_lrelu(self, feat_in, feat_out):
+        return nn.Sequential(
+            nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.InstanceNorm3d(feat_out),
+            nn.LeakyReLU()
         )
 
     def forward(self, x):
-        return self.double_conv(x)
+        residuals = dict()
+        skips = dict()
+        out = x
 
-class ImprovedUNet3D(nn.Module):
-    """改进的3D UNet模型"""
-    def __init__(self, in_channels, out_channels):
-        super(ImprovedUNet3D, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+        # Contextualization level 1 to 5
+        for i in range(5):
+            out = self.convs_context[i](out)
+            residuals[i] = out
+            out = self.contexts[i](out)
+            out += residuals[i]
+            if i < 4:
+                out = self.norm_relus_context[i](out)
+                skips[i] = out
 
-        self.down1 = DoubleConv(in_channels, 64)
-        self.pool1 = nn.MaxPool3d(2)
-        self.down2 = DoubleConv(64, 128)
-        self.pool2 = nn.MaxPool3d(2)
-        self.down3 = DoubleConv(128, 256)
-        self.pool3 = nn.MaxPool3d(2)
-        self.down4 = DoubleConv(256, 512)
-        self.pool4 = nn.MaxPool3d(2)
+        # Localization level 1
+        out = self.upSamples[0](out)
+        out = self.convs_local[0](out)
+        out = self.norm_local0(out)
+        out = self.lrelu(out)
 
-        self.bottleneck = DoubleConv(512, 1024)
+        # Localization level 2-5
+        for j in range(4):
+            out = torch.cat([out, skips[3 - j]], dim=1)
+            out = self.convs_norm_relu_local[j](out)
+            if j == 1:
+                ds2 = out
+            elif j == 2:
+                ds3 = out
+            if j == 3:
+                out = self.convs_local[j + 1](out)
+            else:
+                out = self.convs_local[j + 1](out)
+            if j < 3:
+                out = self.upSamples[j + 1](out)
 
-        self.up1 = nn.ConvTranspose3d(1024, 512, kernel_size=2, stride=2)
-        self.conv1 = DoubleConv(1024, 512)
-        self.up2 = nn.ConvTranspose3d(512, 256, kernel_size=2, stride=2)
-        self.conv2 = DoubleConv(512, 256)
-        self.up3 = nn.ConvTranspose3d(256, 128, kernel_size=2, stride=2)
-        self.conv3 = DoubleConv(256, 128)
-        self.up4 = nn.ConvTranspose3d(128, 64, kernel_size=2, stride=2)
-        self.conv4 = DoubleConv(128, 64)
+        # Segment layer summation
+        ds2_conv = self.deep_segment_2_conv(ds2)
+        ds2_conv_upscale = self.upScale(ds2_conv)
 
-        self.out_conv = nn.Conv3d(64, out_channels, kernel_size=1)
+        ds3_conv = self.deep_segment_3_conv(ds3)
+        ds2_ds3_upscale = ds2_conv_upscale + ds3_conv
 
-    def forward(self, x):
-        # 编码路径
-        x1 = self.down1(x)
-        x2 = self.pool1(x1)
-        x3 = self.down2(x2)
-        x4 = self.pool2(x3)
-        x5 = self.down3(x4)
-        x6 = self.pool3(x5)
-        x7 = self.down4(x6)
-        x8 = self.pool4(x7)
+        ds2_ds3_upscale_upscale = self.upScale(ds2_ds3_upscale)
+        out += ds2_ds3_upscale_upscale
 
-        # Bottle neck
-        x9 = self.bottleneck(x8)
+        # Sigmoid Layer
+        out = torch.sigmoid(out)
 
-        # 解码路径
-        x10 = self.up1(x9)
-        x10 = torch.cat([x7, x10], dim=1)
-        x11 = self.conv1(x10)
-        x12 = self.up2(x11)
-        x12 = torch.cat([x5, x12], dim=1)
-        x13 = self.conv2(x12)
-        x14 = self.up3(x13)
-        x14 = torch.cat([x3, x14], dim=1)
-        x15 = self.conv3(x14)
-        x16 = self.up4(x15)
-        x16 = torch.cat([x1, x16], dim=1)
-        x17 = self.conv4(x16)
-
-        output = self.out_conv(x17)
-        return output
-
+        return out

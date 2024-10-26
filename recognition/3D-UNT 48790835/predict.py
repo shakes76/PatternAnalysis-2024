@@ -1,42 +1,61 @@
 import torch
-from modules import ImprovedUNet3D
-from dataset import NiftiDataset
-import nibabel as nib
-import numpy as np
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
+from dataset import Medical3DDataset, get_transform
+import modules
+import train
+import os
+import time
 
-# 设置字体
-font_path = '/mnt/data/file-ngwyeoEN29l1M3O1QpdxCwkj'
-font_prop = font_manager.FontProperties(fname=font_path)
+# Define paths for test data
+TEST_IMAGES_PATH = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon"
+TEST_LABELS_PATH = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_labels_anon"
 
-# 加载模型
-model = ImprovedUNet3D(in_channels=1, out_channels=2)
-model.load_state_dict(torch.load('improved_unet3d.pth'))
-model.eval()
+def main():
+    # Set device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if not torch.cuda.is_available():
+        print("CUDA not available, using CPU")
 
-# 加载测试数据
-test_images = ['path_to_test_image1.nii', 'path_to_test_image2.nii']  # 请根据需要替换路径
-test_dataset = NiftiDataset(test_images)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
+    # Load test dataset
+    testDataSet = Medical3DDataset(TEST_IMAGES_PATH, TEST_LABELS_PATH, get_transform())
+    testDataloader = DataLoader(testDataSet, batch_size=train.batchSize, shuffle=False)
 
-# 进行预测并可视化结果
-with torch.no_grad():
-    for idx, images in enumerate(test_loader):
-        outputs = model(images)
-        prediction = torch.argmax(outputs, dim=1).squeeze().numpy()
+    # Load trained model
+    model = modules.Improved2DUnet()
+    model.load_state_dict(torch.load(train.modelPath))
+    model.to(device)
+    print("Model successfully loaded.")
 
-        # 可视化中间切片
-        slice_idx = prediction.shape[2] // 2
-        plt.figure(figsize=(12, 6))
-        plt.subplot(1, 2, 1)
-        plt.imshow(images.squeeze().numpy()[:, :, slice_idx], cmap='gray')
-        plt.title('Input Image', fontproperties=font_prop)
-        plt.subplot(1, 2, 2)
-        plt.imshow(prediction[:, :, slice_idx], cmap='jet')
-        plt.title('Predicted Segmentation', fontproperties=font_prop)
-        plt.show()
+    # Perform testing
+    test(testDataloader, model, device)
 
-        # 保存预测结果为Nifti文件
-        pred_img = nib.Nifti1Image(prediction.astype(np.uint8), affine=np.eye(4))
-        nib.save(pred_img, f'prediction_{idx}.nii')
+def test(dataLoader, model, device):
+    losses_validation = []
+    dice_similarities_validation = []
+
+    print("> Test inference started")
+    start = time.time()
+    model.eval()
+    with torch.no_grad():
+        for step, (images, labels) in enumerate(dataLoader):
+            images = images.to(device)
+            labels = labels.to(device)
+
+            # Get model outputs
+            outputs = model(images)
+            losses_validation.append(train.dice_loss(outputs, labels).item())
+            dice_similarities_validation.append(train.dice_coefficient(outputs, labels).item())
+
+            # Save segmentations for the first batch
+            if step == 0:
+                train.save_segments(images, labels, outputs, numComparisons=9, test=True)
+
+        print(f'Test Loss: {train.get_average(losses_validation):.5f}, '
+              f'Test Average Dice Similarity: {train.get_average(dice_similarities_validation):.5f}')
+    end = time.time()
+    elapsed = end - start
+    print(f"Test inference took {elapsed/60:.2f} minutes in total")
+
+if __name__ == "__main__":
+    main()

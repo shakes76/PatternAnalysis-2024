@@ -18,8 +18,8 @@ learning_rate = 0.001
 batch_size = 1  # 由于3D数据较大，batch_size设置为1，避免内存不足
 
 # 定义文件夹路径
-labels_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/未命名文件夹/Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/data/HipMRI_study_complete_release_v1/semantic_labels_anon'
-mrs_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/未命名文件夹/Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon'
+labels_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_labels_anon'
+mrs_dir = '//Users/qiuhan/Desktop/UQ/3710/Lab3/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon'
 
 # 获取所有图像和标签文件
 train_images = sorted([f for f in os.listdir(mrs_dir) if f.endswith('.nii')])

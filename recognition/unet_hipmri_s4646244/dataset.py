@@ -73,11 +73,11 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
 baseDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/'
 testDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_test/'
-trainDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_train.large/'
+trainDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_train/'
 validateDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_validate/'
 
 testSegDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_test/'
-trainSegDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_train.large/'
+trainSegDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_train/'
 validateSegDir = '/home/kankuna/Documents/COMP3710DATA/HipMRI_study_keras_slices_data/keras_slices_seg_validate/'
 
 # Uncomment for rangpur and comment for local

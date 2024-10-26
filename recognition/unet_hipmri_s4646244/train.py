@@ -27,16 +27,14 @@ learn_rate_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patienc
 
 early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3, restore_best_weights = True)
 
-# Set up the model from the modules file
 unetModel = unet()
-#unetModel.compile(optimizer=Adam(learning_rate=0.0001), loss=BinaryCrossentropy(), metrics = ['accuracy',dice_metric])
 unetModel.compile(optimizer=Adam(learning_rate=0.0001), loss=combined_loss, metrics=[dice_metric])
 
 #unetModel.summary()
 
 # Run the training on the model
 trainResults = unetModel.fit(trainImages, trainSegImages, validation_data = (validateImages, validateSegImages), 
-                        batch_size = 2, epochs=3, callbacks=[early_stopping, learn_rate_scheduler], verbose=1)
+                        batch_size = 16, epochs=2, callbacks=[early_stopping, learn_rate_scheduler], verbose=1)
 
 # Run the trained model on the test datasets 
 testResults = unetModel.evaluate(testImages, testSegImages, batch_size = 1)

@@ -27,20 +27,20 @@ The left half of this figure depicts the encoder of the 2D UNet model, and the r
 
 # Plots
 Here is the output from the uploaded saved model:
-![Terminal Output](/Finalised/TerminalOutput.png)
+![Terminal Output](Finalised/TerminalOutput.png)
 and the associated loss plot:
-![Loss plot over epochs](/Finalised/loss_plot.png)
+![Loss plot over epochs](Finalised/loss_plot.png)
 
 These are the dice scores per class, as well as some visualisations of the predicted masks:
-![Average Dice Scores Per Class](/Finalised/average_dice_score_per_class.png)
-![Channel 0](/Finalised/predicted_mask_channel_0.png)
-![Channel 1](/Finalised/predicted_mask_channel_1.png)
-![Channel 2](/Finalised/predicted_mask_channel_2.png)
-![Channel 3](/Finalised/predicted_mask_channel_3.png)
+![Average Dice Scores Per Class](Finalised/average_dice_score_per_class.png)
+![Channel 0](Finalised/predicted_mask_channel_0.png)
+![Channel 1](Finalised/predicted_mask_channel_1.png)
+![Channel 2](Finalised/predicted_mask_channel_2.png)
+![Channel 3](Finalised/predicted_mask_channel_3.png)
 
 Channels 4 and 5 are blank for this specific image:
-![Channel 4](/Finalised/predicted_mask_channel_4.png)
-![Channel 5](/Finalised/predicted_mask_channel_5.png)
+![Channel 4](Finalised/predicted_mask_channel_4.png)
+![Channel 5](Finalised/predicted_mask_channel_5.png)
 ---
 
 # Preprocessing and Data Splits

@@ -4,7 +4,8 @@ This repository contains a TensorFlow Keras implimentation of a Binary classific
 #### Files: 
 dataset.py    
 - A file used to read in the .nii files into training, validation and test sets
-modules.py    
+modules.py   
+
 - A file containing the Unet architecture, including the Encoder, decoder and bottleneck 
 
 train.py
@@ -13,6 +14,9 @@ train.py
 predict.py
 - A file to show how well the Unet predicts test images
 
+#### Folders
+Unet_images
+- A folder containing the testing results of running different epochs
 
 ### Model 
 ###### Filters
@@ -37,16 +41,20 @@ One last convolution using the sigmoid function is used to complete the binary c
 The Unet is trained with an adam optimiser with an initial learning rate of 0.0001. It uses a combined loss function that consists of binary cross entropy and dice loss as this resulted in the best performance. 
 The training also uses early stoppage, this stops the training when the validation loss performance does not increase after three consecutive epochs.
 A learning rate scheduler is also used to monitor the validation loss, if the validation does not improve after two epochs the learning rate is halved.
-In the results only six epochs were used to reduce the training time, If it were to be done again 20 epochs would be used to make sure that the model converges but doesnt overtrain.
+In the results twelve epochs were used to reduce the training time however only 6 were run as the model stopped early.
 It also uses a validation set to evaluate performance after each epoch, helping to monitor overfitting by checking how well the model performs on new data.
 
 ### Testing 
 After the model is trained it then is given new data to segment. This data is  
 
-
 ### Performance
+The model was run using a batch size of four and twelve epochs, only six were run as it stopped early. 
+The results for the model being trained on three and six epochs can be seen in the Unet_images folder.
 
-
+The model is very good at binary segmentaion of the prostate cancer images, If i had more time I would convert it to do multi class segmentation.
+It segments most of the regions well except very small areas.
+It can be seen that the mean dice test score is just above 0.65 however there are many datapoints that fall below this region.
+When looking at the dice coefficents over each epoch it sharply increases and then slowly tapers off, this is the same for the loss function except it sharply decreases. 
 
 #### Required dependencies 
 - TensorFlow (for Keras layers, models, and callbacks)

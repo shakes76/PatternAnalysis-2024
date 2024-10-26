@@ -32,7 +32,7 @@ def to_channels(arr: np.ndarray, num_classes: int, dtype=np.uint8) -> np.ndarray
     return res
 
 # Load medical images with optional categorical and affine handling
-def load_data_2D(imageNames, target_shape=(256, 128), normImage=False, categorical=False, dtype=np.float32,
+def load_data_2D(imageNames, pc=100, target_shape=(256, 128), normImage=False, categorical=False, dtype=np.float32,
                  getAffines=False, early_stop=False, num_classes=None):
     """
     Load and preprocess 2D medical images, with options for normalization and categorical encoding.
@@ -54,6 +54,8 @@ def load_data_2D(imageNames, target_shape=(256, 128), normImage=False, categoric
     # Determine the number of images and pre-allocate arrays
     num = len(imageNames)
     rows, cols = target_shape
+    # early stopping numbers
+    num_imgs_cap = int((pc*num)/100)
 
     # If categorical, num_classes must be specified
     if categorical and num_classes is None:
@@ -89,7 +91,7 @@ def load_data_2D(imageNames, target_shape=(256, 128), normImage=False, categoric
         # Collect the affine matrix
         affines.append(affine)
         # Stop early if specified
-        if i > 20 and early_stop:
+        if i > num_imgs_cap and early_stop:
             break
     # Return images and affines
     if getAffines:
@@ -102,7 +104,7 @@ class SegmentationData(Dataset):
     """
     A custom dataset class for loading and handling segmentation data.
     """
-    def __init__(self, image_dir, label_dir, norm_image=False, categorical=False, dtype=np.float32, augment=False):
+    def __init__(self, image_dir, label_dir, norm_image=False, categorical=False, dtype=np.float32, augment=False, pc=100, early_stop=False, num_classes=None):
         """
         Initializes the dataset by loading images and labels from specified directories.
 
@@ -124,23 +126,31 @@ class SegmentationData(Dataset):
                 # Additional transforms can be added here
             ])
         else:
+            print("No transforms used.")
             self.transforms = None
 
         self.image_filenames = sorted([os.path.join(image_dir, f) for f in os.listdir(image_dir)
                                        if f.endswith('.nii') or f.endswith('.nii.gz')])
         self.label_filenames = sorted([os.path.join(label_dir, f) for f in os.listdir(label_dir)
                                        if f.endswith('.nii') or f.endswith('.nii.gz')])
+
         print(f"Image Dir {image_dir}: {len(self.image_filenames)} images")
         print(f"Label Dir {label_dir}: {len(self.label_filenames)} labels")
 
-        # Collect all unique labels to determine the total number of classes
-        self.num_classes = self._determine_num_classes()
-        print(f"Total number of classes in the dataset: {self.num_classes}")
+        if early_stop:
+            print(f"Using first {pc}% of images from each of these sets.")
 
-        self.images, _ = load_data_2D(self.image_filenames, normImage=norm_image, categorical=False, dtype=dtype)
+        if num_classes:
+            self.num_classes = num_classes
+        else:
+            # Collect all unique labels to determine the total number of classes
+            self.num_classes = self._determine_num_classes()
+            print(f"Total number of classes in the dataset: {self.num_classes}")
+
+        self.images, _ = load_data_2D(self.image_filenames, pc=pc, normImage=norm_image, categorical=False, dtype=dtype, early_stop=early_stop)
         # For labels, set categorical=True to get one-hot encoding
-        self.labels, _ = load_data_2D(self.label_filenames, normImage=False, categorical=categorical,
-                                      dtype=dtype, num_classes=self.num_classes)
+        self.labels, _ = load_data_2D(self.label_filenames, pc=pc, normImage=False, categorical=categorical,
+                                      dtype=dtype, num_classes=self.num_classes, early_stop=early_stop)
         if not categorical:
             self.labels = (self.labels > 0).astype(dtype)
 
@@ -184,6 +194,15 @@ class SegmentationData(Dataset):
             tuple: A tuple containing the image and label tensors.
         """
         image, label = self.images[idx], self.labels[idx]
+
+        # Add channel dimension if missing
+        if len(image.shape) == 2:
+            image = image[np.newaxis, :]
+        if len(label.shape) == 2:
+            label = label[np.newaxis, :]
+        elif len(label.shape) == 3 and self.num_classes > 1:
+            label = label.transpose(2, 0, 1)  # Move channels to first dimension
+            
         # Convert numpy arrays to PIL Images for transformations
         if self.transforms:
             # Set Random

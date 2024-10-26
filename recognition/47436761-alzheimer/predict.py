@@ -14,8 +14,8 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 # Parameters
 START_EPOCH = 500
-train_dir = '/home/groups/comp3710/ADNI/AD_NC/train' # '/home/groups/comp3710/ADNI/AD_NC/train'
-test_dir = '/home/groups/comp3710/ADNI/AD_NC/test' # '/home/groups/comp3710/ADNI/AD_NC/train'
+train_dir = 'TRAIN_DATA_PATH'
+test_dir = 'TEST_DATA_PATH'
 
 # Define hyperparameters and settings with minimal values
 in_channels = 1

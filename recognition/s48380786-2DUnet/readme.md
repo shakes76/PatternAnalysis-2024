@@ -33,14 +33,14 @@ and the associated loss plot:
 
 These are the dice scores per class, as well as some visualisations of the predicted masks:
 ![Average Dice Scores Per Class](.finalised/average_dice_score_per_class.png)
-![Channel 0](.finalised/predicted_mask_channel_0.png)
-![Channel 1](.finalised/predicted_mask_channel_1.png)
-![Channel 2](.finalised/predicted_mask_channel_2.png)
-![Channel 3](.finalised/predicted_mask_channel_3.png)
+![Channel 0](./finalised/predicted_mask_channel_0.png)
+![Channel 1](./finalised/predicted_mask_channel_1.png)
+![Channel 2](./finalised/predicted_mask_channel_2.png)
+![Channel 3](./finalised/predicted_mask_channel_3.png)
 
 Channels 4 and 5 are blank for this specific image:
-![Channel 4](.finalised/predicted_mask_channel_4.png)
-![Channel 5](.finalised/predicted_mask_channel_5.png)
+![Channel 4](./finalised/predicted_mask_channel_4.png)
+![Channel 5](./finalised/predicted_mask_channel_5.png)
 ---
 
 # Preprocessing and Data Splits

@@ -7,6 +7,7 @@ import numpy as np
 testPredictedSeg = unetModel.predict(testImages)
 print(np.unique(testPredictedSeg)) 
 
+#Function to find the dice score of each set of actual segments and predicted
 def calculate_dice_scores(y_true, y_pred):
     dice_scores = []
     for i in range(len(y_true)):
@@ -35,17 +36,17 @@ for i in range(5):
     pos[i, 2].imshow(testPredictedSeg[i].squeeze())
     pos[i, 2].set_title(f'Predicted segmentation {i+1}')
     pos[i, 2].axis('off')
-
 plt.tight_layout()
 plt.show()
 
-#print the dice scores 
+#print the dice scores for each image and the distribution
 plt.figure(figsize=(12, 6))
 plt.plot(dice_scores, marker='o', linestyle='None', color='b')
 plt.title('Dice Scores for Each Test Image')
 plt.xlabel('Test Image Index')
 plt.ylabel('Dice Score')
 plt.ylim(0, 1) 
+plt.yticks(np.linspace(0, 1, num=11))  
 plt.grid()
 plt.axhline(y=np.mean(dice_scores), color='r', linestyle='--', label='Mean Dice Score')
 plt.legend()
@@ -56,15 +57,12 @@ plt.hist(dice_scores, bins=10, color='c', edgecolor='black', alpha=0.7)
 plt.title('Distribution of Dice Scores')
 plt.xlabel('Dice Score')
 plt.ylabel('Frequency')
-plt.xlim(0, 1)  # Dice scores range from 0 to 1
+plt.xlim(0, 1) 
 plt.grid()
 plt.show()
 
-
 # Plotting Loss and Dice Coefficient
 plt.figure(figsize=(12, 5))
-
-# Plot loss
 plt.subplot(1, 2, 1)
 plt.plot(trainResults.history['loss'], label='Training Loss')
 plt.plot(trainResults.history['val_loss'], label='Validation Loss')

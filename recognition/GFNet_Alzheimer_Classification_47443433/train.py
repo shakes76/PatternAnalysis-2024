@@ -3,62 +3,66 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataset import ADNIDataset, data_transform
-from modules import GFNet  # Import GFNet directly
+from modules import GFNet  
+from torch.cuda.amp import GradScaler, autocast
 
-# Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Hyperparameters
 num_epochs = 10
-batch_size = 32  # You might need to adjust this depending on your GPU memory
+batch_size = 32
 learning_rate = 0.001
+accumulation_steps = 2
 
-# Load the dataset
 train_dataset = ADNIDataset(root_dir='/PatternAnalysis-2024/recognition/GFNet_Alzheimer_Classification_47443433/train', transform=data_transform)
 test_dataset = ADNIDataset(root_dir='/PatternAnalysis-2024/recognition/GFNet_Alzheimer_Classification_47443433/test', transform=data_transform)
 
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-# Initialize the model and optimizer
-model = GFNet(img_size=224, patch_size=16, num_classes=2, embed_dim=768, depth=12).to(device)  # Initialize GFNet
+model = GFNet(img_size=224, patch_size=16, num_classes=2, embed_dim=768, depth=8).to(device)  # Initialize GFNet
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+optimiser = optim.AdamW(model.parameters(), lr=learning_rate)
+scaler = GradScaler() 
 
-# Train the model
 for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+
     for i, (images, labels) in enumerate(train_loader):
-        images = images.to(device)
-        labels = labels.to(device)
+        images, labels = images.to(device), labels.to(device)
 
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+        with autocast():
+            outputs = model(images)
+            loss = criterion(outputs, labels) / accumulation_steps
 
-        # Backward and optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+
+        if (i + 1) % accumulation_steps == 0:
+            scaler.step(optimiser)
+            scaler.update()
+            optimiser.zero_grad()
+
+        running_loss += loss.item()
 
         if (i + 1) % 100 == 0:
-            print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}')
+            print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(train_loader)}], Loss: {running_loss/100:.4f}')
+            running_loss = 0.0
 
-# Test the model
-model.eval()
-with torch.no_grad():
+    # Testin
+    model.eval()
     correct = 0
     total = 0
-    for images, labels in test_loader:
-        images = images.to(device)
-        labels = labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
     accuracy = 100 * correct / total
-    print(f'Accuracy of the model on the test images: {accuracy:.2f}%')
+    print(f'Accuracy of the model on the test set: {accuracy:.2f}%')
+    model.train()
 
-# Save the model checkpoint
 torch.save(model.state_dict(), 'gfnet_model.ckpt')

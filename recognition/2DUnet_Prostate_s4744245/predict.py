@@ -11,7 +11,7 @@ from modules import unet_model, unet_model1
 images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
 
 
-run = "wcc,lr0.00001"
+run = "low"
 
 #check if GPU is available
 tf.config.experimental.list_physical_devices('GPU')
@@ -87,8 +87,6 @@ class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(
 
 print(class_weights)
 
-
-
 # Initialize the U-Net model
 model = unet_model1(n_classes, input_size=(256, 128, 1))
 
@@ -141,4 +139,6 @@ for class_id, score in enumerate(dice_scores):
     print(f"Dice Coefficient for Class {class_id}: {score:.4f}")
 
 if passed:
-    print("WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW")
+    print("WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW", run)
+else:
+    print(run)

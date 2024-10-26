@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 #define training variables
 BATCH_SIZE = 16
-EPOCHS = 100
+EPOCHS = 30
 n_classes = 6
 learning_rate = 0.0001
 
@@ -90,17 +90,14 @@ def train_unet_model(model, train_images, train_labels,
 
     # EarlyStopping: Stop training if validation Dice coefficient does not improve
     early_stopping = EarlyStopping(monitor='val_dice_coefficient', 
-                                   patience=20, 
+                                   patience=10, 
                                    mode='max', 
                                    verbose=1)
-    
-    #weightAndBiasCallback = tf.keras.callbacks.LambdaCallback(
-    #    on_epoch_end=lambda epoch, logs: weightsBiasDict.update({epoch: model.get_weights()}))
 
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', 
                                                  factor=0.5,  # Reduce by 50%
-                                                 patience=5,  # Wait for 5 epochs before reducing
-                                                 min_lr=1e-6)  # Minimum learning rate
+                                                 patience=3,  # Wait for 5 epochs before reducing
+                                                 min_lr=1e-7)  # Minimum learning rate
     
 
     loss = weighted_categorical_crossentropy(class_weights)
@@ -145,4 +142,4 @@ def plot_training(history):
     plt.ylabel('Loss Value')
     plt.ylim([0, 1])
     plt.legend()
-    plt.savefig('training_loss_wcc_lr0.00001.png')
+    plt.savefig('training_loss_1.png')

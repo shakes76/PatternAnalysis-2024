@@ -54,7 +54,7 @@ class BalancedMelanomaDataset():
             tf.keras.layers.RandomRotation(0.9),
             tf.keras.layers.RandomBrightness(0.1/255),
             tf.keras.layers.RandomZoom(0.3),
-            # tf.keras.layers.GaussianNoise(0.1)
+            tf.keras.layers.GaussianNoise(0.15)
         ])
 
         dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
@@ -139,7 +139,7 @@ class FullMelanomaDataset():
             tf.keras.layers.RandomRotation(0.9),
             tf.keras.layers.RandomBrightness(0.1/255),
             tf.keras.layers.RandomZoom(0.3),
-            # tf.keras.layers.GaussianNoise(0.1)
+            tf.keras.layers.GaussianNoise(0.15)
         ])
 
         dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))

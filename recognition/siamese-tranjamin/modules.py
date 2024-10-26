@@ -1,49 +1,161 @@
-from Modules import DataManager, GenericModel, NeuralNetwork
+import sys
+sys.path.insert(1, './Modules')
+
+from Modules import NeuralNetwork
+import keras
+import matplotlib.pyplot as plt
 import tensorflow as tf
+import tensorflow_addons as tfa
+from sklearn.manifold import TSNE
 import numpy as np
-from keras import ops
 
-K = tf.keras.backend
+class SiameseNetwork():
+    '''
+    A network which has a Siamese architecture.
+    '''
+    # hyperparameters
+    MARGIN = 0.4
+    LAYERS_TO_UNFREEZE = -2
+    LEARNING_RATE = 0.001
+    EMBEDDINGS_EPOCHS = 10
+    CLASSIFICATION_EPOCHS = 50
 
-class ContrastiveLoss():
-    def __new__(cls, margin):
-        def contrastive_loss(ytrue, ypred):
-            square_pred = ops.square(ypred)
-            margin_square = ops.square(ops.maximum(margin - (ypred), 0))
-            return ops.mean((1 - ytrue) * square_pred + (ytrue) * margin_square)
-        return contrastive_loss
+    # loss functions to use for similarity
+    similarity_loss = tfa.losses.TripletSemiHardLoss(margin=MARGIN)
+    similarity_optim = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 
-class TripletLoss():
-    def __new__(cls, margin):
-        def triplet_loss(ytrue, ypred):
-            return 0
-        return triplet_loss
+    # loss functions to use for classification
+    classification_loss = tf.keras.losses.BinaryCrossentropy()
+    classification_optim = tf.keras.optimizers.Adam()
 
-class SiameseNetwork(NeuralNetwork.FunctionalNetwork):
-    def set_basemodel(self, model: NeuralNetwork.FunctionalNetwork):
-        self.basemodel = model.get_model()
+    def __init__(self,
+                 image_shape
+                 ):
+        '''
+        Parameters:
+            image_shape (tuple): a tuple of the 2D shape of the input images
+        '''
+        # define the embeddings model
+        self.base_model = NeuralNetwork.FunctionalNetwork()
 
-    def set_contrastivemodel(self, model: NeuralNetwork.FunctionalNetwork):
-        self.contrastivemodel = model.get_model()
+        # grab the pretrained model
+        self.backbone = tf.keras.applications.InceptionV3(
+            include_top=False,
+            input_shape=(*image_shape, 3)
+            )
+
+        # create similarity network
+        self.base_model.add_generic_layer(tf.keras.layers.Input(shape=(*image_shape, 3)))
+        self.base_model.add_generic_layer(self.backbone)
+        self.base_model.add_dropout(0.3)
+        self.base_model.add_global_pooling2D_layer("max")
+        self.base_model.add_dense_layer(2048, activation="leaky_relu")
+        self.base_model.add_dropout(0.2)
+        self.base_model.add_dense_layer(2048, activation="leaky_relu")
+        self.base_model.add_generic_layer(tf.keras.layers.Lambda(lambda x: tf.math.l2_normalize(x)))
+
+        # generate a functional model
+        self.base_model.generate_functional_model()
     
-    def set_input_shape(self, shape):
-        self.shape = shape
+        # set hyperparameters
+        self.base_model.set_loss_function(SiameseNetwork.similarity_loss)
+        self.base_model.set_optimisation(SiameseNetwork.similarity_optim)
+        self.base_model.set_epochs(SiameseNetwork.EMBEDDINGS_EPOCHS)
 
-    def generate_functional_model(self):
-        def euclid_dis(vects):
-            x,y = vects
-            sum_square = K.sum(K.square(x-y), axis=1, keepdims=True)
-            return K.sqrt(K.maximum(sum_square, 0))
+        # classifier network
+        classifier_model = NeuralNetwork.NeuralNetwork()
+        classifier_model.add_generic_layer(self.base_model.model)
+        classifier_model.add_dense_layer(32)
+        classifier_model.add_dense_layer(16)
+        classifier_model.add_dense_layer(1, activation="sigmoid")
 
-        def eucl_dist_output_shape(shapes):
-            shape1, shape2 = shapes
-            return (shape1[0], 1)
+        # set classifier hyperparameters
+        classifier_model.set_loss_function(SiameseNetwork.classification_loss)
+        classifier_model.set_epochs(SiameseNetwork.CLASSIFICATION_EPOCHS)
+        classifier_model.set_optimisation(SiameseNetwork.classification_optim)
 
-        input1 = tf.keras.layers.Input(shape=self.shape)
-        input2 = tf.keras.layers.Input(shape=self.shape)
-        output1 = self.basemodel(input1)
-        output2 = self.basemodel(input2)
-        distance_layer = tf.keras.layers.Lambda(euclid_dis, output_shape=eucl_dist_output_shape)([output1, output2])
-        normal_layer = tf.keras.layers.BatchNormalization()(distance_layer)
-        output_layer = tf.keras.layers.Dense(1, activation="sigmoid")(normal_layer)
-        self.model = tf.keras.Model([input1, input2], output_layer)
+        # add metrics to monitor
+        classifier_model.add_metric(["accuracy"])
+        classifier_model.add_metric(tf.keras.metrics.Precision())
+        classifier_model.add_metric(tf.keras.metrics.Recall())
+        classifier_model.add_metric(tf.keras.metrics.TruePositives())
+        classifier_model.add_metric(tf.keras.metrics.TrueNegatives())
+        classifier_model.add_metric(tf.keras.metrics.FalsePositives())
+        classifier_model.add_metric(tf.keras.metrics.FalseNegatives())
+
+        self.classifier = classifier_model
+
+        # enable mixed precision
+        NeuralNetwork.NeuralNetwork.enable_mixed_precision()
+        
+    def train_similarity(self, dataset, dataset_val):
+        # compile model
+        self.base_model.compile_functional_model()
+
+        # unfreeze the last few layers
+        self.backbone.trainable = False
+        for layer in self.backbone.layers[SiameseNetwork.LAYERS_TO_UNFREEZE:]:
+            layer.trainable = True
+
+        self.base_model.fit_model_batches(
+            dataset, 
+            dataset_val, 
+            verbose=1
+        )
+
+    def train_classification(self, dataset, dataset_val):
+        # compile model
+        self.classifier.compile_model()
+
+        # freeze layers
+        self.backbone.trainable = False
+
+        # fit
+        self.classifier.fit_model_batches(
+            dataset, 
+            dataset_val, 
+            verbose=1
+            )
+        
+    def plot_embeddings(self, data, save_path):
+        outputs = self.base_model.model.predict(data)
+        classes = []
+
+        for batch in data:
+            features, labels = batch
+            numpy_labels = labels.numpy().ravel()
+            classes += list(numpy_labels)
+
+        classes = np.array(classes)
+        tsne = TSNE(n_components=2)
+        embedded = tsne.fit_transform(outputs)
+        plt.scatter(embedded[:, 0], embedded[:, 1], c=classes)
+        plt.savefig(save_path)
+    
+    def plot_training_classification(self, filename):
+        self.classifier.visualise_training(to_file=True, filename=filename)
+    
+    def plot_training_similarity(self, filename):
+        self.classifier.visualise_training(to_file=True, filename=filename)
+
+    def enable_wandb_similarity(self, path):
+        self.base_model.enable_wandb(path)
+    
+    def enable_wandb_classification(self, path):
+        self.classifier.enable_wandb(path)
+    
+    def enable_similarity_checkpoints(self, path, save_best_only=True):
+        self.base_model.enable_model_checkpoints(path, save_best_only)
+
+    def enable_classification_checkpoints(self, path, save_best_only=True):
+        self.classifier.enable_model_checkpoints(path, save_best_only)
+
+    def predict(self, data):
+        self.base_model.model.predict(data)
+
+    def evaluate_classifier(self, data):
+        self.classifier.model.evaluate(data)
+
+    def load_classification_model(self, checkpoint):
+        self.classifier.compile_model()
+        self.classifier.load_checkpoint(checkpoint)

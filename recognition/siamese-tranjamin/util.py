@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 
 
 def plot_images(square_size=3):
-    # datasets
+    '''
+    Plots a selection of preprocessed images.
+    '''
     df = BalancedMelanomaDataset(
         image_shape=(256, 256),
         batch_size=64,

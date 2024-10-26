@@ -2,7 +2,8 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
-# Define GCN model
+
+# Define the GCN model with batch normalization and dropout layers
 class GCN(torch.nn.Module):
     def __init__(self, num_features, hidden_dim, num_classes):
         super(GCN, self).__init__()
@@ -14,6 +15,7 @@ class GCN(torch.nn.Module):
         self.bn2 = torch.nn.BatchNorm1d(hidden_dim)
         self.bn3 = torch.nn.BatchNorm1d(hidden_dim)
 
+    # Define forward pass through the GCN layers
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = F.relu(self.bn1(self.conv1(x, edge_index)))

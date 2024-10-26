@@ -10,6 +10,8 @@ NEW_ROOT = "../../../PatientSplit"
 TESTPATH = "/test"
 TRAINPATH = "/train"
 VALPATH = "/val"
+MEAN = 0.1156
+STD = 0.2198
 IMG_SIZE = 224
 
 TRAIN_TRANSFORM = transforms.Compose([
@@ -17,20 +19,20 @@ TRAIN_TRANSFORM = transforms.Compose([
     transforms.RandAugment(num_ops = 3),
     transforms.Grayscale(),
     transforms.ToTensor(),
-    transforms.Normalize(mean = 0.1156, std = 0.2198)
+    transforms.Normalize(mean = MEAN, std = STD)
 ])
 TEST_TRANSFORM = transforms.Compose([
-    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    transforms.CenterCrop((IMG_SIZE, IMG_SIZE)),
     transforms.Grayscale(),
     transforms.ToTensor(),
-    transforms.Normalize(mean = 0.1156, std = 0.2198)
+    transforms.Normalize(mean = MEAN, std = STD)
 ])
 CALC_TRANSFORM = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor()
 ])
 
-def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuffle: bool = True, gpu = False, workers = 1):
+def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuffle: bool = True, gpu = False, workers = 1) -> DataLoader:
     '''
     Get Pytorch DataLoader with ADNI training DATA
 
@@ -48,7 +50,7 @@ def getTrainLoader(path: str = NEW_ROOT + TRAINPATH, batchSize: int = 128, shuff
     trainLoader = DataLoader(trainData, batch_size = batchSize, shuffle = shuffle, num_workers=workers, pin_memory = gpu)
     return trainLoader
 
-def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True, gpu = False):
+def getValLoader(path:str = NEW_ROOT + VALPATH, batchSize:int = 128, shuffle:bool = True, gpu:bool = False, num_workers:int = 1) -> DataLoader:
     '''
     Get Pytorch DataLoader with ADNI test DATA
 
@@ -63,10 +65,10 @@ def getValLoader(path = NEW_ROOT + VALPATH, batchSize = 128, shuffle = True, gpu
         root = path,
         transform = TEST_TRANSFORM
     )
-    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=0, pin_memory = gpu)
+    valLoader = DataLoader(valData, batch_size = batchSize, shuffle = shuffle, num_workers=num_workers, pin_memory = gpu)
     return valLoader
 
-def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):
+def getTestLoader(path:str = NEW_ROOT + TESTPATH, batchSize:int = 128, shuffle:bool = True, gpu:bool = False, num_workers:int = 1) -> DataLoader:
     '''
     Get Pytorch DataLoader with ADNI test DATA
 
@@ -81,10 +83,10 @@ def getTestLoader(path = NEW_ROOT + TESTPATH, batchSize = 128, shuffle = True):
         root = path,
         transform = TEST_TRANSFORM
     )
-    testLoader = DataLoader(testData, batch_size = batchSize, shuffle = shuffle)
+    testLoader = DataLoader(testData, batch_size = batchSize, shuffle = shuffle, num_workers=num_workers, pin_memory = gpu)
     return testLoader
 
-def formatByPatient(path = ROOT, newPath = NEW_ROOT):
+def formatByPatient(path:str = ROOT, newPath:str = NEW_ROOT) -> None:
     '''
     Create a new folder with a Val and Test Split that uses patient level
     splitting. new test, val will be 50% of the original test.
@@ -165,7 +167,7 @@ def formatByPatient(path = ROOT, newPath = NEW_ROOT):
                 os.mkdir(os.path.join(newP, item))
                 valq.append((os.path.join(p, item), os.path.join(newP, item)))
 
-def meanStdCalc(path = NEW_ROOT + TRAINPATH, device = "cpu"):
+def meanStdCalc(path = NEW_ROOT + TRAINPATH, device = "cpu") -> tuple[tuple, tuple]:
     '''
     Calculates the mean and std dev of a folder with the structure
 

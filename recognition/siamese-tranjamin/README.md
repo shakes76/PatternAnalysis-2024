@@ -18,6 +18,8 @@ In addition to having an unbalanced dataset, there were several cases of data le
 
 Because of how few positive images there were, heavy data augmentation had to be applied. Random flips, brightness and rotations were implemented, as it makes physical sense that changing how the picture of a lesion is taken should not cause the model to break. Small amounts of noise were also added to both positive and negative samples. The intention of this was to increase the model's robustness to imperfections in the images, which happen quite frequently in this case - many images have hair obscuring the lesion, ruler lines to show size or markings made by the dermatologist.
 
+This was done twice: firstly, only the positive images were augmented. Then, the entire dataset was. This was done to increase the variability of the positive class in relation to the negative class.
+
 A standard 80/20 split is used for training and testing. Usually, this split should be stratified to ensure that the training and testing datasets have similar proportions of both classes. However, it turned out that this usually happened without the need to enforce it. After this split, the training set was further broken down into 70/10 for training and validation.
 
 A representative portion of input images is shown below, after having undergone the above preprocessing. As shown, there are many textures, such as hair follicles and markings, which are common to both classes. The goal of this model is to learn to a point where it treats these textures as noise. 
@@ -54,22 +56,21 @@ Once class separation had been performed, the layers of the embeddings network w
 
 The below figure shows the monitored training metrics over the best model run. As seen from the graphs, the accuracy approaches 80% (ending on about 79%), with good scores for precision and recal as well. Because of the unabalanced dataset, accuracy may not be the most ideal metric to monitor, as it puts equal weights on both the positive and negative classes regardless of their proportions. Instead, it is more interesting to monitor the precision and recall. Recall is important in medical settings because we want maligant lesions to be identified at a high rate. However at the same time, precision is important because we don't want to misdiagnose. A good trade off between these two is F1 score (not plotted here), which is the harmonic mean of the two.
 
-![alt text](image-1.png)
-![alt text](image-2.png)
+![alt text](assets/training_curves.png)
 
 The validation loss is shown below. It follows the same characteristics as the training loss, indicating that there is no presence of overfitting. One discrepancy noted is that the precision of the validation set was slightly lower. This is reasonable because the data has not been fit on the validation set, however it does likely indicate a slight bias of the model towards classifying images as malignant.
 
-![alt text](image-4.png)
+![alt text](assets/validation_curves.png)
 
-However, when analysing the embeddings space, it wasn't clear that the metric learning portion of the classifier had succeeded. The below graph shows the loss curve of the embeddings training performed. The loss seemed to bottom out at the margin of 0.3, and the embeddings network, although it separated the dataset into two clusters,did perform well in class separation. The reason for this is not could not quite be ascertained, as the loss function used (semi-hard triplet loss) and data preprocessing was done in accordance to industry standards. The only possible cause that could be identified was the use of `tfa.losses.TripletSemiHardLoss`. It is possible that this method, having no official support from Tensorflow, is not adept at extracting hard triplets.
+However, when analysing the embeddings space, it wasn't clear that the metric learning portion of the classifier had succeeded. The below graph shows the loss curve of the embeddings training performed. The loss seemed to bottom out at the margin of 0.3, and the embeddings network did perform well in class separation. The reason for this is not could not quite be ascertained, as the loss function used (semi-hard triplet loss) and data preprocessing was done in accordance to industry standards. The only possible cause that could be identified was the use of `tfa.losses.TripletSemiHardLoss`. It is possible that this method, having no official support from Tensorflow, is not adept at extracting hard triplets. In future, pytorch is recommended for metric learning problems.
 
-![alt text](image-6.png)
+![alt text](assets/tsne.png)
 
-To compare, the TSNE graph of the MNIST classifier in `mnist.py` is shown below. This clearly shows that the classes have been separated into distinct clusters, and this is along the lines of what is to be expected for the Melanoma dataset.
+Therefore, in summary the model achieves the required accuracy, however the embeddings network is still not well developed. Future work on this should be to port the algorithm over to PyTorch to use its more advanced triplet mining strategy. This is forecasted to vastly improve the embeddings.
 
 #### A note on accuracy
 
-Technically, the requirements of this model is to meet 80% accuracy. Given how unbalanced the original dataset is, this can be trivially solved by classifying everything as benign. However, this would defeat the purpose of this model. Therefore, this metric for accuracy will instead be evaluated on a 50/50 balanced dataset.
+Technically, the requirements of this model is to meet 80% accuracy. Given how unbalanced the original dataset is, this can be trivially solved by classifying everything as benign. However, this would defeat the purpose of this model. Therefore, a 50/50 dataset was used for testing.
 
 ## Dependencies
 This network relies on the use of tensorflow_addons, which is deprecated as of mid-2024. For compatibility reasons, this model therefore uses an older version of Python (3.11.1) and numpy/tensorflow. To install, you must first have Python 3.11.1, or create a virtual environment that supports it. All relevant packages can then be installed using `pip install -r requirements.txt`. Or, instead, the following key ones need to be installed:
@@ -87,5 +88,3 @@ Finally, you must initialise the submodule. To do this, run `git submodule updat
 The commit log admittedly is inconsistent. This is primarily because trials were run on different branches with more than questionable commit history. For a clean history, these incremental changes were copied over to the main branch. 
 
 This assignment also makes use of a submodule called `Modules`. The intention behind this was to incrementally develop a library which abstracts away all of the esoteric API calls of pytorch/tensorflow. It has been used for other courses but it should be clear that it is largely only wrapper functions for API calls. I'm not sure whether it should be referenced in marking (in some way, it supplements the `modules.py`), but if so the only function used for this project is `Modules/NeuralNetwork.py`. (Admittedly, the code structure and commenting of this function is pretty decent).
-
-EDIT: the `NeuralNetwork.py` function has copied into `modules.py`.

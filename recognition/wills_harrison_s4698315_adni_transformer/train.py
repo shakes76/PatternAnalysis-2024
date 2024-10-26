@@ -32,7 +32,7 @@ def make_model():
     return model
 
 def train(patience=50, lr=1e-4, batch_size=64, show_plots=False, 
-          model_type='gfnet-big', num_epochs=20, weight_decay=0.01,
+          num_epochs=20, weight_decay=0.01,
           save_model=True):
     
     print(f"Training with parameters {lr} {batch_size} {weight_decay}")
@@ -181,7 +181,6 @@ def main():
         config = yaml.safe_load(file)
     
     parameters = config['parameters']
-    model_type = config.get('model_type', 'swin')
     num_epochs = config.get('num_epochs', 100)
     show_plots = config.get('show_plots', False)
     save_model = config.get('save_model', False)
@@ -195,7 +194,7 @@ def main():
         
         # Check if the model has already been trained
         if not os.path.exists(model_path):
-            train(lr=lr, batch_size=batch_size, model_type=model_type, 
+            train(lr=lr, batch_size=batch_size, 
                   show_plots=show_plots, num_epochs=num_epochs, 
                   weight_decay=weight_decay, save_model=save_model)
         else:

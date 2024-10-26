@@ -164,7 +164,7 @@ Class 5: Dice = 0.8873
 This project demonstrates the application of a simplified UNet model for semantic segmentation of the prostate gland in MRI images. By addressing overfitting through model simplification, regularization, and data augmentation, the model achieves a high Dice Similarity Coefficient, indicating accurate segmentation performance.
 
 ## References
-- UNet Paper: U-Net: Convolutional Networks for Biomedical Image Segmentation
+- UNet Paper: [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/pdf/2109.05443)
 - PyTorch Documentation: https://pytorch.org/docs/stable/index.html
 - Nibabel Documentation: https://nipy.org/nibabel/
-- HipMRI Study Dataset: Refer to the dataset's official publication or repository for more information.
+- HipMRI Study Dataset: https://data.csiro.au/collection/csiro:51392v2?redirected=true.

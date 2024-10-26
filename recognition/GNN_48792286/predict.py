@@ -28,4 +28,11 @@ def visualize(model, data):
     plt.xlabel('t-SNE Component 1')
     plt.ylabel('t-SNE Component 2')
     plt.show()
+    
+losses, accuracies = train(model, graph_data)
 
+# Plot training metrics
+plot_loss_accuracy(losses, accuracies)
+
+# Visualize embeddings
+visualize(model, graph_data)

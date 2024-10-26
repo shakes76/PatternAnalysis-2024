@@ -26,17 +26,21 @@ The left half of this figure depicts the encoder of the 2D UNet model, and the r
 ---
 
 # Plots
-The first working run of this model took 45 minutes for very mediocre results:
+Here is the output from the uploaded saved model:
+![Terminal Output](.finalised/TerminalOutput.png)
+and the associated loss plot:
+![Loss plot over epochs](.finalised/loss_plot.png)
 
-*Epoch 50/50, Loss: 0.005778507029752079*
-*Validation Loss: 0.1750896299280316*
-*Average Dice Coefficient: 0.16860544484327822*
+These are the dice scores per class, as well as some visualisations of the predicted masks:
+![Average Dice Scores Per Class](.finalised/average_dice_score_per_class.png)
+![Channel 0](.finalised/predicted_mask_channel_0.png)
+![Channel 1](.finalised/predicted_mask_channel_1.png)
+![Channel 2](.finalised/predicted_mask_channel_2.png)
+![Channel 3](.finalised/predicted_mask_channel_3.png)
 
-The loss was very low, which was good, but the validation loss was very high and the dice coefficient extremely low. No plot was generated for this output.
-
-Here is a different generated plot on 10 epochs, before the dice coefficient has been able to be improved:
-![Loss plot over epochs](./loss_plot.png)
-
+Channels 4 and 5 are blank for this specific image:
+![Channel 4](.finalised/predicted_mask_channel_4.png)
+![Channel 5](.finalised/predicted_mask_channel_5.png)
 ---
 
 # Preprocessing and Data Splits

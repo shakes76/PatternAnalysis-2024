@@ -107,31 +107,6 @@ plt.title("Training and Validation Loss over Epochs")
 plt.legend()
 plt.savefig(image_save_path, dpi=300)
 
-"""
-# Evaluate on the test set
-model.eval()
-dice_scores = []
-average_dice_scores = []
-num_classes = 6
-
-threshold = 0.5 #0.5
-with torch.no_grad():
-    for test_images, test_labels in test_loader:
-        test_images = test_images.to(device)
-        test_labels = test_labels.to(device)
-
-        outputs = model(test_images)  # Add batch dimension here
-        outputs = (outputs > threshold).float()  # Threshold to binary mask
-
-        # Calculate Dice scores (per-class and average)
-        dice_scores_batch, avg_dice_score = dice_coefficient(outputs, test_labels, num_classes)
-        dice_scores.extend(dice_scores_batch.tolist())  # Add individual class scores for each sample
-        average_dice_scores.append(avg_dice_score)  # Store batch average Dice score
-
-average_dice = np.mean(average_dice_scores)
-print(f"Average Dice Coefficient (New): {average_dice}")
-"""
-
 # Evaluate on the test set
 model.eval()
 num_classes = 6
@@ -167,3 +142,15 @@ print(f"Overall Average Dice Coefficient: {average_dice}")
 average_dice_per_class = [dice_scores_per_class[i] / class_counts[i] for i in range(num_classes)]
 for class_idx, avg_dice in enumerate(average_dice_per_class):
     print(f"Average Dice Coefficient for Class {class_idx}: {avg_dice}")
+
+
+# Plot the average Dice score per class
+plt.figure(figsize=(8, 6))
+plt.bar(range(num_classes), average_dice_per_class, color='skyblue')
+plt.xlabel('Class')
+plt.ylabel('Average Dice Score')
+plt.title('Average Dice Score per Class')
+plt.xticks(range(num_classes), [f'Class {i}' for i in range(num_classes)])
+plt.ylim(0, 1)  # Dice scores range from 0 to 1
+plt.savefig("/home/Student/s4838078/plots/average_dice_score_per_class.png", dpi=300)
+plt.close()

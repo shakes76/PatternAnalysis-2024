@@ -102,24 +102,13 @@ def dice_coefficient(pred, target, num_classes, smooth=1e-6):
         mean_dice (float): Mean Dice score across all classes
     """
 
-    # Debug check for initial shapes of pred and target
-    print(f"Initial pred shape: {pred.shape}")
-    print(f"Initial target shape: {target.shape}")
-
     # Ensure `pred` and `target` are in [batch_size, num_classes, height, width] shape
     if target.dim() == 5:
         target = target.squeeze(1)  # Remove the extra dimension if present
-        print(f"Target shape after squeeze: {target.shape}")
 
     # Make sure target has channels in the second dimension
     if target.shape[1] != num_classes:
         target = target.permute(0, 3, 1, 2)
-        print(f"Target shape after permute: {target.shape}")
-
-     # Final shape check before computing Dice
-    print(f"Final pred shape: {pred.shape}")
-    print(f"Final target shape: {target.shape}")
-    assert pred.shape == target.shape, "Shapes of pred and target must match for Dice calculation."
 
     # Ensure binary masks by thresholding predictions
     pred = (pred > 0.5).float()
@@ -131,10 +120,6 @@ def dice_coefficient(pred, target, num_classes, smooth=1e-6):
     for i in range(num_classes):
         pred_flat = pred[:, i].contiguous().view(-1)
         target_flat = target[:, i].contiguous().view(-1)
-
-        # Debug check for flattened shapes of each channel
-        print(f"Flattened pred shape for class {i}: {pred_flat.shape}")
-        print(f"Flattened target shape for class {i}: {target_flat.shape}")
 
         intersection = (pred_flat * target_flat).sum()
         dice_score = (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)

@@ -76,7 +76,7 @@ With the improved 3D U-Net model, all labels achieved a **DSC of at least 0.8.**
 
 
 
-Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the original image (first row) and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. Both the original (second row) and improved 3D U-Net (last row) models produce great results, with the improved 3D U-Net producing comparatively higher quality segmentations.
+Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to generate axial slices of the original image (first row) and segemented output. Slices 73, 97 (wk0) and 75 (wk5) were used respectively. Both the original (second row) and improved 3D U-Net (thirds row) models produce great results, with the improved 3D U-Net producing comparatively higher quality segmentations. The "ground-truth" segmentation can be observed on the last row. 
 
 
 
@@ -97,7 +97,11 @@ Samples **L011_Week0_LFOV.nii.gz** and **L011_Week5_LFOV.nii.gz** were used to g
     <td><img src="images/Improvedunet3d/wk0_pred_slice_97.png" width="400" height="300"/></td>
     <td><img src="images/Improvedunet3d/wk5_pred_slice_75.png" width="400" height="300"/></td>
   </tr>
-<table>
+    <tr>
+    <td><img src="images/image_slice_73.png" width="400" height="300"/></td>
+    <td><img src="images/image_slice_97.png" width="400" height="300"/></td>
+    <td><img src="images/image_slice_75.png" width="400" height="300"/></td>
+  </tr>
 <table>
 
 ## Dependencies

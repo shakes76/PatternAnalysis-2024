@@ -1,2 +1,3 @@
 /recognition/data/*
 *.pth
+/__pycache__/*

@@ -62,7 +62,6 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from PIL import Image
 from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
 
 # Import the Discriminator from modules.py
 from modules import Discriminator as ODiscriminator
@@ -91,7 +90,7 @@ class ModifiedDiscriminator(ODiscriminator):
 # Load the checkpointed discriminator model
 def load_discriminator(checkpoint_path, log_resolution):
     discriminator = ModifiedDiscriminator(log_resolution=log_resolution)
-    checkpoint = torch.load(checkpoint_path)
+    checkpoint = torch.load(checkpoint_path, weights_only=True)
     discriminator.load_state_dict(checkpoint)
     discriminator.eval()  # Set to evaluation mode
     return discriminator
@@ -144,10 +143,11 @@ def plot_tsne_with_named_clusters(tsne_embeddings, cluster_labels):
         plt.scatter(tsne_embeddings[mask, 0], tsne_embeddings[mask, 1], label=cluster, color=label, s=50)
     
     plt.legend()
-    plt.title('t-SNE Projection with AD and CN Clusters')
+    plt.title('t-SNE Projection')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
-    plt.show()
+    plt.savefig("tsne_plot.png")
+    
 
 if __name__ == "__main__":
     # Path to the checkpoint (discriminator state_dict)
@@ -162,8 +162,8 @@ if __name__ == "__main__":
 
     # Register hooks to capture features from specific layers
     layer_features = []
-    discriminator.from_rgb[1].register_forward_hook(get_features_from_layer(discriminator.from_rgb[1]))  # Example: from_rgb layer
-    discriminator.blocks[0].block[1].register_forward_hook(get_features_from_layer(discriminator.blocks[0].block[1]))  # Example: first block's conv layer
+    discriminator.from_rgb[1].register_forward_hook(get_features_from_layer(discriminator.from_rgb[1])) 
+    discriminator.blocks[0].block[1].register_forward_hook(get_features_from_layer(discriminator.blocks[0].block[1])) 
 
     # Load and preprocess all images from the directory
     images = load_images_from_epochs(root_dir)
@@ -171,18 +171,16 @@ if __name__ == "__main__":
     # Forward pass through the discriminator to get the features
     with torch.no_grad():  # No need to compute gradients
         layer_features.clear()  # Clear any previous feature storage
-        discriminator(images)  # Forward pass
+        discriminator_output = discriminator(images)  # Forward pass
+        predicted_labels = torch.argmax(discriminator_output, dim=1).cpu().numpy()  # Get predicted classes
 
     # Flatten the extracted feature maps
     all_features = flatten_features(layer_features)
 
     # Apply t-SNE to reduce dimensionality to 2D
-    tsne_model = TSNE(n_components=2, perplexity=30, random_state=42)
+    tsne_model = TSNE(n_components=2, perplexity=50, random_state=42)
     tsne_embeddings = tsne_model.fit_transform(all_features)
 
-    # Perform K-Means clustering on the t-SNE embeddings
-    kmeans = KMeans(n_clusters=2, random_state=42)
-    cluster_labels = kmeans.fit_predict(tsne_embeddings)
-
     # Plot the t-SNE embeddings with "AD" and "CN" labels
-    plot_tsne_with_named_clusters(tsne_embeddings, cluster_labels)
+    plot_tsne_with_named_clusters(tsne_embeddings, predicted_labels)
+

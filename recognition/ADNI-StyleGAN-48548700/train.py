@@ -70,7 +70,7 @@ import csv
 # Define constants and hyperparameters
 DATASET                 = "./train"  # Path to the dataset
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
-EPOCHS                  = 50 # Number of training epochs
+EPOCHS                  = 151 # Number of training epochs
 LEARNING_RATE           = 1e-3  # Learning rate for optimization
 BATCH_SIZE              = 32  # Batch size for training
 LOG_RESOLUTION          = 7  # Logarithmic resolution used for 128*128 images
@@ -268,7 +268,7 @@ if __name__ == "__main__":
             # Save the state of the critic optimizer
             torch.save(opt_critic.state_dict(), f'opt_critic_epoch{epoch}.pt')
             # Save the state of the mapping network optimizer
-            torch.save(opt_mapping_network.state_dict(), f'opt_mapping_network_epoch{epoch}.pt')
+            torch.save(opt_mapping_network.state_dict(), f'model/opt_mapping_network_epoch{epoch}.pt')
 
     plt.figure(figsize=(10,5))
     plt.title("Generator Loss During Training")

@@ -1,96 +1,133 @@
 import os
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
-from dataset import MedicalDataset3D, load_image_paths
-from modules import UNet3D
-from utils import DiceLoss, calculate_dice_coefficient
+from modules import ImprovedUNet3D
+from dataset import NiftiDataset
+import torch.optim as optim
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
-# 设置超参数
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-LEARNING_RATE = 1e-4
-BATCH_SIZE = 1  # 根据您的显存大小调整批量大小
-EPOCHS = 50
+# 设置字体
+font_path = '/mnt/data/file-ngwyeoEN29l1M3O1QpdxCwkj'
+font_prop = font_manager.FontProperties(fname=font_path)
 
-# 指定图像和标签目录
-image_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/未命名文件夹/' \
-            'Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/' \
-            'data/HipMRI_study_complete_release_v1/semantic_MRs_anon'
+# 定义超参数
+num_epochs = 50
+learning_rate = 0.001
+batch_size = 1  # 由于3D数据较大，batch_size设置为1，避免内存不足
 
-label_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/未命名文件夹/' \
-            'Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/' \
-            'data/HipMRI_study_complete_release_v1/semantic_labels_anon'
+# 定义文件夹路径
+labels_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/未命名文件夹/Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/data/HipMRI_study_complete_release_v1/semantic_labels_anon'
+mrs_dir = '/Users/qiuhan/Desktop/UQ/3710/Lab3/未命名文件夹/Labelled_weekly_MR_images_of_the_male_pelvis-QEzDvqEq-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon'
 
+# 获取所有图像和标签文件
+train_images = sorted([f for f in os.listdir(mrs_dir) if f.endswith('.nii')])
+train_labels = sorted([f for f in os.listdir(labels_dir) if f.endswith('.nii')])
 
-# 加载图像和标签路径
-image_paths, label_paths = load_image_paths(image_dir, label_dir)
+# 打印文件数量
+print(f"Total images: {len(train_images)}")
+print(f"Total labels: {len(train_labels)}")
 
-# 将数据集划分为训练集和验证集
-train_images, val_images, train_labels, val_labels = train_test_split(
-    image_paths, label_paths, test_size=0.2, random_state=42)
+train_images_filtered = []
+train_labels_filtered = []
+
+# 匹配逻辑
+for image_name in train_images:
+    case_id = image_name.split('_')[0] + '_' + image_name.split('_')[1]  # Case_ID
+
+    found_match = False
+    for label_name in train_labels:
+        if case_id in label_name:
+            train_images_filtered.append(os.path.join(mrs_dir, image_name))
+            train_labels_filtered.append(os.path.join(labels_dir, label_name))
+            found_match = True
+            break
+
+    if not found_match:
+        print(f"未找到匹配的标签文件：{image_name}")
+
+# 更新图像和标签文件列表
+train_images = train_images_filtered
+train_labels = train_labels_filtered
+
+# 打印匹配结果
+print(f"匹配的图像数量: {len(train_images)}")
+print(f"匹配的标签数量: {len(train_labels)}")
+
+# 断言检查
+assert len(train_images) == len(train_labels), "图像和标签文件数量不一致！"
+
+# 拆分训练集和验证集（90%训练，10%验证）
+split_index = int(len(train_images) * 0.9)
+train_images, val_images = train_images[:split_index], train_images[split_index:]
+train_labels, val_labels = train_labels[:split_index], train_labels[split_index:]
 
 # 创建数据集和数据加载器
-train_dataset = MedicalDataset3D(train_images, train_labels)
-val_dataset = MedicalDataset3D(val_images, val_labels)
+train_dataset = NiftiDataset(train_images, train_labels)
+val_dataset = NiftiDataset(val_images, val_labels)
 
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+# 打印数据集大小
+print(f"Number of training samples: {len(train_dataset)}")
+print(f"Number of validation samples: {len(val_dataset)}")
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
 # 初始化模型、损失函数和优化器
-model = UNet3D(in_channels=1, out_channels=1).to(DEVICE)
-criterion = DiceLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+model = ImprovedUNet3D(in_channels=1, out_channels=2)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-# 定义训练函数
-def train():
-    for epoch in range(EPOCHS):
-        print(f"Epoch {epoch+1}/{EPOCHS}")
-        model.train()
-        train_loss = 0.0
-        for batch_idx, (images, labels) in enumerate(train_loader):
-            images = images.to(DEVICE, dtype=torch.float)
-            labels = labels.to(DEVICE, dtype=torch.float)
+# 如果有GPU可用，使用GPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.to(device)
 
-            optimizer.zero_grad()
+# 训练和验证循环
+train_losses = []
+val_losses = []
+
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad()  # 清空梯度
+        outputs = model(images)
+        loss = criterion(outputs, labels.long())
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item() * images.size(0)
+
+    epoch_loss = running_loss / len(train_loader.dataset)
+    train_losses.append(epoch_loss)
+
+    model.eval()
+    val_running_loss = 0.0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+
             outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            loss = criterion(outputs, labels.long())
+            val_running_loss += loss.item() * images.size(0)
+    val_epoch_loss = val_running_loss / len(val_loader.dataset)
+    val_losses.append(val_epoch_loss)
 
-            train_loss += loss.item()
+    print(f"Epoch {epoch + 1}/{num_epochs}, Training Loss: {epoch_loss:.4f}, Validation Loss: {val_epoch_loss:.4f}")
 
-            if (batch_idx + 1) % 10 == 0:
-                print(f"  Batch {batch_idx+1}/{len(train_loader)}, Loss: {loss.item():.4f}")
+# 保存模型
+torch.save(model.state_dict(), 'improved_unet3d.pth')
 
-        avg_train_loss = train_loss / len(train_loader)
-        print(f"  Average Training Loss: {avg_train_loss:.4f}")
-
-        # 验证步骤
-        model.eval()
-        val_loss = 0.0
-        dice_coeffs = []
-        with torch.no_grad():
-            for images, labels in val_loader:
-                images = images.to(DEVICE, dtype=torch.float)
-                labels = labels.to(DEVICE, dtype=torch.float)
-
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
-
-                dice_coeff = calculate_dice_coefficient(outputs, labels)
-                dice_coeffs.append(dice_coeff)
-
-        avg_val_loss = val_loss / len(val_loader)
-        avg_dice = sum(dice_coeffs) / len(dice_coeffs)
-        print(f"  Validation Loss: {avg_val_loss:.4f}, Average Dice Coefficient: {avg_dice:.4f}")
-
-
-# 验证数据加载
-for i in range(1):
-    image, label = train_dataset[i]
-    print(f"Sample {i}: Image shape: {image.shape}, Label shape: {label.shape}")
-
-# 开始训练
-if __name__ == "__main__":
-    train()
+# 绘制损失曲线
+plt.figure()
+plt.plot(range(1, num_epochs + 1), train_losses, label='Training Loss')
+plt.plot(range(1, num_epochs + 1), val_losses, label='Validation Loss')
+plt.xlabel('Epoch', fontproperties=font_prop)
+plt.ylabel('Loss', fontproperties=font_prop)
+plt.legend(prop=font_prop)
+plt.savefig('loss_curve.png')
+plt.close()

@@ -4,9 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-    """
-    两次卷积操作：Conv3D => BN => ReLU => Conv3D => BN => ReLU
-    """
+    """两次卷积操作：Conv3D -> ReLU -> Conv3D -> ReLU"""
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
@@ -21,51 +19,63 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.double_conv(x)
 
-class UNet3D(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, features=[32, 64, 128, 256]):
-        super(UNet3D, self).__init__()
-        self.ups = nn.ModuleList()
-        self.downs = nn.ModuleList()
-        self.pool = nn.MaxPool3d(kernel_size=2, stride=2)
+class ImprovedUNet3D(nn.Module):
+    """改进的3D UNet模型"""
+    def __init__(self, in_channels, out_channels):
+        super(ImprovedUNet3D, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
 
-        # 下采样部分
-        for feature in features:
-            self.downs.append(DoubleConv(in_channels, feature))
-            in_channels = feature
+        self.down1 = DoubleConv(in_channels, 64)
+        self.pool1 = nn.MaxPool3d(2)
+        self.down2 = DoubleConv(64, 128)
+        self.pool2 = nn.MaxPool3d(2)
+        self.down3 = DoubleConv(128, 256)
+        self.pool3 = nn.MaxPool3d(2)
+        self.down4 = DoubleConv(256, 512)
+        self.pool4 = nn.MaxPool3d(2)
 
-        # 上采样部分
-        for feature in reversed(features):
-            self.ups.append(
-                nn.ConvTranspose3d(feature * 2, feature, kernel_size=2, stride=2)
-            )
-            self.ups.append(DoubleConv(feature * 2, feature))
+        self.bottleneck = DoubleConv(512, 1024)
 
-        self.bottleneck = DoubleConv(features[-1], features[-1] * 2)
-        self.final_conv = nn.Conv3d(features[0], out_channels, kernel_size=1)
+        self.up1 = nn.ConvTranspose3d(1024, 512, kernel_size=2, stride=2)
+        self.conv1 = DoubleConv(1024, 512)
+        self.up2 = nn.ConvTranspose3d(512, 256, kernel_size=2, stride=2)
+        self.conv2 = DoubleConv(512, 256)
+        self.up3 = nn.ConvTranspose3d(256, 128, kernel_size=2, stride=2)
+        self.conv3 = DoubleConv(256, 128)
+        self.up4 = nn.ConvTranspose3d(128, 64, kernel_size=2, stride=2)
+        self.conv4 = DoubleConv(128, 64)
+
+        self.out_conv = nn.Conv3d(64, out_channels, kernel_size=1)
 
     def forward(self, x):
-        skip_connections = []
+        # 编码路径
+        x1 = self.down1(x)
+        x2 = self.pool1(x1)
+        x3 = self.down2(x2)
+        x4 = self.pool2(x3)
+        x5 = self.down3(x4)
+        x6 = self.pool3(x5)
+        x7 = self.down4(x6)
+        x8 = self.pool4(x7)
 
-        # 下采样路径
-        for down in self.downs:
-            x = down(x)
-            skip_connections.append(x)
-            x = self.pool(x)
+        # Bottle neck
+        x9 = self.bottleneck(x8)
 
-        x = self.bottleneck(x)
-        skip_connections = skip_connections[::-1]
+        # 解码路径
+        x10 = self.up1(x9)
+        x10 = torch.cat([x7, x10], dim=1)
+        x11 = self.conv1(x10)
+        x12 = self.up2(x11)
+        x12 = torch.cat([x5, x12], dim=1)
+        x13 = self.conv2(x12)
+        x14 = self.up3(x13)
+        x14 = torch.cat([x3, x14], dim=1)
+        x15 = self.conv3(x14)
+        x16 = self.up4(x15)
+        x16 = torch.cat([x1, x16], dim=1)
+        x17 = self.conv4(x16)
 
-        # 上采样路径
-        for idx in range(0, len(self.ups), 2):
-            x = self.ups[idx](x)
-            skip_connection = skip_connections[idx // 2]
-
-            # 如果尺寸不匹配，进行裁剪（可根据需要调整）
-            if x.shape != skip_connection.shape:
-                x = F.interpolate(x, size=skip_connection.shape[2:])
-
-            concat_skip = torch.cat((skip_connection, x), dim=1)
-            x = self.ups[idx + 1](concat_skip)
-
-        return self.final_conv(x)
+        output = self.out_conv(x17)
+        return output
 

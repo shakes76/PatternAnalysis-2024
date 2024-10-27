@@ -43,7 +43,6 @@ The specific GCN structure in this project is as follows：
   3. **Dropout:** There is a Dropout operation after each convolution layer, which randomly discards some node features during training to prevent the model from overfitting.
   4. **ReLU:** ReLU activation function is applied after each convolution layer to introduce nonlinearity, so that the model can learn more complex features.
   5. **Classification layer:** The last output layer uses a Log Softmax layer, which is responsible for outputting the category probability of the node.
-
 The data set input contains a graph structure containing node features and edge connection information. After passing through the model, a tensor will be output, indicating the logarithmic probability of each node belonging to different categories.
 
 ### Overall framework
@@ -115,7 +114,6 @@ The visualization curves of accuracy and loss value corresponding to the trainin
 </div>
 
 From the loss curve, we can see that both curves are high at the beginning, and then gradually decrease. After about 50 epochs, the **loss value** stabilizes and finally approaches **0.3**. Although the training loss is significantly lower than the test loss, this indicates that the model performs better on the training set, but there may also be some overfitting trends.
-
 From the accuracy curve, we can see that both curves rise rapidly at the beginning, then gradually stabilize, and finally fluctuate between **0.85-0.9**. 
 We visualize the output results and use UMAP to reduce the dimensionality of the high-dimensional feature vector to a two-dimensional projection:
 

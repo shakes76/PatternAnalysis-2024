@@ -241,19 +241,19 @@ Each model was provided the same set of data. As the data is randomly split each
 ### GraphSAGE Performance
 **GraphSAGE Loss Plot:**
 
-![GraphSAGE Loss Plot](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_Train.png)
+![GraphSAGE Loss Plot](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SAGE_Train.png)
 
 **GraphSAGE Validation Loss:**
 
-![GraphSAGE Validation Loss](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_Validation.png)
+![GraphSAGE Validation Loss](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SAGE_Validation.png)
 
 **GraphSAGE Test Accuracy:**
 
-![GraphSAGE Test Accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_Accuracy.png)
+![GraphSAGE Test Accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SAGE_Accuracy.png)
 
 **GraphSAGE T-SNE Visualisation:**
 
-![GraphSAGE TSNE](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_TSNE.png)
+![GraphSAGE TSNE](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SAGE_TSNE.png)
 
 ### SGC Performance
 **SGC Loss Plot:**

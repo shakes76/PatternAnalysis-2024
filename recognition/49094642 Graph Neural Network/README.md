@@ -6,11 +6,11 @@ student ID: 49094642
 ## Project Overview
 This project solves the problem of semi supervised node classification of Facebook Large Page-Page Network dataset by using GCN model. The goal is to classify nodes into multiple categories based on their features and their edges. It uses batch normalization and dropout to improve the accuracy of the model, and draws loss curves and accuracy curves, combined with embedded UMAP visualization, to help better understand the model's ability to represent data.
 
-
 ## Table of Contents
+- [Module Architecture](#module-architecture)
 - [Environment Dependencies](#environment-dependencies)
-- [Inputs](#inputs)
 - [Model Usage](#model-usage)
+- [Inputs](#inputs)
 - [Outputs](#outputs)
 - [References](#references)
 

@@ -156,17 +156,20 @@ The results highlight a key issue in melanoma detection: getting high overall ac
 - `predict.py`: Performs predictions and evaluation on new image data
 - `README.md`: Project documentation
 
+
+```markdown
 ## Dependencies
 
-matplotlib==3.8.2
-numpy==2.1.2
-pandas==2.2.3
-Pillow==11.0.0
-scikit_learn==1.3.2
-seaborn==0.13.2
-torch==2.2.1+cu121
-torchvision==0.17.1+cu121
-tqdm==4.66.5
+matplotlib==3.8.2  
+numpy==2.1.2  
+pandas==2.2.3  
+Pillow==11.0.0  
+scikit_learn==1.3.2  
+seaborn==0.13.2  
+torch==2.2.1+cu121  
+torchvision==0.17.1+cu121  
+tqdm==4.66.5  
+```
 
 ## References
 

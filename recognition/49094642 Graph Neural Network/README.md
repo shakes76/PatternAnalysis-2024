@@ -22,13 +22,13 @@ GNN covers all neural network models for processing graph data. Its goal is to p
   3.Message Passing Neural Networks (MPNN): The message passing and aggregation process between nodes can be flexibly defined.
   4.Graph Recurrent Neural Networks (GRNN): Combine graph structure with recurrent neural network (RNN) to process time-dependent graph data.
   5.Dynamic Graph Neural Networks (DGNN): Process dynamic graph structures that change over time.
+The process diagram of the GNN model performing end-to-end prediction tasks is as follows：
+![An end-to-end prediction task with a GNN module](./images/model structure.png) 
 
 ### Graph Convolutional Network(GCN)
 GCN is a specific implementation of GNN. It is a model that processes graph-structured data based on convolution operations. The representation of each node is updated by aggregating the features of each node and its neighboring nodes. Unlike traditional convolutional neural networks that operate on regular grid data (such as images and text), GCN processes irregular graph-structured data, such as social networks and molecular structure graphs.
 
-The core principle of GCN is to propagate and update node features layer by layer, and each layer updates the representation of the node according to the node's neighbor information. Through multi-layer graph convolution operations, the node features gradually merge the information of the surrounding nodes, thereby extracting high-order features in the entire graph structure, and finally used for tasks such as node classification, edge prediction, or overall graph classification.The process diagram of the GCN model performing end-to-end prediction tasks is as follows：
-
-图片
+The core principle of GCN is to propagate and update node features layer by layer, and each layer updates the representation of the node according to the node's neighbor information. Through multi-layer graph convolution operations, the node features gradually merge the information of the surrounding nodes, thereby extracting high-order features in the entire graph structure, and finally used for tasks such as node classification, edge prediction, or overall graph classification.
 
 ### Algorithm Principle
 The specific GCN structure in this project is as follows：
@@ -116,6 +116,3 @@ According to the output results, the model showed good classification ability pr
   https://distill.pub/2021/gnn-intro/
 - Boldenow, Brad. 2018. 'Simple Network Analysis of Facebook Data', Accessed 10.26.
   https://www.kaggle.com/code/boldy717/simple-network-analysis-of-facebook-data
-
-
-

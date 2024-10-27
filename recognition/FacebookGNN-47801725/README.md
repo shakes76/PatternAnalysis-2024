@@ -45,22 +45,26 @@ This code preprocesses graph data for training with PyTorch Geometric. It loads 
 - **Convergence**: The losses approach low values with minimal discrepancies, indicating effective learning with minimal overfitting. Slight end-of-training fluctuations suggest a good balance between learning rate and model stability.
 
 ## Files Included 
-Dataset.py: Containing the data loader for transforming the Facebook dataset into torch_geometric Dataset.
-modules.py: Contains the GAN model
-train.py: Contains the source code for training, validating, testing and saving your model.
-predict.py: Shows example usage of your trained model
-README.md: This file provides an overview of the project, the dataset, training details, discussions and the results obtained.
-Images: Images used in the README.md
+- **`data.py`**: Contains the data loader, transforming the Facebook dataset into a `torch_geometric` dataset.
+- **`modules.py`**: Contains the GCN model architecture.
+- **`train.py`**: Script for training, validating, testing, and saving the model.
+- **`predict.py`**: Provides example usage of the trained model.
+- **`README.md`**: This documentation file.
+- **`images/`**: Folder containing images used in the README.
 
 
 ## Conclusion 
 
+The Graph Convolutional Network (GCN) model achieved a notable **best accuracy of 94.97%** on the Facebook dataset, demonstrating its strong generalization capability. The accuracy plot reveals rapid improvement in the initial training epochs, followed by a smooth convergence as the model refines its predictions. This steady convergence, accompanied by closely aligned training and validation losses, indicates effective learning with minimal overfitting.
+
+The transformation of node embeddings observed in the t-SNE visualizations illustrates the GCN’s ability to learn meaningful representations. Before training, nodes from different classes were intermixed without clear separation. However, post-training, the t-SNE plot shows distinct clusters for each class, underscoring the model’s effectiveness in capturing both feature and structural information within the graph. This high accuracy, along with clear embedding separation and stable convergence, demonstrates the model’s robustness and effectiveness for complex node classification in graph-structured data.
+
 
 ## Dependencies 
-Python 3.8 
-Pytorch: 2.0.0+cpu
-scikit-learn 1.3.2 
-scipy 1.11.3 
-matplotlib 3.8.0 
-numpy 1.24.1
+- **Python**: 3.8
+- **PyTorch**: 2.0.0+cpu
+- **scikit-learn**: 1.3.2
+- **scipy**: 1.11.3
+- **matplotlib**: 3.8.0
+- **numpy**: 1.24.1
 ## References 

@@ -205,58 +205,72 @@ The primary metrics logged and used for the analysis of the GNN architectures we
 Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the dataset.py file. Each model was then tested on each seed for a total of 5 runs. The following graphs display the performances of each model.
 
 ### GCN Performance
-**[GCN Loss Plot]**
+**GCN Loss Plot:**
 
 ![GCN Loss Plot](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GCN_Train.png)
 
-**[GCN Test Accuracy]**
+**GCN Validation Loss:**
 
+![GCN Validation Loss](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GCN_Validation.png)
 
-**[GCN Validation Loss]**
+**GCN Test Accuracy:**
 
+![GCN Test Accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GCN_Accuracy.png)
 
-**[GCN T-SNE Visualisation]**
+**GCN T-SNE Visualisation:**
 
+![GCN TSNE](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GCN_TSNE.png)
 
 ### GAT Performance
-**[GAT Loss Plot]**
+**GAT Loss Plot:**
 
+![GAT Loss Plot](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GAT_Train.png)
 
-**[GAT Test Accuracy]**
+**GAT Validation Loss:**
 
+![GAT Validation Loss](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GAT_Validation.png)
 
-**[GAT Validation Loss]**
+**GAT Test Accuracy:**
 
+![GAT Test Accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GAT_Accuracy.png)
 
-**[GAT T-SNE Visualisation]**
+**GAT T-SNE Visualisation:**
 
+![GAT TSNE](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GAT_TSNE.png)
 
 ### GraphSAGE Performance
-**[GraphSAGE Loss Plot]**
+**GraphSAGE Loss Plot:**
 
+![GraphSAGE Loss Plot](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_Train.png)
 
-**[GraphSAGE Test Accuracy]**
+**GraphSAGE Validation Loss:**
 
+![GraphSAGE Validation Loss](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_Validation.png)
 
-**[GraphSAGE Validation Loss]**
+**GraphSAGE Test Accuracy:**
 
+![GraphSAGE Test Accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_Accuracy.png)
 
-**[GraphSAGE T-SNE Visualisation]**
+**GraphSAGE T-SNE Visualisation:**
 
-
+![GraphSAGE TSNE](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/GraphSAGE_TSNE.png)
 
 ### SGC Performance
-**[SGC Loss Plot]**
+**SGC Loss Plot:**
 
+![SGC Loss Plot](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SGC_Train.png)
 
-**[SGC Test Accuracy]**
+**SGC Validation Loss:**
 
+![SGC Validation Loss](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SGC_Validation.png)
 
-**[SGC Validation Loss]**
+**SGC Test Accuracy:**
 
+![SGC Test Accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SGC_Accuracy.png)
 
-**[SGC T-SNE Visualisation]**
+**SGC T-SNE Visualisation:**
 
+![SGC TSNE](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/SGC_TSNE.png)
 
 
 ### Model Comparisons

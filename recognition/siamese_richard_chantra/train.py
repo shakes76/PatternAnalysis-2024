@@ -3,79 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from dataset import DataManager
 from tqdm import tqdm
-import torchvision.models as models
-from torchvision.models import ResNet50_Weights
-
-class SiameseNetwork(nn.Module):
-    """
-    Siamese Network for learning image embeddings of benign and malignant melanomas.
-    """
-    def __init__(self):
-        super(SiameseNetwork, self).__init__()
-
-        # ResNet50 Feature Extractor
-        resnet = models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
-        self.features = nn.Sequential(*list(resnet.children())[:-1])
-
-        # Fully Connected Layer
-        self.fc = nn.Sequential(
-            nn.Linear(2048, 512),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128)
-        )
-
-    def forward(self, x1, x2):
-        """Forward pass to compute embeddings for a pair of images"""
-        # Get embeddings for both images
-        out1 = self.get_embedding(x1)
-        out2 = self.get_embedding(x2)
-        return out1, out2
-    
-    def get_embedding(self, x):
-        """Computing embeddings for a single image"""
-        features = self.features(x)
-        features = features.view(features.size(0), -1)
-        return self.fc(features)
-
-class MLPClassifier(nn.Module):
-    """
-    MLP Classifier using Siamese Network embeddings to predict melanoma
-    """
-    def __init__(self, embedding_dim=128):
-        super(MLPClassifier, self).__init__()
-        self.classifier = nn.Sequential(
-            nn.Linear(embedding_dim, 64),
-            nn.ReLU(),
-            nn.Dropout(0.7),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(32, 1),
-            nn.Sigmoid()
-        )
-
-    def forward(self, embedding):
-        """
-        Input: embedding from Siamese network
-        Output: probability of being malignant (0 = benign, 1 = malignant)
-        """
-        return self.classifier(embedding)
-
-def contrastive_loss(output1, output2, label, margin=1.0):
-    """
-    Contrastive loss for Siamese Network training
-    """
-    # Calculate euclidean distance
-    euclidean_distance = torch.sqrt(torch.sum((output1 - output2) ** 2, dim=1) + 1e-6)
-    
-    # Calculate contrastive loss
-    loss = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
-                     label * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2))
-    
-    return loss
+from modules import SiameseNetwork, MLPClassifier, contrastive_loss
 
 def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, margin=1.0):
     """
@@ -173,7 +101,9 @@ def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loade
                 'accuracy': best_acc,
             }, 'best_mlp_classifier.pth')
 
-if __name__ == "__main__":
+
+def main():
+    global device
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -209,3 +139,6 @@ if __name__ == "__main__":
     # Train classifier
     print("\nTraining MLPClassifier using learned embeddings:")
     train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=8)
+
+if __name__ == "__main__":
+    main()

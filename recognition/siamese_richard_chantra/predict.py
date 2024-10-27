@@ -1,3 +1,11 @@
+"""
+- Predicts melanoma classifications for images in a directory
+- Provides evaluation metrics for batch predictions
+
+@author: richardchantra
+@student_number: 43032053
+"""
+
 import torch
 from modules import SiameseNetwork, MLPClassifier, Predict
 
@@ -19,10 +27,10 @@ def main():
     # Create Predict instance
     predictor = Predict(siamese_network, mlp_classifier, device)
     
-    # Path to the folder with new images for prediction
-    folder_path = 'archive/test-image/image/'  # Replace with your folder path
+    # Path to the directory with new images for prediction
+    folder_path = 'archive/test-image/image/'  # Replace with any directory
 
-    # Run predictions on the folder
+    # Run predictions on the directory
     predictions, probabilities, image_names = predictor.batch_predict(folder_path)
     
     # Evaluate and display results

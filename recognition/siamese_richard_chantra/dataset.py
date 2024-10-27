@@ -1,3 +1,11 @@
+"""
+- Manages and preprocesses melanoma dataset for model training
+- Includes data loading, augmentation, and DataLoader generation
+
+@author: richardchantra
+@student_number: 43032053
+"""
+
 import pandas as pd
 from PIL import Image
 import torch

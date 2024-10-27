@@ -1,16 +1,24 @@
+"""
+- The Siamese Network, MLP Classifier and Contrastive Loss are defined for use in train.py and predict.py
+- The Predict class is defined for prediction using a saved model in predict.py
+- The Evaluation class is defined for evaluating the performance post training in train.py
+
+@author: richardchantra
+@student_number: 43032053
+"""
+
+import os
 import torch
 import torch.nn as nn
 import torchvision.models as models
 from torchvision.models import ResNet50_Weights
+import torchvision.transforms as transforms
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report, roc_curve, auc, confusion_matrix, classification_report
+from sklearn.metrics import classification_report, roc_curve, auc, confusion_matrix
 import seaborn as sns
-from dataset import DataManager
 from PIL import Image
-import torchvision.transforms as transforms
-import os
 
 class SiameseNetwork(nn.Module):
     """
@@ -34,17 +42,34 @@ class SiameseNetwork(nn.Module):
         )
 
     def forward(self, x1, x2):
-        """Forward pass to compute embeddings for a pair of images"""
+        """
+        Forward pass to compute embeddings for a pair of images
+        """
         # Get embeddings for both images
         out1 = self.get_embedding(x1)
         out2 = self.get_embedding(x2)
         return out1, out2
     
     def get_embedding(self, x):
-        """Computing embeddings for a single image"""
+        """
+        Computing embeddings for a single image
+        """
         features = self.features(x)
         features = features.view(features.size(0), -1)
         return self.fc(features)
+    
+    def contrastive_loss(self, output1, output2, label, margin=1.0):
+        """
+        Contrastive loss for Siamese Network training
+        """
+        # Calculate euclidean distance
+        euclidean_distance = torch.sqrt(torch.sum((output1 - output2) ** 2, dim=1) + 1e-6)
+        
+        # Calculate contrastive loss
+        loss = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
+                        label * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2))
+        
+        return loss
 
 class MLPClassifier(nn.Module):
     """
@@ -70,18 +95,7 @@ class MLPClassifier(nn.Module):
         """
         return self.classifier(embedding)
 
-def contrastive_loss(output1, output2, label, margin=1.0):
-    """
-    Contrastive loss for Siamese Network training
-    """
-    # Calculate euclidean distance
-    euclidean_distance = torch.sqrt(torch.sum((output1 - output2) ** 2, dim=1) + 1e-6)
-    
-    # Calculate contrastive loss
-    loss = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
-                     label * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2))
-    
-    return loss
+
 
 class Predict:
     """

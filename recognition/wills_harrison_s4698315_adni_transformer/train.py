@@ -26,8 +26,8 @@ def make_model():
         img_size=224, patch_size=4, in_chans=1, num_classes=2,
         embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
         window_size=7, mlp_ratio=4, qkv_bias=True, qk_scale=None, 
-        drop_path_rate=0.2, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-        drop_rate=0.3, attn_drop_rate=0
+        drop_path_rate=0.5, norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        drop_rate=0.5, attn_drop_rate=0.5
     )
     return model
 
@@ -173,7 +173,7 @@ def train(patience=50, lr=1e-4, batch_size=64, show_plots=False,
     
     # Save the model
     if save_model:
-        torch.save(best_model, f'models/{model_type}_{lr}_{weight_decay}_{batch_size}.pth')
+        torch.save(best_model, f'models/_{lr}_{weight_decay}_{batch_size}.pth')
 
 def main():
     # Load configuration from config.yaml
@@ -181,7 +181,7 @@ def main():
         config = yaml.safe_load(file)
     
     parameters = config['parameters']
-    num_epochs = config.get('num_epochs', 100)
+    num_epochs = config.get('num_epochs', 300)
     show_plots = config.get('show_plots', False)
     save_model = config.get('save_model', False)
     
@@ -190,7 +190,7 @@ def main():
     param_combinations = list(itertools.product(*param_values))
     
     for lr, batch_size, weight_decay in param_combinations:
-        model_path = f"models/{model_type}_{lr}_{weight_decay}_{batch_size}.pth"
+        model_path = f"models/{lr}_{weight_decay}_{batch_size}.pth"
         
         # Check if the model has already been trained
         if not os.path.exists(model_path):

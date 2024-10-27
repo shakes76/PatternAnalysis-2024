@@ -7,6 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, roc_curve, auc, confusion_matrix, classification_report
 import seaborn as sns
+from dataset import DataManager
+from PIL import Image
+import torchvision.transforms as transforms
+import os
 
 class SiameseNetwork(nn.Module):
     """
@@ -80,13 +84,93 @@ def contrastive_loss(output1, output2, label, margin=1.0):
     return loss
 
 class Predict:
+    """
+    Handling prediction for images and using a trained SiameseNetwork and MLPClassifier to do so
+    """
     def __init__(self, siamese_network, mlp_classifier, device):
         self.siamese_network = siamese_network
         self.mlp_classifier = mlp_classifier
         self.device = device
 
+    @staticmethod
+    def load_image(image_path):
+        """
+        Load and preprocess an image for prediction.
+        """
+        # Apply transformations
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        ])
+        image = Image.open(image_path).convert('RGB')
+        return transform(image).unsqueeze(0)
+    
+    def predict_image(self, image_path):
+        """
+        Predict whether a new image is benign or malignant.
+        """
+        # Load and preprocess the image
+        image = self.load_image(image_path).to(self.device)
+        
+        # Eval mode
+        self.siamese_network.eval()
+        self.mlp_classifier.eval()
+        
+        with torch.no_grad():
+            # Generate embedding for the image
+            embedding = self.siamese_network.get_embedding(image)
+            
+            # Classify the embedding
+            output = self.mlp_classifier(embedding)
+            prediction = (output > 0.5).float() 
+            probability = output.item()
+        
+        return prediction.item(), probability
+
+    def batch_predict(self, folder):
+        """
+        Performs predictions on all images within a specified directory
+        """
+        predictions = []
+        probabilities = []
+        image_names = []
+        
+        for filename in tqdm(os.listdir(folder), desc="Predicting images"):
+            if filename.endswith(('.jpg')):
+                image_path = os.path.join(folder, filename)
+                prediction, probability = self.predict_image(image_path)
+                
+                predictions.append(prediction)
+                probabilities.append(probability)
+                image_names.append(filename)
+        
+        return predictions, probabilities, image_names
+
+    def evaluate_predictions(self, predictions, probabilities):
+        """
+        Evaluates a set of metrics for a batch of predictions
+        """
+        benign_count = predictions.count(0)
+        malignant_count = predictions.count(1)
+        avg_probability = np.mean(probabilities)
+        
+        report = classification_report(
+            predictions, [1]*len(predictions), target_names=['Benign', 'Malignant']
+        )
+
+        return {
+            'benign_count': benign_count,
+            'malignant_count': malignant_count,
+            'avg_probability': avg_probability,
+            'classification_report': report
+        }
+
     def predict(self, data_loader):
-        """Run predictions on the given data loader"""
+        """
+        Run predictions on the given data loader
+        """
         # Set models to evaluation mode
         self.siamese_network.eval()
         self.mlp_classifier.eval()
@@ -117,13 +201,18 @@ class Predict:
         return np.array(preds), np.array(probs), np.array(labels)
 
 class Evaluate:
+    """
+    Evaluating the classifier using a number of metrics
+    """
     def __init__(self, preds, probs, labels):
         self.preds = preds
         self.probs = probs
         self.labels = labels
 
     def evaluate(self):
-        """Evaluate predictions and return metrics"""
+        """
+        Evaluate predictions and return metrics
+        """
         return {
             'basic_metrics': self._get_basic_metrics(),
             'roc_auc': self._get_roc_auc(),
@@ -132,7 +221,9 @@ class Evaluate:
         }
 
     def _get_basic_metrics(self):
-        """Calculate accuracy metrics for both classes"""
+        """
+        Calculate accuracy metrics for both classes
+        """
         accuracy = (self.preds == self.labels).mean()
         malignant_mask = self.labels == 1
         benign_mask = self.labels == 0
@@ -144,12 +235,16 @@ class Evaluate:
         }
     
     def _get_roc_auc(self):
-        """Calculate ROC curve and AUC score"""
+        """
+        Calculate ROC curve and AUC score
+        """
         fpr, tpr, _ = roc_curve(self.labels, self.probs)
         return {'fpr': fpr, 'tpr': tpr, 'auc': auc(fpr, tpr)}
 
     def plot_results(self):
-        """Generate ROC curve and confusion matrix plots"""
+        """
+        Generate ROC curve and confusion matrix plots
+        """
         # Plot ROC curve
         roc_data = self._get_roc_auc()
         plt.figure(figsize=(10, 8))
@@ -172,12 +267,14 @@ class Evaluate:
         plt.close()
 
     def save_results(self, filename='evaluation_results.txt'):
-        """Save all evaluation metrics to file"""
+        """
+        Save evaluation metrics to file
+        """
         results = self.evaluate()
         metrics = results['basic_metrics']
         
         with open(filename, 'w') as f:
-            f.write("Evaluation Results\n\n")
+            f.write("\nEvaluation Results:\n")
             f.write(f"Overall Accuracy: {metrics['accuracy']}\n")
             f.write(f"Malignant Accuracy: {metrics['malignant_accuracy']}\n")
             f.write(f"Benign Accuracy: {metrics['benign_accuracy']}\n")

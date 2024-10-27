@@ -305,7 +305,7 @@ From the plot above, the architecture with the single highest accuracy (95.149%)
 
 The GAT also performed best on average:
 
-Architecture  | Average Accuracy
+**Architecture**  | **Average Accuracy**
 ------------- | -------------
 GCN  | 93.0216%
 GAT  |  **94.3392%**
@@ -320,9 +320,9 @@ To test trained models on the graph data, use the `predict.py` script. This scri
 ## Further Improvements
 To further improve the accuracy of the Graph Attention Network, the following improvements can be made:
 
-Hyperparameter Tuning: A grid search should be done to find the most optimal set of hyperparameters. These include the learning rate, learning rate scheduler, number of epochs, patience, number of layers, number of attention heads, activation functions, dropout and weight decay.
+**Hyperparameter Tuning:** A grid search should be done to find the most optimal set of hyperparameters. These include the learning rate, learning rate scheduler, number of epochs, patience, number of layers, number of attention heads, activation functions, dropout and weight decay.
 
-Visualisation: A UMAP visualisation could be done to see observe on the manifold where the model can be improved, and to understand important node/edge relationships.
+**Visualisation:** A UMAP visualisation could be done to see observe on the manifold where the model can be improved, and to understand important node/edge relationships.
 
 ## References
 - Kipf, T. N., & Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. ArXiv:1609.02907 [Cs, Stat]. https://arxiv.org/abs/1609.02907

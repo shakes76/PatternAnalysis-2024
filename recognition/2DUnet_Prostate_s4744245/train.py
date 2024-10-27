@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 #define training variables
 BATCH_SIZE = 16
-EPOCHS = 30
+EPOCHS = 50
 n_classes = 6
 learning_rate = 0.0001
 
@@ -142,4 +142,4 @@ def plot_training(history):
     plt.ylabel('Loss Value')
     plt.ylim([0, 1])
     plt.legend()
-    plt.savefig('training_loss_1.png')
+    plt.savefig('training_loss_drop0.2.png')

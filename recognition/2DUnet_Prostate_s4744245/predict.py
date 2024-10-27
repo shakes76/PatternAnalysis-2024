@@ -11,7 +11,7 @@ from modules import unet_model, unet_model1
 images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
 
 
-run = "low"
+run = "drop0.2"
 
 #check if GPU is available
 tf.config.experimental.list_physical_devices('GPU')
@@ -88,7 +88,7 @@ class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(
 print(class_weights)
 
 # Initialize the U-Net model
-model = unet_model1(n_classes, input_size=(256, 128, 1))
+model = unet_model(n_classes, dropout_rate=0.2, input_size=(256, 128, 1))
 
 # Train the U-Net model
 history = train_unet_model(model, images_train, images_seg_train, 
@@ -116,9 +116,8 @@ def print_image(index):
 for i in range(5):
     print_image(i*10)
 
+images_test_predict = np.expand_dims(images_test, axis=-1)  # Adds the channel dimension
 
-
-images_test_predict = np.expand_dims(images_test, axis=-1)  # Adds the channel dimension if missing
 # Make predictions on the test set
 predictions = model.predict(images_test_predict)
 
@@ -131,14 +130,7 @@ true_labels = np.argmax(images_seg_test, axis=-1)  # Shape (num_samples, height,
 # Calculate Dice coefficients for each class
 dice_scores = calculate_dice_per_class(true_labels, predicted_labels, n_classes)
 
-passed = True
 # Print the Dice coefficients for each class
 for class_id, score in enumerate(dice_scores):
-    if score < 0.75 and passed:
-        passed = False
     print(f"Dice Coefficient for Class {class_id}: {score:.4f}")
 
-if passed:
-    print("WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW", run)
-else:
-    print(run)

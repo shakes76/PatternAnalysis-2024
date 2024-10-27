@@ -35,7 +35,7 @@ train_gt_dir = "/home/groups/comp3710/ISIC2018/ISIC2018_Task1_Training_GroundTru
 train_image_paths = sorted(glob(os.path.join(train_input_dir, "*.jpg")))
 train_mask_paths = sorted(glob(os.path.join(train_gt_dir, "*.png")))
 
-# 创建图像和标注的映射关系
+# Create mapping between images and annotations
 image_dict = {os.path.basename(x).split('.')[0]: x for x in train_image_paths}
 
 mask_dict = {}

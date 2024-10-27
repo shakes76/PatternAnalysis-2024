@@ -216,3 +216,23 @@ class DiceLoss(nn.Module):
             dsc = dsc * self.weights.to(y_pred.device)
 
         return 1. - dsc.mean()
+
+
+def calculate_dice(y_pred, y_true, num_classes=6):
+    assert y_true.size() == y_pred.size(
+    ), f"Shape mismatch: {y_pred.size()} != {y_true.size()}"
+
+    y_pred = torch.argmax(y_pred, dim=1)
+    y_true = torch.argmax(y_true, dim=1)
+
+    dice_scores = []
+    for cls in range(num_classes):
+        y_pred_cls = (y_pred == cls).float()
+        y_true_cls = (y_true == cls).float()
+
+        intersection = (y_pred_cls * y_true_cls).sum(dim=[1, 2, 3])
+        union = y_pred_cls.sum(dim=[1, 2, 3]) + y_true_cls.sum(dim=[1, 2, 3])
+        dice = (2. * intersection + 1e-5) / (union + 1e-5)
+        dice_scores.append(dice.mean().item())
+
+    return torch.tensor(dice_scores, device=y_pred.device)

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from modules import Basic3DUNet, DiceLoss, Improved3DUNet
+from modules import Basic3DUNet, DiceLoss, Improved3DUNet, calculate_dice
 import time
 import os
 from dataset import load_data_3D, Custom3DDataset
@@ -44,16 +44,14 @@ class RandomRotate3D:
         self.max_angle = max_angle
 
     def __call__(self, img):
-        # img should be a PyTorch tensor (C, D, H, W)
-        # Convert the angle to radians for compatibility with torch functions
+        # Convert the angle to radians for compatibility with torch
         angle = np.random.uniform(-self.max_angle, self.max_angle)
         # Choose a random pair of axes for rotation
-        # Corresponds to (D, H), (H, W), (D, W)
         axes = [(2, 3), (3, 4), (2, 4)]
         chosen_axes = np.random.choice(len(axes))
         axes_to_rotate = axes[chosen_axes]
 
-        # Rotate the tensor using torch.rot90 (only works for 90-degree increments)
+        # Rotate the tensor using torch.rot90
         k = int(angle // 90)
         img = torch.rot90(img, k=k, dims=axes_to_rotate)
         return img
@@ -168,26 +166,6 @@ def validate(epoch):
     avg_dice_score = avg_class_dice_scores.mean()
     print(
         f"Epoch [{epoch+1}/{num_epochs}], Average Validation Dice Score: {avg_dice_score:.4f}")
-
-
-def calculate_dice(y_pred, y_true, num_classes=6):
-    assert y_true.size() == y_pred.size(
-    ), f"Shape mismatch: {y_pred.size()} != {y_true.size()}"
-
-    y_pred = torch.argmax(y_pred, dim=1)
-    y_true = torch.argmax(y_true, dim=1)
-
-    dice_scores = []
-    for cls in range(num_classes):
-        y_pred_cls = (y_pred == cls).float()
-        y_true_cls = (y_true == cls).float()
-
-        intersection = (y_pred_cls * y_true_cls).sum(dim=[1, 2, 3])
-        union = y_pred_cls.sum(dim=[1, 2, 3]) + y_true_cls.sum(dim=[1, 2, 3])
-        dice = (2. * intersection + 1e-5) / (union + 1e-5)
-        dice_scores.append(dice.mean().item())
-
-    return torch.tensor(dice_scores, device=y_pred.device)
 
 
 if __name__ == "__main__":

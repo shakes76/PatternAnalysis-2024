@@ -12,7 +12,7 @@ The Facebook Large Page-Page Network dataset was preprocessed into the facebook.
 
 These arrays were converted into tensors for compatibility with the model. To prevent bias and overfitting, the dataset was split into training (70%), validation (20%), and test (10%) sets.
 
-# Model
+## Model
 The GCN model is a type of neural network designed to work with graph-structured data. Like other neural networks, it employs convolution operations, but instead of applying them to grid-based data (e.g. images), it operates on graphs. The key distinction between grid-based models and graph-based models is that grid data relies on aggregating information from fixed-sized regular neighborhoods, whereas graph data aggregates features from dynamically defined neighborhoods based on the graph's structure.
 
 In a GCN, each node updates its feature representation by combining the features of its neighboring nodes. The main idea is that the node can improve its representation by summing up the  information from its neighbors. This aggregation process is similar to the convolution operation in traditional CNNs, where nearby xpixel values are combined to detect patterns.
@@ -20,8 +20,9 @@ In a GCN, each node updates its feature representation by combining the features
 The GCN algorithm can be summarized as follows:
 It requires a feature matrix and an adjacency matrix as inputs. These inputs are passed through predefined convolution layers, which follow the mathematical model of the GCN. After multiple graph convolution layers, each node's feature representation is updated to reflect the information from its surrounding graph structure.
 
+![GCN_model_structure](https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/ce822dbc002c772cd04deac1dac3b0ac4cf01145/recognition_GCN_s4722208/GCN_model_structure.png)
 
-# Architecture
+## Architecture
 The GCN model is built on the neural network based class model in PytTorch.
 
 Graph Convolution layers: performs Graph convolution which takes input and output channel as parameters. 
@@ -31,14 +32,14 @@ Relu activation funciton: activation function which outputs the input directly i
 The input goes through 4 graph convolutions layers and relu functions applied after first, second and third convolution layers.
 The model requests for 3 parameters which are input, hidden and output channels. Input channel value was 128 which is the feature dimension and output channels is 4 which are number of classes. 
 
-# Hyperparameters and Functions
+## Hyperparameters and Functions
 - Optimizer: Adam optimzer 
 - loss: CrossEntropyLoss 
 - num_epochs = 350
 - hidden_layer = 64
 - learning_rate = 5e-4
 
-# Figures and Results 
+## Figures and Results 
 - TSNE plot (pre - training)
   This TSNE plot illustrates the initial distribution of the data before training. The points from different classes appear scattered chaotically, with no discernible clusters or structure.
   ![[TSNE_original_PLOT](recognition/TSNE_original_plot.png)](https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/c4aa6031fa32b2dbd0cc2b2f0eb2ad7c450b87a2/recognition/TSNE_original_plot.png)
@@ -58,22 +59,24 @@ The model requests for 3 parameters which are input, hidden and output channels.
 
 Conclusion: The model achieves an average test accuracy of 93.5%, which is reasonable. It performs well in classifying nodes according to their true labels, although there are room for improvement in reducing overfitting. IIn terms of models, dropout layer and  batch normalisation could be applied to the model to reduce overfitting. Also, Early stopping may be effective to overfitting. Overall, the model successfully classifies nodes in the Facebook dataset with high accuracy.
 
-# Files
+## Files
 - modules.py : GCN Model class 
 - predict.py : Run the saved model on the dataset 
 - train.py : training and testing functions and run them after loading data 
 - dataset.py : function for loading data from `facebook.npz`
 - utiles.py : functions for plotting 
 
-# Depedencies
+## Depedencies
 - torch
 - sklearn
 - matplotlib
 - numpy
 
-# References
+## References
 Data: https://snap.stanford.edu/data/facebook-large-page-page-network.html
 
 Model and training inspiration: https://github.com/gayanku/SCGC/blob/main/models.py and Chat GPT
 
 GCN: https://arxiv.org/abs/1609.02907
+
+Model structure Image: https://www.researchgate.net/figure/Schematic-illustration-of-the-GCN-model-in-this-study_fig3_345220766

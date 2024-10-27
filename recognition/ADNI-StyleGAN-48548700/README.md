@@ -46,7 +46,7 @@ The following dependencies are required to run the scripts in this project:
 - **torchvision 0.10.0+**: For image transformations and saving generated images.
 - **tqdm 4.62.0+**: For progress bars during training.
 - **matplotlib 3.4.3+**: For plotting loss curves and visualizing t-SNE embeddings.
-- **scikit-learn 0.24.2+**: For performing t-SNE and K-Means clustering.
+- **scikit-learn 0.24.2+**: For performing t-SNE.
 - **Pillow 8.3.1+**: For handling image saving via `torchvision`.
 - **argparse**: For command-line argument parsing (included in Python’s standard library).
 - **csv**: For logging training losses (included in Python’s standard library).

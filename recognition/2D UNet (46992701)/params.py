@@ -13,11 +13,9 @@ TEST_MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras
 VAL_IMG_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate'
 VAL_MASK_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate'
 
-IMAGE_SIZE = (128, 128)
-
 # Hyperparameters
 LEARNING_RATE = 1e-4
-BATCH_SIZE = 32
+BATCH_SIZE = 3
 NUM_EPOCHS = 40
 
 

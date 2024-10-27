@@ -2,7 +2,6 @@
 Normal Difficulty
 3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation
 Paper URL: https://arxiv.org/abs/1606.06650
-Author: Ozgun Cicek et al.
 """
 from torch import nn
 import torch
@@ -109,7 +108,7 @@ class UNet3D(nn.Module):
     Returns:
         torch.Tensor: Output tensor after passing through the U-Net.
     """
-    def __init__(self, in_channels, num_classes, level_channels=(64, 128, 256), bottleneck_channel=512) -> None:
+    def __init__(self, in_channels=1, num_classes=5, level_channels=(64, 128, 256), bottleneck_channel=512) -> None:
         super().__init__()
 
         self.a_block1 = Conv3DBlock(in_channels, level_channels[0])

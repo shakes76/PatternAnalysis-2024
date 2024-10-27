@@ -100,7 +100,7 @@ The dataset was not initially divided.I split the dataset into train, validation
 ### Printing accuracy
 The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the **learning rate** is set to **0.005**. After **400 epochs**, the best **train accuracy** is **0.9409** and the **test accuracy** is **0.9206**. The accuracy and loss values of the train set and test set are as follows:
 <div style="text-align: center;">
-    <img src="outputs/printing result.png" alt="printing result" style="width: 60%">
+    <img src="outputs/printing results.png" alt="printing results" style="width: 60%">
 </div>
 
 ### Curve

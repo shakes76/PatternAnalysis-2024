@@ -3,25 +3,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from modules import UNet
+from modules import UNet, f1_score
 from dataset import HipMRIDataset
 import matplotlib.pyplot as plt
+import os, os.path
 
-def f1_score(output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    output = (output > 0.5).float()
-    target = (target > 0.5).float()
-    dims = (-3, -2, -1)
-    EPSILON = 1e-8
-    precision = torch.sum(output * target, dims) / (torch.sum(output, dims) + 1e-8)
-    precision = (torch.abs(torch.sum(output, dims)) >= EPSILON) * precision
-    recall = torch.sum(output * target, dims) / (torch.sum(output * target, dims) + torch.sum((1 - output) * target, dims) + 1e-8)
-    recall = (torch.abs(torch.sum(output * target, dims) + torch.sum((1 - output) * target, dims)) >= EPSILON) * recall
-
-    f1 = 1 - 2 * precision * recall / (precision + recall + 1e-8)
-    f1 = (torch.abs(precision) >= EPSILON) * (torch.abs(recall) >= EPSILON) * f1
-    return f1
-
-def report_batch(images: torch.Tensor, segmented: torch.Tensor, predicted: torch.Tensor, batch: int) -> torch.Tensor:
+def report_batch(images: torch.Tensor, segmented: torch.Tensor, predicted: torch.Tensor, batch: int, name: str = 'batch') -> torch.Tensor:
     if images.shape[0] < 20 or segmented.shape[0] < 20 or predicted.shape[0] < 20:
         raise ValueError('cannot have less than 20 values to report a batch')
 
@@ -36,7 +23,7 @@ def report_batch(images: torch.Tensor, segmented: torch.Tensor, predicted: torch
         axis.set_xticks([])
         axis.set_yticks([])
 
-    plt.savefig(f'batch_{batch}_images.png')
+    plt.savefig(f'{name}_{batch}_images.png')
     plt.clf()
 
     fig, axes = plt.subplots(4, 5)
@@ -50,7 +37,7 @@ def report_batch(images: torch.Tensor, segmented: torch.Tensor, predicted: torch
         axis.set_xticks([])
         axis.set_yticks([])
 
-    plt.savefig(f'batch_{batch}_segmented.png')
+    plt.savefig(f'{name}_{batch}_segmented.png')
     plt.clf()
 
     fig, axes = plt.subplots(4, 5)
@@ -64,7 +51,7 @@ def report_batch(images: torch.Tensor, segmented: torch.Tensor, predicted: torch
         axis.set_xticks([])
         axis.set_yticks([])
 
-    plt.savefig(f'batch_{batch}_predicted.png')
+    plt.savefig(f'{name}_{batch}_predicted.png')
     plt.clf()
 
 if __name__ == '__main__':
@@ -93,6 +80,12 @@ if __name__ == '__main__':
 
         if batch % 50 == 0:
             report_batch(images, segments, output, batch)
+
+    if not os.path.isdir('models/'):
+        os.mkdir('models/')
+
+    print('saving model to models/unet.pt')
+    torch.save(model, 'models/unet.pt')
 
     loader = DataLoader(train_dataset, batch_size=20, shuffle=False)
     sample_images, sample_segments = next(iter(loader))

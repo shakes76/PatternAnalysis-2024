@@ -30,3 +30,17 @@ class UNet(nn.Module):
         x2_up = F.relu(self.up2(F.relu(self.compress2(torch.concat((x3_up, x2), dim=CHANNEL_DIM)))))
         x1_up = F.sigmoid(self.up1(F.relu(self.compress1(torch.concat((x2_up, x1), dim=CHANNEL_DIM)))))
         return x1_up
+
+def f1_score(output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    output = (output > 0.5).float()
+    target = (target > 0.5).float()
+    dims = (-3, -2, -1)
+    EPSILON = 1e-8
+    precision = torch.sum(output * target, dims) / (torch.sum(output, dims) + 1e-8)
+    precision = (torch.abs(torch.sum(output, dims)) >= EPSILON) * precision
+    recall = torch.sum(output * target, dims) / (torch.sum(output * target, dims) + torch.sum((1 - output) * target, dims) + 1e-8)
+    recall = (torch.abs(torch.sum(output * target, dims) + torch.sum((1 - output) * target, dims)) >= EPSILON) * recall
+
+    f1 = 1 - 2 * precision * recall / (precision + recall + 1e-8)
+    f1 = (torch.abs(precision) >= EPSILON) * (torch.abs(recall) >= EPSILON) * f1
+    return f1

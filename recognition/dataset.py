@@ -126,7 +126,7 @@ def show_masks(masks):
 
 show_masks(masks)
 
-# 定义模型和训练过程
+# Define model and training process
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import models
@@ -159,7 +159,7 @@ model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# 训练模型
+# Train the model
 for epoch in range(NUMBER_EPOCHS):
     model.train()
     running_loss = 0.0
@@ -175,7 +175,7 @@ for epoch in range(NUMBER_EPOCHS):
     epoch_loss = running_loss / len(trainloader)
     print(f"Epoch [{epoch+1}/{NUMBER_EPOCHS}], Loss: {epoch_loss:.4f}")
     
-    # 验证
+      # Validation
     model.eval()
     val_loss = 0.0
     with torch.no_grad():

@@ -79,15 +79,18 @@ def train_unet_model():
     """
     
     # Hyperparameters
-    batch_size = 2**6
-    learining_rate = 0.005
-    num_epochs = 50
-    # output_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/outputs/' # Local path
-    output_dir = '/home/Student/s4904983/COMP3710/project/outputs/' # Rangpur path
+    batch_size = 2**9
+    learning_rate = 0.005
+    num_epochs = 20
+    rangpur = True
 
-    # Directory for saving the model
-    # model_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/models/' # Local path
-    model_dir = '/home/Student/s4904983/COMP3710/project/models/' # Rangpur path
+    # Directories for saving the output images and model
+    if rangpur:
+        output_dir = '/home/Student/s4904983/COMP3710/project/outputs/' # Rangpur path
+        model_dir = '/home/Student/s4904983/COMP3710/project/models/' # Rangpur path
+    else:
+        output_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/outputs/' # Local path
+        model_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/models/' # Local path
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -146,9 +149,9 @@ def train_unet_model():
 
     # Load the data
     print("Initializing datasets and dataloaders")
-    TrainDataLoader = MRIDataLoader("train", batch_size=batch_size)
+    TrainDataLoader = MRIDataLoader("train", batch_size=batch_size, shuffle=True)
     print("Training data initialized")
-    ValDataLoader = MRIDataLoader("validate", batch_size=batch_size)
+    ValDataLoader = MRIDataLoader("validate", batch_size=batch_size, shuffle=True)
     print("Validation data initialized")
 
     if not os.path.exists(output_dir):
@@ -162,7 +165,7 @@ def train_unet_model():
 
     # criterion = nn.CrossEntropyLoss()
     criterion = DiceLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learining_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     train_loss, val_loss = [], []
     # train_dice, val_dice = [], []
@@ -171,11 +174,9 @@ def train_unet_model():
 
     for epoch in range(num_epochs):
         model.train()
-        running_loss = np.empty(0)
+        running_loss = []
 
-        # tqdm(total=num_epochs, desc=f'Epoch {epoch + 1}/{num_epochs}', unit='img') as pbar:
-        for i, (images, labels) in enumerate(tqdm(TrainDataLoader, desc=f'Epoch {epoch + 1:>3}/{num_epochs:<3}', unit='batch')):
-            print('\n')
+        for i, (images, labels) in enumerate(TrainDataLoader):
             images, labels = images.to(device), labels.to(device).long()
             
             ### TODO: Remove this
@@ -192,12 +193,12 @@ def train_unet_model():
             optimizer.step()
 
             # dice = dice_coefficient(outputs, labels)
-            running_loss = np.append(running_loss, loss.item())
+            running_loss.append(loss.item())
 
         train_loss.append(np.mean(running_loss))
 
         model.eval()
-        running_loss = np.empty(0)
+        running_loss = []
 
         with torch.no_grad():
             for i, (images, labels) in enumerate(ValDataLoader):
@@ -223,8 +224,8 @@ def train_unet_model():
                 #     plt.show()
 
 
-                running_loss = np.append(running_loss, loss.item())
-                if (epoch+1) % 10 == 0 and i % 5 == 0:
+                running_loss.append(loss.item())
+                if (epoch+1) % 5 == 0 and i % 5 == 0:
                     # Save output images
                     for j in range(0, batch_size, int(batch_size/2-0.5)):
                         image_index = i*batch_size + j
@@ -249,9 +250,9 @@ def train_unet_model():
             val_loss.append(np.mean(running_loss))
             # val_dice.append(dice)
 
-            print(f'{" ":>19}{"|":<8}Train Loss: {train_loss[-1]:.4f} {"|":^15} Val Loss: {val_loss[-1]:.4f} {"|":^15} Train Dice:') #{train_dice[-1].sum()/5:.4f} {"|":^15} Val Dice: {val_dice[-1].sum()/5:.4f}')
+            print(f'Epoch: {epoch + 1}/{num_epochs}, Train Loss: {train_loss[-1]:.4f} | Val Loss: {val_loss[-1]:.4f}')
     
-        if (epoch + 1) % 20 == 0:
+        if (epoch + 1) % 5 == 0:
             # Save the model
             torch.save(model.state_dict(), model_dir + 'unet_model_ep' + str(epoch + 1) + '.pth')
 

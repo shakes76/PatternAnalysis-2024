@@ -79,6 +79,7 @@ evaluation metric:
 	using the DICE Coefficient to evaluate the model
 	
 		the result is:	0.9258
+  	![DICE Coffeicient](recognition/3D-UNET--48243304/result/dice.png)
 	
 segmentation output:
 
@@ -86,7 +87,7 @@ segmentation output:
 
 ##**Reference**
 
-1.Çiçek, Ö., Abdulkadir, A., Lienkamp, S. S., Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning dense volumetric segmentation from sparse annotation. *arXiv*. https://doi.org/10.48550/arXiv.1606.06650
+1.Ã‡iÃ§ek, Ã–., Abdulkadir, A., Lienkamp, S. S., Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning dense volumetric segmentation from sparse annotation. *arXiv*. https://doi.org/10.48550/arXiv.1606.06650
 
 2.OpenAI. (2024). ChatGPT [Large language model]. https://chatgpt.com
 3.Dowling, Jason; & Greer, Peter (2021): Labelled weekly MR images of the male pelvis. v2. CSIRO. Data Collection. https://doi.org/10.25919/45t8-p065

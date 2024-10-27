@@ -13,6 +13,7 @@ import torch.optim as optim
 from tqdm import tqdm
 from dataset import DataManager
 from modules import SiameseNetwork, MLPClassifier, Evaluate, Predict
+import argparse
 
 def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, margin=1.0):
     """
@@ -117,15 +118,31 @@ def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loade
     return epoch_losses
 
 def main():
+    # Argument Parsing
+    parser = argparse.ArgumentParser(description="Training a Siamese Network and MLP Classifier on melanoma images")
+    parser.add_argument('--csv_path', type=str, default='archive/train-metadata.csv',
+                        help='Path to the CSV metadata file')
+    parser.add_argument('--img_dir', type=str, default='archive/train-image/image/',
+                        help='Directory path to the image files')
+    parser.add_argument('--batch_size', type=int, default=256,
+                        help='Batch size for DataLoader')
+    parser.add_argument('--epochs_siamese', type=int, default=16,
+                        help='Number of epochs for training the Siamese Network')
+    parser.add_argument('--epochs_mlp', type=int, default=8,
+                        help='Number of epochs for training the MLP Classifier')
+    parser.add_argument('--save_dir', type=str, default="plots",
+                        help='Directory to save training plots')
+    args = parser.parse_args()
+
     # Set device
     global device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Setup data
-    data_manager = DataManager('archive/train-metadata.csv', 'archive/train-image/image/')
+    data_manager = DataManager(args.csv_path, args.img_dir)
     data_manager.load_data()
-    data_manager.create_dataloaders()
+    data_manager.create_dataloaders(batch_size=args.batch_size)
     train_loader = data_manager.train_loader
     test_loader = data_manager.test_loader
 
@@ -151,7 +168,7 @@ def main():
         siamese_network,
         optimizer_siamese,
         train_loader,
-        epochs=16
+        epochs=args.epochs_siamese
     )
     
     # Train the MLP classifier
@@ -161,7 +178,7 @@ def main():
         mlp_classifier, 
         optimizer_mlp, 
         train_loader,
-        epochs=8
+        epochs=args.epochs_mlp
     )
 
     # Plot and save training losses

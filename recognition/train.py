@@ -9,30 +9,30 @@ from dataset import SiameseISICDataset
 import random
 import numpy as np
 
-# Random
+# Set random seeds
 torch.manual_seed(42)
 random.seed(42)
 np.random.seed(42)
 
-# 设置超参数
+# Set hyperparameters
 BATCH_SIZE = 8
 NUMBER_EPOCHS = 100
 IMG_SIZE = 100
 
-# 定义图像转换
+# Define image transformations
 transform = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor()
 ])
 
-# 创建数据集和数据加载器
+# Create datasets and data loaders
 train_dataset = SiameseISICDataset(image_folder='/home/groups/comp3710/ISIC2018/train', transform=transform)
 val_dataset = SiameseISICDataset(image_folder='/home/groups/comp3710/ISIC2018/val', transform=transform)
 
 trainloader = DataLoader(train_dataset, shuffle=True, num_workers=8, batch_size=BATCH_SIZE)
 valloader = DataLoader(val_dataset, shuffle=False, num_workers=8, batch_size=BATCH_SIZE)
 
-# 定义模型、损失函数和优化器
+# Define model, loss function, and optimizer
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 net = SiameseNetwork().to(device)
 criterion = nn.CrossEntropyLoss()
@@ -67,7 +67,7 @@ for epoch in range(NUMBER_EPOCHS):
     epoch_loss = running_loss / len(trainloader)
     print(f"Epoch [{epoch+1}/{NUMBER_EPOCHS}], Loss: {epoch_loss:.4f}")
     
-    # 验证模型
+    # Validate the model
     net.eval()
     correct_val = 0
     total_val = 0
@@ -83,5 +83,5 @@ for epoch in range(NUMBER_EPOCHS):
     accuracy = 100 * correct_val / total_val
     print(f'Validation Accuracy: {accuracy:.2f}%')
     
-    # 可视化损失曲线（如果需要）
+    # Visualize loss curve (if needed)
     # show_plot(counter, loss_history)

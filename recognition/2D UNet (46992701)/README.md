@@ -17,7 +17,7 @@ The MRI images used for this project were acquired as part of a retrospective MR
 The provided validation and test sets were used and so there was no train-validate-test split performed for training, validating and testing the 2D UNet model.
 
 ### Data Preprocessing:
-Images were read using provided NifTI load_data_2D function. All images where normalized and resized to 128x128 to reduce training time and memory consumption, and the segmentation labels were one-hot encoded.
+Images were read using provided NifTI load_data_2D function. All images where normalized and resized to 256x128 to ensure consistency, and the segmentation labels were one-hot encoded.
 
 ### Usage:
 To create predictions and evaluate the model, set the values of `TRAIN_IMG_DIR, TRAIN_MASK_DIR, TEST_IMG_DIR, TEST_MASK_DIR, VAL_IMG_DIR, VAL_MASK_DIR` in `params.py` to the appropriate file directories of the corresponding images/masks. Run `train.py` to train the model. If a pre-trained checkpoint is available, set variable `CHECKPOINT_DIR` in `params.py` to the directory of the pre-trained checkpoint, and run `predict.py`.
@@ -28,9 +28,12 @@ The 2D UNet uses the architecture shown in the diagram below:
 ![UNet network architecture](readme-images/u-net-architecture.png)
 *Figure 1: UNet model architecture*
 
-The UNet is a convolution neural network architecture that consists of an encoder and a decoder, joined by skip connections. The encoder (shown on the left side of the figure) is a contracting path that repeatedly applies two 3x3 convolution layers followed by a RELU activation and a 2x2 max pooling operation with a stride of 2 for downsampling. This reduces the spatial dimension of the data and extracts important features. The decoder (shown on the right side of the figure) then upsamples the input at each step, followed by a 2x2 convolution which halves the number of features and a concatenation with the skip connections to re-introduce the spatial details lost during downsampling. This enables a more detailed, accurate segmetation mask to be determined and improves final segmentation results.  
+The UNet is a convolution neural network architecture that consists of an encoder and a decoder, joined by skip connections. The model's contracting and expanding architecture gives it a characteristc U-shape which lends the model its the name.
 
-The model's contracting and expanding architecture gives it a characteristc U-shape which lends the model its the name.
+The encoder (shown on the left side of the figure) is a contracting path that repeatedly applies two 3x3 convolution layers followed by a RELU activation and a 2x2 max pooling operation with a stride of 2 for downsampling. This reduces the spatial dimension of the data and extracts important features. 
+
+The decoder (shown on the right side of the figure) then upsamples the input at each step, followed by a 2x2 convolution, which halves the number of features, and a concatenation with the skip connections to re-introduce the spatial details lost during downsampling. This use of skip connections in the UNet architecture enables a more detailed, accurate segmetation mask to be determined and improves final segmentation results.  
+
 
 ## Training:
 The model has been trained for 40 epochs, using an ADAM optimiser with an initial learning rate of 1e-4. The learning rate is reduced by a factor of 0.1 if mean epoch loss plateaus over 2 epochs (i.e. patience = 2). The model uses Cross-Entropy loss and DICE score as the evaluation metrics.

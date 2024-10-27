@@ -1,5 +1,7 @@
 # StyleGAN2-based Image Generation and Feature Embedding for the ADNI dataset
 
+### Author: Baibhav Mund
+
 ## 1. Overview
 
 This project implements a **StyleGAN2** architecture for high-resolution image generation, with a focus on generating brain scans (ADNI dataset). The project includes the training of the StyleGAN2 model, generating new images using the trained generator, and visualizing learned features of the discriminator using t-SNE embeddings.
@@ -8,29 +10,29 @@ This project implements a **StyleGAN2** architecture for high-resolution image g
 
 StyleGAN2 enhances the original StyleGAN with several key improvements. It replaces adaptive instance normalization with a technique known as weight demodulation. The training process is also refined, maintaining the progressive focus on low to high-resolution images without modifying the network structure during training. Additionally, new regularization methods, such as lazy regularization and path length regularization, are used to improve stability and performance.
 
-![Generator block in Style-GAN2](figs/generator.png)
+![Generator block in Style-GAN2](figs/model/generator.png)
 
 **Figure: Generator Block in StyleGAN2**
 
-![Style block in Style-GAN2](figs/style.png)
+![Style block in Style-GAN2](figs/model/style.png)
 
 **Figure: Style Block in StyleGAN2**
 
-![Discriminator block in Style-GAN2](figs/critic.png)
+![Discriminator block in Style-GAN2](figs/model/critic.png)
 
 **Figure: Discriminator Block in StyleGAN2**
 
 
 ### Problem Description
 
-The algorithm solves the problem of **generating realistic brain images** for **Alzheimer's Disease (AD)** and **Cognitively Normal (CN)** subjects. With the advanced **StyleGAN2** architecture, the model produces high-quality images that can aid in medical research, specifically in augmenting datasets for classification tasks. Additionally, by visualizing the discriminator’s feature space using t-SNE, we can evaluate how effectively the model distinguishes between real and generated images.
+The algorithm solves the problem of generating realistic brain images for **Alzheimer's Disease (AD)** and **Cognitively Normal (CN)** subjects. With the advanced **StyleGAN2** architecture, the model produces high-quality images that can aid in medical research, specifically in augmenting datasets for classification tasks. Additionally, by visualizing the discriminator’s feature space using t-SNE, we can evaluate how effectively the model distinguishes between AD and CN datasets.
 
 ### How the Algorithm Works
 
 - The **StyleGAN2 architecture** is used to progressively grow both the generator and discriminator. The generator is responsible for creating new images from random latent vectors, while the discriminator evaluates whether an image is real or generated.
 - During training, the generator and discriminator are updated through adversarial training, where the generator tries to produce images that can fool the discriminator, while the discriminator learns to differentiate between real and fake images.
 - A **gradient penalty** is applied to the discriminator for regularization, ensuring stable training. A **path length penalty** is used to improve the generator’s style control.
-- **t-SNE embeddings** are used to visualize the feature space of the discriminator, helping to understand how the model differentiates between classes.
+- Style codes are consistently logged throughout the run of the generator, which are used in **t-SNE embeddings** to visualize the feature space of the discriminator, helping to understand how the model differentiates between classes.
 
 ---
 
@@ -38,6 +40,7 @@ The algorithm solves the problem of **generating realistic brain images** for **
 
 The following dependencies are required to run the scripts in this project:
 
+- **Anaconda or miniconda** for setting up the environment.
 - **Python 3.8+**
 - **PyTorch 1.9.0+**: For building and training the StyleGAN2 model.
 - **torchvision 0.10.0+**: For image transformations and saving generated images.
@@ -48,10 +51,10 @@ The following dependencies are required to run the scripts in this project:
 - **argparse**: For command-line argument parsing (included in Python’s standard library).
 - **csv**: For logging training losses (included in Python’s standard library).
 
-To install the necessary packages, you can use the following command:
+To install the necessary packages, you can use the following command, using the provided environment.yml file:
 
 ```bash
-pip install torch torchvision tqdm matplotlib scikit-learn Pillow
+conda env create -f environment.yml
 ```
 
 ---
@@ -66,17 +69,23 @@ To train the GAN model using `train.py`, simply run the following command:
 python train.py
 ```
 
-This script will train the generator and discriminator, saving model checkpoints every 5 epochs. Losses for both the generator and discriminator will be logged and saved in a CSV file.
+This script will train the generator and discriminator, saving model checkpoints every 5 epochs. Losses for both the generator and discriminator will be logged and saved in a CSV file. Also, style codes will be saved in a npy file, used for t-SNE visualization later.
 
 ### Generating Images
 
 After training, you can generate images using the pre-trained generator with the `predict.py` script:
 
 ```bash
-python predict.py --epoch 75 --n 10
+python predict.py --epoch 150 --n 10
 ```
 
 This will generate 10 images from the generator saved at epoch 45 and save them in the `generated_images` folder, organized by epoch and latent vector `w` values.
+
+Alternatively, you can run the provided `run_predict.sh`, which will generate images for multiple epochs as specified in the script.
+
+```bash
+bash run_predict.sh
+```
 
 ### t-SNE Embeddings
 
@@ -86,42 +95,58 @@ To visualize the t-SNE embeddings of the discriminator's feature space, use `man
 python manifold.py
 ```
 
-This will load the discriminator, generate embeddings of the feature maps, and apply t-SNE for dimensionality reduction. The result will be a 2D plot showing how the discriminator separates real vs. generated images.
+This will generate embeddings of the style codes in latent space, and apply t-SNE for dimensionality reduction. The result will be a 2D plot, displaying both **AD** and **CN** datapoints.
 
 ---
 
-## 4. Example Outputs
+## 4. Outputs
 
 ### Example Image Generation
 
-Below is an example of images generated by the StyleGAN2 model at epoch 75. At epoch 75, the model has started to capture the overall structure of the brain, but the finer details are not yet fully visible, which is expected at this stage of training. As the model continues to train, it is expected that these details will become clearer, producing more realistic brain images.
+#### Alzheimer's Disease Dataset
 
-![Generated Images at epoch 75](figs/brain.png)
+Below is an example of images generated by the StyleGAN2 model at after 150 epochs for the AD dataset. 
 
-Here is an example of an image generated at epoch 120, which shows how the model has learned from both the AD and CN datasets, which might be useful to notice any inconsistencies in the image when compared to a cognitivel normal scan.
+![Generated Images at epoch 150](figs/scans/AD/img_0.png)
+![Generated Images at epoch 150](figs/scans/AD/img_1.png)
+![Generated Images at epoch 150](figs/scans/AD/img_2.png)
+![Generated Images at epoch 150](figs/scans/AD/img_3.png)
+![Generated Images at epoch 150](figs/scans/AD/img_4.png)
 
-![Generated Images at epoch 75](figs/img_0.png)
+#### Cognitively Normal Dataset
+
+Below is an example of images generated by the StyleGAN2 model at after 150 epochs for the CN dataset.
+
+![Generated Images at epoch 150](figs/scans/CN/img_0.png)
+![Generated Images at epoch 150](figs/scans/CN/img_1.png)
+![Generated Images at epoch 150](figs/scans/CN/img_2.png)
+![Generated Images at epoch 150](figs/scans/CN/img_3.png)
+![Generated Images at epoch 150](figs/scans/CN/img_4.png)
 
 
-### Generator Loss
+### Generator and Discriminator Loss
 
-The plot shows the generator loss during the training of a StyleGAN model over approximately 35,000 iterations. Initially, the loss exhibits significant fluctuations, with values ranging from around -300 to over 100, indicating instability in the early stages of training. As the iterations progress, the loss gradually stabilizes, centering closer to zero with much less variance, suggesting that the generator's learning process becomes more consistent. This stabilization after about 5,000 iterations reflects the generator's improved ability to produce more realistic outputs, balancing its performance against the discriminator's feedback.
+#### Alzheimer's Disease Dataset
 
-![Generator loss](figs/gen_loss.png)
+The plot shows the generator loss during the training of a StyleGAN model over approximately 50,000 iterations. Initially, the loss exhibits significant fluctuations, however, as the iterations progress, the loss gradually stabilizes, centering closer to zero with much less variance, suggesting that the generator's learning process becomes more consistent. This stabilization after about 5,000 iterations reflects the generator's improved ability to produce more realistic outputs, balancing its performance against the discriminator's feedback.
 
-### Discriminator Loss
+For the discriminator, we see that after massive fluctuations in the initial training stages, the model stabilizes around 0 after about 5000 iterations, with the variance decreasing as training is continued.This would indicate the improved ability of the discriminator to discern real from fake images, achieving a more balanced adversial process with the generator. 
 
-The plot illustrates the discriminator loss during the training of a StyleGAN model across approximately 35,000 iterations. In the early stages, the loss is highly volatile, with values spiking up to 500 and dropping as low as -100, reflecting the discriminator's initial difficulty in distinguishing between real and generated samples. As training progresses, the loss stabilizes closer to zero, with much smaller fluctuations after about 5,000 iterations. This stabilization indicates that the discriminator is improving its ability to discern real from generated images, achieving a more balanced adversarial process with the generator. The smoother curve in the later iterations suggests a more stable and consistent learning phase for the discriminator.
+![Generator loss](figs/loss/AD_gen_loss.png)
+![Discriminator loss](figs/loss/AD_dis_loss.png)
 
-![Discriminator loss](figs/critic_loss.png)
+#### Cognitively Normal Dataset
+
+The generator loss is very similar to one for the AD dataset, and follows a similar path of fluctuations and then stabilization as the model continues to learn. However, for the discriminator, we do see a slightly higher variance in fluctuations for the CN dataset, indicating discriminator being able to tell apart images easily in the early iterations of the model learning process. Finally, the model learning does seem to stabilize around 10000 iterations, indicating improved performance from the discriminator.
+
+![Generator loss](figs/loss/NC_gen_loss.png)
+![Discriminator loss](figs/loss/NC_dis_loss.png)
 
 ### t-SNE Embeddings
 
-This plot shows a t-SNE (t-distributed Stochastic Neighbor Embedding) projection of high-dimensional data into two components for visualization. The data points are color-coded to indicate two distinct classes: AD (Alzheimer's Disease) in red and CN (Cognitively Normal) in blue.
+This plot shows a t-SNE (t-distributed Stochastic Neighbor Embedding) projection of high-dimensional data into two components for visualization. The plot clearly shows a seperation between the two classes. This would suggest that the style codes effectively capture distinguishing features between the two groups, resulting in well separated clusters.
 
-The x-axis and y-axis represent the two components derived from the t-SNE algorithm, which seeks to maintain the relative distances between points, capturing the structure of the data in a reduced 2D space. Clusters of red and blue points indicate distinct groupings, with some separation between the AD and CN classes. However, a few blue points overlap with red clusters, suggesting potential similarities or difficulties in distinguishing between the classes based on the features used. 
-
-![t-SNE Embedding](figs/tsne_plot.png)
+![t-SNE Embedding](figs/tsne_style_codes.png)
 
 ---
 
@@ -143,10 +168,10 @@ To ensure the reproducibility of results:
 - The specific model checkpoints and random latent vectors used to generate images can be saved and reused to obtain the same results.
 - Model checkpoints are saved in `.pt` format every 5 epochs to allow for exact replication of the model state.
 
-To reproduce the results from the final model (saved at epoch 45), load the model with:
+To reproduce the results from the final model, load the model with:
 
 ```bash
-python predict.py --epoch 45
+python predict.py --epoch 150
 ```
 
 This will generate the exact images produced during the training process at that epoch.

@@ -18,6 +18,21 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 
 ## Requirements
 
+| Package | Version |
+| --- | --- |
+|torch | 2.5.0.dev20240904 |
+|torchvision | 0.20.0.dev20240904 |
+|tqdm | 4.66.5 |
+|numpy | 1.26.4 |
+|pandas | 2.2.2 |
+|matplotlib | 3.9.2 |
+|seaborn | 0.13.2 |
+|scikit-learn | 1.5.1 |
+|scipy | 1.13.1 |
+|pillow | 10.3.0 |
+|os |  |
+
+
 ## Dataset
 
 ## File Structure

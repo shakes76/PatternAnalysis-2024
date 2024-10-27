@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from torch.cuda.amp import GradScaler
 from sklearn.metrics import confusion_matrix, f1_score
 
-MODEL_PATH = "./model_epoch_16"
+MODEL_PATH = "relativePathToModel"
 
 def predict(modelPath:str = MODEL_PATH, device: str = "cpu"):
     

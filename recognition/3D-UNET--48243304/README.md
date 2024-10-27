@@ -13,7 +13,10 @@ The dataset consists of:
 	lables:	corresponding binary segmentation masks, 1 is prostate tissue, 0 represents non-prostate tissue.
 	
 ##**Data Preprocessing**
-	the segmentation masks are binarized, converting values greater than 0 to 1. And the dataset is split into training and validation sets to ensure proper evaluation during training.
+
+	Normalization: Every image is normalized to standatdize intensity values and improve impove model stability.
+	
+ 	label Binarization: labes are binarized to ensure all non-zero values are treated as prostate tissue, while 0 values represent the background. the function to_channels coverts label data into a multi-channel format, where each unique label value is represented as a separate channel. 
 
 ##**Model Architecture**
 
@@ -44,10 +47,6 @@ The model consists of two paths:
 #**Evaluation metric:**
 
 DICE Coefficient: measures the overlap between the predicted segmentation mask and the truth. A higher DICE score indicateds better segmentation accuracy. 
-
-
-#**Training**
-the model is trained using batches of 3D MRI scans with their corresponding labels, the traning loop consists of forward passes through the network, loos computation, and weight updates.
 
 ##**Dependences**
 

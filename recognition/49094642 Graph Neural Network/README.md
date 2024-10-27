@@ -5,9 +5,9 @@ Author: Zhe Wu (student ID: 49094642)
 ## Project Overview
 This project solves the problem of semi supervised node classification of Facebook Large Page-Page Network dataset by using GCN model. The goal is to classify nodes into multiple categories based on their features and their edges. It uses batch normalization and dropout to improve the accuracy of the model, and draws loss curves and accuracy curves, combined with embedded UMAP visualization, to help better understand the model's ability to represent data.
 
-**Best train accuracy: 0.9409** 
+**Best train accuracy: 94.09%** 
 
-**Best test accuracy: 0.9206**
+**Best test accuracy: 92.06%**
 
 ## Table of Contents
 - [Module Architecture](#module-architecture)
@@ -102,7 +102,7 @@ The dataset was not initially divided.I split the dataset into train, validation
 
 ## Outputs
 ### Printing Accuracy
-The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the **learning rate** is set to **0.005**. After **400 epochs**, the best **train accuracy** is **0.9409** and the **test accuracy** is **0.9206**. The accuracy and loss values of the train set and test set are as follows:
+The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the **learning rate** is set to **0.005**. After **400 epochs**, the best **train accuracy** is **94.09%** and the **test accuracy** is **92.06%**. The accuracy and loss values of the train set and test set are as follows:
 <div style="text-align: center;">
     <img src="outputs/printing results.png" alt="printing results" style="width: 60%">
 </div>

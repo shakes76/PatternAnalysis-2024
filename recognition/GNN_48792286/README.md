@@ -34,7 +34,8 @@ When performing classification on the nodes, then these per-node vectors can be 
 Below is a plot displaying the model's loss and accuracy over epochs.
 ### ![loss_accuracy ](./loss_accuracy.png)
 From the plot, The results show that the model architecture and training process are well optimized for this task. The rapid convergence of the loss function and the early stability of the accuracy reflect a good balance between the learning rate and the complexity of the model.
-Below is a t-SNE plot with ground truth in colors
+
+Below is a t-SNE plot.
 ### ![t-SNE ](./t-SNE.png)
 t-SNE visualized GNN features show a clear separation of different categories. The clusters of each category (represented by different colors) are well separate, indicating that GNN has successfully captured the structural information of the data and effectively classified the features into meaningful groups. Although there may be some overlapping or ambiguous data points, overall, the model can effectively classify the data.
 ## Discussion

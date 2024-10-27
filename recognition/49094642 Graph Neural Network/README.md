@@ -89,7 +89,7 @@ The project requires the installation of the following software or packages:
    Draw UMAP projections and loss and accuracy curves during training and testing
 
 ## Inputs
-This project uses the Facebook Large Page-Page Network dataset provided by the course. The dataset is in the form of a 128-dimensional vector feature.The nodes represent Facebook pages, and the edges represent the likes between these pages. We need to classify them based on specific features.
+This project uses the Facebook Large Page-Page Network dataset provided by the course. The dataset is in the form of a ***128-dimensional vector*** feature.The nodes represent Facebook pages, and the edges represent the likes between these pages. We need to classify them based on specific features.
 
 The dataset was not initially divided.I split the dataset into train, validation, and test sets: **80%** for **train set**, **10%** for **validation set**, and **10%** for **test set**. This is to ensure that the nodes are reasonably allocated according to the preset ratio to maintain the balance of the data. Secondly, the dataset uses a specific labeling method to effectively prevent confusion between datasets. This can maintain randomness while making the model more universal and operable. The data layout is shown in the figure below:
 <div style="text-align: center;">

@@ -27,6 +27,7 @@ The model presently uses two distinct datasets. The first dataset, used on the d
 ![alt text](assets/preprocessed_images.png)
 
 ## Siamese Network Implementation
+
 This siamese network uses an image network as the backbone for its embeddings, in order to extract salient characteristics from the samples. Initially, the ResNet50 was used because it is very common in medical environments. However, upon testing various backbones the InceptionV3 network showed to be much less computationally expensive, without diminishing any of the performance. The Inception network makes use of factorised convolutions, which are intended to increase efficiency with minimal loss of performance. The architecture of the network is shown below (image courtesy of https://www.researchgate.net/figure/The-architecture-of-Inception-V3-model_fig5_349717475)
 
 ![](assets/InceptionNet.png)
@@ -52,7 +53,7 @@ Once class separation had been performed, the layers of the embeddings network w
 
 ## Results
 
-The below figure shows the monitored training metrics over the best model run. As seen from the graphs, the accuracy approaches 80% (ending on about 79%), with good scores for precision and recal as well. Because of the unabalanced dataset, accuracy may not be the most ideal metric to monitor, as it puts equal weights on both the positive and negative classes regardless of their proportions. Instead, it is more interesting to monitor the precision and recall. Recall is important in medical settings because we want maligant lesions to be identified at a high rate. However at the same time, precision is important because we don't want to misdiagnose. A good trade off between these two is F1 score (not plotted here), which is the harmonic mean of the two.
+The below figure shows the monitored training metrics over the best model run. This model was using the lightweight Siamese Network with the full dataset (see 'Replication'). As seen from the graphs, the accuracy approaches 80% (ending on about 79%), with good scores for precision and recal as well. Because of the unabalanced dataset, accuracy may not be the most ideal metric to monitor, as it puts equal weights on both the positive and negative classes regardless of their proportions. Instead, it is more interesting to monitor the precision and recall. Recall is important in medical settings because we want maligant lesions to be identified at a high rate. However at the same time, precision is important because we don't want to misdiagnose. A good trade off between these two is F1 score (not plotted here), which is the harmonic mean of the two.
 
 ![alt text](assets/training_curves.png)
 
@@ -69,6 +70,14 @@ Therefore, in summary the model achieves the required accuracy, however the embe
 #### A note on accuracy
 
 Technically, the requirements of this model is to meet 80% accuracy. Given how unbalanced the original dataset is, this can be trivially solved by classifying everything as benign. However, this would defeat the purpose of this model. Therefore, a 50/50 dataset was used for testing.
+
+#### Replication
+
+This repository has two models: a full model based on ResNet50 and a lightweight version (which is used to show the results above) which is based on the lighter inception network and the smaller balanced dataset. To train a network, run `python train.py`. There are two command line flags you can optionally add:
+- `full-dataset`: if included, the full dataset will be used.
+- `full-model`': if included, the heavyweight model will be used instead of the lightweight.
+
+You should use WandB to capture the training curves of the network, although they are also saved individually to image files.
 
 ## Dependencies
 This network relies on the use of tensorflow_addons, which is deprecated as of mid-2024. For compatibility reasons, this model therefore uses an older version of Python (3.11.1) and numpy/tensorflow. To install, you must first have Python 3.11.1, or create a virtual environment that supports it. All relevant packages can then be installed using `pip install -r requirements.txt`. Or, instead, the following key ones need to be installed:

@@ -5,12 +5,27 @@ import matplotlib.pyplot as plt
 from modules import SiameseNetwork, LightweightSiamese
 from dataset import FullMelanomaDataset, BalancedMelanomaDataset
 
+import argparse
+
 # hyperparameters
 BATCH_SIZE = 256
 IMAGE_SHAPE = (256, 256)
 VALIDATION_SPLIT = 0.1
 TESTING_SPLIT = 0.2
 BALANCE_SPLIT = True
+
+
+# pass command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--full-model', action='store_true')
+parser.add_argument('--full-dataset', action='store_true')
+args = parser.parse_args()
+
+# get model
+if args["full-model"]:
+    model = SiameseNetwork(image_shape=IMAGE_SHAPE)
+else:
+    model = LightweightSiamese(image_shape=IMAGE_SHAPE)
 
 # load full dataset
 df_full = FullMelanomaDataset(    
@@ -21,7 +36,7 @@ df_full = FullMelanomaDataset(
     balance_split=BALANCE_SPLIT
 )
 
-# load full dataset
+# load balanced dataset
 df = BalancedMelanomaDataset(    
     image_shape=IMAGE_SHAPE,
     batch_size=BATCH_SIZE,
@@ -31,9 +46,15 @@ df = BalancedMelanomaDataset(
 )
 
 # grab the relevent dataset
-dataset = df.dataset
-dataset_val = df.dataset_val
-dataset_test = df.dataset_test
+if args["full-dataset"]:
+    dataset = df_full.dataset
+    dataset_val = df_full.dataset_val
+    dataset_test = df_full.dataset_test
+else:
+    dataset = df.dataset
+    dataset_val = df.dataset_val
+    dataset_test = df.dataset_test
+
 
 # define siamese network
 model = LightweightSiamese(image_shape=IMAGE_SHAPE)

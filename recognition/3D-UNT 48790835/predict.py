@@ -1,61 +1,62 @@
-import torch
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-from dataset import Medical3DDataset, get_transform
+import dataset
 import modules
 import train
-import os
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
 import time
 
-# Define paths for test data
-TEST_IMAGES_PATH = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon"
-TEST_LABELS_PATH = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_labels_anon"
+# Add your own paths here
+testImagesPath = "isic_data/ISIC2018_Task1-2_Test_Input"
+testLabelsPath = "isic_data/ISIC2018_Task1_Test_GroundTruth"
 
 def main():
-    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if not torch.cuda.is_available():
-        print("CUDA not available, using CPU")
+        print("Warning CUDA not Found. Using CPU")
 
-    # Load test dataset
-    testDataSet = Medical3DDataset(TEST_IMAGES_PATH, TEST_LABELS_PATH, get_transform())
+    testDataSet = dataset.ISIC2017DataSet(testImagesPath, testLabelsPath, dataset.ISIC_transform_img(), dataset.ISIC_transform_label())
     testDataloader = DataLoader(testDataSet, batch_size=train.batchSize, shuffle=False)
 
-    # Load trained model
     model = modules.Improved2DUnet()
     model.load_state_dict(torch.load(train.modelPath))
     model.to(device)
-    print("Model successfully loaded.")
-
-    # Perform testing
+    print("Model Successfully Loaded")
+    
     test(testDataloader, model, device)
 
 def test(dataLoader, model, device):
-    losses_validation = []
-    dice_similarities_validation = []
+    losses_validation = list()
+    dice_similarities_validation = list()
 
-    print("> Test inference started")
+    print("> Test Inference Commenced")
     start = time.time()
     model.eval()
     with torch.no_grad():
+        print(dataLoader)
         for step, (images, labels) in enumerate(dataLoader):
+            print(step)
             images = images.to(device)
             labels = labels.to(device)
 
-            # Get model outputs
             outputs = model(images)
-            losses_validation.append(train.dice_loss(outputs, labels).item())
-            dice_similarities_validation.append(train.dice_coefficient(outputs, labels).item())
+            losses_validation.append(train.dice_loss(outputs, labels))
+            dice_similarities_validation.append(train.dice_coefficient(outputs, labels))
 
-            # Save segmentations for the first batch
-            if step == 0:
-                train.save_segments(images, labels, outputs, numComparisons=9, test=True)
+            if (step == 0):
+                train.save_segments(images, labels, outputs, 9, test=True)
 
-        print(f'Test Loss: {train.get_average(losses_validation):.5f}, '
-              f'Test Average Dice Similarity: {train.get_average(dice_similarities_validation):.5f}')
+        print('Test Loss: {:.5f}, Test Average Dice Similarity: {:.5f}'.format(train.get_average(losses_validation) ,train.get_average(dice_similarities_validation)))
     end = time.time()
     elapsed = end - start
-    print(f"Test inference took {elapsed/60:.2f} minutes in total")
+    print("Test Inference took " + str(elapsed/60) + " mins in total")
 
 if __name__ == "__main__":
     main()

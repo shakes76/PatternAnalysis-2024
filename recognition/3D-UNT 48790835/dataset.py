@@ -1,52 +1,80 @@
-import os
-from torch.utils.data import Dataset
-from torchvision.transforms import Compose
-import nibabel as nib
-import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import Dataset
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+from torchvision.io import read_image
 
-# Define 3D medical dataset class
-class Medical3DDataset(Dataset):
-    def __init__(self, imgs_path, labels_path, transform=None):
-        self.images_path = imgs_path
-        self.labels_path = labels_path
-        self.image_names = sorted(os.listdir(self.images_path))
-        self.label_names = sorted(os.listdir(self.labels_path))
+import time
+import math
+import matplotlib.pyplot as plt
+import os
+
+
+
+# create hyper paramaters
+new_size = 128
+
+# create dataset class to store all the images
+class ISIC2018DataSet(Dataset):
+    def __init__(self, imgs_path, labels_path, transform=None, labelTransform=None):
+        self.LabelsPath = labels_path
+        self.ImagesPath = imgs_path
+        self.LabelNames = os.listdir(self.LabelsPath)
+        self.imageNames = os.listdir(self.ImagesPath)
+        self.LabelsSize = len(self.LabelNames)
+        self.ImagesSize = len(self.imageNames)
         self.transform = transform
-
-        if len(self.image_names) != len(self.label_names):
-            raise ValueError("The number of images and labels do not match. Please check the data.")
+        self.labelTransform = labelTransform
 
     def __len__(self):
-        return len(self.image_names)
+        if self.ImagesSize != self.LabelsSize:
+            print("Bad Data! Please Check Data, or unpredictable behaviour!")
+            return -1
+        else:
+            return self.ImagesSize
 
     def __getitem__(self, idx):
-        img_name = self.image_names[idx]
-        label_name = self.label_names[idx]
+        img_path = os.path.join(self.ImagesPath, self.imageNames[idx])
 
-        img_path = os.path.join(self.images_path, img_name)
-        label_path = os.path.join(self.labels_path, label_name)
-
-        # Load NIfTI images
-        image = nib.load(img_path).get_fdata().astype(np.float32)
-        label = nib.load(label_path).get_fdata().astype(np.float32)
-
-        # Expand dimensions to match (C, D, H, W) format
-        image = np.expand_dims(image, axis=0)
-        label = np.expand_dims(label, axis=0)
-
-        # Convert to Tensor
-        image = torch.from_numpy(image)
-        label = torch.from_numpy(label)
+        # This accounts for an invisible .db file in the test folder that can't be removed
+        if img_path == "isic_data/ISIC2018_Task1-2_Test_Input\Thumbs.db":
+            img_path = "isic_data/ISIC2018_Task1-2_Test_Input\ISIC_0036309.jpg"
+            self.imageNames[idx] = "ISIC_0036309.jpg"
+        image = read_image(img_path)
+        label_path = os.path.join(self.LabelsPath, self.imageNames[idx].removesuffix(".jpg") + "_segmentation.png")
+        label = read_image(label_path)
 
         if self.transform:
             image = self.transform(image)
-            label = self.transform(label)
-
+        if self.labelTransform:
+            label = self.labelTransform(label)
+        
         return image, label
 
-# Define transforms for 3D images and labels if needed
-def get_transform():
-    return Compose([
-        # Add 3D-specific transformations here if needed, like normalization, resizing, etc.
+
+
+
+# functions to transform the images
+def img_transform():
+
+    img_tr = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ToTensor(),
+        transforms.Resize((new_size, new_size))
     ])
+
+    return img_tr
+
+def label_transform():
+        
+    label_tr = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ToTensor(),
+        transforms.Resize((new_size, new_size))
+    ])
+
+    return label_tr

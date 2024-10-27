@@ -1,4 +1,4 @@
-import os
+# source code for training, validating, testing and saving the model
 import dataset
 import modules
 import matplotlib.pyplot as plt
@@ -7,132 +7,233 @@ from tqdm import tqdm
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
 import time
 import numpy as np
 
 # Hyper-parameters
 num_epochs = 30
-learning_rate = 5 * 10 ** -4
-batch_size = 4
+learning_rate = 5 * 10**-4
+batchSize = 16
 learning_rate_decay = 0.985
 
+# set up the funcitonality from the imported dataset.py and modules.py
 
-validation_images_path = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon"
-train_images_path = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_MRs_anon"
-validation_labels_path = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_labels_anon"
-train_labels_path = "/Users/qiuhan/Desktop/UQ/3710/Improved-UNET-s4879083/重新下载的数据集/Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-/data/HipMRI_study_complete_release_v1/semantic_labels_anon"
-model_path = "3d_unet_model.pt"
-
-
+# Add your own paths here
+validationImagesPath = "isic_data/ISIC2018_Task1-2_Validation_Input"
+trainImagesPath = "isic_data/ISIC2018_Task1-2_Training_Input_x2"
+validationLabelsPath = "isic_data/ISIC2018_Task1_Validation_GroundTruth"
+trainLabelsPath = "isic_data/ISIC2018_Task1_Training_GroundTruth_x2"
+modelPath = "model.pt"
 
 def init():
-    transform = dataset.get_transform()
-    valid_dataset = dataset.Medical3DDataset(validation_images_path, validation_labels_path, transform=transform)
-    train_dataset = dataset.Medical3DDataset(train_images_path, train_labels_path, transform=transform)
+    validDataSet = dataset.ISIC2018DataSet(validationImagesPath, validationLabelsPath, dataset.img_transform(), dataset.label_transform())
+    validDataloader = DataLoader(validDataSet, batch_size=batchSize, shuffle=False)
+    trainDataSet = dataset.ISIC2018DataSet(trainImagesPath, trainLabelsPath, dataset.img_transform(), dataset.label_transform())
+    trainDataloader = DataLoader(trainDataSet, batch_size=batchSize, shuffle=True)
 
-    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
+    # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if not torch.cuda.is_available():
-        print("Warning: CUDA not found. Using CPU")
+        print("Warning CUDA not Found. Using CPU")
 
-    data_loaders = {'train': train_loader, 'valid': valid_loader}
-    return data_loaders, device
+    dataLoaders = dict()
+    dataLoaders["valid"] = validDataloader
+    dataLoaders["train"] = trainDataloader
 
+    dataSets = dict()
+    dataSets["valid"] = validDataSet
+    dataSets["train"] = trainDataSet
+
+    return dataSets, dataLoaders, device
 
 def main():
-    data_loaders, device = init()
-    model = modules.Improved3DUnet()
+    dataSets, dataLoaders, device = init()
+    model = modules.Improved2DUnet()
     model = model.to(device)
-    train_and_validate(data_loaders, model, device)
-    torch.save(model.state_dict(), model_path)
 
+    # training and validating
+    train_and_validate(dataLoaders, model, device)
 
-def train_and_validate(data_loaders, model, device):
+    # saving
+    torch.save(model.state_dict(), modelPath)
+
+def train_and_validate(dataLoaders, model, device):
+    # Define optimization parameters and loss according to Improved Unet Paper.
     criterion = dice_loss
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=learning_rate_decay)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=10**-5)
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=learning_rate_decay)
 
-    train_losses, train_dice, val_losses, val_dice = [], [], [], []
+    losses_training = list()
+    dice_similarities_training = list()
+    losses_valid = list()
+    dice_similarities_valid = list()
+
+    print("Training and Validation Commenced:")
+    start = time.time()
+    epochNumber = 0
 
     for epoch in range(num_epochs):
-        train_loss, train_coeff = train(data_loaders["train"], model, device, criterion, optimizer)
-        val_loss, val_coeff = validate(data_loaders["valid"], model, device, criterion)
+        epochNumber += 1
+        train_loss, train_coeff = train(dataLoaders["train"], model, device, criterion, optimizer, scheduler)
+        valid_loss, valid_coeff = validate(dataLoaders["valid"], model, device, criterion, epochNumber)
 
-        train_losses.append(train_loss)
-        train_dice.append(train_coeff)
-        val_losses.append(val_loss)
-        val_dice.append(val_coeff)
-
-        scheduler.step()
-
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Training Loss: {train_loss:.5f}, Training Dice: {train_coeff:.5f}")
-        print(f"Validation Loss: {val_loss:.5f}, Validation Dice: {val_coeff:.5f}")
-
-    save_plot(train_losses, val_losses, "Loss", "LossCurve.png")
-    save_plot(train_dice, val_dice, "Dice Coefficient", "DiceCurve.png")
+        losses_training.append(train_loss)
+        dice_similarities_training.append(train_coeff)
+        losses_valid.append(valid_loss)
+        dice_similarities_valid.append(valid_coeff)
 
 
-def train(loader, model, device, criterion, optimizer):
+        print ("Epoch [{}/{}], Training Loss: {:.5f}, Training Dice Similarity {:.5f}".format(epoch+1, num_epochs, losses_training[-1], dice_similarities_training[-1]))
+        print('Validation Loss: {:.5f}, Validation Average Dice Similarity: {:.5f}'.format(get_average(losses_valid) ,get_average(dice_similarities_valid)))
+        
+    
+    end = time.time()
+    elapsed = end - start
+    print("Training & Validation Took " + str(elapsed/60) + " Minutes")
+
+    save_list_as_plot(trainList=losses_training, valList=losses_valid, type="Loss", path="LossCurve.png")
+    save_list_as_plot(trainList=dice_similarities_training, valList=dice_similarities_valid, type="Dice Coefficient", path="DiceCurve.png")
+
+
+def train(dataLoader, model, device, criterion, optimizer, scheduler):
     model.train()
-    losses, dice_scores = [], []
 
-    for images, labels in loader:
-        images, labels = images.to(device), labels.to(device)
+    losses = list()
+    coefficients = list()
+
+    for images, labels in dataLoader:
+        images = images.to(device)
+        labels = labels.to(device)
+
         outputs = model(images)
-
         loss = criterion(outputs, labels)
         losses.append(loss.item())
-
-        dice_score = dice_coefficient(outputs, labels).item()
-        dice_scores.append(dice_score)
+        coefficients.append(dice_coefficient(outputs, labels).item())
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        
+    scheduler.step()
 
-    return np.mean(losses), np.mean(dice_scores)
+    return get_average(losses), get_average(coefficients)
 
+def validate(dataLoader, model, device, criterion, epochNumber):
 
-def validate(loader, model, device, criterion):
+    losses = list()
+    coefficients = list()
+
     model.eval()
-    losses, dice_scores = [], []
-
     with torch.no_grad():
-        for images, labels in loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
+        for step, (images, labels) in enumerate(dataLoader):
+            images = images.to(device)
+            labels = labels.to(device)
 
+            outputs = model(images)
             loss = criterion(outputs, labels)
             losses.append(loss.item())
+            coefficients.append(dice_coefficient(outputs, labels).item())
 
-            dice_score = dice_coefficient(outputs, labels).item()
-            dice_scores.append(dice_score)
+            if (step == 0):
+                save_segments(images, labels, outputs, 9, epochNumber)
+    
+    return get_average(losses), get_average(coefficients)
 
-    return np.mean(losses), np.mean(dice_scores)
 
+# Variable numList must be a list of number types only
+def get_average(numList):
+    
+    size = len(numList)
+    count = 0
+    for num in numList:
+        count += num
+    
+    return count / size
 
 def dice_loss(outputs, labels):
+    
     return 1 - dice_coefficient(outputs, labels)
 
+def dice_coefficient(outputs, labels, epsilon=10**-8):
 
-def dice_coefficient(outputs, labels, epsilon=1e-8):
     intersection = (outputs * labels).sum()
-    return (2. * intersection) / ((outputs + labels).sum() + epsilon)
+    denom = (outputs + labels).sum() + epsilon
+    diceCoefficient = (2. * intersection) / denom
+    return diceCoefficient
 
+def print_model_info(model):
 
-def save_plot(train_list, val_list, metric, path):
-    epochs = list(range(1, num_epochs + 1))
-    plt.plot(epochs, train_list, label=f"Training {metric}")
-    plt.plot(epochs, val_list, label=f"Validation {metric}")
-    plt.xlabel("Epochs")
-    plt.ylabel(metric)
-    plt.legend()
-    plt.title(f"Training and Validation {metric} Over Epochs")
-    plt.savefig(path)
+    print("Model No. of Parameters:", sum([param.nelement() for param in model.parameters()]))
+    print(model)
+
+def save_segments(images, labels, outputs, numComparisons, epochNumber=num_epochs, test=False):
+
+    if numComparisons > batchSize:
+        numComparisons = batchSize
+    
+    images=images.cpu()
+    labels=labels.cpu()
+    outputs=outputs.cpu()
+
+    fig, axs = plt.subplots(numComparisons, 3)
+    axs[0][0].set_title("Image")
+    axs[0][1].set_title("Ground Truth")
+    axs[0][2].set_title("Predicted")
+    for row in range(numComparisons):
+        img = images[row]
+        img = img.permute(1,2,0).numpy()
+        label = labels[row]
+        label = label.permute(1,2,0).numpy()
+        pred = outputs[row]
+        pred = pred.permute(1,2,0).numpy()
+        axs[row][0].imshow(img)
+        axs[row][0].xaxis.set_visible(False)
+        axs[row][0].yaxis.set_visible(False)
+
+        axs[row][1].imshow(label, cmap="gray")
+        axs[row][1].xaxis.set_visible(False)
+        axs[row][1].yaxis.set_visible(False)
+
+        axs[row][2].imshow(pred, cmap="gray")
+        axs[row][2].xaxis.set_visible(False)
+        axs[row][2].yaxis.set_visible(False)
+    
+    if (not test):
+        fig.suptitle("Validation Segments Epoch: " + str(epochNumber))
+        #fig.tight_layout()
+        plt.savefig("ValidationSegmentsEpoch" + str(epochNumber))
+    else:
+        fig.suptitle("Test Segments")
+        #fig.tight_layout()
+        plt.savefig("TestSegments")
     plt.close()
+
+def save_list_as_plot(trainList, valList, type, path):
+
+    if (len(trainList) != len(valList)):
+        print("ERROR: Cannot display!")
+    
+    length = len(trainList)
+    xList = list()
+    x = 1
+    for i in range(length):
+        xList.append(x)
+        x += 1
+
+    plt.xticks(np.arange(min(xList), max(xList)+1, 1.0))
+    plt.plot(xList, trainList, label="Training " + type)
+    plt.plot(xList, valList, label="Validation " + type)
+    plt.legend()
+    plt.title("Training and Validation " + type + " Over Epochs")
+    plt.savefig(fname=path)
+    plt.close()
+
+
+
 
 
 if __name__ == "__main__":

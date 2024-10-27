@@ -99,33 +99,44 @@ As state above, this project implements the following GNN architectures:
 Each model has been encapsulated in the `modules.py` file, with a defined forward pass and relevant layers. The next sections contain brief descriptions of how each model functions.
 
 ### Graph Convolutional Networks (GCN)
-Graph Convolutional Networks (GCN) leverage the principles of convolutional neural networks to operate directly on graph-structured data. The key idea is to use the spectral domain of the graph to learn a transformation of node features. GCNs are designed to perform node classification tasks by aggregating features from a node's neighbourhood in the graph, effectively capturing local structures. The propagation rule can be expressed as:
-
-[FORMULA]
+Graph Convolutional Networks (GCN) leverage the principles of convolutional neural networks to operate directly on graph-structured data. The key idea is to use the spectral domain of the graph to learn a transformation of node features. GCNs are designed to perform node classification tasks by aggregating features from a node's neighbourhood in the graph, effectively capturing local structures. 
 
 GCNs are particularly effective for semi-supervised learning, where only a small subset of nodes has labeled information.
 
-### Graph Attention Networks (GAT)
-Graph Attention Networks (GAT) introduce an attention mechanism to the graph convolution process, allowing nodes to weigh their neighbours' contributions based on their importance. GATs utilise self-attention to learn the coefficients for each edge, thereby adapting the influence of connected nodes dynamically. The attention coefficients can be computed as:
+The GCN architecture implements:
+- 2 layers of GCNConv
+- ReLU activation in between
+- dropout layer for regularisation, and applied to prevent overfitting.
 
-[FORMULA]
+### Graph Attention Networks (GAT)
+Graph Attention Networks (GAT) introduce an attention mechanism to the graph convolution process, allowing nodes to weigh their neighbours' contributions based on their importance. GATs utilise self-attention to learn the coefficients for each edge, thereby adapting the influence of connected nodes dynamically. 
 
 By focusing on relevant neighbours, GATs enhance the model's expressiveness and robustness against noise in the graph structure.
 
-### Graph Sample and Aggregation (GraphSAGE)
-Graph Sample and Aggregation (GraphSAGE) is designed to handle large graphs by sampling a fixed-size neighbourhood of each node rather than considering the entire graph. It employs various aggregation functions (mean, LSTM, pooling) to merge information from sampled neighbours into the target node's representation. The update rule is as follows:
+The GAT architecture implements:
+- 1st GATConv layer with multi-head attention (8 heads) to learn weighted relations
+- ReLU activation layer
+- A final GATConv layer to combine the attention head and project to the output classes (1 head)
 
-[FORMULA]
+### Graph Sample and Aggregation (GraphSAGE)
+Graph Sample and Aggregation (GraphSAGE) is designed to handle large graphs by sampling a fixed-size neighbourhood of each node rather than considering the entire graph. It employs various aggregation functions (mean, LSTM, pooling) to merge information from sampled neighbours into the target node's representation. 
 
 GraphSAGE enables inductive learning, allowing the model to generalise to unseen nodes during training.
 
+The GraphSAGE architecture implements:
+- 1st SAGEConv layer aggregates neighbourhood information and learns a hidden representation
+- 2nd SAGEConv layer aggregates said hidden representations and projects them to the outputs
+- Dropout is used to regularise
+- ReLU is used to activate nodes in between first and second SAGEConv layers
 
 ### Simplified Graph Convolution (SGC)
-Simplified Graph Convolution (SGC) reduces the complexity of graph convolutional operations by removing non-linearities and employing a single linear transformation. The key innovation is the simplification of the message-passing framework into a single matrix multiplication, effectively treating the graph structure as a single layer. The transformation can be expressed as:
+Simplified Graph Convolution (SGC) reduces the complexity of graph convolutional operations by removing non-linearities and employing a single linear transformation. The key innovation is the simplification of the message-passing framework into a single matrix multiplication, effectively treating the graph structure as a single layer. 
 
-[FORMULA]
+SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance. As the SGC architecture is relatively simple, this implementation was done without the use of the PyTorch Geometric built-in SGConv, and instead implements propagation and degree-based normalisation manually.
 
-SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
+The SGC architecture implements:
+- A k-step propagation layer for neighbourhood aggregation across k hops
+- a linear transformation layer that projects aggregated features to output classes
 
 ## Training Process
 ### Data Splits

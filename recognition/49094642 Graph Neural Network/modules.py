@@ -14,7 +14,7 @@ class GCN(torch.nn.Module):
         self.bn2 = torch.nn.BatchNorm1d(hidden_dim)
         self.bn3 = torch.nn.BatchNorm1d(hidden_dim)
 
-    # Define forward pass 
+    # define forward pass 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = F.relu(self.bn1(self.conv1(x, edge_index)))

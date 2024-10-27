@@ -98,15 +98,21 @@ The splits are randomized with a fixed seed to maintain consistency across diffe
 ├── dataset.py
 
 ├── model.py
+
 ├── train.py
 
 ├── predict.py
 
 ├── README.md
+
 └── logs
+
     └── GFNet
+    
         ├── best_gfnet.pt
+        
         └── loss_plot.png
+        
 dataset.py: Contains custom dataset classes for training and testing.
 model.py: Defines the Global Filter Network architecture and its components.
 train.py: Script to train the model, including data loading, training loop, and validation.

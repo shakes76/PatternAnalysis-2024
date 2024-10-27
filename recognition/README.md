@@ -89,11 +89,17 @@ The HipMRI Study dataset consists of processed 2D MRI slices of the prostate reg
 ```
 
 modules.py: Contains the simplified UNet model definition.
+
 dataset.py: Custom dataset class for data loading and preprocessing.
+
 train.py: Script to train the UNet model.
+
 predict.py: Script to evaluate the model on the test set and compute the Dice coefficient.
+
 requirements.txt: Lists all Python dependencies.
+
 README.md: Project documentation.
+
 
 ## Implementation Details
 

@@ -11,25 +11,25 @@ from math import sqrt
 
 
 class MappingNetwork(nn.Module):
-    def __init__(self,z_dim,w_dim,activation = nn.ReLU):
+    def __init__(self,z_dim,w_dim,activation = nn.ReLU()):
         super().__init__()
 
         # Mapping network
         self.mapping = nn.Sequential(
             EqualizerStraights(z_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(w_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(z_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(w_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(z_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(w_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(z_dim, w_dim),
-            activation(),
+            activation,
             EqualizerStraights(w_dim, w_dim)
         )
 
@@ -203,7 +203,7 @@ class GeneratorBlock(nn.Module):
         self.styled_block1 = DripBlock(w_dim, in_chanel, out_chanel)
         self.styled_block2 = DripBlock(w_dim, out_chanel, out_chanel)
 
-
+        self.to_rgb = ToRGB(w_dim, out_chanel)
 
     def forward(self, x,w,noise):
 
@@ -282,9 +282,9 @@ class DiscriminatorBlock(nn.Module):
 
         self.block = nn.Sequential(
             Dis_Conv2d(in_chanel, out_chanel, 3, padding = 1),
-            activation(),
+            activation,
             Dis_Conv2d(out_chanel, out_chanel, 3, padding = 1),
-            activation()
+            activation
         )
 
         self.downsample = nn.AvgPool2d( kernel_size=2, stride=2)

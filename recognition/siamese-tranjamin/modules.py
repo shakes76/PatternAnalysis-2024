@@ -93,14 +93,13 @@ class SiameseNetwork():
             dataset: the dataset to train on
             dataset_val: the validation dataset to report metrics on
         '''
+        # unfreeze the last few layers
+        self.backbone.trainable = False
+        for layer in self.backbone.layers[SiameseNetwork.LAYERS_TO_UNFREEZE:]:
+            layer.trainable = True
 
         # compile model
         self.base_model.compile_functional_model()
-
-        # unfreeze the last few layers
-        self.backbone.trainable = False
-        # for layer in self.backbone.layers[SiameseNetwork.LAYERS_TO_UNFREEZE:]:
-            # layer.trainable = True
 
         self.base_model.fit_model_batches(
             dataset, 
@@ -244,3 +243,82 @@ class SiameseNetwork():
         '''
         self.classifier.compile_model()
         self.classifier.load_checkpoint(checkpoint)
+
+class LightweightSiamese(SiameseNetwork):
+    '''
+    A network which has uses lightweight architectures to train small datasets quickly.
+    '''
+    # hyperparameters
+    MARGIN = 0.4
+    LAYERS_TO_UNFREEZE = -1
+    LEARNING_RATE = 0.001
+    EMBEDDINGS_EPOCHS = 5
+    CLASSIFICATION_EPOCHS = 80
+
+    def __init__(self, image_shape):
+        # define the embeddings model
+        self.base_model = NeuralNetwork.FunctionalNetwork()
+
+        # grab the pretrained model
+        self.backbone = tf.keras.applications.InceptionV3(
+            include_top=False,
+            input_shape=(*image_shape, 3)
+            )
+
+        # create similarity network
+        self.base_model.add_generic_layer(tf.keras.layers.Input(shape=(*image_shape, 3)))
+        self.base_model.add_generic_layer(self.backbone)
+        self.base_model.add_dropout(0.3)
+        self.base_model.add_global_pooling2D_layer("max")
+        self.base_model.add_dense_layer(2048, activation="leaky_relu")
+        self.base_model.add_dropout(0.2)
+        self.base_model.add_dense_layer(1024, activation="leaky_relu")
+        self.base_model.add_dense_layer(1024, activation="leaky_relu")
+        self.base_model.add_generic_layer(tf.keras.layers.Lambda(lambda x: tf.math.l2_normalize(x))) # normalise embeddings to evenly weight each one
+
+        # synthesise the layers together
+        self.base_model.generate_functional_model()
+    
+        # set hyperparameters
+        self.base_model.set_loss_function(LightweightSiamese.similarity_loss)
+        self.base_model.set_optimisation(LightweightSiamese.similarity_optim)
+        self.base_model.set_epochs(LightweightSiamese.EMBEDDINGS_EPOCHS)
+
+        # classifier network
+        classifier_model = NeuralNetwork.NeuralNetwork()
+        classifier_model.add_generic_layer(self.base_model.model)
+        classifier_model.add_dense_layer(32)
+        classifier_model.add_dense_layer(16)
+        classifier_model.add_dense_layer(1, activation="sigmoid") # for probabilistic outcomes
+
+        # set classifier hyperparameters
+        classifier_model.set_loss_function(LightweightSiamese.classification_loss)
+        classifier_model.set_epochs(LightweightSiamese.CLASSIFICATION_EPOCHS)
+        classifier_model.set_optimisation(LightweightSiamese.classification_optim)
+
+        # add metrics to monitor
+        classifier_model.add_metric(["accuracy"])
+        classifier_model.add_metric(tf.keras.metrics.Precision())
+        classifier_model.add_metric(tf.keras.metrics.Recall())
+        classifier_model.add_metric(tf.keras.metrics.TruePositives())
+        classifier_model.add_metric(tf.keras.metrics.TrueNegatives())
+        classifier_model.add_metric(tf.keras.metrics.FalsePositives())
+        classifier_model.add_metric(tf.keras.metrics.FalseNegatives())
+        classifier_model.add_metric(tf.keras.metrics.AUC(curve="PR"))
+
+        self.classifier = classifier_model
+    
+    def train_similarity(self, dataset, dataset_val):
+        # unfreeze the last few layers
+        self.backbone.trainable = False
+        for layer in self.backbone.layers[LightweightSiamese.LAYERS_TO_UNFREEZE:]:
+            layer.trainable = True
+
+        # compile model
+        self.base_model.compile_functional_model()
+
+        self.base_model.fit_model_batches(
+            dataset, 
+            dataset_val, 
+            verbose=1
+        )

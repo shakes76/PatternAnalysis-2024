@@ -2,11 +2,11 @@ import sys
 sys.path.insert(1, './Modules')
 
 import matplotlib.pyplot as plt
-from modules import *
+from modules import SiameseNetwork, LightweightSiamese
 from dataset import FullMelanomaDataset, BalancedMelanomaDataset
 
 # hyperparameters
-BATCH_SIZE = 64
+BATCH_SIZE = 256
 IMAGE_SHAPE = (256, 256)
 VALIDATION_SPLIT = 0.1
 TESTING_SPLIT = 0.2
@@ -36,7 +36,7 @@ dataset_val = df.dataset_val
 dataset_test = df.dataset_test
 
 # define siamese network
-model = SiameseNetwork(image_shape=IMAGE_SHAPE)
+model = LightweightSiamese(image_shape=IMAGE_SHAPE)
 
 # train the similarity
 model.enable_wandb_similarity("melanoma-similarity")

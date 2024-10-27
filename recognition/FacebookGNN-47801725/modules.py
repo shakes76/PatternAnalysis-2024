@@ -16,13 +16,13 @@ class GCN(torch.nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim, dropout_rate=0.5):
         super(GCN, self).__init__()
         
-        np.random.seed(42)
+        torch.manual_seed(42)
         
-        # Define GCN layers with the specified dimensions
         self.conv1 = GCNConv(input_dim, hidden_dims[0])
         self.conv2 = GCNConv(hidden_dims[0], hidden_dims[1])
         self.conv3 = GCNConv(hidden_dims[1], hidden_dims[2])
         self.final_conv = GCNConv(hidden_dims[2], output_dim)
+
         
         # Store the dropout rate
         self.dropout_rate = dropout_rate
@@ -47,10 +47,4 @@ class GCN(torch.nn.Module):
         x = self.final_conv(x, edge_index)
         return x
 
-# Example usage
-input_dim = 128  # Number of input features
-hidden_dims = [100, 64, 32]  # List of hidden layer sizes
-output_dim = 4  # Number of output classes
 
-model = GCN(input_dim=input_dim, hidden_dims=hidden_dims, output_dim=output_dim, dropout_rate=0.5)
-print(model)

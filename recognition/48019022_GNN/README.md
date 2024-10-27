@@ -190,13 +190,21 @@ At the end of training, additional metrics such as total training time and the n
 
 ### Training Details
 - Maximum epochs: **300**
+
 - Optimiser: **Adam**
+
    - The Adam optimiser was chosen and used with weight decay for fast convergence.
+
       - Learning Rate (Max): 0.01
+
       - Weight Decay: 0.0005 (L2 Regularisation)
+
 - Loss Function: **Cross Entropy Loss**
+
    - Cross Entropy Loss was used as a criterion due to its effectiveness for multi-class problems. CE minimises the loss by aligning its predicted probability distribution with the actual class distribution
+
 - Scheduler: **StepLR**
+
    - The learning rate scheduler StepLR was used for improved convergence and stability, as well as its advantage of better exploration in early stages, allowing it to explore the parameter space more widely and escape local minima.
 
 ## Results
@@ -304,8 +312,17 @@ GAT  |  **94.3392%**
 GraphSAGE  | 92.95184%
 SGC  | 886428%
 
+Moreover, the GAT model also shows the most distinguished T-SNE clustering compared to the other architectures. The distinct clusters demonstrate the model's sufficiency in separating data despite the limited feature information in the dataset.
+
 ## Inference
 To test trained models on the graph data, use the `predict.py` script. This script will load a selected trained model and attempt to classify each node of the dataset.
+
+## Further Improvements
+To further improve the accuracy of the Graph Attention Network, the following improvements can be made:
+
+Hyperparameter Tuning: A grid search should be done to find the most optimal set of hyperparameters. These include the learning rate, learning rate scheduler, number of epochs, patience, number of layers, number of attention heads, activation functions, dropout and weight decay.
+
+Visualisation: A UMAP visualisation could be done to see observe on the manifold where the model can be improved, and to understand important node/edge relationships.
 
 ## References
 - Kipf, T. N., & Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. ArXiv:1609.02907 [Cs, Stat]. https://arxiv.org/abs/1609.02907

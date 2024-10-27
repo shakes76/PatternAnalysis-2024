@@ -19,20 +19,17 @@ class TestDataSet(unittest.TestCase):
         """
             Tests loading .npz file from FLPPDataset
         """
-        flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
-
-        print('Dataset properties')
-        print('==============================================================')
-        print(f'Dataset: {flpp_dataset}') #This prints the name of the dataset
-        print(f'Number of graphs in the dataset: {len(flpp_dataset)}')
-        print(f'Number of features: {flpp_dataset.num_features}') #Number of features each node in the dataset has
-        print(f'Number of classes: {flpp_dataset.num_classes}') #Number of classes that a node can be classified into
-        print(f'Number of nodes: {flpp_dataset.x.shape[0]}')
+        flpp_dataset, training_data, testing_data, validate_data = dataset.load_dataset(DATASET_DIR, 200)
 
         assert len(flpp_dataset) == 1
         assert flpp_dataset.num_features == 128
         assert flpp_dataset.num_classes == 4
         assert flpp_dataset.x.shape[0] == 22470
+        assert flpp_dataset.y.shape[0] == 22470
+
+        print(len(training_data))
+        print(len(testing_data))
+        print(len(validate_data))
 
 class TestUtils(unittest.TestCase):
     # def test_utils_display_graph(self):
@@ -48,7 +45,7 @@ class TestUtils(unittest.TestCase):
         """
             Tests creating the TSNE display for the raw dataset.
         """
-        flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
+        flpp_dataset, training_data, testing_data, validate_data = dataset.load_dataset(DATASET_DIR, 200)
 
         utils.display_raw_tsne(flpp_dataset)
 

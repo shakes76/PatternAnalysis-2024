@@ -164,7 +164,7 @@ Therefore overall there is a minor reduction in overfitting, but the test accura
 
 To help benefit any further research or investigation into this model, any further work on this model's performance would benefit with this in mind. 
 
-Another potential route I began to work on is the idea of breaking up the batches into patients, since that would potentially help GFNet to understand that these images come from the same patient. This was implemented and run on rangpur, but the performance failed to improve above 60%.
+Another potential route I began to work on is the idea of breaking up the batches into patients, since that would potentially help GFNet to understand that these images come from the same patient. This was implemented and run on rangpur, but the performance failed to improve above 60%. The training data for patients was split 90%/10% train/validation to better assess model performance:
 
 ![Large Acc](https://github.com/user-attachments/assets/b52f27a5-266d-432b-9ff7-07eb506934b8)
 

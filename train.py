@@ -4,7 +4,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from modules import UNet, f1_score
-from dataset import HipMRIDataset
+from dataset import HipMRIDataset, DATASET_ROOT
 import matplotlib.pyplot as plt
 import os, os.path
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     transform = transforms.Normalize(mean=(0.5,), std=(0.5,))
-    train_dataset = HipMRIDataset('data/', train=True, concise=False, device=device, transform=transform)
+    train_dataset = HipMRIDataset(DATASET_ROOT, train=True, concise=False, device=device, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     model = UNet().to(device)
 

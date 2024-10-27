@@ -52,12 +52,11 @@ class HipMRIDataset(Dataset):
         return image_tensor, segment_tensor
 
 
-if __name__ == '__main__':
-    # DATASET_LOCATION = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data'
-    DATASET_LOCATION = 'data/'
+DATASET_ROOT = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data'
 
+if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    dataset = HipMRIDataset(DATASET_LOCATION, concise=True, device=device)
+    dataset = HipMRIDataset(DATASET_ROOT, concise=True, device=device)
     images, segments = next(iter(DataLoader(dataset, batch_size=20, shuffle=True)))
 
     fig, axes = plt.subplots(4, 5)

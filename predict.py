@@ -3,7 +3,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import os.path
 from modules import UNet, f1_score
-from dataset import HipMRIDataset
+from dataset import HipMRIDataset, DATASET_ROOT
 from train import report_batch
 
 if __name__ == '__main__':
@@ -12,7 +12,6 @@ if __name__ == '__main__':
 
     model: UNet = torch.load('models/unet.pt', weights_only=False)
 
-    DATASET_ROOT = 'data/'
     device = torch.device('cuda:0' if torch.cuda.is_available else 'cpu')
 
     transform = transforms.Normalize(mean=(0.5,), std=(0.5,))

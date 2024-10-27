@@ -48,7 +48,7 @@ def split_data(data):
 
     return data
 
-# Example usage
+#Example
 if __name__ == "__main__":
     npz_path = '/Users/eaglelin/Downloads/facebook.npz'  # Update the path to your .npz file
     data = load_data(npz_path)

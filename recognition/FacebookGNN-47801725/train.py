@@ -2,8 +2,8 @@ import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score
-from modules import GCN  # Assuming the model is defined in modules.py
-from data import load_data, split_data  # Assuming the updated data.py contains these functions
+from modules import GCN 
+from data import load_data, split_data  
 
 def train(model, data, optimizer, criterion):
     """

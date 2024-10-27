@@ -35,7 +35,7 @@ class MRIDataset(Dataset):
         image = img_nii.get_fdata()  # Get the image data as a numpy array
 
         # Convert to tensor and add a channel dimension
-        image = np.expand_dims(image, axis=0)  # Shape (1, H, W)
+        #image = (image - np.min(image)) / (np.max(image) - np.min(image)) * 255
         image = torch.tensor(image, dtype=torch.float32)  # Convert to tensor
 
         # Apply the transforms (if any)
@@ -45,7 +45,7 @@ class MRIDataset(Dataset):
         # Return the image and its corresponding index (can be adapted for labels if needed)
         return image, idx
     
-def get_dataloader(root_dir, batch_size=32, image_size=64, shuffle=True, num_workers=4, device='cpu'):
+def get_dataloader(root_dir, batch_size=32, image_size=256, shuffle=True, num_workers=4, device='cpu'):
     """
     Creates a DataLoader for the MRI dataset.
     Args:

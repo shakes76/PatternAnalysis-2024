@@ -18,31 +18,31 @@ This architecture enables flexible learning on node-based datasets by processing
 This code preprocesses graph data for training with PyTorch Geometric. It loads data from a .npz file, extracting edges, features, and labels, and converts them to PyTorch tensors. Node features are standardized using scikit-learn's StandardScaler to improve model performance. A Data object is created, storing the processed features, edge connections, and labels. Finally, RandomNodeSplit is used to generate train, validation, and test masks, splitting nodes into subsets for training and evaluation.
 ## Training And Validation with Visualization
 
+### t-SNE Plot Before Training
 ![TSNE Plot Before Training](images/TSNE_Before.png)
-t-SNE Plot (Before Training)
-Clustering: In the untrained model, there is no clear separation among the different classes. The nodes are scattered across the plot with overlapping clusters, showing limited class distinction.
 
-Class Distribution: Nodes of different classes (colored in red, green, blue, and orange) are interspersed, indicating that the initial embeddings do not contain meaningful information for classifying the nodes correctly.
+- **Clustering**: The untrained model shows no clear separation among classes. Nodes are scattered with overlapping clusters, indicating limited class distinction.
+- **Class Distribution**: Nodes of different classes (red, green, blue, and orange) are interspersed, suggesting that the initial embeddings lack meaningful information for classification.
 
-![](images/Tsne.png)
+### t-SNE Plot After Training
+![TSNE Plot After Training](images/Tsne.png)
 
-t-SNE Plot (After Training)
-Clustering and Separation: After training, the embeddings exhibit clear clusters, with each class forming more distinct regions. This indicates that the GCN has learned to differentiate the classes based on node features and graph structure.
+- **Clustering and Separation**: After training, the embeddings form distinct clusters, with each class occupying separate regions, indicating that the GCN has learned to differentiate classes based on features and graph structure.
+- **Class Distinction**: Nodes of the same class are cohesive with minimal overlap, showcasing that the trained GCN has effectively grouped similar nodes, capturing the underlying graph structure.
 
-Class Distinction: The nodes of the same class are much more cohesive, with less overlap between different colors. This shows that the trained GCN has successfully grouped similar nodes together, capturing the underlying structure and relationships in the graph.
-![](images/Validation%20and%20Test%20Accuracy.png)
-Validation and Test Accuracy Plot:
+### Accuracy and Loss Plots
 
-The model's accuracy improves significantly during the initial epochs, with rapid gains in performance within the first 25 epochs. This quick rise suggests that the model is effectively learning from the data.
-After reaching around 90% accuracy, the accuracy values start to plateau and stabilize, with minor fluctuations. Both the validation and test accuracies converge closely, indicating that the model generalizes well without overfitting.
-This stability towards the end of training suggests that the model has learned the underlying patterns effectively, achieving consistent high performance across both validation and test sets.
+#### Validation and Test Accuracy Plot
+![Validation and Test Accuracy](images/Validation%20and%20Test%20Accuracy.png)
 
-raining and Validation Loss Plot:
+- **Initial Training Phase**: The accuracy improves significantly within the first 25 epochs, indicating efficient learning.
+- **Plateau Phase**: After reaching around 90% accuracy, the values stabilize, with minor fluctuations. Validation and test accuracies converge closely, indicating good generalization without overfitting.
 
-![Validation and Test Loss Plot](images/Training%20and%20Validation%20loss.png)
-Similar to the accuracy plot, the training and validation losses drop quickly in the first 25 epochs, showing that the model learns efficiently during the initial phase.
-Both losses approach low values as the training progresses, converging closely with minimal discrepancies. This convergence indicates effective learning with minimal overfitting, as the validation loss follows the training loss closely.
-Slight fluctuations towards the end of training are observed, but they remain minimal, indicating a good balance between learning rate and model stability.
+#### Training and Validation Loss Plot
+![Training and Validation Loss](images/Training%20and%20Validation%20loss.png)
+
+- **Initial Learning**: Both training and validation losses drop rapidly within the first 25 epochs, showing effective learning.
+- **Convergence**: The losses approach low values with minimal discrepancies, indicating effective learning with minimal overfitting. Slight end-of-training fluctuations suggest a good balance between learning rate and model stability.
 
 ## Files Included 
 Dataset.py: Containing the data loader for transforming the Facebook dataset into torch_geometric Dataset.

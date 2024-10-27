@@ -261,7 +261,7 @@ Therefore, the change to weight initalisation gave a better distribution to pred
 Due to time constraints, I was unable to further test additional methods, like longer learning times or other preprocessing or changing the model parameters, etc further. 
 
 ## License
-MIT License
+See LICENSE file
 
 ### Acknowledgments
 Many thanks to the Alzheimer's Disease Neuroimaging Initiative for creating the dataset used in this project.

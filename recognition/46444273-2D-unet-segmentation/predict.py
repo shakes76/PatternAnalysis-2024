@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from keras.models import load_model
 
 from dataset import load_data_2D
-from modules import dice_coef_prostate, total_loss
+from modules import dice_coef_prostate, total_loss, dice_coef
 from util import create_mask
 import paths
 
@@ -84,6 +84,11 @@ def main(args):
     plt.imshow(create_mask(prediction), cmap='viridis', norm=norm)
     plt.savefig('plots/predict.png')
     plt.show()
+
+    classes = ['background', 'bladder', 'body', 'bone', 'rectum', 'prostate']
+    for i, c in enumerate(classes):
+        dice_score = dice_coef(prediction[:,:,:,i], ground_truth[:,:,:,i])
+        print(f'dice similarity for class {c} ({i}) = {round(dice_score, 3)}')
 
 if __name__ == '__main__':
    main(sys.argv)

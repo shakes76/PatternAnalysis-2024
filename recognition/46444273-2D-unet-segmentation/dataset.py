@@ -6,6 +6,7 @@ import nibabel as nib
 import tensorflow as tf
 from tqdm import tqdm
 
+from modules import natural_sort_key
 import paths
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -86,11 +87,11 @@ def get_training_data(image_limit=None):
     seg_train_image_count = len(list(seg_train_data_dir.glob('*.nii')))
     print(f"seg test image count: {seg_train_image_count}")
     # testing images
-    test_data_dir = pathlib.Path(paths.TEST_IMG_PATH).with_suffix('')
+    test_data_dir = pathlib.Path(paths.VAL_IMG_PATH).with_suffix('')
     test_image_count = len(list(test_data_dir.glob('*.nii')))
     print(f"test image count: {test_image_count}")
     # testing masks
-    seg_test_data_dir = pathlib.Path(paths.TEST_LABEL_PATH).with_suffix('')
+    seg_test_data_dir = pathlib.Path(paths.VAL_LABEL_PATH).with_suffix('')
     seg_test_image_count = len(list(seg_test_data_dir.glob('*.nii')))
     print(f"seg test image count: {seg_test_image_count}")
 
@@ -101,20 +102,51 @@ def get_training_data(image_limit=None):
         early_stop = True
   
     # loading train images
-    train_data = load_data_2D(list(train_data_dir.glob('*.nii')), normImage=False,
+    #train_data = load_data_2D(list(train_data_dir.glob('*.nii')), normImage=False,
+    #                          categorical=False, early_stop=early_stop,
+    #                            image_limit=image_limit)[:image_limit,:,:]
+    # loading train masks
+    #seg_train_data = load_data_2D(list(seg_train_data_dir.glob('*.nii')),
+    #                               normImage=False, categorical=False,
+    #                               early_stop=early_stop,
+    #                                 image_limit=image_limit).astype(np.uint8)[:image_limit,:,:]
+    # loading testing images
+    #test_data = load_data_2D(list(test_data_dir.glob('*.nii')), normImage=False,
+    #                          categorical=False, early_stop=early_stop,
+    #                            image_limit=image_limit)[:image_limit,:,:]
+    # loading testing masks
+    #seg_test_data = load_data_2D(list(seg_test_data_dir.glob('*.nii')),
+    #                              normImage=False, categorical=False,
+    #                                early_stop=early_stop,
+    #                                  image_limit=image_limit).astype(np.uint8)[:image_limit,:,:]
+
+    # loading train images
+    train_data = list(train_data_dir.glob('*.nii'))
+    train_string = [str(d) for d in train_data]
+    train_string.sort(key=natural_sort_key)
+    train_data = load_data_2D(train_string, normImage=False,
                               categorical=False, early_stop=early_stop,
                                 image_limit=image_limit)[:image_limit,:,:]
     # loading train masks
-    seg_train_data = load_data_2D(list(seg_train_data_dir.glob('*.nii')),
+    seg_train_data = list(seg_train_data_dir.glob('*.nii'))
+    seg_train_string = [str(d) for d in seg_train_data]
+    seg_train_string.sort(key=natural_sort_key)
+    seg_train_data = load_data_2D(seg_train_string,
                                    normImage=False, categorical=False,
                                    early_stop=early_stop,
                                      image_limit=image_limit).astype(np.uint8)[:image_limit,:,:]
     # loading testing images
-    test_data = load_data_2D(list(test_data_dir.glob('*.nii')), normImage=False,
+    test_data = list(test_data_dir.glob('*.nii'))
+    test_string = [str(d) for d in test_data]
+    test_string.sort(key=natural_sort_key)
+    test_data = load_data_2D(test_string, normImage=False,
                               categorical=False, early_stop=early_stop,
                                 image_limit=image_limit)[:image_limit,:,:]
     # loading testing masks
-    seg_test_data = load_data_2D(list(seg_test_data_dir.glob('*.nii')),
+    seg_test_data = list(seg_test_data_dir.glob('*.nii'))
+    seg_test_string = [str(d) for d in seg_test_data]
+    seg_test_string.sort(key=natural_sort_key)
+    seg_test_data = load_data_2D(seg_test_string,
                                   normImage=False, categorical=False,
                                     early_stop=early_stop,
                                       image_limit=image_limit).astype(np.uint8)[:image_limit,:,:]
@@ -132,8 +164,6 @@ def get_training_data(image_limit=None):
 
     test_labels = to_categorical(seg_test_data, num_classes=n_classes, dtype=np.uint8)
     test_labels = test_labels.reshape((seg_test_data.shape[0], seg_test_data.shape[1], seg_test_data.shape[2], n_classes))
-
-    #TODO: Normalize input data
 
     X_train, X_test, y_train, y_test = train_data, test_data, train_labels, test_labels
 

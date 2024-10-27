@@ -1,5 +1,9 @@
+import re
+
+from keras import backend as K
 from keras.layers import Activation, BatchNormalization, Concatenate, Conv2D, Conv2DTranspose, MaxPooling2D, Input
 from keras.models import Model
+import numpy as np
 
 # pair of convolutional layers with batch normalization applied to each
 def convolution_pair(input, filters):
@@ -63,28 +67,43 @@ def unet_2d(output_classes, input_shape):
 
   return model
 
-from keras import backend as K
+def dice_coef(y_true, y_pred):
+    '''
+    Based off of implementation from https://github.com/qubvel/segmentation_models
+    '''
+    y_true_f = y_true.flatten()
+    y_pred_f = y_pred.flatten()
+    intersection = np.sum(y_true_f * y_pred_f)
+    smooth = 1e-5
+
+    return (2.0 * intersection + smooth) / (np.sum(y_true_f) + np.sum(y_pred_f) + smooth)
 
 def dice_similarity(y_true, y_pred):
+
     y_true_f = K.flatten(y_pred)
     y_pred_f = K.flatten(y_true)
     intersection = K.sum(y_true_f * y_pred_f)
+
     return (2.0 * intersection + 1) / (K.sum(y_true_f) + K.sum(y_pred_f) + 1)
 
 def dice_coef_prostate(y_true, y_pred):
    return dice_similarity(y_true[:,:,:,5], y_pred[:,:,:,5])
 
 def focal_loss(y_true, y_pred):
-   
-   gamma = 2.0
-   alpha = 0.25
-   y_pred = K.clip(y_pred, K.epsilon(), 1.0 - K.epsilon())
-   loss = -y_true * (alpha * K.pow((1 - y_pred), gamma) * K.log(y_pred))
-   
-   return K.mean(loss)
+    '''
+    Based off of implementation from https://github.com/qubvel/segmentation_models
+    '''
+    gamma = 2.0
+    alpha = 0.25
+    y_pred = K.clip(y_pred, K.epsilon(), 1.0 - K.epsilon())
+    loss = -y_true * (alpha * K.pow((1 - y_pred), gamma) * K.log(y_pred))
+
+    return K.mean(loss)
 
 def f_score(y_true, y_pred, beta=1, smooth=1e-5):
-
+    '''
+    Based off of implementation from https://github.com/qubvel/segmentation_models
+    '''
     axes = [1, 2]
     axes.insert(0, 0)
 
@@ -95,7 +114,7 @@ def f_score(y_true, y_pred, beta=1, smooth=1e-5):
     score = ((1 + beta ** 2) * tp + smooth) \
             / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + smooth)
     score = K.mean(score)
-
+ 
     return score
 
 def dice(y_true, y_pred):
@@ -103,3 +122,8 @@ def dice(y_true, y_pred):
 
 def total_loss(y_true, y_pred):
    return dice(y_true, y_pred) + focal_loss(y_true, y_pred)
+
+def natural_sort_key(s):
+    regex = re.compile('([0-9]+)')
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(regex, s)]

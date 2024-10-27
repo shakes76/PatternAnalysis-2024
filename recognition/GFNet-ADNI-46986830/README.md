@@ -84,7 +84,7 @@ The model exhibited stable convergence, though there is some room for improvemen
 
 ### Test Set Accuracy
 
-The now pre-trained model was run through predict.py, and received a score of roughly 64% on the test set. 
+The now pre-trained model was run through predict.py, and received a score of roughly 71% on the test set. 
 
 ## Dependency and Environment Setup
 To reproduce this project, install the following dependencies:

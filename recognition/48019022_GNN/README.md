@@ -5,6 +5,7 @@ Student Number: 48019022
 
 ## Project Overview
 This project implements a variety of Graph Neural Network (GNN) architectures for node classification, specifically for the Facebook Large Page-Page Network dataset. The goal of the project was to sufficiently classify nodes of the graph data into 4 categories: politicians, governmental organisations, television shows and companies. 
+
 A potential use of this model would be to improve content recommendations for Facebook users, or categorise and moderate Facebook pages.
 
 ## Table of Contents
@@ -21,19 +22,20 @@ A potential use of this model would be to improve content recommendations for Fa
 
 ## Project Structure
 The following files are included in the repository:
-- train.py: Training and evaluation logic wrapped in a main training loop.
-- modules.py: Contains various GNN architectures, defines layers and forward passes.
-- dataset.py: Custom dataloader for the Facebook graph data.
-- predict.py: Script for running inference on the dataset. 
-- plotting.py: Script for plotting the TSNE embeddings for a select model.
-- wandb_config.py: Script for initialising Weights and Biases logging.
-- utils.py: (Unused)
+- `train.py`: Training and evaluation logic wrapped in a main training loop.
+- `modules.py`: Contains various GNN architectures, defines layers and forward passes.
+- `dataset.py`: Custom dataloader for the Facebook graph data.
+- `predict.py`: Script for running inference on the dataset.
+- `plotting.py`: Script for plotting the TSNE embeddings for a select model.
+- `wandb_config.py`: Script for initialising Weights and Biases logging.
+- `utils.py`: (Unused)
 
 ## Dependencies
 This project requires the following libraries:
 - Python 3.8 or higher
 - PyTorch 1.8.0 or higher
 - PyTorch Geometric
+- PyTorch Sparse
 - NumPy
 - Matplotlib
 - Scikit-learn
@@ -41,7 +43,7 @@ This project requires the following libraries:
 
 You can install the required packages using pip:
 ```bash
-pip install torch torchvision torchaudio torch-geometric numpy matplotlib scikit-learn wandb
+pip install torch torchvision torchaudio torch-geometric numpy matplotlib scikit-learn wandb torch-sparse
 ```
 
 ## Installation
@@ -64,12 +66,12 @@ In the dataloader, graph data indexes are split in a 80/10/10 split across train
 
 ## Usage
 The repository implements 4 GNN architectures:
-- Graph Convolutional Network (GCN)
-- Graph Attention Network (GAT)
-- GraphSAGE (SAGE)
-- Simple Graph Convolution (SGC)
+- Graph Convolutional Network (**GCN**)
+- Graph Attention Network (**GAT**)
+- GraphSAGE (**SAGE**)
+- Simple Graph Convolution (**SGC**)
 
-1. To select a model to train, change train.py to one of the above bracketed model types.
+1. To select a model to train, change [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L128) in train.py to one of the above bracketed model types. If you wish to reproduce data splits, set a seed with [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L130).
 
 2. To train the model, run the following command:
    ```bash

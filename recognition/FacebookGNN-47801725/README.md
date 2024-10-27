@@ -12,7 +12,7 @@ GCN Layers: Three GCNConv layers, each followed by ReLU activation and dropout f
 Dropout: Applied after each layer to prevent overfitting, with a configurable dropout rate.
 Output Layer: A final GCN layer for classification, with output dimensions matching the number of classes.
 This architecture enables flexible learning on node-based datasets by processing input features based on graph connectivity.
-![Example of a GCN Model Architecture](The-structure-of-GCN-model-Each-node-in-the-input-graph-represents-a-sample-with-a.png)
+![Example of a GCN Model Architecture](images/The-structure-of-GCN-model-Each-node-in-the-input-graph-represents-a-sample-with-a.png)
 
 ## Data Preprocessing 
 This code preprocesses graph data for training with PyTorch Geometric. It loads data from a .npz file, extracting edges, features, and labels, and converts them to PyTorch tensors. Node features are standardized using scikit-learn's StandardScaler to improve model performance. A Data object is created, storing the processed features, edge connections, and labels. Finally, RandomNodeSplit is used to generate train, validation, and test masks, splitting nodes into subsets for training and evaluation.

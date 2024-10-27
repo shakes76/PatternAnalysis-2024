@@ -46,8 +46,8 @@ def main(args):
     """
     # Set constants as defaults
     IMAGESIZE = 180
-    ROOTDATAPATH = "/home/groups/comp3710/ADNI/"
-    MODELPATH = "./model.pth"
+    ROOTDATAPATH = "/home/groups/comp3710/ADNI/AD_NC"
+    MODELPATH = "./best_model.pth"
     GOAL_ACCURACY = 0.8
     
     # Handle optional arguments

@@ -102,7 +102,7 @@ class SegmentationTransform:
         mask = (mask > 0.5).long()
         return img, mask
 
-# 创建数据集和数据加载器
+# Create datasets and data loaders
 transform = SegmentationTransform(IMG_SIZE)
 trainset = ISICSegmentationDataset(train_pairs, transform=transform)
 valset = ISICSegmentationDataset(val_pairs, transform=transform)
@@ -110,7 +110,7 @@ valset = ISICSegmentationDataset(val_pairs, transform=transform)
 trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
 valloader = DataLoader(valset, batch_size=BATCH_SIZE, shuffle=False, num_workers=8)
 
-# 可视化一些图像和标注
+# Visualize some images and annotations
 import torchvision
 dataiter = iter(trainloader)
 images, masks = next(dataiter)

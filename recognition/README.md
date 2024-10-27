@@ -60,12 +60,6 @@ The HipMRI Study dataset consists of processed 2D MRI slices of the prostate reg
 - matplotlib
 - tqdm
 - torchvision
-
-Install the required packages using:
-
-```bash
-pip install -r requirements.txt
-```
 *Note: Ensure that you have a compatible GPU and CUDA installed if you plan to train the model on a GPU.*
 
 ## Project Structure

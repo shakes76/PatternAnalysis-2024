@@ -6,7 +6,7 @@ These include: GCN, GAT, SGC, GraphSAGE
 """
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import GATConv, GCNConv, SAGEConv, SGConv
+from torch_geometric.nn import GATConv, GCNConv, SAGEConv
 from torch_geometric.utils import add_self_loops, degree
 from torch_sparse import SparseTensor
 

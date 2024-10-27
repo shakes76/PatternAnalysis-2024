@@ -19,6 +19,7 @@ A potential use of this model would be to improve content recommendations for Fa
 - [Results](#results)
 - [Inference](#inference)
 - [References](#references)
+- [Improvements](#further-improvements)
 
 ## Project Structure
 The following files are included in the repository:
@@ -105,7 +106,9 @@ GCNs are particularly effective for semi-supervised learning, where only a small
 
 The GCN architecture implements:
 - 2 layers of GCNConv
+
 - ReLU activation in between
+
 - dropout layer for regularisation, and applied to prevent overfitting.
 
 ### Graph Attention Networks (GAT)
@@ -115,7 +118,9 @@ By focusing on relevant neighbours, GATs enhance the model's expressiveness and 
 
 The GAT architecture implements:
 - 1st GATConv layer with multi-head attention (8 heads) to learn weighted relations
+
 - ReLU activation layer
+
 - A final GATConv layer to combine the attention head and project to the output classes (1 head)
 
 ### Graph Sample and Aggregation (GraphSAGE)
@@ -125,8 +130,11 @@ GraphSAGE enables inductive learning, allowing the model to generalise to unseen
 
 The GraphSAGE architecture implements:
 - 1st SAGEConv layer aggregates neighbourhood information and learns a hidden representation
+
 - 2nd SAGEConv layer aggregates said hidden representations and projects them to the outputs
+
 - Dropout is used to regularise
+
 - ReLU is used to activate nodes in between first and second SAGEConv layers
 
 ### Simplified Graph Convolution (SGC)
@@ -136,6 +144,7 @@ SGC is efficient and effective for node classification, particularly in scenario
 
 The SGC architecture implements:
 - A k-step propagation layer for neighbourhood aggregation across k hops
+
 - a linear transformation layer that projects aggregated features to output classes
 
 ## Training Process
@@ -310,9 +319,9 @@ The GAT also performed best on average:
 GCN  | 93.0216%
 GAT  |  **94.3392%**
 GraphSAGE  | 92.95184%
-SGC  | 886428%
+SGC  | 88.6428%
 
-Moreover, the GAT model also shows the most distinguished T-SNE clustering compared to the other architectures. The distinct clusters demonstrate the model's sufficiency in separating data despite the limited feature information in the dataset.
+Moreover, the GAT model also shows the most distinguished T-SNE clustering compared to the other architectures. The distinct clusters and minimal embedding overlap demonstrate the model's sufficiency in separating data despite the limited feature information in the dataset.
 
 ## Inference
 To test trained models on the graph data, use the `predict.py` script. This script will load a selected trained model and attempt to classify each node of the dataset.

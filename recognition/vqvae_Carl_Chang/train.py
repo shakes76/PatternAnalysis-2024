@@ -19,7 +19,7 @@ validate_path = "./data/keras_slices_validate"
 
 # Hyperparameters
 batch_size = 256
-num_epochs = 10
+num_epochs = 20
 num_hiddens = 128
 num_residual_hiddens = 32
 num_residual_layers = 2

@@ -80,7 +80,7 @@ evaluation metric:
 	
 	the result is:	0.9258
  
-  ![DICE Coffeicient](recognition/3D-UNET--48243304/result/dice.png)
+  ![DICE Coffeicient](result/dice.png)
 	
 segmentation output:
 

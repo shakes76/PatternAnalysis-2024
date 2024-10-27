@@ -19,10 +19,10 @@ This dataset (https://graphmining.ai/datasets/ptg/facebook.npz)contains nodes re
 ### Data Description
 ### ![ Data type ](./type.png)
 In this part, I use the partially processed dataset where the features are in the form of 128 dim vectors.
-Nodes: Each node represents a Facebook page. 
-Edges: An edge between two nodes indicates a relationship between the corresponding pages, such as mutual likes.
-Features: Each node is associated with a 128-dimensional feature vector. These features capture properties of the Facebook pages.
-Target Labels: Each node has a corresponding label that denotes its category. The task is to classify these nodes into one of the given categories.
+##### Nodes: Each node represents a Facebook page. 
+##### Edges: An edge between two nodes indicates a relationship between the corresponding pages, such as mutual likes.
+##### Features: Each node is associated with a 128-dimensional feature vector. These features capture properties of the Facebook pages.
+##### Target Labels: Each node has a corresponding label that denotes its category. The task is to classify these nodes into one of the given categories.
 And in dataset part, I extract features, edges, and labels and then processing label dimension, if the targets are two-dimensional, only the first column of label information is extracted. And then the extracted eigenmatrices, labels and edge relations are converted from NumPy to PyTorch tensor format, so that PyTorch Geometric can be used to train graph neural networks.
 ## Model
 ### ![GCN ](./GCN.jpg)
@@ -33,10 +33,12 @@ When performing classification on the nodes, then these per-node vectors can be 
 ## Results
 Below is a plot displaying the model's loss and accuracy over epochs.
 ### ![loss_accuracy ](./loss_accuracy.png)
-From the plot, The results show that the model architecture and training process are well optimized for this task. The rapid convergence of the loss function and the early stability of the accuracy reflect a good balance between the learning rate and the complexity of the model. In addition, the regularization technique and epoch number have significant effect on the selection of parameters, and there is no obvious overfitting or underfitting phenomenon in the training process.
+From the plot, The results show that the model architecture and training process are well optimized for this task. The rapid convergence of the loss function and the early stability of the accuracy reflect a good balance between the learning rate and the complexity of the model.
 Below is a t-SNE plot with ground truth in colors
 ### ![t-SNE ](./t-SNE.png)
 t-SNE visualized GNN features show a clear separation of different categories. The clusters of each category (represented by different colors) are well separate, indicating that GNN has successfully captured the structural information of the data and effectively classified the features into meaningful groups. Although there may be some overlapping or ambiguous data points, overall, the model can effectively classify the data.
+## Discussion
+From the two plots, the model's average accuracy hovers between 90 and 93%. This aligns with the above interpretations from the t-SNE plot. Future work can refine the boundary regions between clusters for even better classification performance.
 ## References
 ##### [1]https://jonathan-hui.medium.com/graph-convolutional-networks-gcn-pooling-839184205692
 ##### [2]Z. Wu, S. Pan, F. Chen, G. Long, C. Zhang, and P. S. Yu, "A comprehensive survey on graph neural networks," IEEE Transactions on Neural Networks and Learning Systems, vol. 32, no. 1, pp. 4-24, Jan. 2021, doi: 10.1109/TNNLS.2020.2978386.

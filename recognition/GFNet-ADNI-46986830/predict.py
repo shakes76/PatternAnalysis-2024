@@ -7,7 +7,7 @@ import torch.backends.cudnn as cudnn
 import json
 
 from dataset import adni_data_load
-from gfnet import GFNet, _cfg
+from modules import GFNet, _cfg
 from functools import partial
 
 from utils import visualize_batch
@@ -153,4 +153,6 @@ def validate(val_loader, model, criterion, device):
 
     return top1.avg
 
-main()
+
+if __name__ == "__main__":
+    main()

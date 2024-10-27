@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import torchvision
 import math
 
+import ast
+
 def visualize_batch(data_loader, classes, num_images=500):
     """
     Visualize a batch of images from the DataLoader.
@@ -253,3 +255,50 @@ def batch_index_select(x, idx):
         return out
     else:
         raise NotImplementedError
+    
+def plot_training(file):
+    datas = []
+    train_losses = []
+    val_losses = []
+    accuracies = []
+    with open(file) as f:
+        lines = f.readlines()
+        for line in lines:
+            datas.append(ast.literal_eval(line))
+
+    for data in datas:
+        train_losses.append(data["train_loss"])
+        val_losses.append(data["test_loss"])
+        accuracies.append(data["test_acc1"])
+
+    plt.figure(1)
+    plt.title("Validation Accuracy")
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy (%)')
+    
+    plt.plot(accuracies, label="Validation Accuracy")
+    # plt.plot(losses, label="Training Loss")
+
+    # plt.legend()
+
+    plt.show()
+
+
+    plt.figure(1)
+    plt.title("Training Loss and Validation Loss")
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    
+    plt.plot(val_losses, label="Validation Loss")
+    plt.plot(train_losses, label="Training Loss")
+
+    plt.legend()
+
+    plt.show()
+
+
+    
+
+if __name__ == "__main__":
+    # plot_training("/home/reuben/Documents/remote-repos/PatternAnalysis-2024/recognition/GFNet-ADNI-46986830/pretrained/adni_gfnet-xs_50epoch.txt")
+    plot_training("/home/reuben/MEGA/uni/Y4-S2/COMP3710/project/pretrained_models/gfnet-xs-500-rangpur/log.txt")

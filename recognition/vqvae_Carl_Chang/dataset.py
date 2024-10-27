@@ -6,15 +6,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 
-def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
-    """Convert array to multi-channel format based on unique labels."""
-    channels = np.unique(arr)
-    res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
-    for c in channels:
-        c = int(c)
-        res[..., c:c+1][arr == c] = 1
-    return res
-
+# Pad images to fixed size to ensure all input images are same size
 def pad_to_fixed_size(img, target_size=(256, 144)):
     c, h, w = img.shape
     target_h, target_w = target_size
@@ -31,11 +23,12 @@ def pad_to_fixed_size(img, target_size=(256, 144)):
     padding = (pad_left, pad_right, 0, 0)  # (left, right, top, bottom)
     return F.pad(img, padding, mode='constant', value=0)  # Pad with zeros
 
+
+# Custom Dataset for loading 2D MRI slices from Nifti files
 class HipMRI2DDataset(Dataset):
-    def __init__(self, data_dir, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, early_stop=False):
+    def __init__(self, data_dir, norm_image=False, dtype=np.float32, get_affines=False, early_stop=False):
         self.data_dir = data_dir
         self.norm_image = norm_image
-        self.categorical = categorical
         self.dtype = dtype
         self.get_affines = get_affines
         self.early_stop = early_stop
@@ -47,10 +40,11 @@ class HipMRI2DDataset(Dataset):
         if self.early_stop:
             self.image_files = self.image_files[:20]  # Only keep the first 20 files for testing
 
-
+    # Returns number of images in dataset
     def __len__(self):
         return len(self.image_files)
 
+    # Retrieves image from dataset
     def __getitem__(self, idx):
         img_path = self.image_files[idx]
         img, affine = self.load_nifti_image(img_path)
@@ -67,8 +61,8 @@ class HipMRI2DDataset(Dataset):
         else:
             return img
 
+    # Load and preprocess a single Nifti image
     def load_nifti_image(self, file_path):
-        """Load and preprocess a single Nifti image."""
         nifti_image = nib.load(file_path)
         in_image = nifti_image.get_fdata(caching='unchanged')
         affine = nifti_image.affine
@@ -80,18 +74,14 @@ class HipMRI2DDataset(Dataset):
         # Convert to the specified data type
         in_image = in_image.astype(self.dtype)
 
-        # Normalize the image
+        # Normalize the image using Z-score norm
         if self.norm_image:
             in_image = (in_image - in_image.mean()) / in_image.std()
 
-        # Convert to categorical if specified
-        if self.categorical:
-            in_image = to_channels(in_image, dtype=self.dtype)
-
         return in_image, affine
 
-def get_data_loader(data_dir, batch_size=256, shuffle=True, norm_image=False, categorical=False, get_affines=False, early_stop=False):
-    """Create a DataLoader for the dataset."""
-    dataset = HipMRI2DDataset(data_dir, norm_image=norm_image, categorical=categorical, get_affines=get_affines, early_stop=early_stop)
+# Create a DataLoader for the dataset
+def get_data_loader(data_dir, batch_size=256, shuffle=True, norm_image=False, get_affines=False, early_stop=False):
+    dataset = HipMRI2DDataset(data_dir, norm_image=norm_image, get_affines=get_affines, early_stop=early_stop)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 

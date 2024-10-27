@@ -32,12 +32,12 @@ learning_rate = 1e-3
 train_loader = get_data_loader(train_path, batch_size=batch_size, norm_image=True)
 validate_loader = get_data_loader(validate_path, batch_size=batch_size, norm_image=True)
 
-# Initialize Model and Optimizer
+# Initialise Model and optimiser
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VQVAE(num_hiddens, num_residual_layers, num_residual_hiddens, num_embeddings, embedding_dim, commitment_cost).to(device)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate, amsgrad=False)
+optimiser = optim.Adam(model.parameters(), lr=learning_rate, amsgrad=False)
 
-# Initialize lists to track metrics
+# Initialise lists to track metrics
 train_recon_errors = []
 train_perplexities = []
 train_ssim_scores = []
@@ -53,58 +53,59 @@ for epoch in range(num_epochs):
     epoch_perplexity = []
     epoch_train_ssim = []
     
+    # Training for each batch
     for data in tqdm(train_loader, desc=f"Training Epoch {epoch + 1}/{num_epochs}"):
         data = data.to(device)
-        optimizer.zero_grad()
-
+        # Reset gradients
+        optimiser.zero_grad()
         # Forward Pass
         vq_loss, data_recon, perplexity = model(data)
-
-        # Compute Loss and Backpropagation
+        # Compute losses
         train_recon_error = F.mse_loss(data_recon, data)
         loss = train_recon_error + vq_loss
+        # Backpropagation
         loss.backward()
-
-        # Optimize
-        optimizer.step()
-    
-        # Collect Statistics
+        # Update model weights
+        optimiser.step()
+        # Collect metrics
         epoch_train_recon_error.append(train_recon_error.item())
         epoch_perplexity.append(perplexity.item())
-        
         # Calculate SSIM
         train_ssim = calculate_ssim(data, data_recon)
         epoch_train_ssim.append(train_ssim)
     
-    # Store average stats for the epoch
+    # Store average stats for epoch
     train_recon_errors.append(np.mean(epoch_train_recon_error))
     train_perplexities.append(np.mean(epoch_perplexity))
     train_ssim_scores.append(np.mean(epoch_train_ssim))
-    
     print(f"Epoch {epoch + 1} - Training Reconstruction Error (MSE Loss): {train_recon_errors[-1]:.3f}, Perplexity: {train_perplexities[-1]:.3f}, SSIM: {train_ssim_scores[-1]:.3f}")
 
     # Validation step after each epoch
     model.eval()
+    # Lists to track validation metrics for this epoch
     epoch_val_recon_error = []
     epoch_val_perplexity = []
     epoch_val_ssim_scores = []
 
     with torch.no_grad():
+        # Evaluate on validation set
         for val_data in validate_loader:
             val_data = val_data.to(device)
+            # Pass through model to get reconstructed images
             vq_loss, val_data_recon, perplexity = model(val_data)
+            # Calculate and track MSE loss, perplexity, and SSIM
             val_recon_error = F.mse_loss(val_data_recon, val_data)
             epoch_val_recon_error.append(val_recon_error.item())
             epoch_val_perplexity.append(perplexity.item())
-            
-            # Calculate SSIM for validation
             val_ssim = calculate_ssim(val_data, val_data_recon)
             epoch_val_ssim_scores.append(val_ssim)
-
+    
+    # Compute average validation metrics
     avg_val_recon_error = np.mean(epoch_val_recon_error)
     avg_val_perplexity = np.mean(epoch_val_perplexity)
     avg_val_ssim = np.mean(epoch_val_ssim_scores)
     
+    # Add to list of metrics
     val_recon_errors.append(avg_val_recon_error)
     val_perplexities.append(avg_val_perplexity)
     validation_ssim_scores.append(avg_val_ssim)

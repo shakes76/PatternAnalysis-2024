@@ -16,7 +16,7 @@ There is also a residual stack in the encoder and decoder containing residual bl
 During training, the model learns to minimise the difference between the original images and their reconstructions. It also aims to achieve high perplexity.
 By compressing the input to discrete latent representations and reconstructing the images, the VQVAE can learn meaningful features and patterns in the data, which is useful for applications like compression and image generation.
 
-Reference - Code modules are adapted from [2].
+Reference - Code modules are adapted from [2]. Hyperparameters used are also the same, but epochs changed to reduce trainig time.
 
 ### Training Process
 The model is trained using the following steps:

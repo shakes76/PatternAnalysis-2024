@@ -15,13 +15,15 @@ import os
 import datetime
 import csv
 
+import dataset
+import modules
+
 from torch.utils.data import DataLoader
 from typing import Callable
 
 MODEL_DIR = './models/'
 CSV_DIR = './models_csv/'
-
-DEBUG = False
+DATASET_DIR = './dataset/'
 
 ################
 # Global Value #
@@ -29,7 +31,58 @@ DEBUG = False
 
 best_accuracy = 0
 
-def run_training(
+def run_gnn_training(
+        epochs: int,
+        batch_size: int,
+        learning_rate: float,
+        is_load: bool = True,
+        is_save: bool = True
+    ) -> None:
+    """
+        Run the GNN training proccess by loading dataset, creating adjacency matrix,
+        and running trainig method on the GNN model for the given number of epochs.
+
+        Parameters:
+            epochs: The total number of epochs to train for.
+            batch_size: The size of the dataset batches.
+            learning_rate: The rate that the model training delta changes.
+            is_load: If true, load the saved model data and extend current training;
+                Otherwise overwrite current saved model.
+            is_save: If true, save the model when the accuracy increase;
+                Otherwise the model only stays in memory until the process terminates.
+    """
+    # Load FLPP dataset
+    _, train_dataloader, test_dataloader = dataset.load_dataset(DATASET_DIR, batch_size)
+
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    if not torch.cuda.is_available():
+        print("WARNING: CUDA not found; Using CPU")
+
+    # Create the model utilising the class type
+    model = modules.GNN(128, 16, 4)
+    model = model.to(device)
+
+    # Utilise the Adam optimiser and cross entropy loss
+    criterion = nn.CrossEntropyLoss()
+    optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Run training for GNN
+    _run_training(
+        num_epochs=epochs,
+        model=model,
+        device=device,
+        train_loader=train_dataloader,
+        test_loader=test_dataloader,
+        optimiser=optimiser,
+        criterion=criterion,
+        name='gnn_classifier',
+        load=is_load,
+        save=is_save
+    )
+
+def _run_training(
         num_epochs: int,
         model: nn.Module,
         device: torch.device,
@@ -166,8 +219,7 @@ def _train(
 
         train_loss += loss.item()
 
-        if DEBUG:
-            print (f"Training Batch {batch_idx + 1} Loss: {loss.item()}")
+        print (f"Training Batch {batch_idx + 1} Loss: {loss.item()}")
 
     avg_loss = train_loss / (batch_idx + 1)
 

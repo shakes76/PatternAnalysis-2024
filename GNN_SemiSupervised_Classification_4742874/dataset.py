@@ -19,6 +19,10 @@ def load_dataset(root: str, batch_size: int) -> tuple[FacebookPagePage, DataLoad
         Load The Facebook Page-Page Network data set and separate 
         graph data into training and testing data loaders.
 
+        Parameters:
+            root: The root directory of the raw dataset
+            batch_size: The size of the dataset subdivisions
+
         Returns:
             Tuple (flpp_dataset, train_dataloader, test_dataloader)
     """

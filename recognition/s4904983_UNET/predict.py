@@ -4,10 +4,12 @@ Author: Øystein Kvandal
 Description: Contains the prediction function for the 2D UNET. Test the model on the test data.
 """
 
+import os
 import torch
 from modules import UNet2D, DiceLoss
 import dataset as ds
 from dataset import MRIDataLoader, MRIDataset
+import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -47,7 +49,7 @@ def predict_image(model, image, device):
         return pred
     
 
-def plot_prediction(input_img, prediction, target):
+def plot_prediction(input_img, prediction, target, filename):
     """ 
     Plot the input image, prediction and target segmentation masks.
 
@@ -72,12 +74,17 @@ def plot_prediction(input_img, prediction, target):
     plt.title('Target')
     plt.axis('off')
     ### Show the plot
-    plt.show()
+    # plt.show()
     ### Save the plot
     if ds.IS_RANGPUR_ENV:
-        plt.savefig('/home/Student/s4904983/COMP3710/project/figures/prediction.png') # Rangpur path
+        save_dir = '/home/Student/s4904983/COMP3710/project/figures/' + filename + '.png' # Rangpur path
     else:
-        plt.savefig('C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/predictions/prediction.png') # Local path
+        save_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/predictions/' + filename + '.png' # Local path
+
+    if not os.path.exists(os.path.dirname(save_dir)):
+        os.makedirs(os.path.dirname(save_dir))
+
+    plt.savefig(save_dir)
 
 
 def test_model():
@@ -96,7 +103,7 @@ def test_model():
     if ds.IS_RANGPUR_ENV:
         model_dir = '/home/Student/s4904983/COMP3710/project/models/unet_model_ep20.pth' # Rangpur path
     else:    
-        model_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/models/unet_model_ep20.pth' # Local path
+        model_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/results_a/unet_model_ep10_a.pth' # Local path
     
     print("Loading model")
     model = load_model(model_dir, device)
@@ -110,16 +117,24 @@ def test_model():
     # Predict and calculate dice coefficient
     dice_loss = DiceLoss()
     dice_coefficients = []
+    dice_per_class = []
+    min_dice_per_class = []
     predictions = []
+
+    # Plot a random sample of the predictions
+    rand_idx = np.random.choice(len(TestDataLoader.dataset), 20)
 
     for i, (image, label) in enumerate(tqdm(TestDataLoader)):
         # image = image[None, None, :, :]
         pred = predict_image(model, image, device)
         predictions.append(pred)
         dice = dice_loss(pred, label.long(), return_dice=True)
+        classwise_dice = dice_loss(pred, label.long(), return_dice=True, separate_classes=True)
         dice_coefficients.append(dice)
+        dice_per_class.append(classwise_dice)
 
-
+        if i in rand_idx:
+            plot_prediction(image[0,0,:,:], pred[0], label[0,0,:,:], f'prediction_{i}')
     # Print average dice coefficient
     avg_dice = sum(dice_coefficients) / len(dice_coefficients)
     print("Average Dice Coefficient: {:.4f}".format(avg_dice))
@@ -127,13 +142,9 @@ def test_model():
     min_dice = min(dice_coefficients)
     print("Minimum Dice Coefficient: {:.4f}".format(min_dice))
 
-    # Plot five random predictions
-    for _ in range(5):
-        idx = torch.randint(0, len(TestDataLoader.dataset), (1,)).item()
-        input_image, target = TestDataLoader.dataset[idx]
-        prediction = predictions[idx]
-        dice = dice_coefficients[idx]
-        plot_prediction(input_image.squeeze(0), prediction[0], target.squeeze(0))
+    avg_class_dice = sum([d[0] for d in dice_per_class]) / len(dice_per_class)
+    for i in range(6):
+        print(f"Average Dice Coefficient for class {i}: {avg_class_dice[i]}")
 
     return
 

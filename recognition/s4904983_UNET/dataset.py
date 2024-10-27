@@ -80,7 +80,7 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     else:
         return torch.tensor(images, dtype = torch.float32)
 
-
+### TODO: Remove this code after testing
 # def load_img_seg_pair(dataset_type="train"):
 #     assert dataset_type in ["train", "test", "validate"], "Invalid dataset type. Must be 'train', 'test' or 'validate'."
 
@@ -112,9 +112,9 @@ class MRIDataset(data.Dataset):
 
 
 class MRIDataLoader(data.DataLoader):
-    def __init__(self, dataset_type, batch_size=1, shuffle=False):
+    def __init__(self, dataset_type, batch_size=1, shuffle=False, pin_memory=False, num_workers=0):
         self.dataset = MRIDataset(dataset_type)
-        super(MRIDataLoader, self).__init__(self.dataset, batch_size=batch_size, shuffle=shuffle)
+        super(MRIDataLoader, self).__init__(self.dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers)
 
     def __shuffle__(self):
         # Shuffle images and labels equally to maintain correspondence
@@ -123,6 +123,7 @@ class MRIDataLoader(data.DataLoader):
         self.dataset.label_paths = [self.dataset.label_paths[i] for i in perm]
 
 
+### TODO: Remove this code after testing
 ### Unit test
 
 # from matplotlib import pyplot as plt

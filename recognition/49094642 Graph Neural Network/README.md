@@ -23,8 +23,9 @@ GNN covers all neural network models for processing graph data. Its goal is to p
   4. Graph Recurrent Neural Networks (GRNN): Combine graph structure with recurrent neural network (RNN) to process time-dependent graph data.
   5. Dynamic Graph Neural Networks (DGNN): Process dynamic graph structures that change over time.
 The process diagram of the GNN model performing end-to-end prediction tasks is as follows：
-![An end-to-end prediction task with a GNN module](/images/model_structure.png)
 <div style="text-align: center;">
+    <img src="images/model structure.png" alt="Epoch Losses" style="width: 60%">
+</div> [2]
 
 ### Graph Convolutional Network(GCN)
 GCN is a specific implementation of GNN. It is a model that processes graph-structured data based on convolution operations. The representation of each node is updated by aggregating the features of each node and its neighboring nodes. Unlike traditional convolutional neural networks that operate on regular grid data (such as images and text), GCN processes irregular graph-structured data, such as social networks and molecular structure graphs.
@@ -91,18 +92,23 @@ The project requires the installation of the following software or packages:
 This project uses the Facebook Large Page-Page Network dataset provided by the course. The dataset is in the form of a 128-dimensional vector feature.The nodes represent Facebook pages, and the edges represent the likes between these pages. We need to classify them based on specific features.
 
 The dataset was not initially divided.I split the dataset into train, validation, and test sets: **80%** for **train set**, **10%** for **validation set**, and **10%** for **test set**. This is to ensure that the nodes are reasonably allocated according to the preset ratio to maintain the balance of the data. Secondly, the dataset uses a specific labeling method to effectively prevent confusion between datasets. This can maintain randomness while making the model more universal and operable. The data layout is shown in the figure below:
-![data example](/images/data example.png) [2]
+<div style="text-align: center;">
+    <img src="images/data example.png" alt="Epoch Losses" style="width: 60%">
+</div> [2]
 
 ## Outputs
 ### Printing accuracy
 The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the **learning rate** is set to **0.005**. After **400 epochs**, the best **train accuracy** is **0.9409** and the **test accuracy** is **0.9206**. The accuracy and loss values of the train set and test set are as follows:
-![printing results](/outputs/printing results.png) 
+<div style="text-align: center;">
+    <img src="outputs/printing result.png" alt="Epoch Losses" style="width: 60%">
+</div>
 
 ### Curve
 The visualization curves of accuracy and loss value corresponding to the training set and test set of the entire training process are as follows：
-![loss curve](./outputs/loss curve.png) 
-
-![accuracy curve](/outputs/accuracy curve.png) 
+<div style="text-align: center;">
+    <img src="outputs/loss curve.png" alt="TSNE" style="width: 45%;">
+    <img src="outputs/accuracy curve.png" alt="UMAP" style="width: 45%; margin-left: 20px;">
+</div>
 
 From the loss curve, we can see that both curves are high at the beginning, and then gradually decrease. After about 50 epochs, the **loss value** stabilizes and finally approaches **0.3**. Although the training loss is significantly lower than the test loss, this indicates that the model performs better on the training set, but there may also be some overfitting trends.
 
@@ -111,15 +117,9 @@ We visualize the output results and use UMAP to reduce the dimensionality of the
 
 ### Umap
 UMAP maps high-dimensional data to low-dimensional space by reducing dimensionality, so that the global structure and local neighborhood relationship of the data can be presented intuitively. The input result of umap is as follows:
-![umap projection](/images/umap projection.png) 
-
 <div style="text-align: center;">
     <img src="outputs/umap projection.png" alt="Epoch Losses" style="width: 60%">
 </div>
-
-
-
-
 
 In this graph, each cluster in the figure represents a different node category, and the color reflects the true label. Although nodes from different categories form distinguishable clusters, there are some overlapping and fuzzy areas, which indicates that the model has achieved a certain classification effect, but it may be difficult to clearly distinguish certain node categories.
 

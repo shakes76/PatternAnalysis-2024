@@ -95,19 +95,19 @@ Actual Malignant: 79       38
 ### Training and Evaluation Plots
 
 <img src="assets/embeddings_distribution.png" alt="Embedding Distribution" width="60%">
-*Distribution of embedding distances. It shows a clear separation between similar and dissimilar pairs*
+This plot shows the distribution of embedding distances. There is a clear separation between similar and dissimilar pairs.
 
 <img src="assets/embeddings_tsne.png" alt="t-SNE Visualization" width="60%">
-*t-SNE visualization of learned embeddings showing clusters*
+This is a t-SNE visualization of learned embeddings and shows the ability of the Siamese Network to create useful clusters.
 
 <img src="assets/mlp_loss.png" alt="MLP Loss" width="60%">
-*MLP Classifier training loss showing consistent convergence*
+This is a plot of the MLP Classifier training loss and shows consistent convergence.
 
 <img src="assets/siamese_loss.png" alt="Siamese Loss" width="60%">
-*Siamese Network training loss demonstrating stable learning*
+This is a plot of the Siamese Network training loss and it demonstrates stable learning.
 
 <img src="assets/roc_curve.png" alt="ROC Curve" width="60%">
-*ROC curve with AUC = 0.792 indicating good discriminative ability*
+This is the ROC curve with AUC = 0.792. This indicates good discriminative ability.
 
 ### Discussion
 The model achieved mixed results across different metrics. The overall accuracy was 94% but only 32% of melanomas were detected. The benign detection rate was strong at 95% accuracy.

@@ -1,5 +1,7 @@
 """
-TSNE embeddings plot for the saved model
+TSNE embeddings plotting for the saved model
+@author Anthony Ngo
+@date 21/10/2024
 """
 import torch
 from sklearn.manifold import TSNE

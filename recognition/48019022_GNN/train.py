@@ -1,5 +1,6 @@
 """
-Code for training, validating, tesing and saving the model.
+Script for training, validating, tesing and saving the model. 
+Can select between GCN, GAT, SAGE and SGC to be trained.
 @author Anthony Ngo
 @date 21/10/2024
 """
@@ -11,11 +12,6 @@ import matplotlib.pyplot as plt
 import wandb_config
 import time
 import datetime
-
-"""
-Potential Improvements:
-    Change hyperparameters after tests
-"""
 
 def _train_model(model, data, train, optimiser, criterion, device):
     """
@@ -112,7 +108,6 @@ def training_loop(architecture, num_epochs, model, data, train, valid, test, opt
     savedpath = "best_" + architecture + "_model.pth"
     torch.save(model.state_dict(), savedpath)
 
-
 """
 Main loop.
 Initialises hyper parameters and sets up model.
@@ -130,8 +125,7 @@ if __name__ == '__main__':
     epochs = 300 # default, perhaps try 200,400,500 etc
 
     # Change this to change the model
-    architecture = "SGC"
-    seed = 42
+    architecture = "GAT"
     # loading data
     data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='recognition/48019022_GNN/facebook.npz')
 

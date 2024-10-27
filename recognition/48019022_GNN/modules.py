@@ -13,6 +13,12 @@ from torch_sparse import SparseTensor
 class GCNModel(torch.nn.Module):
     """
     A simple graph convolutional network architecture
+
+    The model consists of:
+    - Two graph convolutional layers (GCNConv):
+        The first GCNConv layer projects input node features to a hidden representation, followed by ReLU activation.
+        The second GCNConv layer projects the hidden representation to the output classes.
+    - Dropout layer for regularization, applied between the GCN layers to prevent overfitting.
     """
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GCNModel, self).__init__()
@@ -31,6 +37,12 @@ class GCNModel(torch.nn.Module):
 class GATModelBasic(torch.nn.Module):
     """
     A simple graph attention network architecture
+
+    The model consists of:
+    - Two graph attention (GATConv) layers:
+        The first GAT layer uses multi-head attention (8 heads) to learn weighted relations between connected nodes.
+        The second GAT layer combines the attention heads and projects them to the output classes.
+    - ReLU activation function applied after the first attention layer.
     """
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GATModelBasic, self).__init__()
@@ -49,6 +61,13 @@ class GATModelBasic(torch.nn.Module):
 class GraphSAGE(torch.nn.Module):
     """
     A simple Graph SAGE architecture
+
+    The model consists of:
+    - Two SAGEConv layers:
+        The first layer aggregates neighborhood information and learns a hidden representation.
+        The second layer aggregates hidden representations and projects them to output classes.
+    - Dropout layer for regularization, applied before the first convolution.
+    - ReLU activation function applied after the first layer.
     """
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(GraphSAGE, self).__init__()
@@ -67,6 +86,18 @@ class GraphSAGE(torch.nn.Module):
 class SGCModel(torch.nn.Module):
     """
     Implementation of Simple Graph Convolution (SGC)
+
+    A Simple Graph Convolution (SGC) model for node classification.
+    
+    This model simplifies the traditional GCN by removing non-linearity between layers,
+    relying on multi-hop neighborhood aggregation followed by a linear transformation.
+
+    The model consists of:
+        A K-step propagation layer (propagate_features) for neighborhood aggregation across K hops.
+        A linear transformation layer that projects aggregated features to output classes.
+
+    As the SGC is considered one of the simplest GNN architectures, this implementation avoids
+    using SGConv, and attempts to build the architecture somewhat from scratch :)
     """
     def __init__(self, input_dim, output_dim, k=2):
         super(SGCModel, self).__init__()

@@ -17,7 +17,6 @@ def GNNDataLoader(filepath='recognition/48019022_GNN/facebook.npz'):
     """
     # Set seed for reproducible results
     seed = 42
-    
     torch.manual_seed(seed)
 
     # Load in data from file path as some object

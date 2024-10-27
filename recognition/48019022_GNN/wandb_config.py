@@ -1,6 +1,7 @@
 """
-Weights and Biases config file
-Structure based off Shakes' config file
+Weights and Biases config file for initialising runs and logging of data
+@author Anthony Ngo
+@date 21/10/2024
 """
 import wandb
 def setup_wandb(architecture: str, epochs: int, decay, lr):

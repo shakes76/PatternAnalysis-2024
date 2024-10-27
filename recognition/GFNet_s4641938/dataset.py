@@ -1,7 +1,6 @@
 from os.path import join
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-from torchvision.transforms import v2
 
 """
 ADNI_DataLoader handles all data loaded to pass to the neural network

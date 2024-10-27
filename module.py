@@ -170,7 +170,7 @@ class PatchEmbed(nn.Module):
 
     def forward(self, x):
         B, C, H, W = x.shape
-        # FIXME look at relaxing size constraints
+        # FIXME 
         assert (
             H == self.img_size[0] and W == self.img_size[1]
         ), f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."

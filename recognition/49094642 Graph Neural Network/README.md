@@ -5,7 +5,9 @@ student ID: 49094642
 
 ## Project Overview
 This project solves the problem of semi supervised node classification of Facebook Large Page-Page Network dataset by using GCN model. The goal is to classify nodes into multiple categories based on their features and their edges. It uses batch normalization and dropout to improve the accuracy of the model, and draws loss curves and accuracy curves, combined with embedded UMAP visualization, to help better understand the model's ability to represent data.
-**Best train accuracy: 0.9409**
+
+**Best train accuracy: 0.9409** 
+
 **Best test accuracy: 0.9206**
 
 ## Table of Contents
@@ -36,8 +38,8 @@ The core principle of GCN is to propagate and update node features layer by laye
 
 ### Algorithm Principle
 The specific GCN structure in this project is as follows：
-  1. **Convolutional layer:** There are 4 convolutional layers and each convolution layer is responsible for aggregating the features of the node and its neighboring nodes. The outputs of the 1st, 2nd, and 3rd layers are the feature representations of the hidden layer, and the output of the 4th layer is the result of node classification.
-  2. **Batch Normalization:** There are 3 batch normalization layers，which perform normalization after the first three layers of convolution, helping the training process to be more stable and accelerate convergence.
+  1. **Convolutional layer:** There are **4** convolutional layers and each convolution layer is responsible for aggregating the features of the node and its neighboring nodes. The outputs of the 1st, 2nd, and 3rd layers are the feature representations of the hidden layer, and the output of the 4th layer is the result of node classification.
+  2. **Batch Normalization:** There are **3** batch normalization layers，which perform normalization after the first three layers of convolution, helping the training process to be more stable and accelerate convergence.
   3. **Dropout:** There is a Dropout operation after each convolution layer, which randomly discards some node features during training to prevent the model from overfitting.
   4. **ReLU:** ReLU activation function is applied after each convolution layer to introduce nonlinearity, so that the model can learn more complex features.
   5. **Classification layer:** The last output layer uses a Log Softmax layer, which is responsible for outputting the category probability of the node.

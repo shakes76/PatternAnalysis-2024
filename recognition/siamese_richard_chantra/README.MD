@@ -157,9 +157,8 @@ The results highlight a key issue in melanoma detection: getting high overall ac
 - `README.md`: Project documentation
 
 
-```markdown
 ## Dependencies
-
+```markdown
 matplotlib==3.8.2  
 numpy==2.1.2  
 pandas==2.2.3  

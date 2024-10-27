@@ -106,8 +106,11 @@ The splits are randomized with a fixed seed to maintain consistency across diffe
 ├── README.md
 
 └── logs
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── GFNet
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── best_gfnet.pt
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── loss_plot.png
         
 dataset.py: Contains custom dataset classes for training and testing.

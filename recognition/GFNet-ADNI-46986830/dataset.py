@@ -4,7 +4,7 @@ from torchvision import transforms
 from PIL import Image
 from typing import Any
 from sklearn.model_selection import train_test_split
-from visualise import visualize_batch
+from utils import visualize_batch
 
 class ADNIDataset(Dataset):
     def __init__(self, image_paths, labels, transform) -> None:

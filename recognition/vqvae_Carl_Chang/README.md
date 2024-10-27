@@ -1,6 +1,6 @@
-# VQVAE for Image Reconstruction
+# VQ-VAE for Image Reconstruction
 ## 1. Project Overview
-This project implements a Variational Quantization-Variational Autoencoder (VQVAE) to reconstruct medical images from the HipMRI Study on Prostate Cancer. The aim is to analyse the effectiveness of the model in producing high-quality reconstructions of medical scans. This should address the problem of efficient image compression and reconstruction, since the algorithm provides a way to encode images into a more compact, discrete representation whilst preserving essential features. The images can be reconstructed by the model using the learned quantized latent space, reducing storage requirements with reduced information loss. 
+This project implements a Vector Quantised-Variational AutoEncoder (VQVAE) to reconstruct medical images from the HipMRI Study on Prostate Cancer. The goal is to analyse the effectiveness of the model in producing high-quality reconstructions of medical scans. This aims address the problem of efficient image compression and reconstruction, since the algorithm provides a way to encode images into a more compact, discrete representation whilst preserving essential features. The images can be reconstructed by the model using the learned quantized latent space, reducing storage requirements with reduced information loss. 
 
 The algorithm has been trained on processed 2D slices of medical scans and measures the quality of reconstruction using metrics such as Mean Squared Error (MSE), Perplexity, and Structural Similarity Index (SSIM). The goal is to achieve a reasonably clear reconstructed image with an SSIM score above 0.6.
 
@@ -51,7 +51,10 @@ The training process tracks the following metrics:
 - **SSIM**: Measures the similarity between the original and reconstructed images, with a target of 0.6 or higher.
 
 **Example Plot of Metrics Over Epochs:**
-(plots showing training and validation MSE, perplexity, and SSIM over the epochs)
+![image](https://github.com/user-attachments/assets/1770c9ac-47c0-40ef-9579-f04588532e8f)
+![image](https://github.com/user-attachments/assets/2922da3e-ed57-4161-8848-1278d263e3b9)
+![image](https://github.com/user-attachments/assets/848ff545-6d34-4ef0-861c-602c453090ff)
+
 
 ## 5. Reproducibility
 The results can be reproduced using the following steps:
@@ -70,8 +73,7 @@ The results can be reproduced using the following steps:
 **Output**: Reconstructed 2D slice of the prostate MRI scan
 
 The following figure shows the original/input (top row) and reconstructed/output images (bottom row):
-
-(Sample figure placeholder to add in github)
+![image](https://github.com/user-attachments/assets/a77f83a1-bfbb-4c6b-b8f2-ddd30e37c618)
 
 
 ## 6. References

@@ -1,75 +1,58 @@
-import numpy as np
 import torch
-from sklearn.model_selection import train_test_split
+import numpy as np
+from torch_geometric.data import Data
+from torch_geometric.transforms import RandomNodeSplit
 from sklearn.preprocessing import StandardScaler
-from torch.utils.data import TensorDataset
 
-def filter_edges(edge_index, num_nodes):
+def load_data(npz_path):
     """
-    Filters out edges that reference nodes outside the valid range.
+    Loads and preprocesses the dataset from a .npz file.
 
     Args:
-        edge_index (torch.Tensor): The edge index tensor (2, num_edges).
-        num_nodes (int): The number of nodes in the graph.
+        npz_path (str): Path to the .npz file containing the dataset.
 
     Returns:
-        torch.Tensor: Filtered edge index tensor.
+        data (torch_geometric.data.Data): The graph data object with node features, edge indices, and labels.
     """
-    # Create a mask to filter out edges where both source and target nodes are within the valid range
-    mask = (edge_index[0] < num_nodes) & (edge_index[1] < num_nodes)
-    filtered_edge_index = edge_index[:, mask]
-    return filtered_edge_index
+    # Load data from the .npz file
+    data = np.load(npz_path)
 
-def upload_dataset(file_path, device):
-    """
-    Loads and preprocesses the Facebook dataset.
-
-    Args:
-        file_path (str): Path to the .npz file containing the dataset.
-        device (torch.device): The device to transfer tensors ('cpu', 'cuda', or 'mps').
-
-    Returns:
-        tensor_edges (torch.Tensor): The edges of the graph without self-loops.
-        train_set (TensorDataset): The dataset for training, containing node features and corresponding targets.
-        test_set (TensorDataset): The dataset for testing, containing node features and corresponding targets.
-    """
-    # Load the dataset from the provided file
-    facebook_data = np.load(file_path)
-    edges = facebook_data['edges']
-    features = facebook_data['features']
-    targets = facebook_data['target']
-
-    # Convert edges to tensor and remove self-loops
-    tensor_edges = torch.tensor(edges.T, dtype=torch.long).to(device)
-    tensor_edges = tensor_edges[:, tensor_edges[0] != tensor_edges[1]]  # Remove self-loops
-
-    # Convert features and targets to tensors
-    tensor_features = torch.tensor(features, dtype=torch.float32).to(device)
-    tensor_targets = torch.tensor(targets, dtype=torch.long).to(device)
+    # Extract edges, features, and labels
+    edge_index = torch.tensor(data['edges'], dtype=torch.long).t().contiguous()
+    features = torch.tensor(data['features'], dtype=torch.float32)
+    labels = torch.tensor(data['target'], dtype=torch.long)
 
     # Normalize the features
     scaler = StandardScaler()
-    normalized_features = scaler.fit_transform(tensor_features.cpu().numpy())
-    tensor_features = torch.tensor(normalized_features, dtype=torch.float32).to(device)
+    normalized_features = scaler.fit_transform(features.numpy())
+    features = torch.tensor(normalized_features, dtype=torch.float32)
 
-    # Filter out edges that reference non-existing nodes
-    num_nodes = tensor_features.size(0)
-    tensor_edges = filter_edges(tensor_edges, num_nodes)
+    # Create the graph data object
+    data = Data(x=features, edge_index=edge_index, y=labels)
 
-    # Split into train and test datasets
-    node_indices = torch.arange(num_nodes)
-    train_idx, test_idx = train_test_split(node_indices, test_size=0.7, random_state=42)
+    return data
 
-    train_features = tensor_features[train_idx]
-    train_targets = tensor_targets[train_idx]
-    test_features = tensor_features[test_idx]
-    test_targets = tensor_targets[test_idx]
+def split_data(data):
+    """
+    Splits the data into training, validation, and test sets using RandomNodeSplit.
 
-    # Create TensorDatasets for training and testing
-    train_set = TensorDataset(train_features, train_targets)
-    test_set = TensorDataset(test_features, test_targets)
+    Args:
+        data (torch_geometric.data.Data): The graph data object.
 
-    return tensor_edges, train_set, test_set
+    Returns:
+        data (torch_geometric.data.Data): The graph data object with train, validation, and test masks.
+    """
+    # Split the data using RandomNodeSplit
+    split = RandomNodeSplit(num_val=0.1, num_test=0.2)  # Adjust the proportions as needed
+    data = split(data)
 
+    return data
 
-
+# Example usage
+if __name__ == "__main__":
+    npz_path = '/Users/eaglelin/Downloads/facebook.npz'  # Update the path to your .npz file
+    data = load_data(npz_path)
+    data = split_data(data)
+    print("Data loaded and split successfully.")
+    print(f'Number of nodes: {data.num_nodes}')
+    print(f'Number of edges: {data.num_edges}')

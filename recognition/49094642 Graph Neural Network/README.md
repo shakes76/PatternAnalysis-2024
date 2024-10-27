@@ -23,7 +23,7 @@ GNN covers all neural network models for processing graph data. Its goal is to p
   4. Graph Recurrent Neural Networks (GRNN): Combine graph structure with recurrent neural network (RNN) to process time-dependent graph data.
   5. Dynamic Graph Neural Networks (DGNN): Process dynamic graph structures that change over time.
 The process diagram of the GNN model performing end-to-end prediction tasks is as follows：
-![An end-to-end prediction task with a GNN module](./images/model structure.png) 
+![An end-to-end prediction task with a GNN module](./images/model structure.png) [1]
 
 ### Graph Convolutional Network(GCN)
 GCN is a specific implementation of GNN. It is a model that processes graph-structured data based on convolution operations. The representation of each node is updated by aggregating the features of each node and its neighboring nodes. Unlike traditional convolutional neural networks that operate on regular grid data (such as images and text), GCN processes irregular graph-structured data, such as social networks and molecular structure graphs.
@@ -89,12 +89,12 @@ The project requires the installation of the following software or packages:
 ## Inputs
 This project uses the Facebook Large Page-Page Network dataset provided by the course. The dataset is in the form of a 128-dimensional vector feature.The nodes represent Facebook pages, and the edges represent the likes between these pages. We need to classify them based on specific features.
 
-The dataset was not initially divided.I split the dataset into train, validation, and test sets: 80% for train set, 10% for validation set, and 10% for test set. This is to ensure that the nodes are reasonably allocated according to the preset ratio to maintain the balance of the data. Secondly, the dataset uses a specific labeling method to effectively prevent confusion between datasets. This can maintain randomness while making the model more universal and operable. The data layout is shown in the figure below:
-![data example](./images/data example.png) 
+The dataset was not initially divided.I split the dataset into train, validation, and test sets: **80%** for **train set**, **10%** for **validation set**, and **10%** for **test set**. This is to ensure that the nodes are reasonably allocated according to the preset ratio to maintain the balance of the data. Secondly, the dataset uses a specific labeling method to effectively prevent confusion between datasets. This can maintain randomness while making the model more universal and operable. The data layout is shown in the figure below:
+![data example](./images/data example.png) [2]
 
 ## Outputs
 ### Printing accuracy
-The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the learning rate is set to 0.005. After 400 epochs, the best train accuracy is 0.9409 and the test accuracy is 0.9206. The accuracy and loss values of the train set and test set are as follows:
+The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the **learning rate** is set to **0.005**. After **400 epochs**, the best **train accuracy** is **0.9409** and the **test accuracy** is **0.9206**. The accuracy and loss values of the train set and test set are as follows:
 ![printing results](./outputs/printing results.png) 
 
 ### Curve
@@ -103,9 +103,9 @@ The visualization curves of accuracy and loss value corresponding to the trainin
 
 ![accuracy curve](./outputs/accuracy curve.png) 
 
-From the loss curve, we can see that both curves are high at the beginning, and then gradually decrease. After about 50 epochs, the loss value stabilizes and finally approaches 0.3. Although the training loss is significantly lower than the test loss, this indicates that the model performs better on the training set, but there may also be some overfitting trends.
+From the loss curve, we can see that both curves are high at the beginning, and then gradually decrease. After about 50 epochs, the **loss value** stabilizes and finally approaches **0.3**. Although the training loss is significantly lower than the test loss, this indicates that the model performs better on the training set, but there may also be some overfitting trends.
 
-From the accuracy curve, we can see that both curves rise rapidly at the beginning, then gradually stabilize, and finally fluctuate between 0.85-0.9. 
+From the accuracy curve, we can see that both curves rise rapidly at the beginning, then gradually stabilize, and finally fluctuate between **0.85-0.9**. 
 We visualize the output results and use UMAP to reduce the dimensionality of the high-dimensional feature vector to a two-dimensional projection:
 
 ### Umap
@@ -113,9 +113,6 @@ UMAP maps high-dimensional data to low-dimensional space by reducing dimensional
 ![umap projection](./images/umap projection.png) 
 
 In this graph, each cluster in the figure represents a different node category, and the color reflects the true label. Although nodes from different categories form distinguishable clusters, there are some overlapping and fuzzy areas, which indicates that the model has achieved a certain classification effect, but it may be difficult to clearly distinguish certain node categories.
-
-### Summary
-According to the output results, the model showed good classification ability processing the dataset. However, there is a large deviation in the loss curves of the training set and the test set. So it is needed to improve the stability and generalization ability of the model.
 
 ## References
 - [1] Distill. 'A Gentle Introduction to Graph Neural Networks', Accessed 10/27.

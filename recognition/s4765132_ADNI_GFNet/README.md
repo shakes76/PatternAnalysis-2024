@@ -5,7 +5,7 @@ This project implements Alzheimer's disease classification using the ADNI datase
 
 ### GFNet Model
 GFNet is a Transformer based deep learning network and it incorporates desing elemtents from CNN, especially in its hierarchical model variant.
-![GFNet Architecture] (https://github.com/raoyongming/GFNet/raw/master/figs/intro.gif)
+![GFNet Architecture](https://github.com/raoyongming/GFNet/raw/master/figs/intro.gif)
 
 
 ### Dataset 

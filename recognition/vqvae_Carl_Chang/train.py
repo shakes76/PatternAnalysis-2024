@@ -85,25 +85,25 @@ for epoch in range(num_epochs):
 
     # Validation step after each epoch
     model.eval()
-    val_recon_errors = []
-    val_perplexities = []
-    val_ssim_scores = []
+    epoch_val_recon_error = []
+    epoch_val_perplexity = []
+    epoch_val_ssim_scores = []
 
     with torch.no_grad():
         for val_data in validate_loader:
             val_data = val_data.to(device)
             vq_loss, val_data_recon, perplexity = model(val_data)
             val_recon_error = F.mse_loss(val_data_recon, val_data)
-            val_recon_errors.append(val_recon_error.item())
-            val_perplexities.append(perplexity.item())
+            epoch_val_recon_error.append(val_recon_error.item())
+            epoch_val_perplexity.append(perplexity.item())
             
             # Calculate SSIM for validation
             val_ssim = calculate_ssim(val_data, val_data_recon)
-            val_ssim_scores.append(val_ssim)
+            epoch_val_ssim_scores.append(val_ssim)
 
-    avg_val_recon_error = np.mean(val_recon_errors)
-    avg_val_perplexity = np.mean(val_perplexities)
-    avg_val_ssim = np.mean(val_ssim_scores)
+    avg_val_recon_error = np.mean(epoch_val_recon_error)
+    avg_val_perplexity = np.mean(epoch_val_perplexity)
+    avg_val_ssim = np.mean(epoch_val_ssim_scores)
     
     val_recon_errors.append(avg_val_recon_error)
     val_perplexities.append(avg_val_perplexity)

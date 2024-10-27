@@ -18,8 +18,6 @@ In addition to having an unbalanced dataset, there were several cases of data le
 
 Because of how few positive images there were, heavy data augmentation had to be applied. Random flips, brightness and rotations were implemented, as it makes physical sense that changing how the picture of a lesion is taken should not cause the model to break. Small amounts of noise were also added to both positive and negative samples. The intention of this was to increase the model's robustness to imperfections in the images, which happen quite frequently in this case - many images have hair obscuring the lesion, ruler lines to show size or markings made by the dermatologist.
 
-This was done twice: firstly, only the positive images were augmented. Then, the entire dataset was. This was done to increase the variability of the positive class in relation to the negative class.
-
 A standard 80/20 split is used for training and testing. Usually, this split should be stratified to ensure that the training and testing datasets have similar proportions of both classes. However, it turned out that this usually happened without the need to enforce it. After this split, the training set was further broken down into 70/10 for training and validation.
 
 A representative portion of input images is shown below, after having undergone the above preprocessing. As shown, there are many textures, such as hair follicles and markings, which are common to both classes. The goal of this model is to learn to a point where it treats these textures as noise. 

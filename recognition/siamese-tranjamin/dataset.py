@@ -72,17 +72,17 @@ class BalancedMelanomaDataset():
 
         # even out the dataset split
         if balance_split:
-            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(2000)
-            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(2000)
+            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(1000)
+            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(1000)
             
-            dataset_positive = dataset_positive.map(lambda x, y: (data_augmenter_aggressive(x, training=True), y))
+            # dataset_positive = dataset_positive.map(lambda x, y: (data_augmenter_aggressive(x, training=True), y))
             
             dataset = tf.data.Dataset.sample_from_datasets(
                 [dataset_positive, dataset_negative],
                 weights=[0.5, 0.5]
             )
 
-            dataset = dataset.take(4000)
+            dataset = dataset.take(2000)
 
         dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
 
@@ -178,8 +178,8 @@ class FullMelanomaDataset():
 
         # even out the dataset split
         if balance_split:
-            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(2000)
-            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(2000)
+            dataset_positive = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 1))).repeat().take(1000)
+            dataset_negative = dataset.filter(lambda x,y: tf.reduce_all(tf.math.equal(y, 0))).repeat().take(1000)
             
             dataset_positive = dataset_positive.map(lambda x, y: (data_augmenter_aggressive(x, training=True), y))
             
@@ -188,7 +188,7 @@ class FullMelanomaDataset():
                 weights=[0.5, 0.5]
             )
 
-            dataset = dataset.take(4000)
+            dataset = dataset.take(2000)
 
         dataset = dataset.map(lambda x, y: (data_augmenter(x, training=True), y))
 

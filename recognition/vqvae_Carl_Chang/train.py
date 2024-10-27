@@ -64,3 +64,37 @@ for update in tqdm(range(num_training_updates), desc="Training Progress"):
         train_recon_errors.append(recon_error.item())
         train_perplexities.append(perplexity.item())
 
+
+# Save model
+torch.save(model.state_dict(), "vqvae_model.pth")
+print("Model saved as vqvae_model.pth")
+
+
+# Evaluate and Display Images
+model.eval()
+
+def show(img):
+    npimg = img.numpy()
+    npimg = (npimg - npimg.min()) / (npimg.max() - npimg.min())
+    fig = plt.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
+    fig.axes.get_xaxis().set_visible(False)
+    fig.axes.get_yaxis().set_visible(False)
+
+# Process Validation Data for Visualization
+valid_originals = next(iter(validate_loader)).to(device)
+with torch.no_grad():
+    vq_output_eval = model._pre_vq_conv(model._encoder(valid_originals))
+    _, valid_quantize, _, _ = model._vq_vae(vq_output_eval)
+    valid_reconstructions = model._decoder(valid_quantize)
+
+valid_reconstructions = valid_reconstructions.cpu().data
+valid_originals = valid_originals.cpu().data
+
+# Display Results
+print("Displaying reconstructed images:")
+show(make_grid(valid_reconstructions, nrow=8, normalize=True))
+plt.show()
+
+print("Displaying original images:")
+show(make_grid(valid_originals, nrow=8, normalize=True))
+plt.show()

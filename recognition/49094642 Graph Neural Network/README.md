@@ -43,7 +43,7 @@ The specific GCN structure in this project is as follows：
   2. **Batch Normalization:** There are **3** batch normalization layers，which perform normalization after the first three layers of convolution, helping the training process to be more stable and accelerate convergence.
   3. **Dropout:** There is a Dropout operation after each convolution layer, which randomly discards some node features during training to prevent the model from overfitting.
   4. **ReLU:** ReLU activation function is applied after each convolution layer to introduce nonlinearity, so that the model can learn more complex features.
-  5. **Classification layer:** The last output layer uses a Log Softmax layer, which is responsible for outputting the category probability of the node.
+  5. **Classification layer:** The last output layer uses a Log Softmax layer, which is responsible for outputting the category probability.
 
 The data set input contains a graph structure containing node features and edge connection information. After passing through the model, a tensor will be output, indicating the logarithmic probability of each node belonging to different categories.
 
@@ -102,7 +102,7 @@ The dataset was not initially divided.I split the dataset into train, validation
 </div> 
 
 ## Outputs
-### Printing accuracy
+### Printing Accuracy
 The dataset is divided into train set, validation set and test set according to 80%, 10% and 10%. And the **learning rate** is set to **0.005**. After **400 epochs**, the best **train accuracy** is **0.9409** and the **test accuracy** is **0.9206**. The accuracy and loss values of the train set and test set are as follows:
 <div style="text-align: center;">
     <img src="outputs/printing results.png" alt="printing results" style="width: 60%">

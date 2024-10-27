@@ -5,8 +5,8 @@ from utiles import *
 from modules import *
 from sklearn.manifold import TSNE
 
-def plot_TSNE(output, y_true, classes):
-    # Plotting t-SNE of whole dataset
+# Plotting t-SNE of whole dataset
+def plot_TSNE(output, y_true, classes):   
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
     reduced_embeddings = tsne.fit_transform(output)
 
@@ -20,8 +20,8 @@ def plot_TSNE(output, y_true, classes):
     plt.savefig("TSNE_plot.png")
 
 
+# plotting loss of training and validation
 def plot_loss(train_loss, val_loss):
-    # plotting loss of training and validation
     plt.figure(figsize=(10, 6))
 
     plt.plot(train_loss, label='Train Loss', color='red')
@@ -33,9 +33,8 @@ def plot_loss(train_loss, val_loss):
     plt.title('Training and Validation Loss graph')
     plt.savefig("Training and Validation Loss graph_1.png")
 
-
+# plotting accuracy of training and validation
 def plot_accuracy(train_accuracies, val_accuracies):
-    # plotting accuracy of training and validation 
     plt.figure(figsize=(10, 6))
 
     plt.plot(train_accuracies, label='Train Accuracy', color='red')
@@ -47,9 +46,8 @@ def plot_accuracy(train_accuracies, val_accuracies):
     plt.title('Training and Validation Accuracy')
     plt.savefig("Training and Validation Accuracy_1.png")
 
+# Plotting t-SNE of original dataset
 def plot_pre_train_TSNE(features, labels, classes):
-    # Plotting t-SNE of original dataset
-
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
     reduced_embeddings = tsne.fit_transform(features)
 

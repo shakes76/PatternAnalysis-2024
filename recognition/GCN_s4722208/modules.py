@@ -5,6 +5,12 @@ from torch_geometric.nn import GCNConv
 # Define a GCN model with four convolutional layers
 class GCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
+        '''
+        Parameters
+        in_channels: Feature dimension. It should match the number of features in each node in your graph
+        hidden_channels: Number of channels or feature dimensions in the hidden layers of the GCN. 
+        out_chnnel: Output features per node, representing the final feature dimensionality.
+        '''
         super(GCN, self).__init__()
         # Define four GCN convolutional layers
         self.conv1 = GCNConv(in_channels, hidden_channels)

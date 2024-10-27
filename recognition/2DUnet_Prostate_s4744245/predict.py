@@ -1,100 +1,18 @@
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import confusion_matrix
-from matplotlib import pyplot as plt
 
+
+
+from util import calculate_dice_per_class, n_classes, run, save_validation_image
 from dataset import load_data
-from train import dice_coefficient, train_unet_model, n_classes
-from modules import unet_model, unet_model1
 
 
 images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
 
-
-run = "drop0.2"
-
 #check if GPU is available
 tf.config.experimental.list_physical_devices('GPU')
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-
-def calculate_dice_per_class(y_true, y_pred, num_classes):
-    """
-    Calculate Dice coefficient for each class.
-
-    Args:
-        y_true: Ground truth segmentation masks (one-hot encoded).
-        y_pred: Predicted segmentation masks (one-hot encoded).
-        num_classes: Number of classes.
-
-    Returns:
-        dice_scores: List of Dice coefficients for each class.
-    """
-    dice_scores = []
-
-    for class_id in range(num_classes):
-        true_class = (y_true == class_id).astype(np.float32)
-        pred_class = (y_pred == class_id).astype(np.float32)
-
-        dice = dice_coefficient(true_class, pred_class)
-        dice_scores.append(dice.numpy())  # Convert to NumPy value for easy handling
-
-    return dice_scores
-
-# Function to save a validation image
-def save_validation_image(image, mask, prediction, index):
-    """Saves the original image, mask, and prediction."""
-    
-    # If the mask has more than one channel, convert it back to a single channel
-    if len(mask.shape) == 3:
-        mask = mask[:, :, 0]
-    
-    # Similarly, for predictions
-    if len(prediction.shape) == 4:
-        prediction = prediction[:, :, :, 0]
-
-    # Create a figure
-    plt.figure(figsize=(12, 4))
-    
-    # Original image
-    plt.subplot(1, 3, 1)
-    plt.imshow(image.squeeze())  
-    plt.title('Original Image')
-    plt.axis('off')
-    
-    # Ground truth mask
-    plt.subplot(1, 3, 2)
-    plt.imshow(mask)  
-    plt.title('Ground Truth Mask')
-    plt.axis('off')
-    
-    # Predicted mask
-    plt.subplot(1, 3, 3)
-    plt.imshow(prediction)  
-    plt.title('Predicted Mask')
-    plt.axis('off')
-    
-    # Save the figure
-    plt.savefig(f'validation_image_{run}_{index}.png')
-    plt.close()
-
-
-
-from sklearn.utils import class_weight
-
-labels_train = np.argmax(images_seg_train, axis=-1)
-labels_train = labels_train.flatten()
-class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(labels_train), y=labels_train)
-
-print(class_weights)
-
-# Initialize the U-Net model
-model = unet_model(n_classes, dropout_rate=0.2, input_size=(256, 128, 1))
-
-# Train the U-Net model
-history = train_unet_model(model, images_train, images_seg_train, 
-                           images_validate, images_seg_validate, 
-                           model_save_path=f"best_unet_model_{run}.h5",
-                           class_weights=class_weights)
 
 
 def print_image(index):
@@ -113,6 +31,10 @@ def print_image(index):
     # Save the images (modify this function to handle the labels as needed)
     save_validation_image(image, true_labels, predicted_labels, index)
 
+
+#Load the model
+model = tf.keras.models.load_model('best_unet_model_drop0.2.h5', compile=False)
+
 for i in range(5):
     print_image(i*10)
 
@@ -122,10 +44,10 @@ images_test_predict = np.expand_dims(images_test, axis=-1)  # Adds the channel d
 predictions = model.predict(images_test_predict)
 
 # Convert predictions to class labels (argmax along the last axis)
-predicted_labels = np.argmax(predictions, axis=-1)  # Shape (num_samples, height, width)
+predicted_labels = np.argmax(predictions, axis=-1) 
 
 # Convert one-hot encoded masks to class labels for comparison
-true_labels = np.argmax(images_seg_test, axis=-1)  # Shape (num_samples, height, width)
+true_labels = np.argmax(images_seg_test, axis=-1) 
 
 # Calculate Dice coefficients for each class
 dice_scores = calculate_dice_per_class(true_labels, predicted_labels, n_classes)

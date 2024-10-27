@@ -9,9 +9,8 @@ from dataset import load_data
 from modules import unet_model
 from util import BATCH_SIZE, learning_rate, run, n_classes, EPOCHS, dice_coefficient
 
-
-# plot the training/validation curves from the history
 import matplotlib.pyplot as plt
+
 
 def weighted_categorical_crossentropy(class_weights):
     def wcce(y_true, y_pred):
@@ -91,8 +90,6 @@ def train_unet_model(model, train_images, train_labels,
     
     plot_training(history)
 
-    #wandb.finish()
-
     print("LR:", learning_rate, "/nEPOCHS:", EPOCHS, "/nBATCHSIZE:", BATCH_SIZE)
 
     return history
@@ -114,6 +111,10 @@ def plot_training(history):
     plt.savefig('training_loss_drop0.2.png')
 
 
+#check if GPU is available
+tf.config.experimental.list_physical_devices('GPU')
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+
 images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
 
 
@@ -132,4 +133,4 @@ model = unet_model(n_classes, dropout_rate=0.2, input_size=(256, 128, 1))
 history = train_unet_model(model, images_train, images_seg_train, 
                            images_validate, images_seg_validate, 
                            model_save_path=f"best_unet_model_{run}.h5",
-                           class_weights=class_weights)
+                           class_weights=class_weights) 

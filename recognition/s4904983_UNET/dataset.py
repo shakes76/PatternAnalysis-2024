@@ -8,7 +8,6 @@ import os
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-import torchio as tio
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
@@ -106,8 +105,8 @@ class MRIDataset(data.Dataset):
     def __getitem__(self, idx):
         image = load_data_2D([self.image_paths[idx]], normImage=True)
         label = load_data_2D([self.label_paths[idx]])
-        image = transforms.Resize((64, 64))(image)
-        label = transforms.Resize((64, 64))(label)
+        image = transforms.Resize((128, 64))(image)
+        label = transforms.Resize((128, 64))(label)
 
         return image, label
 

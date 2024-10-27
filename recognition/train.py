@@ -9,7 +9,7 @@ from dataset import SiameseISICDataset
 import random
 import numpy as np
 
-# 设置随机种子
+# Random
 torch.manual_seed(42)
 random.seed(42)
 np.random.seed(42)

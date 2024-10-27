@@ -11,21 +11,117 @@ Date: 26/10/2024
 from torch.utils.data import DataLoader
 from typing import Callable
 
-import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch
 import os
 import datetime
 import csv
-import numpy as np
 
 MODEL_DIR = './models/'
 CSV_DIR = './models/'
 DEBUG = False
 
+################
+# Global Value #
+################
+
 best_accuracy = 0
 
-def train(
+def run_training(
+        num_epochs: int,
+        model: nn.Module,
+        device: torch.device,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
+        optimiser: torch.optim.Optimizer,
+        criterion: nn.Module,
+        name: str,
+        save: bool = True,
+        load: bool = True,
+        train_function: Callable | None = _train,
+        test_function: Callable | None = _test,
+    ) -> None:
+    """
+        Run the training for the model for 
+        the given number of epochs.
+
+        Parameters:
+            num_epochs: The total number of epochs to run the training for
+            model: The model used to train
+            device: The torch device used to train the model
+            train_loader: The dataloader for the training data
+            test_loader: The dataloader for the test data
+            optimiser: The optimisation stratergy for the training
+            criterion: The loss criterion used to evaluated the model's training gradient
+            name: The name of the model being trained
+            save: If true, saves the model after each iteration of improved accuracy
+            load: If true, loads the saved model on start
+            train_function: The function used to train the model (defaults to "train.train()")
+            test_function: The function used to test  the model (defaults to "train.test()")
+    """
+    print(f"Training: {name}")
+
+    start_epoch = 0
+
+    # Load save states of the model from disk
+    csv_path = os.path.join(CSV_DIR, f'{name}.csv')
+
+    if not os.path.isdir(MODEL_DIR):
+        os.mkdir(MODEL_DIR)
+
+    if not os.path.isdir(CSV_DIR):
+        os.mkdir(CSV_DIR)
+
+    if load:
+        # Load the previous model data from disk and continue training from best iteration
+        start_epoch = _load_model(model, name)
+    elif os.path.exists(csv_path):
+        os.remove(csv_path)
+
+    model.to(device)
+
+    # Train the model for the given number of epochs from the start epoch
+    for epoch in range(start_epoch, start_epoch + num_epochs):
+        start_time = datetime.datetime.now()
+
+        if train_function is not None:
+            # Train the model with the given training function
+            train_loss = train_function(
+                model=model,
+                device=device,
+                train_loader=train_loader,
+                optimiser=optimiser,
+                epoch=epoch,
+                criterion=criterion
+            )
+
+        test_accuracy = 0
+        test_loss = 0
+
+        if test_function is not None:
+            # Test the model with the given test function
+            test_loss, test_accuracy = test_function(
+                model=model,
+                device=device,
+                test_loader=test_loader,
+                epoch=epoch,
+                criterion=criterion,
+                name=name,
+                save=save
+            )
+
+        if save:
+            _save_model(epoch, model, test_accuracy, name)
+
+        end_time = datetime.datetime.now()
+        training_duration = (end_time - start_time).total_seconds()
+
+        # Write training iteration to disk
+        with open(csv_path, mode='a', newline='') as file:
+            csv_writer = csv.writer(file)
+            csv_writer.writerow([epoch, train_loss, test_loss, test_accuracy, training_duration])
+
+def _train(
         model: nn.Module,
         device: torch.device,
         train_loader: DataLoader,
@@ -78,7 +174,7 @@ def train(
 
     return avg_loss
 
-def test(
+def _test(
         model: nn.Module,
         device: torch.device,
         test_loader: DataLoader,
@@ -134,105 +230,54 @@ def test(
 
     return avg_loss, accuracy
 
-def run_training(
-        num_epochs: int,
-        model: nn.Module,
-        device: torch.device,
-        train_loader: DataLoader,
-        test_loader: DataLoader,
-        optimiser: torch.optim.Optimizer,
-        criterion: nn.Module,
-        name: str,
-        save: bool = True,
-        load: bool = True,
-        train_function: Callable | None = train,
-        test_function: Callable | None = test,
-    ) -> None:
+def _save_model(epoch: int, model: nn.Module, accuracy: int, name: str) -> None:
     """
-        Run the training for the model for 
-        the given number of epochs.
+        Save best model to disk if accuracy has improved.
 
         Parameters:
-            num_epochs: The total number of epochs to run the training for
-            model: The model used to train
-            device: The torch device used to train the model
-            train_loader: The dataloader for the training data
-            test_loader: The dataloader for the test data
-            optimiser: The optimisation stratergy for the training
-            criterion: The loss criterion used to evaluated the model's training gradient
-            name: The name of the model being trained
-            save: If true, saves the model after each iteration of improved accuracy
-            load: If true, loads the saved model on start
-            train_function: The function used to train the model (defaults to "train.train()")
-            test_function: The function used to test  the model (defaults to "train.test()")
+            epoch: The current epoch of the model
+            model: The model with trained values
+            accuracy: The accuracy of the model
+            name: The name of the model
     """
-    print(f"Training: {name}")
+    global best_accuracy
 
-    start_epoch = 0
+    # Save the model if its accuracy has improved
+    if accuracy >= best_accuracy:
+        print(f"Saving {name} : Epoch {epoch} : Accruacy {accuracy}%")
 
-    # Load save states of the model from disk
+        best_accuracy = accuracy
+        state = {
+            'model': model.state_dict(),
+            'accuracy': accuracy,
+            'epoch': epoch
+        }
+
+        model_path = os.path.join(MODEL_DIR, f'{name}.pth')
+        torch.save(state, model_path) 
+
+def _load_model(model: nn.Module, name: str) -> int:
+    """
+        Load the given model from file into the model parameter.
+
+        Parameters:
+            model: The model to load with the saved trained values
+            name: The name of the model to load
+
+        Returns:
+            The start epoch of the loaded training
+    """
+    global best_accuracy
+
     model_path = os.path.join(MODEL_DIR, f'{name}.pth')
-    csv_path = os.path.join(CSV_DIR, f'{name}.csv')
 
-    if not os.path.isdir(MODEL_DIR):
-        os.mkdir(MODEL_DIR)
+    loader = torch.load(model_path)
+    model.load_state_dict(loader['model'])
 
-    if not os.path.isdir(CSV_DIR):
-        os.mkdir(CSV_DIR)
+    best_accuracy = loader['accuracy']
+    start_epoch = loader['epoch']
 
-    if load:
-        # Load the previous model data from disk and continue training from best iteration
-        loader = torch.load(model_path)
-        model.load_state_dict(loader['model'])
-        model.to(device)
+    print(f"Loaded {name}: Epoch {start_epoch} : Accuracy: {best_accuracy}%")
 
-        best_accuracy = loader['accuracy']
-        start_epoch = loader['epoch']
-
-        print(f"Loaded {name}: Epoch {start_epoch} : Accuracy: {best_accuracy}%")
-
-    elif os.path.exists(csv_path):
-        os.remove(csv_path)
-
-    # Train the model for the given number of epochs from the start epoch
-    for epoch in range(start_epoch, start_epoch + num_epochs):
-        start_time = datetime.datetime.now()
-
-        if train_function is not None:
-            # Train the model with the given training function
-            train_loss = train_function(
-                model=model,
-                device=device,
-                train_loader=train_loader,
-                optimiser=optimiser,
-                epoch=epoch,
-                criterion=criterion
-            )
-
-        test_accuracy = 0
-        test_loss = 0
-
-        if test_function is not None:
-            # Test the model with the given test function
-            test_loss, test_accuracy = test_function(
-                model=model,
-                device=device,
-                test_loader=test_loader,
-                epoch=epoch,
-                criterion=criterion,
-                name=name,
-                save=save
-            )
-
-        if save:
-            save_model(epoch, model, test_accuracy, name)
-
-        end_time = datetime.datetime.now()
-        training_duration = (end_time - start_time).total_seconds()
-
-        # Write training iteration to disk
-        with open(csv_path, mode='a', newline='') as file:
-            csv_writer = csv.writer(file)
-            csv_writer.writerow([epoch, train_loss, test_loss, test_accuracy, training_duration])
-
+    return start_epoch
 

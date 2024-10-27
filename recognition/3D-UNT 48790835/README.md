@@ -34,6 +34,15 @@ where \( A \) and \( B \) are the sets of predicted and ground truth regions res
 - Utilize data augmentation techniques to improve model generalization.
 - Load and preprocess Nifti file formats for volumetric data analysis.
 
+## Quick Start
+
+To get started with the 3D UNet model for prostate segmentation, follow these steps:
+
+1. **Clone the Repository**: Clone the repository to your local machine.
+2. **Install Dependencies**: Ensure you have the required libraries installed.
+3. **Prepare the Dataset**: Download the Prostate 3D dataset and place it in the `data/` directory.
+4. **Run Training**: Execute the training script to begin training the model on the Prostate 3D dataset.
+
 ## Results
 
 ### Training and Validation Loss
@@ -48,6 +57,12 @@ where \( A \) and \( B \) are the sets of predicted and ground truth regions res
 
 ### Dice Similarity Coefficient
 
+![Dice](https://github.com/Han1zen/PatternAnalysis-2024/blob/topic-recognition/recognition/3D-UNT%2048790835/picture/dice.png#:~:text=dice.-,png,-loss.jpg)
 - The model achieves a **Dice similarity coefficient** of over **0.7** for all labels, meeting our established target.
 - This indicates that the model performs excellently in the segmentation task, accurately identifying and segmenting different regions of the prostate.
+
+
+## References
+
+1. Sik-Ho Tsang. "Review: 3D U-Net — Volumetric Segmentation (Medical Image Segmentation)." [Towards Data Science](https://towardsdatascience.com/review-3d-u-net-volumetric-segmentation-medical-image-segmentation-8b592560fac1).
 

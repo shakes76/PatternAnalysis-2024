@@ -47,8 +47,10 @@ The following image shows the architecture of the GFNet model used for Alzheimer
 - **Testing Split(15%)** :  This is a separated, unseen dataset used in order to determine the performance of a model.
 The splitting of data would thereby enable the model to be validated during training, while completely new data are tested with this model, making it robust and generalizable.
 
-## Training & Validation Loss, Training & Validation Accuracy
-These two plots represent the training and validation loss (on the left) and training and validation accuracy (on the right) over the 200 epochs of training the GFNet model on the ADNI dataset.
+## Training & Validation Loss, Training & Validation Accuracy, Testing Accuracy
+- These two plots represent the training and validation loss (on the left) and training and validation accuracy (on the right) over the 200 epochs of training the GFNet model on the ADNI dataset.
+- Got an overall of 0.79 accuracy on the test dataset.
+
 
 The following image shows the training and validation loss and accuracy over 200 epochs.
 ![Training and Validation Loss & Accuracy](https://drive.google.com/uc?export=view&id=1FmPLCZAj04GeWjKof4ZDv9u1wwmTRhBH)
@@ -105,6 +107,7 @@ The confusion matrix shows the number of correct and incorrect classifications f
 - Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification [ArXiv preprint arXiv:2107.00645].  
 https://arxiv.org/abs/2107.0064
 - OpenAI. (2024). ChatGPT [AI language model]. Available from https://www.openai.com
+- ADNI Dataset Link from Google Drive : https://drive.google.com/drive/folders/1nABIvR58TitI563V5Vi8Lv9v19xpLGYC?usp=sharing
 
 
 

@@ -13,8 +13,8 @@ from functools import partial
 from utils import visualize_batch
 
 def main():
-    # adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
-    adni_dir = "/home/reuben/Documents/datasets/ADNI_AD_NC_2D/AD_NC"
+    adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"
+    # adni_dir = "/home/reuben/Documents/datasets/ADNI_AD_NC_2D/AD_NC"
     dataset_val, dataloader_val = adni_data_load(adni_dir, verbose=True, test_set=True) 
 
     # visualize_batch(dataloader_val, ["NC", "AD"])
@@ -27,7 +27,8 @@ def main():
     )
 
     # model_path = "/home/reuben/Documents/remote-repos/PatternAnalysis-2024/recognition/GFNet-ADNI-46986830/pretrained/adni_gfnet-xs_10epoch_best.pth"
-    model_path = "/home/reuben/MEGA/uni/Y4-S2/COMP3710/project/pretrained_models/adni_gfnet-xs_50epoch_best.pth"
+    # model_path = "/home/reuben/MEGA/uni/Y4-S2/COMP3710/project/pretrained_models/adni_gfnet-xs_50epoch_best.pth"
+    model_path = "/home/reuben/MEGA/uni/Y4-S2/COMP3710/project/pretrained_models/gfnet-xs-500-rangpur/checkpoint_epoch19.pth"
     model.default_cfg = _cfg()
 
     checkpoint = torch.load(model_path, map_location="cpu")

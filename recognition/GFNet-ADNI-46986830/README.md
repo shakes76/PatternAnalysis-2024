@@ -31,7 +31,19 @@ AD_NC/
 ```
 The dataset is organized with separate directories for training and testing, each containing "AD" (Alzheimer’s Disease) and "NC" (Normal Control) subdirectories.
 
+### Example input images from datasets
+
+ - Example patient image with Alzeimers disease (`388206_78.jpeg`)
+
+![Example with Alzeimers](images/example_AD.jpeg)
+
+ - Example patient image without Alzeimers disease (`1182968_94.jpeg`)
+
+![Example without Alzeimers](images/example_NC.jpeg)
+
 ## Data Pre-processing
+This code splits data by subject ID to ensure that no single patient's data appears in both the training and validation sets, preventing data leakage and improving model generalization. First, it extracts unique subject IDs from the file names, which contain identifiers. It then uses `train_test_split` to separate subjects into training and validation groups. Paths and labels are filtered according to the assigned group, creating separate datasets and data loaders for training and validation. This approach helps maintain subject-wise independence between the splits.
+
 Data pre-processing and augmentation were performed in `dataset.py`:
 1. **Resizing**: Images resized to 224x224 pixels.
 2. **Normalization**: Standardization with mean and standard deviation derived from the dataset.

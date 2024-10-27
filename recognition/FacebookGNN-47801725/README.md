@@ -30,6 +30,19 @@ t-SNE Plot (After Training)
 Clustering and Separation: After training, the embeddings exhibit clear clusters, with each class forming more distinct regions. This indicates that the GCN has learned to differentiate the classes based on node features and graph structure.
 
 Class Distinction: The nodes of the same class are much more cohesive, with less overlap between different colors. This shows that the trained GCN has successfully grouped similar nodes together, capturing the underlying structure and relationships in the graph.
+![Validation and Test Accuracy Plot](images/Validation%20and%20Test%20Accuracy.png)
+Validation and Test Accuracy Plot:
+
+The model's accuracy improves significantly during the initial epochs, with rapid gains in performance within the first 25 epochs. This quick rise suggests that the model is effectively learning from the data.
+After reaching around 90% accuracy, the accuracy values start to plateau and stabilize, with minor fluctuations. Both the validation and test accuracies converge closely, indicating that the model generalizes well without overfitting.
+This stability towards the end of training suggests that the model has learned the underlying patterns effectively, achieving consistent high performance across both validation and test sets.
+
+raining and Validation Loss Plot:
+
+![Validation and Test Loss Plot](images/Training%20and%20Validation%20loss.png)
+Similar to the accuracy plot, the training and validation losses drop quickly in the first 25 epochs, showing that the model learns efficiently during the initial phase.
+Both losses approach low values as the training progresses, converging closely with minimal discrepancies. This convergence indicates effective learning with minimal overfitting, as the validation loss follows the training loss closely.
+Slight fluctuations towards the end of training are observed, but they remain minimal, indicating a good balance between learning rate and model stability.
 
 ## Files Included 
 Dataset.py: Containing the data loader for transforming the Facebook dataset into torch_geometric Dataset.

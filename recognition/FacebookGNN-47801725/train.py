@@ -1,5 +1,6 @@
 import torch
 import torch.optim as optim
+import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score
 from modules import GCN  # Assuming the model is defined in modules.py
 from data import load_data, split_data  # Assuming the updated data.py contains these functions
@@ -65,7 +66,13 @@ if __name__ == '__main__':
     model = GCN(input_dim=input_dim, hidden_dims=hidden_dims, output_dim=output_dim, dropout_rate=0.5).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)
     criterion = torch.nn.CrossEntropyLoss()
-
+   
+    # Lists to store loss and accuracy values
+    train_losses = []
+    val_losses = []
+    val_accuracies = []
+    test_accuracies = []
+   
     # Training loop
     num_epochs = 200
     best_val_acc = 0
@@ -81,6 +88,11 @@ if __name__ == '__main__':
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), 'best_gcn_model.pth')
+       
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+        val_accuracies.append(val_acc)
+        test_accuracies.append(test_acc)
 
         # Print training, validation, and test statistics
         if epoch % 10 == 0:
@@ -91,3 +103,24 @@ if __name__ == '__main__':
     test_loss, test_acc = evaluate(model, data, data.test_mask, criterion)
     print(f'Best Test Accuracy: {test_acc:.4f}')
 
+    epochs = range(1, num_epochs + 1)
+    
+   
+    plt.figure()
+    plt.plot(epochs, train_losses, label='Train Loss')
+    plt.plot(epochs, val_losses, label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.show()
+
+    
+    plt.figure()
+    plt.plot(epochs, val_accuracies, label='Validation Accuracy')
+    plt.plot(epochs, test_accuracies, label='Test Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Validation and Test Accuracy')
+    plt.legend()
+    plt.show()

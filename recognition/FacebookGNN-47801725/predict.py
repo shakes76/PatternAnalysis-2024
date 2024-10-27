@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     # Initialize the model and load the best trained weights
     model = GCN(input_dim=input_dim, hidden_dims=hidden_dims, output_dim=output_dim, dropout_rate=0.5).to(device)
-    model = load_best_model(model, 'best_gcn_model.pth', device)
+    
 
     # Extract embeddings from the GCN model
     embeddings = extract_embeddings(model, data)

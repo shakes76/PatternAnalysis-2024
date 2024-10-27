@@ -26,6 +26,7 @@ The process diagram of the GNN model performing end-to-end prediction tasks is a
 ![An end-to-end prediction task with a GNN module](./images/model_structure.png)
 
 
+
 ### Graph Convolutional Network(GCN)
 GCN is a specific implementation of GNN. It is a model that processes graph-structured data based on convolution operations. The representation of each node is updated by aggregating the features of each node and its neighboring nodes. Unlike traditional convolutional neural networks that operate on regular grid data (such as images and text), GCN processes irregular graph-structured data, such as social networks and molecular structure graphs.
 

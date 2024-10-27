@@ -6,6 +6,10 @@ This script includes:
 - Tuning hyperparameters using Optuna.
 - Saving the best model checkpoint and recording training and validation loss per epoch in a CSV file.
 
+Additional information:
+- The script saves models and CSV files in a folder named with the hyperparameter values, located within the experiments directory.
+- The Optuna study results will be saved as an SQLite database file named gfnet_study.db in the same directory as this script.
+
 Created by:     Shogo Terashima
 ID:             S47779628
 Last update:    25/10/2024
@@ -196,7 +200,7 @@ if __name__ == "__main__":
     )
     terminator_callback = TerminatorCallback(terminator)
 
-    # create and initialies optuna study
+    # Create and initialize an Optuna study (saved in the same directory as this file)
     study = optuna.create_study(
         direction='minimize', # I want to minimse the loss
         study_name='gfnet_study',

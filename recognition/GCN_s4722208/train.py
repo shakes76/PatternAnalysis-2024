@@ -6,10 +6,11 @@ from utiles import *
 from modules import *
 
 # Hyper-parameters
-num_epochs = 500
+num_epochs = 350
 hidden_layer = 64
 classes = ["Politicians", "Governmental Organisations", "Television Shows", "Companies"]
 learning_rate = 5e-4
+weight_decay_value = 1e-5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train_model():
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     model = model.to(device)
 
     # Setup the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = weight_decay_value)
     # Setup the CrossEntropyLoss function
     criterion = torch.nn.CrossEntropyLoss()
     train_model()

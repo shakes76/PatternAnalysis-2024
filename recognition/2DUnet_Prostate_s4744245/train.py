@@ -1,28 +1,17 @@
 import numpy as np
 import random
-#import wandb
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras import backend as K
 
+from dataset import load_data
+from modules import unet_model
+from util import BATCH_SIZE, learning_rate, run, n_classes, EPOCHS, dice_coefficient
+
 
 # plot the training/validation curves from the history
 import matplotlib.pyplot as plt
-
-#define training variables
-BATCH_SIZE = 16
-EPOCHS = 50
-n_classes = 6
-learning_rate = 0.0001
-
-# Define the Dice similarity coefficient
-def dice_coefficient(y_true, y_pred, smooth=1e-6):
-    y_true_f = K.flatten(y_true)  # Flatten ground truth tensor
-    y_pred_f = K.flatten(y_pred)  # Flatten predicted tensor
-    intersection = K.sum(y_true_f * y_pred_f)  # Intersection between true and predicted
-    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-
 
 def weighted_categorical_crossentropy(class_weights):
     def wcce(y_true, y_pred):
@@ -38,24 +27,6 @@ def weighted_categorical_crossentropy(class_weights):
         return loss * K.sum(y_true * Kweights, axis=-1)
         
     return wcce
-    
-def weighted_dice_loss(class_weights):
-    def wdl(y_true, y_pred):
-        # Calculate the Dice coefficient for each class
-        dice_scores = []
-        for i in range(n_classes):  # Iterate over the number of classes
-            class_dice = dice_coefficient(y_true[..., i], y_pred[..., i])
-            dice_scores.append(class_dice)
-
-        # Convert list to tensor
-        dice_scores = K.stack(dice_scores)
-            
-        # Apply the class weights
-        weighted_dice = K.sum(class_weights * (1 - dice_scores))  # 1 - Dice score to convert to loss
-        
-        return weighted_dice
-    
-    return wdl
 
 
 def train_unet_model(model, train_images, train_labels, 
@@ -102,8 +73,6 @@ def train_unet_model(model, train_images, train_labels,
 
     loss = weighted_categorical_crossentropy(class_weights)
     print("weighted_cc_loss")
-    #loss = weighted_dice_loss(class_weights)
-    #print("weighted_dice_loss")
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
 
 
@@ -143,3 +112,24 @@ def plot_training(history):
     plt.ylim([0, 1])
     plt.legend()
     plt.savefig('training_loss_drop0.2.png')
+
+
+images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate = load_data()
+
+
+from sklearn.utils import class_weight
+
+labels_train = np.argmax(images_seg_train, axis=-1)
+labels_train = labels_train.flatten()
+class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(labels_train), y=labels_train)
+
+print(class_weights)
+
+# Initialize the U-Net model
+model = unet_model(n_classes, dropout_rate=0.2, input_size=(256, 128, 1))
+
+# Train the U-Net model
+history = train_unet_model(model, images_train, images_seg_train, 
+                           images_validate, images_seg_validate, 
+                           model_save_path=f"best_unet_model_{run}.h5",
+                           class_weights=class_weights)

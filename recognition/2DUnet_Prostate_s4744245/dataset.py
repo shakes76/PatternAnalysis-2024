@@ -1,45 +1,7 @@
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-from skimage.transform import resize
 import glob
-import tensorflow as tf
-
-def augment_image_and_mask(image, mask, class_index=5, heavy_augment=True, zoom_factor=0.2):
-    # Check if the weak class is present in the mask
-    class_present = tf.reduce_sum(mask[..., 5]) > 0
-
-    if not class_present:
-        class_present = tf.reduce_sum(mask[..., 4]) > 0
-
-    if heavy_augment and class_present:
-        # Apply heavier augmentations
-        if tf.random.uniform(()) > 0.5:
-            image = tf.image.flip_left_right(image)
-            mask = tf.image.flip_left_right(mask)
-
-        # Apply zoom augmentation
-        """if tf.random.uniform(()) > 0.5:
-            # Determine the zoom-in size (based on the zoom factor)
-            zoom_in_size = [int(image.shape[0] * (1 + zoom_factor)),
-                            int(image.shape[1] * (1 + zoom_factor))]
-            
-            # Resize to a zoomed-in version
-            image = tf.image.resize(image, zoom_in_size, method='bilinear')
-            mask = tf.image.resize(mask, zoom_in_size, method='nearest')  # Use nearest for mask
-            
-            # Crop back to the original size
-            image = tf.image.resize_with_crop_or_pad(image, image.shape[0], image.shape[1])
-            mask = tf.image.resize_with_crop_or_pad(mask, mask.shape[0], mask.shape[1])"""
-        
-
-    # Apply standard augmentations
-    if tf.random.uniform(()) > 0.5:
-        image = tf.image.random_brightness(image, max_delta=0.1)
-    if tf.random.uniform(()) > 0.5:
-        image = tf.image.random_contrast(image, lower=0.9, upper=1.1)
-
-    return tf.squeeze(image, axis=-1), mask
 
 
 def to_channels(arr: np.ndarray , dtype = np.uint8) -> np.ndarray :
@@ -148,28 +110,6 @@ def load_data():
     print(f"Segement Training data shape: {images_seg_train.shape}")
     print(f"Segement Test data shape: {images_seg_test.shape}")
     print(f"Segement Validation data shape: {images_seg_validate.shape}")
-    
-    '''
-    num_samples = images_train.shape[0]
-    augmented_images = []
-    augmented_masks = []
-    
-
-
-    for i in range(num_samples):
-        image = images_train[i]  # Shape: (256, 128)
-        image = np.expand_dims(image, axis=-1)
-        mask = images_seg_train[i]    # Shape: (256, 128, 6)
-        
-        augmented_image, augmented_mask = augment_image_and_mask(image, mask, class_index=5, heavy_augment=True)
-       
-        augmented_images.append(augmented_image)
-        augmented_masks.append(augmented_mask)
-
-    # Convert augmented lists back to numpy arrays
-    images_train = np.array(augmented_images)
-    images_seg_train = np.array(augmented_masks)
-    '''
 
     return images_train, images_test, images_validate, images_seg_test, images_seg_train, images_seg_validate
 

@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 from torch.cuda.amp import GradScaler
 
 def train(device: str = "cpu"):
+    '''
+    Performs the training process for the model defined
+    within the function
+    '''
     NUM_EPOCH = 1000
     LEARNING_RATE = 0.00003
     BATCH_SIZE = 32

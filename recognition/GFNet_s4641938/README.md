@@ -92,7 +92,7 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 
 # Performance & Results
 The model achieved the following results on the validation set:
-- **Test Accuracy**: 0.635%
+- **Test Accuracy**: 62.9%
 - **Learning Rate**: 0.0001
 - **Epochs**: 50
 

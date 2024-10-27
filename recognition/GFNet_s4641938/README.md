@@ -32,26 +32,57 @@ GFNet contains:
 # Training
 Parameters
 ```zsh
-python ./recognition/GFNet_s4641938/train.py [IMAGESIZE] [EPOCHS] [ROOTDATAPATH]
+python ./recognition/GFNet_s4641938/train.py [IMAGESIZE] [EPOCHS] [ADNIROOTDATAPATH]
+```
+Where:
+- **IMAGESIZE**:contains the image sizes after preprocessing (e.g. 180 means 180x180)
+- **EPOCHS**: contains number of epochs to train for
+- **ADNIROOTDATAPATH**: contains the path to the ADNI database where the file passed contains files in the format:
+
+```
+│ADNI/
+├──train/
+│  ├── AD
+│  │   ├── 369883_4.jpeg
+│  │   ├── 369883_5.jpeg
+│  │   ├── ......
+│  ├── NC
+│  │   ├── 370202_42.jpeg
+│  │   ├── 370202_43.jpeg
+│  │   ├── ......
+├──test/
+│  ├── AD
+│  │   ├── 370001_94.jpeg
+│  │   ├── 370001_95.jpeg
+│  │   ├── ......
+│  ├── NC
+│  │   ├── 370323_53.jpeg
+│  │   ├── 370323_54.jpeg
+│  │   ├── ......
 ```
 
 Example
 ```zsh
-python ./recognition/GFNet_s4641938/train.py 240 50 ./ADNI/AD_NC
+python ./recognition/GFNet_s4641938/train.py 180 50 "/home/groups/comp3710/ADNI/AD_NC"
 ```
 
-During training, the ongoing best model will be saved at ./recognition/GFNet_s4641938/best_model.pth
+During training, the ongoing best model will be saved at ./best_model.pth
 
 # Testing
 After training
 Parameters
 ```zsh
-python ./recognition/GFNet_s4641938/predict.py [IMAGESIZE] [MODELPATH] [ROOTDATAPATH]
+python ./recognition/GFNet_s4641938/predict.py [IMAGESIZE] [MODELPATH] [ADNIROOTDATAPATH]
 ```
+
+Where:
+- **IMAGESIZE**:contains the image sizes after preprocessing (e.g. 180 means 180x180)
+- **MODELPATH**: contains the path to the model to assess
+- **ADNIROOTDATAPATH**: contains the path to the ADNI database where the file passed contains files in the format:
 
 Example
 ```zsh
-python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
+python recognition/GFNet_s4641938/predict.py 180 "./best_model.pth" "/home/groups/comp3710/ADNI/AD_NC"
 ```
 
 ## Training Details

@@ -11,6 +11,7 @@ from skimage.metrics import structural_similarity as ssim
 # Import your custom modules
 from modules import VQVAE
 from dataset import get_data_loader 
+from utils import calculate_ssim, show_img, show_combined, plot_metrics
 
 # Data paths
 train_path = "./data/keras_slices_train"
@@ -19,16 +20,12 @@ validate_path = "./data/keras_slices_validate"
 # Hyperparameters
 batch_size = 256
 num_epochs = 10
-
 num_hiddens = 128
 num_residual_hiddens = 32
 num_residual_layers = 2
-
 embedding_dim = 64
 num_embeddings = 512
-
 commitment_cost = 0.25
-
 learning_rate = 1e-3
 
 # Prepare Data Loaders
@@ -45,19 +42,9 @@ train_recon_errors = []
 train_perplexities = []
 train_ssim_scores = []
 
-validation_recon_errors = []
-validation_perplexities = []
+val_recon_errors = []
+val_perplexities = []
 validation_ssim_scores = []
-
-# Function to calculate SSIM
-def calculate_ssim(original, reconstructed):
-    ssim_scores = []
-    for i in range(original.size(0)):
-        orig = original[i].cpu().detach().numpy().squeeze()
-        recon = reconstructed[i].cpu().detach().numpy().squeeze()
-        ssim_score = ssim(orig, recon, data_range=recon.max() - recon.min())
-        ssim_scores.append(ssim_score)
-    return np.mean(ssim_scores)
 
 # Training Loop
 for epoch in range(num_epochs):
@@ -94,7 +81,7 @@ for epoch in range(num_epochs):
     train_perplexities.append(np.mean(epoch_perplexity))
     train_ssim_scores.append(np.mean(epoch_train_ssim))
     
-    print(f"Epoch {epoch + 1} - Train Recon Error: {train_recon_errors[-1]:.3f}, Perplexity: {train_perplexities[-1]:.3f}, SSIM: {train_ssim_scores[-1]:.3f}")
+    print(f"Epoch {epoch + 1} - Training Reconstruction Error (MSE Loss): {train_recon_errors[-1]:.3f}, Perplexity: {train_perplexities[-1]:.3f}, SSIM: {train_ssim_scores[-1]:.3f}")
 
     # Validation step after each epoch
     model.eval()
@@ -118,30 +105,19 @@ for epoch in range(num_epochs):
     avg_val_perplexity = np.mean(val_perplexities)
     avg_val_ssim = np.mean(val_ssim_scores)
     
-    validation_recon_errors.append(avg_val_recon_error)
-    validation_perplexities.append(avg_val_perplexity)
+    val_recon_errors.append(avg_val_recon_error)
+    val_perplexities.append(avg_val_perplexity)
     validation_ssim_scores.append(avg_val_ssim)
 
-    print(f"Epoch {epoch + 1} - Validation Recon Error: {avg_val_recon_error:.3f}, Perplexity: {avg_val_perplexity:.3f}, SSIM: {avg_val_ssim:.3f}")
+    print(f"Epoch {epoch + 1} - Validation Reconstruction Error (MSE Loss): {avg_val_recon_error:.3f}, Perplexity: {avg_val_perplexity:.3f}, SSIM: {avg_val_ssim:.3f}")
 
 # Save model
 torch.save(model.state_dict(), "vqvae_model.pth")
 print("Model saved as vqvae_model.pth")
 
-# Plot Metrics
-def plot_metrics(train, validation, metric_name):
-    epochs = range(1, len(train) + 1)
-    plt.plot(epochs, train, 'bo-', label=f'Train {metric_name}')
-    plt.plot(epochs, validation, 'ro-', label=f'Validation {metric_name}')
-    plt.xlabel('Epochs')
-    plt.ylabel(metric_name)
-    plt.title(f'{metric_name} Over Epochs')
-    plt.legend()
-    plt.show()
-
 # Plot reconstruction error, perplexity, and SSIM
-plot_metrics(train_recon_errors, validation_recon_errors, "Reconstruction Error")
-plot_metrics(train_perplexities, validation_perplexities, "Perplexity")
+plot_metrics(train_recon_errors, val_recon_errors, "Reconstruction Error (MSE Loss)")
+plot_metrics(train_perplexities, val_perplexities, "Perplexity")
 plot_metrics(train_ssim_scores, validation_ssim_scores, "SSIM")
 
 # Final evaluation on the validation set for visualization
@@ -157,18 +133,14 @@ with torch.no_grad():
     valid_reconstructions = model._decoder(valid_quantize).cpu().data
     valid_originals = valid_originals.cpu().data
 
-# Display Results
-def show(img):
-    npimg = img.numpy()
-    npimg = (npimg - npimg.min()) / (npimg.max() - npimg.min())
-    fig = plt.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
-    fig.axes.get_xaxis().set_visible(False)
-    fig.axes.get_yaxis().set_visible(False)
-
 print("Displaying original images:")
-show(make_grid(valid_originals[:16], nrow=8, normalize=True))
+show_img(make_grid(valid_originals[:16], nrow=8, normalize=True))
 plt.show()
 
 print("Displaying reconstructed images:")
-show(make_grid(valid_reconstructions[:16], nrow=8, normalize=True))
+show_img(make_grid(valid_reconstructions[:16], nrow=8, normalize=True))
+plt.show()
+
+print("Displaying original vs reconstructed images:")
+show_combined(valid_originals, valid_reconstructions, calculate_ssim(valid_originals, valid_reconstructions))
 plt.show()

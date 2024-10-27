@@ -13,7 +13,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the trained model
 model = UNet3D(in_channels=1, out_channels=1, init_features=32).to(device)
-model.load_state_dict(torch.load('unet3d_model.pth',weights_only=False))  # Load saved model weights
+model.load_state_dict(torch.load('unet3d_model.pth', weights_only=False))  # Load saved model weights
 model.eval()  # Set the model to evaluation mode
 
 # Define the test dataset paths
@@ -41,12 +41,14 @@ def plot_predictions_grid(image_np, label_np, output_np, slices_to_display, outp
         axes[0, j].imshow(image_np[slice_idx], cmap="gray")
         axes[0, j].set_title(f"Image Slice {slice_idx}")
         
-        # Ground truth label
-        axes[1, j].imshow(label_np[slice_idx], cmap="gray")
+        # Ground truth label with color mapping
+        axes[1, j].imshow(image_np[slice_idx], cmap="gray")  # Background grayscale image
+        axes[1, j].imshow(label_np[slice_idx], cmap="jet", alpha=0.5)  # Overlay label with color mapping
         axes[1, j].set_title(f"Label Slice {slice_idx}")
         
-        # Predicted output
-        axes[2, j].imshow(output_np[slice_idx], cmap="gray")
+        # Predicted output with color mapping
+        axes[2, j].imshow(image_np[slice_idx], cmap="gray")  # Background grayscale image
+        axes[2, j].imshow(output_np[slice_idx], cmap="jet", alpha=0.5)  # Overlay prediction with color mapping
         axes[2, j].set_title(f"Prediction Slice {slice_idx}")
         
     plt.tight_layout()

@@ -105,6 +105,10 @@ Inherently, this would be a large issue given the size of the dataset. ViT model
 spatial and image information from extremally large datasets (often 1+ million), while the training data
 available only contains around ~25000 images. 
 
+# Best Model Location
+The link below provides the file of the model that performs to the accuracy described, since the training may vary between each training loop due to random choices made by pytorch/numpy during training:
+[Link](https://drive.google.com/file/d/1GHfTqKdfuTHTDx1CqEyr2Qh0SxeQvd6Y/view?usp=sharing)
+Due to the file size of the model (~150MB), it is available on the google drive link above.
 
 
 # Report & Process Documentation

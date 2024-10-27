@@ -1,6 +1,9 @@
 # StyleGAN Brain MRI Generative Model
 This is an image generation model trained on the ADNI brain dataset with the goal of producing "reasonably clear" deepfake images of brain MRI's.
 
+Jun Woo (Jason) Jung\
+SN: 47492347
+
 
 ## Overview
 The field of medical imaging is currently undergoing significant changes due to recent advancements in machine learning, which is being utilised for tasks such as disease detection and image enhancement. Despite this progress, there are many challenges that remain, one of which is that medical datasets are often lacking in size and diversity. Many tasks in machine learning require subtantial amounts of data to achieve meaningful solutions. This project aims to address this problem by training a generative model capable of producing images that imitate real world data, specifically brain MRI scans.

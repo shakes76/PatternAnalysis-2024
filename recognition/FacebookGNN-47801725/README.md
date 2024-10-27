@@ -19,4 +19,8 @@ In this report, we apply a GCN to the partially processed facebook dataset, wher
 ## Dependencies 
 Python 3.8 
 Pytorch: 2.0.0+cpu
+scikit-learn 1.3.2 
+scipy 1.11.3 
+matplotlib 3.8.0 
+numpy 1.24.1
 ## References 

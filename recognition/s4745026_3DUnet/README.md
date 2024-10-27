@@ -32,6 +32,7 @@ The output is expected to be:
 - Post-processing to assign probabilities to classes
 
 ![alt text](image.png)
+![alt text](image-1.png)
 
 ## Preprocessing
 

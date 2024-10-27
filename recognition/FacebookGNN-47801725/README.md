@@ -8,7 +8,7 @@ In this report, we apply a GCN to the partially processed facebook dataset, wher
 ## Description of the model 
 
 ## Data Preprocessing 
-
+This code preprocesses graph data for training with PyTorch Geometric. It loads data from a .npz file, extracting edges, features, and labels, and converts them to PyTorch tensors. Node features are standardized using scikit-learn's StandardScaler to improve model performance. A Data object is created, storing the processed features, edge connections, and labels. Finally, RandomNodeSplit is used to generate train, validation, and test masks, splitting nodes into subsets for training and evaluation.
 ## Training And Validation 
 
 ## Visulization 

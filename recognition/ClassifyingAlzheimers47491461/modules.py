@@ -1,13 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torchvision
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader as DataLoader
-from torchvision.datasets import ImageFolder
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 import numpy as np
 import torch.fft
 
@@ -46,28 +38,23 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-class GlobalFilterLayer(nn.Module): # broken
+class GlobalFilterLayer(nn.Module):
     def __init__(self, embed_dim):
         super(GlobalFilterLayer, self).__init__()
-        # Learnable global filters in the frequency domain for each embedding dimension
-        self.global_filter = nn.Parameter(torch.randn(1, embed_dim, 1, 1, dtype=torch.cfloat))  # (1, embed_dim, 1, 1)
+        self.global_filter = nn.Parameter(torch.randn(1, embed_dim, 1, 1, dtype=torch.cfloat))
 
     def forward(self, x):
-        # Input shape (batch_size, num_tokens, embed_dim)
-        # Reshape input to (batch_size, embed_dim, num_tokens, 1)
-        x = x.transpose(1, 2).unsqueeze(-1)
+        x = x.transpose(1, 2).unsqueeze(-1)  # Reshape to (batch_size, embed_dim, num_patches, 1)
 
+        # Apply FFt
         freq_x = torch.fft.fft2(x, dim=(-3, -2))
-
         filtered_freq_x = freq_x * self.global_filter
 
+        # Inv FFt
         output = torch.fft.ifft2(filtered_freq_x, dim=(-3, -2))
-
         output = output.squeeze(-1).transpose(1, 2)
-        # Dimensionality issue needs debugging
 
         return output.real
-
 
 
 class GFNetBlock(nn.Module):
@@ -85,7 +72,6 @@ class GFNetBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        # Global filtering in the frequency domain
         filtered_x = self.global_filter(self.norm1(x))
         x = x + self.dropout(filtered_x)
 
@@ -94,3 +80,53 @@ class GFNetBlock(nn.Module):
         return x
 
 
+class GFNet(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, num_classes=1000, embed_dim=768, depth=12, mlp_dim=3072):
+        super(GFNet, self).__init__()
+        # Patch embedding layer (same as ViT)
+        self.patch_embed = PatchyEmbedding(image_size=img_size, patch_size=patch_size, latent_size=embed_dim)
+
+        # Positional encoding (same as ViT)
+        num_patches = (img_size // patch_size) ** 2
+        #self.pos_encoding = PositionalEncoding(embed_dim, num_patches)
+        self.pos_encoding = PositionalEncoding(embed_dim, num_patches + 1)
+
+        # Classification token
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+
+        # GFNet blocks (replaces Transformer blocks)
+        self.blocks = nn.ModuleList([GFNetBlock(embed_dim, mlp_dim) for _ in range(depth)])
+
+        # Final normalization and classification head
+        self.norm = nn.LayerNorm(embed_dim)
+        self.head = nn.Linear(embed_dim, num_classes)
+
+    def forward(self, x):
+        # Patch embedding (same as ViT)
+        x = self.patch_embed(x)
+        batch_size = x.shape[0]
+
+        # Append the CLS token
+        cls_token = self.cls_token.expand(batch_size, -1, -1)
+        x = torch.cat((cls_token, x), dim=1)
+
+        # Add positional encoding
+        x = self.pos_encoding(x)
+
+        # Pass through GFNet blocks
+        for block in self.blocks:
+            x = block(x)
+
+        # Final layer normalization
+        x = self.norm(x)
+
+        # Use the CLS token output for classification
+        cls_token_final = x[:, 0]
+        return self.head(cls_token_final)
+
+
+model = GFNet(img_size=224, patch_size=16, num_classes=1000, embed_dim=768, depth=12, mlp_dim=3072)
+
+dummy_input = torch.randn(8, 3, 224, 224)
+output = model(dummy_input)
+print(f"{output.shape == (8, 1000)}")

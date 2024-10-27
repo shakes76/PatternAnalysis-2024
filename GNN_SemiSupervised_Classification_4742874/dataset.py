@@ -51,6 +51,8 @@ def load_dataset(root: str, batch_size: int) -> tuple[FacebookPagePage, DataLoad
         pin_memory=True
     )
 
+    print("Loaded Dataset")
+
     return flpp_dataset, train_dataloader, test_dataloader
 
 

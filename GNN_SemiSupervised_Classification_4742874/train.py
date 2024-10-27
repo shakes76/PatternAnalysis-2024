@@ -97,8 +97,7 @@ def _run_training(
         test_function: Callable | None = _test,
     ) -> None:
     """
-        Run the training for the model for 
-        the given number of epochs.
+        Run the training for the model for the given number of epochs.
 
         Parameters:
             num_epochs: The total number of epochs to run the training for

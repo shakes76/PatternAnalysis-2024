@@ -7,6 +7,7 @@ Date: 26/10/2024
 """
 
 import argparse
+import train
 
 parser = argparse.ArgumentParser(description='COMP3710 Pattern Recognition: Graph Neural Network')
 
@@ -18,18 +19,18 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--save',
+    '-s',
+    action='store_true',
+    help="Save the specified model to ./models/<model_name>.pth if it exists"
+)
+
+parser.add_argument(
     '--inference',
     '-i',
     type=int,
     default=-1,
     help="Run inference on the specified model from ./models/<model_name>.pth if it exists with the test data from the index"
-)
-
-parser.add_argument(
-    '--display',
-    '-d',
-    action='store_true',
-    help='Display the csv data for the specified model using matplotlib'
 )
 
 parser.add_argument(
@@ -40,10 +41,32 @@ parser.add_argument(
     help='Number of epochs to train the model for'
 )
 
+parser.add_argument(
+    '--learning_rate',
+    '-lr',
+    type=float,
+    default=0.1,
+    help='The learning rate to train the model with'
+)
+
+parser.add_argument(
+    '--batch_size',
+    '-b',
+    type=int,
+    default=200,
+    help='The dataloader batch size'
+)
+
 args = parser.parse_args()
 
 if not args.load:
     if input("WARNING: Overwriting model [Y/n] ") != 'Y':
         exit()
 
-
+train.run_gnn_training(
+    epochs=args.epochs ,
+    batch_size=args.batch_size ,
+    learning_rate=args.learning_rate,
+    is_load=args.load,
+    is_save=args.save
+)

@@ -35,14 +35,22 @@ class TestDataSet(unittest.TestCase):
         assert flpp_dataset.x.shape[0] == 22470
 
 class TestUtils(unittest.TestCase):
-    def test_utils_display_graph(self):
+    # def test_utils_display_graph(self):
+    #     """
+    #         Tests creating the spring layout of the FLPP graph
+    #         visualising category connections.
+    #     """
+    #     flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
+    #
+    #     #utils.display_flpp_network(flpp_dataset)
+    #
+    def test_utils_display_raw_tsne(self):
         """
-            Tests creating teh spring layout of the FLPP graph
-            visualising category connections.
+            Tests creating the TSNE display for the raw dataset.
         """
         flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
 
-        utils.display_flpp_network(flpp_dataset)
+        utils.display_raw_tsne(flpp_dataset)
 
 class TestModules(unittest.TestCase):
     def test_modules_create(self):

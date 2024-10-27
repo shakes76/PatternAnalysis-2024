@@ -20,7 +20,6 @@ import torch.nn as nn
 from datasets import build_dataset
 from engine import train_one_epoch, evaluate
 from losses import DistillationLoss
-from samplers import RASampler
 import utils
 from gfnet import GFNet, GFNetPyramid
 

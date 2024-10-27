@@ -24,7 +24,7 @@ GNN covers all neural network models for processing graph data. Its goal is to p
   5. Dynamic Graph Neural Networks (DGNN): Process dynamic graph structures that change over time.
 The process diagram of the GNN model performing end-to-end prediction tasks is as follows：
 <div style="text-align: center;">
-    <img src="images/model structure.png" alt="CNN structure" style="width: 60%"> [1]
+    <img src="images/model structure.png" alt="CNN structure" style="width: 70%"> [1]
 </div>
 
 ### Graph Convolutional Network(GCN)

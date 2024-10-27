@@ -66,9 +66,11 @@ from tqdm import tqdm
 from torch import optim
 import matplotlib.pyplot as plt
 import csv
+import numpy as np
 
 # Define constants and hyperparameters
 DATASET                 = "./train"  # Path to the dataset
+CLASS_TYPE              = "AD" # Train either on Alzeihmer's or Normal Data 
 DEVICE                  = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise use CPU
 EPOCHS                  = 151 # Number of training epochs
 LEARNING_RATE           = 1e-3  # Learning rate for optimization
@@ -128,6 +130,7 @@ def get_noise(batch_size):
 
     return noise
 
+style_codes_log = []
 
 # Training function for the discriminator and generator
 def train_fn(
@@ -138,6 +141,8 @@ def train_fn(
     opt_critic,
     opt_gen,
     opt_mapping_network,
+    epoch,
+
 ):
     loop = tqdm(loader, leave=True)  # Create a tqdm progress bar for training iterations
     
@@ -148,14 +153,14 @@ def train_fn(
         real = real.to(DEVICE)  # Move real data to the specified device
         cur_batch_size = real.shape[0]
 
-        w     = get_w(cur_batch_size)  # Generate 'w' from random noise
+        w = get_w(cur_batch_size)  # Generate 'w' from random noise
         noise = get_noise(cur_batch_size)  # Generate noise inputs for the generator
         with torch.amp.autocast('cuda'):  # Use automatic mixed-precision (AMP) for faster training
-            fake = gen(w, noise)  # Generate fake images
+            fake, style_codes = gen(w, noise, return_style=True)  # Generate fake images
             critic_fake = critic(fake.detach())  # Get critic scores for fake images
-            
             critic_real = critic(real)  # Get critic scores for real images
             gp = gradient_penalty(critic, real, fake, device=DEVICE)  # Compute gradient penalty
+            
             loss_critic = (
                 -(torch.mean(critic_real) - torch.mean(critic_fake))  # Critic loss
                 + LAMBDA_GP * gp  # Gradient penalty term
@@ -181,33 +186,24 @@ def train_fn(
         opt_gen.step()  # Update generator's weights
         opt_mapping_network.step()  # Update mapping network's weights
 
-        loop.set_postfix(
-            gp=gp.item(),
-            loss_critic=loss_critic.item(),
-        )
-        
-        
-    
+        loop.set_postfix(gp=gp.item(), loss_critic=loss_critic.item())
+
+        if epoch % 5 == 0 and batch_idx == 0:
+            style_codes_np = torch.cat(style_codes,dim=1).detach().cpu().numpy() # log style codes for embeddings
+            style_codes_log.append(style_codes_np)
+            
     return (D_losses, G_losses)
 
 # Function to save Gen and critic losses to csv file for each iteration    
 def save_losses_to_csv(g_losses, d_losses, filename="losses.csv"):
-    # Open the CSV file in append mode ("a"), and ensure that newline characters are handled correctly
     with open(filename, mode="a", newline="") as f:
         # Create a CSV writer object to write rows to the file
         writer = csv.writer(f)
-        
-        # Write the header row: "Epoch", "Generator Loss", and "Discriminator Loss"
         writer.writerow(["Epoch", "Generator Loss", "Discriminator Loss"])
         
-        # Iterate over the length of the generator losses (or discriminator losses)
         for i in range(len(g_losses)):
-            # Retrieve the generator loss at index i, or use an empty string if it's out of range
             gen_loss = g_losses[i] if i < len(g_losses) else ""
-            # Retrieve the discriminator loss at index i, or use an empty string if it's out of range
             disc_loss = d_losses[i] if i < len(d_losses) else ""
-            
-            # Write a new row to the CSV file with the epoch number, generator loss, and discriminator loss
             writer.writerow([i, gen_loss, disc_loss])
 
 
@@ -216,7 +212,7 @@ mapping_network     = MappingNetwork(Z_DIM, W_DIM).to(DEVICE)  # Initialize mapp
 gen                 = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)  # Initialize generator
 critic              = Discriminator(LOG_RESOLUTION).to(DEVICE)  # Initialize critic
 
-loader = get_loader(DATASET, LOG_RESOLUTION, BATCH_SIZE)
+loader = get_loader(DATASET, LOG_RESOLUTION, BATCH_SIZE, CLASS_TYPE)
 
 gen                 = Generator(LOG_RESOLUTION, W_DIM).to(DEVICE)
 
@@ -248,6 +244,7 @@ if __name__ == "__main__":
             opt_critic,              # Optimizer for the critic
             opt_gen,                 # Optimizer for the generator
             opt_mapping_network,      # Optimizer for the mapping network
+            epoch,                  # Epoch
         )
 
         # Extend the total loss lists with the losses from the current epoch
@@ -263,12 +260,8 @@ if __name__ == "__main__":
             torch.save(gen.state_dict(), f'generator_epoch{epoch}.pt')
             # Save the critic's state
             torch.save(critic.state_dict(), f'critic_epoch{epoch}.pt')
-            # Save the state of the generator optimizer
-            torch.save(opt_gen.state_dict(), f'opt_gen_epoch{epoch}.pt')
-            # Save the state of the critic optimizer
-            torch.save(opt_critic.state_dict(), f'opt_critic_epoch{epoch}.pt')
-            # Save the state of the mapping network optimizer
-            torch.save(opt_mapping_network.state_dict(), f'model/opt_mapping_network_epoch{epoch}.pt')
+
+    np.save('style_codes_log.npy', np.array(style_codes_log))    
 
     plt.figure(figsize=(10,5))
     plt.title("Generator Loss During Training")

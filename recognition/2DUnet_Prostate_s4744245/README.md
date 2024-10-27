@@ -109,6 +109,7 @@ Predict.py
 
 The predict file tests the model on the test dataset and outputs example images of the model's output compared to the true labels.
 
-
+Util.py
+This file contains some utility functions used across the other files such as a dice coefficient function. 
 
   

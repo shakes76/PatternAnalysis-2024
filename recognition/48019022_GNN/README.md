@@ -205,28 +205,58 @@ The primary metrics logged and used for the analysis of the GNN architectures we
 Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the dataset.py file. Each model was then tested on each seed for a total of 5 runs. The following graphs display the performances of each model.
 
 ### GCN Performance
-[GCN Loss Plot]
-[GCN Test Accuracy]
-[GCN Validation Loss]
-[GCN T-SNE Visualisation]
+**[GCN Loss Plot]**
+(recognition/48019022_GNN/assets/GCN_Train.png)
+
+**[GCN Test Accuracy]**
+
+
+**[GCN Validation Loss]**
+
+
+**[GCN T-SNE Visualisation]**
+
 
 ### GAT Performance
-[GAT Loss Plot]
-[GAT Test Accuracy]
-[GAT Validation Loss]
-[GAT T-SNE Visualisation]
+**[GAT Loss Plot]**
+
+
+**[GAT Test Accuracy]**
+
+
+**[GAT Validation Loss]**
+
+
+**[GAT T-SNE Visualisation]**
+
 
 ### GraphSAGE Performance
-[GraphSAGE Loss Plot]
-[GraphSAGE Test Accuracy]
-[GraphSAGE Validation Loss]
-[GraphSAGE T-SNE Visualisation]
+**[GraphSAGE Loss Plot]**
+
+
+**[GraphSAGE Test Accuracy]**
+
+
+**[GraphSAGE Validation Loss]**
+
+
+**[GraphSAGE T-SNE Visualisation]**
+
+
 
 ### SGC Performance
-[SGC Loss Plot]
-[SGC Test Accuracy]
-[SGC Validation Loss]
-[SGC T-SNE Visualisation]
+**[SGC Loss Plot]**
+
+
+**[SGC Test Accuracy]**
+
+
+**[SGC Validation Loss]**
+
+
+**[SGC T-SNE Visualisation]**
+
+
 
 ### Model Comparisons
 [Comparisons Loss Plot]

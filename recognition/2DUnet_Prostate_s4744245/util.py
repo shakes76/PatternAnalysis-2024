@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras import backend as K
 
+import numpy as np
+
 from matplotlib import pyplot as plt
 
 #define training variables

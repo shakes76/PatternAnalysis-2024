@@ -15,9 +15,9 @@ tf.config.experimental.list_physical_devices('GPU')
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 
-def print_image(index):
-    image = images_test[index]  # Shape (256, 128, 1)
-    mask = images_seg_test[index]   # Shape (256, 128, 5)
+def print_image(index, test, seg):
+    image = test[index]  # Shape (256, 128, 1)
+    mask = seg[index]   # Shape (256, 128, 6)
 
     # Get prediction from the model
     prediction = model.predict(image[np.newaxis, ..., np.newaxis])  # shape of input (1, 256, 128, 1)
@@ -35,8 +35,9 @@ def print_image(index):
 #Load the model
 model = tf.keras.models.load_model('best_unet_model_drop0.2.h5', compile=False)
 
+# save images
 for i in range(5):
-    print_image(i*10)
+    print_image(i*10, images_test, images_seg_test)
 
 images_test_predict = np.expand_dims(images_test, axis=-1)  # Adds the channel dimension
 

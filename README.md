@@ -67,5 +67,8 @@ Image below shows the accuracy using confusion matrix.
 
 ![Alt text](images/confusion_matrix.png)
 
+Training loss graph is shown below.
+![alt text](images/LOSS.png)
+
 # 4 Training process
 The train.py module trains the data. Data is first loaded and preprocessed. Then the model is trained using the training data. The model is then evaluated using the test data. The model wieghts is saved in the model directory. 

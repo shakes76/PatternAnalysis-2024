@@ -170,6 +170,59 @@ Another potential route I began to work on is the idea of breaking up the batche
 
 This was done by preprocessing the data such that each batch called by the dataloader would give back all the images for the number of patients. The data was then flattened into a 4D vector that corresponded to (images, channels, height, width) from all patient images. For example, a batch size of 3 would get the images for 3 random patients, then the model would train on all the images for those patients at once for that batch.
 
+On a more detailed investigation, I found that the original weight initalisation caused all predictions to initalise as negative. (So 100% guessed normal cognition) (see example result on test data in below table:
+
+|               | Predicted Positive | Predicted Negative |
+|---------------|--------------------|--------------------|
+| **Actual Positive** | 0  | 4460 |
+| **Actual Negative** | 0 | 4540  |
+
+The model have improved given enough training time, but this was not feasible due to time constraints. Regardless, I attempted to change the initalisation of the parameters to have significant more deviation in the weight parameters:
+Original (see function in modules.py inside the GFNetPyramid class)
+```python
+        trunc_normal_(self.pos_embed, std=.02)
+        self.apply(self._init_weights)
+
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+```
+Increased deviation:
+```python
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.15) #Increased variance of weights in all linear layers from 0.02 -> 0.15
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+```
+
+This produced the following confusion matrices:
+After training for 1 epoch:
+|               | Predicted Positive | Predicted Negative |
+|---------------|--------------------|--------------------|
+| **Actual Positive** | 1553  | 1417 |
+| **Actual Negative** | 2907 | 3123  |
+Accuracy: 0.520
+
+After training for 400 epochs:
+|               | Predicted Positive | Predicted Negative |
+|---------------|--------------------|--------------------|
+| **Actual Positive** | 1564  | 1391 |
+| **Actual Negative** | 2896 | 3149  |
+Accuracy: 0.524
+
+
+Therefore, the change to weight initalisation gave a better distribution to predictions, but unfortunately training for 400 epochs failed to not produce a noticable improvement in test accuracy.
+
 Due to time constraints, I was unable to further test additional methods, like longer learning times or other preprocessing or changing the model parameters, etc further. 
 
 ## License

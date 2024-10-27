@@ -113,9 +113,9 @@ Preprocessing:
 - Data Augmentation (Optional): Applies random transformations such as flips and rotations to enhance model generalization.
 
 # Model Architecture
-A simplified UNet architecture is implemented in modules.py to reduce overfitting:
+A simple UNet architecture is implemented in modules.py:
 Contracting Path:
-- Consists of two downsampling steps with fewer feature channels (32, 64, 128).
+- Consists of three downsampling steps with feature channels (64, 128, 256, 512).
 - Each downsampling step includes a DoubleConv block and a max-pooling layer.
 Expanding Path:
 - Mirrors the contracting path with upsampling layers.

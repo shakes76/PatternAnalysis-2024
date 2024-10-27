@@ -83,13 +83,13 @@ For regularization, dropout and drop paths were used for regularization. Dropout
 
 ## Training
 
-### Early Stopping
+#### Early Stopping
 Early Stopping is implemented to detect overfitting. Specifically, training is now terminated when validation loss does not improve by more than 0.0001 for five consecutive epochs.   
 
-### Linear war up
+#### Linear war up
 We performed the linear warm-up at the first five epochs.
 
-### Parameters not used for tuning
+#### Parameters not used for tuning
 | Parameter            | Description                                                            | Value                   |
 |----------------------|------------------------------------------------------------------------|-------------------------|
 | Activation function   | Activation function used in the model                                 | GELU                    |
@@ -105,7 +105,7 @@ We performed the linear warm-up at the first five epochs.
 
 ## Hyper Parameter Tuning with Optuna
 Here, we used Optuna to perform hyperparameter tuning; Optuna is an automatic optimization framework for hyperparameters that uses a Bayesian optimization-based method to perform parameter exploration. [4] Specifically, it repeats the process of sampling parameter values to obtain the value of the objective function. Then it uses the result to update the estimate of the next parameter to be explored. This adaptive search allows us to find the optimal hyperparameters more efficiently than grid or random searches.
-### Parameters used for tuning
+#### Parameters used for tuning
 
 | Parameter        | Description                                          | Range              | Type       |
 |------------------|------------------------------------------------------|--------------------|------------|
@@ -117,7 +117,8 @@ Here, we used Optuna to perform hyperparameter tuning; Optuna is an automatic op
 <p style="text-align:center;">Table2: parameters we tuned.</p>
 
 ## Results
-We repeated the training 15 times to search for the optimal parameters while examining the evolution of the validation loss. The graph below shows the transition of the best validation loss obtained in each trial.
+We repeated the training 15 times to search for the optimal parameters while monitoring the progression of the validation loss. 
+The graph below shows the trend of the best validation loss achieved in each trial.
 
 ![loss across trials](./images/loss_per_trial.png)
 <p style="text-align:center;">Figure2: The best validation loss for each trial</p>

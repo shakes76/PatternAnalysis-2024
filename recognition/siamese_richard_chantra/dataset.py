@@ -216,6 +216,7 @@ class SiameseDataset(Dataset):
         return self.transform(image)
 
 if __name__ == "__main__":
+    # Argument Parsing
     parser = argparse.ArgumentParser(description="Dataset Manager for Melanoma Classification")
     parser.add_argument('--csv_path', type=str, default='archive/train-metadata.csv',
                         help='Path to the CSV metadata file')

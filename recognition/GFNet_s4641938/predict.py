@@ -58,7 +58,8 @@ def main(args):
 
     model.load_state_dict(torch.load(MODELPATH, map_location=device))
     print("Loaded model from model file")
-    accuracy = getAccuracy(test_dataloader, model, device, -1)
+    criterion = nn.CrossEntropyLoss()
+    accuracy = getAccuracy(test_dataloader, model, device, criterion, -1)
     print(f"Overall accuracy of the trained GFNet model is {accuracy}")
     
     if accuracy > GOAL_ACCURACY:

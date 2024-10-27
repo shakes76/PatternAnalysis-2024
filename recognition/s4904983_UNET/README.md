@@ -50,17 +50,19 @@ To run this project, you will need the following Python packages:
 
 ### Installation
 
-You can install these dependencies using pip:
+You can install these dependencies using pip. The requirements.txt file can be used to ensure they're all installed by running the following in the terminal:
 ```bash
-pip install torch
-
-## with version
-pip install torch==2.2.2+cpu
+pip install -r requirements.txt
 ```
+
 
 ## Running the program
 
-To run the program, you first have to update the paths to the directories where the MRI data is located, the output images, predictions and loss graphs should be saved, and the models should be saved and/or loaded from. 
+To run the program, you first have to update the paths to the directories for:
+  * finding the MRI data is located
+  * saving the output images
+  * saving predictions and loss graphs
+  * saving/loading pretrained models 
 
 To train a model, run:
 ```bash
@@ -74,7 +76,22 @@ python.exe prediction.py
 
 ## Results
 
+The model was trained for 10 epochs with a learning rate of 0.005 and batchsize of 512. It demonstrated promising performance on the test dataset for the first four classes (classes 0-3). For further improvements in performance, the dice loss should be weighted to improve performance on classes 4 and 5 (rectum and prostate). Below are the key metrics obtained and a example prediction:
 
+* **Average Dice Coefficient (Overall):** 0.963
+* **Minimum Dice Coefficient (Overall):** 0.949
+
+| Class        | Average Dice Coefficient|
+| :----------- | ----------------------: |
+| Background   |                  0.993  |
+| Body Outline |                  0.978  |
+| Bone         |                  0.849  |
+| Bladder      |                  0.760  |
+| Rectum       |                  0.0004 |
+| Prostate     |                  0.0001 |
+
+
+![](prediction.png)
 
 ## References
 

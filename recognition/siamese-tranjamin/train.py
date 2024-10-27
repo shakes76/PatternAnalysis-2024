@@ -3,7 +3,7 @@ sys.path.insert(1, './Modules')
 
 import matplotlib.pyplot as plt
 from modules import *
-from dataset import BalancedMelanomaDataset, FullMelanomaDataset
+from dataset import FullMelanomaDataset, BalancedMelanomaDataset
 
 # hyperparameters
 BATCH_SIZE = 64
@@ -12,15 +12,7 @@ VALIDATION_SPLIT = 0.1
 TESTING_SPLIT = 0.2
 BALANCE_SPLIT = True
 
-# datasets
-df = BalancedMelanomaDataset(
-    image_shape=IMAGE_SHAPE,
-    batch_size=BATCH_SIZE,
-    validation_split=VALIDATION_SPLIT,
-    testing_split=TESTING_SPLIT,
-    balance_split=BALANCE_SPLIT
-)
-
+# load full dataset
 df_full = FullMelanomaDataset(    
     image_shape=IMAGE_SHAPE,
     batch_size=BATCH_SIZE,
@@ -29,10 +21,19 @@ df_full = FullMelanomaDataset(
     balance_split=BALANCE_SPLIT
 )
 
+# load full dataset
+df = BalancedMelanomaDataset(    
+    image_shape=IMAGE_SHAPE,
+    batch_size=BATCH_SIZE,
+    validation_split=VALIDATION_SPLIT,
+    testing_split=TESTING_SPLIT,
+    balance_split=BALANCE_SPLIT
+)
+
 # grab the relevent dataset
-dataset = df_full.dataset
-dataset_val = df_full.dataset_val
-dataset_test = df_full.dataset_test
+dataset = df.dataset
+dataset_val = df.dataset_val
+dataset_test = df.dataset_test
 
 # define siamese network
 model = SiameseNetwork(image_shape=IMAGE_SHAPE)
@@ -41,10 +42,8 @@ model = SiameseNetwork(image_shape=IMAGE_SHAPE)
 model.enable_wandb_similarity("melanoma-similarity")
 model.train_similarity(dataset, dataset_val)
 
-# use the full dataset
-# dataset = df_full.dataset
-# dataset_val = df_full.dataset_val
-# dataset_test = df_full.dataset_test
+# plot TSNE
+model.plot_embeddings(dataset_val, "tsne.png")
 
 # train the classification
 model.enable_wandb_classification("melanoma-classification")
@@ -54,9 +53,6 @@ model.train_classification(dataset, dataset_val)
 # evaluate model
 print("--- Testing Performance ---")
 model.evaluate_classifier(dataset_test)
-
-# plot TSNE
-model.plot_embeddings(dataset_val, "tsne.png")
 
 # plot training curves
 model.plot_training_classification("classification.png")

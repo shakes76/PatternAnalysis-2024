@@ -165,12 +165,12 @@ Improved 3D UNet is a powerful architecture which makes complex image-processing
 
 ## Dependencies
 
-matplotlib=3.9.2
-monai=1.4.0
-nibabel=5.3.2=pypi_0
-pytorch=2.5.0
-scikit-learn=1.5.2=pypi_0
-torchaudio=2.5.0
-torchvision=0.20.0
+- matplotlib=3.9.2
+- monai=1.4.0
+- nibabel=5.3.2=pypi_0
+- pytorch=2.5.0
+- scikit-learn=1.5.2=pypi_0
+- torchaudio=2.5.0
+- torchvision=0.20.0
 
 For more details, refer to `requirements.txt`

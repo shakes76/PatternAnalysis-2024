@@ -2,3 +2,7 @@ torch
 albumentations
 timm
 pillow
+pyyaml
+scikit-learn
+seaborn
+tqdm

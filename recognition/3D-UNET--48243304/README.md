@@ -8,15 +8,19 @@ The goal of the project is to perform segmentation on 3D medical images.it used 
 
 The dataset consists of:
 
-	input:	3D MRI scans in NIFTI format(extension .nii or .nii.gz).
+    input:	3D MRI scans in NIFTI format(extension .nii or .nii.gz).
 	
-	lables:	corresponding binary segmentation masks, 1 is prostate tissue, 0 represents non-prostate tissue.
+    lables:	corresponding binary segmentation masks, 1 is prostate tissue, 0 represents non-prostate tissue.
 	
 ##**Data Preprocessing**
 
-	Normalization: Every image is normalized to standatdize intensity values and improve impove model stability.
+    #Normalization: 
+    
+        Every image is normalized to standatdize intensity values and improve impove model stability.
 	
- 	label Binarization: labes are binarized to ensure all non-zero values are treated as prostate tissue, while 0 values represent the background. the function to_channels coverts label data into a multi-channel format, where each unique label value is represented as a separate channel. 
+    #label Binarization: 
+    
+        labes are binarized to ensure all non-zero values are treated as prostate tissue, while 0 values represent the background. the function to_channels coverts label data into a multi-channel format, where each unique label value is represented as a separate channel. 
 
 ##**Model Architecture**
 
@@ -24,25 +28,25 @@ The project uses a 3D U-Net architecture, which is widely used for medical image
 
 The network architecture is :
 
-	input channels: 	1	(grayscale MRI scans)
-	Output channels:	1	(binary segmentation mask)
-	base feature size:	32			
+    input channels: 	1	(grayscale MRI scans)
+    Output channels:	1	(binary segmentation mask)
+    base feature size:	32			
 
 #**Architecture:**
 
 The model consists of two paths:
 	
-	encoder(downsampling): extracts hierarchical features through convolutional layers followed by max pooling.
-	
-	decoder(upsampling): recover spatial resolution using transposed convolutions, with skip connections from the encoder to retain spatial information.
+    encoder(downsampling): extracts hierarchical features through convolutional layers followed by max pooling.
+
+    decoder(upsampling): recover spatial resolution using transposed convolutions, with skip connections from the encoder to retain spatial information.
 
 #**Loss Funciton:**
 
-	the model is optimized using binary cross-entropy loss to handle binary classification for segmentation.
+    the model is optimized using binary cross-entropy loss to handle binary classification for segmentation.
 	
 #**Optimizer:**
 
-	adam optimized is used with a learning rate of 0.001
+    adam optimized is used with a learning rate of 0.001
 	
 #**Evaluation metric:**
 
@@ -62,29 +66,29 @@ matplotlib		3.4.3  (for visualization)
 
 ##**Reproducibility**
 
-	1. install the dependences
-	2. download the dataset and place the MRI volumes and segmentation labels in the approptiate diectories.
-	3. using the train.py to train the model and save the trained model.
+    1. install the dependences
+    2. download the dataset and place the MRI volumes and segmentation labels in the approptiate diectories.
+    3. using the train.py to train the model and save the trained model.
 	
 		python train.py
 		
-	4. predict segmentation masks using the predict.py
+   4. predict segmentation masks using the predict.py
 	
 		python predict.py
 	
 	
 ##**Result**
 
-evaluation metric:
-	using the DICE Coefficient to evaluate the model
+#evaluation metric:
+    using the DICE Coefficient to evaluate the model
 	
-	the result is:	0.9258
+        the result is:	0.9258
  
   ![DICE Coffeicient](result/dice.png)
 	
-segmentation output:
+#segmentation output:
 
- ![segmentation output](result/prediction_grid_0.png)
+  ![segmentation output](result/prediction_grid_0.png)
 
 ##**Reference**
 

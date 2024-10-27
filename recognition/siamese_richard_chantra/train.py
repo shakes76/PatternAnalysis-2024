@@ -15,7 +15,7 @@ from dataset import DataManager
 from modules import SiameseNetwork, MLPClassifier, Evaluate, Predict
 import argparse
 
-def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, margin=1.0):
+def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, margin=1.6):
     """
     Train Siamese Network to learn embeddings from images
     """
@@ -128,7 +128,7 @@ def main():
                         help='Batch size for DataLoader')
     parser.add_argument('--epochs_siamese', type=int, default=16,
                         help='Number of epochs for training the Siamese Network')
-    parser.add_argument('--epochs_mlp', type=int, default=8,
+    parser.add_argument('--epochs_mlp', type=int, default=12,
                         help='Number of epochs for training the MLP Classifier')
     parser.add_argument('--save_dir', type=str, default="plots",
                         help='Directory to save training plots')
@@ -153,7 +153,7 @@ def main():
     # Initialize optimizers
     optimizer_siamese = optim.Adam(
         siamese_network.parameters(),
-        lr=0.001,
+        lr=0.0004,
         weight_decay=5e-5
     )
     optimizer_mlp = optim.Adam(

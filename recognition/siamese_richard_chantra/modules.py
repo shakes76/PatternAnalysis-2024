@@ -99,7 +99,7 @@ class MLPClassifier(nn.Module):
 
 class Predict:
     """
-    Handling prediction for images and using a trained SiameseNetwork and MLPClassifier to do so
+    Handling prediction for images and using a trained SiameseNetwork and MLPClassifier
     """
     def __init__(self, siamese_network, mlp_classifier, device):
         self.siamese_network = siamese_network
@@ -151,7 +151,7 @@ class Predict:
         probabilities = []
         image_names = []
         
-        for filename in tqdm(os.listdir(folder), desc="Predicting images"):
+        for filename in tqdm(os.listdir(folder)[:10], desc="Predicting images"):
             if filename.endswith(('.jpg')):
                 image_path = os.path.join(folder, filename)
                 prediction, probability = self.predict_image(image_path)
@@ -243,9 +243,9 @@ class Evaluate:
         benign_mask = self.labels == 0
         
         return {
-            'accuracy': accuracy,
-            'malignant_accuracy': (self.preds[malignant_mask] == self.labels[malignant_mask]).mean(),
-            'benign_accuracy': (self.preds[benign_mask] == self.labels[benign_mask]).mean()
+            'accuracy': accuracy.round(2),
+            'malignant_accuracy': (self.preds[malignant_mask] == self.labels[malignant_mask]).mean().round(2),
+            'benign_accuracy': (self.preds[benign_mask] == self.labels[benign_mask]).mean().round(2)
         }
     
     def _get_roc_auc(self):
@@ -296,7 +296,7 @@ class Evaluate:
             f.write(f"Classification Report:\n{results['class_report']}\n")
 
     @staticmethod
-    def plot_loss(self, data, title, xlabel, ylabel, save_path, color='b', marker='o'):
+    def plot_loss(data, title, xlabel, ylabel, save_path, color='b', marker='o'):
         """
         Plots and saves a training loss graph
         """

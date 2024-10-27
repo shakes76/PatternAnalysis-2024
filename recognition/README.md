@@ -67,12 +67,15 @@ The HipMRI Study dataset consists of processed 2D MRI slices of the prostate reg
 │
 ├── data
 │   └── HipMRI_study_keras_slices_data
+|       |
 │       ├── keras_slices_train
 │       ├── keras_slices_seg_train
+|       |
 │       ├── keras_slices_validate
 │       ├── keras_slices_seg_validate
-│       ├── test
-│       └── seg_test
+|       |
+│       ├── keras_slices_test
+│       └── keras_slices_seg_test
 │
 ├── modules.py
 ├── dataset.py

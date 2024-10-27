@@ -2,7 +2,8 @@
 Every year tens of thousands of men are diagnosed with prostate cancer, mostly effecting elderly men[1]. The identification of abnormal or enlarged prostates in a HipMRI could therefore be useful for assisting doctors in early detection.
 
 ## 2D UNet
-![alt text](image.png)[2]
+![alt text](graphs/UNet.png)[2]
+
 The UNet is a model mostly used for segmenting images and is especially effective on small datasets, which are common in medical imaging[3]. The model consists of an encoding network which extracts features from the input followed by a decoding network which creates the segmentation mask[2]. A key difference between the UNet earlier image segmentation models is that the UNet utilises skip connections which allow for finer details in the original image to be carried through the model into the segmentation mask.
 
 ## Implementation

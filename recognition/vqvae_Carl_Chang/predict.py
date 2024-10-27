@@ -68,10 +68,28 @@ def show(img):
     fig.axes.get_yaxis().set_visible(False)
 
 print("Displaying reconstructed images:")
-show(make_grid(test_reconstructions[:16], nrow=4, normalize=True))
+show(make_grid(test_reconstructions[:16], nrow=8, normalize=True))
 plt.show()
 
 print("Displaying original images:")
-show(make_grid(test_originals[:16], nrow=4, normalize=True))
+show(make_grid(test_originals[:16], nrow=8, normalize=True))
 plt.show()
 
+# Combined Display of Original and Reconstructed Images
+def show_combined(originals, reconstructions):
+    # Combine originals and reconstructions
+    combined = torch.cat([originals[:8], reconstructions[:8]], dim=0)
+    
+    npimg = make_grid(combined, nrow=8, normalize=True).numpy()
+    npimg = (npimg - npimg.min()) / (npimg.max() - npimg.min())  # Normalize for display
+    
+    # Display with SSIM
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
+    ax.set_title(f"Originals (Top) and Reconstructions (Bottom) - Avg SSIM: {average_ssim:.3f}", fontsize=14)
+    ax.axis('off')
+    plt.show()
+
+# Show Combined Images
+show_combined(test_originals, test_reconstructions)
+plt.show()

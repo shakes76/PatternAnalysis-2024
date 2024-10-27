@@ -211,6 +211,7 @@ After training for 1 epoch:
 |---------------|--------------------|--------------------|
 | **Actual Positive** | 1553  | 1417 |
 | **Actual Negative** | 2907 | 3123  |
+
 Accuracy: 0.520
 
 After training for 400 epochs:
@@ -218,6 +219,7 @@ After training for 400 epochs:
 |---------------|--------------------|--------------------|
 | **Actual Positive** | 1564  | 1391 |
 | **Actual Negative** | 2896 | 3149  |
+
 Accuracy: 0.524
 
 

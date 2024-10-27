@@ -1,45 +1,29 @@
 """
-=======================================================================
-File Name: dataset.py
-Author: Baibhav Mund
-Student ID: 48548700
-Description:
-    This file defines a function for loading and processing image datasets 
-    for training models, such as GANs, using PyTorch's DataLoader. It includes
-    the following key functionalities:
-    
-    - Data Augmentation: The images are augmented with random horizontal flips.
-    - Image Preprocessing: Images are resized and normalized.
-    - Batch Loading: The images are loaded into batches for efficient processing 
-      during training.
+File: dataset.py
+Author: Baibhav Mund (ID: 48548700)
 
-    The function `get_loader()` is designed to load images from directories, apply 
-    specified transformations (e.g., resizing, normalization), and return a DataLoader 
-    object that can be used during model training.
+Description:
+    Defines `get_loader()` to load and process image datasets for model training
+    using PyTorch’s DataLoader. Includes data augmentation, resizing, normalization, 
+    and batch loading for efficient GAN training. Trains on classes such as AD/CN separately.
 
 Usage:
-    1. Specify the path to the dataset directory containing the images.
-    2. Call `get_loader()` with the appropriate `log_resolution` (e.g., 6 for 64x64 images) 
-       and `batch_size` for training.
-    3. Use the returned DataLoader to iterate through the dataset during model training.
-    
+    - Specify dataset path and call `get_loader()` with desired `log_resolution` and `batch_size`.
+    - Use the returned DataLoader for model training.
+
 Parameters:
-    - dataset: str
-        The path to the root directory of the dataset (must contain subdirectories for each class).
-    - log_resolution: int
-        The resolution exponent (e.g., log_resolution=6 corresponds to 2^6=64x64 images).
-    - batch_size: int
-        The number of images to load per batch.
+    - dataset (str): Path to the dataset directory
+    - log_resolution (int): Image resolution as a power of 2
+    - batch_size (int): Images per batch
+    - class_type(str): Either AD or NC depending on the training.
 
 Functions:
-    - get_loader(): Returns a DataLoader for the specified dataset, with specified
-      image transformations and batching.
+    - get_loader(): Returns a DataLoader with transformations and batching.
 
 Output:
-    - DataLoader object: Provides an iterable over the dataset with augmented and preprocessed images.
-
-=======================================================================
+    - DataLoader: Iterable for the dataset with processed images.
 """
+
 
 # Import necessary libraries
 from torchvision import datasets, transforms

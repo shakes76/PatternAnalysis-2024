@@ -1,61 +1,23 @@
 """
-=======================================================================
-File Name: modules.py
-Author: Baibhav Mund
-Student ID: s48548700
-Description:
-    This file contains the implementation of key neural network components 
-    used in a StyleGAN2 architecture. It includes the following classes:
-    - MappingNetwork: A mapping network used to project latent space vectors
-      (z) to the intermediate latent space (w).
-    - Generator: A progressive generator that creates high-resolution images
-      by progressively upscaling.
-    - Discriminator: A multi-scale discriminator used for differentiating 
-      between real and generated images.
-    - Supporting classes for style modulation, convolution, and equalized 
-      learning rate.
+File: modules.py
+Author: Baibhav Mund (ID: s48548700)
 
-    These components are typically used in GAN architectures such as 
-    StyleGAN or StyleGAN2 for generating high-quality images from noise vectors. 
-    The generator progressively increases the resolution, while the 
-    discriminator downscales the images for real/fake classification.
+Description:
+    Implements key StyleGAN2 components:
+    - MappingNetwork: Projects latent vectors (z) to intermediate space (w).
+    - Generator: Progressive generator for high-res image synthesis.
+    - Discriminator: Multi-scale discriminator for real/fake classification.
+    - Supporting modules for style modulation, equalized learning rate, and path length penalty.
 
 Usage:
-    - Import the necessary components from this file for use in training GAN models.
-    - Example usage:
+    Import classes for GAN training:
         from modules import Generator, Discriminator, MappingNetwork
-        gen = Generator(log_resolution=7, W_DIM=256)
-        disc = Discriminator(log_resolution=7)
-
-    - Use the MappingNetwork to map latent vectors from z-space to w-space 
-      for style-based generation in the Generator.
-    - The Generator and Discriminator classes are typically used with 
-      noise inputs and progressively scaled images.
 
 Classes:
-    - MappingNetwork: Implements the latent space mapping to intermediate space.
-    - Generator: Builds a progressive generator that outputs images.
-    - GeneratorBlock: A basic block in the Generator for style-based image synthesis.
-    - StyleBlock: Applies style-based modulation and noise injection to a feature map.
-    - ToRGB: Converts a feature map to an RGB image at each resolution.
-    - Conv2dWeightModulate: Implements weight modulation for style-based convolutions.
-    - Discriminator: Classifies real and fake images by downscaling them progressively.
-    - DiscriminatorBlock: A residual block in the Discriminator with downsampling.
-    - EqualizedLinear: Linear layer with equalized learning rate.
-    - EqualizedConv2d: Convolutional layer with equalized learning rate.
-    - EqualizedWeight: Handles weight normalization in equalized learning rate layers.
-    - PathLengthPenalty: Regularization class used for enforcing the path length penalty.
+    - MappingNetwork, Generator, Discriminator
+    - Supporting modules: GeneratorBlock, StyleBlock, ToRGB, Conv2dWeightModulate, 
+      DiscriminatorBlock, EqualizedLinear, EqualizedConv2d, PathLengthPenalty
 
-Dependencies:
-    - PyTorch: Install via `pip install torch`
-    - numpy: Install via `pip install numpy`
-    
-Notes:
-    - Ensure that you adjust the log resolution and dimensions for both the 
-      generator and discriminator based on your dataset's image size.
-    - The discriminator uses a minibatch standard deviation for added variance.
-    
-=======================================================================
 """
 
 import torch

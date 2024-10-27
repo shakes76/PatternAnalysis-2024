@@ -1,63 +1,25 @@
 ﻿"""
-=======================================================================
-File Name: train.py
-Author: Baibhav Mund
-Student ID: 48548700
-Description:
-    This script is responsible for training a StyleGAN2 
-    model. It loads a dataset, initializes a generator, discriminator (critic), and 
-    mapping network, and performs adversarial training over a number of epochs.
-    The training loop applies gradient penalties for better convergence and 
-    employs automatic mixed precision (AMP) to optimize speed.
+File: train.py
+Author: Baibhav Mund (ID: 48548700)
 
-    Key Features:
-    - Generator and Critic (Discriminator) training with gradient penalty.
-    - Mapping network for latent vector transformation.
-    - Path Length Penalty (PLP) for regularizing generator training.
-    - Loss visualization saved as images and losses stored as CSV files.
-    - Periodic model checkpointing during training.
+Description:
+    Trains a StyleGAN2 model using a generator, discriminator (critic), and 
+    mapping network with adversarial training. Features gradient penalty, 
+    path length penalty, and AMP for optimized training.
 
 Usage:
-    1. Set the path to your dataset in `DATASET` and adjust the hyperparameters 
-       (e.g., `EPOCHS`, `BATCH_SIZE`, `LEARNING_RATE`, etc.) as needed.
-    2. Ensure that your GPU is available, or training will default to CPU.
-    3. Run the script using:
-       `python train.py`
-    4. During training, the script will save the generator and critic models every 
-       5 epochs, along with optimizer states. Losses are logged in a CSV file and 
-       plotted at the end of training.
+    1. Set `DATASET` path and adjust hyperparameters.
+    2. Ensure GPU is available; defaults to CPU if not.
+    3. Run with `python train.py`.
 
-Dependencies:
-    - PyTorch: Install via `pip install torch torchvision`
-    - tqdm: Progress bar library, install via `pip install tqdm`
-    - matplotlib: For loss plotting, install via `pip install matplotlib`
-
-Key Parameters:
-    - DATASET: Path to the dataset directory.
-    - DEVICE: Device to run the training on (GPU if available, else CPU).
-    - EPOCHS: Number of training epochs.
-    - LEARNING_RATE: Learning rate for optimizers.
-    - BATCH_SIZE: Number of images per batch.
-    - LOG_RESOLUTION: Logarithmic resolution for images (2^7 = 128x128 in this case).
-    - Z_DIM: Latent space dimensionality for input noise vectors.
-    - W_DIM: Dimension of the mapping network output.
-    - LAMBDA_GP: Weight for the gradient penalty term in the critic's loss function.
-
-Functions:
-    - gradient_penalty(): Computes the gradient penalty for the discriminator.
-    - get_w(): Generates latent vectors (w) from random noise.
-    - get_noise(): Generates noise inputs for the generator.
-    - train_fn(): The main training loop for training the generator and discriminator.
-    - save_losses_to_csv(): Logs and saves the generator and discriminator losses to a CSV file.
+Parameters:
+    - DATASET: Dataset path
+    - DEVICE: CPU or GPU
+    - EPOCHS, BATCH_SIZE, LEARNING_RATE, Z_DIM, W_DIM, LAMBDA_GP, etc.
 
 Output:
-    - Model checkpoints saved every 5 epochs (generator, critic, and optimizer states).
-    - Loss values saved to a CSV file (`total_losses.csv`).
-    - Loss plots saved as PNG images (`gen_loss.png`, `dis_loss.png`).
-
-=======================================================================
+    - Model checkpoints, loss logs (CSV), style code logs (npy) and loss plots (PNG)
 """
-
 
 from dataset import *  
 from modules import *  

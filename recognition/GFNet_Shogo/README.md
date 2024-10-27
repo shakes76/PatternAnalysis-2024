@@ -14,8 +14,7 @@ It is a promising alternative to traditional Convolutional Neural Networks (CNN)
 The model we used is called GFNet, inspired by Vision Transformer.
 GFNet differs from ViT in that it uses Fourier transforms rather than multi-head attention to learn the spatial relationships of images.
 This approach can efficiently capture various interrelationships while keeping the low computational cost (log-linear) [1].    
-In addition, the validation results show that imageNet performs very competitively in classification tasks compared to other transformer-based and CNN models [1].
-
+In addition, according to the paper, the test results indicate that ImageNet-trained models achieve competitive performance in classification tasks compared to other transformer-based models and CNNs [1].
 The ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset is used for the data set. This dataset contains brain MRI images of normal (NC) subjects and Alzheimer's disease (AD) patients.  
 
 ## Architecture
@@ -34,12 +33,11 @@ Initially, one can start with a large feature map (e.g., 56 × 56) and gradually
 
 ### 2. Global Filter Layer
 This layer is where GFNet differs from ordinal ViT.
-In multi-head attention, queries, keys, and values are generated from the input feature map and passed through a linear layer, each with its training parameters. The scaled dot product then performs a similarity-based transformation between vectors using inner products.
-Since the relationship between patches is performed on all patch combinations, capturing the relationship between distant pixels is possible.
+In multi-head attention, queries, keys, and values are generated from the input feature map and passed through a linear layer, each with its training parameters. 
+The scaled dot product attention computes the similarity between query and key vectors using inner products, allowing a similarity-based transformation. 
+Since the attention mechanism considers all possible patch (or token) pairs, it can capture relationships between distant pixels.
 
-In contrast, the Global Filter Layer transforms the input features into the frequency domain by performing a two-dimensional fast Fourier transform (FFT).
-Element-wise multiplications are then performed for the learnable filter weights and each frequency component. An inverse two-dimensional FFT (IFFT) is then applied to return the data to the spatial domain.
-With this approach, the GlobalFilter Layer learns long-term spatial dependencies in the frequency domain with log-linear complexity.
+In contrast, the Global Filter Layer transforms the input features into the frequency domain by applying a two-dimensional Fast Fourier Transform (FFT). Then, element-wise multiplications are performed between the learnable filter weights and each frequency component. An inverse two-dimensional FFT (IFFT) is applied to transform the data back to the spatial domain. This approach allows the Global Filter Layer to capture long-range spatial dependencies in the frequency domain with efficient computational complexity, referred to as near log-linear complexity.
 
 Note: Layer normalisation is performed before the Fourier transform. It normalises the hidden layer values within each sample, specifically the mean and variance of the hidden layer values for each layer in one sample.
 
@@ -51,19 +49,20 @@ Before applying the MLP, layer normalisation is performed on the output from the
 After passing through the MLP, a skip connection directly adds the original input to the outputs. The output of each block is added to the original input (residual) to produce the final output.
 
 ### 4. Global Averaging Pooling
-Take the average of the tokens obtained from the output of the last block and summarise the values for each channel. In other words, summarising the information for each patch summarises the overall characteristics.
+Take the average of the token values from the output of the last block across all spatial positions, reducing each channel to a single summary value. 
+In other words, by averaging the information from each patch, the overall characteristics of the entire image are captured for each channel.
 
 ### 5. Linear
-This is the all-combining layer (Linear Layer) for final classification and prediction. It takes the output of Global Average Pooling and produces the final output through the dense layer.
+This is the fully connected layer (Linear Layer) for final classification and prediction. It takes the output of Global Average Pooling and produces the final output through the dense layer.
 
 ## Data Loading and Preprocessing
-We used 20% of the entire ADNI dataset for the test. 
-Additionally, 80% of the remaining 80% was used for training and the remainder for validation to perform hyperparameter tuning.  
+We combined all images from the original ADNI dataset, which was initially divided into train and test sets, and then randomly shuffled the entire dataset. 
+From this shuffled dataset, we allocated 20% for testing. Of the remaining 80%, 80% was used for training and the rest for validation to perform hyperparameter tuning.  
 
 We converted each set of images to grayscale.
 In addition, since the image size is 256x240, padding was added to make it 256x256 and then resized to 224x224 pixels. The paper trained on a 224x224 sized image, so this was adapted.
 
-The mean and standard deviation were obtained after using the above transformation for the training set. These values were used to normalize the training set, validation set, and test set.  
+The mean and standard deviation were obtained after using the above transformation for the training set. These values were used to normalise the training set, validation set, and test set.  
 
 The training set was further subjected to data augmentation. The augmentation performed was as follows.
 
@@ -80,7 +79,7 @@ Each stage first performs patch embedding and transforms the input features into
 Between stages, downsampling is performed, reducing the resolution by half. This allows for learning highly abstract features while progressively decreasing the size of the feature map. The number of blocks in each stage is 3, 3, 27, and 3, respectively.
 The input dimensions of the patch embedding for each stage are set to 96, 192, 384, and 768, respectively, and the dimension of the feature vector increases as the resolution decreases.  
 
-In building the model, dropout and drop paths were used for regularization. Dropout was applied in the MLP, where some nodes were randomly deactivated during training. Drop-pass was applied after the Feed Forward Network and before the skip connections. The entire block is skipped by stochastic scaling with respect to the feedforward layer output.
+For regularization, dropout and drop paths were used for regularization. Dropout was applied in the MLP, where some nodes were randomly deactivated during training. Drop-pass was applied after the Feed Forward Network and before the skip connections. The entire block is skipped by stochastic scaling with respect to the feedforward layer output.
 
 ## Training
 
@@ -159,13 +158,13 @@ We can see that the training effectively completed with early stopping, and over
 <p style="text-align:center;">Figure4: Training and validation loss over epoch for trial 2 (the third trial)</p>
 
 ## Discussion
-In this project, GFNet-H-B was trained using the ADNI dataset and successfully detected Alzheimer's patients with **98.62%** accuracy. As we mentioned earlier, the entire dataset was randomly divided into training, validation, and test sets, respectively, but using the original ADNI split (the official training and test sets), the accuracy was significantly reduced to 56%.
+In this project, GFNet-H-B was trained using the ADNI dataset and successfully detected Alzheimer's patients with **98.62%** accuracy. As mentioned earlier, the entire dataset was randomly divided into training, validation, and test sets. However, when using the original ADNI split (official training and test sets) for training and testing, the accuracy significantly dropped to 56%.
 The cause may be an imbalance of data between the official training and test sets. In particular, if the test set contains data that cannot be learned from the original training set because of this, the model may not be able to generalise to that data.
 Therefore, a good result may have been obtained by randomly re-splitting the whole set. This indicates that the distribution of the data significantly impacts training, and careful partitioning is necessary.
 
 ## Conclusion
 We confirmed that GFNet-H-B can detect Alzheimer's disease with high accuracy using the ADNI dataset. It achieved **98.62%** accuracy on the randomly split dataset, but accuracy significantly dropped to 56.68% on original data partitioning.
-These results suggest that GFNet performance may depend on the amount and distribution of data used for training. Further testing is needed to determine whether further data expansion and data preprocessing that accounts for class imbalance and sample bias in the data set will increase accuracy.
+These results suggest that GFNet performance may depend on the amount and distribution of data used for training. Further experiments are needed to determine whether additional data augmentation and preprocessing techniques that address class imbalance and sample bias in the dataset can improve accuracy.
 
 ## Running the code
 #### Dependencies

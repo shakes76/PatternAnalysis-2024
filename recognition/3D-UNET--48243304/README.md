@@ -21,9 +21,9 @@ The project uses a 3D U-Net architecture, which is widely used for medical image
 
 The network architecture is :
 
-	input channels: 1	(grayscale MRI scans)
-	Output channels:1	(binary segmentation mask)
-	base feature size:32			
+	input channels: 	1	(grayscale MRI scans)
+	Output channels:	1	(binary segmentation mask)
+	base feature size:	32			
 
 #**Architecture:**
 
@@ -79,7 +79,7 @@ matplotlib		3.4.3  (for visualization)
 evaluation metric:
 	using the DICE Coefficient to evaluate the model
 	
-	training....(did not get the result)
+		the result is:	0.9258
 	
 segmentation output:
 

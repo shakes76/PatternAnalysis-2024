@@ -8,7 +8,6 @@ from monai.transforms import (Compose, ToTensord, Spacingd, EnsureChannelFirstd,
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data._utils.collate import default_collate
 
-
 # test other transforms
 train_transforms = Compose(
     [
@@ -126,7 +125,7 @@ def collate_batch(batch: Sequence):
     return ret
 
 
-def get_dataloaders(train_batch=8, val_batch=8) -> tuple[DataLoader, DataLoader, DataLoader]:
+def get_images():
     image_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
     mask_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
 
@@ -139,8 +138,12 @@ def get_dataloaders(train_batch=8, val_batch=8) -> tuple[DataLoader, DataLoader,
     mask_files = [os.path.join(mask_dir, fname) for fname in os.listdir(mask_dir) if fname.endswith('.nii.gz')]
     image_files, mask_files = sorted(image_files, key=extract_keys), sorted(mask_files, key=extract_keys)
 
-    # train/test/val split with numpy indexing
-    image_files, mask_files = np.array(image_files), np.array(mask_files)
+    return np.array(image_files), np.array(mask_files)
+
+
+def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, DataLoader]:
+    image_files, mask_files = get_images()
+
     num_samples = len(image_files)
     np.random.seed(42)
     indices = np.random.permutation(num_samples)
@@ -172,3 +175,18 @@ def get_dataloaders(train_batch=8, val_batch=8) -> tuple[DataLoader, DataLoader,
                                  collate_fn=collate_batch)
 
     return train_dataloader, val_dataloader, test_dataloader
+
+
+def get_test_dataloader(batch_size):
+    image_files, mask_files = get_images()
+    num_samples = len(image_files)
+    np.random.seed(42)
+    indices = np.random.permutation(num_samples)
+
+    split = int(0.9 * num_samples)
+    test_idx = indices[split:]
+    test_images, test_masks = image_files[test_idx], mask_files[test_idx]
+    test_ds = MRIDataset(test_images, test_masks, mode='valid')
+    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=4, pin_memory=True, shuffle=True,
+                                 collate_fn=collate_batch)
+    return test_dataloader

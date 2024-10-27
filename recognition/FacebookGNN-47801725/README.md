@@ -68,3 +68,9 @@ The transformation of node embeddings observed in the t-SNE visualizations illus
 - **matplotlib**: 3.8.0
 - **numpy**: 1.24.1
 ## References 
+
+1. **Kipf, T. N., & Welling, M. (2017).** [*Semi-Supervised Classification with Graph Convolutional Networks*](https://arxiv.org/abs/1609.02907). *arXiv preprint arXiv:1609.02907.*  
+   This foundational paper introduces the Graph Convolutional Network (GCN) model and its application to semi-supervised learning on graph-structured data.
+
+2. **Hamilton, W., Ying, Z., & Leskovec, J. (2017).** [*Inductive Representation Learning on Large Graphs*](https://papers.nips.cc/paper/2017/hash/5dd9db5e033da9c6fb5ba83c7a7ebea9-Abstract.html). *Advances in Neural Information Processing Systems.*  
+   This paper presents GraphSAGE, an approach to learning node embeddings in large graphs, introducing new techniques for efficient GCN training and generalization.

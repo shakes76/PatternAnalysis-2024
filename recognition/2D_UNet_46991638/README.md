@@ -11,10 +11,10 @@ This model is design to be used on 2D slices of HipMRI data which can be found [
 ## Results
 
 After some tuning, a preliminary test run of 50 epochs shows only a slight increase in accuracy for the validation data while the training data improves significantly. This disparity could be a result of overfitting, although due to the variance in the validation data it also seemed likely that the learning rate was too high.
-![alt text](graphs\Dice_Coeff1.png)
+![alt text](graphs/Dice_Coeff1.png)
 
 In hopes to improve this the learning rate was lowered from $10^{-3}$ to $10^{-4}$ giving the following result.
-![alt text](graphs\Dice_Coeff.png)
+![alt text](graphs/Dice_Coeff.png)
 As expected the training data is learned slower, however there is not a clear difference in results for the validation data. In both instances the validation dice score roughly oscillates between 0.7 and 0.725. 
 
 The higher learning rate gave a slightly better evaluation on the test set with a dice score of 0.7507 compared to 0.7462. Which is not significant enough to suggest the learning rate is a meaningful factor in the models lack of accuracy. Regardless the first (higher) learning rate is used for model evaluation. Other hyperparameters were tested with other values such as filter size, batch size and number of epochs. However they gave similarly ineffective results with the validation data stagnating quickly.
@@ -22,12 +22,12 @@ The higher learning rate gave a slightly better evaluation on the test set with 
 Running inference on this iteration of the model gives these segmentation masks for each class
 | Predicted Mask  | True Mask |
 | ------------- | ------------- |
-| ![alt text](graphs\Prediction_0.png)| ![alt text](graphs\True_0.png) |
-| ![alt text](graphs\Prediction_1.png)| ![alt text](graphs\True_1.png) |
-| ![alt text](graphs\Prediction_2.png)| ![alt text](graphs\True_2.png) |
-| ![alt text](graphs\Prediction_3.png)| ![alt text](graphs\True_3.png) |
-| ![alt text](graphs\Prediction_4.png)| ![alt text](graphs\True_4.png) |
-| ![alt text](graphs\Prediction_5.png)| ![alt text](graphs\True_5.png) |
+| ![alt text](graphs/Prediction_0.png)| ![alt text](graphs/True_0.png) |
+| ![alt text](graphs/Prediction_1.png)| ![alt text](graphs/True_1.png) |
+| ![alt text](graphs/Prediction_2.png)| ![alt text](graphs/True_2.png) |
+| ![alt text](graphs/Prediction_3.png)| ![alt text](graphs/True_3.png) |
+| ![alt text](graphs/Prediction_4.png)| ![alt text](graphs/True_4.png) |
+| ![alt text](graphs/Prediction_5.png)| ![alt text](graphs/True_5.png) |
 Clearly this result leaves much to be desired and while the model may not be very useful in its current state it provides a starting point for further study.
 
 

@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
+import numpy as np
 
 class GCN(torch.nn.Module):
     '''
@@ -15,7 +16,7 @@ class GCN(torch.nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim, dropout_rate=0.5):
         super(GCN, self).__init__()
         
-        torch.manual_seed(42)
+        np.random.seed(42)
         
         # Define GCN layers with the specified dimensions
         self.conv1 = GCNConv(input_dim, hidden_dims[0])

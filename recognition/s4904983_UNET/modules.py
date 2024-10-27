@@ -57,10 +57,8 @@ class UNet2D(nn.Module):
         ### Decoding
         x = self.up_trans_1(x7)
         x = self.up_conv_1(torch.cat([x, x5], 1))
-
         x = self.up_trans_2(x)
         x = self.up_conv_2(torch.cat([x, x3], 1))
-
         x = self.up_trans_3(x)
         x = self.up_conv_3(torch.cat([x, x1], 1))
 
@@ -90,7 +88,7 @@ class DiceLoss(nn.Module):
         super(DiceLoss, self).__init__()
         self.smooth = 1e-14
 
-    def forward(self, inputs, targets, return_dice=False):
+    def forward(self, inputs, targets, return_dice=False, separate_classes=False):
         """ 
         Calculate the dice loss.
 
@@ -101,6 +99,7 @@ class DiceLoss(nn.Module):
 
         Returns:
             torch.Tensor: The dice loss (or coefficient).
+            list: The dice coefficient for each class if separate_classes is True.
         """
         inputs = torch.softmax(inputs, dim=1)        
         targets = F.one_hot(targets, num_classes=6)
@@ -110,8 +109,16 @@ class DiceLoss(nn.Module):
         inputs = inputs.view(inputs.size(0), inputs.size(1), -1)
         targets = targets.view(inputs.size(0), inputs.size(1), -1)
 
+        if separate_classes:
+            intersect = (inputs * targets).sum(-1)
+            inputs_sum = inputs.sum(-1)
+            targets_sum = targets.sum(-1)
+            dice = (2 * intersect + self.smooth) / (inputs_sum + targets_sum + self.smooth)
+            return dice if return_dice else 1 - dice
+        
         intersect = torch.abs(inputs * targets).sum()
         dice = (2 * intersect + self.smooth) / (torch.abs(inputs).sum(-1).sum() + torch.abs(targets).sum(-1).sum() + self.smooth)
+        
         if return_dice:
-            return dice
+            return dice.mean()
         return 1 - dice.mean()

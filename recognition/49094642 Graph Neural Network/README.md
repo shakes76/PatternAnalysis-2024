@@ -123,7 +123,7 @@ UMAP maps high-dimensional data to low-dimensional space by reducing dimensional
 
 In this graph, each cluster in the figure represents a different node category, and the color reflects the true label. Although nodes from different categories form distinguishable clusters, there are some overlapping and fuzzy areas, which indicates that the model has achieved a certain classification effect, but it may be difficult to clearly distinguish certain node categories.
 
-According to the output results, the model showed good classification ability when processing the Facebook Large Page-Page Network dataset, and from the UMAP projection graph, the model can distinguish different categories well. However, there is a large deviation in the loss curves of the training set and the test set. 
+According to the output results, the model showed good classification ability when processing the Facebook Large Page-Page Network dataset, and from the UMAP projection graph, the model can distinguish different categories well. However, there is a large deviation in the loss curves of the training set and the test set. The performance and generalization ability of the model should be improved to make the performance on the dataset more stable and outstanding.
 
 ## References
 - [1] Distill. 'A Gentle Introduction to Graph Neural Networks', Accessed 10/27.

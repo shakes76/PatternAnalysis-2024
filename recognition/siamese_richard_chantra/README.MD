@@ -37,14 +37,14 @@ Images are normalized using ResNet50's pretrained requirements:
 - Standard deviation: [0.229, 0.224, 0.225]
 This normalization ensures optimal feature extraction from the pretrained network.
 
-**Dataset Organization:**
+**Dataset Handling:**
 - 80:20 train-test split for model evaluation
 - Siamese pair creation with 50% similar and 50% dissimilar pairs
 - Careful control to prevent self-pairing of images
 
 ## Architecture
 
-We used a Siamese network with ResNet50 to learn features from skin lesion images. ResNet50 creates 2048-length vectors from each image. These vectors contain the key patterns that help identify melanomas.
+A Siamese network was used with ResNet50 to learn features from melanoma images. ResNet50 creates 2048-length vectors from each image and these embeddings help identify melanomas.
 
 The Siamese setup compares images in pairs using two ResNet50s that share the same weights. We used contrastive loss because we only need to separate two classes: benign and malignant. This was simpler than triplet loss which would add unnecessary complexity.
 
@@ -114,7 +114,7 @@ The model achieved mixed results across different metrics. The overall accuracy 
 
 Looking at the confusion matrix:
 6162 Benign were correctly identified
-347 Benign were mistakenly flagged as melanomas
+347 Benign were mistakenly flagged as malignant
 79 Malignant were missed
 38 Malignant were caught
 
@@ -123,7 +123,7 @@ The t-SNE visualization displays clear grouping of similar cases, though some ov
 
 ## Conclusions
 
-The results highlight a key issue in melanoma detection: getting high overall accuracy doesn't mean the system works well enough for practical use. Missing 68% of melanomas is a critical problem that needs addressing. The data suggests the model can spot general patterns separating benign from malignant cases, but lacks the precision needed for clinical applications. More melanoma samples and targeted architectural changes could improve detection rates while maintaining the current strong performance on benign cases.
+The results highlight a key issue in melanoma detection that getting high overall accuracy doesn't mean the system works well enough for practical use. The results suggests the model can spot general patterns separating benign from malignant cases but struggles obtaining a high accuracy. More melanoma samples and targeted architectural changes could improve detection rates.
 
 ## Instructions
 

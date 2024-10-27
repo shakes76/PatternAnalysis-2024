@@ -79,6 +79,8 @@ This repository has two models: a full model based on ResNet50 and a lightweight
 
 You should use WandB to capture the training curves of the network, although they are also saved individually to image files.
 
+Trained networks, by default, will be stored in `checkpoints/best_epoch.keras`. You may change this if you want, but you will also have to change `predict.py` to reference the correct file.
+
 ## Dependencies
 This network relies on the use of tensorflow_addons, which is deprecated as of mid-2024. For compatibility reasons, this model therefore uses an older version of Python (3.11.1) and numpy/tensorflow. To install, you must first have Python 3.11.1, or create a virtual environment that supports it. All relevant packages can then be installed using `pip install -r requirements.txt`. Or, instead, the following key ones need to be installed:
 

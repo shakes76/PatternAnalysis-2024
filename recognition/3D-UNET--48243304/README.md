@@ -84,7 +84,7 @@ evaluation metric:
 	
 segmentation output:
 
-	traning... (did not get the result)
+ ![segmentation output](result/prediction_grid_0.png)
 
 ##**Reference**
 

@@ -36,27 +36,3 @@ def plot_confusion_matrix(labels, preds):
     plt.ylabel('True Label')
     plt.show()
 
-# For the classification report and saving the model
-def main():
-    # Load test dataset
-    _, _, test_loader = get_data_loaders('/content/drive/MyDrive/ADNI/AD_NC/train', '/content/drive/MyDrive/ADNI/AD_NC/test')
-
-    # Initialization of the model and load the trained model weights
-    model = GFNet(num_classes=2).to(device)
-    model.load_state_dict(torch.load('/content/drive/MyDrive/ADNI/saved_model.pth'))
-    criterion = nn.CrossEntropyLoss()
-
-    # Evaluate the model on test dataset
-    all_preds, all_labels, test_loss = evaluate_model(model, test_loader, criterion)
-
-    print(f"Test Loss: {test_loss:.4f}")
-
-    # Generate classification report
-    report = classification_report(all_labels, all_preds, target_names=['NC', 'AD'])
-    print("Classification Report:\n", report)
-
-    # Plot confusion matrix
-    plot_confusion_matrix(all_labels, all_preds)
-
-if __name__ == '__main__':
-    main()

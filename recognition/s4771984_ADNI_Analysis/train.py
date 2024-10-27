@@ -78,16 +78,3 @@ def plot_metrics(train_loss, val_loss, train_acc, val_acc):
 
     plt.tight_layout()
     plt.show()
-
-# Initialization of data loaders and model
-train_loader, val_loader, _ = get_data_loaders('/content/drive/MyDrive/ADNI/AD_NC/train', '/content/drive/MyDrive/ADNI/AD_NC/test')
-model = GFNet(num_classes=2).to(device)
-
-# Loss function, optimizer, and number of epochs
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-num_epochs = 200
-
-# Train the model and plotting the Training & Validation Loss/Accuracy Plots
-train_loss, val_loss, train_acc, val_acc = train_model_with_val_loss(model, criterion, optimizer, num_epochs, train_loader, val_loader)
-plot_metrics(train_loss, val_loss, train_acc, val_acc)

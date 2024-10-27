@@ -41,11 +41,12 @@ Output:
 =======================================================================
 """
 
+# Import necessary libraries
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 # Define a function to create a data loader
-def get_loader(dataset, log_resolution, batch_size):
+def get_loader(dataset, log_resolution, batch_size, class_type):
     # Define a series of data transformations to be applied to the images
     transform = transforms.Compose(
         [
@@ -69,9 +70,19 @@ def get_loader(dataset, log_resolution, batch_size):
     # Create an ImageFolder dataset object that loads images from the specified directory
     dataset = datasets.ImageFolder(root=dataset, transform=transform)
     
+    if class_type not in dataset.class_to_idx:
+        raise ValueError(f"Invalid class_type '{class_type}'. Expected 'AD' or 'NC'.")
+    class_idx = dataset.class_to_idx[class_type]
+
+    # Filter indices for the specified class
+    class_indices = [i for i, (_, label) in enumerate(dataset) if label == class_idx]
+
+    # Create a subset dataset for the specified class
+    class_dataset = Subset(dataset, class_indices)
+
     # Create a data loader that batches and shuffles the data
     loader = DataLoader(
-        dataset,
+        class_dataset,
         batch_size=batch_size,  # Number of samples per batch
         shuffle=True,          # Shuffle the data for randomness
     )

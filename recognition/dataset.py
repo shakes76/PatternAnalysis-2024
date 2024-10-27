@@ -52,10 +52,10 @@ for image_name, image_path in image_dict.items():
     else:
         print(f"Mask not found for image {image_name}")
 
-# 划分训练集和验证集
+# Split into training and validation sets
 train_pairs, val_pairs = train_test_split(data_pairs, test_size=0.2, random_state=42)
 
-# 定义数据集类
+# Define dataset class
 class ISICSegmentationDataset(Dataset):
     def __init__(self, image_mask_pairs, transform=None):
         self.image_mask_pairs = image_mask_pairs

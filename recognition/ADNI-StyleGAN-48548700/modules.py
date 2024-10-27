@@ -111,9 +111,13 @@ class Generator(nn.Module):
         blocks = [GeneratorBlock(W_DIM, features[i - 1], features[i]) for i in range(1, self.n_blocks)]
         self.blocks = nn.ModuleList(blocks)
 
-    def forward(self, w, input_noise):
+    def forward(self, w, input_noise, return_style=False):
         batch_size = w.shape[1]
         x = self.initial_constant.expand(batch_size, -1, -1, -1)
+        
+        # Store the style codes if return_style is True
+        style_codes = [w[0]] if return_style else None
+        
         x = self.style_block(x, w[0], input_noise[0][1])
         rgb = self.to_rgb(x, w[0])
 
@@ -121,8 +125,17 @@ class Generator(nn.Module):
             x = F.interpolate(x, scale_factor=2, mode="bilinear")
             x, rgb_new = self.blocks[i - 1](x, w[i], input_noise[i])
             rgb = F.interpolate(rgb, scale_factor=2, mode="bilinear") + rgb_new
+            
+            # Append style code if style extraction is enabled
+            if return_style:
+                style_codes.append(w[i])
 
-        return torch.tanh(rgb)
+        # Return both the image and style codes if requested
+        if return_style:
+            return torch.tanh(rgb), style_codes
+        else:
+            return torch.tanh(rgb)
+
 
 # Define the GeneratorBlock class
 class GeneratorBlock(nn.Module):
@@ -158,7 +171,7 @@ class StyleBlock(nn.Module):
             x = x + self.scale_noise[None, :, None, None] * noise
         return self.activation(x + self.bias[None, :, None, None])
 
-# Defining the ToRGB class
+# Define the ToRGB class
 class ToRGB(nn.Module):
     def __init__(self, W_DIM, features):
         super().__init__()
@@ -174,7 +187,7 @@ class ToRGB(nn.Module):
         x = self.conv(x, style)
         return self.activation(x + self.bias[None, :, None, None])
 
-# Defining the Conv2dWeightModulate class
+# Define the Conv2dWeightModulate class
 class Conv2dWeightModulate(nn.Module):
     def __init__(self, in_features, out_features, kernel_size, demodulate=True, eps=1e-8):
         super().__init__()
@@ -198,7 +211,7 @@ class Conv2dWeightModulate(nn.Module):
         x = F.conv2d(x, weights, padding=self.padding, groups=b)
         return x.reshape(-1, self.out_features, h, w)
 
-# Defining the Discriminator class
+# Define the Discriminator class
 class Discriminator(nn.Module):
     def __init__(self, log_resolution, n_features=64, max_features=256):
         super().__init__()
@@ -238,7 +251,7 @@ class DiscriminatorBlock(nn.Module):
         super().__init__()
         # Define a residual block with an AveragePool2d layer for downsampling
         self.residual = nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2), 
-                                    EqualizedConv2d(in_features, out_features, kernel_size=1))
+                                      EqualizedConv2d(in_features, out_features, kernel_size=1))
         # Define a main block with LeakyReLU activations
         self.block = nn.Sequential(
             EqualizedConv2d(in_features, in_features, kernel_size=3, padding=1),

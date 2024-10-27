@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains code to train computer vision neural network designed to analyze images from the Alzheimer's Disease Neuroimaging Initiative (ADNI) dataset. The goal is to assist in the classification and understanding of Alzheimer's disease progression through deep learning techniques. This repository folder contains an implementation of [GFNet](https://ieeexplore.ieee.org/document/10091201).
+This repository contains code to train a computer vision neural network designed to classify images from the Alzheimer's Disease Neuroimaging Initiative (ADNI) dataset. The goal is to assist in the classification and understanding of Alzheimer's disease progression through deep learning techniques. This repository folder contains an implementation of [GFNet](https://ieeexplore.ieee.org/document/10091201).
 
 ## About the Model
 
@@ -23,7 +23,7 @@ GFNet contains:
 
 ### Model Architecture
 - **Base Model**: GFNet
-- **Input Shape**: 240x240
+- **Input Shape**: 180x180
 - **Output Classes**: Alzheimer's (AD), Normal Cognition (NC)
 - **Framework**: PyTorch
 
@@ -60,9 +60,8 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 - **Source**: Alzheimer's Disease Neuroimaging Initiative (ADNI)
 - **Training** 25120 (256x240) images
 - **Test** 9000 (256x240) images
-- **Preprocessing**: Images were resized, normalized, converted to grayscale, and augmented to enhance model robustness.
-- **Train/Validation Split from Training data** 90/10
-- **Train/Validation/Test Split** 66.26/7.36/26.37
+- **Preprocessing**: Images were resized, converted to grayscale and normalized to improve the training quality from the data.
+- **Train/Validation/Test Split** 25120/0/9000. The best performing model uses 25120/0/9000 training/validation/test split since due to the limited size of the dataset it would be better to use all data provided, but the training dataset was split 90%/10% training/validation in later versions (see challenges for steps and changes made).
 
 ### Training Configuration
 - **Batch Size**: 64
@@ -80,17 +79,18 @@ python ./recognition/GFNet_s4641938/train.py 240 ./best_model.pth ./ADNI/AD_NC
 - **Drop path rate**: 0.25
 
 ### Training Procedure
-1. **Load the Dataset**: Use `torchvision.datasets` and `torch.utils.data.DataLoader` to load and preprocess the ADNI dataset using torchvision transforms.
+1. **Load the Dataset**: Use `torchvision.datasets` and `torch.utils.data.DataLoader` to load and preprocess the ADNI dataset.
 2. **Define the Model**: Instantiate the GFNet model following the given model parameters.
 3. **Train the Model**: Execute training loops, monitor accuracy and loss, saving the best performing model after each epoch.
+4. **Assess Performance**: After training has concluded, use predict.py to show the performance of the best-performing model.
 
-### Dependencies
+# Dependencies
 - **Python**
 - **PyTorch**
 - **torchvision**
 - **timm** >= 1.8.0
 
-### Performance & Results
+# Performance & Results
 The model achieved the following results on the validation set:
 - **Test Accuracy**: 0.635%
 - **Learning Rate**: 0.0001

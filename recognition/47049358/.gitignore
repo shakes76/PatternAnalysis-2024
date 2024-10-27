@@ -7,8 +7,6 @@ semantic_MRs_anon
 
 *.pkl
 
-*.txt
-
 Images
 
 rangpur_outputs
@@ -19,3 +17,4 @@ rangpur_outputs
 
 *.pdf
 
+BriefDataDescription.txt

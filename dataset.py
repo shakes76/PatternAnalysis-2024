@@ -1,53 +1,64 @@
 import torch
+from torch.utils.data import Dataset, DataLoader
 import os
 import os.path
 import matplotlib.pyplot as plt
 import nibabel as nib
 
-def load_images(file_names: list[str], concise: bool = False,
-                         torch_device: torch.device = 'cpu') -> torch.Tensor:
-    if concise:
-        NUM_IMAGES_CONCISE = 20
-        file_names = file_names[:min(NUM_IMAGES_CONCISE, len(file_names))]
+class HipMRIDataset(Dataset):
+    def __init__(self, dataset_root: str, train: bool = True, concise: bool = False, device: torch.device = 'cpu', transform = None):
+        super().__init__()
+        TRAIN_DIR, TRAIN_SEGMENT_DIR = 'keras_slices_train', 'keras_slices_seg_train'
+        TEST_DIR, TEST_SEGMENT_DIR = 'keras_slices_test', 'keras_slices_seg_test'
 
-    each_shape = nib.load(file_names[0]).get_fdata(caching='unchanged').shape
-    data = torch.zeros((len(file_names),) + each_shape).to(torch_device)
+        image_dir = os.path.join(dataset_root, TRAIN_DIR)
+        segment_dir = os.path.join(dataset_root, TRAIN_SEGMENT_DIR)
+        if not train:
+            image_dir = os.path.join(dataset_root, TEST_DIR)
+            segment_dir = os.path.join(dataset_root, TEST_SEGMENT_DIR)
 
-    for i, file in enumerate(file_names):
-        image = nib.load(file)
+        image_names = sorted(os.listdir(image_dir))
+        segment_names = sorted(os.listdir(segment_dir))
+
+        if len(image_names) != len(segment_names) or not all(a[4:] == b[3:] for a, b in zip(image_names, segment_names)):
+            raise RuntimeError('The files have different names!')
+
+        if concise:
+            image_names = image_names[:min(20, len(image_names))]
+            segment_names = segment_names[:min(20, len(segment_names))]
+
+        self.image_items = list(map(lambda f : os.path.join(image_dir, f), image_names))
+        self.segment_items = list(map(lambda f : os.path.join(segment_dir, f), segment_names))
+        self.device = device
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return len(self.image_items)
+
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
+        image = nib.load(self.image_items[index])
         image_data = image.get_fdata(caching='unchanged')
-        data[i] = torch.from_numpy(image_data).to(torch_device)
+        image_tensor = torch.from_numpy(image_data)[:, :128].unsqueeze(0).to(self.device).to(torch.float32)
 
-    return data
+        segment = nib.load(self.segment_items[index])
+        segment_data = segment.get_fdata(caching='unchanged')
+        segment_tensor = torch.from_numpy(segment_data)[:, :128].unsqueeze(0).to(self.device).to(torch.float32)
+        PROSTATE_INDEX = 5
+        segment_tensor = (segment_tensor == PROSTATE_INDEX).float()
 
-def separate_prostate_channel(image: torch.Tensor) -> torch.Tensor:
-    PROSTATE_INDEX = 5
-    return (image == PROSTATE_INDEX).to(torch.uint8)
+        if self.transform is not None:
+            image_tensor = self.transform(image_tensor.float())
 
-def load_hipmri(dataset_root: str, train: bool = True, concise: bool = False, torch_device: torch.device = 'cpu') -> tuple[torch.Tensor, torch.Tensor]:
-    TRAIN_DIR, TRAIN_SEGMENT_DIR = 'keras_slices_train', 'keras_slices_seg_train'
-    TEST_DIR, TEST_SEGMENT_DIR = 'keras_slices_test', 'keras_slices_seg_test'
+        return image_tensor, segment_tensor
 
-    image_dir = os.path.join(dataset_root, TRAIN_DIR)
-    segment_dir = os.path.join(dataset_root, TRAIN_SEGMENT_DIR)
-    if not train:
-        image_dir = os.path.join(dataset_root, TEST_DIR)
-        segment_dir = os.path.join(dataset_root, TEST_SEGMENT_DIR)
-
-    image_filenames = list(map(lambda f : os.path.join(image_dir, f), os.listdir(image_dir)))
-    segment_filenames = list(map(lambda f : os.path.join(segment_dir, f), os.listdir(segment_dir)))
-    image_tensor = load_images(image_filenames, concise=concise, torch_device=torch_device)
-    segment_tensor = load_images(segment_filenames, concise=concise, torch_device=torch_device)
-    segment_tensor = separate_prostate_channel(segment_tensor)
-
-    return image_tensor, segment_tensor
 
 if __name__ == '__main__':
     # DATASET_LOCATION = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data'
     DATASET_LOCATION = 'data/'
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    images, segments = load_hipmri(DATASET_LOCATION, concise=True, torch_device=device)
+    dataset = HipMRIDataset(DATASET_LOCATION, concise=True, device=device)
+    images, segments = next(iter(DataLoader(dataset, batch_size=20, shuffle=True)))
 
     fig, axes = plt.subplots(4, 5)
 
@@ -57,7 +68,7 @@ if __name__ == '__main__':
 
     for i, axis in enumerate(axes.ravel()):
         axis.set_title(f'Example {i + 1}')
-        axis.imshow(torch.swapaxes(images[i], -1, -2).flip(0).cpu(), cmap='gist_gray')
+        axis.imshow(torch.swapaxes(images[i], -1, -2).squeeze().flip(0).cpu(), cmap='gist_gray')
         axis.set_xticks([])
         axis.set_yticks([])
 
@@ -72,7 +83,7 @@ if __name__ == '__main__':
 
     for i, axis in enumerate(axes.ravel()):
         axis.set_title(f'Example {i + 1}')
-        axis.imshow(torch.swapaxes(segments[i], -1, -2).flip(0).cpu(), cmap='gist_gray')
+        axis.imshow(torch.swapaxes(segments[i], -1, -2).squeeze().flip(0).cpu(), cmap='gist_gray')
         axis.set_xticks([])
         axis.set_yticks([])
 

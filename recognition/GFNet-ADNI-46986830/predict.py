@@ -10,8 +10,7 @@ from dataset import adni_data_load
 from gfnet import GFNet, _cfg
 from functools import partial
 
-
-from visualise import visualize_batch
+from utils import visualize_batch
 
 def main():
     # adni_dir = "/home/reuben/Documents/GFNet_testing/ADNI_AD_NC_2D/AD_NC"

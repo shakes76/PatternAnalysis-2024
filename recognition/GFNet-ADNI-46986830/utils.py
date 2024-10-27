@@ -1,9 +1,5 @@
-# Copyright (c) 2015-present, Facebook, Inc.
-# All rights reserved.
 """
-Misc functions, including distributed helpers.
-
-Mostly copy-paste from torchvision references.
+Helper functions
 """
 import io
 import os
@@ -14,6 +10,56 @@ import datetime
 import torch
 import torch.distributed as dist
 
+import matplotlib.pyplot as plt
+import torchvision
+import math
+
+def visualize_batch(data_loader, classes, num_images=500):
+    """
+    Visualize a batch of images from the DataLoader.
+    
+    Args:
+        data_loader (DataLoader): The DataLoader to sample from.
+        classes (list): List of class names (e.g., ["NC", "AD"]).
+        num_images (int): Number of images to visualize.
+    """
+    # Get a batch of data
+    data_iter = iter(data_loader)
+    images, labels = next(data_iter)
+
+    print(labels)
+
+    # Define how many images to show
+    num_images = min(num_images, len(images))
+
+    # Calculate grid size (rows and columns)
+    num_cols = math.ceil(math.sqrt(num_images))
+    num_rows = math.ceil(num_images / num_cols)
+
+    # Make a grid of images
+    img_grid = torchvision.utils.make_grid(images[:num_images], nrow=num_cols, padding=2)
+    
+    # Convert the image tensor back to a format Matplotlib can display
+    img_grid = img_grid.permute(1, 2, 0).numpy()  # Convert from CxHxW to HxWxC
+
+    # Denormalize the images (if normalization was used)
+    # img_grid = img_grid * [0.229, 0.224, 0.225] + [0.485, 0.456, 0.406]
+    # img_grid = img_grid.clip(0, 1)
+
+    # Plot the grid
+    plt.figure(figsize=(num_cols * 2, num_rows * 2))
+    plt.imshow(img_grid)
+    plt.title('Batch from DataLoader')
+
+    # Add labels for the images
+    for i in range(num_images):
+        label = classes[labels[i].item()]
+        row = i // num_cols
+        col = i % num_cols
+        plt.text(col * 256, row * 240 + 20, label, color='white', fontsize=12, bbox=dict(facecolor='black', alpha=0.8))
+    
+    plt.axis('off')
+    plt.show()
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
@@ -75,7 +121,6 @@ class SmoothedValue(object):
             global_avg=self.global_avg,
             max=self.max,
             value=self.value)
-
 
 class MetricLogger(object):
     def __init__(self, delimiter="\t"):
@@ -158,7 +203,6 @@ class MetricLogger(object):
         print('{} Total time: {} ({:.4f} s / it)'.format(
             header, total_time_str, total_time / len(iterable)))
 
-
 def _load_checkpoint_for_ema(model_ema, checkpoint):
     """
     Workaround for ModelEma._load_checkpoint to accept an already-loaded object
@@ -168,22 +212,6 @@ def _load_checkpoint_for_ema(model_ema, checkpoint):
     mem_file.seek(0)
     model_ema._load_checkpoint(mem_file)
 
-
-def setup_for_distributed(is_master):
-    """
-    This function disables printing when not in master process
-    """
-    import builtins as __builtin__
-    builtin_print = __builtin__.print
-
-    def print(*args, **kwargs):
-        force = kwargs.pop('force', False)
-        if is_master or force:
-            builtin_print(*args, **kwargs)
-
-    __builtin__.print = print
-
-
 def is_dist_avail_and_initialized():
     if not dist.is_available():
         return False
@@ -191,52 +219,22 @@ def is_dist_avail_and_initialized():
         return False
     return True
 
-
 def get_world_size():
     if not is_dist_avail_and_initialized():
         return 1
     return dist.get_world_size()
-
 
 def get_rank():
     if not is_dist_avail_and_initialized():
         return 0
     return dist.get_rank()
 
-
 def is_main_process():
     return get_rank() == 0
-
 
 def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
-
-
-def init_distributed_mode(args):
-    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
-        args.rank = int(os.environ["RANK"])
-        args.world_size = int(os.environ['WORLD_SIZE'])
-        args.gpu = int(os.environ['LOCAL_RANK'])
-    elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ['SLURM_PROCID'])
-        args.gpu = args.rank % torch.cuda.device_count()
-    else:
-        print('Not using distributed mode')
-        args.distributed = False
-        return
-
-    args.distributed = True
-
-    torch.cuda.set_device(args.gpu)
-    args.dist_backend = 'nccl'
-    print('| distributed init (rank {}): {}'.format(
-        args.rank, args.dist_url), flush=True)
-    torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-                                         world_size=args.world_size, rank=args.rank)
-    torch.distributed.barrier()
-    setup_for_distributed(args.rank == 0)
-
 
 def batch_index_select(x, idx):
     if len(x.size()) == 3:

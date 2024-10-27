@@ -3,8 +3,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import umap.umap_ as umap
 
-
-# Function to plot UMAP embeddings from the graph network
+# function to plot UMAP 
 def plot_umap(data, model):
     model.eval()  # Set model to evaluation mode
     with torch.no_grad():  # Disable gradient computation
@@ -17,22 +16,21 @@ def plot_umap(data, model):
         x = F.dropout(x, p=0.5, training=model.training)
         embeddings = model.conv4(x, edge_index).cpu().numpy()
 
-    # Perform UMAP dimensionality reduction
+    # perform UMAP dimensionality reduction
     reducer = umap.UMAP(n_neighbors=15, min_dist=0.1)
     embedding_2d = reducer.fit_transform(embeddings)
 
-    # Plot UMAP results with ground truth labels
+    # plot UMAP results 
     plt.scatter(embedding_2d[:, 0], embedding_2d[:, 1], c=data.y.cpu().numpy(), cmap="Spectral", s=5)
     plt.colorbar()
     plt.title("UMAP Projection ")
     plt.show()
 
-
-# Function to plot loss and accuracy curves
+# function to plot loss and accuracy curves
 def plot_metrics(train_loss_values, test_loss_values, train_acc_values, test_acc_values):
     plt.figure(figsize=(12, 6))
 
-    # Plot loss curves
+    # plot loss curves
     plt.subplot(1, 2, 1)
     plt.plot(train_loss_values, label='Train Loss', color='red')
     plt.plot(test_loss_values, label='Test Loss', color='blue')
@@ -41,7 +39,7 @@ def plot_metrics(train_loss_values, test_loss_values, train_acc_values, test_acc
     plt.title('Loss Curve')
     plt.legend()
 
-    # Plot accuracy curves
+    # plot accuracy curves
     plt.subplot(1, 2, 2)
     plt.plot(train_acc_values, label='Train Accuracy', color='red')
     plt.plot(test_acc_values, label='Test Accuracy', color='blue')
@@ -49,7 +47,5 @@ def plot_metrics(train_loss_values, test_loss_values, train_acc_values, test_acc
     plt.ylabel('Accuracy')
     plt.title('Accuracy Curve')
     plt.legend()
-
     plt.tight_layout()
     plt.show()
-

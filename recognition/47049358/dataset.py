@@ -30,11 +30,11 @@ __status__ = "Committed"
 # Constants
 # ==========================
 
-# IMAGE_FILE_NAME = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs' # on rangpur
-# LABEL_FILE_NAME = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only' # on rangpur
+IMAGE_FILE_NAME = '/home/groups/comp3710/HipMRI_Study_open/semantic_MRs' # on rangpur
+LABEL_FILE_NAME = '/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only' # on rangpur
 
-IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon') # assuming folders are in the cwd
-LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
+# IMAGE_FILE_NAME = os.path.join(os.getcwd(), 'semantic_MRs_anon') # assuming folders are in the cwd
+# LABEL_FILE_NAME = os.path.join(os.getcwd(), 'semantic_labels_anon')
 
 rawImageNames = sorted(os.listdir(IMAGE_FILE_NAME))
 rawLabelNames = sorted(os.listdir(LABEL_FILE_NAME))

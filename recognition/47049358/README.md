@@ -50,7 +50,7 @@ However, some augmentations methods are altered to limit the complexity of solut
 - Gaussian Noise ($\mu = 0, \sigma = 0.5$)
 - Resizing (down to (128 x 128 x 64))
 
-Resizing is an optional transformation as it is meant to save the memory consumption and increase the speed of training. However, with a limit in memory, this transformation must be applied for the training to happen. The past attempts have shown that the implementation cannot process image size of (256 x 256 x 128) regardless of batch size. In addition, all images are normalised as they are loaded to eliminate difference in intensity scales if there are any. Finally, all voxel values are loaded as `torch.float32` but `torch.uint8` is used for labels to save memory consumption. The labels in the dataset are indexed according to the table below, and are assigned to corresponding layers as binary masks as they are on-hot encoded. For example, segments corresponding to the first type of label appears as 1s in the 0th layer while other parts appear as 0s, and so on.
+Resizing is an optional transformation as it is meant to be done to save the memory consumption and increase the speed of training. **However, resizing must be applied with limited memory resources to run the model**. The past attempts have shown that the implementation cannot process image size of (256 x 256 x 128) regardless of batch size. In addition, all images are normalised as they are loaded to eliminate difference in intensity scales if there are any. Finally, all voxel values are loaded as `torch.float32` but `torch.uint8` is used for labels to save memory consumption. The labels in the dataset are indexed according to the table below, and are assigned to corresponding layers as binary masks as they are on-hot encoded. For example, segments corresponding to the first type of label appears as 1s in the 0th layer while other parts appear as 0s, and so on.
 
  |Labels|Segment|
 | - | - |
@@ -108,13 +108,37 @@ In addition, the model utilises a learning rate scheduler based on the number of
 
 It is to be noted that mixed precision and gradient accumulation are used to reduce the memory consumption during the training. **Mixed precision** reduces the memory consumption by replaceing value types with `torch.float16` where it can to reduce the space required to perform necessary operations including loss and gradient calculations necessary to train the model. **Gradient accumulation** accumulates the gradients and updates the weights after some training loop.
 
- ### Testing
+### Testing
 
-The model is tested by measuring its dice scores on the segmentations it produces for unseen images. Although the model outputs softmax values for its predicted segmentations, they are one-hot encoded during the test to maximise the contribution of correct predictions. Dice scores for each label is calculated independently to obtain the accurate performance to analyse the model's weakness and strengths in predicting particular segments for all labels. Then, their averages are taken and are summarised in the bar chart. Moreover, the visualisation of first 9 labels are produces with the actual segmentations for comparison.
+The model is tested by measuring its dice scores on the segmentations it produces for unseen images. Although the model outputs softmax values for its predicted segmentations, they are one-hot encoded during the test to maximise the contribution of correct predictions. Dice scores for each label is calculated independently to obtain the accurate performance to analyse the model's weakness and strengths in predicting particular segments for all labels. Then, their averages are taken and are summarised in the bar chart. Moreover, the visualisation of first 9 labels are produced with the actual segmentations for comparison.
 
 ## Result
 
-The outcome shows the significant impact of the choice of loss function in the performance of model. It was found that with other loss functions, the model performs poorly on assigning correct labels to small segments. Specifically, segment label 4 (rectum) often suffered from poor performance as it was often ignored by the model in optimising the segmentaion of corresponding label. However, the addition of weighted cross-entropy loss seem to enforce the model to classify segments correctly, which might have led to an improvement in performance. 
+<p align="center">
+  <img src = documentation/unet_dice_coefs_over_epochs_dice_ce_loss.png alt = "The Training Progress with Dice Loss + CE" width = 100% >
+  <br>
+  <em>Figure 3: The Training Progress with Dice Loss + 0.2CE</em>
+<p>
+
+<p align="center">
+  <img src = documentation/ground_truths_dice_ce_loss.png alt = "Example of Predicted Labels produced by the Model" width = 100% >
+  <br>
+  <em>Figure 4: Example of Ground Truth Labels used for Testing</em>
+<p>
+
+<p align="center">
+  <img src = documentation/predictions_dice_ce_loss.png alt = "Example of Predicted Labels produced by the Model" width = 100% >
+  <br>
+  <em>Figure 5: Example of Predicted Labels produced by the model</em>
+<p>
+
+<p align="center">
+  <img src = documentation/dice_coefs_test_dice_ce_loss.png alt = "The Final Dice Scores achieved by the Model for Each Label" width = 100% >
+  <br>
+  <em>Figure 6: The Final Dice Scores achieved by the Model for Each Label</em>
+<p>
+
+The outcome shows the significant impact of the choice of loss function in the performance of model. It was found that with other loss functions, the model performs poorly on assigning correct labels to small segments. Specifically, segment label 4 (rectum) often suffered from poor performance as it was often ignored by the model in optimising the segmentaion of corresponding label. However, the addition of weighted cross-entropy loss seem to enforce the model to classify segments correctly, which might seem to cause a tremendous improvement in performance. The final model produces segment predictions with dice scores greater than 0.8 each, which is an astonishing performance from where it started off.
 
 ## Discussion
 
@@ -141,116 +165,12 @@ Improved 3D UNet is a powerful architecture which makes complex image-processing
 
 ## Dependencies
 
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: linux-64
-_libgcc_mutex=0.1=main
-_openmp_mutex=5.1=1_gnu
-blas=1.0=mkl
-brotli-python=1.0.9=py312h6a678d5_8
-bzip2=1.0.8=h5eee18b_6
-ca-certificates=2024.9.24=h06a4308_0
-certifi=2024.8.30=py312h06a4308_0
-charset-normalizer=3.3.2=pyhd3eb1b0_0
-contourpy=1.3.0=pypi_0
-cuda-cudart=11.8.89=0
-cuda-cupti=11.8.87=0
-cuda-libraries=11.8.0=0
-cuda-nvrtc=11.8.89=0
-cuda-nvtx=11.8.86=0
-cuda-runtime=11.8.0=0
-cuda-version=12.6=3
-cycler=0.12.1=pypi_0
-expat=2.6.3=h6a678d5_0
-ffmpeg=4.3=hf484d3e_0
-filelock=3.13.1=py312h06a4308_0
-fonttools=4.54.1=pypi_0
-freetype=2.12.1=h4a9f257_0
-fsspec=2024.10.0=pypi_0
-giflib=5.2.2=h5eee18b_0
-gmp=6.2.1=h295c915_3
-gnutls=3.6.15=he1e5248_0
-idna=3.7=py312h06a4308_0
-intel-openmp=2023.1.0=hdb19cb5_46306
-jinja2=3.1.4=py312h06a4308_0
-joblib=1.4.2=pypi_0
-jpeg=9e=h5eee18b_3
-kiwisolver=1.4.7=pypi_0
-lame=3.100=h7b6447c_0
-lcms2=2.12=h3be6417_0
-ld_impl_linux-64=2.40=h12ee557_0
-lerc=3.0=h295c915_0
-libcublas=11.11.3.6=0
-libcufft=10.9.0.58=0
-libcufile=1.11.1.6=0
-libcurand=10.3.7.77=0
-libcusolver=11.4.1.48=0
-libcusparse=11.7.5.86=0
-libdeflate=1.17=h5eee18b_1
-libffi=3.4.4=h6a678d5_1
-libgcc-ng=11.2.0=h1234567_1
-libgomp=11.2.0=h1234567_1
-libiconv=1.16=h5eee18b_3
-libidn2=2.3.4=h5eee18b_0
-libjpeg-turbo=2.0.0=h9bf148f_0
-libnpp=11.8.0.86=0
-libnvjpeg=11.9.0.86=0
-libpng=1.6.39=h5eee18b_0
-libstdcxx-ng=11.2.0=h1234567_1
-libtasn1=4.19.0=h5eee18b_0
-libtiff=4.5.1=h6a678d5_0
-libunistring=0.9.10=h27cfd23_0
-libuuid=1.41.5=h5eee18b_0
-libwebp=1.3.2=h11a3e52_0
-libwebp-base=1.3.2=h5eee18b_1
-llvm-openmp=14.0.6=h9e868ea_0
-lz4-c=1.9.4=h6a678d5_1
-markupsafe=2.1.3=py312h5eee18b_0
-matplotlib=3.9.2=pypi_0
-mkl=2023.1.0=h213fc3f_46344
-mkl-service=2.4.0=py312h5eee18b_1
-mkl_fft=1.3.10=py312h5eee18b_0
-mkl_random=1.2.7=py312h526ad5a_0
-monai=1.4.0=pypi_0
-mpmath=1.3.0=py312h06a4308_0
-ncurses=6.4=h6a678d5_0
-nettle=3.7.3=hbbd107a_1
-networkx=3.2.1=py312h06a4308_0
+matplotlib=3.9.2
+monai=1.4.0
 nibabel=5.3.2=pypi_0
-numpy=1.26.4=pypi_0
-openh264=2.1.1=h4ff587b_0
-openjpeg=2.5.2=he7f1fd0_0
-openssl=3.0.15=h5eee18b_0
-packaging=24.1=pypi_0
-pillow=10.4.0=py312h5eee18b_0
-pip=24.2=py312h06a4308_0
-pyparsing=3.2.0=pypi_0
-pysocks=1.7.1=py312h06a4308_0
-python=3.12.7=h5148396_0
-python-dateutil=2.9.0.post0=pypi_0
-pytorch=2.5.0=py3.12_cuda11.8_cudnn9.1.0_0
-pytorch-cuda=11.8=h7e8668a_6
-pytorch-mutex=1.0=cuda
-pyyaml=6.0.2=py312h5eee18b_0
-readline=8.2=h5eee18b_0
-requests=2.32.3=py312h06a4308_0
+pytorch=2.5.0
 scikit-learn=1.5.2=pypi_0
-scipy=1.14.1=pypi_0
-setuptools=75.1.0=py312h06a4308_0
-six=1.16.0=pypi_0
-sqlite=3.45.3=h5eee18b_0
-sympy=1.13.1=pypi_0
-tbb=2021.8.0=hdb19cb5_0
-threadpoolctl=3.5.0=pypi_0
-tk=8.6.14=h39e8969_0
-torchaudio=2.5.0=py312_cu118
-torchtriton=3.1.0=py312
-torchvision=0.20.0=py312_cu118
-typing_extensions=4.11.0=py312h06a4308_0
-tzdata=2024b=h04d1e81_0
-urllib3=2.2.3=py312h06a4308_0
-wheel=0.44.0=py312h06a4308_0
-xz=5.4.6=h5eee18b_1
-yaml=0.2.5=h7b6447c_0
-zlib=1.2.13=h5eee18b_1
-zstd=1.5.6=hc292b87_0
+torchaudio=2.5.0
+torchvision=0.20.0
+
+For more details, refer to `requirements.txt`

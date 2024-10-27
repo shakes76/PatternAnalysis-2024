@@ -27,7 +27,7 @@ __maintainer__ = "Ryuto Hisamoto"
 __email__ = "s4704935@student.uq.edu.au"
 __status__ = "Committed"
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 300
 BATCH_SIZE = 2
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 1e-5
@@ -101,6 +101,8 @@ def train(model: nn.Module, train_loader: DataLoader, criterion, num_epochs: int
     model.to(device)
     model.train()
 
+    dice = DiceLoss(batch=True).to(device)
+
     training_dice_coefs = np.zeros(NUM_EPOCHS)
     seg_0_dice_coefs = np.zeros(NUM_EPOCHS)
     seg_1_dice_coefs = np.zeros(NUM_EPOCHS)
@@ -136,7 +138,8 @@ def train(model: nn.Module, train_loader: DataLoader, criterion, num_epochs: int
                 scaler.step(optimiser)
                 scaler.update()
 
-            running_dice += 1 - loss.item()
+            dice_batch = dice(outputs, labels)
+            running_dice += 1 - dice_batch.item()
 
         scheduler.step()
 

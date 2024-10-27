@@ -1,4 +1,4 @@
-# PREDICT.PY
+# predict.py
 
 import os
 import torch
@@ -71,84 +71,98 @@ def plot_predictions(image, prediction, ground_truth, num_classes):
     axes[2].axis('off')
     plt.show()
 
-# Datasets directories
-test_image_dir = './data/HipMRI_study_keras_slices_data/keras_slices_test'
-test_label_dir = './data/HipMRI_study_keras_slices_data/keras_slices_seg_test'
+    """
+    Choose 5 random images from the testing set to preview segmentation predictions against ground truth annotations.
+    """
+def display_random_sample_segmentations():
+    
 
-# Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Using device: {device}")
+    
+def evaluate_models_and_plot():
+    """
+    Evaluates all saved model checkpoints and plots the Dice coefficients over epochs.
+    """
+    # Datasets directories
+    test_image_dir = './data/HipMRI_study_keras_slices_data/keras_slices_test'
+    test_label_dir = './data/HipMRI_study_keras_slices_data/keras_slices_seg_test'
 
-# Load Test Dataset
-print("Loading Test Data")
-test_dataset = SegmentationData(
-    test_image_dir, test_label_dir,
-    norm_image=False, categorical=True, dtype=np.float32
-)
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
 
-# Create dataloader
-test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+    # Load Test Dataset
+    print("Loading Test Data")
+    test_dataset = SegmentationData(
+        test_image_dir, test_label_dir,
+        norm_image=False, categorical=True, dtype=np.float32
+    )
 
-# Initialize the model
-n_channels = 1  # Assuming input images are grayscale
-n_classes = test_dataset.num_classes  # Number of classes in the dataset
-model = SimpleUNet(n_channels=n_channels, n_classes=n_classes)
-model.to(device)
+    # Create dataloader
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-# Load the latest model checkpoint
-# Find the latest epoch number from saved model files
-model_files = [f for f in os.listdir('.') if f.startswith('model_epoch_') and f.endswith('.pth')]
-if not model_files:
-    raise FileNotFoundError("No model checkpoint files found.")
-latest_model_file = max(model_files, key=lambda x: int(x.split('_')[-1].split('.pth')[0]))
-print(f"Loading model from checkpoint: {latest_model_file}")
-model.load_state_dict(torch.load(latest_model_file, map_location=device))
+    # Initialize the model
+    n_channels = 1  # Assuming input images are grayscale
+    n_classes = test_dataset.num_classes  # Number of classes in the dataset
+    model = SimpleUNet(n_channels=n_channels, n_classes=n_classes)
+    model.to(device)
 
-model.eval()
-dice_scores = []
-all_images = []
-all_labels = []
-all_predictions = []
+    # Get the list of model checkpoint files
+    model_files = [f for f in os.listdir('.') if f.startswith('model_epoch_') and f.endswith('.pth')]
+    if not model_files:
+        raise FileNotFoundError("No model checkpoint files found.")
 
-with torch.no_grad():
-    print("Running inference on test data...")
-    for images, labels in tqdm(test_loader, desc="Testing"):
-        images = images.to(device)  # Shape: (batch_size, n_channels, H, W)
-        labels = labels.to(device)  # Shape: (batch_size, n_classes, H, W)
-        labels_cls = labels.argmax(dim=1)  # Convert one-hot labels to class indices
+    # Extract epoch numbers and sort the files
+    model_files = sorted(model_files, key=lambda x: int(x.split('_')[-1].split('.pth')[0]))
+    epochs = [int(f.split('_')[-1].split('.pth')[0]) for f in model_files]
 
-        # Forward pass
-        outputs = model(images)  # Shape: (batch_size, n_classes, H, W)
+    # Initialize list to store dice scores per epoch
+    dice_scores_per_epoch = []
 
-        # Compute Dice coefficient
-        dice = dice_coefficient(outputs, labels_cls)
-        dice_scores.append(dice)
+    print("Epochs:\n", epochs, '\n')
 
-        # Store images, labels, and predictions for visualization
-        all_images.append(images.cpu().numpy())
-        all_labels.append(labels_cls.cpu().numpy())
-        preds = outputs.argmax(dim=1)
-        all_predictions.append(preds.cpu().numpy())
+    for epoch, model_file in zip(epochs, model_files):
+        print(f"\nEvaluating model from checkpoint: {model_file}")
+        model.load_state_dict(torch.load(model_file, map_location=device))
+        model.eval()
+        dice_scores = []
 
-# Convert list of dice_scores to a numpy array
-dice_scores = np.array(dice_scores)  # Shape: (num_samples, num_classes)
+        with torch.no_grad():
+            for images, labels in tqdm(test_loader, desc=f"Testing Epoch {epoch}"):
+                images = images.to(device)  # Shape: (batch_size, n_channels, H, W)
+                labels = labels.to(device)  # Shape: (batch_size, n_classes, H, W)
+                labels_cls = labels.argmax(dim=1)  # Convert one-hot labels to class indices
 
-# Compute mean Dice coefficient for each class
-mean_dice = dice_scores.mean(axis=0)
+                # Forward pass
+                outputs = model(images)  # Shape: (batch_size, n_classes, H, W)
 
-# Print Dice scores for each class
-print("\nDice Similarity Coefficient for each class:")
-for cls_idx, dice in enumerate(mean_dice):
-    print(f"Class {cls_idx}: Dice = {dice:.4f}")
+                # Compute Dice coefficient
+                dice = dice_coefficient(outputs, labels_cls)
+                dice_scores.append(dice)
 
-# Choose 5 random images to display
-num_samples = len(all_images)
-indices = random.sample(range(num_samples), 5)
-print(f"\nDisplaying predictions for {len(indices)} random images.")
+        # Convert list of dice_scores to a numpy array
+        dice_scores = np.array(dice_scores)  # Shape: (num_samples, num_classes)
+        # Compute mean Dice coefficient for each class
+        mean_dice = dice_scores.mean(axis=0)
+        dice_scores_per_epoch.append(mean_dice)
 
-for idx in indices:
-    image = all_images[idx][0, 0]  # Shape: (H, W)
-    ground_truth = all_labels[idx][0]  # Shape: (H, W)
-    prediction = all_predictions[idx][0]  # Shape: (H, W)
+        # Print Dice scores for each class
+        print(f"Epoch {epoch} - Dice Similarity Coefficient for each class:")
+        for cls_idx, dice_value in enumerate(mean_dice):
+            print(f"Class {cls_idx}: Dice Coefficient = {dice_value:.4f}")
 
-    plot_predictions(image, prediction, ground_truth, n_classes)
+    # After all epochs, convert dice_scores_per_epoch to numpy array
+    dice_scores_per_epoch = np.array(dice_scores_per_epoch)  # Shape: (num_epochs, num_classes)
+
+    # Plotting the dice scores over epochs
+    plt.figure(figsize=(10, 6))
+    for cls_idx in range(n_classes):
+        plt.plot(epochs, dice_scores_per_epoch[:, cls_idx], label=f'Class {cls_idx}')
+    plt.xlabel('Epoch')
+    plt.ylabel('Dice Coefficient')
+    plt.title('Dice Coefficient per Class over Epochs')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+if __name__ == "__main__":
+    evaluate_models_and_plot()

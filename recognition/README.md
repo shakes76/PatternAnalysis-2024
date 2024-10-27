@@ -46,8 +46,8 @@ The HipMRI Study dataset consists of processed 2D MRI slices of the prostate reg
   - Images: `./data/HipMRI_study_keras_slices_data/keras_slices_validate`
   - Labels: `./data/HipMRI_study_keras_slices_data/keras_slices_seg_validate`
 - **Test Set**:
-  - Images: `./data/HipMRI_study_keras_slices_data/test`
-  - Labels: `./data/HipMRI_study_keras_slices_data/seg_test`
+  - Images: `./data/HipMRI_study_keras_slices_data/keras_slices_test`
+  - Labels: `./data/HipMRI_study_keras_slices_data/keras_slices_seg_test`
 
 ## Prerequisites
 

@@ -1,3 +1,5 @@
+# Plotting functions for tsne, loss, accuracy defiend. 
+# Jiwhan Oh s4722208
 from torch.utils.data import *
 from dataset import *
 import matplotlib.pyplot as plt

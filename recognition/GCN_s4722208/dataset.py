@@ -1,3 +1,5 @@
+# Loading data from preprocessed npz file. Splits data into train, test and validation sets
+# Jiwhan Oh s4722208
 import numpy as np
 from torch_geometric.data import Data
 import torch

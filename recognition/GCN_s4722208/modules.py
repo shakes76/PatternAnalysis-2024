@@ -1,3 +1,5 @@
+# Implements GCN model based on torch
+# Jiwhan Oh s4722208
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv

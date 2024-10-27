@@ -1,3 +1,5 @@
+# Code for train, test, validation process. Saves the trained model
+# Jiwhan Oh s4722208
 from torch.utils.data import *
 from dataset import *
 import torch

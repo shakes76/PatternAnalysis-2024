@@ -1,3 +1,5 @@
+# Example run on the saved trained model 
+# Jiwhan Oh s4722208
 import numpy as np
 from torch_geometric.data import Data
 import torch

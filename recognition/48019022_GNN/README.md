@@ -74,7 +74,7 @@ The repository implements 4 GNN architectures:
 
 1. To select a model to train, change [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L128) in `train.py` to one of the above bracketed model types. If you wish to reproduce data splits, set a seed with [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L130).
 
-2. To train the model, run the following command:
+2. To train the model, first run `wandb login`, paste your API key, then run the following command:
    ```bash
    python train.py
    ```

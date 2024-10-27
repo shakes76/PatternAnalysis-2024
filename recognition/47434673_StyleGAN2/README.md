@@ -179,6 +179,8 @@ In the plot below, we see an example image from the generated images based on se
 
 ![UMAP_plot](assets/umap_1.png "UMAP 100 style codes")
 
+In the plot below, we see the UMAP plot for `n = 10000`.
+
 ![UMAP_plot_2](assets/umap_2.png "UMAP 10000 style codes")
 
 The UMAP seems to indicate a quasi Gaussian distribution of mean intensity to number of style codes captured in an image in that the number of style codes that have very low mean intensity or very high mean intensity are seen in fewer and fewer images as the mean intensity goes very low or very high. This seems to indicate that most of the style of the image is captured by many style codes with moderate intensity rather than a few style codes with high intensity. This could be due to the relatively similar nature of the brain images; there are not very distinctive features that separate images, mostly small changes in features.

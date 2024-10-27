@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 import torchvision.transforms as transforms
 import numpy as np
+import argparse
 
 class DataManager:
     """
@@ -111,15 +112,20 @@ class DataManager:
         """
         Print dataset statistics before and after balancing
         """
-        print("Original dataset statistics:")
-        print(f"Total images: {len(self.data)}")
-        print(f"Classes distribution: \n{self.data['target'].value_counts()}")
-        
+        # Original dataset statistics
+        class_distribution = self.data['target'].value_counts()
+        print(f"Original dataset statistics:\n"
+            f"Total images: {len(self.data)}\n"
+            f"Classes distribution:\n{class_distribution}\n")
+
+        # Split and display training/testing data statistics
         train_data, test_data = self.split_data()
-        print("\nAfter balancing training data:")
-        print(f"Training set distribution: \n{train_data['target'].value_counts()}")
-        print(f"Test set distribution: \n{test_data['target'].value_counts()}")
-        print("\nNote: 0 = benign, 1 = malignant")
+        train_distribution = train_data['target'].value_counts()
+        test_distribution = test_data['target'].value_counts()
+        print(f"After balancing training data:\n"
+            f"Training set distribution:\n{train_distribution}\n"
+            f"Test set distribution:\n{test_distribution}\n"
+            f"\nNote: 0 = benign, 1 = malignant")
 
 class SiameseDataset(Dataset):
     """
@@ -210,12 +216,17 @@ class SiameseDataset(Dataset):
         return self.transform(image)
 
 if __name__ == "__main__":
-    # File paths
-    csv_path = 'archive/train-metadata.csv'
-    img_dir = 'archive/train-image/image/'
+    parser = argparse.ArgumentParser(description="Dataset Manager for Melanoma Classification")
+    parser.add_argument('--csv_path', type=str, default='archive/train-metadata.csv',
+                        help='Path to the CSV metadata file')
+    parser.add_argument('--img_dir', type=str, default='archive/train-image/image/',
+                        help='Directory path to the image files')
+    parser.add_argument('--batch_size', type=int, default=256,
+                        help='Batch size for DataLoader')
+    args = parser.parse_args()
 
-    data_manager = DataManager(csv_path, img_dir)
+    # Initialize DataManager with arguments
+    data_manager = DataManager(args.csv_path, args.img_dir)
     data_manager.load_data()
-    data_manager.create_dataloaders()
+    data_manager.create_dataloaders(batch_size=args.batch_size)
     data_manager.print_statistics()
-    

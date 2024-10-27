@@ -1,5 +1,13 @@
+import os
+import time
+
+import numpy as np
 import torch
 from utils import one_hot_mask
+from dataset import get_dataloaders
+from modules import UNet3D
+
+MODEL_PATH = "best_unet.pth"
 
 
 class Dice(torch.nn.Module):
@@ -61,3 +69,73 @@ class Dice(torch.nn.Module):
         dice_loss = 1 - torch.mean(coeff)  # Mean over classes
 
         return dice_loss
+
+
+def train():
+    pass
+    # TODO: Build train function
+
+
+def validate():
+    pass
+    # TODO: Build validate function
+
+
+if __name__ == '__main__':
+    """
+    Main function to run the training and validation processes.
+    """
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # Set up datasets and DataLoaders
+    batch_size = 8
+    train_loader, val_loader, test_loader = get_dataloaders(train_batch=batch_size, val_batch=batch_size)
+
+    # Initialize model
+    unet = UNet3D()
+    unet = unet.to(device)
+
+    epochs = 15
+    criterion = Dice()
+    # TODO: find best optimizer for UNet3D for my images
+    # optimizer =
+
+    best_metric = float(0.)
+    best_state = unet.state_dict()
+
+    train_start_time = time.time()
+
+    # Training and evaluation loop
+    for epoch in range(epochs):
+        epoch_loss = train()
+        print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {epoch_loss / len(train_loader):.4f}")
+
+        # TODO: Build validate function
+
+        dice_score = validate()
+        dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in dice_score])
+        print(f"Test Epoch {epoch + 1}/{epochs}, Dice Coefficients for each class: [{dice_coeff_str}]")
+
+        avg_dice_score = float(np.mean(dice_score))
+        if avg_dice_score > best_metric:
+            best_metric = avg_dice_score
+            best_state = unet.state_dict()
+            # Save the best model state
+            torch.save(best_state, MODEL_PATH)
+
+    train_end_time = time.time()  # End timer
+    train_time = train_end_time - train_start_time  # Calculate elapsed time
+    print(f"Total training time: {train_time:.2f} seconds")
+
+    # Load the best model state (if not loaded already)
+    unet.load_state_dict(torch.load(MODEL_PATH, weights_only=True))
+
+    # test the model on seperate test dataset
+    test_start_time = time.time()  # Start timer
+    final_dice_score = validate()
+
+    test_end_time = time.time()  # End timer
+    test_time = test_end_time - test_start_time  # Calculate elapsed time
+    dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in final_dice_score])
+    print(f"Final Dice Coefficients for each class: [{dice_coeff_str}]")
+    print(f"Total test time: {test_time:.2f} seconds")

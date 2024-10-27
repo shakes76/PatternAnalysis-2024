@@ -1,3 +1,7 @@
+"""
+This file contains code which evaluates a model given presaved weights
+and compares the predicted and real segmentation masks
+"""
 import modules
 import numpy as np
 import dataset as data

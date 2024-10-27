@@ -45,3 +45,4 @@ The model is implemented using tensorflow 2.17.0 utilising the nibabel library t
 [2] https://medium.com/analytics-vidhya/what-is-unet-157314c87634
 
 [3] https://github.com/NITR098/Awesome-U-Net
+Code for UNet modified from  https://github.com/shakes76/PatternFlow/blob/master/recognition/MySolution/Methods.ipynb

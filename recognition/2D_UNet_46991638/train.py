@@ -1,3 +1,6 @@
+"""
+This file contains the main test script for training the model
+"""
 import dataset as data
 import modules
 import tensorflow as tf

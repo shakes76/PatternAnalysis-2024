@@ -1,3 +1,6 @@
+"""
+This file contains the UNet model used for segmentation
+"""
 import tensorflow as tf 
 #Modified from https://github.com/shakes76/PatternFlow/blob/master/recognition/MySolution/Methods.ipynb
 def unet_model ():    

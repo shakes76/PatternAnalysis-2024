@@ -1,3 +1,7 @@
+"""
+This file contains functions which are used for the loading
+and preprocessing of the dataset
+"""
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm

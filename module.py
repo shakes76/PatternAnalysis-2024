@@ -26,7 +26,7 @@ from collections import OrderedDict
 import torch.optim as optim
 
 
-# The model was mainly inspired by https://github.com/raoyongming/GFNet/blob/master/main_gfnet.py
+# The model was mainly inspired by raoyongming's GFNet implementation
 _logger = logging.getLogger(__name__)
 
 

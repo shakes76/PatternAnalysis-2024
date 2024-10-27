@@ -28,7 +28,7 @@ def imshow(img, title=None):
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
 
-# 获取图像和标注的路径
+# Get paths of images and annotations
 train_input_dir = "/home/groups/comp3710/ISIC2018/ISIC2018_Task1-2_Training_Input_x2"
 train_gt_dir = "/home/groups/comp3710/ISIC2018/ISIC2018_Task1_Training_GroundTruth_x2"
 

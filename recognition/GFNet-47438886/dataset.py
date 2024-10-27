@@ -155,6 +155,7 @@ def load_adni_data(root_dir, batch_size=32, testing=False):
             v2.CenterCrop((224, 224)),  # Resize to fit model input size (256 x 240)
             v2.RandomVerticalFlip(p=0.5),
             v2.ToTensor(),  # Convert image to PyTorch tensor
+            v2.ColorJitter(brightness=0.1, contrast=0.1),
             v2.GaussianNoise(),
             v2.Normalize(mean=[ADNI_MEAN], std=[ADNI_STD])
         ])

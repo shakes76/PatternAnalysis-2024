@@ -20,16 +20,17 @@ The typical features associated with vision transformers like dense linear layer
 !["Architecture"](assets/architecture.jpg)
 
 ## Dependencies
+While the latest dependencies will likely work, the code was written with these versions.
+
 | Dependency | Version |
 |------------|---------|
-| torch      | latest  |
-| torchvision| latest  |
-| timm       | latest  |
-| scikit_learn| latest |
-| Pillow     | latest  |
-| numpy      | latest  |
-| matplotlib | latest  |
-| pandas     | latest  |
+| matplotlib | 3.8.4 |
+| pandas | 2.2.3 |
+| Pillow | 11.0.0 |
+| scikit_learn | 1.5.2 |
+| timm | 1.0.11 |
+| torch | 2.4.0 |
+| torchvision | 0.19.0 |
 
 ## Usage
 
@@ -40,7 +41,7 @@ This repository contains the following files:
 - `train.py`: This file contains the code used to train, validate and test the GFNet model. The best model is also saved to be used in inference if desired. Relevant plots are also generated here.
 - `predict.py`: This file contains the code used to run inference on the trained model on unseen test data.
 - `utils.py`: This file contains utility functions useful across the multiple files. Specifically, functions to get the current device and also dataset root.
-
+-  `requirements.txt`: This file contains the list of dependencies and their versions
 
 ### Running the Algorithm
 1. Clone the repository:
@@ -104,9 +105,10 @@ After this, another split had to be done to ensure the equivalent distribution o
 ### Pre-processing
 Pre-processing was then performed on the data before training. Augmentation was necessary as the ADNI dataset is not particularly large, and generally for deep learning models, the more data there is, the better the outcome. The following transformations were done on the training data:
 1. The images were centre cropped to 224 x 224, to align with the default sizes proposed by Rao., et al. [1]. 
-2. Random vertical flips were added to the data. This helps the model be more generalisable, improving upon its accuracy on unseen data.
-3. Gaussian noise was added to the images. Again, this helps with generalisability, but it also represents something that occurs in real life. Practical signals like those from MRIs will always have some degree of noise associated with them.
-4. Finally, the data was normalised. A simple script (not in repository) was used to estimate the mean and standard deviation of the ADNI dataset. The mean was found to be  ~0.1156 and the standard deviation ~0.2199.
+2. Random vertical flips were added to the data. This augments the data and helps the model be more generalisable, improving upon its accuracy on unseen data. The `RandomVerticalFlip` method was used to achieve this.
+3. Random jitters in contrast and brightness were applied to the images. This not only gives the model more variation to learn from, but it also represents subtle differences inherent between different MRI machines. `ColorJitter` method was used to do this.
+4. Gaussian noise was added to the images. Again, this helps with generalisability, but it also represents something that occurs in real life. Practical signals like those from MRIs will always have some degree of noise associated with them. The method that does this is `GaussianNoise`.
+5. Finally, the data was normalised. A simple script (not in repository) was used to estimate the mean and standard deviation of the ADNI dataset. The mean was found to be  ~0.1156 and the standard deviation ~0.2199. This normalisation was applied using the `Normalize` method.
 
 Note: The augmentation techniques applied above only applied to the training set. The validation and test sets only had the centre crop and normalisation applied.
 
@@ -122,17 +124,17 @@ The following images show some examples of input images fed into the model.
 
 ## Training
 ### Learning Rate Scheduler
-The `ReduceLROnPlateau` learning rate scheduler from Pytorch was used to adjust the learning rate depending on the validation loss. Starting at a learning rate of 0.00001, when the validation loss plateaued, the learning rate was multiplied by a factor of 0.6, slowly decreasing it as it got closer to the minimum.
+The `CosineAnnealingLR` learning rate scheduler from Pytorch was used to adjust the learning rate. Starting at a learning rate of 0.00005, it slowly decreased to a minimum of 0.000001, following the curve of a cosine function.
 
 ### Training and Validation Loss and Accuracy Plots
 ![Training and Validation Loss and Accuracy](assets/training_figures.png)
 
-The model was trained for 210 epochs. The maximum validation accuracy from training was **82.7%**, which is impressive, as it was based on unseen data. From the plots, it appears the validation accuracy has somewhat plateaued, however, training the model for longer may yield higher accuracies. Due to limitations with compute resources, this was not achieved. 
+The model was trained for 200 epochs. The maximum validation accuracy from training was **84.7%**, which is impressive, as it was based on unseen data. From the plots, it appears the validation accuracy has somewhat plateaued, however, training the model for longer may yield higher accuracies. Due to limitations with compute resources, this was not tested. 
 
 ## Results
-After training, the model was tested on the ADNI test dataset. This contained 4460 images of AD classes, and 4540 images of NC classes. It was found from running `predict.py` that the accuracy of the model tested on the unseen test set was **62.4%**. 
+After training, the model was tested on the ADNI test dataset. This contained 4460 images of the AD class, and 4540 images of the NC class. It was found from running `predict.py` that the accuracy of the model tested on the unseen test set was **75.2%**. Due to limitations in compute resources, it could not be tested whether this result would be reproducible with subsequent re-training on the same dataset.
 
-To improve this, some of the data from the test set could have been allocated to training, exposing the model to more variation. 
+To improve the accuracy, some of the data from the test set could have been allocated to training, exposing the model to more variation. 
 
 
 # References

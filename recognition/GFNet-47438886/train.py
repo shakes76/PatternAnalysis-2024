@@ -9,7 +9,7 @@ Author: Kevin Gu
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from modules import GFNet
 from dataset import load_adni_data
 from functools import partial
@@ -33,7 +33,7 @@ def initialise_optimizer(model: nn.Module):
     """
     Initialises optimiser
     """
-    optimizer = optim.Adam(model.parameters(), lr=0.00001, amsgrad=True)  # Adam optimizer with initial learning rate 0.01
+    optimizer = optim.Adam(model.parameters(), lr=0.00005, amsgrad=True)  # Adam optimizer with initial learning rate 0.01
     return optimizer
 
 
@@ -41,7 +41,7 @@ def initialise_scheduler(optimizer: torch.optim):
     """
     Intialises the scheduler
     """
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=10, verbose=True)
+    scheduler = CosineAnnealingLR(optimizer, T_max=200, eta_min=1e-6)
     return scheduler
 
 
@@ -187,7 +187,7 @@ def train_and_validate_one_epoch(train_loader, val_loader, model, optimizer,
     validation_accuracy = 100 * correct_val / total_val
 
     # Step the scheduler
-    scheduler.step(validation_loss)
+    scheduler.step()
 
     return training_loss, training_accuracy, validation_loss, validation_accuracy
 
@@ -211,7 +211,7 @@ def main():
     scheduler = initialise_scheduler(optimizer)
 
     # Training loop
-    n_epochs = 210
+    n_epochs = 200
 
     train_loss_list = []
     validation_loss_list = []
@@ -255,7 +255,7 @@ def main():
                 'training_loss': train_loss_list
             }
 
-            torch.save(checkpoint, 'model_checkpoint_actual_split.pth')
+            torch.save(checkpoint, 'model_checkpoint.pth')
         
     training_time = time.time() - start_time
     print(f"Training took {training_time} seconds or {training_time / 60} minutes")

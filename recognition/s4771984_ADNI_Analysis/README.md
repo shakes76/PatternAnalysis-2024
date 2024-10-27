@@ -97,6 +97,9 @@ The confusion matrix shows the number of correct and incorrect classifications f
 - The project is developed and trained in **Google Colab Pro+** to make use of enhanced computational resources with high-performance GPUs. This has allowed for not only faster training but also faster experimentation with the model, enabling to iterate efficiently to achieve high accuracy in a much shorter period of time.
 - It was trained for **200 epochs**, using a GPU instance from **Colab Pro+**. This drastically reduced the time taken to run the model when compared to local machines or basic Colab environments. This high-performance environment was important to train deep learning models like the GFNet, which require extensive computational power while processing large image datasets like those of the ADNI dataset.
 
+## Notes
+- The ADNI dataset was uploaded to Google Drive and accessed directly from there in Google Colab for training and evaluation. It provides easy integration and fast data loading with powerful GPU resources of Google Colab.
+
 ## References
 - Giuliano Giacaglia. (Mar 11, 2019). How Transformers Work. Towards Data Science. https://towardsdatascience.com/transformers-141e32e69591
 - Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification [ArXiv preprint arXiv:2107.00645].  

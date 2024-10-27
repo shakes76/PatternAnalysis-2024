@@ -1,9 +1,13 @@
 import os
+from typing import Sequence, Mapping
+
 import numpy as np
 from utils import load_data_3D
 from monai.transforms import (Compose, ToTensord, Spacingd, EnsureChannelFirstd, ScaleIntensityRanged, CropForegroundd,
                               Orientationd, RandCropByPosNegLabeld, Affined)
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data._utils.collate import default_collate
+
 
 # test other transforms
 train_transforms = Compose(
@@ -98,6 +102,30 @@ class MRIDataset(Dataset):
         return data
 
 
+def collate_batch(batch: Sequence):
+    """
+    Enhancement for PyTorch DataLoader default collate.
+    If dataset already returns a list of batch data that generated in transforms, need to merge all data to 1 list.
+    Then it's same as the default collate behavior.
+
+    Note:
+        Need to use this collate if apply some transforms that can generate batch data.
+
+    """
+    elem = batch[0]
+    data = [i for k in batch for i in k] if isinstance(elem, list) else batch
+    collate_fn = default_collate
+    if isinstance(elem, Mapping):
+        ret = {}
+        for k in elem:
+            key = k
+            data_for_batch = [d[key] for d in data]
+            ret[key] = collate_fn(data_for_batch)
+    else:
+        ret = collate_fn(data)
+    return ret
+
+
 def get_dataloaders(train_batch=8, val_batch=8) -> tuple[DataLoader, DataLoader, DataLoader]:
     image_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
     mask_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
@@ -136,8 +164,11 @@ def get_dataloaders(train_batch=8, val_batch=8) -> tuple[DataLoader, DataLoader,
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
 
     # get dataloaders
-    train_dataloader = DataLoader(dataset=train_ds, batch_size=train_batch, shuffle=True)
-    val_dataloader = DataLoader(dataset=val_ds, batch_size=val_batch, shuffle=True)
-    test_dataloader = DataLoader(dataset=test_ds, batch_size=val_batch, shuffle=True)
+    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=4, pin_memory=True, shuffle=True,
+                                  collate_fn=collate_batch)
+    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=4, pin_memory=True, shuffle=True,
+                                collate_fn=collate_batch)
+    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=4, pin_memory=True, shuffle=True,
+                                 collate_fn=collate_batch)
 
     return train_dataloader, val_dataloader, test_dataloader

@@ -4,10 +4,9 @@ import torch
 import nibabel as nib
 import numpy as np
 import tqdm as tqdm
-from sklearn.model_selection import train_test_split
-from scipy.ndimage import zoom
+#from sklearn.model_selection import train_test_split
+#from scipy.ndimage import zoom
 import torch.nn as nn
-import torchvision.transforms as transforms
 import glob
 
 
@@ -109,7 +108,6 @@ class MyCustomDataset(Dataset):
         self.label_paths = glob.glob(f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"}/**/*.nii.gz', recursive=True)
         self.image_paths = glob.glob(f'{"/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"}/**/*.nii.gz', recursive=True)
   
-        self.transform = transforms.Compose([transforms.Resize((256, 128))])
         self.up = torch.nn.Upsample(size=(128,128,128))
 
         self.classes = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}

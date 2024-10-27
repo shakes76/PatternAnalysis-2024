@@ -1,16 +1,18 @@
 # Source code for training, validating, testing and saving the UNet3D Model.
 from modules import *
 from dataset import *
+from predict import *
 import torch
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 import time
 import glob
+import os
 torch.cuda.empty_cache()
 
 
 cust_dataset = MyCustomDataset()
-train, val, test = torch.utils.data.random_split(cust_dataset, [0.2, 0.1, 0.7])
+train, val, test = torch.utils.data.random_split(cust_dataset, [0.7, 0.2, 0.1])
 train = DataLoader(train)
 val = DataLoader(val)
 test = DataLoader(test)
@@ -30,7 +32,7 @@ scheduler = optim.lr_scheduler.SequentialLR(optimizer, schedulers=[l_sched_1, l_
 
 
 # No. of Epochs (Number of times all training data is run)
-n_epochs = 1
+n_epochs = 5
 train_losses = []
 print(">> Training <<")
 start = time.time()
@@ -41,7 +43,6 @@ for epoch in range(n_epochs):
     running_loss = 0.0
     print(len(train))
     for i, (inputs, labels) in enumerate(train):
-
         inputs = inputs.cuda()
         labels = labels.cuda()
 
@@ -74,6 +75,9 @@ for epoch in range(n_epochs):
     epend = time.time()
     print(f"Epoch {epoch + 1}/{n_epochs}, Training Loss: {loss.item()}, Validation DSC: {mean_score}")
     print(f"Epoch {epoch + 1}/{n_epochs} took {epend - epstart} seconds")
+
+
+predict(model, test)
 
 end = time.time()
 total_time = end - start

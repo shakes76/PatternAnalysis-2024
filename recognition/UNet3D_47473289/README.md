@@ -24,5 +24,8 @@ Numpy version: 1.26.4
 Tqdm version: 4.66.4
 Nibabel version: 5.3.1
 Python version: 3.12.3
+Matplotlib version: 3.8.4
 
 ## Results
+
+Average DSC across classes = 0.6122

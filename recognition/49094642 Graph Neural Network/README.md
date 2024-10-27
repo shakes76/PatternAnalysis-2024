@@ -24,7 +24,7 @@ GNN covers all neural network models for processing graph data. Its goal is to p
   5. Dynamic Graph Neural Networks (DGNN): Process dynamic graph structures that change over time.
 The process diagram of the GNN model performing end-to-end prediction tasks is as follows：
 <div style="text-align: center;">
-    <img src="images/model structure.png" alt="CNN structure" style="width: 70%"> [1]
+    <img src="images/model structure.png" alt="CNN structure" style="width: 80%"> [1]
 </div>
 
 ### Graph Convolutional Network(GCN)
@@ -93,7 +93,7 @@ This project uses the Facebook Large Page-Page Network dataset provided by the c
 
 The dataset was not initially divided.I split the dataset into train, validation, and test sets: **80%** for **train set**, **10%** for **validation set**, and **10%** for **test set**. This is to ensure that the nodes are reasonably allocated according to the preset ratio to maintain the balance of the data. Secondly, the dataset uses a specific labeling method to effectively prevent confusion between datasets. This can maintain randomness while making the model more universal and operable. The data layout is shown in the figure below:
 <div style="text-align: center;">
-    <img src="images/data example.png" alt="data example" style="width: 60%"> [2]
+    <img src="images/data example.png" alt="data example" style="width: 30%"> [2]
 </div> 
 
 ## Outputs

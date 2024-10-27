@@ -1,14 +1,9 @@
 import numpy as np
 from torch_geometric.data import Data
 import torch
-# 4 catoegories (politicians, governmental organizations, television shows and companies)
-# Not directed 
-# Nodes	22,470
-# Edges	171,002   
 
+# load data 
 def load_data():
-    # load data 
-
     # local directory of data
     data = np.load("/Users/jace/Desktop/Coding/Python/2024/COMP3710/Project/GNN/facebook.npz")
 

@@ -287,10 +287,22 @@ Each model was provided the same set of data. As the data is randomly split each
 
 
 ### Model Comparisons
-[Comparisons Loss Plot]
-[Comparisons Test Accuracy]
-[Comparisons Validation Loss]
-[Comparisons T-SNE Visualisation]
+For the sake of the methodology, the main metric used to benchmark each architecture will be the training accuracy.
+
+Below is the plot of each model's accuracy.
+
+![Overall architecture accuracy](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/topic-recognition/recognition/48019022_GNN/assets/Overall_Accuracy.png)
+
+From the plot above, the architecture with the single highest accuracy (95.149%) on the testing data labels was the Graph Attention Network. This is theorised to be a result of the GAT's ability to focus on the most relevant nodes in the graph data using its attention mechanism.
+
+The GAT also performed best on average:
+
+Architecture  | Average Accuracy
+------------- | -------------
+GCN  | 93.0216%
+GAT  |  **94.3392%**
+GraphSAGE  | 92.95184%
+SGC  | 886428%
 
 ## Inference
 To test trained models on the graph data, use the `predict.py` script. This script will load a selected trained model and attempt to classify each node of the dataset.

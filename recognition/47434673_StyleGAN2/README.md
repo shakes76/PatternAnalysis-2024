@@ -206,3 +206,10 @@ Hui, J., 2020. GAN - StyleGAN & StyleGAN2. Medium, 9 March.
 Tauil, A. E., 2023. Implementation StyleGAN2 from scratch. [Online] 
 Available at: https://blog.paperspace.com/implementation-stylegan2-from-scratch/
 [Accessed October 2024].
+
+S. Liu, L. Liu, C. Engstrom, X. V. To, Z. Ge, S. Crozier, F. Nasrallah, and S. S. Chandra, “Style-Based Mani-
+fold forÂ Weakly-Supervised Disease Characteristic Discovery,” in Medical Image Computing and Computer
+Assisted Intervention âe“ MICCAI 2023, ser. Lecture Notes in Computer Science, H. Greenspan, A. Mad-
+abhushi, P. Mousavi, S. Salcudean, J. Duncan, T. Syeda-Mahmood, and R. Taylor, Eds.
+Cham: Springer
+Nature Switzerland, 2023, pp. 368–378.

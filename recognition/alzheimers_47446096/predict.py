@@ -9,7 +9,10 @@ from sklearn.metrics import confusion_matrix, f1_score
 MODEL_PATH = "relativePathToModel"
 
 def predict(modelPath:str = MODEL_PATH, device: str = "cpu"):
-    
+    '''
+    Calculates the accuracy, f1 score and confusion matrix of
+    the model at modelPath
+    '''
     print("Beginning testing")
 
     model = torch.load(modelPath, weights_only=False).to(device)

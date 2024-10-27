@@ -17,7 +17,7 @@ validate_path = "./data/keras_slices_validate"
 
 # Hyperparameters
 batch_size = 256
-num_training_updates = 1500
+num_training_updates = 20
 
 num_hiddens = 128
 num_residual_hiddens = 32
@@ -31,8 +31,8 @@ commitment_cost = 0.25
 learning_rate = 1e-3
 
 # Prepare Data Loaders
-train_loader = get_data_loader(train_path, batch_size=batch_size, norm_image=True, early_stop=True)
-validate_loader = get_data_loader(validate_path, batch_size=batch_size, norm_image=True, early_stop=True)
+train_loader = get_data_loader(train_path, batch_size=batch_size, norm_image=True)
+validate_loader = get_data_loader(validate_path, batch_size=batch_size, norm_image=True)
 
 # Initialize Model and Optimizer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -92,9 +92,9 @@ valid_originals = valid_originals.cpu().data
 
 # Display Results
 print("Displaying reconstructed images:")
-show(make_grid(valid_reconstructions, nrow=8, normalize=True))
+show(make_grid(valid_reconstructions[:16], nrow=4, normalize=True))
 plt.show()
 
 print("Displaying original images:")
-show(make_grid(valid_originals, nrow=8, normalize=True))
+show(make_grid(valid_originals[:16], nrow=4, normalize=True))
 plt.show()

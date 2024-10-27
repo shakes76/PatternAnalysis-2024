@@ -8,20 +8,25 @@ This project implements a **StyleGAN2** architecture for high-resolution image g
 
 ### StyleGAN2
 
+StyleGAN2 is a powerful generative model designed for synthesizing high-resolution, realistic images. It builds on the original StyleGAN architecture with key improvements in image quality and style control. Unlike traditional GANs, which use a single latent vector input, StyleGAN2 leverages a mapping network to project the input into an intermediate latent space. This intermediate representation allows for precise control over various image features by modulating the style at multiple layers.
+
+The generator in StyleGAN2 uses progressive growing, synthesizing images layer by layer at increasing resolutions. It injects stochastic variations, such as small details in textures, to produce more lifelike and varied images. Additionally, StyleGAN2 introduces features like adaptive instance normalization (AdaIN) for enhanced style control and path length regularization, which stabilizes training and maintains high image quality.
+
 StyleGAN2 enhances the original StyleGAN with several key improvements. It replaces adaptive instance normalization with a technique known as weight demodulation. The training process is also refined, maintaining the progressive focus on low to high-resolution images without modifying the network structure during training. Additionally, new regularization methods, such as lazy regularization and path length regularization, are used to improve stability and performance.
+
+Through these mechanisms, StyleGAN2 achieves fine-grained control over the generated content, enabling separation of high-level structure (like face shape) from low-level details (such as color and texture), making it particularly adept for tasks that demand detailed image synthesis and stylistic flexibility.
 
 ![Generator block in Style-GAN2](figs/model/generator.png)
 
-**Figure: Generator Block in StyleGAN2**
+In StyleGAN2, a Generator Block is a modular unit within the generator that progressively refines and upscales the generated image, allowing for detailed control over both global structure and fine-grained attributes. Each block operates at a specific resolution, doubling the image size as the network grows, and modulates style through the adaptive instance normalization (AdaIN) layers. Style information from the Mapping Network is injected at each block, guiding the network to control attributes such as shape, color, and texture independently. Additionally, each block incorporates noise injection, adding natural variation and subtle detail.
 
 ![Style block in Style-GAN2](figs/model/style.png)
 
-**Figure: Style Block in StyleGAN2**
+Style Block applies style-specific adjustments to each layer in the generator, enabling fine control over attributes like color, texture, and structure in the generated image. Each Style Block uses a latent vector from the Mapping Network to modulate the weights of the convolutional layers, allowing StyleGAN2 to influence different aspects of the image independently. Through Adaptive Instance Normalization (AdaIN), the Style Block normalizes feature maps and then adjusts them based on the style vector, ensuring that broader characteristics (like shape) and fine details (like texture) are controlled precisely at each layer. 
 
 ![Discriminator block in Style-GAN2](figs/model/critic.png)
 
-**Figure: Discriminator Block in StyleGAN2**
-
+The discriminator Block is responsible for analyzing various features of an image at multiple scales, helping the discriminator distinguish between real and generated images. Each Discriminator Block processes the input image through layers of convolution, progressively reducing its resolution while capturing both global structure and fine details.
 
 ### Problem Description
 
@@ -56,6 +61,22 @@ To install the necessary packages, you can use the following command, using the 
 ```bash
 conda env create -f environment.yml
 ```
+
+### Files included in this repository:
+
+`dataset.py`: For loading the ADNI dataset, and specifying the class to load (AD or CN).
+
+`modules.py`: Contains all the code for the generator, discriminator and style blocks.
+
+`train.py` : Used for training the dataset, contains all the hyper-parameters to tune when training the model.
+
+`predict.py` : Used for generating images from a pre-trained model.
+
+`manifold.py`: Used to map the style codes on to latent space using t-SNE.
+
+`run_predict.sh`: script to automatically run `predict.py`
+
+`environment.yml`: to create a conda enviroment for running/training the model.
 
 ---
 

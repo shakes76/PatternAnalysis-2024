@@ -18,7 +18,7 @@ Based on the architecture of GFNet, there are four key components.
 The combination of these componets make GFNet more robust and effective for image classification tasks.
 
 ### Dataset 
-This project uses ADNI dataset obatined from Alzheimer’s Disease Neuroimaging Initiative [\[2\]](#reference2). This dataset contains two classes: Alzheimer's Disease (AD) and Normal Control (NC) with images of dimension 256 × 240 in greyscale. Each class has separate folders for train and test sets. The distribution of the dataset is shown in the table below.
+This project uses the ADNI dataset obatined from the Alzheimer’s Disease Neuroimaging Initiative [\[2\]](#reference2). This dataset contains two classes: Alzheimer's Disease (AD) and Normal Control (NC) with greyscale images of dimensions 256 × 240. Each class has separate folders for train and test sets. The distribution of the dataset is shown in the table below.
 
 | Dataset | AD | NC |
 |---------|----|----|
@@ -26,11 +26,22 @@ This project uses ADNI dataset obatined from Alzheimer’s Disease Neuroimaging 
 | Test set | 4460 | 4540 |
 
 Some examples of the images from dataset is shown below.
+
 ![Samples of images](Before_Preprocessing_data_sample.png)
 
+## Setup
+- **Programming Language**: Python 3.12.4
+- **Dependencies**: 
+  - `scikit-learn` 1.5.1
+  - `torch` 2.4.0
+  - `torchvision` 0.19.0
+  - `matplotlib-base` 3.9.2
+- **Environment**: Conda 24.5.0
+
+To set up the environment, ensure you have [Conda](https://docs.conda.io/en/latest/miniconda.html) 
 
 ## Data Preprocessing
-In the data preprocessing stage, the original training set is split 80% into training set and 20% into validation set. The distribution of data is shown as below.
+In the data preprocessing stage, load data first and assign correponding labels to loaded data based on the folder structure. Specifically, AD images are labeled as 0, NC images are labeled as 1. Next, in order to achieve a robust model, the original training set is split into 80% training and 20% validation by using ```train_test_split```. The distribution of data after the split is shown below.
 
 | Dataset | AD | NC |
 |---------|----|----|
@@ -38,16 +49,29 @@ In the data preprocessing stage, the original training set is split 80% into tra
 | Validation set | 2080 | 2224 |
 | Test set | 4460 | 4540 |
 
-## Model Building 
+To enhance data consistency and improve model convergence, each input image is resized to ```64x64``` pixels, converted into a PyTorch tensor, and normalize images to help stabilize the following training process.
 
+## GFNet Model Building 
+The GFNet model has two key components: ```GlobalFilter``` and ```GFNet```. ```GlobalFilter``` module performs frequency-domain filtering and ```GFNet``` is the main neural network architecture designed for image classification. 
+
+The ```GlobalFilter``` module is designed to process input images in the frequency domain. The original code can be found on [GitHub](https://github.com/raoyongming/GFNet). It first uses the 2D FFT to convert the spatial features into the frequency domain for subsequent filtering. Unlike the original implementation, intead of using a fixed filter size, the code in this project made an adjustment for generating the ```complex_weight``` automatically with dimensions based on the transformed shape of ```x``` in the frequency domain. This adjustment is more suitble for this classification task. After frequency filtering, an inverse FFT is used to transfrom features back to the spatial domain.
+
+The ```GFNet``` module is the main neural network model for classification. It consists of convolutional layers, global filter modules, a feed-forward network and a classification layer. 
+
+## Predict
 
 ## Model Performance
 
 
 
+
+
 ## References
 <a id="reference1"></a>
-[1] ADNI Dataset. Sharing Alzheimer’s Research Data with the World. *Alzheimer’s Disease Neuroimaging Initiative*. https://adni.loni.usc.edu/
+[1] Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). GFNet: Global filter networks for visual recognition. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, 45(9), 10960-10973. https://doi.org/10.1109/TPAMI.2023.3263824
 
 <a id="reference2"></a>
 [2] ADNI Dataset. Sharing Alzheimer’s Research Data with the World. *Alzheimer’s Disease Neuroimaging Initiative*. https://adni.loni.usc.edu/
+
+<a id="reference3"></a>
+[3] Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). Global filter networks for visual recognition. *GitHub* https://github.com/raoyongming/GFNet

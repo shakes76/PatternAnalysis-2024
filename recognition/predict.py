@@ -71,13 +71,27 @@ def plot_predictions(image, prediction, ground_truth, num_classes):
     axes[2].axis('off')
     plt.show()
 
+def display_random_sample_segmentations(all_images, all_labels, all_predictions, n_classes):
     """
-    Choose 5 random images from the testing set to preview segmentation predictions against ground truth annotations.
-    """
-def display_random_sample_segmentations():
-    
+    Displays segmentation predictions against ground truth annotations for random samples.
 
-    
+    Parameters:
+        all_images (list): List of image arrays.
+        all_labels (list): List of ground truth label arrays.
+        all_predictions (list): List of predicted label arrays.
+        n_classes (int): Number of segmentation classes.
+    """
+    # Choose 5 random images to display
+    num_samples = len(all_images)
+    indices = random.sample(range(num_samples), 5)
+    print(f"\nDisplaying predictions for {len(indices)} random images.")
+
+    for idx in indices:
+        image = all_images[idx][0, 0]  # Shape: (H, W)
+        ground_truth = all_labels[idx][0]  # Shape: (H, W)
+        prediction = all_predictions[idx][0]  # Shape: (H, W)
+        plot_predictions(image, prediction, ground_truth, n_classes)
+
 def evaluate_models_and_plot():
     """
     Evaluates all saved model checkpoints and plots the Dice coefficients over epochs.
@@ -118,6 +132,11 @@ def evaluate_models_and_plot():
     # Initialize list to store dice scores per epoch
     dice_scores_per_epoch = []
 
+    # Initialize variables for visualization
+    all_images = None
+    all_labels = None
+    all_predictions = None
+
     print("Epochs:\n", epochs, '\n')
 
     for epoch, model_file in zip(epochs, model_files):
@@ -125,6 +144,12 @@ def evaluate_models_and_plot():
         model.load_state_dict(torch.load(model_file, map_location=device))
         model.eval()
         dice_scores = []
+
+        # Initialize lists to collect data for visualization if it's the last epoch
+        if epoch == epochs[-1]:
+            all_images = []
+            all_labels = []
+            all_predictions = []
 
         with torch.no_grad():
             for images, labels in tqdm(test_loader, desc=f"Testing Epoch {epoch}"):
@@ -138,6 +163,13 @@ def evaluate_models_and_plot():
                 # Compute Dice coefficient
                 dice = dice_coefficient(outputs, labels_cls)
                 dice_scores.append(dice)
+
+                if epoch == epochs[-1]:
+                    # Collect images, labels, predictions for visualization
+                    all_images.append(images.cpu().numpy())
+                    all_labels.append(labels_cls.cpu().numpy())
+                    preds = outputs.argmax(dim=1)
+                    all_predictions.append(preds.cpu().numpy())
 
         # Convert list of dice_scores to a numpy array
         dice_scores = np.array(dice_scores)  # Shape: (num_samples, num_classes)
@@ -163,6 +195,10 @@ def evaluate_models_and_plot():
     plt.legend()
     plt.grid(True)
     plt.show()
+
+    # Display random sample segmentations
+    if all_images is not None:
+        display_random_sample_segmentations(all_images, all_labels, all_predictions, n_classes)
 
 if __name__ == "__main__":
     evaluate_models_and_plot()

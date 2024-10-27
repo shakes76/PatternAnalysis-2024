@@ -47,7 +47,7 @@ The specific GCN structure in this project is as follows：
 
 The data set input contains a graph structure containing node features and edge connection information. After passing through the model, a tensor will be output, indicating the logarithmic probability of each node belonging to different categories.
 
-### Overall framework
+### Overall Framework
 The model uses a four-layer GCN, combined with batch normalization and Dropout to learn node representations based on graph structure and node features. The feature vector (128 dimensions) of each node is processed by GCN, and ReLU activation and Dropout are used between layers to prevent overfitting. The dataset is randomly split into train, validation, and test sets, and a weighted loss function is used during training. The model is trained using the AdamW optimizer, and the entire process lasts for 400 epochs. The model performance is tracked by training and test loss and accuracy, and finally UMAP is used to reduce the dimension of the node embedding and visualize it.
 
 ## Environment Dependencies

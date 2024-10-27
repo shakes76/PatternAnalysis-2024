@@ -106,12 +106,9 @@ The splits are randomized with a fixed seed to maintain consistency across diffe
 ├── README.md
 
 └── logs
-
     └── GFNet
-    
-        ├── best_gfnet.pt
-        
-        └── loss_plot.png
+    ├── best_gfnet.pt
+    └── loss_plot.png
         
 dataset.py: Contains custom dataset classes for training and testing.
 model.py: Defines the Global Filter Network architecture and its components.

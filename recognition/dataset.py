@@ -75,7 +75,8 @@ class ISICSegmentationDataset(Dataset):
     def __len__(self):
         return len(self.image_mask_pairs)
 
-# 定义数据变换
+# Define data transformations
+
 class SegmentationTransform:
     def __init__(self, img_size):
         self.img_size = img_size

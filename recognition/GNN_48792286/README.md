@@ -17,7 +17,8 @@ predict.py contains example usage of  trained model
 train.py contains the source code for training
 ## DataSet
 ### Data Description
-###### ![ Data type ](./type.png)
+![ Data type ](./type.png)
+In this part, we use the partially processed dataset where the features are in the form of 128 dim vectors.
 Nodes: Each node represents a Facebook page. 
 Edges: An edge between two nodes indicates a relationship between the corresponding pages, such as mutual likes.
 Features: Each node is associated with a 128-dimensional feature vector. These features capture properties of the Facebook pages.

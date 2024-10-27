@@ -9,10 +9,13 @@ semantic_MRs_anon
 
 *.txt
 
-*.png
+Images
+
+rangpur_outputs
 
 *.sh
 
 *.out
 
 *.pdf
+

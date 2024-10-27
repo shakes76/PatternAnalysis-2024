@@ -9,7 +9,7 @@ import torch.optim as optim
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def main(mode='train', num_epochs=200, lr=0.001, batch_size=64, train_dir='', test_dir='', model_path='saved_model.pth'):
+def main(mode='train', num_epochs=200, lr=0.001, batch_size=64, train_dir='/content/drive/MyDrive/ADNI/AD_NC/train', test_dir='/content/drive/MyDrive/ADNI/AD_NC/test', model_path='saved_model.pth'):
     # Load the data
     train_loader, val_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
     

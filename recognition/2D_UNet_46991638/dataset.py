@@ -26,10 +26,10 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     early_stop : Stop loading pre-maturely , leaves arrays mostly empty , for quick loading and testing scripts .
     '''
     affines = []
-    #count = 0
     # get fixed size
     num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching="unchanged")
+    #rescale image
     if categorical:
         #neareat-neigboor interpolation
         first_case = sk.resize(first_case, (256,256), order=0, anti_aliasing=False, preserve_range=True)
@@ -61,8 +61,6 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
             inImage = inImage[: ,: ,0] # sometimes extra dims in HipMRI_study data
             inImage = inImage.astype(dtype)
         if normImage:
-            # ~ inImage = inImage / np . linalg . norm ( inImage )
-            # ~ inImage = 255. * inImage / inImage . max ()
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
             inImage = to_channels(inImage, dtype = dtype)
@@ -78,7 +76,7 @@ def load_data_2D (imageNames, normImage = False, categorical = False, dtype = np
     else:
         return images
     
-
+#Load all the nifti images in the given apth
 def load(path, label=False):
     image_list = []
     for filename in glob.glob(path + '/*.nii.gz'): 
@@ -86,15 +84,16 @@ def load(path, label=False):
     train_set = load_data_2D(image_list, normImage=False, categorical=label)
     return train_set
 
-def process_data(data_set):
+#Normalise and scale to [0, 1]
+def process_data(train_set):
   # the method normalizes training images and adds 4th dimention 
 
-  train_set = data_set
   train_set = (train_set - np.mean(train_set))/ np.std(train_set)
   train_set= (train_set- np.amin(train_set))/ np.amax(train_set- np.amin(train_set))
   train_set = train_set[...,np.newaxis]
   return train_set
 
+#Data Generator class made with assitance of ChatGPT
 class DataGenerator(tf.keras.utils.Sequence):
         def __init__(self, x_set, y_set, batch_size):
             self.x, self.y = x_set, y_set

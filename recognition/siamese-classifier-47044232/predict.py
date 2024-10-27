@@ -6,15 +6,11 @@ Made by Joshua Deadman
 
 import argparse
 import matplotlib.pyplot as plt
-import os
 from sklearn.metrics import ConfusionMatrixDisplay
 import torch
-from torch.utils.data import DataLoader
 
-from config import BATCH_SIZE, DATAPATH, WORKERS
 from modules import SiameseNetwork, BinaryClassifier
-from dataset import ISICKaggleChallengeSet
-from utils import split_data
+from dataset import get_dataloaders
 
 parser = argparse.ArgumentParser()
 parser.add_argument("siamese", help="Path to siamese network to be used for inference")
@@ -25,11 +21,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if not torch.cuda.is_available():
     print("WARNING: Using the CPU...")
 
-_, _, sample = split_data(os.path.join(DATAPATH, "train-metadata.csv"))
-print(f"Testing on a sample of {len(sample)} images.")
+_, _, sample_loader = get_dataloaders()
+print(f"Testing on a sample of {len(sample_loader.dataset)} images.")
 
-sample_set = ISICKaggleChallengeSet(os.path.join(DATAPATH, "train-image/image/"), sample, transforms=None)
-sample_loader = DataLoader(sample_set, batch_size=BATCH_SIZE, num_workers=WORKERS)
 
 # Initialise models
 siamese = SiameseNetwork().to(device)

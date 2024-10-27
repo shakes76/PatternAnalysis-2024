@@ -222,7 +222,7 @@ Implementation of the discriminator network
 Is mostly the same as GAN discriminator network
 '''
 class Discriminator(nn.Module):
-    def __init__(self, log_reso, n_features = 64, max_features = 256, rgb = False): # log resolution 2^log_reso= image size
+    def __init__(self, log_reso, n_features = 64, max_features = 256, rgb = True): # log resolution 2^log_reso= image size
         super().__init__()
 
         features = [min(max_features, n_features*(2**i)) for i in range(log_reso - 1)]
@@ -234,7 +234,7 @@ class Discriminator(nn.Module):
                 nn.LeakyReLU(0.2, True)
             )
         else:
-            self.grey = nn.Sequential(
+            self.rgb = nn.Sequential(
                 Dis_Conv2d(1, n_features, 1),
                 nn.LeakyReLU(0.2, True)
             )
@@ -295,7 +295,7 @@ class DiscriminatorBlock(nn.Module):
         residual = self.residual(x)
 
         x = self.block(x)
-        x = self.down_sample(x)
+        x = self.downsample(x)
 
         return (x + residual) * self.scale
 

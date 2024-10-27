@@ -7,8 +7,6 @@ calculates and prints out the DICE score.
 from modules import *
 from dataset import load_data_2D
 import torch
-import torchio as tio
-import time
 from params import *
 import os
 import numpy as np
@@ -28,11 +26,8 @@ test_imgs = load_data_2D(test_imgs, True)
 test_labels = sorted([os.path.join(TEST_MASK_DIR, img) for img in os.listdir(TEST_MASK_DIR) if img.endswith(('.nii', '.nii.gz'))])
 test_labels = load_data_2D(test_labels, False, True)
 
-subject = tio.Subject(test_imgs, test_labels)
-transform = tio.CropOrPad(IMAGE_SIZE, mask_name=test_labels)
-testing_set = transform(subject)
-
-test_loader = torch.utils.data.dataLoader(testing_set, BATCH_SIZE, True)
+testing_set = [ [test_imgs[i], test_labels[i]] for i in range(len(test_imgs))]
+test_loader = torch.utils.data.DataLoader(testing_set, BATCH_SIZE, True)
 
 model = UNet().to(device)
 checkpoint = torch.load(CHECKPOINT_DIR)

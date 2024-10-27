@@ -206,6 +206,7 @@ Each model was provided the same set of data. As the data is randomly split each
 
 ### GCN Performance
 **[GCN Loss Plot]**
+
 (recognition/48019022_GNN/assets/GCN_Train.png)
 
 **[GCN Test Accuracy]**

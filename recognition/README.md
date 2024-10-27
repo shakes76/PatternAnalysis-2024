@@ -159,6 +159,8 @@ Predicted Segmentations compared to Ground Truth Labels
 ![Figure_2](https://github.com/user-attachments/assets/53090a01-6230-4f63-8892-ef3c0fac992f)
 ![Figure_3](https://github.com/user-attachments/assets/ef4f912b-0866-4328-a24b-7050cd381f4f)
 ![Figure_4](https://github.com/user-attachments/assets/94536202-f570-411f-9e4f-267cb6e8d70e)
+![Figure_5](https://github.com/user-attachments/assets/e30332b6-cfac-49de-8b87-311909880639)
+
 
 Dice Coefficients Per Training Epoch
 ![Dice_Epochs](https://github.com/user-attachments/assets/19052a9e-ceb5-46d0-9cd6-8d2f88f4e2bd)

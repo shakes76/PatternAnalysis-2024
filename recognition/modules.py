@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
-def unet(tensor_in, depth=64):
+
+def init_unet(tensor_in, depth=64):
     
     # For each layer of the UNET filter convolute twice and then pool.
     encode1 = layers.Conv2D(depth, 3, activation='relu', padding='same')(tensor_in)
@@ -43,6 +44,7 @@ def unet(tensor_in, depth=64):
     merge4 = layers.concatenate([encode1, up4])
     decode4 = layers.Conv2D(depth, 3, activation='relu', padding='same')(merge4)
     decode4 = layers.Conv2D(depth, 3, activation='relu', padding='same')(decode4)
-    tensor_out = layers.Conv2D(1, 1, activation='sigmoid', padding='same')(decode4)
+    tensor_out = layers.Conv2D(1, 1, activation='softmax', padding='same')(decode4)
     model = models.Model(inputs=tensor_in, outputs=tensor_out)
+    return model
     

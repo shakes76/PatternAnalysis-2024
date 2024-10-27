@@ -94,19 +94,19 @@ Actual Malignant: 79       38
 
 ### Training and Evaluation Plots
 
-![Embedding Distribution](assets/embedding_distribution.png)
+<img src="assets/embeddings_distribution.png" alt="Embedding Distribution" width="60%">
 *Distribution of embedding distances. It shows a clear separation between similar and dissimilar pairs*
 
-![t-SNE Visualization](assets/tsne_visualization.png)
+<img src="assets/embeddings_tsne.png" alt="t-SNE Visualization" width="60%">
 *t-SNE visualization of learned embeddings showing clusters*
 
-![MLP Loss](assets/mlp_loss.png)
+<img src="assets/mlp_loss.png" alt="MLP Loss" width="60%">
 *MLP Classifier training loss showing consistent convergence*
 
-![Siamese Loss](assets/siamese_loss.png)
+<img src="assets/siamese_loss.png" alt="Siamese Loss" width="60%">
 *Siamese Network training loss demonstrating stable learning*
 
-![ROC Curve](assets/roc_curve.png)
+<img src="assets/roc_curve.png" alt="ROC Curve" width="60%">
 *ROC curve with AUC = 0.792 indicating good discriminative ability*
 
 ### Discussion

@@ -218,3 +218,4 @@ if __name__ == "__main__":
     data_manager.load_data()
     data_manager.create_dataloaders()
     data_manager.print_statistics()
+    

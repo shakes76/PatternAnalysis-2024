@@ -28,7 +28,7 @@ def main():
     predictor = Predict(siamese_network, mlp_classifier, device)
     
     # Path to the directory with new images for prediction
-    folder_path = 'archive/test-image/image/'  # Replace with any directory
+    folder_path = 'archive/test-image/image/'
 
     # Run predictions on the directory
     predictions, probabilities, image_names = predictor.batch_predict(folder_path)
@@ -43,3 +43,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

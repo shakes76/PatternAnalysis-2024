@@ -6,6 +6,7 @@
 @student_number: 43032053
 """
 
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -19,6 +20,7 @@ def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, ma
     """
     siamese_network.train()
     best_loss = float('inf')
+    epoch_losses = []
     
     for epoch in range(epochs):
         running_loss = 0.0
@@ -38,12 +40,13 @@ def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, ma
             
             # Backward pass
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(siamese_network.parameters(), 1.0) # Gradient clipping
+            torch.nn.utils.clip_grad_norm_(siamese_network.parameters(), 1.0)
             optimizer.step()
             
             running_loss += loss.item()
 
         epoch_loss = running_loss / len(train_loader)
+        epoch_losses.append(epoch_loss)
         print(f"Siamese Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}")
 
         # Save best model
@@ -55,15 +58,17 @@ def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, ma
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': best_loss,
             }, 'best_siamese_network.pth')
+    return epoch_losses
 
 def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loader, epochs=5):
     """
     Train MLP classifier using Siamese Network embeddings
     """
     mlp_classifier.train()
-    siamese_network.eval() # Freeze Siamese network
+    siamese_network.eval()
     criterion = nn.BCELoss()
     best_acc = 0.0
+    epoch_losses = []
     
     for epoch in range(epochs):
         running_loss = 0.0
@@ -96,6 +101,7 @@ def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loade
             correct += (predicted == diagnosis_label).sum().item()
         
         epoch_loss = running_loss / len(train_loader)
+        epoch_losses.append(epoch_loss)
         accuracy = 100 * correct / total
         print(f"Classifier Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}, Accuracy: {accuracy:.2f}%")
         
@@ -108,7 +114,7 @@ def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loade
                 'optimizer_state_dict': optimizer.state_dict(),
                 'accuracy': best_acc,
             }, 'best_mlp_classifier.pth')
-
+    return epoch_losses
 
 def main():
     # Set device
@@ -128,17 +134,60 @@ def main():
     mlp_classifier = MLPClassifier().to(device)
     
     # Initialize optimizers
-    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001, weight_decay=5e-5)
-    optimizer_mlp = optim.Adam(mlp_classifier.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer_siamese = optim.Adam(
+        siamese_network.parameters(),
+        lr=0.001,
+        weight_decay=5e-5
+    )
+    optimizer_mlp = optim.Adam(
+        mlp_classifier.parameters(),
+        lr=0.001,
+        weight_decay=1e-4
+    )
 
+    # Train the Siamese Network
     print("Training Siamese Network to learn embeddings from images:")
-    train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=16)
+    siamese_losses = train_siamese_network(
+        siamese_network,
+        optimizer_siamese,
+        train_loader,
+        epochs=16
+    )
     
-   # Train the MLP classifier
+    # Train the MLP classifier
     print("\nTraining MLPClassifier using learned embeddings:")
-    train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=8)
+    mlp_losses = train_mlp_classifier(
+        siamese_network,
+        mlp_classifier, 
+        optimizer_mlp, 
+        train_loader,
+        epochs=8
+    )
 
-    # Evaluate the trained model
+    # Plot and save training losses
+    save_dir = "plots"
+    os.makedirs(save_dir, exist_ok=True)
+    
+    Evaluate.plot_loss(
+        siamese_losses,
+        title="Siamese Network Training Loss per Epoch",
+        xlabel="Epoch",
+        ylabel="Loss",
+        save_path=os.path.join(save_dir, "siamese_network_loss.png"),
+        color='b',
+        marker='o'
+    )
+    Evaluate.plot_loss(
+        mlp_losses,
+        title="MLP Classifier Training Loss per Epoch", 
+        xlabel="Epoch", 
+        ylabel="Loss", 
+        save_path=os.path.join(save_dir, "mlp_classifier_loss.png"),
+        color='g', 
+        marker='s'
+    )
+
+    # Evaluate the model after training
     print("\nEvaluating the model on test data:")
     predictor = Predict(siamese_network, mlp_classifier, device)
     preds, probs, labels = predictor.predict(test_loader)
@@ -152,7 +201,7 @@ def main():
     print(f"ROC-AUC Score: {results['roc_auc']['auc']}\n")
     print(results['class_report'])
     
-    # Optionally save and plot results
+    # Optionally save and plot evaluation results
     evaluator.plot_results()
     evaluator.save_results()
 

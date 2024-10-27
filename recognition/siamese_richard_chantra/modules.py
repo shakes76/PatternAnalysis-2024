@@ -294,3 +294,21 @@ class Evaluate:
             f.write(f"Benign Accuracy: {metrics['benign_accuracy']}\n")
             f.write(f"ROC-AUC Score: {results['roc_auc']['auc']}\n\n")
             f.write(f"Classification Report:\n{results['class_report']}\n")
+
+    @staticmethod
+    def plot_loss(self, data, title, xlabel, ylabel, save_path, color='b', marker='o'):
+        """
+        Plots and saves a training loss graph
+        """
+        plt.figure(figsize=(8, 6))
+        plt.plot(data, label=title, marker=marker, color=color)
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(save_path)
+        plt.close()
+        print(f"Plot saved at: {save_path}")
+        

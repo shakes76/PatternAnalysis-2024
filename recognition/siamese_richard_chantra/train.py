@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from dataset import DataManager
 from tqdm import tqdm
-from modules import SiameseNetwork, MLPClassifier, contrastive_loss
+from modules import SiameseNetwork, MLPClassifier, contrastive_loss, evaluate_model
 
 def train_siamese_network(siamese_network, optimizer, train_loader, epochs=5, margin=1.0):
     """
@@ -139,6 +139,10 @@ def main():
     # Train classifier
     print("\nTraining MLPClassifier using learned embeddings:")
     train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=8)
+
+    # Evaluate trained model
+    print("\nEvaluating the model on test data:")
+    evaluate_model(siamese_network, mlp_classifier, test_loader, device)
 
 if __name__ == "__main__":
     main()

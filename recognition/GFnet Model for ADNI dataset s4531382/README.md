@@ -96,9 +96,12 @@ The splits are randomized with a fixed seed to maintain consistency across diffe
 
 ### Repository Structure
 ├── dataset.py
+
 ├── model.py
 ├── train.py
+
 ├── predict.py
+
 ├── README.md
 └── logs
     └── GFNet

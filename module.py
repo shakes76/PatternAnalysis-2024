@@ -25,7 +25,11 @@ from functools import partial
 from collections import OrderedDict
 import torch.optim as optim
 
+
+# The model was mainly inspired by https://github.com/raoyongming/GFNet/blob/master/main_gfnet.py
 _logger = logging.getLogger(__name__)
+
+
 class Mlp(nn.Module):
     def __init__(
         self,

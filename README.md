@@ -4,7 +4,8 @@
 - Learning rate: 0.001
 - Epochs = 25
 
-Model is trained using 1200 images, validated using 900 images and tested using 300 images.
+Model is trained using 80% of the data and tested using 20% of the data.
+```
 
 # 2 Model Evalution
 

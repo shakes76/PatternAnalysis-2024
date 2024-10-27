@@ -76,10 +76,10 @@ python.exe prediction.py
 
 ## Results
 
-The model was trained for 10 epochs with a learning rate of 0.005 and batchsize of 512. It demonstrated promising performance on the test dataset for the first four classes (classes 0-3). For further improvements in performance, the dice loss should be weighted to improve performance on classes 4 and 5 (rectum and prostate). Below are the key metrics obtained and a example prediction:
+The model was trained for 10 epochs with a learning rate of 0.005 and batchsize of 512. It demonstrated promising performance on the test dataset for the first four classes (classes 0-3). For further improvements in performance, the dice loss should be weighted to improve performance on classes 4 and 5 (rectum and prostate). In Figure 2 you can see one of the resulting predictions of the last trained model. Below are the key metrics obtained: 
 
-* **Average Dice Coefficient (Overall):** 0.963
-* **Minimum Dice Coefficient (Overall):** 0.949
+* **Average Dice Coefficient (Overall):** 0.967
+* **Minimum Dice Coefficient (Overall):** 0.939
 
 | Class        | Average Dice Coefficient|
 | :----------- | ----------------------: |
@@ -92,6 +92,7 @@ The model was trained for 10 epochs with a learning rate of 0.005 and batchsize 
 
 
 ![](prediction.png)
+*Figure 2: Prediction from model trained with 10 epochs and lr = 0.005*
 
 ## References
 

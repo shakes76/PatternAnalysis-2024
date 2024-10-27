@@ -8,6 +8,7 @@ Date: 26/10/2024
 
 import unittest
 
+import modules
 import dataset
 import utils
 
@@ -36,8 +37,14 @@ class TestDataSet(unittest.TestCase):
 class TestUtils(unittest.TestCase):
     def test_utils_display_graph(self):
         """
-
+            Tests creating teh spring layout of the FLPP graph
+            visualising category connections.
         """
         flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
 
         utils.display_flpp_network(flpp_dataset)
+
+class TestModules(unittest.TestCase):
+    def test_modules_create(self):
+        """
+        """

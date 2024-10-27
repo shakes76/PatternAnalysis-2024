@@ -27,9 +27,9 @@ GFNet contains:
 - **Output Classes**: Alzheimer's (AD), Normal Cognition (NC)
 - **Framework**: PyTorch
 
-### How to use
+# How to use
 
-# Training
+## Training
 Parameters
 ```zsh
 python ./recognition/GFNet_s4641938/train.py [IMAGESIZE] [EPOCHS] [ADNIROOTDATAPATH]
@@ -68,7 +68,7 @@ python ./recognition/GFNet_s4641938/train.py 180 50 "/home/groups/comp3710/ADNI/
 
 During training, the ongoing best model will be saved at ./best_model.pth
 
-# Testing
+## Testing
 After training
 Parameters
 ```zsh

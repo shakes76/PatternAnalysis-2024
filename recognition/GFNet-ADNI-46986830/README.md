@@ -7,6 +7,10 @@ This project tackles the classification of Alzheimer's Disease (AD) and Normal C
 ## GFNet Introduction
 The Global Filter Network (GFNet) is an efficient neural architecture that substitutes the self-attention mechanism in vision transformers with a Global Filter Layer, which operates in the frequency domain using fast Fourier transforms. This approach allows GFNet to capture long-range spatial dependencies with log-linear computational complexity, making it more efficient for high-resolution images. By leveraging frequency domain features with learnable global filters, GFNet offers faster processing and reduced computational load, potentially outperforming traditional transformers in speed and resource use. GFNet is computationally efficient, making it an ideal choice for high-resolution image classification tasks, trained on medium / limited hardware.
 
+An animation of the structure and function of the GFNet (taken from a paper done by Rao et al, 2021) can be found below.
+
+![Animation of GFNet Architecture](images/raoyongming_gfnet.gif)
+
 ## Project Structure
 - `dataset.py`: Data loading and pre-processing script for ADNI data.
 - `modules.py`: Contains the GFNet architecture and related modules.
@@ -82,4 +86,6 @@ To reproduce this project, install the following dependencies:
 This project demonstrates the effectiveness of GFNet for medical image classification, achieving satisfactory results on a challenging dataset. The model shows promise in assisting early Alzheimer's diagnosis by automating the analysis of MRI scans.
 
 ## References
+- raoyongming/GFNet: [NeurIPS 2021] [T-PAMI] Global Filter Networks for Image Classification. (n.d.). Retrieved October 27, 2024, from https://github.com/raoyongming/GFNet/tree/master
+- Yongming Rao, Wenliang Zhao, Zheng Zhu, Jiwen Lu, & Jie Zhou. (n.d.). GFNet. Retrieved October 27, 2024, from https://gfnet.ivg-research.xyz/
 

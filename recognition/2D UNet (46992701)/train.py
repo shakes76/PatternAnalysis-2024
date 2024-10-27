@@ -8,7 +8,6 @@ from params import *
 from modules import *
 
 import torch
-import torchio as tio
 import time
 import os
 from tqdm import tqdm
@@ -31,23 +30,18 @@ validation_imgs = sorted([os.path.join(VAL_IMG_DIR, img) for img in os.listdir(V
 validation_imgs = load_data_2D(validation_imgs, True)
 
 # One-hot encode the labels
-train_labels = sorted([os.path.join(TRAIN_MASK_DIR, img) for img in os.listdir(TRAIN_IMG_DIR) if img.endswith(('.nii', '.nii.gz'))])
+train_labels = sorted([os.path.join(TRAIN_MASK_DIR, img) for img in os.listdir(TRAIN_MASK_DIR) if img.endswith(('.nii', '.nii.gz'))])
 train_labels = load_data_2D(train_labels, False, True)
 
 validation_labels = sorted([os.path.join(VAL_MASK_DIR, img) for img in os.listdir(VAL_MASK_DIR) if img.endswith(('.nii', '.nii.gz'))])
 validation_labels = load_data_2D(validation_labels, True)
 
-train_transform = tio.CropOrPad(IMAGE_SIZE, mask_name=train_labels)
-val_transform = tio.CropOrPad(IMAGE_SIZE, mask_name=validation_labels)
-
 # Create dataloaders
-subject = tio.Subject(train_imgs, train_labels)
-training_set = train_transform(subject)
-train_loader = torch.utils.data.dataLoader(training_set, BATCH_SIZE, True)
+training_set = [ [train_imgs[i], train_labels[i]] for i in range(len(train_imgs))]
+train_loader = torch.utils.data.DataLoader(training_set, BATCH_SIZE, True)
 
-val = tio.Subject(validation_imgs, validation_labels)
-validation_set = val_transform(val)
-val_loader = torch.utils.data.dataLoader(validation_set, BATCH_SIZE, True)
+validation_set = [ [validation_imgs[i], validation_labels[i]] for i in range(len(validation_imgs))]
+val_loader = torch.utils.data.DataLoader(validation_set, BATCH_SIZE, True)
 
 # Initialise the model
 model = UNet().to(device)
@@ -73,7 +67,7 @@ for epoch in range(NUM_EPOCHS):
         labels = labels.to(device)
 
         # Forward pass
-        outputs = model(images)
+        outputs = model(images.unsqueeze(dim=0))
         loss = loss_function(outputs, labels)
 
         # Backward and optimize
@@ -134,8 +128,8 @@ plt.xlabel('Batch Number')
 plt.ylabel('Loss')
 plt.title('Training Losses')
 plt.grid(True)
-plt.savefig('save_data/training_losses.png')
-plt.show()
+plt.savefig('plots/training_losses.png')
+#plt.show()
 
 # plot Average Losses per Epoch
 plt.figure(figsize=(20, 10))
@@ -144,8 +138,8 @@ plt.xlabel('Epoch Number')
 plt.ylabel('Loss')
 plt.title('Average Losses per Epoch')
 plt.grid(True)
-plt.savefig('save_data/avg_epoch_losses.png')
-plt.show()
+plt.savefig('plots/avg_epoch_losses.png')
+#plt.show()
     
 # plot Dice score for each epoch
 plt.figure(figsize=(20, 10))
@@ -154,5 +148,5 @@ plt.xlabel('Epoch #')
 plt.ylabel('Dice Score')
 plt.title('Validation Dice Scores')
 plt.grid(True)
-plt.savefig('save_data/dice_scores.png')
-plt.show()
+plt.savefig('plots/dice_scores.png')
+#plt.show()

@@ -1,55 +1,53 @@
-# Medical Image Segmentation Project  
+# 3D UNet for Prostate Segmentation
 
-## Project Overview  
-This project aims to utilize a 3D U-Net network for the segmentation of medical images. By loading MRI medical images and their corresponding labels, the model is trained and evaluated on a test set.  
+## Introduction
 
-## File Structure  
-Below are the main files in the project and their functionalities:  
+This project utilizes the 3D UNet architecture to train on the Prostate 3D dataset, aiming to achieve precise medical volumetric image segmentation. We evaluate the performance of the segmentation using the Dice similarity coefficient, targeting a minimum score of 0.7 for all labels on the test set. Image segmentation transforms a volumetric image into segmented areas represented by masks, which facilitates medical condition analysis, symptom prediction, and treatment planning.
 
-1. **train.py**:   
-   - This script is used for training the model. It loads the training dataset and labels, trains the 3D U-Net model using an optimizer and loss function, and performs validation after each training epoch.  
-   - It uses a custom dataset `MedicalDataset3D` and implements Dice loss as the training objective.  
+## Background
 
-2. **dataset.py**:   
-   - Contains the custom dataset class `MedicalDataset3D`, which is used to load 3D medical images and optional labels.  
-   - Provides functionality for loading image paths and supports data augmentation.  
+### UNet-3D
 
-3. **utils.py**:  
-   - Contains the `DiceLoss` class for calculating the Dice loss and functions for computing the Dice coefficient.  
-   - This module is primarily used for calculating the model's accuracy during the evaluation process.  
+The 3D UNet is an extension of the original UNet architecture, which is widely used for segmenting 2D medical images. While the standard UNet processes 2D images, UNet-3D extends this functionality to volumetric (3D) images, allowing for more accurate segmentation of complex medical structures found in modalities like MRI or CT scans.
 
-4. **modules.py**:  
-   - Defines the structure of the 3D U-Net model, including convolutional layers, activation layers, and upsampling layers.  
-   - The model is designed to extract features from the input images to improve segmentation accuracy.  
+UNet architecture leverages a combination of convolutional neural networks (CNNs) and skip connections, improving performance by combining high-resolution features from the contracting path with low-resolution context from the expansive path. This design maintains spatial information throughout the segmentation process, which is critical in the medical imaging field.
 
-5. **predict.py**:  
-   - This script is used to load test data and apply the trained model for predictions. It calculates and prints the average Dice coefficient on the test data while visualizing the input images, target labels, and prediction results.  
 
-## Usage Instructions  
+![3D U-Net Architecture](https://raw.githubusercontent.com/Han1zen/PatternAnalysis-2024/refs/heads/topic-recognition/recognition/3D-UNT%2048790835/picture/3D%20U-Net.webp)
 
-### Environment Requirements  
-- Python 3.x  
-- PyTorch  
-- nibabel  
-- numpy  
-- tqdm  
-- matplotlib  
+### Dataset
 
-### Data Preparation  
-Before using this project, please ensure you have the following data prepared:  
-- 3D medical images (NIfTI format)  
-- Corresponding label data  
+For this project, we will segment the downsampled Prostate 3D dataset. A sample code for loading and processing Nifti file formats is provided in Appendix B. Furthermore, we encourage the use of data augmentation libraries for TensorFlow (TF) or the appropriate transformations in PyTorch to enhance the robustness of the model.
 
-### Training the Model  
-1. Modify the data paths in `train.py` to point to your dataset.  
-2. Run `train.py` to start training.  
+### Evaluation Metric
 
-### Prediction  
-1. Set the path for the test data in `predict.py`.  
-2. Run `predict.py` to obtain prediction results and Dice coefficient evaluation.  
+We will employ the Dice similarity coefficient as our primary evaluation metric. The Dice coefficient measures the overlap between the predicted segmentation and the ground truth, mathematically expressed as:
 
-## Contribution  
-Contributions of any kind are welcome! If you have suggestions or issues, please open an issue or pull request.  
+\[ \text{Dice} = \frac{2 |A \cap B|}{|A| + |B|} \]
 
-## License  
-This project is licensed under the MIT License. See the LICENSE file for details.
+where \( A \) and \( B \) are the sets of predicted and ground truth regions respectively. A Dice coefficient of 0.7 or greater indicates a significant degree of accuracy in segmentation.
+
+## Objectives
+
+- Implement the 3D Improved UNet architecture for the Prostate dataset.
+- Achieve a minimum Dice similarity coefficient of 0.7 for all labels on the test set.
+- Utilize data augmentation techniques to improve model generalization.
+- Load and preprocess Nifti file formats for volumetric data analysis.
+
+## Results
+
+### Training and Validation Loss
+
+![Training and Validation Loss](recognition/3D-UNT 48790835/picture/loss.jpg)
+
+- The **training loss** curve demonstrates a rapid decline in the early stages of training, indicating that the model is effectively learning and adapting to the training data.
+- As training progresses, the loss stabilizes, ultimately reaching around **0.6**. This suggests that the model performs well on the training set and is capable of effective feature learning.
+
+- The **validation loss** curve also exhibits a downward trend, remaining relatively close to the training loss in the later stages of training.
+- This indicates that the model has good generalization capabilities on the validation set, with no significant signs of overfitting. The validation loss stabilizes at approximately **0.62**, further supporting the model's effectiveness.
+
+### Dice Similarity Coefficient
+
+- The model achieves a **Dice similarity coefficient** of over **0.7** for all labels, meeting our established target.
+- This indicates that the model performs excellently in the segmentation task, accurately identifying and segmenting different regions of the prostate.
+

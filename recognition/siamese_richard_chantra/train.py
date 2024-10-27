@@ -62,7 +62,7 @@ class MLPClassifier(nn.Module):
         """
         return self.classifier(embedding)
 
-def contrastive_loss(output1, output2, label, margin=1.0):
+def contrastive_loss(output1, output2, label, margin=2.0):
     """
     Contrastive loss for Siamese Network training
     """
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    SKIP_SIAMESE_TRAINING = 1  # 0: Begin training, 1: Skip training (use checkpoint)
+    SKIP_SIAMESE_TRAINING = 0  # 0: Begin training, 1: Skip training (use checkpoint)
 
     # Setup data
     data_manager = DataManager('archive/train-metadata.csv', 'archive/train-image/image/')
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     mlp_classifier = MLPClassifier().to(device)
     
     # Initialize optimizers
-    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.009, weight_decay=1.3e-3)
     optimizer_mlp = optim.Adam(mlp_classifier.parameters(), lr=0.001, weight_decay=1e-4)
 
     if SKIP_SIAMESE_TRAINING:
@@ -202,8 +202,8 @@ if __name__ == "__main__":
     else:
         # Train Siamese network from scratch
         print("Training Siamese Network to learn embeddings from images:")
-        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=10)
+        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=18)
     
     # Train classifier
     print("\nTraining MLPClassifier using learned embeddings:")
-    train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=10)
+    train_mlp_classifier(siamese_network, mlp_classifier, optimizer_mlp, train_loader, epochs=8)

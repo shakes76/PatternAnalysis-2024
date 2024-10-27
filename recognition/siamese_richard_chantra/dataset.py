@@ -23,9 +23,10 @@ class DataManager:
         """
         self.data = pd.read_csv(self.csv_path)
 
-    def balance_dataset(self, data, data_augmentation='oversampling'):
+    def balance_dataset(self, data, data_augmentation='oversampling', target_ratio=None):
         """
         Balance dataset using specified sampling strategy
+        target_ratio is the ratio of benign desired in the balanced dataset
         """
         if data_augmentation is None:
             return data
@@ -42,17 +43,34 @@ class DataManager:
             n_samples = len(malignant)
             benign_undersampled = benign.sample(n=n_samples, random_state=42)
             balanced_data = pd.concat([malignant, benign_undersampled])
+        elif data_augmentation == 'ratio' and target_ratio is not None:
+            # Calculate target numbers for the specified ratio
+            total_samples = len(data)
+            target_benign_samples = int(total_samples * target_ratio)
+            target_malignant_samples = total_samples - target_benign_samples
+            
+            # Downsample benign or keep to maintain target
+            if len(benign) > target_benign_samples:
+                benign_sampled = benign.sample(n=target_benign_samples, random_state=42)
+            else:
+                benign_sampled = benign
+                
+            # Oversample malignant to reach target
+            malignant_oversampled = malignant.sample(n=target_malignant_samples, replace=True, random_state=42)
+            balanced_data = pd.concat([benign_sampled, malignant_oversampled])
         else:
-            raise ValueError(f"Unknown data_augmentation parameter: {data_augmentation}")
+            raise ValueError(f"Invalid parameter for: data_augmentation or target_ratio")
 
-    return balanced_data.sample(frac=1, random_state=42).reset_index(drop=True)
+        return balanced_data.sample(frac=1, random_state=42).reset_index(drop=True)
 
     def split_data(self):
         """
-        Split the data into training and testing sets then balance
+        Split the data into training and testing sets and balance
         """
+        # Normal train test split
         train_data, test_data = train_test_split(self.data, test_size=0.2, random_state=42, stratify=self.data['target'])
-        balanced_train_data = self.balance_dataset(train_data)
+        # Balance dataset based on oversampling, undersampling or oversampling using a ratio
+        balanced_train_data = self.balance_dataset(train_data, data_augmentation='ratio', target_ratio=0.67)
         
         return balanced_train_data, test_data
 
@@ -95,7 +113,6 @@ class DataManager:
         print(f"Test set distribution: \n{test_data['target'].value_counts()}")
         print("\nNote: 0 = benign, 1 = malignant")
 
-# Rest of the code remains unchanged
 class SiameseDataset(Dataset):
     """
     Dataset for Siamese Network training and melanoma classification
@@ -103,14 +120,27 @@ class SiameseDataset(Dataset):
     def __init__(self, data, img_dir):
         self.data = data
         self.img_dir = img_dir
-        self.diagnosis_labels = data['target'].values  # 0 = benign, 1 = malignant
+        self.diagnosis_labels = data['target'].values
         self.image_ids = data['isic_id'].values
-
+        
+        # resize and normalize
+        self.transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                std=[0.229, 0.224, 0.225])
+])
     def __len__(self):
+        """
+        Returns the length of the dataset
+        """
         return len(self.data)
 
     def __getitem__(self, idx):
-        # Get the first image and associated diagnosis
+        """
+        Takes an index and returns a pair of images with their labels
+        """
+        # Get the first image and diagnosis label
         img1_id = self.image_ids[idx]
         img1_diagnosis = self.diagnosis_labels[idx]
         
@@ -118,10 +148,10 @@ class SiameseDataset(Dataset):
         should_get_same_class = np.random.random() > 0.5
         
         if should_get_same_class:
-            # Get another image with same diagnosis
+            # Get another image with same diagnosis label
             same_class_indices = np.where(self.diagnosis_labels == img1_diagnosis)[0]
             second_idx = np.random.choice(same_class_indices)
-            while second_idx == idx:  # Avoid picking the same image
+            while second_idx == idx:  # Don't pick same pair
                 second_idx = np.random.choice(same_class_indices)
             img2_id = self.image_ids[second_idx]
             similarity_label = torch.tensor(0.0)  # 0 = similar pair
@@ -136,8 +166,8 @@ class SiameseDataset(Dataset):
         img2_diagnosis = self.diagnosis_labels[second_idx]
         
         # Load and preprocess images
-        img1 = load_image(img1_id, self.img_dir)
-        img2 = load_image(img2_id, self.img_dir)
+        img1 = self.load_and_transform(img1_id)
+        img2 = self.load_and_transform(img2_id)
         
         return {
             'img1': img1,
@@ -147,26 +177,29 @@ class SiameseDataset(Dataset):
             'diagnosis2': torch.tensor(img2_diagnosis, dtype=torch.float32)
         }
 
-def preprocess_image(image):
-    """
-    Preprocess image for ResNet50 input
-    """
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # ResNet50 expected input size
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                            std=[0.229, 0.224, 0.225])  # ImageNet normalization
-    ])
-    return transform(image)
-
-def load_image(image_id, img_dir):
-    """
-    Takes an image from the ISIC-2020 dataset and preprocesses it for the models
-    """
-    img_path = f'{img_dir}{image_id}.jpg'
-    image = Image.open(img_path).convert('RGB')
-    return preprocess_image(image)
-
+    def load_and_transform(self, image_id, threshold=0.7):
+        """
+        Load image and apply random augmentations if over theshold
+        """
+        img_path = f'{self.img_dir}{image_id}.jpg'
+        image = Image.open(img_path).convert('RGB')
+        
+        # 30% chance of augmentation
+        if np.random.random() > threshold:
+            # List of possible augmentations: equal chance of a flip and a rotation
+            augmentations = [
+                transforms.functional.hflip,
+                transforms.functional.vflip,
+                lambda img: transforms.functional.rotate(img, np.random.uniform(0, 360)),
+                lambda img: transforms.functional.rotate(img, np.random.uniform(0, 360))
+            ]
+            
+            # Random augmentation of image
+            aug_func = np.random.choice(augmentations)
+            image = aug_func(image)
+        
+        # Apply standard preprocessing
+        return self.transform(image)
 
 if __name__ == "__main__":
     # File paths

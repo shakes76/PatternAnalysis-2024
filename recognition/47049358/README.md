@@ -4,16 +4,35 @@ author: "Ryuto Hisamoto"
 date: "2024-10-25"
 ---
 
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Improved 3D UNet](#improved-3d-unet)
+  - [Problem](#problem)
+  - [Model](#model)
+- [Loading Data](#loading-data)
+- [Training](#training)
+  - [Loss Function](#loss-function)
+  - [Optimiser](#optimiser)
+- [Testing](#testing)
+- [Result](#result)
+- [Discussion](#discussion)
+- [Conclusion](#conclusion)
+- [References](#references)
+- [Dependencies](#dependencies)
+
 # Improved 3D UNet
 
 Improved 3D UNet is capable of producing segmentations for medical images. The report covers the architecture of model,its parameters and relevant components, and its performance on 3D prostate data.
 
-## The Problem
+## Problem
 
 Segmentation is a task that requires a machine learning models to divide image components into meaningful parts.
 In other words, the model is required to classify components of an image correctly into corresponding labels.
 
-## The Model
+## Model
+
+[`modules.py`](modules.py)
 
 <p align="center">
   <img src = documentation/model_architecture.png alt = "Improved 3D UNet Architecture" width = 100% >  
@@ -33,7 +52,9 @@ The localisation pathway (decoding part) utilises a 4 x 4 x 4 transposed convolu
 
 From the third localisation layer, segmentation layers which apply 1 x 1 x 1 convolution with a stride of 1 take outputs from localisation modules and map them to the corresponding segmentation labels and are summed element-wise after upscaled to match the size. Finally the output is applied a softmax to turn its predictions of labels into probabilities for later calculation of loss. It is to be noted that, argmax has to be applied to produce proper masks from the output of the model. Otherwise, the model produces its predictions from the architecture and processed discussed.
 
-### Loading Data
+# Loading Data
+
+[`dataset.py`](dataset.py)
 
 The authors of "Brain Tumor Segmentation and Radiomics Survival Prediction: Contribution to the BRATS 2017 Challenge" seem to have used the following augmentation methods:
 
@@ -68,7 +89,9 @@ Resizing is an optional transformation as it is meant to be done to save the mem
   <em>Figure 2: Example of labels layered on top of images.</em>
 <p>
 
-### Training
+# Training
+
+[`train.py`](train.py)
 
 - Batch Size: 2
 - Number of Epochs: 300
@@ -78,7 +101,7 @@ Resizing is an optional transformation as it is meant to be done to save the mem
 
 The model takes in an raw image as its input, and its goal is to learn the best feature map which ends up being a multi-channel segmentation of the original image. 
 
-#### Loss Function
+## Loss Function
 
 The model utilises dice loss as its loss function. Moreover, it is capable of using deviations of dice loss such as a sum of dice loss and cross-entropy loss, or focal loss. A vanilla dice score has formula: $$D(y_{true}, y_{pred}) = 2 \times \frac{\Sigma(y_{true} \cdot y_{pred})}{\Sigma y_{true} + \Sigma y_{pred}}$$
 
@@ -98,7 +121,7 @@ $$L_{loss} = L_{Dice} + \alpha L_{CE}$$
 
 "Multi-task thyroid tumor segmentation based on the joint loss function" recommends to set $\alpha = 0.2$, so the report strictly follows it to calculate the weighted loss.
 
-#### Optimiser
+## Optimiser
 
 **Adam (Adaptive Moment Estimation)** is an optimisation algorithm that boosts the speed of convergence of gradient descent. The optimiser utilises an exponential average of gradients, which allows its efficient and fast pace of convergence. Moreover, the optimiser applies a **$L_2$ regularisation** (aka Tikhonov regularisation) to penalise for the complexity of model. Complexity can be defined as the number of parameters learned from the data, and high complexity is likely to be an indication of overfitting to the training samples. Hence, regularisation is necessary to prevent the model from learning high values of parameters by penalising the model for its complexity, and $L_2$ regularisation is one of the explicit regularisation methods which adds an extra penalty term to the cost function. The parameters learned with such technique can be denoted as
 
@@ -108,11 +131,13 @@ In addition, the model utilises a learning rate scheduler based on the number of
 
 It is to be noted that mixed precision and gradient accumulation are used to reduce the memory consumption during the training. **Mixed precision** reduces the memory consumption by replaceing value types with `torch.float16` where it can to reduce the space required to perform necessary operations including loss and gradient calculations necessary to train the model. **Gradient accumulation** accumulates the gradients and updates the weights after some training loop.
 
-### Testing
+# Testing
+
+[`predict.py`](predict.py)
 
 The model is tested by measuring its dice scores on the segmentations it produces for unseen images. Although the model outputs softmax values for its predicted segmentations, they are one-hot encoded during the test to maximise the contribution of correct predictions. Dice scores for each label is calculated independently to obtain the accurate performance to analyse the model's weakness and strengths in predicting particular segments for all labels. Then, their averages are taken and are summarised in the bar chart. Moreover, the visualisation of first 9 labels are produced with the actual segmentations for comparison.
 
-## Result
+# Result
 
 <p align="center">
   <img src = documentation/unet_dice_coefs_over_epochs_dice_ce_loss.png alt = "The Training Progress with Dice Loss + CE" width = 100% >
@@ -140,7 +165,7 @@ The model is tested by measuring its dice scores on the segmentations it produce
 
 The outcome shows the significant impact of the choice of loss function in the performance of model. It was found that with other loss functions, the model performs poorly on assigning correct labels to small segments. Specifically, segment label 4 (rectum) often suffered from poor performance as it was often ignored by the model in optimising the segmentaion of corresponding label. However, the addition of weighted cross-entropy loss seem to enforce the model to classify segments correctly, which might seem to cause a tremendous improvement in performance. The final model produces segment predictions with dice scores greater than 0.8 each, which is an astonishing performance from where it started off.
 
-## Discussion
+# Discussion
 
 Firstly, there had to be a compromise in maintaining the original resolution of the image given the limiation in resources. The model seem to perform well on downsized images, but without testing it on images with original resolution, its performance on original images can only be estimated. Moreover, the optimality of architecture remain as a question as the model could be potentially simplified to perform the same task without facing issues in its large consumption of computer memory.
 
@@ -149,11 +174,11 @@ Secondly, the project did not incorporate the idea of pateient-level predictions
 Finally, although the report strictly followed the implementation of the architectures and loss functions from the published papers with different problem space, there could be more optimal or efficient adjustments that could improve the model's performance in terms of accuracy and time and/or memory savings. Therefore, future research
 could focus on the improvement of current model with differentiations from the architectures and components already mentioned by researchers for new discoveries.
 
-## Conclusion
+# Conclusion
 
 Improved 3D UNet is a powerful architecture which makes complex image-processing tasks possible. However, its performance is truly maximised through the observation of its behaviour and performance under different settings, tunings, and/or parameter selections. In the given problem of segmenting 3D prostate images, adjusting the loss function from a vanilla dice loss to the sum of dice loss and weighted cross-entropy loss improved the performance dramatically. The model could be explored in depth in regards to its relationship with its components for improved performance, which could potentially lead to a discovery of new and more generalised architectures that could function in wider 
 
-## References
+# References
 
 1. Gupta, P. (2021, December 17). Understanding Skip Connections in Convolutional Neural Networks using U-Net Architecture. Medium. https://medium.com/@preeti.gupta02.pg/understanding-skip-connections-in-convolutional-neural-networks-using-u-net-architecture-b31d90f9670a
 
@@ -163,7 +188,7 @@ Improved 3D UNet is a powerful architecture which makes complex image-processing
 
 4. Yang, D., Li, Y., & Yu, J. (2022). Multi-task thyroid tumor segmentation based on the joint loss function. Biomedical Signal Processing and Control, 79(2). https://doi.org/10.1016/j.bspc.2022.104249
 
-## Dependencies
+# Dependencies
 
 - matplotlib=3.9.2
 - monai=1.4.0
@@ -173,4 +198,4 @@ Improved 3D UNet is a powerful architecture which makes complex image-processing
 - torchaudio=2.5.0
 - torchvision=0.20.0
 
-For more details, refer to `requirements.txt`
+_\*For more details, please refer to the [`requirements.txt`](requirements.txt)._

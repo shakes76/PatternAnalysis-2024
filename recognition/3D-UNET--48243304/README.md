@@ -78,8 +78,9 @@ matplotlib		3.4.3  (for visualization)
 evaluation metric:
 	using the DICE Coefficient to evaluate the model
 	
-		the result is:	0.9258
-  	![DICE Coffeicient](recognition/3D-UNET--48243304/result/dice.png)
+	the result is:	0.9258
+ 
+  ![DICE Coffeicient](recognition/3D-UNET--48243304/result/dice.png)
 	
 segmentation output:
 

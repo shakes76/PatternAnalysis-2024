@@ -1,17 +1,17 @@
 """
-containing the source code of the components of GFNet model. 
+Contains the source code for components of the GFNet model.
 
 Created by: Shogo Terashima
 Created by:     Shogo Terashima
 ID:             S47779628
-Last update:    24/10/2024
+Last update:    25/10/2024
 Reference:
-Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). 
+- Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). 
     GFNet: Global Filter Networks for Visual Recognition. 
     IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(9), 10960–10973. 
     https://doi.org/10.1109/tpami.2023.3263824
 
-raoyongming. (2021). GitHub - raoyongming/GFNet: 
+- raoyongming. (2021). GitHub - raoyongming/GFNet: 
     [NeurIPS 2021] [T-PAMI] Global Filter Networks for Image Classification. GitHub.
      https://github.com/raoyongming/GFNet?tab=MIT-1-ov-file#readme
 
@@ -24,7 +24,7 @@ from timm.layers import DropPath
 
 class GlobalFilterLayer(nn.Module):
     '''
-    GlobalFilterLayer is a layer that applies a learnable global filter in the frequency domain.
+    Applies a learnable global filter in the frequency domain, based on the Global Filter Layer pseudocode.
     Implemented based on the pseudocode of Global Filter Layer from the paper.
     It consists of Layer Normalisation, 2D FFT, Element-wise multiplication, and 2D IFFT.
     '''
@@ -52,7 +52,7 @@ class GlobalFilterLayer(nn.Module):
         return x_filtered 
 class FeedForwardLayer(nn.Module):
     '''
-    It consists of Layer normalisation,  two layers of MLP with a non-linear activation function, with dropout.
+    A feedforward layer consisting of layer normalization, two MLP layers with GELU activation, and dropout.
     '''
     def __init__(self, input_dim, drop=0.1):
         super().__init__()
@@ -74,7 +74,7 @@ class FeedForwardLayer(nn.Module):
 
 class Block(nn.Module):
     '''
-    Block to consist Global Filter Layer and Feed Forward Network
+     A block that combines a Global Filter Layer and a Feed Forward Network, with skip connections and drop path.
     '''
     def __init__(self, height, width, dimension, drop_rate=0.1, drop_path_rate=0.0, init_values=1e-5):
         super().__init__()
@@ -93,6 +93,9 @@ class Block(nn.Module):
     
 
 class PatchEmbedding(nn.Module):
+    '''
+    Embeds input images into patches for initial stages of the GFNet
+    '''
     def __init__(self, dim_in=1, embed_dim=256, patch_size=4):
         super().__init__()
         self.patch_size = patch_size
@@ -105,6 +108,9 @@ class PatchEmbedding(nn.Module):
         return x
     
 class DownSamplingLayer(nn.Module):
+    '''
+    Downsamples input feature maps for hierarchical GFNet stages.
+    '''
     def __init__(self, dim_in, dim_out):
         super().__init__()
         self.dim_in = dim_in
@@ -121,7 +127,7 @@ class DownSamplingLayer(nn.Module):
     
 class GFNet(nn.Module):
     '''
-    Here, we implemented a hierarchical version of the GFNet model.
+    Implements a hierarchical version of the GFNet model with Patch Embedding and DownSampling layers.
     Each stage starts with a Patch Embedding or DownSampling Layer, followed by a sequence of Blocks.
     After the last stage, the model performs global average pooling and outputs the final classification result through a linear layer.
     '''
@@ -171,8 +177,8 @@ class GFNet(nn.Module):
             current_block_index += num_blocks
         
         self.norm = nn.LayerNorm(stage_dims[-1])
-        self.head = nn.Linear(stage_dims[-1], num_classes)  # Linear head
-  
+        self.head = nn.Linear(stage_dims[-1], num_classes)  # fully connected  used for classification
+
     def forward(self, x):
         # Stage 1:
         x = self.patch_embedding[0](x)

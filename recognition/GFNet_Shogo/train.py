@@ -1,10 +1,14 @@
 '''
-Containing the source code for training, validating, testing and saving trained model. 
+Script for training, validating each epoch, and saving the trained GFNet-H-B model for Alzheimer's disease classification.
 
-Created by: Shogo Terashima
+This script includes:
+- Training the model, validating it each epoch, and applying early stopping based on validation loss.
+- Tuning hyperparameters using Optuna.
+- Saving the best model checkpoint and recording training and validation loss per epoch in a CSV file.
+
 Created by:     Shogo Terashima
 ID:             S47779628
-Last update:    24/10/2024
+Last update:    25/10/2024
 '''
 
 import torch
@@ -22,7 +26,7 @@ import gc
 
 def train_one_epoch(model, train_loader, criterion, optimiser, device):
     '''
-    Train model one epoch with using train set and calculate train loss.
+    Performs a single epoch of training on the train set and calculates the average training loss.
     '''
     model.train()
     running_loss = 0.0 
@@ -41,7 +45,7 @@ def train_one_epoch(model, train_loader, criterion, optimiser, device):
 
 def validate(model, val_loader, criterion, device):
     '''
-    Use validation set and calculate loss (BCEWithLogitsLoss)
+    Evaluates the model on the validation set using BCEWithLogitsLoss and returns the average validation loss.
     '''
     model.eval()
     running_loss = 0.0

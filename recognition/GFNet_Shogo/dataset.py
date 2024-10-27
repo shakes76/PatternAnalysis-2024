@@ -5,7 +5,7 @@ that will be used for normalising the datasets.
 
 Created by:     Shogo Terashima
 ID:             S47779628
-Last update:    24/10/2024
+Last update:    25/10/2024
 '''
 import torch
 from torchvision import datasets, transforms

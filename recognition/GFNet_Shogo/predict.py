@@ -1,11 +1,19 @@
 """
-Load test set, the best model, and CSV file that recorded train and validation loss across each epoch obtained by training.
-Predict the test set using the stored model and measure and report the accuracy. 
-It also plots the trend of train loss and validation loss at each epoch from the csv file saved by train.py.
+Script for evaluating the best-trained GFNet-H-B model on the test set of the ADNI dataset.
+
+This scipt:
+- Load the test set, the best model, and CSV file that recorded train and validation loss across each epoch obtained by training.
+- Predict the test set using the stored model and measure and report the accuracy. 
+- Plots the trend of train loss and validation loss at each epoch from the csv file saved by train.py.
+
+Additional Information:
+- Assumes model checkpoints are saved based on performance during training.
+- Hyperparameters are set to identify the folder containing the saved model checkpoints and CSV files.
+- Assumes the hyperparameters match those used in train.py.
 
 Created by:     Shogo Terashima
 ID:             S47779628
-Last update:    24/10/2024
+Last update:    25/10/2024
 """
 import torch
 from modules import GFNet
@@ -18,6 +26,7 @@ import pandas as pd
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
+##### Hyper Parameters #####
 # Set the hyperparameter (for identifying the folder that the model is saved by train.py)
 learning_rate = 0.005876215431947011
 weight_decay = 0.0007870757149220836
@@ -26,6 +35,8 @@ drop_path_rate = 1.0
 batch_size = 64
 warmup_epochs = 5
 t_max = 30
+############################
+
 
 # Load test data
 test_dataset_path = "/home/groups/comp3710/ADNI/AD_NC/test"

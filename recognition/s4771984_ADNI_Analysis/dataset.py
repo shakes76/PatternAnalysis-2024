@@ -1,5 +1,3 @@
-from google.colab import drive
-drive.mount('/content/drive',force_remount=True)
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, SubsetRandomSampler

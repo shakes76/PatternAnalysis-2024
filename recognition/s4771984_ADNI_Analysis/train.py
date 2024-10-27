@@ -1,5 +1,3 @@
-from google.colab import drive
-drive.mount('/content/drive',force_remount=True)
 import torch
 import torch.optim as optim
 import torch.nn as nn

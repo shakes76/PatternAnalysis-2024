@@ -1,5 +1,6 @@
 import numpy as np
 import nibabel as nib
+import torch
 from tqdm import tqdm
 
 
@@ -74,6 +75,7 @@ def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.floa
         return images, affines
     else:
         return images
+
 
 def one_hot_mask(targets):
     """

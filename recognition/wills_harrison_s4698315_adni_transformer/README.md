@@ -1,16 +1,12 @@
 # Alzheimer's Disease Classification using SWIN Transformer
-___
 
 # Overview  
-___
 
 Alzheimer disease (AD) is a neurodegenerative disorder characterized by β-amyloid (Aβ)­ containing extracellular plaques and tau-containing intracellular neurofibrillary tangles, The presentation of AD withshort-term memory difficulty is most common but impairment in expressive speech, visuospatial processing and executive (mental agility) functions also occurs [[1]](#ref1).
 
 For obvious reasons the early detection of AD is crucial for the treatment and management of the disease. In this project, we aim to classify MRI images of the brain as either AD or no condition (NC) using the Swin Transformer architecture.
 
 # Model Architecture
-
-___
 
 The Swin Transformer is a hierarchical vision transformer that uses shifted windows to capture long-range dependencies in images. The Swin Transformer architecture is shown below.
 
@@ -73,7 +69,6 @@ Image augmentation techniques such as random horizontal flip, random rotation, a
 Transformations that introduce noise or distortions to the images were avoided since in the context of medical imaging, preserving the original features of the images is crucial for accurate diagnosis. Real world images are not likely to be distorted or noisy and so the model should be trained on clean images to ensure it can generalize to unseen data.
 
 # Results
-___
 
 ### Performance Metrics
 
@@ -115,8 +110,6 @@ For each given image, the model produces probabilities for each class (AD and NC
 
 
 # Usage
-___
-
 To train your own model, follow the steps below.
 
 ### 1. Clone the repository

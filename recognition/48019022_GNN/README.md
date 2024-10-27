@@ -71,19 +71,19 @@ The repository implements 4 GNN architectures:
 - GraphSAGE (**SAGE**)
 - Simple Graph Convolution (**SGC**)
 
-1. To select a model to train, change [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L128) in train.py to one of the above bracketed model types. If you wish to reproduce data splits, set a seed with [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L130).
+1. To select a model to train, change [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L128) in `train.py` to one of the above bracketed model types. If you wish to reproduce data splits, set a seed with [this line](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/b1280aff8f3637526ee9a34e0b542718c09f1e08/recognition/48019022_GNN/train.py#L130).
 
 2. To train the model, run the following command:
    ```bash
    python train.py
    ```
 
-4. To run inference on the trained model, first select the model type trained in predict.py, then run:
+4. To run inference on the trained model, first [select the model](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/d62be4722f58923f5a8fb3dc5e877f17e40f907b/recognition/48019022_GNN/predict.py#L19) type trained in predict.py, [set a seed](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/d62be4722f58923f5a8fb3dc5e877f17e40f907b/recognition/48019022_GNN/predict.py#L14), then run:
    ```bash
    python predict.py
    ```
 
-5. To visualise the embeddings, again, change the model name in plotting.py, then execute:
+5. To visualise the embeddings, again, [change the model type](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/d62be4722f58923f5a8fb3dc5e877f17e40f907b/recognition/48019022_GNN/plotting.py#L37) and [seed](https://github.com/anthonylastnamengo/PatternAnalysis-2024/blob/d62be4722f58923f5a8fb3dc5e877f17e40f907b/recognition/48019022_GNN/plotting.py#L32) in `plotting.py`, then execute:
    ```bash
    python plotting.py
    ```
@@ -127,16 +127,13 @@ Simplified Graph Convolution (SGC) reduces the complexity of graph convolutional
 
 SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
 
-[FORMULA]
-
-SGC is efficient and effective for node classification, particularly in scenarios where deeper layers do not significantly improve performance.
-
 ## Training Process
 ### Data Splits
 Before training, the data is prepared using a GNNDataLoader, which takes in numpy data from the file facebook.npz and divides it into three subsets:
 - **80% Training Set**: Used to train the model and update weights.
 - **10% Validation Set**: Used to monitor the model's performance during training in methods to alleviate overfitting.
 - **10% Test Set**: Used to evaluate the final model performance after training.
+
 The 80/10/10 split ratio is a common practice in machine learning.
 
 ### Model Initialisation
@@ -169,12 +166,15 @@ For each epoch, the following steps occur:
    - After training, a plot of training and validation loss is generated to visually assess the training process.
 
 **Saving the Model**
+
 At the end of each epoch, if the validation loss improves, the model’s weights are saved. The weights can be restored later for evaluation or inference. The file is saved with a name that indicates the model architecture.
 
 **Learning Rate Scheduling**
+
 A learning rate scheduler (StepLR) is employed to adjust the learning rate during training. Every 50 epochs, the learning rate is multiplied by a gamma factor (0.5 in this case) to help the optimiser converge to better minima.
 
 **Final Logging**
+
 At the end of training, additional metrics such as total training time and the number of parameters in the model are logged to WandB for later analysis.
 
 ### Training Details
@@ -204,7 +204,7 @@ The primary metrics logged and used for the analysis of the GNN architectures we
     - Well-separated clusters in the t-SNE plot imply that the model has learned distinct representations for the different node categories, which indicates good classification performance.
 
 ### Testing Methodology
-Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the dataset.py file. Each model was then tested on each seed for a total of 5 runs. The following graphs display the performances of each model.
+Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the `dataset.py` file. Each model was then tested on each seed for a total of 5 runs. The following graphs display the performances of each model.
 
 ### GCN Performance
 **GCN Loss Plot:**
@@ -282,7 +282,7 @@ Each model was provided the same set of data. As the data is randomly split each
 [Comparisons T-SNE Visualisation]
 
 ## Inference
-To test trained models on the graph data, use the predict.py script. This script will load a selected trained model and attempt to classify each node of the dataset.
+To test trained models on the graph data, use the `predict.py` script. This script will load a selected trained model and attempt to classify each node of the dataset.
 
 ## References
 - Kipf, T. N., & Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. ArXiv:1609.02907 [Cs, Stat]. https://arxiv.org/abs/1609.02907

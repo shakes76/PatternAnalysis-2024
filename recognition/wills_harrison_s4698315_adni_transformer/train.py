@@ -124,7 +124,6 @@ def train(patience=50, lr=1e-4, batch_size=64, show_plots=False,
         val_loss_values.append(avg_val_loss)
         
         print(f'Epoch {epoch+1}/{num_epochs}, Training Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}')
-        # print(f'Validation Accuracy: {accuracy(model)}')
         
         # Early stopping check
         if avg_val_loss < best_loss:

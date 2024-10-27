@@ -95,11 +95,9 @@ As can be seen from the plot, the model was trained for 100 epochs and the best 
 
 The confusion matrix of the model is shown below.
 
-![Confusion Matrix](images/confusion.png)
+![Confusion Matrix](images/confusion.png){ width=50% height=50% }
 
-The predictions of the model seem fairly well balanced and accurate 
-
-As an additonal note, the model achieved an accuracy of 0.85 on the training set and 0.82 on the test set.
+The predictions of the model seem fairly well balanced and accurate with no clear bias towards either class. As an additonal note, the model achieved an accuracy of 0.85 on the training set and 0.82 on the test set.
 
 ### Example Predictions
 
@@ -107,12 +105,12 @@ For each given image, the model produces probabilities for each class (AD and NC
 
 | Image | Prediction | Confidence | Actual |
 |-------|------------|------------|--------|
-| ![Image](images/AD/1.jpeg) | AD | 0.99 | AD |
-| ![Image](images/AD/2.jpeg) | AD | 0.87 | AD |
-| ![Image](images/AD/3.jpeg) | NC | 0.65 | AD |
-| ![Image](images/NC/1.jpeg) | NC | 0.92 | NC |
-| ![Image](images/NC/2.jpeg) | NC | 0.88 | NC |
-| ![Image](images/NC/3.jpeg) | AD | 0.54 | NC |
+| ![Image](images/AD/1.jpeg){width=50% height=50%} | AD | 0.99 | AD |
+| ![Image](images/AD/2.jpeg){width=50% height=50%} | AD | 0.87 | AD |
+| ![Image](images/AD/3.jpeg){width=50% height=50%} | NC | 0.65 | AD |
+| ![Image](images/NC/1.jpeg){width=50% height=50%} | NC | 0.92 | NC |
+| ![Image](images/NC/2.jpeg){width=50% height=50%} | NC | 0.88 | NC |
+| ![Image](images/NC/3.jpeg){width=50% height=50%} | AD | 0.54 | NC |
 
 
 
@@ -123,13 +121,8 @@ To train your own model, follow the steps below.
 
 ### 1. Clone the repository
 
-Clone the repository and navigate to the
-alzheimer-classification directory.
+Clone the repository and navigate to the wills_harrison_s4698315_adni_transformer directory.
 
-```bash
-$ git clone
-$ cd alzheimer-classification
-```
 
 ### 2. Install dependencies
 
@@ -181,7 +174,7 @@ $ python train.py
 To evaluate the accuracy of the model, run the following command.
 
 ```bash
-$ python predict.py --accuracy
+$ python predict.py --accuracy <path_to_model>
 ```
 
 To produce the confusion matrix, run the following command.

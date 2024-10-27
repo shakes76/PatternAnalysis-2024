@@ -1,3 +1,12 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+Plots the loss vs iteration plots for the Discriminator and Generator as well as 
+generates images using the trained StyleGAN2 model.
+"""
+
+
 from __future__ import print_function
 #%matplotlib inline
 import os

@@ -1,3 +1,13 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+This file is the 'main' file for the project. Contains code that trains the StyleGAN2
+and executes all other functionality from the other modules, and hence runs the entire project.
+Also includes a GPU warmup function to avoid GPU warmup errors.
+"""
+
+
 from __future__ import print_function
 #%matplotlib inline
 import torch
@@ -8,6 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import torchvision.utils as vutils
+import umap
 
 from tqdm import tqdm
 
@@ -15,6 +26,7 @@ import dataset
 import modules
 import utils
 import predict
+import colour_umap
 from config import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -64,9 +76,32 @@ if load_model:
     # discrim.load_state_dict(torch.load('/content/drive/My Drive/COMP3710/project/assets/netD.pth'))
     # mapping_network.load_state_dict(torch.load('/content/drive/My Drive/COMP3710/project/assets/netM.pth'))
 
-
     print("Loaded pre-trained models.")
     predict.generate_examples(gen, mapping_network, 14, device) # Change epoch from 14 to whatever epoch you want
+
+    num_samples = 10000 # Total style codes to sample
+    style_codes = colour_umap.sample_style_codes(mapping_network, num_samples, z_dim, batch_size, device)
+    style_codes_np = style_codes.detach().numpy()
+
+    # Generate images
+    images = colour_umap.generate_images_from_style_codes(gen, style_codes, batch_size, device)
+
+    # Compute mean intensity
+    attributes = colour_umap.compute_mean_intensity(images)
+
+    reducer = umap.UMAP(n_components=2, random_state=42)
+    embedding = reducer.fit_transform(style_codes_np)
+
+    # Plot embeddings colored by mean intensity
+    plt.figure(figsize=(12, 10))
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=attributes, cmap='viridis', s=5)
+    plt.title('UMAP Projection of Style Codes Colored by Mean Intensity', fontsize=15)
+    plt.xlabel('UMAP Dimension 1')
+    plt.ylabel('UMAP Dimension 2')
+    plt.colorbar(label='Mean Intensity')
+    plt.show()
+
+
 
 if not load_model:
     # Train the following modules
@@ -154,8 +189,7 @@ if not load_model:
         if epoch % 10 == 0:
             predict.generate_examples(gen, mapping_network, epoch, device)
 
-
-    # Save the models after training
+    # Save the models after training. May need to update these paths!
     torch.save(gen.state_dict(), '/assets/netG.pth')
     torch.save(discrim.state_dict(), '/assets/netD.pth')
     torch.save(mapping_network.state_dict(), '/assets/netM.pth')
@@ -164,8 +198,26 @@ if not load_model:
     # Plot the loss graphs
     predict.plot_loss(G_Loss, D_Loss)
 
+    num_samples = 10000 # Total style codes to sample
+    style_codes = colour_umap.sample_style_codes(mapping_network, num_samples, z_dim, batch_size, device)
+    style_codes_np = style_codes.detach().numpy()
 
+    # Generate images
+    images = colour_umap.generate_images_from_style_codes(gen, style_codes, batch_size, device)
 
+    # Compute mean intensity
+    attributes = colour_umap.compute_mean_intensity(images)
 
+    reducer = umap.UMAP(n_components=2, random_state=42)
+    embedding = reducer.fit_transform(style_codes_np)
+
+    # Plot embeddings colored by mean intensity
+    plt.figure(figsize=(12, 10))
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=attributes, cmap='viridis', s=5)
+    plt.title('UMAP Projection of Style Codes Colored by Mean Intensity', fontsize=15)
+    plt.xlabel('UMAP Dimension 1')
+    plt.ylabel('UMAP Dimension 2')
+    plt.colorbar(label='Mean Intensity')
+    plt.show()
 
 

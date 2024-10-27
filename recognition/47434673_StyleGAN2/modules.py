@@ -1,3 +1,13 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+This file handles all the modules. 
+Contains the complete architecture of the StyleGAN2 model.
+Classes include the Discriminator, Generator and Mapping Network.
+"""
+
+
 from __future__ import print_function
 #%matplotlib inline
 import torch
@@ -17,7 +27,7 @@ from config import *
 
 
 class MappingNetwork(nn.Module):
-    """The Mapping Network class maps a latent vector `z` to an intermediate vector `w`, used for style-based image generation."""
+    """The Mapping Network class maps a latent vector z to an intermediate vector w, used for style-based image generation."""
     def __init__(self, z_dim, w_dim):
         super().__init__()
 
@@ -41,7 +51,7 @@ class MappingNetwork(nn.Module):
         )
     
     def forward(self, x):
-        # Normalize `z` using PixelNorm, then map to `w`
+        # Normalize z using PixelNorm, then map to w
         # Normalize z
         x = x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)  # for PixelNorm 
         # Maps z to w

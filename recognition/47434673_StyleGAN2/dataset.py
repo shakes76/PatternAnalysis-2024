@@ -1,3 +1,13 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+This file handles the data processing. 
+The ImageFolder for the dataset and the DataLoader are instantiated and all data pre-processing is handled in 
+the get_data method. The show_imgs method saves some images after the data pre-processing is complete.
+"""
+
+
 from __future__ import print_function
 #%matplotlib inline
 import torch

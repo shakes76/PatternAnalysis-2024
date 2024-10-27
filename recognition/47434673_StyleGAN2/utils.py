@@ -1,3 +1,12 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+This file contains the methods for data augmentation and optimisation.
+Also reduces the L2 norm of the gradients of the discriminator in gradient_penalty method.
+"""
+
+
 from __future__ import print_function
 #%matplotlib inline
 import torch

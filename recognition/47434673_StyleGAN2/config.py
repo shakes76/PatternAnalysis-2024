@@ -1,7 +1,15 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+Contains all the hyperparameters used in the entire project. These may be updated to suit the needs of the
+model that the user wishes to create.
+"""
+
+
 import random
 import torch
 
-# Hyperparameters
 
 # UPDATE HERE to the file path to your data
 data_root = "C:\Users\kylie\OneDrive\Documents\keras_png_slices_data\keras_png_slices_data\keras_png_slices_seg_train"
@@ -16,7 +24,7 @@ ngf = 64 # Size of feature maps in generator
 ndf = 64 # Size of feature maps in discriminator
 beta1 = 0.5 # Beta1 hyperparameter for Adam optimizers
 ngpu = 1 # Number of GPUs available. Use 0 for CPU mode.
-epochs = 50 # Number of epochs
+epochs = 1 # Number of epochs
 learning_rate = 0.001 # Learning rate
 channels = 1 # 1 Channel for greyscale images, 3 for RGB.
 batch_size = 32 # Number of images per training batch

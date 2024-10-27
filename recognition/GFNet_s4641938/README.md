@@ -217,10 +217,6 @@ On a more detailed investigation, I found that the original weight initalisation
 The model have improved given enough training time, but this was not feasible due to time constraints. Regardless, I attempted to change the initalisation of the parameters to have significant more deviation in the weight parameters:
 Original (see function in modules.py inside the GFNetPyramid class)
 ```python
-        trunc_normal_(self.pos_embed, std=.02)
-        self.apply(self._init_weights)
-
-
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)

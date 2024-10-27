@@ -10,6 +10,8 @@ This repository contains code to train computer vision neural network designed t
 
 ![GFNet Structure](https://github.com/user-attachments/assets/b8e67323-a4d2-4427-ac7c-0e3720ccc62a)
 
+[Image Source](https://github.com/raoyongming/GFNet)
+
 GFNet adapts the well-known vision transformer (ViT) models by replacing the self-attention layer with a global filter layer. 
 GFNet contains:
 - **Patch Embedding**: Initial input images are split into several smaller size patches, which are then flattened into a lower-dimensional space.

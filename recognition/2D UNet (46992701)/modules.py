@@ -112,7 +112,7 @@ class UNet(nn.Module):
 
         # Final layer with a 1x1 convolution to map each 64-component feature vector
         # to the desired number of classes
-        self.outputs = nn.Conv2d(64, 6, kernel_size=1, padding=0)
+        self.outputs = nn.Conv2d(64, 5, kernel_size=1, padding=0)
 
     def forward(self, inputs):
         """
@@ -122,7 +122,7 @@ class UNet(nn.Module):
         # Each encoder block returns:
         # (i) the output of the convolutions, which is used as the skip connection for the decoder
         # and (ii) the output of the pooling layer, which is passed into the next encoder block.
-        
+
         skip_connection1, pooled1 = self.encoder_block1(inputs)
         skip_connection2, pooled2 = self.encoder_block2(pooled1)
         skip_connection3, pooled3 = self.encoder_block3(pooled2)

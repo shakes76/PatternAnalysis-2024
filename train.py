@@ -33,6 +33,9 @@ def train_model(model, train_loader, val_loader, num_epochs=25, learning_rate=0.
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+    # Initialize a list to store loss values
+    loss_values = []
+
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -44,9 +47,10 @@ def train_model(model, train_loader, val_loader, num_epochs=25, learning_rate=0.
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        _logger.info(
-            f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss/len(train_loader)}"
-        )
+
+        epoch_loss = running_loss / len(train_loader)
+        loss_values.append(epoch_loss)
+        _logger.info(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}")
 
         # Validation
         model.eval()
@@ -63,7 +67,17 @@ def train_model(model, train_loader, val_loader, num_epochs=25, learning_rate=0.
                 correct += (predicted == labels).sum().item()
         _logger.info(f"Validation Accuracy: {correct/total}")
 
+    # Plot the loss values after training
+    plt.figure(figsize=(10, 5))
+    plt.plot(loss_values, label="Training Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training Loss Over Epochs")
+    plt.legend()
+    plt.show()
+
     return model
+
 
 # Evaluation function
 def evaluate_model(model, test_loader):
@@ -81,21 +95,28 @@ def evaluate_model(model, test_loader):
             correct += (predicted == labels).sum().item()
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
-    
+
     cm = confusion_matrix(all_labels, all_preds)
-    _logger.info(f'Confusion Matrix:\n{cm}')
-    
+    _logger.info(f"Confusion Matrix:\n{cm}")
+
     # Plot confusion matrix
     plt.figure(figsize=(10, 7))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Normal', 'AD'], yticklabels=['Normal', 'AD'])
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title('Confusion Matrix')
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=["Normal", "AD"],
+        yticklabels=["Normal", "AD"],
+    )
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.title("Confusion Matrix")
     plt.show()
-    
+
     # Compute accuracy
     correct = sum(np.array(all_preds) == np.array(all_labels))
     total = len(all_labels)
     test_accuracy = correct / total
-    _logger.info(f'Test Accuracy: {test_accuracy}')
+    _logger.info(f"Test Accuracy: {test_accuracy}")
     return test_accuracy

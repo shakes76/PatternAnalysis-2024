@@ -1,19 +1,18 @@
-# Pattern Analysis
-Pattern Analysis of various datasets by COMP3710 students in 2024 at the University of Queensland.
+# 1 Training parameters
+- Image input size: 3, 224, 224
+- Training bacth size: 32
+- Learning rate: 0.001
+- Epochs = 25
 
-We create pattern recognition and image processing library for Tensorflow (TF), PyTorch or JAX.
+Model is trained using 1200 images, validated using 900 images and tested using 300 images.
 
-This library is created and maintained by The University of Queensland [COMP3710](https://my.uq.edu.au/programs-courses/course.html?course_code=comp3710) students.
+# 2 Model Evalution
 
-The library includes the following implemented in Tensorflow:
-* fractals 
-* recognition problems
+Final accuracy: 93.88% of unseen test data is predicted correctly.
 
-In the recognition folder, you will find many recognition problems solved including:
-* segmentation
-* classification
-* graph neural networks
-* StyleGAN
-* Stable diffusion
-* transformers
-etc.
+Image below shows the accuracy using confusion matrix.
+
+![Alt text](images/confusion_matrix.png)
+
+# 3 Training process
+The train.py module trains the data. Data is first loaded and preprocessed. Then the model is trained using the training data. The model is then evaluated using the test data. The model wieghts is saved in the model directory. 

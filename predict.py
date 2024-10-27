@@ -29,20 +29,29 @@ from collections import OrderedDict
 import torch.optim as optim
 
 
-# Model Initialization
-model = GFNet(img_size=224, patch_size=16, in_chans=3, num_classes=2, embed_dim=768, depth=12, mlp_ratio=4, drop_rate=0, drop_path_rate=0.)
+model = GFNet(
+    img_size=224,
+    patch_size=16,
+    in_chans=3,
+    num_classes=2,
+    embed_dim=768,
+    depth=12,
+    mlp_ratio=4,
+    drop_rate=0,
+    drop_path_rate=0.0,
+)
 model.head = nn.Linear(model.num_features, 2)  # Assuming binary classification
-model.to(device)  # Move model to GPU
-# Train the model
-trained_model = train_model(model, train_loader, val_loader, num_epochs=25, learning_rate=0.001)
+model.to(device)
 
-# Evaluate the model
+trained_model = train_model(
+    model, train_loader, val_loader, num_epochs=25, learning_rate=0.001
+)
+
 test_accuracy = evaluate_model(trained_model, test_loader)
 
-# Save the model
-torch.save(trained_model.state_dict(), 'gfnet_adni_model2.pth')
+torch.save(trained_model.state_dict(), "gfnet_adni_model2.pth")
 
 # Load the model for inference
-model.load_state_dict(torch.load('gfnet_adni_model.pth'))
+model.load_state_dict(torch.load("gfnet_adni_model.pth"))
 model.to(device)  # Ensure the model is on the GPU for inference
 model.eval()

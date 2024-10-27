@@ -51,6 +51,7 @@ The training process tracks the following metrics:
 - **SSIM**: Measures the similarity between the original and reconstructed images, with a target of 0.6 or higher.
 
 **Example Plot of Metrics Over Epochs:**
+
 ![image](https://github.com/user-attachments/assets/1770c9ac-47c0-40ef-9579-f04588532e8f)
 ![image](https://github.com/user-attachments/assets/2922da3e-ed57-4161-8848-1278d263e3b9)
 ![image](https://github.com/user-attachments/assets/848ff545-6d34-4ef0-861c-602c453090ff)
@@ -73,6 +74,7 @@ The results can be reproduced using the following steps:
 **Output**: Reconstructed 2D slice of the prostate MRI scan
 
 The following figure shows the original/input (top row) and reconstructed/output images (bottom row):
+
 ![image](https://github.com/user-attachments/assets/a77f83a1-bfbb-4c6b-b8f2-ddd30e37c618)
 
 

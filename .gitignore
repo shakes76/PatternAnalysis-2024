@@ -1,3 +1,4 @@
-/recognition/data/*
+2D-MRI_s4698543/recognition/data/*
+2D-MRI_s4698543/__pycache__/*
 *.pth
-/__pycache__/*
+

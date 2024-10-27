@@ -12,9 +12,14 @@ import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
 
+
+IS_RANGPUR_ENV = False
+
 # Dataset path
-# root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/keras_slices_' # Local path
-root_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_' # Rangpur path
+if IS_RANGPUR_ENV:
+    root_path = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_' # Rangpur path
+else:
+    root_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/HipMRI_study_keras_slices_data/keras_slices_' # Local path
 
 
 def to_channels(arr: np.ndarray, dtype = np.uint8) -> np.ndarray:
@@ -80,21 +85,11 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     else:
         return torch.tensor(images, dtype = torch.float32)
 
-### TODO: Remove this code after testing
-# def load_img_seg_pair(dataset_type="train"):
-#     assert dataset_type in ["train", "test", "validate"], "Invalid dataset type. Must be 'train', 'test' or 'validate'."
-
-#     img_path = root_path + dataset_type + '/'
-#     seg_path = root_path + 'seg_' + dataset_type + '/'
-#     images_paths = sorted([os.path.join(img_path, img) for img in os.listdir(img_path) if img.endswith('.nii.gz')])
-#     segmentations_paths =  sorted([os.path.join(seg_path, seg) for seg in os.listdir(seg_path) if seg.endswith('.nii.gz')])
-#     images = load_data_2D(images_paths[342:350], normImage=True)
-#     segmentations = load_data_2D(segmentations_paths[342:350])
-
-#     return images, segmentations
-
 
 class MRIDataset(data.Dataset):
+    """ 
+    Dataset class for the MRI dataset.
+    """
     def __init__(self, dataset_type):
         self.image_paths = sorted([os.path.join(root_path + dataset_type + '/', img) for img in os.listdir(root_path + dataset_type + '/') if img.endswith('.nii.gz')])
         self.label_paths = sorted([os.path.join(root_path + 'seg_' + dataset_type + '/', seg) for seg in os.listdir(root_path + 'seg_' + dataset_type + '/') if seg.endswith('.nii.gz')])
@@ -112,6 +107,9 @@ class MRIDataset(data.Dataset):
 
 
 class MRIDataLoader(data.DataLoader):
+    """ 
+    Data loader for the MRI dataset.
+    """
     def __init__(self, dataset_type, batch_size=1, shuffle=False, pin_memory=False, num_workers=0):
         self.dataset = MRIDataset(dataset_type)
         super(MRIDataLoader, self).__init__(self.dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers)
@@ -121,40 +119,3 @@ class MRIDataLoader(data.DataLoader):
         perm = torch.randperm(len(self.dataset))
         self.dataset.image_paths = [self.dataset.image_paths[i] for i in perm]
         self.dataset.label_paths = [self.dataset.label_paths[i] for i in perm]
-
-
-### TODO: Remove this code after testing
-### Unit test
-
-# from matplotlib import pyplot as plt
-
-# test_dataset = MRIDataset('train')
-
-# plt.figure()
-# cols, rows = 2, 2
-# for i in range(rows*cols):
-#     img, seg = test_dataset[i]
-#     plt.subplot(rows, cols, i+1)
-#     plt.imshow(img[0], cmap='gray')
-#     plt.imshow(seg[0], cmap='gray', alpha=0.5)
-
-# plt.show()
-
-
-# for i, image in enumerate(images):
-#     plt.figure(i)
-#     plt.subplot(1, 7, 1)
-#     plt.imshow(torch.eq(image, 0), cmap='gray')
-#     plt.subplot(1, 7, 2)
-#     plt.imshow(torch.eq(image, 1), cmap='gray')
-#     plt.subplot(1, 7, 3)
-#     plt.imshow(torch.eq(image, 2), cmap='gray')
-#     plt.subplot(1, 7, 4)
-#     plt.imshow(torch.eq(image, 3), cmap='gray')
-#     plt.subplot(1, 7, 5)
-#     plt.imshow(torch.eq(image, 4), cmap='gray')
-#     plt.subplot(1, 7, 6)
-#     plt.imshow(torch.eq(image, 5), cmap='gray')
-#     plt.subplot(1, 7, 7)
-#     plt.imshow(image, cmap='gray')
-#     plt.show()

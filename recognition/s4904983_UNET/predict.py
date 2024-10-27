@@ -4,12 +4,9 @@ Author: Øystein Kvandal
 Description: Contains the prediction function for the 2D UNET. Test the model on the test data.
 """
 
-import os
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from modules import UNet2D
-from train import dice_coefficient
+from modules import UNet2D, DiceLoss
+import dataset as ds
 from dataset import MRIDataLoader, MRIDataset
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -29,7 +26,6 @@ def load_model(model_path, device):
     model = UNet2D()
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
-    model.eval()
     return model
 
 
@@ -44,7 +40,6 @@ def predict_image(model, image, device):
 
     Returns:
         torch.Tensor: The predicted segmentation mask.
-        float: The dice coefficient.
     """
     with torch.no_grad():
         image = image.to(device)
@@ -52,7 +47,7 @@ def predict_image(model, image, device):
         return pred
     
 
-def plot_prediction(input_img, prediction, target, dice_coefficient):
+def plot_prediction(input_img, prediction, target):
     """ 
     Plot the input image, prediction and target segmentation masks.
 
@@ -69,8 +64,7 @@ def plot_prediction(input_img, prediction, target, dice_coefficient):
     for i in range(6):
         plt.subplot(1, 8, i+2)
         plt.imshow(prediction[i], cmap='gray')
-        if i == 3:
-            plt.title(f'Mask {i}')
+        plt.title(f'Mask {i}')
         plt.axis('off')
     plt.axis('off')
     plt.subplot(1, 8, 8)
@@ -78,10 +72,12 @@ def plot_prediction(input_img, prediction, target, dice_coefficient):
     plt.title('Target')
     plt.axis('off')
     ### Show the plot
-    # plt.show()
+    plt.show()
     ### Save the plot
-    # plt.savefig('C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/figures/prediction.png') # Local path
-    plt.savefig('/home/Student/s4904983/COMP3710/project/figures/prediction.png') # Rangpur path
+    if ds.IS_RANGPUR_ENV:
+        plt.savefig('/home/Student/s4904983/COMP3710/project/figures/prediction.png') # Rangpur path
+    else:
+        plt.savefig('C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/predictions/prediction.png') # Local path
 
 
 def test_model():
@@ -97,17 +93,22 @@ def test_model():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Directory where model is saved
-    model_path = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/models/unet_model_ep10.pth' # Local path
-    # model_dir = '/home/Student/s4904983/COMP3710/project/models/unet_model_ep10.pth' # Rangpur path
+    if ds.IS_RANGPUR_ENV:
+        model_dir = '/home/Student/s4904983/COMP3710/project/models/unet_model_ep20.pth' # Rangpur path
+    else:    
+        model_dir = 'C:/Users/oykva/OneDrive - NTNU/Semester 7/PatRec/Project/models/unet_model_ep20.pth' # Local path
+    
     print("Loading model")
-    model = load_model(model_path, device)
+    model = load_model(model_dir, device)
+    model.eval()
 
     # Load test data
     print("Loading data")
-    TestDataLoader = MRIDataLoader("test", batch_size=1)
+    TestDataLoader = MRIDataLoader("test", batch_size=1, shuffle=True)
     print("Model and test data loaded")
 
     # Predict and calculate dice coefficient
+    dice_loss = DiceLoss()
     dice_coefficients = []
     predictions = []
 
@@ -115,7 +116,8 @@ def test_model():
         # image = image[None, None, :, :]
         pred = predict_image(model, image, device)
         predictions.append(pred)
-        dice_coefficients.append(dice_coefficient(pred, label))
+        dice = dice_loss(pred, label.long(), return_dice=True)
+        dice_coefficients.append(dice)
 
 
     # Print average dice coefficient
@@ -131,7 +133,7 @@ def test_model():
         input_image, target = TestDataLoader.dataset[idx]
         prediction = predictions[idx]
         dice = dice_coefficients[idx]
-        plot_prediction(input_image.squeeze(0), prediction[0], target.squeeze(0), dice)
+        plot_prediction(input_image.squeeze(0), prediction[0], target.squeeze(0))
 
     return
 

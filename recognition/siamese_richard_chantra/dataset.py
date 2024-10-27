@@ -74,7 +74,7 @@ class DataManager:
         
         return balanced_train_data, test_data
 
-    def create_dataloaders(self, batch_size=32):
+    def create_dataloaders(self, batch_size=256):
         """
         Creating torch DataLoader objects for training and testing
         """

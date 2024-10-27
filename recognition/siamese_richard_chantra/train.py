@@ -19,10 +19,12 @@ class SiameseNetwork(nn.Module):
 
         # Fully Connected Layer
         self.fc = nn.Sequential(
-            nn.Linear(2048, 256),  # Output of ResNet50 is a 2048 dim feature vector
+            nn.Linear(2048, 512),
             nn.ReLU(),
             nn.Dropout(0.3),
-            nn.Linear(256, 128)    # Final embedding size of 128 for Euclidean distance calc
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128)
         )
 
     def forward(self, x1, x2):
@@ -62,7 +64,7 @@ class MLPClassifier(nn.Module):
         """
         return self.classifier(embedding)
 
-def contrastive_loss(output1, output2, label, margin=2.0):
+def contrastive_loss(output1, output2, label, margin=1.0):
     """
     Contrastive loss for Siamese Network training
     """
@@ -123,7 +125,7 @@ def train_mlp_classifier(siamese_network, mlp_classifier, optimizer, train_loade
     Train MLP classifier using Siamese Network embeddings
     """
     mlp_classifier.train()
-    siamese_network.eval()  # Freeze Siamese network
+    siamese_network.eval() # Freeze Siamese network
     criterion = nn.BCELoss()
     best_acc = 0.0
     
@@ -190,7 +192,7 @@ if __name__ == "__main__":
     mlp_classifier = MLPClassifier().to(device)
     
     # Initialize optimizers
-    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.009, weight_decay=1.3e-3)
+    optimizer_siamese = optim.Adam(siamese_network.parameters(), lr=0.001, weight_decay=5e-5)
     optimizer_mlp = optim.Adam(mlp_classifier.parameters(), lr=0.001, weight_decay=1e-4)
 
     if SKIP_SIAMESE_TRAINING:
@@ -202,7 +204,7 @@ if __name__ == "__main__":
     else:
         # Train Siamese network from scratch
         print("Training Siamese Network to learn embeddings from images:")
-        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=18)
+        train_siamese_network(siamese_network, optimizer_siamese, train_loader, epochs=16)
     
     # Train classifier
     print("\nTraining MLPClassifier using learned embeddings:")

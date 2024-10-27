@@ -6,10 +6,13 @@ It is used in train.py and predict.py.
 import numpy as np 
 import nibabel as nib 
 from tqdm import tqdm
+import skimage.transform as skTrans
 
 def to_channels(arr: np.ndarray, dtype=np.uint8)-> np.ndarray: 
     channels = np.unique(arr) 
-    res = np.zeros(arr.shape + ( len(channels),), dtype=dtype)
+    # res = np.zeros(arr.shape + ( len(channels),), dtype=dtype)
+    res = np.zeros(arr.shape + ( 5,), dtype=dtype)
+    #print(res.shape)
     for c in channels: 
         c = int(c)
         res[..., c:c+1][arr == c] = 1
@@ -44,7 +47,10 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
     for i, inName in enumerate(tqdm(imageNames)):
         niftiImage = nib.load(inName)
+        # print(niftiImage)
         inImage = niftiImage.get_fdata(caching='unchanged') # read disk only
+        inImage = skTrans.resize(inImage, (256, 128), order=1, preserve_range=True)
+        # print(inImage)
         affine = niftiImage.affine
         if len(inImage.shape) == 3: 
             inImage = inImage[:,:,0] #sometimes extra dims in HipMRI_study data 
@@ -54,7 +60,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             #~ inImage = 255. * inImage / inImage.max() 
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical: 
-            inImage = utils.to_channels(inImage, dtype=dtype) 
+            inImage = to_channels(inImage, dtype=dtype) 
             images[i,:,:,:] = inImage 
         else: 
             images[i,:,:] = inImage

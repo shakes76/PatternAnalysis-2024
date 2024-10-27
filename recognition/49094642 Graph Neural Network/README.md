@@ -26,6 +26,7 @@ GNN covers all neural network models for processing graph data. Its goal is to p
   3. Message Passing Neural Networks (MPNN): The message passing and aggregation process between nodes can be flexibly defined.
   4. Graph Recurrent Neural Networks (GRNN): Combine graph structure with recurrent neural network (RNN) to process time-dependent graph data.
   5. Dynamic Graph Neural Networks (DGNN): Process dynamic graph structures that change over time.
+
 The process diagram of the GNN model performing end-to-end prediction tasks is as follows：
 <div style="text-align: center;">
     <img src="images/model structure.png" alt="CNN structure" style="width: 80%"> [1]
@@ -43,6 +44,7 @@ The specific GCN structure in this project is as follows：
   3. **Dropout:** There is a Dropout operation after each convolution layer, which randomly discards some node features during training to prevent the model from overfitting.
   4. **ReLU:** ReLU activation function is applied after each convolution layer to introduce nonlinearity, so that the model can learn more complex features.
   5. **Classification layer:** The last output layer uses a Log Softmax layer, which is responsible for outputting the category probability of the node.
+
 The data set input contains a graph structure containing node features and edge connection information. After passing through the model, a tensor will be output, indicating the logarithmic probability of each node belonging to different categories.
 
 ### Overall framework
@@ -114,7 +116,9 @@ The visualization curves of accuracy and loss value corresponding to the trainin
 </div>
 
 From the loss curve, we can see that both curves are high at the beginning, and then gradually decrease. After about 50 epochs, the **loss value** stabilizes and finally approaches **0.3**. Although the training loss is significantly lower than the test loss, this indicates that the model performs better on the training set, but there may also be some overfitting trends.
+
 From the accuracy curve, we can see that both curves rise rapidly at the beginning, then gradually stabilize, and finally fluctuate between **0.85-0.9**. 
+
 We visualize the output results and use UMAP to reduce the dimensionality of the high-dimensional feature vector to a two-dimensional projection:
 
 ### Umap

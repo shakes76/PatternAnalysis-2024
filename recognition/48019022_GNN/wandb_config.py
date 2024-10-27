@@ -4,13 +4,13 @@ Weights and Biases config file for initialising runs and logging of data
 @date 21/10/2024
 """
 import wandb
-def setup_wandb(architecture: str, epochs: int, decay, lr):
+def setup_wandb(architecture: str, epochs: int, decay, lr, seed):
     """
     Initialises a wandb run with respective model information.
     """
     # Log run with name that desceibes appropraite hyperparameters
     experiment_id = wandb.util.generate_id()
-    name = f"{architecture}, {epochs} epochs, {decay} decay, {lr} learning rate"
+    name = f"{architecture}, seed {seed}"
 
     # Start a run, tracking hyperparameters
     wandb.init(

@@ -10,8 +10,10 @@ from dataset import GNNDataLoader
 from modules import *
 from sklearn.metrics import accuracy_score
 
+# Set seed if required
+seed = 42
 # Load data
-data, train_idx, valid_idx, test_idx  = GNNDataLoader('recognition/48019022_GNN/facebook.npz')
+data, train_idx, valid_idx, test_idx  = GNNDataLoader('recognition/48019022_GNN/facebook.npz', seed=seed)
 
 # Initialise model
 architecture = "GAT"

@@ -202,7 +202,7 @@ The primary metrics logged and used for the analysis of the GNN architectures we
     - Well-separated clusters in the t-SNE plot imply that the model has learned distinct representations for the different node categories, which indicates good classification performance.
 
 ### Testing Methodology
-Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the dataset.py file. Each model was then tested on each seed for a total of 10 runs. The following graphs display the performances of each model.
+Each model was provided the same set of data. As the data is randomly split each run, a manual random seed was introduced to ensure reproducibility of results and consistency across models. The seeds are included in the dataset.py file. Each model was then tested on each seed for a total of 5 runs. The following graphs display the performances of each model.
 
 ### GCN Performance
 [GCN Loss Plot]

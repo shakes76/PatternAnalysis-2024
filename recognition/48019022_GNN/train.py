@@ -125,9 +125,11 @@ if __name__ == '__main__':
     epochs = 300 # default, perhaps try 200,400,500 etc
 
     # Change this to change the model
-    architecture = "GAT"
+    architecture = "SGC"
+    # The seeds we will use are: 42, 10, 56, 713, 492
+    seed = 492
     # loading data
-    data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='recognition/48019022_GNN/facebook.npz')
+    data, train_idx, valid_idx, test_idx = GNNDataLoader(filepath='recognition/48019022_GNN/facebook.npz', seed=seed)
 
     data = data.to(device)
     # now we can define the model
@@ -151,7 +153,7 @@ if __name__ == '__main__':
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     # Setup WANDB configurations
-    wandb_config.setup_wandb(architecture=architecture, epochs=epochs, decay=decay, lr=lr)
+    wandb_config.setup_wandb(architecture=architecture, epochs=epochs, decay=decay, lr=lr, seed=seed)
 
     # Setting up Adam Optimiser and Cross Entropy Loss function
     optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay) # using Adam optimiser

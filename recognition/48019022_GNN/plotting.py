@@ -28,11 +28,13 @@ def plot_tsne(architecture, model, data):
     plt.show()
 
 if __name__ == "__main__":
+    # Change seed if required
+    seed = 42
     # Load data
-    data, train_idx, valid_idx, test_idx = GNNDataLoader('recognition/48019022_GNN/facebook.npz')
+    data, train_idx, valid_idx, test_idx = GNNDataLoader('recognition/48019022_GNN/facebook.npz', seed=seed)
 
     # Select model
-    architecture = "SAGE"
+    architecture = "SGC"
 
     # Initialize model, ensuring the input, hidden, and output dimensions match the training setup
     if architecture == "GCN":
@@ -41,6 +43,8 @@ if __name__ == "__main__":
         model = GATModelBasic(input_dim=128, hidden_dim=64, output_dim=data.y.max().item() + 1)
     elif architecture == "SAGE":
         model = GraphSAGE(input_dim=128, hidden_dim=64, output_dim=data.y.max().item()+1)
+    elif architecture == "SGC":
+        model = SGCModel(input_dim=128, output_dim=data.y.max().item()+1, k=2)
     
     # Load the best performing model of the chosen architecture
     savedpath = "best_" + architecture + "_model.pth"

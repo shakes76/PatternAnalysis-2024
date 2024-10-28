@@ -4,10 +4,21 @@ from tensorflow.keras import layers, models
 
 
 def init_unet(tensor_in, depth=64):
-    
+    """
+    Function to initial the convolution layers of the UNet.
+    parameters: 
+    - tensor_in - the initial tensor filter to use for the model
+    - depth - the number of channels/depth to use at the top layer of extraction (default 64)
+    Return: 
+    NULL
+    """
+
     # For each layer of the UNET filter convolute twice and then pool.
+    # Complete 2 convolutions to condense the image
+    # Model based on https://colab.research.google.com/drive/1K2kiAJSCa6IiahKxfAIv4SQ4BFq7YDYO?usp=sharing
     encode1 = layers.Conv2D(depth, 3, activation='relu', padding='same')(tensor_in)
     encode1 = layers.Conv2D(depth, 3, activation='relu', padding='same')(encode1)
+    # Complete dimension reduction
     pool1 = layers.MaxPooling2D(pool_size=(2,2), padding='same')(encode1)
 
     encode2 = layers.Conv2D(depth*2, 3, activation='relu', padding='same')(pool1)

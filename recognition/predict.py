@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 def unet_predict(model, data_test):
     """
     Function to predict the model
+    Paramaters: 
+    - model - the trained unet model to use for the predictions 
+    - data_test - the data set to use for predictions
     """
     predictions = model.predict(data_test)
     # Get predicted segmented images
@@ -38,7 +41,7 @@ def main():
     _, acc = model.evaluate(data_train, data_validate, verbose=2)
     print('Restored model, accuracy: {:5.2f}%'.format(100 * acc))
     unet_predict(model, data_test)
-    
+
 
 
 if __name__ == "__main__":

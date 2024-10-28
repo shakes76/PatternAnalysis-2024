@@ -114,11 +114,8 @@ def _train(
 
     print(f"Epoch: {epoch}")
 
-    print(adjacency_matrix)
-
     # Train each of the batches of data
     for batch_idx, (features, labels) in enumerate(train_loader):
-        print(batch_idx, features, labels)
         features, labels = features.to(device), labels.to(device)
 
         # Reset the optimiser

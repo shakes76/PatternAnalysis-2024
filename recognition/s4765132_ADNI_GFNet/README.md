@@ -58,10 +58,20 @@ To visualize training progress, the training loss history over epochs is plotted
 The testing phase of the GFNet model involves loading the trained model, evaluating its performance on a separate test dataset, and generating predictions. The predicted results are compared with the actual labels to assess the model’s generalization ability and overall performance.
 
 ## Results
-
 ### Model Evaluation
+The training phase was conducted over a maximum of 100 epochs, with early stopping set to a patience of ```5``` to prevent overfitting. The model training stopped early after 10 epochs when there was no further improvement in validation loss.
 
-### Predict Results
+The training loss and the train and validation accuracy plots are shown below.is shown below. According to the training loss plot, we can see that the training loss fluctuated slightly around a similar value across epochs, and the loss has no clear downward trend. For the train and validation accuracy, it can be seen that the model's accuracy fluctuated in a range around 51% - 52%. This indicates that both the training and validation accuracy remained close to random guessing levels (around 50%), which means the model struggled to learn meaningful patterns from the data.
+
+![Train Loss](train_loss.png) ![Train and Validation Accuracy](train_val_accuracy.png)
+
+
+### Prediction Results
+The prediction results show the model's performance on the unseen data. During this phase, the saved model was used to make prediction on the test set, and the predicted labels were compared with the actual labels. The overall accuracy on the test set was 50.46%, which is close to random guessing for a binary classification task.
+
+The confusion matrix is shown below. According to the plot, it can be seen that the model tends to classify most images as AD. Only a small number of NC images were classified correctly, while most of NC were misclassified as AD. On the other hand, a large number of AD cases were correctly classified, with very few predicted as NC.
+
+![Confusion Matrix](confusion_matrix.png)
 
 
 ## How to Run
@@ -100,6 +110,9 @@ After training, use the ```predict.py``` to make predictions with the saved mode
 ```bash
 python predict.py
 ```
+
+## Future Work
+After fine-tuning some parameters and considering the time constraints, the GFNet model still underperforms and has poor generalization. Based on the results and limitations observed in this project, future efforts could focus on trying to optimize additional hyperparameters, such as adjusting the number of layers, modifying transformation parameters during data loading, try to use alternative optimizers, and using a smaller learning rate.
 
 
 ## References

@@ -59,6 +59,7 @@ dataset/
 6. Ensure that your environment is properly setup to run the model. Conda was used to create the environment. Ensure you have nvidia toolkit installed. Then run the following commands:
 conda install pytorch=2.1.1 torchvision=0.16.1 torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 conda install scikit-learn=1.3.2 matplotlib=3.7.2 seaborn=0.13.2 tqdm=4.66.5 pillow=10.4.0 pandas=2.0.3 numpy=1.24.3
+conda install ultralytics
 7. Now that everything is done the model can now begin training. Model details and graphs will be created by YOLO when it finishes training.
 
 ## Results

@@ -9,18 +9,17 @@ import torch.fft
 
 # Function to load the model
 def load_model(state_dict_path=None):
-    device = torch.device("cpu")
 
     state_dict = torch.load(state_dict_path, map_location=device)
 
     model = GFNet(
-        img_size=225,
-        patch_size=14,
+        img_size=224,
+        patch_size=16,
         in_chans=1,
-        num_classes=1,
-        embed_dim=384,
+        num_classes=2,
+        embed_dim=256,
         depth=12,
-        mlp_ratio=4.,
+        mlp_ratio=4.0,
         drop_rate=0.1,
         drop_path_rate=0.1
     ).to(device)
@@ -64,7 +63,7 @@ def evaluate_model(model, test_loader):
 
 # Main function to load the model, create the loader, and evaluate
 def test_model_pipeline(state_dict_path, batch_size=32):
-    device = torch.device("cpu")
+    device = torch.device("cuda")
     model = load_model(state_dict_path).to(device)
     test_loader = create_test_loader(batch_size)
     accuracy = evaluate_model(model, test_loader)

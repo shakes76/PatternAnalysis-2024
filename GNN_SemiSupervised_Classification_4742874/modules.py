@@ -10,26 +10,7 @@ import torch
 import torch.nn as nn
 
 from torch.functional import Tensor
-
-from torch_geometric.utils import to_dense_adj
-
-def create_adjacency_matrix(edges) -> Tensor:
-    """
-        Create the adjancency matrix from the graphs edge list.
-
-        Parameters:
-            edges: List of edges to create adjacency matrix from.
-
-        Returns:
-            Adjacency matrix with self referential nodes.
-    """
-    adjacency_matrix = to_dense_adj(edges)
-
-    # Add identity matrix to adjacency matrix to make 
-    # all nodes self referential
-    adjacency_matrix += torch.eye(len(adjacency_matrix))
-
-    return adjacency_matrix
+from torch_geometric.nn import GCNConv
 
 class SparseLayer(nn.Module):
     """
@@ -60,7 +41,7 @@ class SparseLayer(nn.Module):
         """
         x = self.linear(x)
 
-        # Sparse matrix multiply the linearised 
+        # Sparse matrix multiply the linearised
         # input with the adjacency matrix
         x = torch.sparse.mm(adjacency_matrix, x)
 
@@ -81,8 +62,8 @@ class GNN(nn.Module):
         """
         super(GNN, self).__init__()
 
-        self.gnn_1 = SparseLayer(dim_in, dim_hidden)
-        self.gnn_2 = SparseLayer(dim_hidden, dim_out)
+        self.gnn_1 = GCNConv(dim_in, dim_hidden)
+        self.gnn_2 = GCNConv(dim_hidden, dim_out)
 
     def forward(self, x: Tensor, adjacency_matrix: Tensor) -> Tensor:
         """

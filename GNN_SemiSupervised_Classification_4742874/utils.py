@@ -6,8 +6,10 @@ Author: Liam Mulhern (S4742847)
 Date: 26/10/2024
 """
 
+import torch
 import dataset
 import modules
+import train
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -36,49 +38,53 @@ def display_flpp_network(flpp_dataset: FacebookPagePage) -> None:
 
     plt.show()
 
-def display_gnn_tsne(model: modules.GNN, flpp_dataset: FacebookPagePage) -> None:
+def display_gnn_tsne() -> None:
     """
         Display the t-distributed stochastic neighbour embeddings for
         the trained Facebook Page-Page Network model using the dataset categories.
-
-        Parameters:
-            model: The trained model used for the t-distributed stochastic neighbour embedding.
-            flpp_dataset: The raw dataset used for categorisation.
     """
+    _, flpp_data, _, _, _ = dataset.load_dataset(train.DATASET_DIR)
+
+    model = modules.GNN(128, 16, 4)
+    train._load_model(model, 'gnn_classifier')
+
+    model.eval()
+
+    # Turn off gradient descent when we run inference on the model
+    with torch.no_grad():
+
+        # Get the predicted classes for this batch
+        outputs = model(flpp_data.x, flpp_data.edge_index)
+
     model_tsne = TSNE(n_components=2, perplexity=30, random_state=1)
-    reduced_embeddings = model_tsne.fit_transform(model.cpu().numpy())
+    reduced_embeddings = model_tsne.fit_transform(outputs.cpu().numpy())
 
     plt.figure(figsize=(10, 10))
 
     for i, category in enumerate(dataset.FLPP_CATEGORIES):
-        idx = flpp_dataset.y == i
+        idx = flpp_data.y == i
         plt.scatter(reduced_embeddings[idx, 0], reduced_embeddings[idx, 1], label=category, alpha = 0.5)
 
     plt.legend()
     plt.title("GNN TSNE Plot")
     plt.show()
 
-    #plt.savefig("GG_TSNE_plot.png")
-
-def display_raw_tsne(flpp_dataset: FacebookPagePage) -> None:
+def display_raw_tsne() -> None:
     """
         Display the t-distributed stochastic neighbour embeddings for
         the untrained Facebook Page-Page Network model using the dataset categories.
-
-        Parameters:
-            flpp_dataset: The raw dataset used for categorisation.
     """
+    _, flpp_data, _, _, _ = dataset.load_dataset(train.DATASET_DIR)
+
     model_tsne = TSNE(n_components=2, perplexity=30, random_state=1)
-    reduced_embeddings = model_tsne.fit_transform(flpp_dataset.x)
+    reduced_embeddings = model_tsne.fit_transform(flpp_data.x)
 
     plt.figure(figsize=(10, 10))
 
     for i, category in enumerate(dataset.FLPP_CATEGORIES):
-        idx = flpp_dataset.y == i
+        idx = flpp_data.y == i
         plt.scatter(reduced_embeddings[idx, 0], reduced_embeddings[idx, 1], label=category, alpha = 0.5)
 
     plt.legend()
     plt.title("Raw TSNE Plot")
     plt.show()
-
-    #plt.savefig("GG_TSNE_plot.png")

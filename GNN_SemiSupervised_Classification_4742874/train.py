@@ -9,7 +9,6 @@ Date: 26/10/2024
 """
 
 import torch
-from torch.functional import Tensor
 import torch.nn as nn
 
 import os
@@ -20,7 +19,9 @@ import dataset
 import modules
 
 from torch.utils.data import DataLoader
+from torch.functional import Tensor
 from typing import Callable
+from torch_geometric.data import Data
 
 MODEL_DIR = './models/'
 CSV_DIR = './models_csv/'
@@ -35,7 +36,7 @@ best_accuracy = 0
 def run_gnn_training(
         epochs: int,
         batch_size: int,
-        learning_rate: float,
+        learning_rate: float=0.001,
         is_load: bool = True,
         is_save: bool = True
     ) -> None:
@@ -53,9 +54,7 @@ def run_gnn_training(
                 Otherwise the model only stays in memory until the process terminates.
     """
     # Load FLPP dataset
-    flpp_dataset, train_dataloader, test_dataloader, validate_dataloader = dataset.load_dataset(DATASET_DIR, 200)
-
-    adjacency_matrix = modules.create_adjacency_matrix(flpp_dataset.edges)
+    _, flpp_data, train_mask, test_mask, validate_mask = dataset.load_dataset(DATASET_DIR)
 
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -75,9 +74,10 @@ def run_gnn_training(
         num_epochs=epochs,
         model=model,
         device=device,
-        train_loader=train_dataloader,
-        test_loader=test_dataloader,
-        adjacency_matrix=adjacency_matrix,
+        flpp_data=flpp_data,
+        train_mask=train_mask,
+        test_mask=test_mask,
+        validate_mask=validate_mask,
         optimiser=optimiser,
         criterion=criterion,
         name='gnn_classifier',
@@ -88,8 +88,9 @@ def run_gnn_training(
 def _train(
         model: nn.Module,
         device: torch.device,
-        train_loader: DataLoader,
-        adjacency_matrix: Tensor,
+        flpp_data: Data,
+        train_mask,
+        train_target,
         optimiser: torch.optim.Optimizer,
         epoch: int,
         criterion: nn.Module,
@@ -109,45 +110,32 @@ def _train(
             The loss of the trained generation
     """
     model.train()
-    train_loss = 0
-    batch_idx = 0
 
     print(f"Epoch: {epoch}")
 
-    # Train each of the batches of data
-    for batch_idx, (features, labels) in enumerate(train_loader):
-        features, labels = features.to(device), labels.to(device)
+    # Reset the optimiser
+    optimiser.zero_grad()
 
-        # Reset the optimiser
-        optimiser.zero_grad()
+    # Forward pass
+    outputs = model(flpp_data.x, flpp_data.edge_index)
+    outputs = outputs[train_mask].to(device)
+    loss = criterion(outputs, train_target.to(device))
 
-        # Forward pass
-        outputs = model(features, adjacency_matrix)
-        loss = criterion(outputs, labels)
+    # Backward and optimize
+    loss.backward()
+    optimiser.step()
 
-        # Backward and optimize
-        loss.backward()
-        optimiser.step()
+    print(f"Training Set: Average Loss: {loss.item()}")
 
-        train_loss += loss.item()
-
-        print (f"Training Batch {batch_idx + 1} Loss: {loss.item()}")
-
-    avg_loss = train_loss / (batch_idx + 1)
-
-    print(f"Training Set: Average Loss: {avg_loss}")
-
-    return avg_loss
+    return loss.item()
 
 def _test(
         model: nn.Module,
         device: torch.device,
-        test_loader: DataLoader,
-        adjacency_matrix: Tensor,
         criterion: nn.Module,
-        epoch: int,
-        name: str,
-        save: bool = True,
+        flpp_data: Data,
+        test_mask: Tensor,
+        test_target: Tensor,
     ) -> tuple[float, float]:
     """
         Test the model by comparing labelled test data subset to model output 
@@ -168,33 +156,22 @@ def _test(
     # Use evaluation mode so we don't backpropagate or drop
     model.eval()
     test_loss = 0
-    correct = 0
 
     # Turn off gradient descent when we run inference on the model
     with torch.no_grad():
-        batch_count = 0
 
-        for data, target in test_loader:
-            batch_count += 1
-            data, target = data.to(device), target.to(device)
+        # Get the predicted classes for this batch
+        outputs = model(flpp_data.x, flpp_data.edge_index)
 
-            # Get the predicted classes for this batch
-            output = model(data, adjacency_matrix)
+        # Calculate the loss for this batch
+        test_loss = criterion(outputs[test_mask].to(device), test_target.to(device)).item()
 
-            # Calculate the loss for this batch
-            test_loss += criterion(output, target).item()
+        # Calculate the accuracy by comparing the training data mask
+        accuracy = ((outputs.argmax(1)[test_mask] == test_target).float()).mean()
 
-            # Calculate the accuracy for this batch
-            _, predicted = torch.max(output.data, 1)
-            correct += torch.sum(target==predicted).item()
+        print(f'Validation set: Average loss: {test_loss}, Accuracy: {accuracy * 100}%')
 
-    # Calculate the average loss and total accuracy for this epoch
-    avg_loss = test_loss / batch_count
-    accuracy = 100. * correct / len(test_loader.dataset)
-
-    print(f'Validation set: Average loss: {avg_loss}, Accuracy: {correct}/{len(test_loader.dataset)} ({accuracy}%)')
-
-    return avg_loss, accuracy
+    return test_loss, float(accuracy)
 
 def _save_model(
         epoch: int,
@@ -259,9 +236,10 @@ def _run_training(
         num_epochs: int,
         model: nn.Module,
         device: torch.device,
-        train_loader: DataLoader,
-        test_loader: DataLoader,
-        adjacency_matrix: Tensor,
+        flpp_data: Data,
+        train_mask,
+        test_mask,
+        validate_mask,
         optimiser: torch.optim.Optimizer,
         criterion: nn.Module,
         name: str,
@@ -304,6 +282,10 @@ def _run_training(
     elif os.path.exists(csv_path):
         os.remove(csv_path)
 
+    train_target = flpp_data.y[train_mask]
+    test_target = flpp_data.y[test_mask]
+    #target_validate = flpp_data.y[validate_mask]
+
     model.to(device)
 
     # Train the model for the given number of epochs from the start epoch
@@ -318,8 +300,9 @@ def _run_training(
             train_loss = train_function(
                 model=model,
                 device=device,
-                train_loader=train_loader,
-                adjacency_matrix=adjacency_matrix,
+                flpp_data=flpp_data,
+                train_mask=train_mask,
+                train_target=train_target,
                 optimiser=optimiser,
                 epoch=epoch,
                 criterion=criterion
@@ -330,12 +313,10 @@ def _run_training(
             test_loss, test_accuracy = test_function(
                 model=model,
                 device=device,
-                test_loader=test_loader,
-                adjacency_matrix=adjacency_matrix,
-                epoch=epoch,
-                criterion=criterion,
-                name=name,
-                save=save
+                flpp_data=flpp_data,
+                test_mask=test_mask,
+                test_target=test_target,
+                criterion=criterion
             )
 
         if save:
@@ -349,5 +330,4 @@ def _run_training(
         with open(csv_path, mode='a', newline='') as file:
             csv_writer = csv.writer(file)
             csv_writer.writerow([epoch, train_loss, test_loss, test_accuracy, training_duration])
-
 

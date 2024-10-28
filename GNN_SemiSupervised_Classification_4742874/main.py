@@ -9,6 +9,7 @@ Date: 26/10/2024
 import argparse
 
 import train
+import utils
 
 if __name__ == '__main__':
 
@@ -84,3 +85,6 @@ if __name__ == '__main__':
             is_load=args.load,
             is_save=args.save
         )
+
+    if args.display:
+        utils.display_gnn_tsne()

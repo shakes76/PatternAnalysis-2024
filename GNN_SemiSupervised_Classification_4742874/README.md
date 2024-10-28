@@ -5,7 +5,7 @@ Date: 26/10/2024
 
 ## Project Specification
 
-Creates a multi-layer graph neural network (GNN) model for semi supervised multi-class node classification using Facebook Large Page-Page Network dataset with 80% Accuracy. This report includes TSNE and UMAP embeddings plot before and after model training providing a brief interpretation and discussion of results.
+Creates a multi-layer graph neural network (GNN) model for semi supervised multi-class node classification using Facebook Large Page-Page Network dataset with 93.2% Accuracy. This report includes TSNE embeddings plot before and after model training providing a brief interpretation and discussion of results.
 
 ## Dependencies
 
@@ -37,7 +37,7 @@ Creates a multi-layer graph neural network (GNN) model for semi supervised multi
 > [!IMPORTANT]
 > It is recommended that a python environment is utilsed for managing dependencies such a conda.
 
-For help, execute the following shell command,
+For help, execute the following shell command:
 
 ```bash
 conda activate torch
@@ -59,6 +59,7 @@ The dataset was pre-processed into a 3 numpy arrays:
 - edges: The undirected graph connections between nodes in the dataset formatted as tuples from the start node to the end node.
 - features: The features of each of the nodes stored in a 128 dimensions vector created from textual descriptions written by the owners of these pages.
 - targets: The categorisation target of each node.
+
 The dataset has 22470 nodes with a 128 dimension feature set, sourced from [Graph Mining Datasets](https://graphmining.ai/datasets/ptg/facebook.npz).
 
 The network is visually represented as the following graph where colour represents the category and size reperesents the degree of the node.
@@ -115,7 +116,10 @@ This figure clearly exhibits little to no correlation in group clustering based 
 
 After training the GNN model on the FLPP dataset it is clear that the post training TSNE features a strong correlation between grouped categorised groups. This is visible through the like-neighbour clustering 
 
+![Facebook Page-Page Network TSNE before model training](./figures/trained_TSNE_plot.png)
+
 ### GNN Training Accuracy and Loss
+
 
 ## Conclusion
 

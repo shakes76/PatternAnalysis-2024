@@ -24,7 +24,7 @@ from typing import Callable
 
 MODEL_DIR = './models/'
 CSV_DIR = './models_csv/'
-DATASET_DIR = './dataset/'
+DATASET_DIR = './dataset/raw'
 
 ################
 # Global Value #
@@ -55,7 +55,7 @@ def run_gnn_training(
     # Load FLPP dataset
     flpp_dataset, train_dataloader, test_dataloader, validate_dataloader = dataset.load_dataset(DATASET_DIR, 200)
 
-    adjacency_matrix = modules.create_adjacency_matrix(flpp_dataset.edge_index)
+    adjacency_matrix = modules.create_adjacency_matrix(flpp_dataset.edges)
 
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -64,7 +64,7 @@ def run_gnn_training(
         print("WARNING: CUDA not found; Using CPU")
 
     # Create the model utilising the class type
-    model = modules.GNN(flpp_dataset.num_features, 16, flpp_dataset.num_classes)
+    model = modules.GNN(128, 16, 4)
 
     # Utilise the Adam optimiser and cross entropy loss
     criterion = nn.CrossEntropyLoss()

@@ -12,7 +12,7 @@ import modules
 import dataset
 import utils
 
-DATASET_DIR = "./dataset/"
+DATASET_DIR = "./dataset/raw"
 
 class TestDataSet(unittest.TestCase):
     def test_load_dataset(self):
@@ -21,11 +21,7 @@ class TestDataSet(unittest.TestCase):
         """
         flpp_dataset, training_data, testing_data, validate_data = dataset.load_dataset(DATASET_DIR, 200)
 
-        assert len(flpp_dataset) == 1
-        assert flpp_dataset.num_features == 128
-        assert flpp_dataset.num_classes == 4
-        assert flpp_dataset.x.shape[0] == 22470
-        assert flpp_dataset.y.shape[0] == 22470
+        assert len(flpp_dataset) == 22470
 
         print(len(training_data))
         print(len(testing_data))

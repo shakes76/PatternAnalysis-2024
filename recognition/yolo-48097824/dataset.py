@@ -36,8 +36,8 @@ def process_masks(data_path, output_location):
 
 def main():
     
-    data_path = "/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/train/masks"
-    output_location = "/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/train/labels"
+    data_path = "/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/train/masks" #configure these to suit your file path
+    output_location = "/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/train/labels" #configure these to suit your file path
     process_masks(data_path, output_location)
 
 if __name__ == "__main__":

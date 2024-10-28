@@ -15,7 +15,17 @@ Once the bottleneck is reached, 2 more convolution steps are done, but no furthe
 
 The model is then trained, such that each channel's weighting and bias can be accurately estimated by the model. Resulting in a reduction of the loss value. The loss function chosen was the catagorical crossentropy (https://www.tensorflow.org/api_docs/python/tf/keras/losses/categorical_crossentropy). 
 
-~~ Example usage~~ 
+## ~~ Example usage~~ 
 
 ### Preprocessing
 The program handles all several aspects of dataset loading and manipulation prior to the main training loop to ensure efficent training procedure.
+
+## Dependicies 
+**Python3**
+**Tensorflow**
+**Numpy**
+**matplotlib.pyplot**
+**sklearn.metrics**
+
+## References
+relevant references are linked throughout the report, alongside the lecture example for a UNet and succesful pull requests from previous years.

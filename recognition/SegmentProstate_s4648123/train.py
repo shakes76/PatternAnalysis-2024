@@ -1,4 +1,3 @@
-import os
 import time
 
 import numpy as np
@@ -6,8 +5,10 @@ import torch
 from utils import one_hot_mask
 from dataset import get_dataloaders
 from modules import UNet3D
+from torch.utils.tensorboard import SummaryWriter
 
 MODEL_PATH = "best_unet.pth"
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Dice(torch.nn.Module):
@@ -26,7 +27,7 @@ class Dice(torch.nn.Module):
         Compute the Dice coefficient between 3D predictions and targets.
 
         Args:
-            pred (torch.Tensor): Model predictions with shape (batch_size, num_classes, depth, height, width).
+            pred (torch.Tensor): Model predictions with shape (batch_size, classes/channels, depth, height, width).
             target (torch.Tensor): Ground truth with shape (batch_size, 1, depth, height, width).
 
         Returns:
@@ -71,21 +72,46 @@ class Dice(torch.nn.Module):
         return dice_loss
 
 
-def train():
-    pass
-    # TODO: Build train function
+def train(model, dataloader, optimizer, crit):
+    model.train()
+    epoch_loss = 0
+    torch.manual_seed(2809)  # reproducibility
+    for batch_data in dataloader:
+        images, masks = batch_data["img"].to(device), batch_data["mask"].to(device)
+        optimizer.zero_grad()  # Zero the gradients
+        outputs = model(images)  # Forward pass
+        loss = crit(outputs, masks)  # Compute loss
+        loss.backward()  # Backward pass
+        optimizer.step()  # Update weights
+
+        epoch_loss += loss.item()  # Accumulate loss
+    return epoch_loss
 
 
-def validate():
-    pass
-    # TODO: Build validate function
+def validate(model, dataloader, crit):
+    model.eval()  # Set model to evaluation mode
+    dice_scores = []
+
+    with torch.no_grad():  # Disable gradient computation
+        torch.manual_seed(2809)  # reproducibility
+        for batch_data in dataloader:
+            imgs, masks = batch_data["img"].to(device), batch_data["mask"].to(device)
+            pred = model(imgs)  # Forward pass
+            new_dice_score = crit.dice(pred, masks)
+            dice_scores.append(new_dice_score.cpu().numpy())
+
+    dice_scores = np.mean(dice_scores, axis=0)
+    return dice_scores
+
+
+# TODO: Test method with visualisation
 
 
 if __name__ == '__main__':
     """
     Main function to run the training and validation processes.
     """
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    writer = SummaryWriter(log_dir="./runs/unet_training")  # Specify the log directory
 
     # Set up datasets and DataLoaders
     batch_size = 8
@@ -97,8 +123,7 @@ if __name__ == '__main__':
 
     epochs = 15
     criterion = Dice()
-    # TODO: find best optimizer for UNet3D for my images
-    # optimizer =
+    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
 
     best_metric = float(0.)
     best_state = unet.state_dict()
@@ -107,18 +132,18 @@ if __name__ == '__main__':
 
     # Training and evaluation loop
     for epoch in range(epochs):
-        epoch_loss = train()
-        print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {epoch_loss / len(train_loader):.4f}")
+        train_loss = train(unet, train_loader, optimizer, criterion)
+        print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {train_loss / len(train_loader):.4f}")
 
-        # TODO: Build validate function
+        # TODO: Plot epoch loss and dice loss
 
-        dice_score = validate()
+        dice_score = validate(unet, val_loader, criterion)
         dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in dice_score])
         print(f"Test Epoch {epoch + 1}/{epochs}, Dice Coefficients for each class: [{dice_coeff_str}]")
 
-        avg_dice_score = float(np.mean(dice_score))
-        if avg_dice_score > best_metric:
-            best_metric = avg_dice_score
+        validation_loss = float(np.mean(dice_score))
+        if validation_loss > best_metric:
+            best_metric = validation_loss
             best_state = unet.state_dict()
             # Save the best model state
             torch.save(best_state, MODEL_PATH)
@@ -132,7 +157,7 @@ if __name__ == '__main__':
 
     # test the model on seperate test dataset
     test_start_time = time.time()  # Start timer
-    final_dice_score = validate()
+    final_dice_score = validate(unet, test_loader, criterion)
 
     test_end_time = time.time()  # End timer
     test_time = test_end_time - test_start_time  # Calculate elapsed time

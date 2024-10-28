@@ -23,11 +23,16 @@ class GlobalFilter(nn.Module):
 
 
 class GFNet(nn.Module):
-    def __init__(self, img_size=224, num_classes=2, in_chans=3, embed_dim=768, ff_dim=1024, dropout_rate=0.1, num_global_filters=3):
+    def __init__(self, img_size=224, num_classes=2, in_chans=3, embed_dim=128, ff_dim=256, dropout_rate=0.1, num_global_filters=2):
         super(GFNet, self).__init__()
 
-        # Convolutional layer to project input images to the embedding dimension
+        # Initial convolutional layer
         self.conv1 = nn.Conv2d(in_chans, embed_dim, kernel_size=3, stride=1, padding=1)
+        
+        # Additional convolutional layer
+        self.conv2 = nn.Conv2d(embed_dim, embed_dim, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(embed_dim, embed_dim, kernel_size=3, stride=1, padding=1)
+
         # Module with a series of global filters
         self.global_filters = nn.ModuleList([GlobalFilter(dim=embed_dim) for _ in range(num_global_filters)])
 
@@ -39,26 +44,30 @@ class GFNet(nn.Module):
             nn.Linear(ff_dim, embed_dim),
         )
 
-        # Normalization layer and classification layer
+        # Normalization and classification layers
         self.layer_norm = nn.LayerNorm(embed_dim)
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(embed_dim, num_classes)
 
     def forward(self, x):
-        # Project input to desired embedding dimension using convolution
-        x = self.conv1(x)  
+        # Initial convolutional layers
+        x = self.conv1(x)
+        x = nn.ReLU()(self.conv2(x))
+        x = nn.ReLU()(self.conv3(x))
+        
+        # Get shape for global filter processing
         B, C, H, W = x.shape
 
-        # Permute tensor from [B, C, H, W] to [B, H, W, C] to match GlobalFilter
+        # Permute tensor for GlobalFilter
         x = x.permute(0, 2, 3, 1)
 
+        # Apply global filters
         for global_filter in self.global_filters:
             x = global_filter(x)
 
-        # Permute back to [B, C, H, W] after filtering
+        # Permute back and continue
         x = x.permute(0, 3, 1, 2)  
-        x = self.pool(x) 
+        x = self.pool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x
-

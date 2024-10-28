@@ -71,7 +71,6 @@ class EquilizerKG(nn.Module):
         self.weight = nn.Parameter(torch.randn(shape))
 
     def forward(self):
-        print(self.weight.shape)
         return self.weight * self.constanted
 
 # -----------------Synthesis Network-----------------#
@@ -283,7 +282,7 @@ class Discriminator(nn.Module):
         #         nn.LeakyReLU(0.2, True)
         #     )
         self.from_rgb = nn.Sequential(
-            Dis_Conv2d(3, n_features, 1), # Change here
+            Dis_Conv2d(CHANNELS, n_features, 1), # Change here
             nn.LeakyReLU(0.2, True)
         )
 
@@ -307,17 +306,11 @@ class Discriminator(nn.Module):
 
 
     def forward(self, x):
-        print("forward")
         x = self.from_rgb(x)
-        print("rgb")
         x = self.blocks(x)
-        print("blocks")
         x = self.minibatch_std(x)
-        print("minibatch")
         x = self.conv(x)
-        print("conv")
         x = x.reshape(x.shape[0], -1)
-        print("reshape")
         return self.final(x)
 
 
@@ -346,9 +339,7 @@ class DiscriminatorBlock(nn.Module):
 
     def forward(self, x):
         residual = self.residual(x)
-        print("residual")
         x = self.block(x)
-        print("block")
         x = self.downsample(x)
 
         return (x + residual) * self.scale
@@ -364,17 +355,6 @@ class Dis_Conv2d(nn.Module):
 
     def forward(self, x: torch.Tensor):
 
-        # weight = self.weight().to(x.device)
-
-        # # Use 1x1 kernel if input dimensions are too small
-        # if x.size(-1) < self.kernel_size or x.size(-2) < self.kernel_size:
-        #     kernel_size = 1  # Switch to 1x1 kernel
-        #     weight = weight[:, :, :kernel_size, :kernel_size]
-        #     padding = 0
-        # else:
-        #     weight = self.weight()
-        #     padding = self.padding
-        print("conv2d")
         return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
 #---------------------------#
 

@@ -62,17 +62,16 @@ class AutoCropBlack:
 
 
 def process(colab=False, test=False, show_samples=False):
-
     preprocess = transforms.Compose([
         AutoCropBlack(),
         transforms.Grayscale(num_output_channels=1),
         transforms.RandomRotation(degrees=15),
         transforms.RandomResizedCrop((224, 224), scale=(0.8, 1.0)),
         transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=10),
-        transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3)),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5], std=[0.5]),
+        transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3)),
     ])
     if not test:
         if not colab:
@@ -88,7 +87,7 @@ def process(colab=False, test=False, show_samples=False):
         else:
             dataset = ImageFolder(root='/content/drive/MyDrive/ADNI/AD_NC/test', transform=preprocess)
         dataloader = DataLoader(dataset, batch_size=256, shuffle=True, num_workers=8, pin_memory=True)
-    return dataloader
+    return dataset
 
 
 if __name__ == "__main__":

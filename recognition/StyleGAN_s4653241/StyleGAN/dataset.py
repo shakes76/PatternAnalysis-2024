@@ -1,13 +1,24 @@
 
 # Importing libraries
 import os
+from config import *
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader,ConcatDataset
 import torchvision.transforms as transforms
 from torchvision.transforms import ToPILImage
 import matplotlib.pyplot as plt
 import torch
 
+def combine_datasets(transform):
+
+    if BRAIN == 'AD':
+        train = ImageDataset(AD_train, transform)
+        test = ImageDataset(AD_test, transform)
+        return ConcatDataset([train, test])
+    else:
+        train = ImageDataset(NC_train, transform)
+        test = ImageDataset(NC_test,transform)
+        return ConcatDataset([train, test])
 
 # Dataset class
 class ImageDataset(Dataset):
@@ -17,7 +28,7 @@ class ImageDataset(Dataset):
             root (str): The root directory of the dataset
             transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed version.
         """
-        self.root = root 
+        self.root = root
         self.transform = transform
 
         self.files = sorted(os.listdir(root))
@@ -32,11 +43,11 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         return len(self.files)
-    
+
     def get_raw_image(self, index):
         """
         Returns the original, untransformed image.
-        
+
         Args:
             index (int): Index of the image in the dataset.
 
@@ -46,12 +57,12 @@ class ImageDataset(Dataset):
         img_path = os.path.join(self.root, self.files[index])
         raw_img = Image.open(img_path).convert("L")  # Always return the raw image in RGB format
         return raw_img
-    
+
     def compare(self, index):
         img = Image.open(os.path.join(self.root, self.files[index]))
         # img_path = os.path.join(self.root, self.files[index])
         # raw_img = Image.open(img_path).convert("L")  # Always return the raw image in RGB format
-        
+
         if self.transform:
             trans_img = self.transform(img)
             to_pil = transforms.ToPILImage()
@@ -62,22 +73,24 @@ class ImageDataset(Dataset):
 
         return img, trans_img,
 
-def get_transform(image_size=(256, 240)):
+def get_transform(image_size=(256, 256)):
     transform = transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.CenterCrop(image_size),
+        transforms.Resize((image_height, image_width), interpolation=transforms.InterpolationMode.BICUBIC),
+        # transforms.CenterCrop(image_size),
+        transforms.Grayscale(),
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])  #Singel channel image
     ])
     return transform
 
 # Function to get the dataloader
-def get_dataloader(root, image_size, batch_size, shuffle = False): # Size of image (256,240)
+def get_dataloader(image_size=IMAGE_SIZE, batch_size=BATCH_SIZE, shuffle = False): # Size of image (256,240)
     transform = get_transform(image_size)
 
-    dataset = ImageDataset(root, transform)
 
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataset = combine_datasets(transform)
+
+    return DataLoader(dataset, batch_size, shuffle=shuffle)
 
 # Function to get the image with transform
 class ImageVisualize:
@@ -89,15 +102,15 @@ class ImageVisualize:
         """
         self.dataloader = dataloader
 
-        
- 
+
+
     def get_image(self):
         for _, img in enumerate(self.dataloader):
             return img
 
     def plot_image(self, img=None):
         to_pil = transforms.ToPILImage()
-        
+
         if img is None:
             img = self.get_image()
 
@@ -140,7 +153,7 @@ class ImageVisualize:
             Tensor: Denormalized image tensor.
         """
         return img * 0.5 + 0.5
-    
+
     def demour_image(self,img):
         """
         Denormalizes the given image tensor from [-1, 1] to [0, 255].
@@ -150,12 +163,12 @@ class ImageVisualize:
             Tensor: Denormalized image tensor in the range [0, 255].
         """
         return (img * 0.5 + 0.5) * 255
-    
-    
+
+
     def display_comparison(original, transformed):
         """
         Display the original and transformed images side-by-side.
-        
+
         Args:
             original (PIL.Image): The original image.
             transformed (PIL.Image or None): The transformed image (or None if not available).

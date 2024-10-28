@@ -1,4 +1,9 @@
 Data/
-recognition/StyleGAN_s4653241/StyleGAN/test.ipynb
+recognition/StyleGAN_s4653241/StyleGAN/StyleSlurm.sh
+recognition/StyleGAN_s4653241/StyleGAN/saved_examples
 pyproject.toml
 .zed
+recognition/StyleGAN_s4653241/StyleGAN/__pycache__
+recognition/StyleGAN_s4653241/StyleGAN/modules2.py
+checkpoints
+.DS_Store

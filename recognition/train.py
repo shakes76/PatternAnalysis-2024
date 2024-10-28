@@ -18,12 +18,24 @@ def dice_coeff(y_true, y_predicted):
 
 
 #Function to train the Unet model, using tensorflow's inbuilt keras.model.fit() function
-def train_unet( data_train, data_train_seg, data_validate, data_validate_seg, epochs=32, batch_size=8):
+def train_unet(data_train, data_train_seg, data_validate, data_validate_seg, epochs=32, batch_size=8):
     init_inputs = layers.Input(shape=(256, 128, 1))
     model = init_unet(init_inputs)
     early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3, restore_best_weights = True)
     # Compile and train the UNET model on the training set and validation set
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', dice_coeff])
     model.fit(data_train, data_train_seg, epochs=epochs, batch_size=batch_size, validation_data=(data_validate, data_validate_seg), callbacks=[early_stopping])
-    return model
-    
+    # save model reference: https://www.tensorflow.org/tutorials/keras/save_and_load
+    model.save('mri_unet.keras')
+
+def main():
+    data_train = load_data_2D()
+    data_train_seg = load_data_2D()
+
+    data_validate = load_data_2D()
+    data_validate_seg = load_data_2D()
+
+    train_unet(data_train, data_train_seg, data_validate, data_validate_seg)
+
+if __name__ == "__main__":
+    main()

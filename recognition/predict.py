@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 
 # Function to take a trained unet model and use it for predictions.
 def unet_predict(model, data_test):
-
+    """
+    Function to predict the model
+    """
     predictions = model.predict(data_test)
     # Get predicted segmented images
     print(np.argmax(predictions, axis=1))
@@ -24,12 +26,20 @@ def unet_predict(model, data_test):
         ax[1, i].im_show(data_test[i].squeeze())
     plt.show()
 
+
 def main():
     # load and evaluate model reference: https://www.tensorflow.org/tutorials/keras/save_and_load
     # load the trained model
     model = tf.keras.models.load_model('mri_unet.keras')
+    model.summary()
+    data_train = load_data_2D()
+    data_validate = load_data_2D()
     data_test = load_data_2D()
+    _, acc = model.evaluate(data_train, data_validate, verbose=2)
+    print('Restored model, accuracy: {:5.2f}%'.format(100 * acc))
     unet_predict(model, data_test)
+    
+
 
 if __name__ == "__main__":
     main()

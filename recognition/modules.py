@@ -47,4 +47,3 @@ def init_unet(tensor_in, depth=64):
     tensor_out = layers.Conv2D(1, 1, activation='softmax', padding='same')(decode4)
     model = models.Model(inputs=tensor_in, outputs=tensor_out)
     return model
-    

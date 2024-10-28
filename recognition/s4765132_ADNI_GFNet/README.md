@@ -1,12 +1,13 @@
 # Alzheimer’s Disease Classification Using Global Filter Network (GFNet)
 
 ## Introduction
-This project implements Alzheimer's disease classification using the ADNI dataset and Global Filter Network (GFNet) model.
+This project uses Python to implement Alzheimer's disease classification using the ADNI dataset and Global Filter Network (GFNet) model.
 
 ### GFNet Model
 GFNet is a deep learning network, which can efficiently capture long-range dependencies in image data by using frequency-domain analysis. It is especially designed for processing and classifying images. It is originally based on the vision Transformer and CNNs, but introduces some key updates. The self-attention mechanism of the vision Transformer is replaced with Fourier transforms in GFNet, which improve the computational effectiveness and enables more effective global feature extraction [\[1\]](#reference1). Additionally, GFNet incorporates design elements from CNN, especially in its hierarchical model variant, which enables capturing local spatial features. These characteristics make GFNet as a powerful and robust tool for handling complex image classification tasks.  
 
 Here is the architecture of GFNet.
+
 ![GFNet Architecture](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*rkWAbLHZjMjnOpfmAmFc3w.png)
 
 Based on the architecture of GFNet, there are four key components.
@@ -29,16 +30,6 @@ Some examples of the images from dataset is shown below.
 
 ![Samples of images](Before_Preprocessing_data_sample.png)
 
-## Setup
-- **Programming Language**: Python 3.12.4
-- **Dependencies**: 
-  - `scikit-learn` 1.5.1
-  - `torch` 2.4.0
-  - `torchvision` 0.19.0
-  - `matplotlib-base` 3.9.2
-- **Environment**: Conda 24.5.0
-
-To set up the environment, ensure you have [Conda](https://docs.conda.io/en/latest/miniconda.html) 
 
 ## Data Preprocessing
 In the data preprocessing stage, load data first and assign correponding labels to loaded data based on the folder structure. Specifically, AD images are labeled as 0, NC images are labeled as 1. Next, in order to achieve a robust model, the original training set is split into 80% training and 20% validation by using ```train_test_split```. The distribution of data after the split is shown below.
@@ -54,16 +45,61 @@ To enhance data consistency and improve model convergence, each input image is r
 ## GFNet Model Building 
 The GFNet model has two key components: ```GlobalFilter``` and ```GFNet```. ```GlobalFilter``` module performs frequency-domain filtering and ```GFNet``` is the main neural network architecture designed for image classification. 
 
-The ```GlobalFilter``` module is designed to process input images in the frequency domain. The original code can be found on [GitHub](https://github.com/raoyongming/GFNet). It first uses the 2D FFT to convert the spatial features into the frequency domain for subsequent filtering. Unlike the original implementation, intead of using a fixed filter size, the code in this project made an adjustment for generating the ```complex_weight``` automatically with dimensions based on the transformed shape of ```x``` in the frequency domain. This adjustment is more suitble for this classification task. After frequency filtering, an inverse FFT is used to transfrom features back to the spatial domain.
+The ```GlobalFilter``` module is designed to process input images in the frequency domain. The original code can be found on [GitHub](https://github.com/raoyongming/GFNet) [\[3\]](#reference3). This module first uses a 2D FFT to convert the spatial features into the frequency domain for subsequent filtering. Unlike the original implementation, this project adjusts the code to generate the ```complex_weight``` automatically based on the transformed shape of ```x``` in the frequency domain. This adjustment is more suited for this classification task. After frequency filtering, an inverse FFT is used to transform the features back to the spatial domain.
 
-The ```GFNet``` module is the main neural network model for classification. It consists of convolutional layers, global filter modules, a feed-forward network and a classification layer. 
+The ```GFNet``` module is the main neural network model for classification. The main components of GFNet include convolutional layers, global filter modules, a feed-forward network, normalization layers, and a classification layer. During the forward pass, the input image is first processed through convolutional layers with ReLU activations. Then the output passes through the Global Filtering module. After this step, the output is pooled, flattened, and passed through a fully connected layer for classification.
 
-## Predict
+## Training Phase
+The training phase of the GFNet model includes defining the model, loss function, and optimizer, followed by iterative training and validation, with an early stopping mechanism to prevent overfitting. The process has two key parts: a training loop and a validation loop. In the training loop, the number of training epochs is set to ```100```, but early stopping is applied with a patience of ```5``` to stop training if the performance stops improving. The training loss and accuracy are calculated at the end of each epoch. After each training epoch, the model's performance is evaluated on a separate validation set.
 
-## Model Performance
+To visualize training progress, the training loss history over epochs is plotted to observe how the model's learning evolves with each epoch, and both training and validation accuracy are plotted to monitor the model's performance.
+
+## Testing Phase
+The testing phase of the GFNet model involves loading the trained model, evaluating its performance on a separate test dataset, and generating predictions. The predicted results are compared with the actual labels to assess the model’s generalization ability and overall performance.
+
+## Results
+
+### Model Evaluation
+
+### Predict Results
 
 
+## How to Run
+### Prerequisites
+- **Programming Language**: Python 3.12.4
+- **Main Dependencies**: 
+  - `scikit-learn` 1.5.1
+  - `torch` 2.4.0
+  - `torchvision` 0.19.0
+  - `matplotlib-base` 3.9.2
+- **Environment**: Conda 24.5.0
 
+### Setup
+To set up the environment, make sure you have [Conda](https://docs.conda.io/en/latest/miniconda.html). 
+Use the code below to install with all necessary dependencies:
+```bash 
+conda env create -f environment.yml
+conda activate <environment_name>
+```
+
+### Steps to Run
+To run the code, make sure you have met all the setup prerequisites.
+
+1. Train the model:
+Run the ```train.py``` to train the model:
+
+```bash
+python train.py
+```
+
+This will start the training process and save the best model to ./result/best_model.pth
+
+2. Run Predictions
+After training, use the ```predict.py``` to make predictions with the saved model.
+
+```bash
+python predict.py
+```
 
 
 ## References

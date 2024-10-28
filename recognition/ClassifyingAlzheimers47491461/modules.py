@@ -123,10 +123,3 @@ class GFNet(nn.Module):
         # Use the CLS token output for classification
         cls_token_final = x[:, 0]
         return self.head(cls_token_final)
-
-
-model = GFNet(img_size=224, patch_size=16, num_classes=1000, embed_dim=768, depth=12, mlp_dim=3072)
-
-dummy_input = torch.randn(8, 3, 224, 224)
-output = model(dummy_input)
-print(f"{output.shape == (8, 1000)}")

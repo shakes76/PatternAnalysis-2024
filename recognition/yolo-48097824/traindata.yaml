@@ -1,3 +1,6 @@
+#train: '/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/train'
+#val: '/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/validation'
+#test: '/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/test'
 train: '/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/train' #location for training images
 validation: '/mnt/c/Users/jccoc/Downloads/ISIC_DATASET/validation' #location for validation images
 

@@ -10,6 +10,8 @@ import torch
 import dataset
 import modules
 import train
+import os
+import csv
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -87,4 +89,46 @@ def display_raw_tsne() -> None:
 
     plt.legend()
     plt.title("Raw TSNE Plot")
+    plt.show()
+
+def display_training():
+    """
+        Display save training data from disk using matplot lib
+    """
+    csv_path = os.path.join(train.CSV_DIR, f'gnn_classifier.csv')
+
+    epoch_nums = []
+    training_losses = []
+    validation_losses = []
+    validation_accuracies = []
+
+    # Open saved csv data for model
+    with open(csv_path, mode='r', newline='') as file:
+        csv_reader = csv.reader(file)
+
+        for i, row in enumerate(csv_reader):
+            _, training_loss, validation_loss, validation_accuracy, duration = row
+
+            epoch_nums.append(i)
+            training_losses.append(float(training_loss))
+            validation_losses.append(float(validation_loss))
+            validation_accuracies.append(float(validation_accuracy))
+
+    _, ax1 = plt.subplots()
+
+    # Create plot from saved CSV data
+    plt.title("GNN Epoch Accuracy and Loss")
+
+    ax1.plot(epoch_nums, training_losses)
+    ax1.plot(epoch_nums, validation_losses)
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.legend(['Training', 'Validation'], loc='upper left')
+    ax1.grid(True)
+
+    ax2 = ax1.twinx()
+    ax2.plot(epoch_nums, validation_accuracies, 'g-')
+    ax2.set_ylabel('Accuracy')
+    ax2.legend(['Accuracy'], loc='upper right')
+
     plt.show()

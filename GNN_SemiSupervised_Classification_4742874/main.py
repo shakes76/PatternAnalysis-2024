@@ -87,4 +87,6 @@ if __name__ == '__main__':
         )
 
     if args.display:
+        utils.display_training()
+        utils.display_raw_tsne()
         utils.display_gnn_tsne()

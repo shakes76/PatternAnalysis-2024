@@ -116,10 +116,11 @@ This figure clearly exhibits little to no correlation in group clustering based 
 
 After training the GNN model on the FLPP dataset it is clear that the post training TSNE features a strong correlation between grouped categorised groups. This is visible through the like-neighbour clustering 
 
-![Facebook Page-Page Network TSNE before model training](./figures/trained_TSNE_plot.png)
+![Facebook Page-Page Network TSNE after model training](./figures/trained_TSNE_plot.png)
 
 ### GNN Training Accuracy and Loss
 
+![Facebook Page-Page Network TSNE accuracy and loss over 100 epochs](./figures/trained_TSNE_accuracy_loss.png)
 
 ## Conclusion
 

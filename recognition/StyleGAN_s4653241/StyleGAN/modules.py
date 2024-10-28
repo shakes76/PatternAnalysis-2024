@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from math import sqrt
-
+from config import *
 
 class MappingNetwork(nn.Module):
     def __init__(self,z_dim,w_dim,activation = nn.ReLU()):
@@ -71,6 +71,7 @@ class EquilizerKG(nn.Module):
         self.weight = nn.Parameter(torch.randn(shape))
 
     def forward(self):
+        print(self.weight.shape)
         return self.weight * self.constanted
 
 # -----------------Synthesis Network-----------------#
@@ -144,6 +145,10 @@ class Weight_Demod(nn.Module):
         # return x in shape of [batch_size, out_features, height, width]
         return x.reshape(-1, self.out_chanel, h, w)
 
+'''
+Generators RGB  images from the feature maps
+CHANNELS: Number of channels in the RGB image
+'''
 
 class ToRGB(nn.Module):
 
@@ -151,8 +156,8 @@ class ToRGB(nn.Module):
         super().__init__()
         self.to_style = EqualizerStraights(W_DIM, features, bias=1.0)
 
-        self.conv = Weight_Demod(features, 3, kernel_size=1, demodulate=False)
-        self.bias = nn.Parameter(torch.zeros(3))
+        self.conv = Weight_Demod(features, CHANNELS, kernel_size=1, demodulate=False)
+        self.bias = nn.Parameter(torch.zeros(CHANNELS))
         self.activation = nn.LeakyReLU(0.2, True)
 
     def forward(self, x, w):
@@ -278,7 +283,7 @@ class Discriminator(nn.Module):
         #         nn.LeakyReLU(0.2, True)
         #     )
         self.from_rgb = nn.Sequential(
-            Dis_Conv2d(3, n_features, 1),
+            Dis_Conv2d(3, n_features, 1), # Change here
             nn.LeakyReLU(0.2, True)
         )
 
@@ -302,14 +307,17 @@ class Discriminator(nn.Module):
 
 
     def forward(self, x):
+        print("forward")
         x = self.from_rgb(x)
+        print("rgb")
         x = self.blocks(x)
-
+        print("blocks")
         x = self.minibatch_std(x)
+        print("minibatch")
         x = self.conv(x)
-
+        print("conv")
         x = x.reshape(x.shape[0], -1)
-
+        print("reshape")
         return self.final(x)
 
 
@@ -328,7 +336,7 @@ class DiscriminatorBlock(nn.Module):
         self.block = nn.Sequential(
             Dis_Conv2d(in_chanel, in_chanel, kernel_size=3, padding = 1),
             activation,
-            Dis_Conv2d(out_chanel, out_chanel, kernel_size=3, padding = 1),
+            Dis_Conv2d(in_chanel, out_chanel, kernel_size=3, padding = 1),
             activation
         )
 
@@ -338,8 +346,9 @@ class DiscriminatorBlock(nn.Module):
 
     def forward(self, x):
         residual = self.residual(x)
-
+        print("residual")
         x = self.block(x)
+        print("block")
         x = self.downsample(x)
 
         return (x + residual) * self.scale
@@ -365,7 +374,7 @@ class Dis_Conv2d(nn.Module):
         # else:
         #     weight = self.weight()
         #     padding = self.padding
-
+        print("conv2d")
         return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
 #---------------------------#
 

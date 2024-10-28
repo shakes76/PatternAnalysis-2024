@@ -2,6 +2,8 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 from utils import to_channels
+import os
+from random import shuffle
 
 # Rangpur Path: /home/groups/comp3710/HipMRI_Study_open
 def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float32, getAffines=False, early_stop=False):
@@ -15,7 +17,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     '''
     affines = []
 
-    # get fixed size
+    # get fixed count
     num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
     if len(first_case.shape) == 3:
@@ -52,3 +54,43 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+    
+
+def get_all_paths(dir):
+    '''
+    Retrieves all file paths of NIfTI images stored in subdirectories within a root directory.
+    
+    Params:
+    str dir: The main directory containing subdirectories for each image.
+
+    Returns a list of str: Paths to each NIfTI file in the root directory.
+    '''
+    paths = []
+    
+    # walk directory and get paths of files
+    for subdir, _, files in os.walk(dir):
+        for file in files:
+            paths.append(os.path.join(subdir, file))
+    return paths
+
+def batch_paths(samplePaths, segPaths, batchSize):
+    '''
+    batch samples and segmentations randomly but mirrored for both 
+
+    Params:
+    List[string] samplePaths: list of paths to images being batched (same length as segPaths)
+    List[string] segPaths: list of paths to segmentations being batched (same length as samplePaths)
+    int batchSize: the size of batches to generate 
+
+    Returns a list containing lists of size batchSize of paths for both samplePaths and segPaths
+    '''
+    count = len(samplePaths) # the amount of samples/segs
+    indicies = [i for i in range(count)]
+    shuffle(indicies)
+    # shuffle samples and segs identically
+    shuffledSamples = [samplePaths[i] for i in indicies]
+    shuffledSegs = [segPaths[i] for i in indicies]
+    # batch the shuffled data
+    batchedSamples = [shuffledSamples[i: min(i + batchSize, count - 1)] for i in range(count)]
+    batchedSegs = [shuffledSegs[i: min(i + batchSize, count - 1)] for i in range(count)]
+    return batchedSamples, batchedSegs

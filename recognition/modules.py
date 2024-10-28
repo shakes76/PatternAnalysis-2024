@@ -3,16 +3,15 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 
 
-def init_unet(tensor_in, depth=64):
+def init_unet(tensor_in, depth=32):
     """
     Function to initial the convolution layers of the UNet.
     parameters: 
     - tensor_in - the initial tensor filter to use for the model
-    - depth - the number of channels/depth to use at the top layer of extraction (default 64)
+    - depth - the number of channels/depth to use at the top layer of extraction (default 32 (based on lecture))
     Return: 
     NULL
     """
-
     # For each layer of the UNET filter convolute twice and then pool.
     # Complete 2 convolutions to condense the image
     # Model based on https://colab.research.google.com/drive/1K2kiAJSCa6IiahKxfAIv4SQ4BFq7YDYO?usp=sharing

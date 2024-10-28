@@ -23,11 +23,13 @@ def unet_predict(model, data_test):
         ax[1, i].set_title("Test Data")
         ax[1, i].im_show(data_test[i].squeeze())
     plt.show()
-    return predictions
 
 def main():
     # load and evaluate model reference: https://www.tensorflow.org/tutorials/keras/save_and_load
+    # load the trained model
     model = tf.keras.models.load_model('mri_unet.keras')
+    data_test = load_data_2D()
+    unet_predict(model, data_test)
 
 if __name__ == "__main__":
     main()

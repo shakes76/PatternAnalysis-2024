@@ -7,4 +7,4 @@
 #SBATCH -o s4742874_gnn.out
 
 conda activate torch
-python main.py -s -l -e 2
+python main.py -t -s -e 2

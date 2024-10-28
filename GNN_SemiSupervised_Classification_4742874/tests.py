@@ -32,15 +32,6 @@ class TestDataSet(unittest.TestCase):
         print(len(validate_data))
 
 class TestUtils(unittest.TestCase):
-    # def test_utils_display_graph(self):
-    #     """
-    #         Tests creating the spring layout of the FLPP graph
-    #         visualising category connections.
-    #     """
-    #     flpp_dataset, training_data, testing_data = dataset.load_dataset(DATASET_DIR, 200)
-    #
-    #     #utils.display_flpp_network(flpp_dataset)
-    #
     def test_utils_display_raw_tsne(self):
         """
             Tests creating the TSNE display for the raw dataset.

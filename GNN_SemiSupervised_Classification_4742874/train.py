@@ -8,7 +8,9 @@ Author: Liam Mulhern (S4742847)
 Date: 26/10/2024
 """
 
+from networkx import adjacency_matrix
 import torch
+from torch.functional import Tensor
 import torch.nn as nn
 
 import os
@@ -54,6 +56,8 @@ def run_gnn_training(
     # Load FLPP dataset
     flpp_dataset, train_dataloader, test_dataloader, validate_dataloader = dataset.load_dataset(DATASET_DIR, 200)
 
+    adjacency_matrix = modules.create_adjacency_matrix(flpp_dataset.edge_index)
+
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -74,6 +78,7 @@ def run_gnn_training(
         device=device,
         train_loader=train_dataloader,
         test_loader=test_dataloader,
+        adjacency_matrix=adjacency_matrix,
         optimiser=optimiser,
         criterion=criterion,
         name='gnn_classifier',
@@ -85,6 +90,7 @@ def _train(
         model: nn.Module,
         device: torch.device,
         train_loader: DataLoader,
+        adjacency_matrix: Tensor,
         optimiser: torch.optim.Optimizer,
         epoch: int,
         criterion: nn.Module,
@@ -109,6 +115,9 @@ def _train(
 
     print(f"Epoch: {epoch}")
 
+
+    print(adjacency_matrix)
+
     # Train each of the batches of data
     for batch_idx, (features, labels) in enumerate(train_loader):
         print(batch_idx, features, labels)
@@ -118,7 +127,7 @@ def _train(
         optimiser.zero_grad()
 
         # Forward pass
-        outputs = model(features)
+        outputs = model(features, adjacency_matrix)
         loss = criterion(outputs, labels)
 
         # Backward and optimize
@@ -139,6 +148,7 @@ def _test(
         model: nn.Module,
         device: torch.device,
         test_loader: DataLoader,
+        adjacency_matrix: Tensor,
         criterion: nn.Module,
         epoch: int,
         name: str,
@@ -174,7 +184,7 @@ def _test(
             data, target = data.to(device), target.to(device)
 
             # Get the predicted classes for this batch
-            output = model(data)
+            output = model(data, adjacency_matrix)
 
             # Calculate the loss for this batch
             test_loss += criterion(output, target).item()
@@ -256,6 +266,7 @@ def _run_training(
         device: torch.device,
         train_loader: DataLoader,
         test_loader: DataLoader,
+        adjacency_matrix: Tensor,
         optimiser: torch.optim.Optimizer,
         criterion: nn.Module,
         name: str,
@@ -313,6 +324,7 @@ def _run_training(
                 model=model,
                 device=device,
                 train_loader=train_loader,
+                adjacency_matrix=adjacency_matrix,
                 optimiser=optimiser,
                 epoch=epoch,
                 criterion=criterion
@@ -324,6 +336,7 @@ def _run_training(
                 model=model,
                 device=device,
                 test_loader=test_loader,
+                adjacency_matrix=adjacency_matrix,
                 epoch=epoch,
                 criterion=criterion,
                 name=name,

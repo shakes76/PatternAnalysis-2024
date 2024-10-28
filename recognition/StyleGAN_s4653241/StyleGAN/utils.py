@@ -39,6 +39,8 @@ def load_checkpoint(path, G, D, optimizer_G, optimizer_D):
 
     return epoch, gen_loss, disc_loss
 
+# def load_generator(path,G):
+
 def devicer():
     # Prioritize CUDA, then MPS, and finally CPU
     if torch.cuda.is_available():

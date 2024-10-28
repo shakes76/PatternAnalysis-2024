@@ -16,7 +16,7 @@ only one category or class. Image localization instead is the process of using b
 boxes to identify the location of one or many objects in an image. Object detection is a 
 combination of both of these as it identifies and localises objects in images or videos. 
 
-![Object Detection Example](/home/jared-cc/PatternAnalysis-2024/recognition/yolo-48097824/readmeimages/ObjectDetection.png)
+![Object Detection Example](/PatternAnalysis-2024/recognition/yolo-48097824/readmeimages/ObjectDetection.png)
 
 You Only Look Once, YOLO, is a real-time object detection algorithm that was made in 
 2015 using a single deep convolutional neural network. It can operate at a high speed 

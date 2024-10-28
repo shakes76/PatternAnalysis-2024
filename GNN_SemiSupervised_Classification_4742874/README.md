@@ -5,7 +5,7 @@ Date: 26/10/2024
 
 ## Project Specification
 
-Creates a multi-layer graph neural network (GNN) model for semi supervised multi-class node classification using Facebook Large Page-Page Network dataset with 93.2% Accuracy. This report includes TSNE embeddings plot before and after model training providing a brief interpretation and discussion of results.
+Creates a multi-layer graph neural network (GNN) model for semi supervised multi-class node classification using Facebook Large Page-Page Network dataset with 93.14% Accuracy. This report includes TSNE embeddings plot before and after model training providing a brief interpretation and discussion of results.
 
 ## Dependencies
 
@@ -96,9 +96,8 @@ Between the two sparse layers is a relu activated function that clamps the outpu
 
 ## Training Hyperparameters
 
-- Learning Rate: 1e-3
+- Learning Rate: 1e-4
 - Epochs: 100
-- Batch Size: 200
 - Optimisation Strategy: Adaptive Moment Estimation (Adam)
 - Loss Type: Cross Entropy
 

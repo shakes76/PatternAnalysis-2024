@@ -11,48 +11,50 @@ Date: 26/10/2024
 import torch
 import torch.nn as nn
 
-import os
-
-from torch.utils.data import DataLoader
+import dataset
+import train
+import modules
 
 MODEL_DIR = './models/'
 CSV_DIR = './models_csv/'
 
 def run_inference(
-        model: nn.Module,
-        device: torch.device,
-        test_dataloader: DataLoader,
-        name: str,
         index: int,
-        labels: list,
     ) -> None:
     """
         Run inference on the given model and predict the outcome at the given index.
 
         Parameters:
-            model: The trained model to run inference on
-            device: The device to move the model to
-            test_dataloader: The dataloader to input to the model
-            name: The name of the model to load
             index: The index of the test data to load into the model
-            labels: The labels of the model outputs
     """
+    _, flpp_data, _, _, validate_mask = dataset.load_dataset(train.DATASET_DIR)
 
-    model_path = os.path.join(MODEL_DIR, f'{name}.pth')
-    loader = torch.load(model_path)
-    model.load_state_dict(loader['model'])
+    validate_target = flpp_data.y[validate_mask]
+
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    if not torch.cuda.is_available():
+        print("WARNING: CUDA not found; Using CPU")
+
+    model = modules.GNN(128, 16, 4)
+    train._load_model(model, 'gnn_classifier')
+
+    model.to(device)
+    model.eval()
 
     # Turn off gradient descent when we run inference on the model
     with torch.no_grad():
-        for data, target in test_dataloader:
-            data, target = data.to(device), target.to(device)
 
-            # Get the predicted classes for this batch
-            output = model(data)
+        # Get the predicted classes for this batch
+        outputs = model(flpp_data.x, flpp_data.edge_index)
 
-            # Get the maximum output tensor (i.e predicted label)
-            _, predicted = torch.max(output.data, 1)
+        # Get the maximum output tensor (i.e predicted label)
+        _, predicted = torch.max(outputs.data, 1)
 
-            predicted = predicted[index].cpu().numpy()
+        predicted = predicted[index].cpu().numpy()
 
-            print(f"Predicted index: {predicted}, Labelled index: {target[index]}, Label: {labels[predicted]}")
+        # Calculate the accuracy of all the predictions
+        accuracy = ((outputs.argmax(1)[validate_mask] == validate_target).float()).mean()
+
+        print(f"Predicted index: {predicted}, Labelled index: {validate_target[index]}, Label: {dataset.FLPP_CATEGORIES[predicted]}, Accuracy: {accuracy}")

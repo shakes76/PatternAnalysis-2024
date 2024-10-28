@@ -47,9 +47,16 @@ def display_gnn_tsne() -> None:
     """
     _, flpp_data, _, _, _ = dataset.load_dataset(train.DATASET_DIR)
 
+    # Device configuration
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    if not torch.cuda.is_available():
+        print("WARNING: CUDA not found; Using CPU")
+
     model = modules.GNN(128, 16, 4)
     train._load_model(model, 'gnn_classifier')
 
+    model.to(device)
     model.eval()
 
     # Turn off gradient descent when we run inference on the model

@@ -10,6 +10,7 @@ import argparse
 
 import train
 import utils
+import predict
 
 if __name__ == '__main__':
 
@@ -90,3 +91,6 @@ if __name__ == '__main__':
         utils.display_training()
         utils.display_raw_tsne()
         utils.display_gnn_tsne()
+
+    if args.inference != - 1:
+        predict.run_inference(args.inference)

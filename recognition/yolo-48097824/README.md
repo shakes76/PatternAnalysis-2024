@@ -64,7 +64,26 @@ conda install ultralytics
 
 ## Results
 
+![val_batch0](readmeimages/val_batch0_pred.jpg)
+![val_batch1](readmeimages/val_batch1_pred.jpg)
+![val_batch2](readmeimages/val_batch2_pred.jpg)
 
+Above we can see the results of the validation data after the training. Below is the validation and test data from the training.
+
+![results](readmeimages/results.png)
+
+Looking above most lesions have a good intersection over union, with them all above 80%. Additionally the mean average precision was 94% and since this is based 
+on the mean IoU of the lesions it validates the overall IoU being above the required 80%. 
+
+Additionally it helps to look at the interaction between precision and confidence. Since the relation is quite high, it mean that there is a low chance 
+of false positives being identified by the model. 
+
+![Precision Confidence graph](readmeimages/P_curve.png)
+
+Looking at the F1-confidence graph is also useful in determining how sensitive to change in the threshold the model is. It is also beneficial when attempting 
+to balance precision and recall. 
+
+![F1-Confidence Graph](readmeimages/F1_curve.png)
 
 ## Dependencies
 

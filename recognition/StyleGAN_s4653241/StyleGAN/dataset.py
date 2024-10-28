@@ -9,14 +9,15 @@ from torchvision.transforms import ToPILImage
 import matplotlib.pyplot as plt
 import torch
 
-def combine_datasets(BRAIN):
-    if BRAIN == 'AC':
-        train = ImageDataset(AC_train)
-        test = ImageDataset(AC_test)
+def combine_datasets(transform):
+
+    if BRAIN == 'AD':
+        train = ImageDataset(AD_train, transform)
+        test = ImageDataset(AD_test, transform)
         return ConcatDataset([train, test])
     else:
-        train = ImageDataset(NC_train)
-        test = ImageDataset(NC_test)
+        train = ImageDataset(NC_train, transform)
+        test = ImageDataset(NC_test,transform)
         return ConcatDataset([train, test])
 
 # Dataset class
@@ -72,22 +73,24 @@ class ImageDataset(Dataset):
 
         return img, trans_img,
 
-def get_transform(image_size=(256, 240)):
+def get_transform(image_size=(256, 256)):
     transform = transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.CenterCrop(image_size),
+        transforms.Resize((image_height, image_width), interpolation=transforms.InterpolationMode.BICUBIC),
+        # transforms.CenterCrop(image_size),
+        transforms.Grayscale(),
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])  #Singel channel image
     ])
     return transform
 
 # Function to get the dataloader
-def get_dataloader(root, image_size, batch_size, shuffle = False): # Size of image (256,240)
+def get_dataloader(image_size=IMAGE_SIZE, batch_size=BATCH_SIZE, shuffle = False): # Size of image (256,240)
     transform = get_transform(image_size)
 
-    dataset = ImageDataset(root, transform)
 
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataset = combine_datasets(transform)
+
+    return DataLoader(dataset, batch_size, shuffle=shuffle)
 
 # Function to get the image with transform
 class ImageVisualize:

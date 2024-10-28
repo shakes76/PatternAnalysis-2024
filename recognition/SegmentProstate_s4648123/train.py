@@ -132,17 +132,28 @@ if __name__ == '__main__':
 
     # Training and evaluation loop
     for epoch in range(epochs):
-        train_loss = train(unet, train_loader, optimizer, criterion)
-        print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {train_loss / len(train_loader):.4f}")
+        train_loss = train(unet, train_loader, optimizer, criterion)  # Your existing function
+        train_loss_avg = train_loss / len(train_loader)  # Average train loss
 
-        # TODO: Plot epoch loss and dice loss
+        print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {train_loss_avg:.4f}")
 
-        dice_score = validate(unet, val_loader, criterion)
-        dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in dice_score])
-        print(f"Test Epoch {epoch + 1}/{epochs}, Dice Coefficients for each class: [{dice_coeff_str}]")
+        # Log training loss to TensorBoard
+        writer.add_scalar("Loss/Train", train_loss_avg, epoch)
 
-        validation_loss = float(np.mean(dice_score))
-        if validation_loss > best_metric:
+        dice_scores = validate(unet, val_loader, criterion)  # Your existing function
+        dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in dice_scores])
+        print(f"Test Epoch {epoch + 1}/{epochs}, Dice Coefficients: [{dice_coeff_str}]")
+
+        validation_loss = 1. - float(np.mean(dice_scores))  # Average validation loss
+
+        # Log validation loss to TensorBoard
+        writer.add_scalar("Loss/Validation", validation_loss, epoch)
+
+        # Log Dice score for each class to TensorBoard
+        for class_idx, dice_scores in enumerate(dice_scores):
+            writer.add_scalar(f"Dice_Score/Class_{class_idx}", dice_scores, epoch)
+
+        if validation_loss < best_metric:
             best_metric = validation_loss
             best_state = unet.state_dict()
             # Save the best model state
@@ -151,6 +162,7 @@ if __name__ == '__main__':
     train_end_time = time.time()  # End timer
     train_time = train_end_time - train_start_time  # Calculate elapsed time
     print(f"Total training time: {train_time:.2f} seconds")
+    writer.close()
 
     # Load the best model state (if not loaded already)
     unet.load_state_dict(torch.load(MODEL_PATH, weights_only=True))

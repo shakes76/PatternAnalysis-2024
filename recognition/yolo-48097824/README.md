@@ -67,3 +67,9 @@ conda install ultralytics
 
 
 ## Dependencies
+
+### Dependencies
+
+- [PyTorch](https://pytorch.org/) 
+- [OpenCV](https://opencv.org/) 
+- [Ultralytics](https://github.com/ultralytics/ultralytics) 

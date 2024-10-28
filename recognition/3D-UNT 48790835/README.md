@@ -47,7 +47,7 @@ To get started with the 3D UNet model for prostate segmentation, follow these st
 
 ### Training and Validation Loss
 
-![Training and Validation Loss](https://github.com/Han1zen/PatternAnalysis-2024/blob/topic-recognition/recognition/3D-UNT%2048790835/picture/loss.jpg#:~:text=U%2DNet.webp-,loss,-.jpg)
+![Training and Validation Loss](https://github.com/Han1zen/PatternAnalysis-2024/blob/topic-recognition/recognition/3D-UNT%2048790835/picture/train_loss_and_valid_loss.png#:~:text=loss.jpg-,train_loss_and_valid_loss,-.png)
 
 - The **training loss** curve demonstrates a rapid decline in the early stages of training, indicating that the model is effectively learning and adapting to the training data.
 - As training progresses, the loss stabilizes, ultimately reaching around **0.6**. This suggests that the model performs well on the training set and is capable of effective feature learning.

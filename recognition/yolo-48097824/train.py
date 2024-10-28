@@ -14,7 +14,7 @@ def execute_training(model, device):
         batch = 4,  
         device = device,
         model = model,
-        data = "/home/jared-cc/PatternAnalysis-2024/recognition/yolo-48097824/traindata.yaml",
+        data = "/home/jared-cc/PatternAnalysis-2024/recognition/yolo-48097824/traindata.yaml", #configure this to your file path
         epochs = 80,
         imgsz = 640
     )

@@ -1,11 +1,11 @@
 # Multi-Layer Graph Neural Network For Categorisation of Facebook Large Page-Page Network Dataset
 Course: COMP3710 Pattern Recognition
 Author: Liam Mulhern (S4742847)
-Date: 26/10/2024
+Date: 28/10/2024
 
 ## Project Specification
 
-Creates a multi-layer graph neural network (GNN) model for semi supervised multi-class node classification using Facebook Large Page-Page Network dataset with 93.14% Accuracy. This report includes TSNE embeddings plot before and after model training providing a brief interpretation and discussion of results.
+Creates a multi-layer graph neural network (GNN) model for semi supervised multi-class node classification using Facebook Large Page-Page Network dataset with 93.14% accuracy. This report includes TSNE embeddings plot before and after model training providing a brief interpretation and discussion of results.
 
 ## Dependencies
 
@@ -37,12 +37,29 @@ Creates a multi-layer graph neural network (GNN) model for semi supervised multi
 > [!IMPORTANT]
 > It is recommended that a python environment is utilsed for managing dependencies such a conda.
 
-For help, execute the following shell command:
+
+To run the script execute the following shell command:
 
 ```bash
-conda activate torch
-
 python main.py --help
+```
+
+For training a model
+
+```bash
+python main.py --train --save
+```
+
+For inference on a trained model
+
+```bash
+python main.py --inference <index>
+```
+
+To display training accuracy, losses and TSNE plots
+
+```bash
+python main.py --display
 ```
 
 # Discussion
@@ -103,6 +120,12 @@ Between the two sparse layers is a relu activated function that clamps the outpu
 
 ## Results
 
+### GNN Training Accuracy and Loss
+
+After 100 epochs of model training the per-epoch training losses had plateaued with an overall best accuracy of 93.14%. Observing the accuracy and loss plot it can be seen that after the 10th epoch a separation occured between the validation and training losses. This may indicate that the model is overfitting the labelled data and a more advanced GNN with greater depth may be required to deliver a higher accuracy.
+
+![Facebook Page-Page Network TSNE accuracy and loss over 100 epochs](./figures/trained_TSNE_accuracy_loss.png)
+
 ### GNN Pre-Training FLPP TSNE
 
 Before computing the trained GNN model the following scatter plot displaying the t-distributed stochastic neighbour embedding of the 4 categories was generated.
@@ -113,18 +136,14 @@ This figure clearly exhibits little to no correlation in group clustering based 
 
 ### GNN Post-Training FLPP TSNE
 
-After training the GNN model on the FLPP dataset it is clear that the post training TSNE features a strong correlation between grouped categorised groups. This is visible through the like-neighbour clustering 
+After training the GNN model on the FLPP dataset it is clear that the post training TSNE features a strong correlation between node and cluster category. This is visible through the like-neighbour clustering of each distinct classification type. Whilst the majority of nodes are embedded within their classification, there are outliers present, particularly on the boundaries of their respective clusters.
 
 ![Facebook Page-Page Network TSNE after model training](./figures/trained_TSNE_plot.png)
 
-### GNN Training Accuracy and Loss
-
-![Facebook Page-Page Network TSNE accuracy and loss over 100 epochs](./figures/trained_TSNE_accuracy_loss.png)
-
 ## Conclusion
 
+Utilising a convolutional graph neural network to classify nodes in the Facebook Large Page-Page Network proved to be a successful application of the model type resulting in a trained accuracy of 93.14%. This in addition to the models clear clustering shows that this is an applicable model for categorising social network graph problems. Future additions may include extending the model to feature a greater depth, hidden layer count, or considering global connectivity between graph nodes.
 
 # References
 
 [1] https://distill.pub/2021/gnn-intro/
-[2]

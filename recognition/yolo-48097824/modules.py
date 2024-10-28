@@ -1,5 +1,5 @@
 import torch
-from ultralytics import yolov8
+from ultralytics import YOLO
 
 def assign_device():
 
@@ -10,7 +10,7 @@ def assign_device():
 
 def use_yolo(device):
 
-    model = yolov8("yolov8n.yaml")
+    model = YOLO("yolov8n.yaml")
     model.to(device)
 
     return model

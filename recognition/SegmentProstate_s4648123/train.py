@@ -123,7 +123,8 @@ if __name__ == '__main__':
 
     epochs = 15
     criterion = Dice()
-    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(unet.parameters())
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
     best_metric = float(0.)
     best_state = unet.state_dict()
@@ -132,47 +133,51 @@ if __name__ == '__main__':
 
     # Training and evaluation loop
     for epoch in range(epochs):
-        train_loss = train(unet, train_loader, optimizer, criterion)  # Your existing function
-        train_loss_avg = train_loss / len(train_loader)  # Average train loss
-
+        # # Training
+        train_loss = train(unet, train_loader, optimizer, criterion)
+        train_loss_avg = train_loss / len(train_loader)
         print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {train_loss_avg:.4f}")
 
         # Log training loss to TensorBoard
         writer.add_scalar("Loss/Train", train_loss_avg, epoch)
 
-        dice_scores = validate(unet, val_loader, criterion)  # Your existing function
+        # Log learning rate for each param group in the optimizer
+        for param_group_idx, param_group in enumerate(optimizer.param_groups):
+            writer.add_scalar(f"LR/Group_{param_group_idx}", param_group['lr'], epoch)
+            writer.add_scalar(f"Weight_Decay/Group_{param_group_idx}", param_group['weight_decay'], epoch)
+        scheduler.step()
+
+        # # Validation
+        dice_scores = validate(unet, val_loader, criterion)
         dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in dice_scores])
         print(f"Test Epoch {epoch + 1}/{epochs}, Dice Coefficients: [{dice_coeff_str}]")
 
-        validation_loss = 1. - float(np.mean(dice_scores))  # Average validation loss
-
         # Log validation loss to TensorBoard
+        validation_loss = 1. - float(np.mean(dice_scores))  # Average validation loss
         writer.add_scalar("Loss/Validation", validation_loss, epoch)
 
         # Log Dice score for each class to TensorBoard
         for class_idx, dice_scores in enumerate(dice_scores):
             writer.add_scalar(f"Dice_Score/Class_{class_idx}", dice_scores, epoch)
 
+        # if this is the best performance so far, save this state
         if validation_loss < best_metric:
             best_metric = validation_loss
             best_state = unet.state_dict()
-            # Save the best model state
             torch.save(best_state, MODEL_PATH)
 
-    train_end_time = time.time()  # End timer
-    train_time = train_end_time - train_start_time  # Calculate elapsed time
+    train_time = time.time() - train_start_time  # Calculate elapsed time
     print(f"Total training time: {train_time:.2f} seconds")
-    writer.close()
 
     # Load the best model state (if not loaded already)
-    unet.load_state_dict(torch.load(MODEL_PATH, weights_only=True))
+    unet.load_state_dict(best_state)
 
-    # test the model on seperate test dataset
+    # test the model on separate test dataset
     test_start_time = time.time()  # Start timer
     final_dice_score = validate(unet, test_loader, criterion)
 
-    test_end_time = time.time()  # End timer
-    test_time = test_end_time - test_start_time  # Calculate elapsed time
+    test_time = time.time() - test_start_time  # Calculate elapsed time
     dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in final_dice_score])
     print(f"Final Dice Coefficients for each class: [{dice_coeff_str}]")
     print(f"Total test time: {test_time:.2f} seconds")
+    writer.close()

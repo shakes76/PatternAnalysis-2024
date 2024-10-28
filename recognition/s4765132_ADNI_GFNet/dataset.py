@@ -3,6 +3,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
+from collections import Counter
 
 class ADNIDataset(Dataset):
     def __init__(self, image_paths, labels, transform=None):
@@ -22,7 +23,7 @@ class ADNIDataset(Dataset):
             image = self.transform(image)
         return image, label
 
-def load_train_val_datasets(folder_path, transform=None, val_split=0.2):
+def load_train_val_datasets(folder_path, transform=None, val_split=0.2, random_state=42):
     # Get paths of AD and NC directories
     ad_path = os.path.join(folder_path, "AD")
     nc_path = os.path.join(folder_path, "NC")
@@ -39,8 +40,14 @@ def load_train_val_datasets(folder_path, transform=None, val_split=0.2):
 
     # Split data into training and validation sets
     train_paths, val_paths, train_labels, val_labels = train_test_split(
-        image_paths, labels, test_size=val_split, stratify=labels
+        image_paths, labels, test_size=val_split, stratify=labels, random_state=random_state
     )
+
+    train_counter = Counter(train_labels)
+    val_counter = Counter(val_labels)
+
+    print(f"Training set - AD: {train_counter[0]}, NC: {train_counter[1]}")
+    print(f"Validation set - AD: {val_counter[0]}, NC: {val_counter[1]}")
 
     # Create dataset objects
     train_dataset = ADNIDataset(train_paths, train_labels, transform=transform)
@@ -50,7 +57,7 @@ def load_train_val_datasets(folder_path, transform=None, val_split=0.2):
 
 # Define the transform
 transform = transforms.Compose([
-    transforms.Resize((128, 128)),
+    transforms.Resize((64, 64)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
@@ -59,8 +66,8 @@ transform = transforms.Compose([
 train_dataset, val_dataset = load_train_val_datasets("./ADNI/AD_NC/train", transform=transform)
 
 # Load train and validation data
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=1)
-val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=1)
+train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
 
 # Load test dataset
 def load_test_dataset(folder_path, transform=None):
@@ -83,4 +90,5 @@ def load_test_dataset(folder_path, transform=None):
 
 # Load the test dataset and create DataLoader
 test_dataset = load_test_dataset("./ADNI/AD_NC/test", transform=transform)
-test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=1)
+test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
+

@@ -9,15 +9,21 @@ from modules import init_unet
 from dataset import load_data_2D, to_channels
 
 # https://medium.com/@vipul.sarode007/u-net-unleashed-a-step-by-step-guide-on-implementing-and-training-your-own-segmentation-model-in-a90ed89399c6
-def dice_coeff(y_true, y_pred, smooth = 1):
-    intersection = K.sum(y_true*y_pred, axis = -1)
-    union = K.sum(y_true, axis = -1) + K.sum(y_pred, axis = -1)
-    dice_coeff = (2*intersection+smooth) / (union + smooth)
+# Function to calculate the mathmatical dice coefficient
+def dice_coeff(y_true, y_predicted):
+    intersection = K.sum(y_true*y_predicted, axis = -1)
+    union = K.sum(y_true, axis = -1) + K.sum(y_predicted, axis = -1)
+    dice_coeff = (2*intersection) / (union)
     return dice_coeff
 
-def train_unet( data_train, data_train_cat, data_test, data_test_cat, epochs=32, batch_size=8):
+
+#Function to train the Unet model, using tensorflow's inbuilt keras.model.fit() function
+def train_unet( data_train, data_train_seg, data_validate, data_validate_seg, epochs=32, batch_size=8):
     init_inputs = layers.Input(shape=(256, 128, 1))
     model = init_unet(init_inputs)
     early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3, restore_best_weights = True)
+    # Compile and train the UNET model on the training set and validation set
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', dice_coeff])
-    model.fit(data_train, data_train_cat, epochs=epochs, batch_size=batch_size, validation_data=(data_test, data_test_cat), callbacks=[early_stopping])
+    model.fit(data_train, data_train_seg, epochs=epochs, batch_size=batch_size, validation_data=(data_validate, data_validate_seg), callbacks=[early_stopping])
+    return model
+    

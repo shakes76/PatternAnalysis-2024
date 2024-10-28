@@ -74,6 +74,10 @@ The confusion matrix is shown below. According to the plot, it can be seen that 
 ![Confusion Matrix](confusion_matrix.png)
 
 
+## Future Work
+After fine-tuning some parameters and considering the time constraints, the GFNet model still underperforms and has poor generalization. Based on the results and limitations observed in this project, future efforts could focus on trying to optimize additional hyperparameters, such as adjusting the number of layers, modifying transformation parameters during data loading, try to use alternative optimizers, and using a smaller learning rate.
+
+
 ## How to Run
 ### Prerequisites
 - **Programming Language**: Python 3.12.4
@@ -110,10 +114,6 @@ After training, use the ```predict.py``` to make predictions with the saved mode
 ```bash
 python predict.py
 ```
-
-## Future Work
-After fine-tuning some parameters and considering the time constraints, the GFNet model still underperforms and has poor generalization. Based on the results and limitations observed in this project, future efforts could focus on trying to optimize additional hyperparameters, such as adjusting the number of layers, modifying transformation parameters during data loading, try to use alternative optimizers, and using a smaller learning rate.
-
 
 ## References
 <a id="reference1"></a>

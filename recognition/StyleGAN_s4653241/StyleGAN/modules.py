@@ -35,7 +35,7 @@ class MappingNetwork(nn.Module):
 
     def forward(self, x):
         # Normalize the input tensor
-        x = x / torch.sqrt(torch.mean(x**2, dim = 1, keepdim = True) + 1e-8)
+        x = x / torch.sqrt(torch.mean(x**2, dim = 1, keepdim = True) + 1e-8) # for PixelNorm
         return self.mapping(x)
 
 # Equalizer for the fully connected layer
@@ -44,14 +44,17 @@ Linear layer with learning rate equalizing weights and bias
 Returns the output of the linear transformation of the tensor with bias
 '''
 class EqualizerStraights(nn.Module):
-    def __init__(self, in_chanel, out_chanel, bias=0):
+    def __init__(self, in_chanel, out_chanel, bias=0.0):
         super().__init__()
         self.weight = EquilizerKG([out_chanel, in_chanel])
         self.bias = nn.Parameter(torch.ones(out_chanel) * bias)
 
+        self.input_size = in_chanel
+
     def forward(self, x):
         # Linear transformation
-        return F.linear(x, self.weight(), bias = self.bias)
+        weight = self.weight().to(x.device)
+        return F.linear(x, weight, bias = self.bias.to(x.device))
 
 
 # Weight equalizer
@@ -74,18 +77,18 @@ class EquilizerKG(nn.Module):
 
 # Drip Block, basically Style Block
 class DripBlock(nn.Module):
-    def __init__(self,w_dim, in_chanel, out_chanel):
+    def __init__(self,W_DIM, in_chanel, out_chanel):
         super().__init__()
 
-        self.need_face = EqualizerStraights(w_dim, in_chanel,bias=1)
+        self.need_face = EqualizerStraights(W_DIM, in_chanel,bias=1.0)
 
         self.conv = Weight_Demod(in_chanel,out_chanel,kernel_size=3)
 
         # Noise and bias
-        self.scale_noise  = nn.Parameter(torch.zeros(out_chanel))
+        self.scale_noise  = nn.Parameter(torch.zeros(1))
         self.bias = nn.Parameter(torch.zeros(out_chanel))
 
-        self.activation = nn.LeakyReLU(0.2)
+        self.activation = nn.LeakyReLU(0.2,True)
 
     def forward(self,x,w,noise):
         s = self.need_face(w)
@@ -96,7 +99,15 @@ class DripBlock(nn.Module):
 
 
 class Weight_Demod(nn.Module):
-    def __init__(self, in_chanel, out_chanel, kernel_size, demodulate = True, eps = 1e-8):
+    def __init__(
+        self,
+        in_chanel,
+        out_chanel,
+        kernel_size,
+        demodulate = True,
+        eps = 1e-8
+    ):
+
         super().__init__()
         self.out_chanel = out_chanel
         self.demodulate = demodulate
@@ -138,7 +149,7 @@ class ToRGB(nn.Module):
 
     def __init__(self, W_DIM, features):
         super().__init__()
-        self.to_style = EqualizerStraights(W_DIM, features, bias=1)
+        self.to_style = EqualizerStraights(W_DIM, features, bias=1.0)
 
         self.conv = Weight_Demod(features, 3, kernel_size=1, demodulate=False)
         self.bias = nn.Parameter(torch.zeros(3))
@@ -152,11 +163,9 @@ class ToRGB(nn.Module):
 '''
 Not implemented yet
 '''
-class Generator(nn.Module):
+class GeneratorNOT(nn.Module):
     def __init__(self, log_reso,w_dim, n_features = 32, max_features = 256):
         super().__init__()
-
-
 
         features = [min(max_features, n_features * (2 ** i)) for i in range(log_reso - 2, -1, -1)]
         self.n_blocks = len(features)
@@ -191,19 +200,49 @@ class Generator(nn.Module):
         # tanh is used to output rgb pixel values form -1 to 1
         return torch.tanh(rgb)
 
+class Generator(nn.Module):
 
+    def __init__(self, log_resolution, W_DIM, n_features = 32, max_features = 256):
+
+        super().__init__()
+
+        features = [min(max_features, n_features * (2 ** i)) for i in range(log_resolution - 2, -1, -1)]
+        self.n_blocks = len(features)
+
+        self.initial_constant = nn.Parameter(torch.randn((1, features[0], 4, 4)))
+
+        self.style_block = DripBlock(W_DIM, features[0], features[0])
+        self.to_rgb = ToRGB(W_DIM, features[0])
+
+        blocks = [GeneratorBlock(W_DIM, features[i - 1], features[i]) for i in range(1, self.n_blocks)]
+        self.blocks = nn.ModuleList(blocks)
+
+    def forward(self, w, input_noise):
+
+        batch_size = w.shape[1]
+
+        x = self.initial_constant.expand(batch_size, -1, -1, -1)
+        x = self.style_block(x, w[0], input_noise[0][1])
+        rgb = self.to_rgb(x, w[0])
+
+        for i in range(1, self.n_blocks):
+            x = F.interpolate(x, scale_factor=2, mode="bilinear")
+            x, rgb_new = self.blocks[i - 1](x, w[i], input_noise[i])
+            rgb = F.interpolate(rgb, scale_factor=2, mode="bilinear") + rgb_new
+
+        return torch.tanh(rgb)
 '''
 Testing
 '''
 class GeneratorBlock(nn.Module):
-    def __init__(self,w_dim, in_chanel, out_chanel):
+    def __init__(self,W_DIM, in_chanel, out_chanel):
         super().__init__()
 
         # First black changes the feature map size to the "out_chanel"
-        self.styled_block1 = DripBlock(w_dim, in_chanel, out_chanel)
-        self.styled_block2 = DripBlock(w_dim, out_chanel, out_chanel)
+        self.styled_block1 = DripBlock(W_DIM, in_chanel, out_chanel)
+        self.styled_block2 = DripBlock(W_DIM, out_chanel, out_chanel)
 
-        self.to_rgb = ToRGB(w_dim, out_chanel)
+        self.to_rgb = ToRGB(W_DIM, out_chanel)
 
     def forward(self, x,w,noise):
 
@@ -222,22 +261,26 @@ Implementation of the discriminator network
 Is mostly the same as GAN discriminator network
 '''
 class Discriminator(nn.Module):
-    def __init__(self, log_reso, n_features = 64, max_features = 256, rgb = True): # log resolution 2^log_reso= image size
+    def __init__(self, log_reso, n_features = 64, max_features = 256,): # log resolution 2^log_reso= image size
         super().__init__()
 
         features = [min(max_features, n_features*(2**i)) for i in range(log_reso - 1)]
 
-        # Not RGB unless trainined on CIFAR-10 images
-        if rgb:
-            self.rgb = nn.Sequential(
-                Dis_Conv2d(3, n_features, 1),
-                nn.LeakyReLU(0.2, True)
-            )
-        else:
-            self.rgb = nn.Sequential(
-                Dis_Conv2d(1, n_features, 1),
-                nn.LeakyReLU(0.2, True)
-            )
+        # # Not RGB unless trainined on CIFAR-10 images
+        # if rgb:
+        #     self.rgb = nn.Sequential(
+        #         Dis_Conv2d(1, n_features, 1),
+        #         nn.LeakyReLU(0.2, True)
+        #     )
+        # else:
+        #     self.rgb = nn.Sequential(
+        #         Dis_Conv2d(1, n_features, 1),
+        #         nn.LeakyReLU(0.2, True)
+        #     )
+        self.from_rgb = nn.Sequential(
+            Dis_Conv2d(3, n_features, 1),
+            nn.LeakyReLU(0.2, True)
+        )
 
         n_blocks = len(features) - 1
 
@@ -250,8 +293,7 @@ class Discriminator(nn.Module):
         # Final conv layer with 3x3 kernel
         self.conv = Dis_Conv2d(final_features, final_features, 3)
         # Final Equalized linear layer for classification
-        self.final = EqualizerStraights(2 * 2 * final_features, 1)
-
+        self.final = EqualizerStraights(2*2*final_features, 1)
     def minibatch_std(self, x):
         batch_statistics = (
             torch.std(x, dim=0).mean().repeat(x.shape[0], 1, x.shape[2], x.shape[3])
@@ -260,18 +302,21 @@ class Discriminator(nn.Module):
 
 
     def forward(self, x):
-        x = self.rgb(x)
+        x = self.from_rgb(x)
         x = self.blocks(x)
 
         x = self.minibatch_std(x)
         x = self.conv(x)
+
         x = x.reshape(x.shape[0], -1)
+
         return self.final(x)
 
 
 
+
 class DiscriminatorBlock(nn.Module):
-    def __init__(self,in_chanel,out_chanel,activation = nn.LeakyReLU(0.2,True),downsample = True):
+    def __init__(self,in_chanel,out_chanel,activation = nn.LeakyReLU(0.2,True)):
         super().__init__()
 
 
@@ -281,9 +326,9 @@ class DiscriminatorBlock(nn.Module):
         )
 
         self.block = nn.Sequential(
-            Dis_Conv2d(in_chanel, out_chanel, 3, padding = 1),
+            Dis_Conv2d(in_chanel, in_chanel, kernel_size=3, padding = 1),
             activation,
-            Dis_Conv2d(out_chanel, out_chanel, 3, padding = 1),
+            Dis_Conv2d(out_chanel, out_chanel, kernel_size=3, padding = 1),
             activation
         )
 
@@ -303,13 +348,25 @@ class DiscriminatorBlock(nn.Module):
 class Dis_Conv2d(nn.Module):
     def __init__(self,in_chanel,out_chanel,kernel_size,padding=0):
         super().__init__()
+        # self.kernel_size = kernel_size
         self.padding = padding
         self.weight = EquilizerKG([out_chanel, in_chanel, kernel_size, kernel_size])
-        self.bias = nn.Parameter(torch.zeros(out_chanel))
+        self.bias = nn.Parameter(torch.ones(out_chanel))
 
     def forward(self, x: torch.Tensor):
-        return F.conv2d(x, self.weight(), bias = self.bias, padding = self.padding)
 
+        # weight = self.weight().to(x.device)
+
+        # # Use 1x1 kernel if input dimensions are too small
+        # if x.size(-1) < self.kernel_size or x.size(-2) < self.kernel_size:
+        #     kernel_size = 1  # Switch to 1x1 kernel
+        #     weight = weight[:, :, :kernel_size, :kernel_size]
+        #     padding = 0
+        # else:
+        #     weight = self.weight()
+        #     padding = self.padding
+
+        return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
 #---------------------------#
 
 class PathLengthPenalty(nn.Module):

@@ -9,7 +9,7 @@ Date: 26/10/2024
 
 import torch
 
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
+from torch.utils.data import Dataset, DataLoader
 from torch_geometric.datasets import FacebookPagePage
 
 FLPP_CATEGORIES = ['politicians', 'governmental organizations', 'television shows', 'companies']
@@ -66,7 +66,6 @@ def load_dataset(root: str, batch_size: int) -> tuple[FacebookPagePage, DataLoad
         batch_size=batch_size,
         num_workers=4,
         pin_memory=True,
-        #sampler=train_sampler
     )
 
     # Load the Test dataset into memory
@@ -75,7 +74,6 @@ def load_dataset(root: str, batch_size: int) -> tuple[FacebookPagePage, DataLoad
         batch_size=batch_size,
         num_workers=4,
         pin_memory=True,
-        #sampler=test_sampler
     )
 
     # Load the Validate dataset into memory
@@ -84,7 +82,6 @@ def load_dataset(root: str, batch_size: int) -> tuple[FacebookPagePage, DataLoad
         batch_size=batch_size,
         num_workers=4,
         pin_memory=True,
-        #sampler=validate_sampler
     )
 
     return flpp_dataset.flpp_dataset, train_dataloader, test_dataloader, validate_dataloader

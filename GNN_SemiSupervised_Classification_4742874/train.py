@@ -8,7 +8,6 @@ Author: Liam Mulhern (S4742847)
 Date: 26/10/2024
 """
 
-from networkx import adjacency_matrix
 import torch
 from torch.functional import Tensor
 import torch.nn as nn
@@ -114,7 +113,6 @@ def _train(
     batch_idx = 0
 
     print(f"Epoch: {epoch}")
-
 
     print(adjacency_matrix)
 

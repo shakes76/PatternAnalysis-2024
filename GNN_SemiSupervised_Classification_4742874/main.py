@@ -9,7 +9,6 @@ Date: 26/10/2024
 import argparse
 
 import train
-import utils
 
 if __name__ == '__main__':
 
@@ -76,10 +75,6 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-
-    if not args.load:
-        if input("WARNING: Overwriting model [Y/n] ") != 'Y':
-            exit()
 
     if args.train:
         train.run_gnn_training(

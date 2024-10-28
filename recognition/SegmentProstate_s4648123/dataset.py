@@ -33,13 +33,13 @@ train_transforms = Compose(
             image_key="image",
             image_threshold=0,
         ),
+        # Affined(
+        #     keys=['image', 'label'],
+        #     affine=[],
+        #     mode=('bilinear', 'nearest'),
+        #     # .... add
+        # )
         ToTensord(keys=["image", "label"], device="cuda"),
-        Affined(
-            keys=['image', 'label'],
-            affine=[],
-            mode=('bilinear', 'nearest'),
-            # .... add
-        )
     ]
 )
 val_transforms = Compose(
@@ -166,6 +166,7 @@ def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, Dat
     val_ds = MRIDataset(val_images, val_masks, mode='valid')
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
 
+    # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
     train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=4, pin_memory=True, shuffle=True,
                                   collate_fn=collate_batch)
@@ -187,6 +188,6 @@ def get_test_dataloader(batch_size):
     test_idx = indices[split:]
     test_images, test_masks = image_files[test_idx], mask_files[test_idx]
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
-    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=4, pin_memory=True, shuffle=True,
+    test_dataloader = DataLoader(test_ds, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True,
                                  collate_fn=collate_batch)
     return test_dataloader

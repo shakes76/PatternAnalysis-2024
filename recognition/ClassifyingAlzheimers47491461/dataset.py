@@ -1,10 +1,9 @@
-from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
 import numpy as np
+import torch
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 
-
-# Initial 256 width, 240 height
 """
 Initial preprocessing of data
 """
@@ -15,7 +14,7 @@ def compute_mean_std(dataset):
     std = 0.0
     total_images_count = 0
     for images, _ in loader:
-        batch_samples = images.size(0)  # batch size (the last batch can have smaller size!)
+        batch_samples = images.size(0)
         images = images.view(batch_samples, images.size(1), -1)
         mean += images.mean(2).sum(0)
         std += images.std(2).sum(0)
@@ -40,7 +39,6 @@ class AutoCropBlack:
         # Determine the data type and max pixel value
         max_pixel_value = np.iinfo(gray_np.dtype).max if np.issubdtype(gray_np.dtype, np.integer) else 1.0
 
-        # Adjust threshold relative to max pixel value if needed
         threshold_value = self.threshold
 
         # Create mask of pixels greater than threshold
@@ -48,7 +46,7 @@ class AutoCropBlack:
 
         # Check if the mask is empty (no non-black pixels found)
         if not np.any(mask):
-            return img  # Return original image if it's completely black or below threshold
+            return img  # Return original image if its completely black or below threshold
 
         # Get coordinates of non-black pixels
         coords = np.argwhere(mask)
@@ -64,19 +62,15 @@ class AutoCropBlack:
 
 
 def process(colab=False, test=False, show_samples=False):
-    '''
-    transforms pipeline was modified upon researching more on medical data processing
-    found here https://ieeexplore.ieee.org/document/10148004
-    removed random flipping or cropping as that may remove context
-    converted to grayscale to reduce overhead
-    normalising based off of b and w equally distributed in image (taking mean and std of data made photo very bright)
-    increased batch size
-    '''
 
     preprocess = transforms.Compose([
-        AutoCropBlack(),  # Automatically crop black space
+        AutoCropBlack(),
         transforms.Grayscale(num_output_channels=1),
-        transforms.Resize((224, 224)),  # Resize to fixed 'square' size
+        transforms.RandomRotation(degrees=15),
+        transforms.RandomResizedCrop((224, 224), scale=(0.8, 1.0)),
+        transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=10),
+        transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5], std=[0.5]),
     ])
@@ -98,6 +92,5 @@ def process(colab=False, test=False, show_samples=False):
 
 
 if __name__ == "__main__":
-
     process(colab=False, test=False, show_samples=True)
 

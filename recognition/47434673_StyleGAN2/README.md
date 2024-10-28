@@ -1,5 +1,5 @@
 # COMP3710 StyleGAN2 Brain Image Generator
-A StyleGAN2 model trained on the ADNI dataset.
+A StyleGAN2 model trained on the OASIS dataset.
 
 ![head_gif](assets/progression.gif "StyleGAN2 generated image training progression")
 
@@ -7,7 +7,7 @@ A StyleGAN2 model trained on the ADNI dataset.
 Accurate brain images are highly valued in such industries as healthcare and in scientific research. However, due to the threat of compromising patient privacy, generating highly realistic brain images offers a promising alternative. StyleGAN2 generated images can be used without compromising privacy, and can also allow for data augmentation as well as more advanced anomaly detection. They are also cost effective, and have an architechture well suited to the modelling and generative problem at hand. The 2D image slices of the brains that need to be generated need to be of sufficiently high quality, and the StyleGAN2 model is one of the best models for high quality image generation, as compared with other models such as DCGAN and VQVAE. This is achieved using the style vector, which controls the styles and features of the generated images. This is particularly important with regards to brain image generation, where capturing specific features which correspond to features of the brain is especially important.
 
 ## Objective
-The objective is to create a generative model of the ADNI brain data set using a StyleGAN2
+The objective is to create a generative model of the OASIS brain data set using a StyleGAN2
 that has a reasonably clear image. Furthermore, a UMAP embeddings plot with ground truth in colours 
 is included.
 
@@ -38,7 +38,7 @@ with a style vector in weight modulation and then the kernel is normalised in we
 ![StyleGAN2](assets/styleGAN2%20architecture.png "StyleGAN vs. StyleGAN2 (Revised) architecture")
 
 ## Data
-The dataset that this model is trained on is the publicly available ADNI brain dataset. This dataset contains 2D MRI image slices of brains. The directory structure of this dataset is the following:
+The dataset that this model is trained on is the publicly available OASIS brain dataset. This dataset contains 2D MRI image slices of brains. The directory structure of this dataset is the following:
 
 ```
 └───keras_png_slices_data
@@ -53,7 +53,7 @@ The dataset that this model is trained on is the publicly available ADNI brain d
 This model trains on images taken from all the folders, i.e. the dataloader does not discriminate between images in the train, test, or validate directories. This is so that this model can train on more diverse images and so be able to generate a wider range of images. It is a potential limitation that this solution has not been implemented such that the model trains exclusively on the training data.
 
 ### Preprocessing
-The ADNI brains dataset is already pre-processed so the only preprocessing included was dataset augmentation to the reduce the risk of over-fitting and random vertical flip transform, grayscale (not strictly necessary as the images are already black and white), normalise the images, and resize using bicubic interpolation. Note that even though the training images are already in black and white, grayscale ensures that the images are imported to the dataloader in one channel instead of the default of three (RGB). This allows for greater efficiency in the training. Bicubic interpolation was used instead of the commonly used bilinear interpolation, since bicubic interpolation produces sharper images with more clearly defined, smoother edges (Han, 2013). This is relevant for MRI brain images, which contain smooth, intricate curves that need to be extracted as features. Bicubic interpolation is less efficient than bilinear interpolation, so it is recommended that tests comparing these two interpolation methods for training the StyleGAN2 be performed.
+The OASIS brains dataset is already pre-processed so the only preprocessing included was dataset augmentation to the reduce the risk of over-fitting and random vertical flip transform, grayscale (not strictly necessary as the images are already black and white), normalise the images, and resize using bicubic interpolation. Note that even though the training images are already in black and white, grayscale ensures that the images are imported to the dataloader in one channel instead of the default of three (RGB). This allows for greater efficiency in the training. Bicubic interpolation was used instead of the commonly used bilinear interpolation, since bicubic interpolation produces sharper images with more clearly defined, smoother edges (Han, 2013). This is relevant for MRI brain images, which contain smooth, intricate curves that need to be extracted as features. Bicubic interpolation is less efficient than bilinear interpolation, so it is recommended that tests comparing these two interpolation methods for training the StyleGAN2 be performed.
 
 ## Requirements
 This program has been tested to run on Windows. 64-bit Python3.11 or later is recommended. Anaconda3 or later is recommeded. The required libraries are: 
@@ -144,7 +144,7 @@ When the training is occuring, the output should look something like this:
 
 Comparing this to a real image from the dataset below, we can see that the generated image at the 50th epoch is reasonably clear by comparison.
 
-![Real_img](assets/aug_img_4.png "Sample image from ADNI dataset")
+![Real_img](assets/aug_img_4.png "Sample image from OASIS dataset")
 
 Hence we can see that by the 50th epoch, the requirement for reasonably clear image generation has been met.
 
@@ -169,7 +169,7 @@ The graphs below show the loss of the generator and discriminator during their t
 Uniform Manifold Approximation and Projection (UMAP) is a dimension reduction technique used for visualisation.
 In the context of this project, we use UMAP to visualise the high-dimensional style codes in a 2D space, 
 with the mean intensities used to colour code the points. This helps in understanding how the style codes relate to the visual characteristics of the generated images. By projecting the high-dimensional style codes (w) into 2D, we can visualise how the generator's latent space is organized. Moreover, by colouring the UMAP plot using the mean intensities of the generated images, we can observe how changes in the latent space relate to changes in the generated images' characteristics. 
-We colour by mean intensity since the ADNI dataset lacks ground truth labels, so mean intensity serves as an image-derived attribute that can be used to colour code the embeddings. The lack of ground truth labels in the ADNI dataset made it unclear as to what the ground truth labels should be, and so it was decided that the most appropriate use of UMAP was to visualise the imapact of different style codes/features on the generated images, and hence mean intensity was chosen as a metric for this. Hence it provides an intuitive relation between the latent space and the 
+We colour by mean intensity since the OASIS dataset lacks ground truth labels, so mean intensity serves as an image-derived attribute that can be used to colour code the embeddings. The lack of ground truth labels in the OASIS dataset made it unclear as to what the ground truth labels should be, and so it was decided that the most appropriate use of UMAP was to visualise the imapact of different style codes/features on the generated images, and hence mean intensity was chosen as a metric for this. Hence it provides an intuitive relation between the latent space and the 
 physical characteristics of the generated images.
 
 The method of implementation is as follows: following the training, a sample of the set of style codes `w` is selected from the mapping network, and then images are generated corresponding to the samples style codes. The mean intensity of each generated image with regards to each style is then found, and then UMAP is used to reduce the dimensionality of the style codes from `w_dim` to 2. 
@@ -192,10 +192,14 @@ The UMAP seems to indicate a quasi Gaussian distribution of mean intensity to nu
 This StyleGAN2 model was trained for a maximum of 50 epochs (35500 iterations), and while this did satisfy the task by generating reasonably clear images, it is expected that had the training been continued even more clarity could have been achieved. Based on similar models, 150 epochs appears to the the point of maximum clarity in the generated images. This is not a fundamental flaw in the implemented solution, it is merely that this number of epochs was not investigated due to the limitations of training time. 
 That being said, the images generated after 50 epochs of training were reasonably clear and there would not be significant improvment at 150 epochs. This can be seen from the loss graphs, which indicate that the Discriminator and Generator loss functions are relatively low by 50 epochs.
 
-It is a potential limitation that this solution has not been implemented such that the model trains exclusively on the training data. In future, better data preprocessing is recommended to avoid the model training on all the ADNI data.
+It is a potential limitation that this solution has not been implemented such that the model trains exclusively on the training data. In future, better data preprocessing is recommended to avoid the model training on all the OASIS data.
 A further limitation is that this model does not contain a UMAP embeddings plot. This should be a future extension to this project.
 
 It is unclear whether the decision for using UMAP to plot style codes with mean intensity as the colour coding was an appropriate decision. Further investigations into using UMAP to give greater insight into the impact of style features on the generated images should be given. Alternative approaches could include performing clustering on the embeddings to create pseudo-labels and using these cluster assignments as labels for colouring, or interpolating between different latent vectors, and then using the interpolation steps as labels to show how the embeddings change across interpolations.
+
+This model was in fact meant to be trained on the ADNI dataset, however, due to a mistake by the author, the it was trained on the 
+OASIS dataset instead (and it was too late to retrain the model). The ADNI dataset does contain ground truth labels, and as such, would have produced a more meaningful 
+UMAP plot.
 
 ## References and Acknowledgements
 The model was implmented based on the [StyleGAN2 paper](https://arxiv.org/pdf/1912.04958):

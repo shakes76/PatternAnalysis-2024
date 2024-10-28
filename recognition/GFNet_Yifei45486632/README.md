@@ -8,6 +8,17 @@ GFNet (Graph-Free Vision Transformer) is an advanced vision transformer model de
 - Robustness: High performance under a variety of conditions and variations, such as images from different stages of the disease or from different scanning devices.
 - Generalization ability: The model should be able to handle similar datasets from outside the project, that is, have good generalization ability so that it can be easily adapted to a wider range of medical imaging tasks in the future.
 
+### Advantages of the Model (GFNet)
+
+As a Transformer-based model, GFNet has several obvious advantages when dealing with image data:
+
+- Better feature capture capability: Vision Transformers are able to capture global dependencies and complex patterns more effectively than conventional CNNS, which is especially important for subtle variations common in medical imaging.
+- Small amount of prior knowledge requirement: GFNet does not need to rely on domain-specific prior knowledge or complex feature engineering as traditional methods do, making it better adaptive on new or unlabeled medical imaging datasets.
+- Efficient information integration capability: The Transformer architecture allows the model to integrate information more effectively when processing large image data, which is particularly critical for parsing and classifying high-resolution medical images.
+- Adaptation to complex data distribution: Since medical images often contain very complex biological information and variable representations, the self-attention mechanism of GFNet can provide a powerful way to understand these complexities and improve the accuracy of diagnosis.
+
+In general, GFNet shows better performance and potential than traditional methods when dealing with medical image data, especially high-dimensional and high-complexity, and is suitable as the model for this project.
+
 ### Algorithm Implemented
 
 GFNet, a recent breakthrough in vision transformers, presents an advanced architecture for image classification by leveraging the power of Fourier transforms for efficient feature extraction. The GFNet model consists of two key components: feature extraction and classification. The feature extraction part transforms input images into feature maps using global Fourier transformations, allowing the network to capture both local and global patterns efficiently across various scales. Unlike traditional convolutional networks that rely on spatial convolutions, GFNet bypasses these operations by directly operating in the frequency domain, which reduces computational overhead while maintaining accuracy.

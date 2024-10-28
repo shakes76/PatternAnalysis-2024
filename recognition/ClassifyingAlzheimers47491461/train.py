@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.fft
 import numpy as np
+import matplotlib.pyplot as plt
 
 def train_model():
     # Instantiate GFNet model
@@ -13,7 +14,7 @@ def train_model():
     print("model loaded")
 
     # DataLoader
-    dataloader = process(colab=True)
+    dataloader = process(colab=False)
     print("data processed")
 
     # Loss function and optimizer
@@ -75,3 +76,12 @@ if __name__ == "__main__":
     loss_list, epoch_list = train_model()
     print(f"Losses: {loss_list}")
     print(f"Epochs: {epoch_list}")
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(epoch_list, loss_list, marker='o', color='b', label='Loss')
+    plt.title('Training Loss over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss (CEL)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

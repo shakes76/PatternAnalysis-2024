@@ -29,8 +29,8 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 |seaborn | 0.13.2 |
 |scikit-learn | 1.5.1 |
 |scipy | 1.13.1 |
-|pillow | 10.3.0 |
-|os |  |
+|pillow | 10.4.0 |
+
 
 
 ## Dataset
@@ -42,6 +42,10 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 ## Conclusion
 
 ## References
+
+NVIDIA Corporation. (2020). StyleGAN2-ADA-PyTorch [Computer software]. GitHub. https://github.com/NVlabs/stylegan2-ada-pytorch
+
+
 
 Task 8:
 ```Create a generative model of one of the ADNI brain data set (see Appendix for links) using either a variant of StyleGAN [10]/StyleGAN2 [11] or Stable Diffusion [12] that has a “reasonably clear image”. You should also include a TSNE or UMAP embeddings plot with ground truth in colors and provide a brief interpretation/discussion. See recent UQ work for hints of how to incorporate labels in style [13]. [Hard Difficulty]```

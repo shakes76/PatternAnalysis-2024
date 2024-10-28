@@ -1,20 +1,20 @@
 from modules import build_model
-from dataset import get_test_dataset, get_train_validation_dataset, extract_labels_from_dataset
+from dataset import get_test_dataset, get_train_validation_dataset, extract_from_dataset
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import matplotlib.pyplot as plt
 
+tf.debugging.set_log_device_placement(True)
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
 print("Loading training data and test data...")
 train_dataset, val_dataset = get_train_validation_dataset()
 test_dataset = get_test_dataset()
-train_labels = extract_labels_from_dataset(train_dataset)
-val_labels = extract_labels_from_dataset(val_dataset)
-test_labels = extract_labels_from_dataset(test_dataset)
+train_images, train_labels = extract_from_dataset(train_dataset)
+val_images, val_labels = extract_from_dataset(val_dataset)
+test_images, test_labels = extract_from_dataset(test_dataset)
 print(f"Total number of training labels: {len(train_labels)}")
-
-train_images = np.array(train_images)
-test_images = np.array(test_images)
 
 print("Converting labels to integers...")
 encoder = LabelEncoder()
@@ -33,26 +33,27 @@ print(f"test_labels shape: {test_labels.shape}")
 
 print("Building model...")
 model = build_model()
-model.compile(optimizer='adam', loss='categorical_crossentroy',
+model.compile(optimizer='adam', loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Define callback function
 print("Setting up callbacks...")
 callbacks = [
     tf.keras.callbacks.EarlyStopping(patience=5, monitor='val_loss'),
-    tf.keras.callbacks.ModelCheckpoint('best_model.h5', save_best_only=True, monitor='val_accuracy')
+    tf.keras.callbacks.ModelCheckpoint('best_mode.keras', save_best_only=True, monitor='val_accuracy')
 ]
 
 # Training model
 print("Start model training...")
-history = model.fit(
-    train_images, train_labels,
-    epochs=50,
-    batch_size=30,
-    validation_split=0.2, #around 0.1-0.3
-    callbacks=callbacks,
-    verbose=1
-)
+with tf.device('/GPU:0'):
+    history = model.fit(
+        train_images, train_labels,
+        epochs=50,
+        batch_size=16,
+        validation_split=0.2, #around 0.1-0.3
+        callbacks=callbacks,
+        verbose=1
+    )
 print("Model training completed.")
 
 print("Rvaluating model on test data...")
@@ -61,8 +62,8 @@ print(f"Test loss: {test_loss}")
 print(f"Test accuracy: {test_accuracy}")
 
 # Save the trained model
-model.save('final_model.h5')
-print("Model saved as final_model.h5")
+model.save('final_model.keras')
+print("Model saved as final_model.keras")
 
 # Plot loss curve
 plt.plot(history.history['loss'], label='train loss')

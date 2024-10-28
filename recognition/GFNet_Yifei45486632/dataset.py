@@ -82,7 +82,7 @@ def extract_from_dataset(dataset):
     all_labels = []
     all_images = []
     for images, labels in dataset.unbatch():
-        all_images.append(images.mumpy())
+        all_images.append(images.numpy())
         all_labels.append(labels.numpy())
     return np.array(all_images), np.array(all_labels)
 

@@ -1,13 +1,13 @@
 # ADNI Classifier Based on GFNet Transformer
 ## Introduction
-Alzheimer's disease is a chronic neurodegenerative condition that slowy impairs an afflicted person's  memory over decades. Modern medicine offers little insight
+Alzheimer`s disease is a chronic neurodegenerative condition that slowy impairs an afflicted person`s  memory over decades. Modern medicine offers little insight
 into this disease and no cure has been discovered. However, their are preventative medications available that can delay early onset of Alzheimers if early
 intervention is taken. Not everyone has the luxury to healthcare which makes predictive machine learning classifiers one of the cheapest and fastest ways
 to get diagnosed. In this test, a vision transformer (ViT) variety known as Global Filter Neural Network (GFNet) is used to build a classification model
-that aims to predict whether a patient has Alzheimer's with up to 80% accuracy.
+that aims to predict whether a patient has Alzheimer`s with up to 80% accuracy.
 
 Vision transformers are a variety of transformer architecture that were originally used for natural language processing. Instead of using convolutional neural nets
-ViT's divide an image into a sequence of flattened sub-images called patches. Traditionally, each patch is then linearly embedded into a fixed dimensional vector.
+ViT`s divide an image into a sequence of flattened sub-images called patches. Traditionally, each patch is then linearly embedded into a fixed dimensional vector.
 Positional embeddings are then added to these patch embeddings to retain spacial information and the resulting sequence is then parsed through the transform encoder
 which is then finally processed by a multi-layered perceptron (MLP) which performs the image classification. Figure 1
 
@@ -19,11 +19,11 @@ which is then finally processed by a multi-layered perceptron (MLP) which perfor
 Figure 1: Structure of the Vision Transformer (Karim et al., n.a)
 </p>
 
-The implementation used throughout this project required some modifications to the standard ViT to turn it into a GFNet. The multi-head attention concept used in ViT's is removed
+The implementation used throughout this project required some modifications to the standard ViT to turn it into a GFNet. The multi-head attention concept used in ViT`s is removed
 and replaced with a global filter layer as shown in figure 2. As opposed to the attention concept used in ViTs, the global filter layer performs a 2D fast Fourier transform to convert
 spatial data into a frequency space, then performs element-wise mmultiplication with all of the learnable filters followed by the inverse Fourier transform to bring everything back
 into the spatial domain. Within the context of the task, this process allows GFNet to model global and local dependancies (i.e spatial patterns in the brain such as grey matter decay)
-with log linear time complexity compared to ViT's quadratic time complexity. This allows it to scale farther and is not intractable for ultra high resolution image recognition.
+with log linear time complexity compared to ViT`s quadratic time complexity. This allows it to scale farther and is not intractable for ultra high resolution image recognition.
 
 <p align="center">
   <img src="fftDisplay.png" alt="Figure 2: The Structure of GFNet (Yongming Rao et al., 2021)" />
@@ -59,8 +59,7 @@ Another linear transform is applied followed by another dropout. Dropout is appl
 activation functions are also used to add non-linearity into the structure- allowing more complex patterns to be learned in training.
 
 
-'''python
-    
+```python
     def forward(self, x):
         # Apply first linear transformation
         x = self.fc1(x)
@@ -78,19 +77,17 @@ activation functions are also used to add non-linearity into the structure- allo
         x = self.drop(x)
 
         return x
-'''
+```
 
 The PatchyEmbedding class is used to breakdown images into patch tokens. The class first defines multiple preset values such as image size, patch size, and the latent space parameters. The number of patches is then
 computed with the provided values:
 
-'''python
-
+```python
 self.num_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1])
-'''
-A 2D convolutional layer is then used to project the image patches into the embedding space (latent space). The convolution operates over the image in 'patch sized' steps- extracting the patches and emmbedding them
+```
+A 2D convolutional layer is then used to project the image patches into the embedding space (latent space). The convolution operates over the image in `patch sized` steps- extracting the patches and emmbedding them
 
-'''python
-
+```python
 img_size = (img_size, img_size)
 patch_size = (patch_size, patch_size)
 
@@ -99,30 +96,27 @@ self.num_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1
 
 # Convolutional layer to project each patch into the embedding space
 self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
-'''
+```
 
 After the convolution has been applied, the forward pass (when called) flattens the tensor starting from the second dimension which combines the spatial dimensions into a single dimension. The tensor is then transposed
 to align with the expected transformer input.
 
-'''python
-
+```python
     def forward(self, x):
         # Apply patch embedding and reshape
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
-'''
-
+```
 The GlobalFilter class applies a global filter to an input tensor in the frequency domain using a variation of the FFT.
 The initialization defines some parameters and also defines a learnable set of complex weights (initially Gaussian noise). In the forward pass, the tensor is first reshaped to match spatial dimensions.
 FFT with conjugate symmetry is then applied to the input where the previously initialized complex weights are used as a filter in the frequency domain. This is the key component in this algorithm as
 filtering in the frequency domain is efficient for capturing global information because each frequency component affects a different spatial pattern. When these frequencies are adjusted by the learnable
 parameter weights, the model will learn to express specific spatial features across the entire input. The reverse Fourier transform is then applied and the resulting tensor is reshapen.
-'''python
-
+```python
         x = x.view(B, a, b, C).to(torch.float32)
 
         # Apply FFT with conjugate symmetry to reduce computation (as per paper)
-        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
+        x = torch.fft.rfft2(x, dim=(1, 2), norm=`ortho`)
 
         # Convert complex weight parameter to complex type
         weight = torch.view_as_complex(self.complex_weight)
@@ -131,14 +125,14 @@ parameter weights, the model will learn to express specific spatial features acr
         x = x * weight
 
         # Inverse FFT to return to spatial domain
-        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
+        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm=`ortho`)
 
         # Reshape back to original dimensions
         x = x.reshape(B, N, C)
 
-'''
+```
 The Block class is used to process a sequence of patches by applying a global filtering operation followed by a perceptron layer, with regularization and residual connections.
-'''python
+```python
         self.norm1 = norm_layer(dim)
 
         # Global filter layer for spatial processing
@@ -155,11 +149,11 @@ The Block class is used to process a sequence of patches by applying a global fi
 
         # Perceptron layer with dropout
         self.mlp = Percep(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-'''
+```
 norm1 normalises the data when it is initially input, wheras norm2 normalises the input before it goes through the MLP. The GlobalFilter layer is applied to capture spatial dependencies throughout the data.
 It performs a global spatial transformation on the input patches, allowing the model to learn long-range interactions in the spatial structure. DropPath is used as as form of regularization by randomly
 dropping residual connections within the network.
-'''python
+```python
     def forward(self, x):
         # Apply normalization and filter, then add residual connection
         x = x + self.drop_path(self.filter(self.norm1(x)))
@@ -168,14 +162,14 @@ dropping residual connections within the network.
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
         return x
-'''
+```
 The first path applies normalization, then the GlobalFilter, then drop path regularizaion. Whereas the second path routes through the MLP instead. This is done so that each block can capture spatial dependencies
 (global information) and feature transforms (introduces local non-linearity) in the data.
 
 
 The GFNet class combines all previously mentioned classes in Modules together. The initilization of this class initializes alot of variables that are parsed when instantiated. Patch embedding takes place with the input
 and a resulting stack of transformer blocks are generated along with learnable weight parameters that are initialized with Gaussian noise. 
-'''python
+```python
     def forward_features(self, x):
         # Extract features from input through patch embedding and Transformer blocks
         x = self.patch_embed(x)
@@ -193,26 +187,26 @@ and a resulting stack of transformer blocks are generated along with learnable w
         x = x.mean(dim=1)
 
         return x
-'''
+```
 The forward features handles feature extraction taking the input image tensor through a sequence of transformations designed to capture spatial and feature-level information. Patch embed splits the input image into patches
 and transforms each patch into a higher dimensional feature vector. This effectively tokenizes the patches which allows the patches to be processed sequentially. The next line adds positional embedding to each patch embedding
 to retain spatial information. self.pos_embed is a learnable tensor that adds some unique spatial information to each patch which enables the model to keep order of the patches. Dropout is then applied to reduce overfitting.
 After this processing, the patch emmbeddings are sent though an array of transformer blocks. As each block can distinguish patterns, the stacking of transformer blocks enables the model to progressively refine the patch
 representations. Normalization and average pooling is then applied to stabalize and reduce the dimensionality of the output.
-'''python
+```python
     def forward(self, x):
         # Forward pass through feature extractor and classification head
         x = self.forward_features(x)
         x = self.head(x)
 
         return x
-'''self.head layer is a linear layer that takes embed_dim input features and produces num_classes outputs, representing the logits for each class. In this case, a linear layer is fine as the previous layers are complicated enough.
+```self.head layer is a linear layer that takes embed_dim input features and produces num_classes outputs, representing the logits for each class. In this case, a linear layer is fine as the previous layers are complicated enough.
 
 ### Train.py
 The training process begins with splitting the training dataset, assigning 80% for training and 20% for validation. This is a standard split as it balances the need for training data with the certainty of validation. 
 The model is optimised using the AdamW optimiser (Adam optimiser with weight decay) with a custom learning rate scheduler that has a linear warmup over the first few epochs to stabalize training followed by cosine decay.
 Cosine decay gradually reduces the learning rate to maintain training stability and to avoid overshooting the mminima within the feature space.
-'''python
+```python
     def lr_lambda(current_step):
         # During the warm-up phase, linearly increase the learning rate
         if current_step < warmup_steps:
@@ -225,7 +219,7 @@ Cosine decay gradually reduces the learning rate to maintain training stability 
             0.0, 0.5 * (1.0 + np.cos(np.pi * (current_step - warmup_steps) / (total_steps - warmup_steps)))
         )
    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-'''
+```
 In each epoch, the model iterates over training batches, where it performs forward passes
 and computes cross-entropy loss, the preferred loss function for multi-class classification. Backpropagation and gradient-based updates refine the weights to minimize loss, and the learning rate is adjusted at each step based on the scheduler.
 Validation is conducted at the end of each epoch using torch.no_grad() to disable gradients, which conserves memory and speeds up evaluation. These steps combined give a clear view of how the model is performing during training
@@ -233,7 +227,7 @@ whilst allowing for adjustments like early stopping if performance plateaus or d
 
 ### Predict.py
 Predict.py provides a pipeline for training, saving, loading, and evaluating the GFNet model. It first initializes the model with default hyperparameters and trains it. The path is then saved to a state dictionary which is then immediately
-reused for model evaluation. The test dataset is processed using a DataLoader and is transformed via cropping, grey-scale conversion, resizing, and normalization. During evaluation the model's accuracy is calculated by comparing predictions to
+reused for model evaluation. The test dataset is processed using a DataLoader and is transformed via cropping, grey-scale conversion, resizing, and normalization. During evaluation the model`s accuracy is calculated by comparing predictions to
 true labels without gradient updates. This pipeline allows for seamless transitions from training to testing while supporting reusability, modularity, and evaluation on unseen test data.
 
 

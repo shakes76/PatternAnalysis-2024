@@ -1,14 +1,14 @@
 import numpy as np
-from utils import load_data_3D, get_images, collate_batch
+from utils import load_image_and_label_3D, collate_batch, get_images
 from monai.transforms import (Compose, ToTensord, Spacingd, EnsureChannelFirstd, ScaleIntensityRanged, CropForegroundd,
                               Orientationd, RandCropByPosNegLabeld)
 from torch.utils.data import Dataset, DataLoader
+from config import NUM_WORKERS
 
 
 # test other transforms
 train_transforms = Compose(
     [
-        EnsureChannelFirstd(keys=["image", "label"]),
         ScaleIntensityRanged(
             keys=["image"],
             a_min=-57,
@@ -35,7 +35,6 @@ train_transforms = Compose(
 )
 val_transforms = Compose(
     [
-        EnsureChannelFirstd(keys=["image", "label"]),
         ScaleIntensityRanged(
             keys=["image"],
             a_min=-57,
@@ -62,7 +61,7 @@ class MRIDataset(Dataset):
     Custom Dataset class for loading MRI images and masks with MONAI transformations.
     """
 
-    def __init__(self, image_files, mask_files, mode: str):
+    def __init__(self, image_files, label_files, mode: str):
         """
         Initialize the dataset by loading file paths and transformations.
 
@@ -70,7 +69,7 @@ class MRIDataset(Dataset):
         """
         self.transform = transforms_dict.get(mode)
         self.image_files = image_files
-        self.mask_files = mask_files
+        self.label_files = label_files
 
     def __len__(self):
         # Return the number of images in the dataset.
@@ -83,11 +82,10 @@ class MRIDataset(Dataset):
         :param index: Index of the item to retrieve
         :return: Dictionary with transformed image and mask
         """
-        img_names = (self.image_files[index], self.mask_files[index])
-        img_and_mask = load_data_3D(img_names, early_stop=False)
+        img_and_mask = load_image_and_label_3D(self.image_files[index], self.label_files[index])
 
         # Load image and segmentation
-        data = {'img': img_and_mask[0], 'mask': img_and_mask[1]}
+        data = {'image': img_and_mask[0], 'label': img_and_mask[1]}
         data = self.transform(data)  # Apply transformations
         return data
 
@@ -119,11 +117,11 @@ def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, Dat
 
     # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
-    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=4, pin_memory=True, shuffle=True,
-                                  collate_fn=collate_batch)
-    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=4, pin_memory=True, shuffle=True,
+    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, pin_memory=True,
+                                  shuffle=True, collate_fn=collate_batch)
+    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, pin_memory=True, shuffle=True,
                                 collate_fn=collate_batch)
-    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=4, pin_memory=True, shuffle=True,
+    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=NUM_WORKERS, pin_memory=True, shuffle=True,
                                  collate_fn=collate_batch)
 
     return train_dataloader, val_dataloader, test_dataloader

@@ -12,6 +12,16 @@ from config import (IMAGE_DIR, MASK_DIR)
 
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
+    """
+    Converts an array to one-hot encoded channels.
+
+    Parameters:
+    - arr: Input array with categorical values.
+    - dtype: Data type for the output array.
+
+    Returns:
+    - One-hot encoded 4D NumPy array.
+    """
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
     for c in channels:
@@ -21,92 +31,45 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     return res
 
 
-def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False,
-                 early_stop=False):
+def load_image_and_label_3D(image_file, label_file, dtype=np.float32):
     """
-    Load medical image data from names, cases list provided into a list for each.
+    Load a 3D medical image and its corresponding label file.
 
-    This function pre - allocates 5D arrays for conv3d to avoid excessive memory & usage .
-
-    normImage : bool (normalise the image 0.0 -1.0)
-    dtype: Type of the data. If dtype =np.uint8, it is assumed that the data is & labels 10
-    early_stop: Stop loading pre-maturely? Leaves arrays mostly empty, for quick & loading and testing scripts .
-    """
-    affines = []
-
-    # ~ interp = ' continuous '
-    interp = 'linear '
-    if dtype == np.uint8:  # assume labels
-        interp = 'nearest '
-
-    # get fixed size
-    num = len(image_names)
-    nifti_image = nib.load(image_names[0])
-    first_case = nifti_image.get_fdata(caching='unchanged')
-    if len(first_case.shape) == 4:
-        first_case = first_case[:, :, :, 0]  # sometimes extra dims , remove
-    if categorical:
-        first_case = to_channels(first_case, dtype=dtype)
-        rows, cols, depth, channels = first_case.shape
-        images = np.zeros((num, rows, cols, depth, channels), dtype=dtype)
-    else:
-        rows, cols, depth = first_case.shape
-        images = np.zeros((num, rows, cols, depth), dtype=dtype)
-
-    for i, inName in enumerate(tqdm(image_names)):
-        nifti_image = nib.load(inName)
-        in_image = nifti_image.get_fdata(caching='unchanged')  # read disk only
-        affine = nifti_image.affine
-        if len(in_image.shape) == 4:
-            in_image = in_image[:, :, :, 0]  # sometimes extra dims in HipMRI_study data
-        in_image = in_image[:, :, :depth]  # clip slices
-        in_image = in_image.astype(dtype)
-        if norm_image:
-            # ~ in_image= in_image/np.linalg.norm(in_image)
-            # ~ in_image = 255.*in_image/in_image.max()
-            in_image = (in_image - in_image.mean()) / in_image.std()
-        if categorical:
-            in_image = to_channels(in_image, dtype=dtype)
-            # ~ images[i,:,:,:,:] = in_image
-            images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2],
-            :in_image.shape[3]] = in_image  # with pad
-        else:
-            # ~ images[i,:,:,:] = in_image
-            images[i, :in_image.shape[0], :in_image.shape[1], : in_image.shape[2]] = in_image  # with pad
-
-        affines.append(affine)
-        if i > 20 and early_stop:
-            break
-
-    if get_affines:
-        return images, affines
-    else:
-        return images
-
-
-def one_hot_mask(targets):
-    """
-    Convert single-channel target images to one-hot encoded masks.
-
-    Args:
-        targets (torch.Tensor): Input tensor of shape (batch_size, 1, height, width) with segmentation labels.
+    Parameters:
+    - image_file: Path to the medical image (non-categorical).
+    - label_file: Path to the label file (categorical).
+    - norm_image: If True, normalize the image data.
+    - dtype: Data type for the output arrays.
 
     Returns:
-        torch.Tensor: One-hot encoded tensor of shape (batch_size, num_classes, height, width).
+    - image: 4D NumPy array (1, rows, cols, depth) for the input image.
+    - label: 4D NumPy array (channels, rows, cols, depth) for the categorical label.
     """
-    batch_size, _, height, width = targets.size()
-    targets_flat = targets.view(batch_size, -1) # Flatten the target tensor for unique value extraction
-    unique_values = torch.unique(targets_flat) # Get unique class labels
-    num_classes = unique_values.size(0) # Number of unique classes
 
-    # Initialize one-hot encoded tensor
-    one_hot_targets = torch.zeros(batch_size, num_classes, height, width, device=targets.device)
+    # Load the image data (non-categorical)
+    nifti_image = nib.load(image_file)
+    image = nifti_image.get_fdata(caching='unchanged').astype(dtype)
 
-    # Fill the one-hot encoded tensor
-    for i in range(batch_size):
-        for j, value in enumerate(unique_values):
-            one_hot_targets[i, j, :, :] = (targets[i, 0, :, :] == value).float()
-    return one_hot_targets
+    if len(image.shape) == 4:
+        image = image[:, :, :, 0]  # Remove extra dimensions if present
+
+    # Add a channel dimension at the front: (1, rows, cols, depth)
+    image = np.expand_dims(image, axis=0)
+
+    # Load the label data (categorical)
+    nifti_label = nib.load(label_file)
+    label = nifti_label.get_fdata(caching='unchanged').astype(np.uint8)
+
+    if len(label.shape) == 4:
+        label = label[:, :, :, 0]  # Remove extra dimensions if present
+
+    # Convert label to categorical (one-hot encoded) format
+    label = to_channels(label, dtype=dtype)
+
+    # Reorder label to (channels, rows, cols, depth)
+    label = np.transpose(label, (3, 0, 1, 2))
+
+    return image, label
 
 
 def get_images():

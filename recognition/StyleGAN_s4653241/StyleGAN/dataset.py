@@ -100,7 +100,7 @@ class ImageDataset(Dataset):
 
 
 # Function to apply transformation to images
-def get_transform(image_size=(256, 256)):
+def get_transform(image_size=(256, 240)):
     """
     Defines transformations for resizing, grayscale conversion, and data augmentation.
     

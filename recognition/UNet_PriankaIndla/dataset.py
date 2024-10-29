@@ -11,27 +11,11 @@ class ProstateMRIDataset(Dataset):
     """
     Dataset class for loading prostate MRI images and corresponding segmentation masks.
     The dataset loads 2D images, resizes them to a target shape, and normalizes them if necessary.
-
-    Attributes:
-        seg_image_paths (list of str): Paths to the segmentation mask images.
-        image_paths (list of str): Paths to the MRI images.
-        normImage (bool): Whether to normalise images to a [0, 1] range.
-        dtype (type): The desired data type of loaded images.
-        target_shape (tuple): Target shape to resize images (height, width).
-        transform (callable, optional): A function/transform to apply on the image and segmentation.
     """
 
     def __init__(self, seg_image_paths, image_paths, normImage=False, dtype=np.float32, target_shape=(256, 128), transform=None):
         """
-        Initialises dataset by loading MRI images and segmentation masks and resizing them to a target shape.
-
-        Args:
-            seg_image_paths (list of str): List of paths to segmentation mask images.
-            image_paths (list of str): List of paths to MRI images.
-            normImage (bool): Whether to normalise images to a [0, 1] range.
-            dtype (type): Data type for the loaded images.
-            target_shape (tuple): Target shape for resizing the images.
-            transform (callable, optional): Transformations to apply on the images and masks.
+        Initializes the dataset by loading MRI images and segmentation masks and resizing them to a target shape.
         """
         self.seg_image_paths = seg_image_paths
         self.image_paths = image_paths
@@ -47,14 +31,6 @@ class ProstateMRIDataset(Dataset):
     def __getitem__(self, idx):
         """
         Retrieves image and segmentation mask by index, processes them, and returns them as tensors.
-
-        Args:
-            idx (int): Index of the image and segmentation mask to retrieve.
-
-        Returns:
-            tuple: A tuple containing:
-                - image (torch.Tensor): The MRI image with shape [1, height, width].
-                - seg (torch.Tensor): The segmentation mask with shape [1, height, width].
         """
         # Use pre-loaded images and segmentation masks
         image = self.images[idx]  # Access pre-loaded image
@@ -87,21 +63,15 @@ class ProstateMRIDataset(Dataset):
 
         return image, seg
 
-		def __len__(self):
+    def __len__(self):
         """
         Returns the total number of images in the dataset.
-
-        Returns:
-            int: The number of images in the dataset.
         """
         return len(self.image_paths)
 
     def get_image_dimensions(self):
         """
         Returns the dimensions of the first image in the dataset.
-
-        Returns:
-            tuple: The shape of the first image if the dataset is not empty, otherwise None.
         """
         if self.images.size > 0:
             return self.images[0].shape
@@ -111,16 +81,7 @@ class ProstateMRIDataset(Dataset):
     def load_data_2D(imageNames, normImage=False, dtype=np.float32, target_shape=(256, 128)):
         """
         Loads and processes a set of 2D images from the specified file paths, resizes them to a target shape,
-        and normalises them if specified.
-
-        Args:
-            imageNames (list of str): Paths to image files.
-            normImage (bool): Whether to normalise images to [0, 1].
-            dtype (type): Desired data type for the loaded images.
-            target_shape (tuple): Target shape for resizing the images.
-
-        Returns:
-            np.ndarray: An array containing processed images with the specified target shape and dtype.
+        and normalizes them if specified.
         """
         num = len(imageNames)
         images = np.zeros((num, *target_shape), dtype=dtype)  # Initialize with target shape
@@ -147,3 +108,4 @@ class ProstateMRIDataset(Dataset):
 
         print(f"Loaded {len(images)} images.")
         return images
+

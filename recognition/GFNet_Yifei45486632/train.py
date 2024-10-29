@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 配置GPU内存增长
+# Configure GPU memory growth
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
@@ -16,15 +16,16 @@ if gpus:
 print(tf.__version__)
 print(tf.config.list_physical_devices('GPU'))
 
+# Loading training data and test data
 print("Loading training data and test data...")
 train_dataset, val_dataset = get_train_validation_dataset()
 test_dataset = get_test_dataset()
 
-# 直接使用数据集进行训练，不进行提取
+# Build model
 print("Building model...")
 model = build_model()
 model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',  # 改用sparse版本，因为标签现在是整数
+              loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
 # Define callback function
@@ -40,16 +41,16 @@ callbacks = [
 print("Start model training...")
 with tf.device('/GPU:0'):
     history = model.fit(
-        train_dataset,  # 直接使用数据集
+        train_dataset,  
         epochs=50,
-        validation_data=val_dataset,  # 直接使用验证数据集
+        validation_data=val_dataset,
         callbacks=callbacks,
         verbose=1
     )
 print("Model training completed.")
 
 print("Evaluating model on test data...")
-test_loss, test_accuracy = model.evaluate(test_dataset)  # 直接使用测试数据集
+test_loss, test_accuracy = model.evaluate(test_dataset)
 print(f"Test loss: {test_loss}")
 print(f"Test accuracy: {test_accuracy}")
 
@@ -79,4 +80,5 @@ plt.legend()
 plt.savefig('accuracy_curve.png')
 plt.close()
 
+# Training end
 print("Training plots have been saved as 'loss_curve.png' and 'accuracy_curve.png'")

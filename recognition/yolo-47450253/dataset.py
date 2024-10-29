@@ -12,11 +12,11 @@ create_label(mask)
     mask: (numpy array) an array containing greyscale image data.
 """
 def create_label(mask):
-    mask_height, mask_width, _ = mask.shape
-    contours, _ = cv.findContours(mode = cv.RETR_TREE, method = CHAIN_APPROX_SIMPLE)
+    mask_height, mask_width = mask.shape
+    contours, _ = cv.findContours(mask, mode = cv.RETR_TREE, method=cv.CHAIN_APPROX_SIMPLE)
     if not contours:
         return None
-    x, y, w, h = cv.bountingRect(contours[0])
+    x, y, w, h = cv.boundingRect(contours[0])
 
     #Normalize x, y, w, h because cv2 uses a top left format to store coordinates for bountingRect, yolo stores its coordinates in center format
     #Format details can be found here: https://docs.ultralytics.com/datasets/detect/#ultralytics-yolo-format
@@ -40,8 +40,9 @@ for file in os.listdir(ISC2018_TRUTH_PATH):
             raise FileNotFoundError("Not Found: " + mask_path)
         label = create_label(mask)
         if label:
-            with open(file, w) as f:
+            with open(label_path, "w") as f:
                 f.write(label)
-            print("Created label for: " + file)
+            #hidden because printing was actually slowing the process down
+            #print("Created label for: " + file)
         else:
             print(file + " is missing contours.")

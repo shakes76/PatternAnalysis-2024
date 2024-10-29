@@ -2,7 +2,10 @@ import matplotlib.pyplot as plt
 import torch
 import os
 from torchvision.utils import save_image
-from PIL import Image
+
+from torch.utils.data import Dataset
+import random
+
 
 from modules import *
 from config import *
@@ -73,28 +76,23 @@ def generate_examples(gen, mapping_net,epoch, n=5):
             save_image(img*0.5+0.5, f"saved_examples/epoch{epoch}/img_{i}.png")
 
 
+    gen.train()
 
-    save_dir = "/home/Student/s4653241/StyleGAN2/recognition/StyleGAN_s4653241/StyleGAN/saved_examples"
-    for i in range(5):
-        images= next(data_iter)  # Get a batch of images and labels
+'''
+Generate samples from the dataset
+'''
+def generate_samples(Dataset, n=5):
 
-        
-        # Save the first few images in each batch
-        for j in range(len(images)):
-            # Convert the image tensor to a numpy array and scale properly
-            img = images[j].permute(1, 2, 0).cpu().numpy()  # Convert to (H, W, C) and numpy
+    indices = random.sample(range(len(Dataset)), n)
+    # Display the images
+    fig, axes = plt.subplots(1, n, figsize=(15, 3))
+    for i, index in enumerate(indices):
+        raw_img = Dataset.get_raw_image(index)
+        axes[i].imshow(raw_img, cmap='gray')
+        axes[i].axis('off')
+        axes[i].set_title(f"Sample {i+1}")
 
-            if img.max() <= 1.0:  # If normalized between 0-1, scale to 0-255
-                img = (img * 255).astype(np.uint8)
-            
-            # Ensure it has three channels; convert grayscale to RGB
-            if img.shape[2] == 1:
-                img = np.repeat(img, 3, axis=2)  # Convert single channel to RGB
+    plt.tight_layout()
+    plt.show()
 
-            # Create PIL image
-            pil_img = Image.fromarray(img)
-
-            # Save the image
-            pil_img.save(os.path.join(save_dir, f"batch_{i+1}_img_{j+1}.png"))
-
-        print(f"Images saved to {save_dir}")
+ 

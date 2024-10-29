@@ -21,6 +21,9 @@ def train(root_dir, batch_size, num_epochs, output_dir):
     
     os.makedirs(output_dir, exist_ok=True)
     
+    gen_losses = []
+    disc_losses = []
+    
     print(f"Loaded {len(dataset)} images for training.")
     for epoch in range(num_epochs):
         gen_loss_accum = 0.0
@@ -66,7 +69,6 @@ def train(root_dir, batch_size, num_epochs, output_dir):
         disc_losses.append(avg_disc_loss)
         print(f"Epoch [{epoch+1}/{num_epochs}] Generator Loss: {avg_gen_loss:.4f}, Discriminator Loss: {avg_disc_loss:.4f}")
 
-    # Plotting the losses
     plt.figure(figsize=(10,5))
     plt.title("Generator and Discriminator Loss During Training")
     plt.plot(gen_losses, label="Generator")

@@ -21,14 +21,18 @@ ADNI_PATH = Path('./AD_NC')
 TRAIN_TRANSFORM = transforms.Compose([
     transforms.RandomCrop(224),
     transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
     transforms.ToTensor(),
-    transforms.Lambda(lambda x: x.repeat(3, 1, 1))
+    # Normalize with grayscale statistics
+    transforms.Normalize(mean=[0.485], std=[0.229])
 ])
 
 # Testing image transforms
 TEST_TRANSFORM = transforms.Compose([
     transforms.CenterCrop(224),
     transforms.ToTensor(),
+    # Normalize with grayscale statistics
+    transforms.Normalize(mean=[0.485], std=[0.229])
 ])
 
 # Rest of the original dataset.py content remains the same
@@ -110,10 +114,40 @@ def get_dataloader(batch_size, train: bool, val_proportion: float = 0.2, keep_pr
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     return loader
 
-def get_dataset(train=True):
+def get_dataset(train=True, val_proportion: float = 0.2, keep_proportion: float = 1.0):
+    """
+    Returns datasets for either training/validation or testing.
+
+    Args:
+        train (bool): If True, returns training and validation datasets. If False, returns test dataset.
+        val_proportion (float): Proportion of training data to use for validation (only used if train=True)
+        keep_proportion (float): Proportion of total data to keep (for debugging purposes)
+
+    Returns:
+        If train=True: tuple (train_dataset, val_dataset)
+        If train=False: test_dataset
+    """
     if train:
-        train_dataset = ADNIDataset(train=True)
-        val_dataset = ADNIDataset(val=True)
+        # Initialize training dataset with proper transforms
+        train_dataset = ADNIDataset(
+            root_path=ADNI_PATH,
+            train=True,
+            transform=TRAIN_TRANSFORM
+        )
+
+        # Split into training and validation sets
+        train_dataset, val_dataset = split_train_val(
+            dataset=train_dataset,
+            val_proportion=val_proportion,
+            keep_proportion=keep_proportion
+        )
+
         return train_dataset, val_dataset
     else:
-        return ADNIDataset(test=True)
+        # Return test dataset
+        test_dataset = ADNIDataset(
+            root_path=ADNI_PATH,
+            train=False,
+            transform=TEST_TRANSFORM
+        )
+        return test_dataset

@@ -1,19 +1,19 @@
 # ADNI Brain Classification with Vision Transformer
 
-This project implements a Vision Transformer (ViT) based classification system for analyzing brain images from the ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset. The model classifies brain images into different categories: Cognitive Normal (CN), Mild Cognitive Impairment (MCI), Alzheimer's Disease (AD), and Subjective Memory Complaints (SMC).
+This project implements a Vision Transformer (ViT) based classification system for analysing brain images from the ADNI (Alzheimer's Disease Neuroimaging Initiative) dataset. The model classifies brain images into different categories: Cognitive Normal (CN), Mild Cognitive Impairment (MCI), Alzheimer's Disease (AD), and Subjective Memory Complaints (SMC).
 
 ## Features
 
 - Custom-designed Vision Transformer for grayscale medical images
 - Enhanced model architecture with:
-  - Data normalization
-  - Dropout regularization
+  - Data normalisation
+  - Dropout regularisation
   - Feature augmentation
   - Residual connections
   - Label smoothing support
   - Proper image size handling
 - Cross-validation support with model ensemble capabilities
-- Comprehensive evaluation metrics and visualization
+- Comprehensive evaluation metrics and visualisation
 - Dataset handling with proper train/validation/test splits
 
 ## Project Structure
@@ -22,7 +22,8 @@ This project implements a Vision Transformer (ViT) based classification system f
 .
 ├── dataset.py        # Data loading and preprocessing
 ├── modules.py        # Model architecture definitions
-├── predict.py        # Evaluation and prediction scripts
+├── train.py         # Training and optimisation scripts
+├── predict.py       # Evaluation and prediction scripts
 └── AD_NC/           # ADNI dataset directory
     ├── train/
     │   ├── AD/
@@ -98,10 +99,10 @@ Two main model architectures are provided in `modules.py`:
 ```python
 from modules import ViTClassifier, EnhancedViTClassifier
 
-# Initialize basic model
+# Initialise basic model
 model = ViTClassifier(num_classes=4)
 
-# Initialize enhanced model
+# Initialise enhanced model
 enhanced_model = EnhancedViTClassifier(
     num_classes=4,
     dropout_rate=0.2,
@@ -109,6 +110,56 @@ enhanced_model = EnhancedViTClassifier(
     image_size=224
 )
 ```
+
+### Training the Model
+
+The training process is handled by the `OptimizedTrainer` class in `train.py`. The system supports various training optimisations including:
+
+- Mixed precision training
+- Distributed training support
+- Automatic batch size optimization
+- Learning rate scheduling
+- Early stopping
+- Checkpoint management
+- Comprehensive metrics tracking
+
+To train the model:
+
+```python
+from train import train_model_optimized
+
+# Initialise training with default parameters
+model, history = train_model_optimized(
+    model=model,
+    train_dataset=train_dataset,
+    val_dataset=val_dataset,
+    test_dataset=test_dataset,
+    epochs=20,
+    batch_size=64,
+    lr=1e-4,
+    classes=['CN', 'MCI', 'AD', 'SMC'],
+    early_stopping_patience=4
+)
+```
+
+Alternatively, use the command line interface:
+
+```bash
+python train.py
+```
+
+The training script will:
+1. Automatically detect and configure available hardware
+2. Optimise training parameters based on system capabilities
+3. Save checkpoints and training curves
+4. Generate comprehensive training reports
+5. Implement early stopping if validation metrics plateau
+
+Training outputs include:
+- Model checkpoints (regular intervals and best model)
+- Training/validation curves
+- Confusion matrix visualisations
+- Complete training results in JSON format
 
 ### Evaluation and Prediction
 
@@ -131,9 +182,10 @@ This will:
 ### Output
 
 The evaluation script generates the following outputs in a timestamped directory:
-- `confusion_matrix.png`: Visualization of model predictions
+- `confusion_matrix.png`: Visualisation of model predictions
 - `roc_curves.png`: ROC curves for each class
 - `evaluation_metrics.json`: Detailed performance metrics
+- `training_curves.png`: Training and validation metrics over time
 
 ## Model Performance
 
@@ -157,23 +209,11 @@ predictions, true_labels, probabilities = cross_validate_models(
 )
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## License
 
-[Add your license information here]
+Apache License - Version 2.0, January 2004 (http://www.apache.org/licenses/)
 
 ## Acknowledgments
 
 - ADNI for providing the dataset
 - Vision Transformer (ViT) original implementation
-- [Add any other acknowledgments]
-
-
-

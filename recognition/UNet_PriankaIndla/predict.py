@@ -100,4 +100,3 @@ with torch.no_grad():
         if idx == 4:  # Display and save predictions for the first 5 images
             break
 
-

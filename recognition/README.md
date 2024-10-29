@@ -60,6 +60,7 @@ activation functions are also used to add non-linearity into the structure- allo
 
 
 '''python
+    
     def forward(self, x):
         # Apply first linear transformation
         x = self.fc1(x)
@@ -83,11 +84,13 @@ The PatchyEmbedding class is used to breakdown images into patch tokens. The cla
 computed with the provided values:
 
 '''python
+
 self.num_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1])
 '''
 A 2D convolutional layer is then used to project the image patches into the embedding space (latent space). The convolution operates over the image in 'patch sized' steps- extracting the patches and emmbedding them
 
 '''python
+
 img_size = (img_size, img_size)
 patch_size = (patch_size, patch_size)
 
@@ -102,17 +105,20 @@ After the convolution has been applied, the forward pass (when called) flattens 
 to align with the expected transformer input.
 
 '''python
+
     def forward(self, x):
         # Apply patch embedding and reshape
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 '''
+
 The GlobalFilter class applies a global filter to an input tensor in the frequency domain using a variation of the FFT.
 The initialization defines some parameters and also defines a learnable set of complex weights (initially Gaussian noise). In the forward pass, the tensor is first reshaped to match spatial dimensions.
 FFT with conjugate symmetry is then applied to the input where the previously initialized complex weights are used as a filter in the frequency domain. This is the key component in this algorithm as
 filtering in the frequency domain is efficient for capturing global information because each frequency component affects a different spatial pattern. When these frequencies are adjusted by the learnable
 parameter weights, the model will learn to express specific spatial features across the entire input. The reverse Fourier transform is then applied and the resulting tensor is reshapen.
 '''python
+
         x = x.view(B, a, b, C).to(torch.float32)
 
         # Apply FFT with conjugate symmetry to reduce computation (as per paper)

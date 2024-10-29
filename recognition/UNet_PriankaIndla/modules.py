@@ -46,7 +46,7 @@ class UNet(nn.Module):
         # Bottleneck
         self.bottleneck = self.double_conv(64, 128)
         self.bottleneck_dropout = nn.Dropout(dropout_rate)
-        
+
         # Decoder (expansive path)
         self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
         self.conv_up3 = self.double_conv(128, 64)
@@ -82,7 +82,7 @@ class UNet(nn.Module):
 
         c3 = self.conv3(p2)
         p3 = self.dropout3(self.pool3(c3))
-
+        
         # Bottleneck
         bn = self.bottleneck_dropout(self.bottleneck(p3))
 

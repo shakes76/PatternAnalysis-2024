@@ -7,3 +7,7 @@ recognition/StyleGAN_s4653241/StyleGAN/__pycache__
 recognition/StyleGAN_s4653241/StyleGAN/modules2.py
 checkpoints
 .DS_Store
+StyleGAN2_ERR.txt
+StyleGAN2_OUT.txt
+disc_loss.png
+gen_loss.png

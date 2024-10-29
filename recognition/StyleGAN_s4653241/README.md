@@ -1,10 +1,17 @@
 # StyleGAN2 on AD_NC Brain Dataset
 
+
 ## Overview
 
-This StyleGAN2's application is to generate realistic like brain scans using the ADNI dataset for Alzheimer's disease. The primary goal is to provide a model that is able to generate "reasobably clear images". Using StyleGAN2 ability to generate high-resolution images, I will be att
+This StyleGAN2's application is to generate realistic like brain scans using the ADNI dataset for Alzheimer's disease. The primary goal is to provide a model that is able to generate "reasobably clear images". Using StyleGAN2 ability to generate high-resolution images, I will be attept to tackle this problem.
+StyleGAN2 can help reasearchers by providing  disease simulation, data augmentation, and privacy-preserving research.
 
 This project leverages StyleGAN2 to generate synthetic MRI scan images that closely resemble authentic ones. The model is trained on the subset of the OASIS brain dataset.
+
+<p align="center">
+  <img src="assets/Frontal_Lobe.gif" width="45%" />
+  
+</p>
 
 ## Table of Contents
 
@@ -14,6 +21,7 @@ This project leverages StyleGAN2 to generate synthetic MRI scan images that clos
   - [File Structure](#file-structure)
   - [Installation](#installation)
   - [Requirements](#requirements)
+  - [Usage](#usage)
   - [Dataset](#dataset)
   - [Data Augmentation](#data-augmentation)
   - [StyleGAN](#stylegan)
@@ -26,6 +34,8 @@ This project leverages StyleGAN2 to generate synthetic MRI scan images that clos
     - [Discriminator Network](#discriminator-network)
     - [Path Length Regularization](#path-length-regularization)
   - [Training Configuration](#training-configuration)
+    - [Learning Rate](#learning-rate)
+    - [Batch Size](#batch-size)
   - [Results](#results)
   - [Conclusion](#conclusion)
   - [References](#references)
@@ -34,12 +44,12 @@ This project leverages StyleGAN2 to generate synthetic MRI scan images that clos
 
 Folder contains the following files:
 
-config.py: Contains the configuration settings for the project
-dataset.py: Contains the data loader for the AD_NC dataset
-modules.py: Contains the StyleGAN2 model
-predict.py: Contains the prediction function for the StyleGAN2 model
-utils.py: Contains utility functions for the project
-train.py: Contains the training loop for the StyleGAN2 model
+- config.py: Contains the configuration settings for the project
+- dataset.py: Contains the data loader for the AD_NC dataset
+- modules.py: Contains the StyleGAN2 model
+- predict.py: Contains the prediction function for the StyleGAN2 model
+- utils.py: Contains utility functions for the project
+- train.py: Contains the training loop for the StyleGAN2 model
 
 ## Installation
 1. Download [ADNI dataset for Alzheimer’s disease](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24).
@@ -47,6 +57,8 @@ train.py: Contains the training loop for the StyleGAN2 model
 3. Check neccessary [requirements](#requirements) are met
 
 ## Requirements
+
+- Anaconda3 was used for it's intra-library compatibility and ease of use. The following packages are required to run the project:
 
 | Package | Version |
 | --- | --- |
@@ -57,8 +69,22 @@ train.py: Contains the training loop for the StyleGAN2 model
 |matplotlib | 3.8.0 |
 |pillow | 9.4.0 |
 
+- Note: An NVIDIA GPU is required to train the model.The model was trained on a NVIDIA A100 GPU with 40GB of memory and 64GB of RAM.
+
+## Usage
+
+Network is trained from scratch, no pretrained model is used. To train the model, run the following command:
+
+```
+> python train.py
 
 
+```
+
+Training mode change TRAIN = True and EPOCHS to your desired training length.
+
+Figures is saved after end of epoch in folder,
+Plots for both generator and discriminator loss are saved in the folder after training is complete.
 
 ## Dataset
 The ADNI dataset for Alzheimer's disease is hosted on the [ADNI website](https://adni.loni.usc.edu/) for download. ADNI stands for Alzheimer's Disease Neuroimaging Initiative (ADNI) and is a longitudinal, multi-center, observational study.
@@ -123,7 +149,43 @@ Enforces a consistent relationship between the latent space and the generated im
 
 ## Training Configuration
 
+### Learning Rate
+The model was trained for 11 epoch, using learning rate of 0.0002.
+<p align="center">
+    <img src="assets/Train_Epoch11_Low.png" alt="raw data" width="20%">
+    <img src="assets/Train_Epoch11_Control.png" alt="raw data" width="20%">
+    <br>
+    Image generated using lr=0.0002 (left) and lr=0.001 (right)
+</p>
+The generator produced a similar shape of the brain but didn't capture the internal structure of it. The model trained with a lr= 0.001 produced a better image quality with more details and structure of the brain.
+Learning rate of 0.001 was used for the final training.
+
+### Batch Size
+
+The model was trained on a batch size of 16. A larger batch size could be used to improve the model's performance, but this would require more computational resources.
+
 ## Results
+
+<p align="center">
+    <img src="assets/disc_loss.png" alt="raw data" width="45%">
+    <img src="assets/gen_loss.png" alt="raw data" width="45%">
+    <br>
+    Loss over iteration for Discriminator (left) and Generator o(Right)
+</p>
+
+The plot shows the loss over iteration for the discriminator and generator. The plot can be smoothed out by increasing the batch size or by tracking the loss over epochs instead of iterations.
+The plot shows a typical loss curve for a GAN model, engaging in a zero sum game where the generator and discriminator are in competition. The generator's loss decreases as it learns to generate more realistic images, while the discriminator's loss increases as it learns to distinguish between real and synthetic images.
+Although the loss curve is not smooth, the model is "Stable and Coverging" with no sign of mode collapse or instability.
+
+After the 11 epoch, the model generator fine tunes the images and produces a more realistic image of the brain.
+
+<p align="center">
+    <img src="assets/results.png" alt="raw data" width="50%">
+    <br>
+    Generated images with epoch interval of 2
+</p>
+
+The StyleGAN2 was able to produce reasonably good images after 30 epouch.
 
 ## Conclusion
 
@@ -142,5 +204,4 @@ NVIDIA Corporation. (2020). StyleGAN2-ADA-PyTorch [Computer software]. GitHub. h
 
 Paperspace. (2020, February 19). Implementing StyleGAN2 from scratch. Paperspace Blog. https://blog.paperspace.com/implementation-stylegan2-from-scratch/
 
-Task 8:
-```Create a generative model of one of the ADNI brain data set (see Appendix for links) using either a variant of StyleGAN [10]/StyleGAN2 [11] or Stable Diffusion [12] that has a “reasonably clear image”. You should also include a TSNE or UMAP embeddings plot with ground truth in colors and provide a brief interpretation/discussion. See recent UQ work for hints of how to incorporate labels in style [13]. [Hard Difficulty]```
+Shakes76. (2023). StyleGAN2-OASIS_45711110. GitHub repository. https://github.com/shakes76/PatternAnalysis-2023/tree/topic-recognition/recognition/StyleGAN2-OASIS_45711110

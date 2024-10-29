@@ -105,21 +105,21 @@ pip install torch==2.0.1 torchvision==0.15.2 nibabel==5.1.0 numpy==1.24.3 scikit
 
 ### 4. Results
 
-Plots and images were saved using the terminal path:
+Plots and images were saved using the terminal path example:
 
 ```r
-scp s4749392@rangpur.compute.eait.uq.edu.au:/home/Student/s4749392/loss_plot.png ~/Desktop/
+scp s4749392@rangpur.compute.eait.uq.edu.au:/home/Student/s4749392/dice_score_plot.png ~/Desktop/
 
 ```
-The Dice Score plot provides insight into the model’s segmentation performance over the training epochs. By the 10th epoch, the Dice Score surpasses the target threshold of 0.7. This value indicates that the overlap between the predicted segmentation and the ground truth is around 70% or better, showing the model’s success. However, the dice score is decreasing meaning further training must be conducted to improve accuracy of model.
+The Dice Score plot provides insight into the model’s segmentation performance over the training epochs. By the 13th epoch, the Dice Score surpasses the target threshold of 0.7. This value indicates that the overlap between the predicted segmentation and the ground truth is around 70% or better, showing the model’s success. However, the dice score is decreasing meaning further training must be conducted to improve accuracy of model.
 
-Figure 1: Dice Score over 10 Epochs
+Figure 1: Dice Score over 13 Epochs 
 ![dice_score_plot](https://github.com/user-attachments/assets/c81055ef-881c-4cbe-824c-5500d32fed24)
 
 
-Training and validating loss  decreases over 25 epochs, therefore the accuracy of the model increases. The steady decrease in training loss implies that the model is gradually improving its accuracy. The steep and unstable validation loss may indicate overfitting, therefore, further analysis of model parameters must be conducted to optimise model.
+Training and validating loss decreases over 13 epochs. Therefore, the accuracy of the model increases as more epochs run. The steady decrease in training loss implies that the model is gradually improving its accuracy. The steep and unstable validation loss may indicate overfitting, therefore, further analysis of model parameters must be conducted to optimise model.
 
-Figure 2: Train and Validation Loss over 10 Epochs
+Figure 2: Train and Validation Loss over 13 Epochs
 ![loss_plot](https://github.com/user-attachments/assets/ff686a05-9389-44c7-965e-445cfa0b10c4)
 
 

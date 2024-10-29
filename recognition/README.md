@@ -26,7 +26,7 @@ into the spatial domain. Within the context of the task, this process allows GFN
 with log linear time complexity compared to ViT`s quadratic time complexity. This allows it to scale farther and is not intractable for ultra high resolution image recognition.
 
 <p align="center">
-  <img src="fftDisplay.png" alt="Figure 2: The Structure of GFNet (Yongming Rao et al., 2021)" />
+  <img src="fftDisplay.PNG" alt="Figure 2: The Structure of GFNet (Yongming Rao et al., 2021)" />
 </p>
 
 <p align="center">
@@ -43,7 +43,7 @@ to gain context. However, I realised this was not the case. random rotations, re
 Each image was then resized to fit the default format for teh GFNet (224x224), converted to a tensor, and normalised using the mean and standard deviation of the original cropped dataset.
 
 <p align="center">
-  <img src="processedVUnprocessed.png" alt="Figure 3: Before and After Preprocessing Of Data" />
+  <img src="processedVUnprocessed.PNG" alt="Figure 3: Before and After Preprocessing Of Data" />
 </p>
 
 <p align="center">

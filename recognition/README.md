@@ -243,7 +243,7 @@ USE REMAINDER OF GRAPPHS LIST DEPENDENCIES DISCUSS RESULTS 68% ACCURACY
 <table>
   <tr>
     <td align="center">
-      <img src="TrainandValidationAccuracy.png" alt="Figure 4: Train and Validation Accuracy" />
+      <img src="TrainandValidatrionAccuracy.png" alt="Figure 4: Train and Validation Accuracy" />
       <p>Figure 4: Train and Validation Accuracy</p>
     </td>
     <td align="center">

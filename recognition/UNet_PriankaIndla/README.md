@@ -114,13 +114,13 @@ scp s4749392@rangpur.compute.eait.uq.edu.au:/home/Student/s4749392/loss_plot.png
 The Dice Score plot provides insight into the model’s segmentation performance over the training epochs. By the 10th epoch, the Dice Score surpasses the target threshold of 0.7. This value indicates that the overlap between the predicted segmentation and the ground truth is around 70% or better, showing the model’s success. However, the dice score is decreasing meaning further training must be conducted to improve accuracy of model.
 
 Figure 1: Dice Score over 10 Epochs
+![dice_score_plot](https://github.com/user-attachments/assets/c81055ef-881c-4cbe-824c-5500d32fed24)
 
 
+Training and validating loss  decreases over 25 epochs, therefore the accuracy of the model increases. The steady decrease in training loss implies that the model is gradually improving its accuracy. The steep and unstable validation loss may indicate overfitting, therefore, further analysis of model parameters must be conducted to optimise model.
 
-Training and validating loss gradually decreases over 25 epochs, therefore the accuracy of the model increases. The steady decrease in validation loss implies that the model is generalising well to unseen data.
-
-Figure 2: Train and Validation Loss over 25 Epochs
-![loss_plot](https://github.com/user-attachments/assets/958820c0-c23d-4bbe-9d46-326b868f7613)
+Figure 2: Train and Validation Loss over 10 Epochs
+![loss_plot](https://github.com/user-attachments/assets/ff686a05-9389-44c7-965e-445cfa0b10c4)
 
 
 The results outputted after the predict.py file was run is shown in Figures 3 to Figure 7. Each figure shows an original image randomly chosen from the test dataset, its corresponding ground truth and the predicted segmentation this model outputted. It can be seen that the segments overlap ground truth segment but overfitting can be seen, therefore, further trianiing must occur to fine tune model.

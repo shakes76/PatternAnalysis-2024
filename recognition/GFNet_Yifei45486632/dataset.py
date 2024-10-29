@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 # Define the image size and batch size
-IMAGE_SIZE = (224, 224)  # The normal size of GFNet is 224x224
-BATCH_SIZE = 16
+IMAGE_SIZE = (160, 160)  # The normal size of GFNet is 224x224
+BATCH_SIZE = 2
 
 # Load and preprocess images using tf.data.Dataset
 def load_images(directory):
@@ -24,6 +24,7 @@ def load_images(directory):
     return images, labels
 
 # TensorFlow Dataloader - to pre-process images
+@tf.function
 def preprocess_image(file_path, label):
     # Definition of image
     img = tf.io.read_file(file_path)
@@ -79,12 +80,20 @@ def get_train_validation_dataset():
 
 # Get the images and labels in dataset after preprocessing
 def extract_from_dataset(dataset):
-    all_labels = []
-    all_images = []
-    for images, labels in dataset.unbatch():
-        all_images.append(images.numpy())
-        all_labels.append(labels.numpy())
-    return np.array(all_images), np.array(all_labels)
+    images_list = []
+    labels_list = []
+    
+    # 使用小批次处理，但不改变原有的batch size
+    for images, labels in dataset:
+        images_list.append(images.numpy())
+        labels_list.append(labels.numpy())
+        
+        # 每处理10个批次清理一次内存
+        if len(images_list) % 10 == 0:
+            tf.keras.backend.clear_session()
+    
+    # 合并结果
+    return np.concatenate(images_list, axis=0), np.concatenate(labels_list, axis=0)
 
 # Test the functionality of the data loader
 if __name__ == "__main__":

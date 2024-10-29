@@ -80,7 +80,8 @@ Style Generative Adversarial Network or StyleGAN is the next generation of gener
 
 ## StyleGAN2
 
-Sovles the problem of "Blob" Artifacts
+StyleGAM2  is an improvement over the original styleGAN model, introduced by NVIDIA in 2019. StyleGAN2 builds upon StyleGAN2 and introduces several key enhancements. The primary improvements inclues tackling "blob artifacts"
+and enchances overall image quality. The model achieves this by introducing a new regularization techniques, such as weight demodulation to prevent visual artifacts. StyleGAN2 also introduces a new data augmentation technique called "adaptive discriminator augmentation" (ADA), which improves the model's generalization capabilities. The model also maintaince StyleGANs ability to control specific image feature and styles, enabling for fine-grained manipulation of generated images. With a higher resolution and improved image quality, StyleGAN2 is able to generate more realistic images with greater detail and fidelity thus setting a new benchmark for generative models.
 
 ## Model Architecture
 

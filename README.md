@@ -1,3 +1,3 @@
-# Generative VQVAE model for MR images of the male pelvis
+# Generative VQVAE model for HipMRI
 
 

@@ -1,6 +1,8 @@
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+import os
+# import utils
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -119,7 +121,7 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
             inImage = (inImage - inImage.mean()) / inImage.std()
         
         if categorical:
-            inImage = utils.to_channels(inImage, dtype=dtype)
+            inImage = to_channels(inImage, dtype=dtype)
             images[i,:inImage.shape[0],:inImage.shape[1],:inImage.shape[2],:inImage.shape[3]] = inImage  # with pad
         else:
             images[i,:inImage.shape[0],:inImage.shape[1],:inImage.shape[2]] = inImage  # with pad
@@ -133,3 +135,16 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
         return images, affines
     else:
         return images
+
+# Load semantic label files
+semantic_labels_dir = '/Users/ella/Documents/UQ/BM_BCs/Y4S2/COMP3710/report/PatternAnalysis-2024/HipMRI_study_complete_release_v1/semantic_labels_anon'
+semantic_label_files = [os.path.join(semantic_labels_dir, f) for f in os.listdir(semantic_labels_dir) if f.endswith('.gz')]
+semantic_labels, semantic_labels_affines = load_data_3D(semantic_label_files, normImage=False, categorical=True, dtype=np.uint8, getAffines=True)
+
+# Load semantic MR files
+semantic_mrs_dir = '/Users/ella/Documents/UQ/BM_BCs/Y4S2/COMP3710/report/PatternAnalysis-2024/HipMRI_study_complete_release_v1/semantic_MRs_anon'
+semantic_mr_files = [os.path.join(semantic_mrs_dir, f) for f in os.listdir(semantic_mrs_dir) if f.endswith('.gz')]
+semantic_mrs, semantic_mrs_affines = load_data_3D(semantic_mr_files, normImage=False, categorical=False, dtype=np.float32, getAffines=True)
+
+print(f"Loaded {len(semantic_label_files)} semantic label files")
+print(f"Loaded {len(semantic_mr_files)} semantic MR files")

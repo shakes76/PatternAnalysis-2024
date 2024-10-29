@@ -29,5 +29,7 @@ def predict():
     parser.add_argument('--device', type=str, default='cuda', help='Device to use: "cuda" or "cpu"')
     args = parser.parse_args()
 
+    generator = Generator(z_dim=512, w_dim=512, in_channels=512, img_channels=1).to(args.device)
+
 if __name__ == "__main__":
     predict()

@@ -62,6 +62,13 @@ class EnhancedViTClassifier(nn.Module):
         # Load the pre-trained ViT model
         self.vit = vit_b_16(pretrained=True)
 
+        # Add positional dropout separately
+        self.pos_dropout = nn.Dropout(0.1)
+
+        # Create our own class token
+        self.class_token = nn.Parameter(torch.zeros(1, 1, 768))
+        nn.init.normal_(self.class_token, std=0.02)  # Initialize following ViT paper
+
         # Calculate number of patches
         self.patch_size = 16
         self.num_patches = (image_size // self.patch_size) ** 2
@@ -172,18 +179,18 @@ class EnhancedViTClassifier(nn.Module):
 
         # Get ViT features
         x = self.vit.conv_proj(x)
-        x = self.vit.encoder.pos_drop(x)
 
         # Reshape to sequence
         batch_size = x.shape[0]
         x = x.reshape(batch_size, self.num_patches, -1)
 
         # Add class token
-        class_token = self.vit.encoder.class_token.expand(batch_size, -1, -1)
-        x = torch.cat((class_token, x), dim=1)
+        class_tokens = self.class_token.expand(batch_size, -1, -1)
+        x = torch.cat((class_tokens, x), dim=1)
 
-        # Add position embeddings
+        # Add position embeddings and apply dropout
         x = x + self.vit.encoder.pos_embedding
+        x = self.pos_dropout(x)
 
         # Pass through encoder
         x = self.vit.encoder.layers(x)

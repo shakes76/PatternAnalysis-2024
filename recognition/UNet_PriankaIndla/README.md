@@ -126,19 +126,19 @@ Figure 2: Train and Validation Loss over 13 Epochs
 The results outputted after the predict.py file was run is shown in Figures 3 to Figure 7. Each figure shows an original image randomly chosen from the test dataset, its corresponding ground truth and the predicted segmentation this model outputted. It can be seen that the segments overlap ground truth segment but overfitting can be seen, therefore, further trianiing must occur to fine tune model.
 
 Figure 3: Image 1 chosen for prediction
-![prediction_0](https://github.com/user-attachments/assets/049205b6-8b7e-4170-9a15-c52ada49cc04)
+<img width="707" alt="Image 2" src="https://github.com/user-attachments/assets/8d980f10-1e4d-4ae0-a543-08c4d2f8f298">
 
 Figure 4: Image 2 chosen for prediction
-![prediction_1](https://github.com/user-attachments/assets/09c0979a-6cf7-4ab6-8cb4-5aac87b541b7)
+<img width="706" alt="Image 1" src="https://github.com/user-attachments/assets/f8c8b636-aa23-4151-874b-e2fb6ba6cdc1">
 
 Figure 5: Image 3 chosen for prediction
-![prediction_2](https://github.com/user-attachments/assets/e342310e-63ad-46a7-a00a-cff31189fea6)
+<img width="697" alt="Image 3" src="https://github.com/user-attachments/assets/cfd1dee8-14bf-4ba5-953f-7149a92b0322">
 
 Figure 6: Image 4 chosen for prediction
-![prediction_3](https://github.com/user-attachments/assets/de590168-adcc-4f1d-975b-bd9feab5dca0)
+<img width="705" alt="Image 4" src="https://github.com/user-attachments/assets/e09279cf-9fdf-438f-98c6-ed50d72df5d3">
 
 Figure 7: Image 5 chosen for prediction
-![prediction_4](https://github.com/user-attachments/assets/16093749-2903-480b-9195-cf72fedd3c39)
+<img width="703" alt="Image 5" src="https://github.com/user-attachments/assets/732fc390-57bf-498c-b566-a2b9496b2b97">
 
 
 

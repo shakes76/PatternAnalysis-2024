@@ -24,7 +24,8 @@ test_dataset = get_test_dataset()
 # Build model
 print("Building model...")
 model = build_model()
-model.compile(optimizer='adam',
+model.compile(# optimizer='adam',
+              optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 

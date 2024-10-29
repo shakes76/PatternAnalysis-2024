@@ -5,6 +5,7 @@ import nibabel as nib
 from torch.utils.data import Dataset
 from skimage.transform import resize
 from tqdm import tqdm
+import torchvision.transforms as T  # Import for transformations
 
 class ProstateMRIDataset(Dataset):
     """
@@ -17,11 +18,12 @@ class ProstateMRIDataset(Dataset):
         normImage (bool): Whether to normalise images to a [0, 1] range.
         dtype (type): The desired data type of loaded images.
         target_shape (tuple): Target shape to resize images (height, width).
+        transform (callable, optional): A function/transform to apply on the image and segmentation.
     """
 
-    def __init__(self, seg_image_paths, image_paths, normImage=False, dtype=np.float32, target_shape=(256, 128)):
+    def __init__(self, seg_image_paths, image_paths, normImage=False, dtype=np.float32, target_shape=(256, 128), transform=None):
         """
-        Initialises dataset by loading MRI images and segmentation masks and resizing them to a target shape.
+        Initializes dataset by loading MRI images and segmentation masks and resizing them to a target shape.
 
         Args:
             seg_image_paths (list of str): List of paths to segmentation mask images.
@@ -29,12 +31,14 @@ class ProstateMRIDataset(Dataset):
             normImage (bool): Whether to normalise images to a [0, 1] range.
             dtype (type): Data type for the loaded images.
             target_shape (tuple): Target shape for resizing the images.
+            transform (callable, optional): Transformations to apply on the images and masks.
         """
         self.seg_image_paths = seg_image_paths
         self.image_paths = image_paths
         self.normImage = normImage
         self.dtype = dtype
-        self.target_shape = target_shape  # Set the target shape for resizing
+        self.target_shape = target_shape
+        self.transform = transform
 
         # Load images and segmentation masks
         self.images = self.load_data_2D(self.image_paths, normImage=self.normImage, dtype=self.dtype)
@@ -53,30 +57,33 @@ class ProstateMRIDataset(Dataset):
                 - seg (torch.Tensor): The segmentation mask with shape [1, height, width].
         """
         # Use pre-loaded images and segmentation masks
-        image = self.images[idx]  # Access pre-loaded image
-        seg = self.seg_images[idx]  # Access pre-loaded segmentation mask
+        image = self.images[idx]
+        seg = self.seg_images[idx]
 
-        # Image is 2D (grayscale), so add channel dimension so shape is [1, height, width]
+        # Image and segmentation are 2D, so add channel dimension to get shape [1, height, width]
         if image.ndim == 2:
-            image = np.expand_dims(image, axis=0) 
-
-        # Segmentation is 2D as well so add channel dimension
+            image = np.expand_dims(image, axis=0)
         if seg.ndim == 2:
-            seg = np.expand_dims(seg, axis=0) 
+            seg = np.expand_dims(seg, axis=0)
 
         # Normalize image to [0,1] if necessary
         if self.normImage:
             image = image / 255.0
-        
+
         # Convert segmentation mask to binary (0 and 1 only)
-        seg = (seg > 0).astype(np.float32)  # Set all values > 0 to 1, otherwise 0
+        seg = (seg > 0).astype(np.float32)
 
         # Convert image and segmentation to PyTorch tensors
         image = torch.tensor(image, dtype=torch.float32)
         seg = torch.tensor(seg, dtype=torch.float32)
 
+        # Apply transformations if provided
+        if self.transform:
+            combined = torch.cat([image, seg], dim=0)  # Concatenate for consistent transform
+            combined = self.transform(combined)
+            image, seg = combined[0:1, :, :], combined[1:, :, :]
+
         return image, seg
-        
 
     def __len__(self):
         """
@@ -114,22 +121,19 @@ class ProstateMRIDataset(Dataset):
             np.ndarray: An array containing processed images with the specified target shape and dtype.
         """
         num = len(imageNames)
-        images = np.zeros((num, *target_shape), dtype=dtype)  # Initialize with target shape
+        images = np.zeros((num, *target_shape), dtype=dtype)
 
         for i, inName in enumerate(tqdm(imageNames)):
             try:
                 niftiImage = nib.load(inName)
                 inImage = niftiImage.get_fdata(caching='unchanged').astype(dtype)
 
-                if len(inImage.shape) == 2:
-                    # Resize the single 2D slice to target shape
+                if inImage.ndim == 2:
                     resized_image = resize(inImage, target_shape, mode='reflect', anti_aliasing=True)
-
                     if normImage:
                         resized_image = (resized_image - resized_image.mean()) / resized_image.std()
-
-                    images[i] = resized_image  # Assign the resized image to the array
-                    print(f"Loaded image {inName} with shape: {resized_image.shape}")  # Print dimensions for debugging
+                    images[i] = resized_image
+                    print(f"Loaded image {inName} with shape: {resized_image.shape}")
                 else:
                     print(f"Warning: Expected 2D image but got shape {inImage.shape} for {inName}.")
 
@@ -138,5 +142,4 @@ class ProstateMRIDataset(Dataset):
 
         print(f"Loaded {len(images)} images.")
         return images
-
 

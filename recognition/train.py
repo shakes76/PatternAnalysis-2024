@@ -378,7 +378,7 @@ def main():
             print(f"GPU {i}: {gpu_props.name} ({gpu_props.total_memory / 1024**3:.1f} GB)")
 
     # Hyperparameters
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     EPOCHS = 20
     LR = 1e-4
     CLASSES = ['CN', 'MCI', 'AD', 'SMC']
@@ -390,16 +390,19 @@ def main():
     print(f"Learning rate: {LR}")
     print(f"Early stopping patience: {EARLY_STOPPING_PATIENCE}")
 
-    # Initialize data
+     # Initialize data with specific proportions
     print("\nLoading data...")
-    # Get datasets instead of dataloaders since our framework will create optimized loaders
-    train_dataset, val_dataset = get_dataset(train=True)  # Assuming you modify get_dataloader to return datasets
+    train_dataset, val_dataset = get_dataset(
+        train=True,
+        val_proportion=0.2,  # 20% validation split
+        keep_proportion=1.0  # Use full dataset
+    )
     test_dataset = get_dataset(train=False)
     print("Data loaded successfully!")
 
     # Initialize model
     print("\nInitializing model...")
-    model = ViTClassifier().to(device)
+    model = ViTClassifier(num_classes=4).to(device)
     print("Model initialized successfully!")
 
     # Print model summary

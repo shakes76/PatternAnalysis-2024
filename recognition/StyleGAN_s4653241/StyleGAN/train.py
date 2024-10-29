@@ -12,7 +12,7 @@ from tqdm import tqdm
 # Local libraries
 from dataset import *
 from modules import *
-import predict
+from predict import *
 from config import *
 from utils import *
 
@@ -25,11 +25,13 @@ def train(
     dataloader ,
     mapping_net,
     optim_mapping,
+    epoch,              # Current Epoch
+    epochs = EPOCHS,             # Total Epoch Left
     visualize=False):
 
     # Initialize tqdm progress bar
     # progress_bar = tqdm(dataloader, total=len(dataloader), desc=f"Epoch {epoch+1}/{epochs}", leave=True, dynamic_ncols=True)
-    progress_bar = tqdm(dataloader,leave=True,dynamic_ncols=True)
+    progress_bar = tqdm(dataloader,desc=f"Epoch {epoch+1}/{epochs}",leave=True,dynamic_ncols=True)
 
     device = devicer()
     current_G_loss = []
@@ -76,6 +78,8 @@ def train(
         progress_bar.set_postfix(
             gp=gp.item(),
             loss_critic=loss_critic.item(),
+            D_loss = loss_critic.item(),
+            G_loss = loss_gen.item()
         )
 
     return (current_D_loss, current_G_loss)
@@ -83,6 +87,7 @@ def train(
 
 if __name__ == '__main__':
 
+    
     device=devicer()
     dataloader = get_dataloader()
     generator = Generator(log_resolution,W_DIM).to(device)
@@ -98,16 +103,41 @@ if __name__ == '__main__':
     G_losses = []
     D_losses = []
 
-    generator.train()
-    discriminator.train()
-    mapping_net.train()
+    if LOAD:
+        Loaded_epoch, G_losses,D_losses = load_checkpoint(LOAD_CHECK,generator,discriminator,optimizer_G,optimizer_D,optim_mapping)
+        print("Loaded checkpoint")
+    else:
+        Loaded_epoch = 0
 
-    for epoch in range(EPOCHS):
-        G_loss, D_loss = train(generator, discriminator, journey_penalty, optimizer_G, optimizer_D, dataloader, mapping_net, optim_mapping)
+    if TRAIN:
 
-        G_losses.append(G_loss)
-        D_losses.append(D_loss)
+        generator.train()
+        discriminator.train()
+        mapping_net.train()
 
-        if epoch % 10 == 0:
-            predict.plot_loss(G_losses, D_losses)
-    predict.plot_loss(G_losses, D_losses)
+        for epoch in range(Loaded_epoch,EPOCHS):
+            G_loss, D_loss = train(generator, discriminator, journey_penalty, optimizer_G, optimizer_D, dataloader, mapping_net, optim_mapping,epoch,EPOCHS)
+
+            G_losses.extend(G_loss)
+            D_losses.extend(D_loss)
+
+            generate_examples(generator, mapping_net,epoch, n=5)
+
+            if epoch % 5 == 0:
+                save_model(epoch,generator,discriminator,optimizer_G,optimizer_D,optim_mapping,G_losses,D_losses)
+                # predict.generator_example(gen,mapping_net,epoch,device)
+        
+        plot_loss(G_losses, D_losses)
+    
+    if TEST:
+        # if LOAD:
+        #     device=devicer()
+
+        #     generator = Generator(log_resolution,W_DIM).to(device)
+        #     mapping_net = MappingNetwork(Z_DIM, W_DIM).to(device)
+            
+        #     checkpoint = torch.load(LOAD_CHECK)
+        #     epoch = checkpoint['epoch']
+        #     gen.load_state_dict(checkpoint['G_state_dict'])
+
+        generate_examples(generator, mapping_net,epoch, n=5)

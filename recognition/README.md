@@ -81,10 +81,12 @@ activation functions are also used to add non-linearity into the structure- allo
 
 The PatchyEmbedding class is used to breakdown images into patch tokens. The class first defines multiple preset values such as image size, patch size, and the latent space parameters. The number of patches is then
 computed with the provided values:
+
 '''python
 self.num_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1])
 '''
 A 2D convolutional layer is then used to project the image patches into the embedding space (latent space). The convolution operates over the image in 'patch sized' steps- extracting the patches and emmbedding them
+
 '''python
 img_size = (img_size, img_size)
 patch_size = (patch_size, patch_size)
@@ -95,8 +97,10 @@ self.num_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1
 # Convolutional layer to project each patch into the embedding space
 self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
 '''
+
 After the convolution has been applied, the forward pass (when called) flattens the tensor starting from the second dimension which combines the spatial dimensions into a single dimension. The tensor is then transposed
 to align with the expected transformer input.
+
 '''python
     def forward(self, x):
         # Apply patch embedding and reshape

@@ -5,14 +5,21 @@
 This StyleGAN2's application is to generate realistic like brain scans using the ADNI dataset for Alzheimer's disease. The primary goal is to provide a model that is able to generate "reasobably clear images". Using StyleGAN2 ability to
 
 ## Table of Contents
-[Installation](#installation)
-[Requirements](#requirements)
-[Dataset](#dataset)
-[File Structure](#file-structure)
-[StyleGAN2](#stylegan2)
-[Results](#results)
-[Conclusion](#conclusion)
-[References](#references)
+
+- [StyleGAN2 on AD\_NC Brain Dataset](#stylegan2-on-ad_nc-brain-dataset)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Dataset](#dataset)
+  - [File Structure](#file-structure)
+  - [StyleGAN](#stylegan)
+  - [StyleGAN2](#stylegan2)
+  - [Model Architecture](#model-architecture)
+  - [Training Configuration](#training-configuration)
+  - [Results](#results)
+  - [Conclusion](#conclusion)
+  - [References](#references)
 
 ## Installation
 1. Download [ADNI dataset for Alzheimer’s disease](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24).

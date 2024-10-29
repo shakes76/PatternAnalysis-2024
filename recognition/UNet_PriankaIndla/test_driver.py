@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=1 
 #SBATCH --gres=gpu:a100 
 #SBATCH --job-name=train_test 
-#SBATCH -o predict_test.out 
+#SBATCH -o train_test.out 
 
 conda activate torch_env
-python predict.py     
+python train.py     

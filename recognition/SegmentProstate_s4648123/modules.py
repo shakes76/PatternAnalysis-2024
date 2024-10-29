@@ -1,135 +1,151 @@
-"""
-Normal Difficulty
-3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation
-Paper URL: https://arxiv.org/abs/1606.06650
-"""
-from torch import nn
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-
-class Conv3DBlock(nn.Module):
-    """
-    A 3D convolutional block consisting of two 3x3x3 convolutions.
+class DoubleConv(nn.Module):
+    """Two consecutive 3x3x3 convolutions with BatchNorm and ReLU activation.
 
     Args:
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
-        bottleneck (bool): If True, disables pooling to act as a bottleneck block.
-
-    Forward:
-        input (torch.Tensor): Input tensor to be convolved.
-
-    Returns:
-        (torch.Tensor, torch.Tensor):
-            - Output after convolution (and pooling).
-            - Residual output for potential skip connections.
     """
+    def __init__(self, in_channels, out_channels):
+        super(DoubleConv, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm3d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm3d(out_channels),
+            nn.ReLU(inplace=True)
+        )
 
-    def __init__(self, in_channels, out_channels, bottleneck=False) -> None:
-        super().__init__()
-        self.conv1 = nn.Conv3d(in_channels, out_channels // 2, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm3d(out_channels // 2)
-        self.conv2 = nn.Conv3d(out_channels // 2, out_channels, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm3d(out_channels)
-        self.relu = nn.ReLU()
-        self.bottleneck = bottleneck
-
-        if not bottleneck:
-            self.pooling = nn.MaxPool3d(kernel_size=2, stride=2)
-
-    def forward(self, input):
-        res = self.relu(self.bn1(self.conv1(input)))
-        res = self.relu(self.bn2(self.conv2(res)))
-
-        out = self.pooling(res) if not self.bottleneck else res
-        return out, res
+    def forward(self, x):
+        """Forward pass through the double convolution block."""
+        return self.conv(x)
 
 
-class UpConv3DBlock(nn.Module):
-    """
-    A 3D upsampling block with optional final output layer and skip connections.
+class Down(nn.Module):
+    """Downsampling block with max pooling followed by DoubleConv.
 
     Args:
         in_channels (int): Number of input channels.
-        res_channels (int, optional): Channels from skip connections to concatenate. Defaults to 0.
-        last_layer (bool, optional): Whether this block is the final output layer. Defaults to False.
-        num_classes (int, optional): Number of output channels for classification. Required if last_layer=True.
-
-    Forward:
-        input (torch.Tensor): Input tensor to upsample.
-        residual (torch.Tensor, optional): Residual tensor to concatenate with input. Defaults to None.
-
-    Returns:
-        torch.Tensor: Final output tensor after upsampling and convolution.
+        out_channels (int): Number of output channels after the convolution.
     """
-    def __init__(self, in_channels, res_channels=0, last_layer=False, num_classes=None) -> None:
-        super().__init__()
-        assert not last_layer or (last_layer and num_classes is not None), \
-            "num_classes must be specified if last_layer=True."
+    def __init__(self, in_channels, out_channels):
+        super(Down, self).__init__()
+        self.pool_conv = nn.Sequential(
+            nn.MaxPool3d(kernel_size=2, stride=2),
+            DoubleConv(in_channels, out_channels)
+        )
 
-        self.upconv = nn.ConvTranspose3d(in_channels, in_channels, kernel_size=2, stride=2)
-        self.relu = nn.ReLU()
-        self.bn = nn.BatchNorm3d(in_channels // 2)
-        self.conv1 = nn.Conv3d(in_channels + res_channels, in_channels // 2, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv3d(in_channels // 2, in_channels // 2, kernel_size=3, padding=1)
+    def forward(self, x):
+        """Forward pass through the downsampling block."""
+        return self.pool_conv(x)
 
-        self.last_layer = last_layer
-        if last_layer:
-            self.conv3 = nn.Conv3d(in_channels // 2, num_classes, kernel_size=1)
 
-    def forward(self, input, residual=None):
-        out = self.upconv(input)
+class Up(nn.Module):
+    """Upsampling block with transposed convolution and DoubleConv.
 
-        if residual is not None:
-            out = torch.cat((out, residual), dim=1)
+    Args:
+        in_channels (int): Number of input channels for the transposed convolution.
+        out_channels (int): Number of output channels after the convolution.
+    """
+    def __init__(self, in_channels, out_channels):
+        super(Up, self).__init__()
+        self.up = nn.ConvTranspose3d(in_channels, out_channels, kernel_size=2, stride=2)
+        self.conv = DoubleConv(in_channels, out_channels)
 
-        out = self.relu(self.bn(self.conv1(out)))
-        out = self.relu(self.bn(self.conv2(out)))
+    def forward(self, x1, x2):
+        """Forward pass through the upsampling block.
 
-        if self.last_layer:
-            out = self.conv3(out)
+        Args:
+            x1 (Tensor): Input feature map from the previous layer.
+            x2 (Tensor): Corresponding feature map from the analysis path (for skip connections).
 
-        return out
+        Returns:
+            Tensor: Concatenated feature map after upsampling and convolution.
+        """
+        # Perform upsampling
+        x1 = self.up(x1)
+
+        # Handle size mismatches between x1 and x2 (if any)
+        diffZ = x2.size(2) - x1.size(2)
+        diffY = x2.size(3) - x1.size(3)
+        diffX = x2.size(4) - x1.size(4)
+
+        # Pad the smaller tensor to match the size of the larger one
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                        diffY // 2, diffY - diffY // 2,
+                        diffZ // 2, diffZ - diffZ // 2])
+
+        # Concatenate along the channel dimension
+        x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
+
+
+class OutConv(nn.Module):
+    """Final layer with 1x1x1 convolution to map to output channels.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels (number of classes).
+    """
+    def __init__(self, in_channels, out_channels):
+        super(OutConv, self).__init__()
+        self.conv = nn.Conv3d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        """Forward pass through the output convolution."""
+        return self.conv(x)
 
 
 class UNet3D(nn.Module):
-    """
-    A 3D U-Net model with encoding and decoding paths.
+    """3D U-Net architecture for volumetric data segmentation.
 
     Args:
-        in_channels (int): Number of input channels.
-        num_classes (int): Number of output channels or segmentation masks.
-        level_channels (list of int): Number of channels at each level in the encoder.
-        bottleneck_channel (int): Number of channels in the bottleneck layer.
-
-    Forward:
-        input (torch.Tensor): Input tensor to the U-Net model.
-
-    Returns:
-        torch.Tensor: Output tensor after passing through the U-Net.
+        n_channels (int): Number of input channels (e.g., 3 for RGB).
+        n_classes (int): Number of output classes (labels).
     """
-    def __init__(self, in_channels=1, num_classes=5, level_channels=(64, 128, 256), bottleneck_channel=512) -> None:
-        super().__init__()
+    def __init__(self, n_channels, n_classes):
+        super(UNet3D, self).__init__()
 
-        self.a_block1 = Conv3DBlock(in_channels, level_channels[0])
-        self.a_block2 = Conv3DBlock(level_channels[0], level_channels[1])
-        self.a_block3 = Conv3DBlock(level_channels[1], level_channels[2])
-        self.bottleNeck = Conv3DBlock(level_channels[2], bottleneck_channel, bottleneck=True)
+        # Define the architecture with increasing and decreasing channels
+        self.inc = DoubleConv(n_channels, 32)
+        self.down1 = Down(32, 64)
+        self.down2 = Down(64, 128)
+        self.down3 = Down(128, 256)
+        self.down4 = Down(256, 512)
 
-        self.s_block3 = UpConv3DBlock(bottleneck_channel, level_channels[2])
-        self.s_block2 = UpConv3DBlock(level_channels[2], level_channels[1])
-        self.s_block1 = UpConv3DBlock(level_channels[1], level_channels[0], num_classes=num_classes, last_layer=True)
+        self.up1 = Up(512, 256)
+        self.up2 = Up(256, 128)
+        self.up3 = Up(128, 64)
+        self.up4 = Up(64, 32)
 
-    def forward(self, input):
-        # Encoder (Analysis path)
-        out, residual_level1 = self.a_block1(input)
-        out, residual_level2 = self.a_block2(out)
-        out, residual_level3 = self.a_block3(out)
-        out, _ = self.bottleNeck(out)
+        self.outc = OutConv(32, n_classes)
 
-        # Decoder (Synthesis path)
-        out = self.s_block3(out, residual_level3)
-        out = self.s_block2(out, residual_level2)
-        out = self.s_block1(out, residual_level1)
+    def forward(self, x):
+        """Forward pass through the 3D U-Net model.
 
-        return out
+        Args:
+            x (Tensor): Input tensor with shape (batch_size, channels, depth, height, width).
+
+        Returns:
+            Tensor: Output tensor with shape (batch_size, n_classes, depth, height, width).
+        """
+        # Analysis path
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # Synthesis path with skip connections
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+
+        # Final output layer
+        logits = self.outc(x)
+        return logits

@@ -30,7 +30,7 @@ with log linear time complexity compared to ViT`s quadratic time complexity. Thi
 </p>
 
 <p align="center">
-Figure 1: The Structure of GFNet (Yongming Rao et al., 2021)
+Figure 2: The Structure of GFNet (Yongming Rao et al., 2021)
 </p>
 
 ## Breakdown of Implementation
@@ -240,20 +240,17 @@ torchvision==0.16.0+cu121
 
 USE REMAINDER OF GRAPPHS LIST DEPENDENCIES DISCUSS RESULTS 68% ACCURACY
 
+<table>
+  <tr>
+    <td align="center">
+      <img src="TrainandValidationAccuracy.png" alt="Figure 4: Train and Validation Accuracy" />
+      <p>Figure 4: Train and Validation Accuracy</p>
+    </td>
+    <td align="center">
+      <img src="Reak_train_AND_VALIDATE_LOSS.png" alt="Figure 5: Train and Validation Loss" />
+      <p>Figure 5: Train and Validation Loss</p>
+    </td>
+  </tr>
+</table>
 
-<p align="center">
-  <img src="TrainandValidatrionAccuracy.png" alt="Figure 4: Train and Validation Accuracy/>
-</p>
-
-<p align="center">
-Figure 4: Train and Validation Accuracy
-</p>
-
-<p align="center">
-  <img src="Reak_train_AND_VALIDATE_LOSS.png" alt="Figure 5: Train and Validation Loss/>
-</p>
-
-<p align="center">
-Figure 5: Train and Validation Loss
-</p>
 

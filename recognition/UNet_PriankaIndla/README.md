@@ -111,3 +111,36 @@ Plots and images were saved using the terminal path:
 scp s4749392@rangpur.compute.eait.uq.edu.au:/home/Student/s4749392/loss_plot.png ~/Desktop/
 
 ```
+The Dice Score plot provides insight into the model’s segmentation performance over the training epochs. By the 25th epoch, the Dice Score surpasses the target threshold of 0.7. This value indicates that the overlap between the predicted segmentation and the ground truth is around 70% or better, showing the model’s success.
+
+Figure 1: Dice Score over 25 Epochs
+
+![dice_score_plot.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/626cae83-e22e-4735-9e83-ed43caa10c95/dice_score_plot.png)
+
+Training and validating loss gradually decreases over 25 epochs, therefore the accuracy of the model increases. The steady decrease in validation loss implies that the model is generalising well to unseen data.
+
+Figure 2: Train and Validation Loss over 25 Epochs
+
+![loss_plot.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/c0e403fe-9b87-45fc-936a-94778af6b137/loss_plot.png)
+
+The results outputted after the [predict.py](http://predict.py) file was run is shown in Figures 3 to Figure 7. Each figure shows an original image randomly chosen from the test dataset, its corresponding ground truth and the predicted segmentation this model outputted. It can be seen that the segments overlap ground truth segment but overfitting can be seen, therefore, further trianiing must occur to fine tune model.
+
+Figure 3: Image 1 chosen for prediction
+
+![prediction_0.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/1c219f50-c243-45fd-aec3-2f2298af4ee9/prediction_0.png)
+
+Figure 4: Image 2 chosen for prediction
+
+![prediction_1.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/8fcf0cd8-b711-4b61-a392-ffe3a27c4414/prediction_1.png)
+
+Figure 5: Image 3 chosen for prediction
+
+![prediction_2.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/5636902d-e939-4eac-96a7-1677d2311199/prediction_2.png)
+
+Figure 6: Image 4 chosen for prediction
+
+![prediction_3.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/92f96167-5c58-49c2-b195-1715e773e081/prediction_3.png)
+
+Figure 7: Image 5 chosen for prediction
+
+![prediction_4.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/220adf2d-394e-4319-91e5-aba9898161d1/prediction_4.png)

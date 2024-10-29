@@ -19,6 +19,7 @@ LEARNING_RATE = 3e-4
 EPOCHS = 10
 NUM_WORKERS = 4
 TARGET_SHAPE = (INPUT_IMAGE_HEIGHT, INPUT_IMAGE_WIDTH)
+EARLY_STOPPING_PATIENCE = 7
 
 # Directories for training and validation data
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -76,9 +77,11 @@ def dice_score(pred, target, smooth=1e-6):
     union = pred.sum() + target.sum()
     dice = (2. * intersection + smooth) / (union + smooth)
     return dice
-
-# Tracking variables
+    
+# Training with early stopping
 best_dice = 0
+best_epoch = 0
+early_stop_counter = 0
 train_losses, val_losses, dice_scores = [], [], []
 
 for epoch in range(EPOCHS):
@@ -127,12 +130,16 @@ for epoch in range(EPOCHS):
     # Adjust learning rate
     scheduler.step(avg_val_dice)
 
-    # Check for best model
+    # Early stopping
     if avg_val_dice > best_dice:
         print(f"Validation Dice Score improved ({best_dice:.4f} --> {avg_val_dice:.4f}). Saving model...")
         torch.save(model.state_dict(), 'best_model.pth')
         best_dice = avg_val_dice
         best_epoch = epoch
+        early_stop_counter = 0
+    else:
+        early_stop_counter += 1
+
 
 # Plot training and validation loss
 plt.figure(figsize=(10, 5))
@@ -154,4 +161,3 @@ plt.ylabel('Dice Score')
 plt.legend()
 plt.savefig('dice_score_plot.png')
 plt.show()
-

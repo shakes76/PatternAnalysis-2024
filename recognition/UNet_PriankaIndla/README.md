@@ -6,14 +6,14 @@
 
 The U-Net model is a convolutional neural network designed for biomedical image segmentation. It addresses the challenge of segmenting complex medical images, such as MRI scans, by using an encoder-decoder structure that combines high-resolution and low-resolution feature maps through skip connections. The U-Net architecture is particularly well-suited for tasks where precise locating is essential.
 
-**Problem Solved**: In this project, the U-Net model is applied to prostate regions in MRI scans as part of the HipMRI Study on Prostate Cancer. Accurate segmentation of prostate tumors within MRI scans aids clinicians in identifying regions of interest, which is crucial for diagnosing and planning treatments for prostate cancer. This project aims to achieve high segmentation accuracy, targeting a Dice similarity coefficient of at least 0.75 on the test set. This metric indicates how well the model's segmented regions match the ground truth, reflecting the model’s reliability in identifying tumor boundaries accurately. 
+**Problem Solved**: In this project, the U-Net model is applied to prostate regions in MRI scans as part of the HipMRI Study on Prostate Cancer. Accurate segmentation of prostate tumours within MRI scans aids clinicians in identifying regions of interest, which is crucial for diagnosing and planning treatments for prostate cancer. This project aims to achieve high segmentation accuracy, targeting a Dice similarity coefficient of at least 0.75 on the test set. This metric indicates how well the model's segmented regions match the ground truth, reflecting the model’s reliability in identifying tumour boundaries accurately. 
 
 ### Dataset, Pre-processing and Data Splits
 
 **Dataset**: The dataset consists of pre-processed 2D slices in Nifti file format, which must be read and processed in a specific way to enable accurate analysis. Each 2D slice represents a cross-section of the MRI scan, and these slices are handled individually to produce segmentation masks labelling critical prostate regions.
 
 **Data Splits**:
-The data is split into training, validation, and testing sets. The training set enables the model to learn, the validation set is used for hyper parameter tuning and avoiding overfitting, and the test set evaluates the model’s abaility to identify the tumour segment.
+The data is split into training, validation, and testing sets. The training set enables the model to learn, the validation set is used for hyperparameter tuning and avoiding overfitting, and the test set evaluates the model’s ability to identify the tumour segment.
 
 **Pre-processing**:
 
@@ -30,7 +30,7 @@ The U-Net architecture consists of a symmetric encoder-decoder structure:
 
 ### **1. modules.py**
 
-This file defines the the U-Net architecture.
+This file defines the U-Net architecture.
 
 **Core Components**:
 
@@ -53,7 +53,7 @@ This file is responsible for **data loading and preprocessing**. It defines a cu
 
 ### 3. train.py
 
-This file is where the U-Net model is trained. It handles loading data, initialsing the model, training, validating, and saving the best-performing model.
+This file is where the U-Net model is trained. It handles loading data, initialising the model, training, validating, and saving the best-performing model.
 
 **Core Workflow**:
 
@@ -115,32 +115,33 @@ The Dice Score plot provides insight into the model’s segmentation performance
 
 Figure 1: Dice Score over 25 Epochs
 
-![dice_score_plot.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/626cae83-e22e-4735-9e83-ed43caa10c95/dice_score_plot.png)
+
 
 Training and validating loss gradually decreases over 25 epochs, therefore the accuracy of the model increases. The steady decrease in validation loss implies that the model is generalising well to unseen data.
 
 Figure 2: Train and Validation Loss over 25 Epochs
 
-![loss_plot.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/c0e403fe-9b87-45fc-936a-94778af6b137/loss_plot.png)
+![loss_plot](https://github.com/user-attachments/assets/958820c0-c23d-4bbe-9d46-326b868f7613)
 
-The results outputted after the [predict.py](http://predict.py) file was run is shown in Figures 3 to Figure 7. Each figure shows an original image randomly chosen from the test dataset, its corresponding ground truth and the predicted segmentation this model outputted. It can be seen that the segments overlap ground truth segment but overfitting can be seen, therefore, further trianiing must occur to fine tune model.
+
+The results outputted after the predict.py file was run is shown in Figures 3 to Figure 7. Each figure shows an original image randomly chosen from the test dataset, its corresponding ground truth and the predicted segmentation this model outputted. It can be seen that the segments overlap ground truth segment but overfitting can be seen, therefore, further trianiing must occur to fine tune model.
 
 Figure 3: Image 1 chosen for prediction
 
-![prediction_0.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/1c219f50-c243-45fd-aec3-2f2298af4ee9/prediction_0.png)
+![prediction_0](https://github.com/user-attachments/assets/049205b6-8b7e-4170-9a15-c52ada49cc04)
+
 
 Figure 4: Image 2 chosen for prediction
 
-![prediction_1.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/8fcf0cd8-b711-4b61-a392-ffe3a27c4414/prediction_1.png)
+
 
 Figure 5: Image 3 chosen for prediction
 
-![prediction_2.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/5636902d-e939-4eac-96a7-1677d2311199/prediction_2.png)
+
 
 Figure 6: Image 4 chosen for prediction
 
-![prediction_3.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/92f96167-5c58-49c2-b195-1715e773e081/prediction_3.png)
+
 
 Figure 7: Image 5 chosen for prediction
 
-![prediction_4.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/34e99d82-20e4-4b43-a614-2d473c77d06c/220adf2d-394e-4319-91e5-aba9898161d1/prediction_4.png)

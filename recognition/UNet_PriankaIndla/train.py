@@ -12,14 +12,13 @@ from modules import UNet  # Import UNet class from modules.py
 from dataset import ProstateMRIDataset  # Import ProstateMRIDataset class from dataset.py
 
 # Model parameters
-INPUT_IMAGE_HEIGHT = 256
-INPUT_IMAGE_WIDTH = 128
+INPUT_IMAGE_HEIGHT = 256  
+INPUT_IMAGE_WIDTH = 128 
 BATCH_SIZE = 16
 LEARNING_RATE = 3e-4
-EPOCHS = 10
-NUM_WORKERS = 4
+EPOCHS = 15
+NUM_WORKERS = 1
 TARGET_SHAPE = (INPUT_IMAGE_HEIGHT, INPUT_IMAGE_WIDTH)
-EARLY_STOPPING_PATIENCE = 7
 
 # Directories for training and validation data
 IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train'
@@ -64,8 +63,33 @@ print(f"Using device: {device}")
 model = UNet(in_channels=1, out_channels=1, retainDim=True, outSize=(INPUT_IMAGE_HEIGHT, INPUT_IMAGE_WIDTH)).to(device)
 print("Model initialized.")
 
-# Define loss function, optimizer, and scheduler
-criterion = nn.BCEWithLogitsLoss()
+# Define BCEDiceLoss
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1e-6):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, pred, target):
+        pred = torch.sigmoid(pred)
+        intersection = (pred * target).sum()
+        union = pred.sum() + target.sum()
+        dice_loss = 1 - (2. * intersection + self.smooth) / (union + self.smooth)
+        return dice_loss
+
+class BCEDiceLoss(nn.Module):
+    def __init__(self, smooth=1e-6, bce_weight=0.5):
+        super(BCEDiceLoss, self).__init__()
+        self.bce = nn.BCEWithLogitsLoss()
+        self.dice = DiceLoss(smooth)
+        self.bce_weight = bce_weight
+
+    def forward(self, pred, target):
+        bce_loss = self.bce(pred, target)
+        dice_loss = self.dice(pred, target)
+        return self.bce_weight * bce_loss + (1 - self.bce_weight) * dice_loss
+
+# Initialize loss function, optimizer, and scheduler
+criterion = BCEDiceLoss(bce_weight=0.5)
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.8, patience=5, min_lr=1e-6)
 
@@ -77,11 +101,9 @@ def dice_score(pred, target, smooth=1e-6):
     union = pred.sum() + target.sum()
     dice = (2. * intersection + smooth) / (union + smooth)
     return dice
-    
-# Training with early stopping
+
+# Tracking variables
 best_dice = 0
-best_epoch = 0
-early_stop_counter = 0
 train_losses, val_losses, dice_scores = [], [], []
 
 for epoch in range(EPOCHS):
@@ -130,16 +152,11 @@ for epoch in range(EPOCHS):
     # Adjust learning rate
     scheduler.step(avg_val_dice)
 
-    # Early stopping
+    # Check for best model
     if avg_val_dice > best_dice:
         print(f"Validation Dice Score improved ({best_dice:.4f} --> {avg_val_dice:.4f}). Saving model...")
         torch.save(model.state_dict(), 'best_model.pth')
         best_dice = avg_val_dice
-        best_epoch = epoch
-        early_stop_counter = 0
-    else:
-        early_stop_counter += 1
-
 
 # Plot training and validation loss
 plt.figure(figsize=(10, 5))
@@ -161,3 +178,4 @@ plt.ylabel('Dice Score')
 plt.legend()
 plt.savefig('dice_score_plot.png')
 plt.show()
+

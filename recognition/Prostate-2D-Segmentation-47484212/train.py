@@ -16,8 +16,6 @@ VALIDATION_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data
 TEST_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_test"
 TEST_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_seg_test"
 
-tf.config.list_physical_devices('GPU')
-
 # create list of paths to each of the datasets
 trainPaths = get_all_paths(TRAIN_PATH)
 trainSegPaths = get_all_paths(TRAIN_SEG_PATH)
@@ -65,8 +63,7 @@ for epoch in range(EPOCHS):
     val_loss = tf.keras.metrics.Mean()
 
     # batching validation to reduce memory usage
-    x_validation_batches = batch_paths(validationPaths)
-    y_validation_batches = batch_paths(validationSegPaths)
+    x_validation_batches, y_validation_batches = batch_paths(validationPaths, validationSegPaths, BATCH_SIZE)
     for val_x_paths, val_y_paths in zip(x_validation_batches, y_validation_batches):
         x_val = load_data_2D(val_x_paths, normImage=True)
         y_val = load_data_2D(val_y_paths)

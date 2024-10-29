@@ -7,3 +7,4 @@
 *.iml
 
 Data/
+__pycache__/

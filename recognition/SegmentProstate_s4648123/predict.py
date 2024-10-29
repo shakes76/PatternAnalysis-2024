@@ -6,8 +6,7 @@ import torch
 from dataset import get_dataloaders, get_test_dataloader
 from modules import UNet3D
 from train import validate
-
-MODEL_PATH = "best_unet.pth"
+from config import MODEL_PATH
 
 if __name__ == '__main__':
     # Initialize model

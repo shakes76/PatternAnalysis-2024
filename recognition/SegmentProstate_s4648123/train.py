@@ -6,8 +6,8 @@ from utils import one_hot_mask
 from dataset import get_dataloaders
 from modules import UNet3D
 from torch.utils.tensorboard import SummaryWriter
+from config import MODEL_PATH
 
-MODEL_PATH = "best_unet.pth"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -168,16 +168,16 @@ if __name__ == '__main__':
 
     train_time = time.time() - train_start_time  # Calculate elapsed time
     print(f"Total training time: {train_time:.2f} seconds")
-
-    # Load the best model state (if not loaded already)
-    unet.load_state_dict(best_state)
-
-    # test the model on separate test dataset
-    test_start_time = time.time()  # Start timer
-    final_dice_score = validate(unet, test_loader, criterion)
-
-    test_time = time.time() - test_start_time  # Calculate elapsed time
-    dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in final_dice_score])
-    print(f"Final Dice Coefficients for each class: [{dice_coeff_str}]")
-    print(f"Total test time: {test_time:.2f} seconds")
     writer.close()
+
+    # # Load the best model state (if not loaded already)
+    # unet.load_state_dict(best_state)
+    #
+    # # test the model on separate test dataset
+    # test_start_time = time.time()  # Start timer
+    # final_dice_score = validate(unet, test_loader, criterion)
+    #
+    # test_time = time.time() - test_start_time  # Calculate elapsed time
+    # dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in final_dice_score])
+    # print(f"Final Dice Coefficients for each class: [{dice_coeff_str}]")
+    # print(f"Total test time: {test_time:.2f} seconds")

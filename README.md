@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pattern Analysis
 Pattern Analysis of various datasets by COMP3710 students in 2024 at the University of Queensland.
 
@@ -17,3 +18,15 @@ In the recognition folder, you will find many recognition problems solved includ
 * Stable diffusion
 * transformers
 etc.
+=======
+# Recognition Tasks
+Various recognition tasks solved in deep learning frameworks.
+
+Tasks may include:
+* Image Segmentation
+* Object detection
+* Graph node classification
+* Image super resolution
+* Disease classification
+* Generative modelling with StyleGAN and Stable Diffusion
+>>>>>>> efda9ce (Initial commit for COMP3710)

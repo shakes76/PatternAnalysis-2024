@@ -1,3 +1,5 @@
+# predict.py
+
 import os
 import torch
 from modules import Generator

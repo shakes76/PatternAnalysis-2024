@@ -1,12 +1,9 @@
-import os
-from typing import Sequence, Mapping
-
 import numpy as np
-from utils import load_data_3D
+from utils import load_data_3D, get_images, collate_batch
 from monai.transforms import (Compose, ToTensord, Spacingd, EnsureChannelFirstd, ScaleIntensityRanged, CropForegroundd,
-                              Orientationd, RandCropByPosNegLabeld, Affined)
+                              Orientationd, RandCropByPosNegLabeld)
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.data._utils.collate import default_collate
+
 
 # test other transforms
 train_transforms = Compose(
@@ -33,12 +30,6 @@ train_transforms = Compose(
             image_key="image",
             image_threshold=0,
         ),
-        # Affined(
-        #     keys=['image', 'label'],
-        #     affine=[],
-        #     mode=('bilinear', 'nearest'),
-        #     # .... add
-        # )
         ToTensord(keys=["image", "label"], device="cuda"),
     ]
 )
@@ -99,46 +90,6 @@ class MRIDataset(Dataset):
         data = {'img': img_and_mask[0], 'mask': img_and_mask[1]}
         data = self.transform(data)  # Apply transformations
         return data
-
-
-def collate_batch(batch: Sequence):
-    """
-    Enhancement for PyTorch DataLoader default collate.
-    If dataset already returns a list of batch data that generated in transforms, need to merge all data to 1 list.
-    Then it's same as the default collate behavior.
-
-    Note:
-        Need to use this collate if apply some transforms that can generate batch data.
-
-    """
-    elem = batch[0]
-    data = [i for k in batch for i in k] if isinstance(elem, list) else batch
-    collate_fn = default_collate
-    if isinstance(elem, Mapping):
-        ret = {}
-        for k in elem:
-            key = k
-            data_for_batch = [d[key] for d in data]
-            ret[key] = collate_fn(data_for_batch)
-    else:
-        ret = collate_fn(data)
-    return ret
-
-
-def get_images():
-    image_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
-    mask_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
-
-    def extract_keys(file_path):
-        parts = os.path.basename(file_path).split('_')
-        return parts[0], str(parts[1])[-1]
-
-    # List of image and mask filepaths
-    image_files = [os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if fname.endswith('.nii.gz')]
-    mask_files = [os.path.join(mask_dir, fname) for fname in os.listdir(mask_dir) if fname.endswith('.nii.gz')]
-    image_files, mask_files = sorted(image_files, key=extract_keys), sorted(mask_files, key=extract_keys)
-
-    return np.array(image_files), np.array(mask_files)
 
 
 def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, DataLoader]:

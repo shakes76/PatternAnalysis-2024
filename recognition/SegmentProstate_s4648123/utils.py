@@ -2,7 +2,9 @@ import numpy as np
 import nibabel as nib
 import torch
 from tqdm import tqdm
-
+import os
+from typing import Sequence, Mapping
+from torch.utils.data._utils.collate import default_collate
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -12,7 +14,6 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
         res[..., c: c + 1][arr == c] = 1
 
     return res
-
 
 def load_data_3D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False,
                  early_stop=False):
@@ -101,3 +102,42 @@ def one_hot_mask(targets):
             one_hot_targets[i, j, :, :] = (targets[i, 0, :, :] == value).float()
     return one_hot_targets
 
+
+def get_images():
+    image_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
+    mask_dir = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
+
+    def extract_keys(file_path):
+        parts = os.path.basename(file_path).split('_')
+        return parts[0], str(parts[1])[-1]
+
+    # List of image and mask filepaths
+    image_files = [os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if fname.endswith('.nii.gz')]
+    mask_files = [os.path.join(mask_dir, fname) for fname in os.listdir(mask_dir) if fname.endswith('.nii.gz')]
+    image_files, mask_files = sorted(image_files, key=extract_keys), sorted(mask_files, key=extract_keys)
+
+    return np.array(image_files), np.array(mask_files)
+
+
+def collate_batch(batch: Sequence):
+    """
+    Enhancement for PyTorch DataLoader default collate.
+    If dataset already returns a list of batch data that generated in transforms, need to merge all data to 1 list.
+    Then it's same as the default collate behavior.
+
+    Note:
+        Need to use this collate if apply some transforms that can generate batch data.
+
+    """
+    elem = batch[0]
+    data = [i for k in batch for i in k] if isinstance(elem, list) else batch
+    collate_fn = default_collate
+    if isinstance(elem, Mapping):
+        batch_list = {}
+        for k in elem:
+            key = k
+            data_for_batch = [d[key] for d in data]
+            batch_list[key] = collate_fn(data_for_batch)
+    else:
+        batch_list = collate_fn(data)
+    return batch_list

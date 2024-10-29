@@ -165,7 +165,7 @@ def main():
     print(f"Test set size: {len(test_dataset)} images")
 
     # Load model
-    model_path = "./checkpoints/best_model_20241029_175957.pt"
+    model_path = "./checkpoints/0/checkpoint_epoch_1_20241029_175957.pt"
     print(f"Loading model from {model_path}...")
     model = load_trained_model(model_path, device)
     model.eval()

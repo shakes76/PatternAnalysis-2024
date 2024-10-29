@@ -382,7 +382,7 @@ def main():
     EPOCHS = 20
     LR = 1e-4
     CLASSES = ['CN', 'MCI', 'AD', 'SMC']
-    EARLY_STOPPING_PATIENCE = 4
+    EARLY_STOPPING_PATIENCE = 2
 
     print("\nHyperparameters:")
     print(f"Batch size: {BATCH_SIZE}")

@@ -5,4 +5,7 @@ HipMRI_study_complete_release_v1/.DS_Store
 /AD_NC
 /recognition/AD_NC
 *.pt
-/recognition
+/recognition/46822394_ViT_ADNC/AD_NC
+/recognition/46822394_ViT_ADNC/result
+recognition/46822394_ViT_ADNC/train3.py
+recognition/46822394_ViT_ADNC/predict_old.py

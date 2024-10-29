@@ -28,12 +28,12 @@ def create_label(mask):
     return label
 
 #Make directories needed for processing if they do not already exist
-os.makedirs("./data/train/labels", exist_ok=True)
+os.makedirs("./data/labels/train", exist_ok=True)
 
 for file in os.listdir(ISC2018_TRUTH_PATH):
     if file.endswith(".png"):
         mask_path = os.path.join(ISC2018_TRUTH_PATH, file)
-        label_path = os.path.join("./data/train/labels", file.replace("_segmentation.png", ".txt"))
+        label_path = os.path.join("./data/labels/train", file.replace("_segmentation.png", ".txt"))
 
         mask = cv.imread(mask_path, cv.IMREAD_GRAYSCALE)
         if mask is None:

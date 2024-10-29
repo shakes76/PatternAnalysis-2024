@@ -127,8 +127,12 @@ Enforces a consistent relationship between the latent space and the generated im
 
 ## Conclusion
 
+StyleGAN2 represents a significant advancement in generative modeling,with it's strengths in generating high-resolution images and addressing the predecessor's issue of image artifacts and stability issues. With it's new tool kit of fixed-resolution architecture, weight demodulation, and path length regularization, StyleGAN2 is able to
+achieve superior image quality and realism.
 
-
+After >10 epochs of training, the model was able to generate "reasonably clear images" of the ADNI brain dataset. The model was able to capture the key features of the brain scans, such as the shape of the brain, and somewhat structue of it inside.
+Further improvements could be made to enhance the model's ability to generate more realistic images, such as larger dataset, longer training time, and fine-tuning the model's hyperparameters.
+Hyperparameters such as learning rate, batch size, gradient penalty, and noise regularization could be adjusted to improve the model's performance.
 
 ## References
 

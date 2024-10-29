@@ -31,8 +31,8 @@ def plot_loss_epoch(G_loss, D_loss, epoch):
     plt.figure(figsize=(10, 5))
     plt.plot(G_loss, label="Generator Loss", color="blue")
     plt.plot(D_loss, label="Discriminator Loss", color="red")
-    plt.title(f"Loss During Training (Epoch {epoch})")
-    plt.xlabel("Iterations")
+    plt.title(f"Loss During Training")
+    plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.legend()
     plt.savefig(f'loss_epoch_{epoch}.png')
@@ -40,8 +40,6 @@ def plot_loss_epoch(G_loss, D_loss, epoch):
 
 def generate_examples(gen, mapping_net,epoch, n=5):
 
-    gen.eval()
-    alpha = 1.0
     for i in range(n):
         with torch.no_grad():
             w     = get_w(1, mapping_net)
@@ -51,4 +49,3 @@ def generate_examples(gen, mapping_net,epoch, n=5):
                 os.makedirs(f'saved_examples/epoch{epoch}')
             save_image(img*0.5+0.5, f"saved_examples/epoch{epoch}/img_{i}.png")
 
-    gen.train()

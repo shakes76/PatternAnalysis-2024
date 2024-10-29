@@ -39,31 +39,6 @@ def load_trained_model(model_path, device):
 
     return model
 
-def evaluate_model(model, test_loader, device, classes):
-    """
-    Evaluate model performance on test set
-    """
-    model.eval()
-
-    # Initialize lists to store predictions and true labels
-    all_preds = []
-    all_labels = []
-    all_probs = []
-
-    # Testing loop
-    with torch.no_grad():
-        for images, labels in tqdm(test_loader, desc="Evaluating"):
-            images = images.to(device)
-            outputs = model(images)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)
-            _, predicted = torch.max(outputs.data, 1)
-
-            all_preds.extend(predicted.cpu().numpy())
-            all_labels.extend(labels.numpy())
-            all_probs.extend(probabilities.cpu().numpy())
-
-    return np.array(all_preds), np.array(all_labels), np.array(all_probs)
-
 def plot_confusion_matrix(y_true, y_pred, classes, save_path):
     """
     Plot and save confusion matrix
@@ -74,7 +49,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, save_path):
 
     cm = confusion_matrix(y_true, y_pred)
     plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+    sns.heatmap(cm, annot=True, fmt='d', cmap='magma',
                 xticklabels=present_class_names,
                 yticklabels=present_class_names)
     plt.title('Confusion Matrix')
@@ -88,6 +63,36 @@ def plot_confusion_matrix(y_true, y_pred, classes, save_path):
     per_class_accuracy = cm.diagonal() / cm.sum(axis=1)
     return per_class_accuracy, present_class_names
 
+def plot_roc_curves(y_true, y_prob, classes, save_path):
+    """
+    Plot ROC curves for each class
+    """
+    plt.figure(figsize=(10, 8))
+    colors = ["orange", "darkcyan"]
+
+    # Convert true labels to one-hot encoding for present classes only
+    n_classes = len(classes)
+    y_true_onehot = np.zeros((len(y_true), n_classes))
+    for i in range(n_classes):
+        y_true_onehot[:, i] = (y_true == i)
+
+    # Calculate ROC curve and AUC for each class
+    for i in range(n_classes):
+        fpr, tpr, _ = roc_curve(y_true_onehot[:, i], y_prob[:, i])
+        roc_auc = auc(fpr, tpr)
+        plt.plot(fpr, tpr, label=f'{classes[i]} (AUC = {roc_auc:.2f})', color=colors[i])
+
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curves')
+    plt.legend(loc="lower right")
+    plt.tight_layout()
+    plt.savefig(save_path / 'roc_curves.png')
+    plt.close()
+
 def evaluate_model(model, test_loader, device, classes):
     """
     Evaluate model performance on test set
@@ -113,9 +118,36 @@ def evaluate_model(model, test_loader, device, classes):
 
     return np.array(all_preds), np.array(all_labels), np.array(all_probs)
 
+def save_metrics(metrics, save_path):
+    """
+    Save evaluation metrics to a JSON file.
+
+    Args:
+        metrics (dict): Dictionary containing evaluation metrics
+        save_path (Path): Directory path where metrics should be saved
+    """
+    # Convert numpy values to Python native types for JSON serialization
+    def convert_numpy(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
+    # Convert all numpy values in the metrics dictionary
+    metrics_json = {k: convert_numpy(v) if isinstance(v, (dict, np.generic, np.ndarray))
+                   else v for k, v in metrics.items()}
+
+    # Save to JSON file
+    metrics_file = save_path / 'evaluation_metrics.json'
+    with open(metrics_file, 'w') as f:
+        json.dump(metrics_json, f, indent=4, sort_keys=True, default=convert_numpy)
+
 def main():
     # Configuration
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     CLASSES = ['CN', 'MCI', 'AD', 'SMC']
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -133,7 +165,7 @@ def main():
     print(f"Test set size: {len(test_dataset)} images")
 
     # Load model
-    model_path = "./checkpoints/best_model_20241029_170413.pt"
+    model_path = "./checkpoints/best_model_20241029_175957.pt"
     print(f"Loading model from {model_path}...")
     model = load_trained_model(model_path, device)
     model.eval()
@@ -179,6 +211,8 @@ def main():
         'test_set_size': len(test_dataset),
         'classes_present': present_class_names
     }
+
+    print(metrics)
 
     # Save metrics
     save_metrics(metrics, results_dir)

@@ -5,73 +5,45 @@ Each component is implementated as a class or a function.
 
 import torch
 import torch.nn as nn
-import torch.fft
+from torchvision.models import vit_b_16, ViT_B_16_Weights
+from torch.utils.data import DataLoader
+from sklearn.model_selection import train_test_split
 
-class GlobalFilter(nn.Module):
-    def __init__(self, dim, h=14, w=8):
-        super().__init__()
-        self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
+class ADNIDataset(torch.utils.data.Dataset):
+    """
+    PyTorch dataset class for the ADNI brain imaging data.
+    """
+    def __init__(self, data_dir, transform=None):
+        self.data_dir = data_dir
+        self.transform = transform
+        self.image_paths = []
+        self.labels = []
+
+        # Load data and labels
+        for label in ['normal', 'ad']:
+            label_dir = os.path.join(data_dir, label)
+            for filename in os.listdir(label_dir):
+                self.image_paths.append(os.path.join(label_dir, filename))
+                self.labels.append(0 if label == 'normal' else 1)
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image = Image.open(self.image_paths[idx])
+        if self.transform:
+            image = self.transform(image)
+        return image, self.labels[idx]
+
+class ViTClassifier(nn.Module):
+    """
+    Vision Transformer model for Alzheimer's classification.
+    """
+    def __init__(self, num_classes=2):
+        super(ViTClassifier, self).__init__()
+        self.vit = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
+        self.vit.heads.head = nn.Linear(self.vit.heads.head.in_features, num_classes)
 
     def forward(self, x):
-        B, H, W, C = x.shape
-        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
-        weight = torch.view_as_complex(self.complex_weight)
-        x = x * weight
-        x = torch.fft.irfft2(x, s=(H, W), dim=(1, 2), norm='ortho')
-        return x
+        return self.vit(x)
 
-class GlobalFilterNetwork(nn.Module):
-    def __init__(self, in_channels=1, num_classes=2):
-        super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-
-        # Global Filter layers
-        self.global_filter1 = GlobalFilter(dim=64)
-        self.global_filter2 = GlobalFilter(dim=128)
-
-        # Additional convolution layers
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        self.bn2 = nn.BatchNorm2d(128)
-
-        # Final layers
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(128, num_classes)
-
-    def forward(self, x):
-        """
-        - Pass the input through the initial convolutional blocks
-        - Reshape the feature maps to prepare for the global filtering layers
-        - Apply the two global filtering layers
-        - Pass the filtered features through the final classification layers (average pooling and fully connected)
-        - Return the final classification output
-        """
-        # Initial convolution block
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
-        # Reshape for GlobalFilter
-        x = x.permute(0, 2, 3, 1)  # [B, C, H, W] -> [B, H, W, C]
-        x = self.global_filter1(x)
-        x = x.permute(0, 3, 1, 2)  # [B, H, W, C] -> [B, C, H, W]
-
-        # Second conv block
-        x = self.conv2(x)
-        x = self.bn2(x)
-        x = self.relu(x)
-
-        # Second GlobalFilter
-        x = x.permute(0, 2, 3, 1)
-        x = self.global_filter2(x)
-        x = x.permute(0, 3, 1, 2)
-
-        # Final layers
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
-
-        return x

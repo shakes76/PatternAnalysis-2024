@@ -2,7 +2,9 @@
 
 ## Overview
 
-This StyleGAN2's application is to generate realistic like brain scans using the ADNI dataset for Alzheimer's disease. The primary goal is to provide a model that is able to generate "reasobably clear images". Using StyleGAN2 ability to
+This StyleGAN2's application is to generate realistic like brain scans using the ADNI dataset for Alzheimer's disease. The primary goal is to provide a model that is able to generate "reasobably clear images". Using StyleGAN2 ability to generate high-resolution images, I will be att
+
+This project leverages StyleGAN2 to generate synthetic MRI scan images that closely resemble authentic ones. The model is trained on the subset of the OASIS brain dataset.
 
 ## Table of Contents
 
@@ -48,16 +50,12 @@ train.py: Contains the training loop for the StyleGAN2 model
 
 | Package | Version |
 | --- | --- |
-|torch | 2.5.0.dev20240904 |
-|torchvision | 0.20.0.dev20240904 |
+|pytorch | 2.0.1 |
+|torchvision | 0.15.2 |
 |tqdm | 4.66.5 |
-|numpy | 1.26.4 |
-|pandas | 2.2.2 |
-|matplotlib | 3.9.2 |
-|seaborn | 0.13.2 |
-|scikit-learn | 1.5.1 |
-|scipy | 1.13.1 |
-|pillow | 10.4.0 |
+|numpy | 1.25.2 |
+|matplotlib | 3.8.0 |
+|pillow | 9.4.0 |
 
 
 
@@ -83,10 +81,16 @@ Below is a sample of the dataset:
 ![AD_NC Dataset](assets/Data_Samples.png)
 
 ## Data Augmentation
+- **Resize**: Images are resized to lower resolution to reduce computational cost.
+- **Grayscale**: Images are Greyscaled but in case converted to grayscale.
+- **Random Rotation**: Images are randomly rotated to introduce variability.
+- **Color Jitter**: Randomly adjust brightness, contrast, saturation, and hue.
+- **Random Horizontal Flip**: Images are flipped horizontally to introduce variability.
+- **Normalize**: Images are normalized to have a mean of 0.5 and a standard deviation of 0.5.
 
+Few examples after augmentation:
 
-
-
+![Data Augmentation Pic1](assets/Data_Aug1.png)![](assets/Data_Aug2.png)![](assets/Data_Aug3.png)![](assets/Data_Aug4.png)![](assets/Data_Aug5.png)
 ## StyleGAN
 
 Style Generative Adversarial Network or StyleGAN is the next generation of generative model for synthesizing high-resoultion images with striking realism. Developed by NVIDIA in 2018, StyleGAN advances the capabilities of generative adversarial networks (GANs) through its unique “style-based” architecture, which allows for detailed control over image attributes such as facial structure, textures, and backgrounds. This model achieves fine-grained manipulation by leveraging a multi-level latent space, where individual layers influence specific visual characteristics, enabling seamless transitions between styles. Using a progressive training technique, StyleGAN gradually refines image resolution, while noise inputs introduce authentic variability. A discriminator network further enhances image quality by guiding the model to improve authenticity at each step.
@@ -122,6 +126,9 @@ Enforces a consistent relationship between the latent space and the generated im
 ## Results
 
 ## Conclusion
+
+
+
 
 ## References
 

@@ -2,10 +2,12 @@ import time
 
 import numpy as np
 import torch
+
 from utils import one_hot_mask
 from dataset import get_dataloaders
-from modules import UNet3D
 from torch.utils.tensorboard import SummaryWriter
+
+from modules import UNet3D
 from config import MODEL_PATH
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -118,7 +120,7 @@ if __name__ == '__main__':
     train_loader, val_loader, test_loader = get_dataloaders(train_batch=batch_size, val_batch=batch_size)
 
     # Initialize model
-    unet = UNet3D()
+    unet = UNet3D(n_channels=1, n_classes=5)
     unet = unet.to(device)
 
     epochs = 15

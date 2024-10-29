@@ -16,3 +16,9 @@ Segment the (downsampled) Prostate 3D data set with the 3D Improved UNet3D with 
 3. provide example inputs, outputs and plots of your algorithm
 4. The read me file should be properly formatted using GitHub markdown
 5. Describe any specific pre-processing you have used with references if any. Justify your training, validation and testing splits of the data.
+
+---
+**Quotes**
+
+- https://arxiv.org/abs/2109.05443
+  - The manual segmentation consists of 5 difference classes: background (1), Femoral Bone (FB) (2), Tibial Bone (TB) (3), Femoral Cartilage (FC) (4) and Tibial Cartilage (TC) (5).

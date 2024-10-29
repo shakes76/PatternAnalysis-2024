@@ -120,28 +120,27 @@ Figure 1: Dice Score over 25 Epochs
 Training and validating loss gradually decreases over 25 epochs, therefore the accuracy of the model increases. The steady decrease in validation loss implies that the model is generalising well to unseen data.
 
 Figure 2: Train and Validation Loss over 25 Epochs
-
 ![loss_plot](https://github.com/user-attachments/assets/958820c0-c23d-4bbe-9d46-326b868f7613)
 
 
 The results outputted after the predict.py file was run is shown in Figures 3 to Figure 7. Each figure shows an original image randomly chosen from the test dataset, its corresponding ground truth and the predicted segmentation this model outputted. It can be seen that the segments overlap ground truth segment but overfitting can be seen, therefore, further trianiing must occur to fine tune model.
 
 Figure 3: Image 1 chosen for prediction
-
 ![prediction_0](https://github.com/user-attachments/assets/049205b6-8b7e-4170-9a15-c52ada49cc04)
 
-
 Figure 4: Image 2 chosen for prediction
-
-
+![prediction_1](https://github.com/user-attachments/assets/09c0979a-6cf7-4ab6-8cb4-5aac87b541b7)
 
 Figure 5: Image 3 chosen for prediction
-
-
+![prediction_2](https://github.com/user-attachments/assets/e342310e-63ad-46a7-a00a-cff31189fea6)
 
 Figure 6: Image 4 chosen for prediction
-
-
+![prediction_3](https://github.com/user-attachments/assets/de590168-adcc-4f1d-975b-bd9feab5dca0)
 
 Figure 7: Image 5 chosen for prediction
+![prediction_4](https://github.com/user-attachments/assets/16093749-2903-480b-9195-cf72fedd3c39)
+
+
+
+
 

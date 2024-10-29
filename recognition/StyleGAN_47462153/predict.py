@@ -21,7 +21,13 @@ def generate_images(generator, seeds, outdir, truncation, device):
             print(f"Generated image saved at '{save_path}'")
 
 def predict():
-    pass
+    parser = argparse.ArgumentParser(description='Generate and Visualize Images using Trained StyleGAN2 Generator')
+    parser.add_argument('--checkpoint', type=str, required=True, help='Path to the trained generator checkpoint')
+    parser.add_argument('--seeds', type=str, default='0-9', help='Comma-separated list of seeds or ranges (e.g., "0-4,10,15-20")')
+    parser.add_argument('--outdir', type=str, default='generated_images', help='Directory to save generated images')
+    parser.add_argument('--truncation', type=float, default=0.7, help='Truncation psi value')
+    parser.add_argument('--device', type=str, default='cuda', help='Device to use: "cuda" or "cpu"')
+    args = parser.parse_args()
 
 if __name__ == "__main__":
     predict()

@@ -23,7 +23,7 @@ class ProstateMRIDataset(Dataset):
 
     def __init__(self, seg_image_paths, image_paths, normImage=False, dtype=np.float32, target_shape=(256, 128), transform=None):
         """
-        Initializes dataset by loading MRI images and segmentation masks and resizing them to a target shape.
+        Initialises dataset by loading MRI images and segmentation masks and resizing them to a target shape.
 
         Args:
             seg_image_paths (list of str): List of paths to segmentation mask images.
@@ -37,8 +37,8 @@ class ProstateMRIDataset(Dataset):
         self.image_paths = image_paths
         self.normImage = normImage
         self.dtype = dtype
-        self.target_shape = target_shape
-        self.transform = transform
+        self.target_shape = target_shape  # Set the target shape for resizing
+        self.transform = transform  # Optional transform
 
         # Load images and segmentation masks
         self.images = self.load_data_2D(self.image_paths, normImage=self.normImage, dtype=self.dtype)
@@ -57,12 +57,14 @@ class ProstateMRIDataset(Dataset):
                 - seg (torch.Tensor): The segmentation mask with shape [1, height, width].
         """
         # Use pre-loaded images and segmentation masks
-        image = self.images[idx]
-        seg = self.seg_images[idx]
+        image = self.images[idx]  # Access pre-loaded image
+        seg = self.seg_images[idx]  # Access pre-loaded segmentation mask
 
-        # Image and segmentation are 2D, so add channel dimension to get shape [1, height, width]
+        # Image is 2D (grayscale), so add channel dimension to get shape [1, height, width]
         if image.ndim == 2:
             image = np.expand_dims(image, axis=0)
+
+        # Segmentation is 2D as well so add channel dimension
         if seg.ndim == 2:
             seg = np.expand_dims(seg, axis=0)
 
@@ -71,7 +73,7 @@ class ProstateMRIDataset(Dataset):
             image = image / 255.0
 
         # Convert segmentation mask to binary (0 and 1 only)
-        seg = (seg > 0).astype(np.float32)
+        seg = (seg > 0).astype(np.float32)  # Set all values > 0 to 1, otherwise 0
 
         # Convert image and segmentation to PyTorch tensors
         image = torch.tensor(image, dtype=torch.float32)
@@ -85,7 +87,7 @@ class ProstateMRIDataset(Dataset):
 
         return image, seg
 
-    def __len__(self):
+		def __len__(self):
         """
         Returns the total number of images in the dataset.
 
@@ -121,19 +123,22 @@ class ProstateMRIDataset(Dataset):
             np.ndarray: An array containing processed images with the specified target shape and dtype.
         """
         num = len(imageNames)
-        images = np.zeros((num, *target_shape), dtype=dtype)
+        images = np.zeros((num, *target_shape), dtype=dtype)  # Initialize with target shape
 
         for i, inName in enumerate(tqdm(imageNames)):
             try:
                 niftiImage = nib.load(inName)
                 inImage = niftiImage.get_fdata(caching='unchanged').astype(dtype)
 
-                if inImage.ndim == 2:
+                if len(inImage.shape) == 2:
+                    # Resize the single 2D slice to target shape
                     resized_image = resize(inImage, target_shape, mode='reflect', anti_aliasing=True)
+
                     if normImage:
                         resized_image = (resized_image - resized_image.mean()) / resized_image.std()
-                    images[i] = resized_image
-                    print(f"Loaded image {inName} with shape: {resized_image.shape}")
+
+                    images[i] = resized_image  # Assign the resized image to the array
+                    print(f"Loaded image {inName} with shape: {resized_image.shape}")  # Print dimensions for debugging
                 else:
                     print(f"Warning: Expected 2D image but got shape {inImage.shape} for {inName}.")
 
@@ -142,4 +147,3 @@ class ProstateMRIDataset(Dataset):
 
         print(f"Loaded {len(images)} images.")
         return images
-

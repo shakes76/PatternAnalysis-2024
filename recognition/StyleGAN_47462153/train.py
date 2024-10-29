@@ -7,6 +7,7 @@ from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import torch.nn.functional as F
 import argparse
+import matplotlib.pyplot as plt
 
 def train(root_dir, batch_size, num_epochs, output_dir):
     dataloader, dataset = get_dataloader(root_dir, batch_size)
@@ -64,6 +65,18 @@ def train(root_dir, batch_size, num_epochs, output_dir):
         gen_losses.append(avg_gen_loss)
         disc_losses.append(avg_disc_loss)
         print(f"Epoch [{epoch+1}/{num_epochs}] Generator Loss: {avg_gen_loss:.4f}, Discriminator Loss: {avg_disc_loss:.4f}")
+
+    # Plotting the losses
+    plt.figure(figsize=(10,5))
+    plt.title("Generator and Discriminator Loss During Training")
+    plt.plot(gen_losses, label="Generator")
+    plt.plot(disc_losses, label="Discriminator")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(os.path.join(output_dir, "loss_plot.png"))
+    plt.show()
+    print(f"Training loss plot saved at {os.path.join(output_dir, 'loss_plot.png')}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train StyleGAN2 on ADNI Dataset')

@@ -1,10 +1,3 @@
-"""
-Containing the source code for training, validating, testing and saving your model. The model
-should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
-sure to plot the losses and metrics during training
-"""
-
-# Importing the required libraries
 import torch
 from torch import optim
 from tqdm import tqdm
@@ -25,12 +18,29 @@ def train(
     dataloader ,
     mapping_net,
     optim_mapping,
-    epoch,              # Current Epoch
+    epoch,                       # Current Epoch
     epochs = EPOCHS,             # Total Epoch Left
     visualize=False):
+    """
+    Trains the generator and discriminator for one epoch and applies a path length penalty.
 
+    Args:
+        generator (nn.Module): The generator model.
+        discriminator (nn.Module): The discriminator model.
+        journey_penalty (nn.Module): Path length penalty for the generator.
+        optimizer_G (torch.optim.Optimizer): Optimizer for the generator.
+        optimizer_D (torch.optim.Optimizer): Optimizer for the discriminator.
+        dataloader (DataLoader): DataLoader providing batches of real images.
+        mapping_net (nn.Module): Mapping network for latent space transformation.
+        optim_mapping (torch.optim.Optimizer): Optimizer for the mapping network.
+        epoch (int): Current epoch.
+        epochs (int): Total epochs for training.
+        visualize (bool): If True, enables visualization of training.
+
+    Returns:
+        tuple: Lists of current discriminator and generator losses.
+    """
     # Initialize tqdm progress bar
-    # progress_bar = tqdm(dataloader, total=len(dataloader), desc=f"Epoch {epoch+1}/{epochs}", leave=True, dynamic_ncols=True)
     progress_bar = tqdm(dataloader,desc=f"Epoch {epoch+1}/{epochs}",leave=True,dynamic_ncols=True)
 
     device = devicer()
@@ -123,21 +133,12 @@ if __name__ == '__main__':
 
             generate_examples(generator, mapping_net,epoch, n=5)
 
-            if epoch % 5 == 0:
+            if epoch % 5 == 0 and SAVE_MODEL :
                 save_model(epoch,generator,discriminator,optimizer_G,optimizer_D,optim_mapping,G_losses,D_losses)
-                # predict.generator_example(gen,mapping_net,epoch,device)
+                
         
         plot_loss(G_losses, D_losses)
     
     if TEST:
-        # if LOAD:
-        #     device=devicer()
-
-        #     generator = Generator(log_resolution,W_DIM).to(device)
-        #     mapping_net = MappingNetwork(Z_DIM, W_DIM).to(device)
-            
-        #     checkpoint = torch.load(LOAD_CHECK)
-        #     epoch = checkpoint['epoch']
-        #     gen.load_state_dict(checkpoint['G_state_dict'])
 
         generate_examples(generator, mapping_net,epoch, n=5)

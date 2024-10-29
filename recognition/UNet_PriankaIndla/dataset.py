@@ -9,12 +9,12 @@ from tqdm import tqdm
 class ProstateMRIDataset(Dataset):
     """
     Dataset class for loading prostate MRI images and corresponding segmentation masks.
-    The dataset loads 2D images, resizes them to a target shape, and normalises them if necessary.
+    The dataset loads 2D images, resizes them to a target shape, and normalizes them if necessary.
 
     Attributes:
         seg_image_paths (list of str): Paths to the segmentation mask images.
         image_paths (list of str): Paths to the MRI images.
-        normImage (bool): Whether to normalize images to a [0, 1] range.
+        normImage (bool): Whether to normalise images to a [0, 1] range.
         dtype (type): The desired data type of loaded images.
         target_shape (tuple): Target shape to resize images (height, width).
     """
@@ -27,8 +27,8 @@ class ProstateMRIDataset(Dataset):
             seg_image_paths (list of str): List of paths to segmentation mask images.
             image_paths (list of str): List of paths to MRI images.
             normImage (bool): Whether to normalise images to a [0, 1] range.
-            dtype (type): Data type for the loaded images
-            target_shape (tuple): Target shape for resizing the images
+            dtype (type): Data type for the loaded images.
+            target_shape (tuple): Target shape for resizing the images.
         """
         self.seg_image_paths = seg_image_paths
         self.image_paths = image_paths
@@ -42,7 +42,7 @@ class ProstateMRIDataset(Dataset):
 
     def __getitem__(self, idx):
         """
-        Retrieves image and segmentation mask index, processes them, and returns them as tensors.
+        Retrieves image and segmentation mask by index, processes them, and returns them as tensors.
 
         Args:
             idx (int): Index of the image and segmentation mask to retrieve.
@@ -64,19 +64,23 @@ class ProstateMRIDataset(Dataset):
         if seg.ndim == 2:
             seg = np.expand_dims(seg, axis=0) 
 
-        # Normalise image to [0,1] if necessary
+        # Normalize image to [0,1] if necessary
         if self.normImage:
             image = image / 255.0
+        
+        # Convert segmentation mask to binary (0 and 1 only)
+        seg = (seg > 0).astype(np.float32)  # Set all values > 0 to 1, otherwise 0
 
-        # Convert image and segement to PyTorch tensors
+        # Convert image and segmentation to PyTorch tensors
         image = torch.tensor(image, dtype=torch.float32)
         seg = torch.tensor(seg, dtype=torch.float32)
 
         return image, seg
+        
 
     def __len__(self):
         """
-        Return total number of images in the dataset.
+        Returns the total number of images in the dataset.
 
         Returns:
             int: The number of images in the dataset.
@@ -88,7 +92,7 @@ class ProstateMRIDataset(Dataset):
         Returns the dimensions of the first image in the dataset.
 
         Returns:
-            tuple: The shape of the first image if the dataset is not empty else, None.
+            tuple: The shape of the first image if the dataset is not empty, otherwise None.
         """
         if self.images.size > 0:
             return self.images[0].shape
@@ -102,7 +106,7 @@ class ProstateMRIDataset(Dataset):
 
         Args:
             imageNames (list of str): Paths to image files.
-            normImage (bool): Whether to normalise images to [0,1]
+            normImage (bool): Whether to normalise images to [0, 1].
             dtype (type): Desired data type for the loaded images.
             target_shape (tuple): Target shape for resizing the images.
 
@@ -110,7 +114,7 @@ class ProstateMRIDataset(Dataset):
             np.ndarray: An array containing processed images with the specified target shape and dtype.
         """
         num = len(imageNames)
-        images = np.zeros((num, *target_shape), dtype=dtype)  # Initialise with target shape
+        images = np.zeros((num, *target_shape), dtype=dtype)  # Initialize with target shape
 
         for i, inName in enumerate(tqdm(imageNames)):
             try:
@@ -134,4 +138,5 @@ class ProstateMRIDataset(Dataset):
 
         print(f"Loaded {len(images)} images.")
         return images
+
 

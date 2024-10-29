@@ -9,7 +9,10 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 [Requirements](#requirements)
 [Dataset](#dataset)
 [File Structure](#file-structure)
-
+[StyleGAN2](#stylegan2)
+[Results](#results)
+[Conclusion](#conclusion)
+[References](#references)
 
 ## Installation
 1. Download [ADNI dataset for Alzheimer’s disease](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24).
@@ -34,8 +37,28 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 
 
 ## Dataset
+The ADNI dataset for Alzheimer's disease is hosted on the [ADNI website](https://adni.loni.usc.edu/) for download. ADNI stands for Alzheimer's Disease Neuroimaging Initiative (ADNI) and is a longitudinal, multi-center, observational study.
+
+In this project I used the preprocessed dataset from this [website](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24). The dataset is split into two classes: AD (Alzheimer's disease) and NC (normal control). Each class contains 15660 brain scans
+
+The dataset specification is as follows:
+
+| Attribute | Values |
+| --- | --- |
+| Class | AD, NC |
+| Number of samples each | 15660 |
+| train set each |11200 |
+| test set each | 4460 |
+| Image size | 256x240 |
+| Image format | .jpg |
+| Number of channels | 1 |
+
+Below is a sample of the dataset:
+![AD_NC Dataset](assets/Data_Samples.png)
 
 ## File Structure
+
+## StyleGAN2
 
 ## Results
 

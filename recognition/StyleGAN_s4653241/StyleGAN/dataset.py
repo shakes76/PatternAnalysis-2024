@@ -78,6 +78,11 @@ def get_transform(image_size=(256, 256)):
         transforms.Resize((image_height, image_width), interpolation=transforms.InterpolationMode.BICUBIC),
         # transforms.CenterCrop(image_size),
         transforms.Grayscale(),
+
+        transforms.RandomRotation(15),  # Rotate image by ±15 degrees
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Randomly adjust brightness and contrast
+        transforms.RandomHorizontalFlip(p=0.5),  # Flip 50% of the images horizontally
+
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])  #Singel channel image
     ])

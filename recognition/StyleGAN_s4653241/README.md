@@ -58,6 +58,17 @@ Below is a sample of the dataset:
 
 ## File Structure
 
+Folder contains the following files:
+
+config.py: Contains the configuration settings for the project
+dataset.py: Contains the data loader for the AD_NC dataset
+modules.py: Contains the StyleGAN2 model
+predict.py: Contains the prediction function for the StyleGAN2 model
+utils.py: Contains utility functions for the project
+train.py: Contains the training loop for the StyleGAN2 model
+
+## StyleGAN
+
 ## StyleGAN2
 
 ## Results

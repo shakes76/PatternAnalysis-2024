@@ -7,6 +7,7 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
+from torchvision import transforms
 
 def generate_images(generator, seeds, outdir, truncation, device):
     os.makedirs(outdir, exist_ok=True)
@@ -110,18 +111,6 @@ def predict():
     test_images = load_test_images(args.test_dir, args.num_test_images, transform=test_transform)
 
     visualize_images(test_images, title="Test Images")
-
-def visualize_images(images, title="Generated Images"):
-    plt.figure(figsize=(15, 15))
-    for i, img in enumerate(images):
-        plt.subplot(5, 5, i+1)
-        if isinstance(img, torch.Tensor):
-            img = img.cpu().permute(1, 2, 0).numpy()
-            img = (img * 0.5 + 0.5)
-        plt.imshow(img)
-        plt.axis('off')
-    plt.suptitle(title, fontsize=20)
-    plt.show()
 
 if __name__ == "__main__":
     predict()

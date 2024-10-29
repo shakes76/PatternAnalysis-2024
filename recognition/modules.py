@@ -41,14 +41,13 @@ class GlobalFilterNetwork(nn.Module):
         self.fc = nn.Linear(128, num_classes)
 
     def forward(self, x):
-    	"""
-    	- Pass the input through the initial convolutional blocks
-		- Reshape the feature maps to prepare for the global filtering layers
-		- Apply the two global filtering layers
-		- Pass the filtered features through the final classification layers (average pooling and fully connected)
-		- Return the final classification output
-		"""
-
+        """
+        - Pass the input through the initial convolutional blocks
+        - Reshape the feature maps to prepare for the global filtering layers
+        - Apply the two global filtering layers
+        - Pass the filtered features through the final classification layers (average pooling and fully connected)
+        - Return the final classification output
+        """
         # Initial convolution block
         x = self.conv1(x)
         x = self.bn1(x)

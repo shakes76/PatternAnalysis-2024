@@ -9,10 +9,11 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 - [StyleGAN2 on AD\_NC Brain Dataset](#stylegan2-on-ad_nc-brain-dataset)
   - [Overview](#overview)
   - [Table of Contents](#table-of-contents)
+  - [File Structure](#file-structure)
   - [Installation](#installation)
   - [Requirements](#requirements)
   - [Dataset](#dataset)
-  - [File Structure](#file-structure)
+  - [Data Augmentation](#data-augmentation)
   - [StyleGAN](#stylegan)
   - [StyleGAN2](#stylegan2)
   - [Model Architecture](#model-architecture)
@@ -26,6 +27,17 @@ This StyleGAN2's application is to generate realistic like brain scans using the
   - [Results](#results)
   - [Conclusion](#conclusion)
   - [References](#references)
+
+## File Structure
+
+Folder contains the following files:
+
+config.py: Contains the configuration settings for the project
+dataset.py: Contains the data loader for the AD_NC dataset
+modules.py: Contains the StyleGAN2 model
+predict.py: Contains the prediction function for the StyleGAN2 model
+utils.py: Contains utility functions for the project
+train.py: Contains the training loop for the StyleGAN2 model
 
 ## Installation
 1. Download [ADNI dataset for Alzheimer’s disease](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24).
@@ -49,6 +61,7 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 
 
 
+
 ## Dataset
 The ADNI dataset for Alzheimer's disease is hosted on the [ADNI website](https://adni.loni.usc.edu/) for download. ADNI stands for Alzheimer's Disease Neuroimaging Initiative (ADNI) and is a longitudinal, multi-center, observational study.
 
@@ -69,16 +82,10 @@ The dataset specification is as follows:
 Below is a sample of the dataset:
 ![AD_NC Dataset](assets/Data_Samples.png)
 
-## File Structure
+## Data Augmentation
 
-Folder contains the following files:
 
-config.py: Contains the configuration settings for the project
-dataset.py: Contains the data loader for the AD_NC dataset
-modules.py: Contains the StyleGAN2 model
-predict.py: Contains the prediction function for the StyleGAN2 model
-utils.py: Contains utility functions for the project
-train.py: Contains the training loop for the StyleGAN2 model
+
 
 ## StyleGAN
 

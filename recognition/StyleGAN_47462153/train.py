@@ -1,3 +1,7 @@
+import os
+import torch
+from modules import Generator, Discriminator
+
 def train():
     for epoch in range(num_epochs):
         for batch in dataloader:

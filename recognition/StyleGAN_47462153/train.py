@@ -27,6 +27,7 @@ def train():
             real_images = real_images.to(device)
             batch_size_current = real_images.size(0)
             
+            # Train Discriminator
             disc_optimizer.zero_grad()
             noise = torch.randn(batch_size_current, 512).to(device)
             fake_images = generator(noise).detach()
@@ -41,6 +42,7 @@ def train():
             scaler.update()
             disc_loss_accum += disc_loss.item()
             
+            # Train Generator
             gen_optimizer.zero_grad()
             noise = torch.randn(batch_size_current, 512).to(device)
             fake_images = generator(noise)
@@ -54,7 +56,11 @@ def train():
             
             loop.set_postfix(gen_loss=gen_loss.item(), disc_loss=disc_loss.item())
         
-        print(f"Epoch [{epoch+1}/{num_epochs}] Generator Loss: {gen_loss_accum:.4f}, Discriminator Loss: {disc_loss_accum:.4f}")
+        avg_gen_loss = gen_loss_accum / len(dataloader)
+        avg_disc_loss = disc_loss_accum / len(dataloader)
+        gen_losses.append(avg_gen_loss)
+        disc_losses.append(avg_disc_loss)
+        print(f"Epoch [{epoch+1}/{num_epochs}] Generator Loss: {avg_gen_loss:.4f}, Discriminator Loss: {avg_disc_loss:.4f}")
 
 if __name__ == "__main__":
     root_dir = '/path/to/data'

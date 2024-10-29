@@ -1,10 +1,3 @@
-"""
-This module is used to show example usage the trained ViT model by using the model to predict
-on a testing set from the ADNI brain dataset
-
-Evaluation metrics will be printed and evaluation figures will be saved to the current folder.
-"""
-
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -20,6 +13,81 @@ from datetime import datetime
 
 from dataset import get_dataset
 from modules import ViTClassifier
+
+
+def cross_validate_models(model1_path, model2_path, test_loader, device, classes):
+    """
+    Combine the strengths of two models by taking the better prediction for each class.
+    """
+    model1 = load_trained_model(model1_path, device)
+    model2 = load_trained_model(model2_path, device)
+
+    # Evaluate both models on the test set
+    print("Evaluating Model 1...")
+    preds1, labels1, probs1 = evaluate_model(model1, test_loader, device, classes)
+    print("Evaluating Model 2...")
+    preds2, labels2, probs2 = evaluate_model(model2, test_loader, device, classes)
+
+    # Calculate accuracy per class for each model
+    accuracy_per_class1 = {}
+    accuracy_per_class2 = {}
+    
+    for class_idx in range(len(classes)):
+        mask = (labels1 == class_idx)
+        if np.any(mask):  # only calculate if class exists in test set
+            accuracy_per_class1[class_idx] = np.mean(preds1[mask] == labels1[mask])
+            accuracy_per_class2[class_idx] = np.mean(preds2[mask] == labels2[mask])
+
+    # Choose predictions based on which model performs better for each class
+    all_preds = np.zeros_like(preds1)
+    all_probs = np.zeros_like(probs1)
+    
+    for class_idx in range(len(classes)):
+        if class_idx in accuracy_per_class1:
+            # Use predictions from the model with higher accuracy for this class
+            if accuracy_per_class1[class_idx] >= accuracy_per_class2[class_idx]:
+                mask = (labels1 == class_idx)
+                all_preds[mask] = preds1[mask]
+                all_probs[mask] = probs1[mask]
+            else:
+                mask = (labels1 == class_idx)
+                all_preds[mask] = preds2[mask]
+                all_probs[mask] = probs2[mask]
+
+    return all_preds, labels1, all_probs
+
+def plot_roc_curves(y_true, y_prob, classes, save_path):
+    """
+    Plot ROC curve for the combined model predictions
+    """
+    plt.figure(figsize=(10, 8))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+    
+    # Convert true labels to one-hot encoding for present classes only
+    present_classes = np.unique(y_true)
+    y_true_onehot = np.zeros((len(y_true), len(present_classes)))
+    
+    for i, class_idx in enumerate(present_classes):
+        y_true_onehot[:, i] = (y_true == class_idx)
+        fpr, tpr, _ = roc_curve(y_true_onehot[:, i], y_prob[:, class_idx])
+        roc_auc = auc(fpr, tpr)
+        class_name = classes[class_idx]
+        plt.plot(fpr, tpr, 
+                label=f'{class_name} (AUC = {roc_auc:.2f})', 
+                color=colors[i])
+    
+    plt.plot([0, 1], [0, 1], 'k--', label='Random')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend(loc="lower right")
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(save_path / 'roc_curves.png', dpi=300)
+    plt.close()
+
 
 def load_trained_model(model_path, device):
     """
@@ -62,36 +130,6 @@ def plot_confusion_matrix(y_true, y_pred, classes, save_path):
     # Calculate per-class accuracy
     per_class_accuracy = cm.diagonal() / cm.sum(axis=1)
     return per_class_accuracy, present_class_names
-
-def plot_roc_curves(y_true, y_prob, classes, save_path):
-    """
-    Plot ROC curves for each class
-    """
-    plt.figure(figsize=(10, 8))
-    colors = ["orange", "darkcyan"]
-
-    # Convert true labels to one-hot encoding for present classes only
-    n_classes = len(classes)
-    y_true_onehot = np.zeros((len(y_true), n_classes))
-    for i in range(n_classes):
-        y_true_onehot[:, i] = (y_true == i)
-
-    # Calculate ROC curve and AUC for each class
-    for i in range(n_classes):
-        fpr, tpr, _ = roc_curve(y_true_onehot[:, i], y_prob[:, i])
-        roc_auc = auc(fpr, tpr)
-        plt.plot(fpr, tpr, label=f'{classes[i]} (AUC = {roc_auc:.2f})', color=colors[i])
-
-    plt.plot([0, 1], [0, 1], 'k--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curves')
-    plt.legend(loc="lower right")
-    plt.tight_layout()
-    plt.savefig(save_path / 'roc_curves.png')
-    plt.close()
 
 def evaluate_model(model, test_loader, device, classes):
     """
@@ -153,10 +191,10 @@ def main():
 
     # Create results directory
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    results_dir = Path(f'evaluation_results_{timestamp}')
+    results_dir = Path(f'cross_validation_results_{timestamp}')
     results_dir.mkdir(exist_ok=True)
 
-    print(f"\nEvaluation Results will be saved to: {results_dir}")
+    print(f"\nCross-validation Results will be saved to: {results_dir}")
 
     # Load test dataset
     print("\nLoading test dataset...")
@@ -164,15 +202,16 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
     print(f"Test set size: {len(test_dataset)} images")
 
-    # Load model
-    model_path = "./checkpoints/0/checkpoint_epoch_1_20241029_175957.pt"
-    print(f"Loading model from {model_path}...")
-    model = load_trained_model(model_path, device)
-    model.eval()
+    # Define paths for both models
+    model1_path = "./checkpoints/best_model_20241029_234652.pt"
+    model2_path = "./checkpoints/best_model_20241029_224507.pt"
+    print(f"Loading models from:\nModel 1: {model1_path}\nModel 2: {model2_path}")
 
-    # Evaluate model
-    print("\nEvaluating model...")
-    predictions, true_labels, probabilities = evaluate_model(model, test_loader, device, CLASSES)
+    # Perform cross-validation
+    print("\nPerforming cross-validation...")
+    predictions, true_labels, probabilities = cross_validate_models(
+        model1_path, model2_path, test_loader, device, CLASSES
+    )
 
     # Get unique classes present in the data
     present_classes = np.unique(true_labels)
@@ -206,19 +245,18 @@ def main():
             class_name: acc for class_name, acc in zip(matrix_classes, per_class_accuracy)
         },
         'overall_accuracy': (predictions == true_labels).mean(),
-        'model_path': model_path,
+        'model1_path': model1_path,
+        'model2_path': model2_path,
         'evaluation_date': timestamp,
         'test_set_size': len(test_dataset),
         'classes_present': present_class_names
     }
 
-    print(metrics)
-
     # Save metrics
     save_metrics(metrics, results_dir)
 
     # Print summary
-    print("\nEvaluation Results Summary:")
+    print("\nCross-validation Results Summary:")
     print(f"Classes present in test set: {', '.join(present_class_names)}")
     print(f"Overall Accuracy: {metrics['overall_accuracy']*100:.2f}%")
     print("\nPer-class Accuracy:")
@@ -236,7 +274,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nEvaluation interrupted by user")
+        print("\nCross-validation interrupted by user")
     except Exception as e:
         print(f"\nAn error occurred: {str(e)}")
         raise

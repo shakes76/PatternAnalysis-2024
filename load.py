@@ -2,7 +2,8 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 import os
-# import utils
+import matplotlib.pyplot as plt
+from torchvision.utils import make_grid, save_image
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -52,7 +53,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             inImage = (inImage - inImage.mean()) / inImage.std()
         
         if categorical:
-            inImage = utils.to_channels(inImage, dtype=dtype)
+            inImage = to_channels(inImage, dtype=dtype)
             images[i,:,:,:] = inImage
         else:
             images[i,:,:] = inImage
@@ -136,15 +137,51 @@ def load_data_3D(imageNames, normImage=False, categorical=False, dtype=np.float3
     else:
         return images
 
-# Load semantic label files
+def get_dataloaders(semantic_labels_dir, semantic_mrs_dir):
+    """Load the dataset and returns the data loaders."""
+    semantic_label_files = [os.path.join(semantic_labels_dir, f) for f in os.listdir(semantic_labels_dir) if f.endswith('.gz')]
+    semantic_labels, semantic_labels_affines = load_data_3D(semantic_label_files, normImage=False, categorical=True, dtype=np.uint8, getAffines=True)
+
+    semantic_mr_files = [os.path.join(semantic_mrs_dir, f) for f in os.listdir(semantic_mrs_dir) if f.endswith('.gz')]
+    semantic_mrs, semantic_mrs_affines = load_data_2D(semantic_mr_files, normImage=False, categorical=False, dtype=np.float32, getAffines=True)
+
+    return semantic_labels, semantic_mrs, semantic_labels_affines, semantic_mrs_affines
+
+def show_batch(semantic_labels, semantic_mrs, filename):
+    """Plot images grid of single batch."""
+    # Combine label and MR images
+    combined = np.concatenate([semantic_labels, semantic_mrs], axis=-1)
+    img = make_grid(torch.from_numpy(combined))
+    show_images(img, filename)
+
+def show_images(img, filename):
+    """Plot images grid of single batch."""
+    img = img.cpu().numpy()
+    img = np.transpose(img, (1, 2, 0))
+    plt.imshow(img)
+    plt.savefig(filename)
+    plt.clf()
+
+# # Load semantic label files
+# semantic_labels_dir = '/Users/ella/Documents/UQ/BM_BCs/Y4S2/COMP3710/report/PatternAnalysis-2024/HipMRI_study_complete_release_v1/semantic_labels_anon'
+# semantic_label_files = [os.path.join(semantic_labels_dir, f) for f in os.listdir(semantic_labels_dir) if f.endswith('.gz')]
+# semantic_labels, semantic_labels_affines = load_data_3D(semantic_label_files, normImage=False, categorical=True, dtype=np.uint8, getAffines=True)
+
+# # Load semantic MR files
+# semantic_mrs_dir = '/Users/ella/Documents/UQ/BM_BCs/Y4S2/COMP3710/report/PatternAnalysis-2024/HipMRI_study_complete_release_v1/semantic_MRs_anon'
+# semantic_mr_files = [os.path.join(semantic_mrs_dir, f) for f in os.listdir(semantic_mrs_dir) if f.endswith('.gz')]
+# semantic_mrs, semantic_mrs_affines = load_data_3D(semantic_mr_files, normImage=False, categorical=False, dtype=np.float32, getAffines=True)
+
+# print(f"Loaded {len(semantic_label_files)} semantic label files")
+# print(f"Loaded {len(semantic_mr_files)} semantic MR files")
+
+# Example usage
 semantic_labels_dir = '/Users/ella/Documents/UQ/BM_BCs/Y4S2/COMP3710/report/PatternAnalysis-2024/HipMRI_study_complete_release_v1/semantic_labels_anon'
-semantic_label_files = [os.path.join(semantic_labels_dir, f) for f in os.listdir(semantic_labels_dir) if f.endswith('.gz')]
-semantic_labels, semantic_labels_affines = load_data_3D(semantic_label_files, normImage=False, categorical=True, dtype=np.uint8, getAffines=True)
-
-# Load semantic MR files
 semantic_mrs_dir = '/Users/ella/Documents/UQ/BM_BCs/Y4S2/COMP3710/report/PatternAnalysis-2024/HipMRI_study_complete_release_v1/semantic_MRs_anon'
-semantic_mr_files = [os.path.join(semantic_mrs_dir, f) for f in os.listdir(semantic_mrs_dir) if f.endswith('.gz')]
-semantic_mrs, semantic_mrs_affines = load_data_3D(semantic_mr_files, normImage=False, categorical=False, dtype=np.float32, getAffines=True)
 
-print(f"Loaded {len(semantic_label_files)} semantic label files")
-print(f"Loaded {len(semantic_mr_files)} semantic MR files")
+semantic_labels, semantic_mrs, semantic_labels_affines, semantic_mrs_affines = get_dataloaders(semantic_labels_dir, semantic_mrs_dir)
+
+print(f"Loaded {semantic_labels.shape[0]} semantic label files")
+print(f"Loaded {semantic_mrs.shape[0]} semantic MR files")
+
+show_batch(semantic_labels[0], semantic_mrs[0], 'batch_example.png')

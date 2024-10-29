@@ -111,9 +111,9 @@ Plots and images were saved using the terminal path:
 scp s4749392@rangpur.compute.eait.uq.edu.au:/home/Student/s4749392/loss_plot.png ~/Desktop/
 
 ```
-The Dice Score plot provides insight into the model’s segmentation performance over the training epochs. By the 25th epoch, the Dice Score surpasses the target threshold of 0.7. This value indicates that the overlap between the predicted segmentation and the ground truth is around 70% or better, showing the model’s success.
+The Dice Score plot provides insight into the model’s segmentation performance over the training epochs. By the 10th epoch, the Dice Score surpasses the target threshold of 0.7. This value indicates that the overlap between the predicted segmentation and the ground truth is around 70% or better, showing the model’s success. However, the dice score is decreasing meaning further training must be conducted to improve accuracy of model.
 
-Figure 1: Dice Score over 25 Epochs
+Figure 1: Dice Score over 10 Epochs
 
 
 

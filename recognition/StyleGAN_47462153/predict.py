@@ -6,6 +6,7 @@ import argparse
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from torchvision.utils import save_image
 
 def generate_images(generator, seeds, outdir, truncation, device):
     os.makedirs(outdir, exist_ok=True)
@@ -29,7 +30,28 @@ def predict():
     parser.add_argument('--device', type=str, default='cuda', help='Device to use: "cuda" or "cpu"')
     args = parser.parse_args()
 
-    generator = Generator(z_dim=512, w_dim=512, in_channels=512, img_channels=1).to(args.device)
+    device = args.device if torch.cuda.is_available() else 'cpu'
+    print(f"Using device: {device}")
+
+    generator = Generator(z_dim=512, w_dim=512, in_channels=512, img_channels=1).to(device)
+
+    if os.path.exists(args.checkpoint):
+        try:
+            checkpoint = torch.load(args.checkpoint, map_location=device)
+            generator.load_state_dict(checkpoint['gen_state_dict'])
+            print(f"Loaded generator checkpoint from '{args.checkpoint}'")
+        except RuntimeError as e:
+            print(f"Error loading checkpoint: {e}")
+            print("Exiting...")
+            exit(1)
+    else:
+        raise FileNotFoundError(f"Checkpoint file '{args.checkpoint}' not found.")
+
+def load_test_images(test_dir, num_images, transform=None):
+    pass
+
+def visualize_images(images, title="Generated Images"):
+    pass
 
 if __name__ == "__main__":
     predict()

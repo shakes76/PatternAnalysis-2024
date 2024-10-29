@@ -220,6 +220,7 @@ Cosine decay gradually reduces the learning rate to maintain training stability 
         )
    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 ```
+### Train.py
 In each epoch, the model iterates over training batches, where it performs forward passes
 and computes cross-entropy loss, the preferred loss function for multi-class classification. Backpropagation and gradient-based updates refine the weights to minimize loss, and the learning rate is adjusted at each step based on the scheduler.
 Validation is conducted at the end of each epoch using torch.no_grad() to disable gradients, which conserves memory and speeds up evaluation. These steps combined give a clear view of how the model is performing during training
@@ -238,8 +239,6 @@ timm==1.0.11
 torch==2.1.0+cu121
 torchvision==0.16.0+cu121
 
-USE REMAINDER OF GRAPPHS LIST DEPENDENCIES DISCUSS RESULTS 68% ACCURACY
-
 <table>
   <tr>
     <td align="center">
@@ -253,4 +252,25 @@ USE REMAINDER OF GRAPPHS LIST DEPENDENCIES DISCUSS RESULTS 68% ACCURACY
   </tr>
 </table>
 
+### Results - Final Word
+The training and validation graphs indicate that the model is learning effectively, with both training and validation losses decreasing steadily over the epochs. The accuracy plot shows a strong upward trend in both training and validation accuracy, stabilizing around 90% training accuracy and 80% validation accuracy, suggesting that the model generalizes well on the validation set without severe overfitting. However, when tested on unseen data, the model achieved a 68% accuracy, which, while decent, reveals a performance gap between validation and test data. This gap may suggest that the model learned patterns specific to the validation set but struggles with generalization to entirely new data. A future attempt where all 19 of each patient's brain MRI scans are parsed as a 3D object may improve accuracy on unseen data.
 
+<p align="center">
+  <img src="UpdatedConfusion.PNG" alt="Figure 6: Confusion Matrix (Class0=Normal, Class1=Alzheimers)" />
+</p>
+
+<p align="center">
+Figure 6: Confusion Matrix
+</p>
+The confusion matrix shows that the model performs okay, with 33.30% of samples correctly classified as normal and 34.70% as Alzheimers. However, it has a higher false negative rate (19.71%) than false positive rate (12.29%), implying a tendency to misclassify Alzheimers samples as Normal. While mostly balanced, the model’s higher false negatives for Alzheimers may imply an issue with data preprocessing- potentially the
+preprocessing made it too difficult to distinguish between the 2 classes.
+
+## References
+<a id="reference2"></a>
+[1] ADNI Dataset. Sharing Alzheimer’s Research Data with the World. *Alzheimer’s Disease Neuroimaging Initiative*. https://adni.loni.usc.edu/
+
+<a id="reference1"></a>
+[2] Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). GFNet: Global filter networks for visual recognition. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, 45(9), 10960-10973. https://doi.org/10.1109/TPAMI.2023.3263824
+
+<a id="reference3"></a>
+[3] Rao, Y., Zhao, W., Zhu, Z., Zhou, J., & Lu, J. (2023). Global filter networks for visual recognition. *GitHub* https://github.com/raoyongming/GFNet

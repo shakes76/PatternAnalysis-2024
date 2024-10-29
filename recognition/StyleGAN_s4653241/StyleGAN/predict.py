@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import torch
 import os
 from torchvision.utils import save_image
+from torch.utils.data import Dataset
+import random
 
 from modules import *
 from config import *
@@ -40,3 +42,20 @@ def generate_examples(gen, mapping_net,epoch, n=5):
             save_image(img*0.5+0.5, f"saved_examples/epoch{epoch}/img_{i}.png")
 
     gen.train()
+
+'''
+Generate samples from the dataset
+'''
+def generate_samples(Dataset, n=5):
+
+    indices = random.sample(range(len(Dataset)), n)
+    # Display the images
+    fig, axes = plt.subplots(1, n, figsize=(15, 3))
+    for i, index in enumerate(indices):
+        raw_img = Dataset.get_raw_image(index)
+        axes[i].imshow(raw_img, cmap='gray')
+        axes[i].axis('off')
+        axes[i].set_title(f"Sample {i+1}")
+
+    plt.tight_layout()
+    plt.show()

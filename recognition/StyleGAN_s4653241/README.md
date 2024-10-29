@@ -69,13 +69,26 @@ train.py: Contains the training loop for the StyleGAN2 model
 
 ## StyleGAN
 
+Style Generative Adversarial Network or StyleGAN is the next generation of generative model for synthesizing high-resoultion images with striking realism. Developed by NVIDIA in 2018, StyleGAN advances the capabilities of generative adversarial networks (GANs) through its unique “style-based” architecture, which allows for detailed control over image attributes such as facial structure, textures, and backgrounds. This model achieves fine-grained manipulation by leveraging a multi-level latent space, where individual layers influence specific visual characteristics, enabling seamless transitions between styles. Using a progressive training technique, StyleGAN gradually refines image resolution, while noise inputs introduce authentic variability. A discriminator network further enhances image quality by guiding the model to improve authenticity at each step.
+
 ## StyleGAN2
+
+Sovles the problem of "Blob" Artifacts
+
+## Model Architecture
+
+![Model Architecture](assets/Compare_models.png)
+
+
+## Training Configuration
 
 ## Results
 
 ## Conclusion
 
 ## References
+
+NVIDIA. (2018). StyleGAN: Official TensorFlow implementation. GitHub repository. https://github.com/NVlabs/stylegan
 
 NVIDIA Corporation. (2020). StyleGAN2-ADA-PyTorch [Computer software]. GitHub. https://github.com/NVlabs/stylegan2-ada-pytorch
 

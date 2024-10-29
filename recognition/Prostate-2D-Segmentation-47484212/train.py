@@ -7,11 +7,11 @@ import numpy as np
 
 MODEL_PATH = "savedModel"
 
-TRAIN_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_train"
-TRAIN_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_seg_train"
+TRAIN_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+TRAIN_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
 
-VALIDATION_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_validate"
-VALIDATION_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_seg_validate"
+VALIDATION_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
+VALIDATION_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate"
 
 TEST_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_test"
 TEST_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_seg_test"
@@ -33,7 +33,6 @@ unet = UNetSegmentation()
 optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 loss_fn = tf.keras.losses.Dice()
 
-print(trainPaths)
 for epoch in range(EPOCHS):
     # randomly sample without replacement to divide the dataset into batches of BATCH_SIZE for each epoch
 
@@ -44,7 +43,7 @@ for epoch in range(EPOCHS):
     for step in range(len(x_batch_paths)):
         # current batch
         x_batch = load_data_2D(x_batch_paths[step], normImage=True)
-        y_batch = load_data_2D(y_batch_paths[step])
+        y_batch = load_data_2D(y_batch_paths[step], categorical=True)
 
         x_tensor = tf.convert_to_tensor(x_batch, dtype=tf.float32)
         y_tensor = tf.convert_to_tensor(y_batch, dtype=tf.float32)

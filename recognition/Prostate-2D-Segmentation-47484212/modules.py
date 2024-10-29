@@ -86,7 +86,7 @@ class UNetSegmentation():
         upConv3 = ReLU()(upConv3)
 
         # output layer
-        output = Conv2D(4, (1, 1), padding='same', activation='softmax')(upConv3)
+        output = Conv2D(5, (1, 1), padding='same', activation='softmax')(upConv3)
 
         model = tf.keras.Model(inputs=inputs, outputs=output)
         return model

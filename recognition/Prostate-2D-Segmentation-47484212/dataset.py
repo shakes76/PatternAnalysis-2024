@@ -16,7 +16,6 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     early_stop: Stop loading prematurely, leaves arrays mostly empty, for quick loading and testing scripts.
     '''
     affines = []
-
     # get fixed count
     num = len(imageNames)
     first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
@@ -25,6 +24,7 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
     if categorical:
         first_case = to_channels(first_case, dtype=dtype)
         rows, cols, channels = first_case.shape
+        channels = 5 # first case does not include all classes so manually setting
         images = np.zeros((num, rows, cols, channels), dtype=dtype)
     else:
         rows, cols = first_case.shape
@@ -37,11 +37,14 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         if len(inImage.shape) == 3:
             inImage = inImage[:, :, 0]  # sometimes extra dims in HipMRI_study data
         inImage = inImage.astype(dtype)
+        # crop image to expected resolution
         if normImage:
             # Normalize image
             inImage = (inImage - inImage.mean()) / inImage.std()
+            inImage = inImage[:256, :128]
         if categorical:
             inImage = to_channels(inImage, dtype=dtype)
+            inImage = inImage[:256, :128, :]
             images[i, :, :, :] = inImage
         else:
             images[i, :, :] = inImage

@@ -23,11 +23,12 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
         first_case = first_case[:, :, 0]  # sometimes extra dims, remove
     if categorical:
         first_case = to_channels(first_case, dtype=dtype)
-        rows, cols, channels = first_case.shape
-        channels = 5 # first case does not include all classes so manually setting
+        #rows, cols, channels = first_case.shape
+        rows, cols, channels = 256, 128, 5 # first case does not include all classes so manually setting
         images = np.zeros((num, rows, cols, channels), dtype=dtype)
     else:
-        rows, cols = first_case.shape
+        #rows, cols = first_case.shape
+        rows, cols = 256, 128
         images = np.zeros((num, rows, cols), dtype=dtype)
 
     for i, inName in enumerate(tqdm(imageNames)):
@@ -38,13 +39,12 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
             inImage = inImage[:, :, 0]  # sometimes extra dims in HipMRI_study data
         inImage = inImage.astype(dtype)
         # crop image to expected resolution
+        inImage = inImage[:256, :128]
         if normImage:
             # Normalize image
             inImage = (inImage - inImage.mean()) / inImage.std()
-            inImage = inImage[:256, :128]
         if categorical:
             inImage = to_channels(inImage, dtype=dtype)
-            inImage = inImage[:256, :128, :]
             images[i, :, :, :] = inImage
         else:
             images[i, :, :] = inImage

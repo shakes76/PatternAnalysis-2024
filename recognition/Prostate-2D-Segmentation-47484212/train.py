@@ -5,7 +5,7 @@ from dataset import load_data_2D, get_all_paths, batch_paths
 import random
 import numpy as np
 
-MODEL_PATH = "savedModel"
+MODEL_PATH = "unetSeg.keras"
 
 TRAIN_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 TRAIN_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
@@ -15,6 +15,8 @@ VALIDATION_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data
 
 TEST_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_test"
 TEST_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_seg_test"
+
+tf.config.list_physical_devices('GPU')
 
 # create list of paths to each of the datasets
 trainPaths = get_all_paths(TRAIN_PATH)
@@ -29,9 +31,12 @@ EPOCHS = 20
 LEARNING_RATE = 0.001
 
 # load or initialize model
-unet = UNetSegmentation()
+unet = UNetSegmentation(MODEL_PATH)
 optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 loss_fn = tf.keras.losses.Dice()
+
+# testing save
+unet.model.save(MODEL_PATH)
 
 for epoch in range(EPOCHS):
     # randomly sample without replacement to divide the dataset into batches of BATCH_SIZE for each epoch

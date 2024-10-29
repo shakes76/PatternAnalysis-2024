@@ -11,7 +11,7 @@ class UNetSegmentation():
         if modelPath is not None:
             try:
                 self.model = tf.keras.models.load_model(modelPath)
-            except FileNotFoundError | OSError:
+            except Exception:
                 print(f"model at {modelPath} could not be loaded, initializing new model")
                 self.model = self.build()
         else:

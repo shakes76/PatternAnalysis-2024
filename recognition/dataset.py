@@ -22,6 +22,7 @@ TRAIN_TRANSFORM = transforms.Compose([
     transforms.RandomCrop(224),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
+    transforms.Lambda(lambda x: x.repeat(3, 1, 1))
 ])
 
 # Testing image transforms

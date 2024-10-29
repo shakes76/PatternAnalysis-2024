@@ -3,6 +3,7 @@ import torch
 from modules import Generator, Discriminator
 from dataset import get_dataloader
 from torch import optim
+from torch.cuda.amp import autocast, GradScaler
 
 def train():
     dataloader, dataset = get_dataloader(root_dir, batch_size)
@@ -12,10 +13,16 @@ def train():
     gen_optimizer = optim.Adam(generator.parameters(), lr=0.001, betas=(0.5, 0.999))
     disc_optimizer = optim.Adam(discriminator.parameters(), lr=0.0005, betas=(0.5, 0.999))
     
+    scaler = GradScaler()
+    
     print(f"Loaded {len(dataset)} images for training.")
     for epoch in range(num_epochs):
         for batch in dataloader:
-            pass  # Placeholder for training logic
+            real_images, _ = batch
+            real_images = real_images.to(device)
+            noise = torch.randn(batch_size, 512).to(device)
+            fake_images = generator(noise)
+            # Placeholder for mixed precision training logic
 
 if __name__ == "__main__":
     root_dir = '/path/to/data'

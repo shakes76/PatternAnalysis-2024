@@ -16,6 +16,12 @@ This StyleGAN2's application is to generate realistic like brain scans using the
   - [StyleGAN](#stylegan)
   - [StyleGAN2](#stylegan2)
   - [Model Architecture](#model-architecture)
+    - [Mapping Network](#mapping-network)
+    - [Adaptive Instance Normalization (AdaIN) Replacement](#adaptive-instance-normalization-adain-replacement)
+    - [Progressive Growing](#progressive-growing)
+    - [Noise Injection](#noise-injection)
+    - [Discriminator Network](#discriminator-network)
+    - [Path Length Regularization](#path-length-regularization)
   - [Training Configuration](#training-configuration)
   - [Results](#results)
   - [Conclusion](#conclusion)
@@ -46,7 +52,7 @@ This StyleGAN2's application is to generate realistic like brain scans using the
 ## Dataset
 The ADNI dataset for Alzheimer's disease is hosted on the [ADNI website](https://adni.loni.usc.edu/) for download. ADNI stands for Alzheimer's Disease Neuroimaging Initiative (ADNI) and is a longitudinal, multi-center, observational study.
 
-In this project I used the preprocessed dataset from this [website](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24). The dataset is split into two classes: AD (Alzheimer's disease) and NC (normal control). Each class contains 15660 brain scans
+In this project I used the preprocessed dataset from this [website](https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24). The dataset is split into two classes: AD (Alzheimer's disease) and NC (normal control). Each class contains 15660 brain scans.
 
 The dataset specification is as follows:
 
@@ -54,8 +60,8 @@ The dataset specification is as follows:
 | --- | --- |
 | Class | AD, NC |
 | Number of samples each | 15660 |
-| train set each |11200 |
-| test set each | 4460 |
+| training set each |11200 |
+| testing set each | 4460 |
 | Image size | 256x240 |
 | Image format | .jpg |
 | Number of channels | 1 |
@@ -87,6 +93,22 @@ and enchances overall image quality. The model achieves this by introducing a ne
 
 ![Model Architecture](assets/Compare_models.png)
 
+### Mapping Network
+Similar to StyleGAN, StyleGAN2 uses a mapping netwokr to transform the latent space $z$ from a simple Gaussian distribution to a more complex distribution, the intermediate latent space $w$.  The mapping network consists of 8 fully connected layers that equalize the learning rate and apply leaky ReLU activation functions.
+
+### Adaptive Instance Normalization (AdaIN) Replacement
+In StyleGAN, AdaIN layers were introduce to inject style information into each layer of the generator. Later replaced with Weight Demodulation, which eliminated "Blob" artifacts caused by AdaIN. This provided better control over visuals and realistic images. Weight Demodulation adjusts the style weights per layer without disrupting the generator's output.
+
+### Progressive Growing
+Different from StyleGAN where it each layer is introduce one at a time starting from low-resolution images and gradually increase the resoulution as during training. StyleGAN2 uses fixed-resolution architecture with all layers active from the start. This stabilizes training and simplifies the overall process, as the network learns at a consistent resolution.
+### Noise Injection
+As is in StyleGAN, adds random noise to each layer to introduce variability in texture and fine-grainded details in generated images.
+
+### Discriminator Network
+Updated from previous generation to better handle complex features and improve image realism.  Discriminator role is to distinguish real from synthetic images and guides the generator to produce more authentic-looking outputs over time.
+
+### Path Length Regularization
+Enforces a consistent relationship between the latent space and the generated image. This helps reduce artifacts and enhances the model's ability to interpolate smoothly between different styles.
 
 ## Training Configuration
 
@@ -100,7 +122,7 @@ NVIDIA. (2018). StyleGAN: Official TensorFlow implementation. GitHub repository.
 
 NVIDIA Corporation. (2020). StyleGAN2-ADA-PyTorch [Computer software]. GitHub. https://github.com/NVlabs/stylegan2-ada-pytorch
 
-
+Paperspace. (2020, February 19). Implementing StyleGAN2 from scratch. Paperspace Blog. https://blog.paperspace.com/implementation-stylegan2-from-scratch/
 
 Task 8:
 ```Create a generative model of one of the ADNI brain data set (see Appendix for links) using either a variant of StyleGAN [10]/StyleGAN2 [11] or Stable Diffusion [12] that has a “reasonably clear image”. You should also include a TSNE or UMAP embeddings plot with ground truth in colors and provide a brief interpretation/discussion. See recent UQ work for hints of how to incorporate labels in style [13]. [Hard Difficulty]```

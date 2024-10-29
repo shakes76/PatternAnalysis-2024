@@ -109,3 +109,11 @@ def get_dataloader(batch_size, train: bool, val_proportion: float = 0.2, keep_pr
         dataset = ADNIDataset(root_path=ADNI_PATH, train=False, transform=TEST_TRANSFORM)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     return loader
+
+def get_dataset(train=True):
+    if train:
+        train_dataset = ADNIDataset(train=True)
+        val_dataset = ADNIDataset(val=True)
+        return train_dataset, val_dataset
+    else:
+        return ADNIDataset(test=True)

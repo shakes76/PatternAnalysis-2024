@@ -6,43 +6,157 @@ the losses and metrics during training are plotted
 """
 import torch
 import torch.nn as nn
+import torch.cuda.amp as amp
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.distributed as dist
+import numpy as np
 from torch.utils.data import DataLoader
+import torch.multiprocessing as mp
+from contextlib import nullcontext
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 import pandas as pd
 import json
 import os
 import time
 from datetime import datetime
 from tqdm import tqdm
-import sys
 from sklearn.metrics import confusion_matrix, classification_report
 
-from dataset import ADNIDataset, get_dataloader
+from dataset import ADNIDataset, get_dataloader, get_dataset
 from modules import ViTClassifier
 
-class ModelCheckpointing:
-    def __init__(self, save_dir='checkpoints'):
-        """Initialize checkpoint manager"""
+class OptimizedTrainer:
+    def __init__(self, model, train_loader, val_loader, device,
+                 mixed_precision=True, distributed=False, num_workers=4,
+                 save_dir='checkpoints'):
+        """
+        Initialize optimized trainer with monitoring capabilities
+        """
+        self.model = model
+        self.device = device
+        self.mixed_precision = mixed_precision
+        self.distributed = distributed
+        self.num_workers = num_workers
         self.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
-        self.best_val_acc = 0
-        self.best_model_path = None
+
+        # Setup mixed precision
+        self.scaler = amp.GradScaler() if mixed_precision else None
+
+        # Optimize data loading
+        self.train_loader = self._optimize_dataloader(train_loader)
+        self.val_loader = self._optimize_dataloader(val_loader)
+
+        # Initialize distributed training if requested
+        if distributed:
+            self.model = DDP(model)
+
+        # Initialize training history
         self.history = {
             'train_loss': [], 'val_loss': [],
             'train_acc': [], 'val_acc': [],
             'learning_rate': [], 'epochs': []
         }
+        self.best_val_acc = 0
+        self.best_model_path = None
 
-    def save_checkpoint(self, model, optimizer, epoch, train_loss, val_loss,
+    def _optimize_dataloader(self, dataloader):
+        """
+        Optimize dataloader for speed
+        """
+        return DataLoader(
+            dataloader.dataset,
+            batch_size=dataloader.batch_size,
+            shuffle=dataloader.dataset.train if hasattr(dataloader.dataset, 'train') else True,
+            num_workers=self.num_workers,
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=2
+        )
+
+    def train_epoch(self, optimizer, criterion, scheduler=None):
+        """
+        Run optimized training epoch
+        """
+        self.model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+
+        amp_context = amp.autocast() if self.mixed_precision else nullcontext()
+        pbar = tqdm(self.train_loader, desc='Training', leave=False)
+
+        for inputs, targets in pbar:
+            inputs, targets = inputs.to(self.device), targets.to(self.device)
+
+            optimizer.zero_grad(set_to_none=True)
+
+            with amp_context:
+                outputs = self.model(inputs)
+                loss = criterion(outputs, targets)
+
+            if self.mixed_precision:
+                self.scaler.scale(loss).backward()
+                self.scaler.step(optimizer)
+                self.scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
+
+            if scheduler is not None:
+                scheduler.step()
+
+            running_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+
+            pbar.set_postfix({'loss': f'{loss.item():.4f}',
+                            'acc': f'{(correct/total)*100:.2f}%'})
+
+            del outputs, loss
+            torch.cuda.empty_cache()
+
+        return running_loss / len(self.train_loader), correct / total
+
+    def validate_epoch(self, criterion):
+        """
+        Run validation epoch
+        """
+        self.model.eval()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            pbar = tqdm(self.val_loader, desc='Validation', leave=False)
+            for inputs, targets in pbar:
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+
+                outputs = self.model(inputs)
+                loss = criterion(outputs, targets)
+
+                running_loss += loss.item()
+                _, predicted = outputs.max(1)
+                total += targets.size(0)
+                correct += predicted.eq(targets).sum().item()
+
+                pbar.set_postfix({'loss': f'{loss.item():.4f}',
+                                'acc': f'{(correct/total)*100:.2f}%'})
+
+        return running_loss / len(self.val_loader), correct / total
+
+    def save_checkpoint(self, optimizer, epoch, train_loss, val_loss,
                        train_acc, val_acc, lr, is_best=False):
-        """Save model checkpoint"""
+        """
+        Save model checkpoint
+        """
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
         checkpoint = {
             'epoch': epoch,
-            'model_state_dict': model.state_dict(),
+            'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'train_loss': train_loss,
             'val_loss': val_loss,
@@ -67,62 +181,25 @@ class ModelCheckpointing:
             self.best_model_path = os.path.join(self.save_dir, f'best_model_{timestamp}.pt')
             torch.save(checkpoint, self.best_model_path)
 
-            # Save config
-            config = {
-                'timestamp': timestamp,
-                'epoch': epoch,
-                'best_val_acc': val_acc,
-                'final_train_loss': train_loss,
-                'final_val_loss': val_loss,
-                'learning_rate': lr
-            }
-
-            with open(os.path.join(self.save_dir, f'model_config_{timestamp}.json'), 'w') as f:
-                json.dump(config, f, indent=4)
-
         return checkpoint_path
 
-    def load_checkpoint(self, model, optimizer, checkpoint_path):
-        """Load model checkpoint"""
-        if not os.path.exists(checkpoint_path):
-            raise FileNotFoundError(f"No checkpoint found at {checkpoint_path}")
-
-        checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        return model, optimizer, checkpoint
-
-    def load_best_model(self, model, optimizer):
-        """Load the best model"""
-        if self.best_model_path is None:
-            raise ValueError("No best model checkpoint found")
-        return self.load_checkpoint(model, optimizer, self.best_model_path)
-
-    def save_training_history(self):
-        """Save training history"""
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        history_path = os.path.join(self.save_dir, f'training_history_{timestamp}.json')
-        with open(history_path, 'w') as f:
-            json.dump(self.history, f, indent=4)
-        return history_path
-
-class VisualizationUtils:
-    @staticmethod
-    def plot_training_history(history):
-        """Plot training metrics"""
+    def plot_training_history(self):
+        """
+        Plot training metrics
+        """
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
 
         # Plot loss
-        ax1.plot(history['train_loss'], label='Training Loss')
-        ax1.plot(history['val_loss'], label='Validation Loss')
+        ax1.plot(self.history['train_loss'], label='Training Loss')
+        ax1.plot(self.history['val_loss'], label='Validation Loss')
         ax1.set_title('Loss Over Time')
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Loss')
         ax1.legend()
 
         # Plot accuracy
-        ax2.plot(history['train_acc'], label='Training Accuracy')
-        ax2.plot(history['val_acc'], label='Validation Accuracy')
+        ax2.plot(self.history['train_acc'], label='Training Accuracy')
+        ax2.plot(self.history['val_acc'], label='Validation Accuracy')
         ax2.set_title('Accuracy Over Time')
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Accuracy')
@@ -131,32 +208,23 @@ class VisualizationUtils:
         plt.tight_layout()
         return fig
 
-    @staticmethod
-    def plot_attention_maps(model, image, pred_class, true_class=None):
-        """Plot attention maps"""
+    def evaluate(self, test_loader, classes):
+        """
+        Evaluate model on test set
+        """
+        self.model.eval()
+        y_true = []
+        y_pred = []
+
         with torch.no_grad():
-            _ = model(image.unsqueeze(0))
-        attention = model.get_attention_weights()
-        attention = attention.mean(1).squeeze()
+            for inputs, targets in tqdm(test_loader, desc='Evaluating'):
+                inputs = inputs.to(self.device)
+                outputs = self.model(inputs)
+                _, preds = torch.max(outputs, 1)
+                y_true.extend(targets.cpu().numpy())
+                y_pred.extend(preds.cpu().numpy())
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-
-        ax1.imshow(image.permute(1, 2, 0).cpu())
-        ax1.axis('off')
-        ax1.set_title('Original Image')
-
-        sns.heatmap(attention.cpu(), ax=ax2, cmap='viridis')
-        title = f'Attention Map (Pred: {pred_class})'
-        if true_class is not None:
-            title += f' (True: {true_class})'
-        ax2.set_title(title)
-
-        plt.tight_layout()
-        return fig
-
-    @staticmethod
-    def plot_confusion_matrix(y_true, y_pred, classes):
-        """Plot confusion matrix"""
+        # Generate confusion matrix
         cm = confusion_matrix(y_true, y_pred)
         plt.figure(figsize=(10, 8))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
@@ -164,188 +232,169 @@ class VisualizationUtils:
         plt.title('Confusion Matrix')
         plt.ylabel('True Label')
         plt.xlabel('Predicted Label')
-        return plt.gcf()
 
-    @staticmethod
-    def generate_classification_report(y_true, y_pred, classes):
-        """Generate classification report"""
+        # Generate classification report
         report = classification_report(y_true, y_pred, target_names=classes, output_dict=True)
-        df_report = pd.DataFrame(report).transpose()
+        return y_true, y_pred, report
 
-        plt.figure(figsize=(10, 6))
-        sns.heatmap(df_report.iloc[:-3, :-1].astype(float), annot=True, cmap='Blues', fmt='.2f')
-        plt.title('Classification Report')
-        return plt.gcf()
+def train_model_optimized(model, train_dataset, val_dataset, test_dataset=None,
+                         epochs=20, batch_size=32, lr=1e-4, classes=None,
+                         early_stopping_patience=4):
+    """
+    Main training function with optimizations and monitoring
+    """
+    # Setup device and optimization
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    torch.backends.cudnn.benchmark = True
+    num_workers = min(mp.cpu_count(), 8)
 
-def train_epoch(model, loader, optimizer, criterion, device):
-    """Run one training epoch"""
-    model.train()
-    running_loss = 0.0
-    correct = 0
-    total = 0
+    # Optimize batch size based on GPU memory
+    if torch.cuda.is_available():
+        gpu_memory = torch.cuda.get_device_properties(0).total_memory
+        batch_size = min(batch_size, int(gpu_memory / (1024**3) * 4))
 
-    pbar = tqdm(loader, desc='Training', leave=False)
-    for images, labels in pbar:
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+    # Create data loaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2
+    )
 
-        running_loss += loss.item()
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size * 2,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2
+    )
 
-        pbar.set_postfix({'loss': f'{loss.item():.4f}',
-                         'acc': f'{(correct/total)*100:.2f}%'})
+    # Initialize optimizer and scheduler
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=lr,
+        betas=(0.9, 0.999),
+        eps=1e-8,
+        weight_decay=0.01
+    )
 
-    return running_loss / len(loader), correct / total
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=lr * 10,
+        epochs=epochs,
+        steps_per_epoch=len(train_loader),
+        pct_start=0.3,
+        anneal_strategy='cos'
+    )
 
-def validate_epoch(model, loader, criterion, device):
-    """Run one validation epoch"""
-    model.eval()
-    running_loss = 0.0
-    correct = 0
-    total = 0
+    # Initialize trainer
+    trainer = OptimizedTrainer(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        device=device,
+        mixed_precision=True,
+        distributed=(torch.cuda.device_count() > 1)
+    )
 
-    with torch.no_grad():
-        pbar = tqdm(loader, desc='Validation', leave=False)
-        for images, labels in pbar:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-
-            running_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-            pbar.set_postfix({'loss': f'{loss.item():.4f}',
-                             'acc': f'{(correct/total)*100:.2f}%'})
-
-    return running_loss / len(loader), correct / total
-
-def train_model(model, train_loader, val_loader, epochs, lr, device, early_stopping_patience=4):
-    """Main training function"""
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # Training loop
     criterion = nn.CrossEntropyLoss()
-    checkpointer = ModelCheckpointing()
-    visualizer = VisualizationUtils()
-
-    print(f"\nStarting training on device: {device}")
-    print(f"Checkpoints will be saved to: {checkpointer.save_dir}")
-
     start_time = time.time()
     stopping_epoch = epochs
     down_consec = 0
 
+    print(f"\nStarting training on device: {device}")
+    print(f"Batch size: {batch_size}, Learning rate: {lr}")
+
     for epoch in range(epochs):
         epoch_start = time.time()
 
-        # Training
-        train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
-
-        # Validation
-        val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)
+        # Training and validation
+        train_loss, train_acc = trainer.train_epoch(optimizer, criterion, scheduler)
+        val_loss, val_acc = trainer.validate_epoch(criterion)
 
         # Check if best model
-        is_best = val_acc > checkpointer.best_val_acc
+        is_best = val_acc > trainer.best_val_acc
 
         # Save checkpoint
-        checkpoint_path = checkpointer.save_checkpoint(
-            model, optimizer, epoch, train_loss, val_loss,
+        checkpoint_path = trainer.save_checkpoint(
+            optimizer, epoch, train_loss, val_loss,
             train_acc, val_acc, lr, is_best
         )
 
+        # Print epoch results
         epoch_time = time.time() - epoch_start
         print(f'\nEpoch [{epoch+1}/{epochs}] - {epoch_time:.1f}s')
         print(f'Train Loss: {train_loss:.4f}, Train Acc: {train_acc*100:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc*100:.2f}%')
-        print(f'Checkpoint saved: {checkpoint_path}')
-
-        if is_best:
-            print(f'New best model saved with validation accuracy: {val_acc*100:.2f}%')
 
         # Early stopping check
-        if epoch > 0 and val_acc < checkpointer.history['val_acc'][-2]:
+        if epoch > 0 and val_acc < trainer.history['val_acc'][-2]:
             down_consec += 1
-            print(f'Validation accuracy decreased. Counter: {down_consec}/{early_stopping_patience}')
+            if down_consec >= early_stopping_patience:
+                print('\nEarly stopping triggered!')
+                stopping_epoch = epoch + 1
+                break
         else:
             down_consec = 0
 
-        if down_consec >= early_stopping_patience:
-            print('\nEarly stopping triggered!')
-            stopping_epoch = epoch + 1
-            break
+    # Final evaluation
+    if test_dataset is not None and classes is not None:
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=batch_size * 2,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=True
+        )
+        y_true, y_pred, report = trainer.evaluate(test_loader, classes)
 
-        print('-' * 60)
+    # Plot and save training curves
+    trainer.plot_training_history()
+    plt.savefig(os.path.join(trainer.save_dir, 'training_curves.png'))
 
     total_time = time.time() - start_time
     print(f'\nTraining completed in {total_time/60:.1f} minutes')
-    print(f'Best validation accuracy: {checkpointer.best_val_acc*100:.2f}%')
+    print(f'Best validation accuracy: {trainer.best_val_acc*100:.2f}%')
 
-    # Save final history
-    history_path = checkpointer.save_training_history()
-    print(f'Training history saved: {history_path}')
-
-    # Plot training curves
-    visualizer.plot_training_history(checkpointer.history)
-    plt.savefig(os.path.join(checkpointer.save_dir, 'training_curves.png'))
-
-    return model, checkpointer.history
-
-def evaluate_model(model, test_loader, device, classes):
-    """Evaluate model on test set"""
-    model.eval()
-    y_true = []
-    y_pred = []
-    visualizer = VisualizationUtils()
-
-    with torch.no_grad():
-        for images, labels in tqdm(test_loader, desc='Evaluating'):
-            images = images.to(device)
-            outputs = model(images)
-            _, preds = torch.max(outputs, 1)
-            y_true.extend(labels.cpu().numpy())
-            y_pred.extend(preds.cpu().numpy())
-
-    # Generate evaluation plots
-    cm_fig = visualizer.plot_confusion_matrix(y_true, y_pred, classes)
-    cm_fig.savefig('confusion_matrix.png')
-
-    report_fig = visualizer.generate_classification_report(y_true, y_pred, classes)
-    report_fig.savefig('classification_report.png')
-
-    return y_true, y_pred
+    return model, trainer.history
 
 def main():
     """Main execution function"""
-    # Device configuration
+    # Device configuration and system information
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Print system information
     print("\nSystem Information:")
     print(f"PyTorch version: {torch.__version__}")
     print(f"Device being used: {device}")
     print(f"Number of available GPUs: {torch.cuda.device_count() if torch.cuda.is_available() else 0}")
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            gpu_props = torch.cuda.get_device_properties(i)
+            print(f"GPU {i}: {gpu_props.name} ({gpu_props.total_memory / 1024**3:.1f} GB)")
 
     # Hyperparameters
     BATCH_SIZE = 32
     EPOCHS = 20
     LR = 1e-4
     CLASSES = ['CN', 'MCI', 'AD', 'SMC']
+    EARLY_STOPPING_PATIENCE = 4
 
     print("\nHyperparameters:")
     print(f"Batch size: {BATCH_SIZE}")
     print(f"Number of epochs: {EPOCHS}")
     print(f"Learning rate: {LR}")
+    print(f"Early stopping patience: {EARLY_STOPPING_PATIENCE}")
 
-    # Initialize data loaders
+    # Initialize data
     print("\nLoading data...")
-    train_loader, val_loader = get_dataloader(batch_size=BATCH_SIZE, train=True)
-    test_loader = get_dataloader(batch_size=BATCH_SIZE, train=False)
+    # Get datasets instead of dataloaders since our framework will create optimized loaders
+    train_dataset, val_dataset = get_dataset(train=True)  # Assuming you modify get_dataloader to return datasets
+    test_dataset = get_dataset(train=False)
     print("Data loaded successfully!")
 
     # Initialize model
@@ -360,24 +409,87 @@ def main():
     print(f"Total parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,}")
 
-    # Train model
-    model, history = train_model(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        epochs=EPOCHS,
-        lr=LR,
-        device=device
-    )
+    # Additional optimization information
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        print("\nOptimization Settings:")
+        print("cuDNN benchmark mode: Enabled")
+        print(f"Mixed precision training: Enabled")
+        print(f"Distributed training: {'Enabled' if torch.cuda.device_count() > 1 else 'Disabled'}")
 
-    # Evaluate model
-    y_true, y_pred = evaluate_model(model, test_loader, device, CLASSES)
+    # Train model using optimized framework
+    try:
+        model, history = train_model_optimized(
+            model=model,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            test_dataset=test_dataset,
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+            lr=LR,
+            classes=CLASSES,
+            early_stopping_patience=EARLY_STOPPING_PATIENCE
+        )
 
-    print("\nTraining and evaluation completed successfully!")
-    print("Check the output directory for visualization plots and model checkpoints.")
+        print("\nTraining completed successfully!")
+
+        # Print final metrics
+        final_train_acc = history['train_acc'][-1]
+        final_val_acc = history['val_acc'][-1]
+        best_val_acc = max(history['val_acc'])
+        best_epoch = history['val_acc'].index(best_val_acc) + 1
+
+        print("\nFinal Results:")
+        print(f"Best validation accuracy: {best_val_acc*100:.2f}% (Epoch {best_epoch})")
+        print(f"Final training accuracy: {final_train_acc*100:.2f}%")
+        print(f"Final validation accuracy: {final_val_acc*100:.2f}%")
+
+        # Save complete training results
+        results = {
+            'hyperparameters': {
+                'batch_size': BATCH_SIZE,
+                'epochs': EPOCHS,
+                'learning_rate': LR,
+                'early_stopping_patience': EARLY_STOPPING_PATIENCE
+            },
+            'model_info': {
+                'total_parameters': total_params,
+                'trainable_parameters': trainable_params
+            },
+            'training_history': history,
+            'final_metrics': {
+                'best_val_acc': best_val_acc,
+                'best_epoch': best_epoch,
+                'final_train_acc': final_train_acc,
+                'final_val_acc': final_val_acc
+            }
+        }
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        with open(f'training_results_{timestamp}.json', 'w') as f:
+            json.dump(results, f, indent=4)
+
+        print("\nResults have been saved. Check the output directory for:")
+        print("- Model checkpoints")
+        print("- Training curves")
+        print("- Confusion matrix")
+        print("- Complete training results JSON")
+
+    except Exception as e:
+        print(f"\nError during training: {str(e)}")
+        raise
+
+    return model, history
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nTraining interrupted by user")
+    except Exception as e:
+        print(f"\nAn error occurred: {str(e)}")
+        raise
+
 
 # import torch
 # import torch.nn as nn

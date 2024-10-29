@@ -20,17 +20,19 @@ This project implements a Vision Transformer (ViT) based classification system f
 
 ```
 .
+├── README.md
 ├── dataset.py        # Data loading and preprocessing
 ├── modules.py        # Model architecture definitions
 ├── train.py         # Training and optimisation scripts
 ├── predict.py       # Evaluation and prediction scripts
-└── AD_NC/           # ADNI dataset directory
-    ├── train/
-    │   ├── AD/
-    │   └── NC/
-    └── test/
-        ├── AD/
-        └── NC/
+├── AD_NC/           # ADNI dataset directory
+│   ├── train/
+│   │   ├── AD/
+│   │   └── NC/
+│   └── test/
+│       ├── AD/
+│       └── NC/
+└── checkpoints      # Trained models
 ```
 
 ## Requirements
@@ -188,13 +190,40 @@ The evaluation script generates the following outputs in a timestamped directory
 - `training_curves.png`: Training and validation metrics over time
 
 ## Model Performance
-
 The system evaluates models using multiple metrics:
 - Overall accuracy
 - Per-class accuracy
 - ROC curves with AUC scores
 - Confusion matrix
 - Detailed classification report including precision, recall, and F1-score
+
+**Classes & Overall Metrics**
+| Metric | Value |
+|--------|--------|
+| Classes Present | CN, MCI |
+| Test Set Size | 9000 |
+| Overall Accuracy | 0.847 |
+| Evaluation Date | 2024-10-30 07:05:15 |
+
+**Per-Class Performance Metrics**
+| Class | Precision | Recall | F1-Score | Support |
+|-------|-----------|---------|-----------|----------|
+| CN | 0.786 | 0.957 | 0.863 | 4540 |
+| MCI | 0.944 | 0.734 | 0.826 | 4460 |
+
+**Aggregate Metrics**
+| Category | Precision | Recall | F1-Score | Support |
+|----------|-----------|---------|-----------|----------|
+| Macro Avg | 0.865 | 0.846 | 0.844 | 9000 |
+| Weighted Avg | 0.864 | 0.847 | 0.845 | 9000 |
+
+**Model Paths**
+| Model | Path |
+|-------|------|
+| Model 1 | ./checkpoints/best_model_20241029_234652.pt |
+| Model 2 | ./checkpoints/best_model_20241029_224507.pt |
+
+
 
 ## Cross-Validation
 

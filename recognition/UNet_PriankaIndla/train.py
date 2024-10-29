@@ -7,23 +7,23 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-from modules import UNet  # Import the UNet from modules.py
-from dataset import ProstateMRIDataset  # Ensure this points to your dataset class
+from modules import UNet  # Import UNet class from modules.py
+from dataset import ProstateMRIDataset  # Import ProstateMRIDataset class from dataset.py
 
-# Define constants
-INPUT_IMAGE_HEIGHT = 256  # Set this to your desired input image height
-INPUT_IMAGE_WIDTH = 128   # Set this to your desired input image width
+# Model parameters
+INPUT_IMAGE_HEIGHT = 256  
+INPUT_IMAGE_WIDTH = 128 
 BATCH_SIZE = 16
-LEARNING_RATE = 1e-4
-EPOCHS = 50
+LEARNING_RATE = 3e-4
+EPOCHS = 25
 NUM_WORKERS = 1
 TARGET_SHAPE = (INPUT_IMAGE_HEIGHT, INPUT_IMAGE_WIDTH)
 
 # Directories for training and validation data
-IMAGE_DIR = '/path/to/images'  # Path to your images
-SEGMENTATION_DIR = '/path/to/segmentations'  # Path to your segmentation masks
-VAL_IMAGE_DIR = '/path/to/val_images'
-VAL_SEGMENTATION_DIR = '/path/to/val_segmentations'
+IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train' 
+SEGMENTATION_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train' 
+VAL_IMAGE_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate'
+VAL_SEGMENTATION_DIR = '/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate'
 
 # Load data
 print("Loading image paths...")
@@ -44,26 +44,33 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_w
 
 print("DataLoader created successfully.")
 
-# Initialize model, loss function, and optimizer
+# Check GPU is working
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
+# Initialise model with the correct input and output channels for 1-channel images
 model = UNet(in_channels=1, out_channels=1, retainDim=True, outSize=(INPUT_IMAGE_HEIGHT, INPUT_IMAGE_WIDTH)).to(device)
 print("Model initialized.")
 
 # Define loss function and optimizer
 criterion = nn.BCEWithLogitsLoss()  # For binary segmentation
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+# Update optimizer and scheduler
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)  # Slightly increased weight decay
+
+# Use a learning rate scheduler that reduces LR on plateau
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, min_lr=1e-6)
 
 # Function to compute Dice Score
 def dice_score(pred, target, smooth=1e-6):
     pred = torch.sigmoid(pred)
-    pred = (pred > 0.5).float()
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
-    intersection = (pred_flat * target_flat).sum()
-    dice = (2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
+    pred = (pred > 0.5).float()  # Threshold at 0.5 for binary output
+    intersection = (pred * target).sum()  # Intersection of prediction and ground truth
+    union = pred.sum() + target.sum()  # Union as the sum of both regions
+    dice = (2. * intersection + smooth) / (union + smooth)
     return dice
+
+
 
 # Lists for tracking losses and metrics
 train_losses = []
@@ -73,13 +80,13 @@ dice_scores = []
 # Track best validation Dice score
 best_dice = 0
 
-# Training loop
+# Main training loop
 for epoch in range(EPOCHS):
     print(f"\nStarting epoch {epoch+1}/{EPOCHS}...")
     model.train()
     running_loss = 0.0
     train_dice_scores = []
-
+    
     # Training phase
     for i, (images, segs) in enumerate(tqdm(train_loader)):
         images, segs = images.to(device), segs.to(device)
@@ -95,12 +102,13 @@ for epoch in range(EPOCHS):
         # Calculate Dice score
         dice = dice_score(outputs, segs)
         train_dice_scores.append(dice.item())
-
+    
     avg_train_loss = running_loss / len(train_loader)
     avg_train_dice = np.mean(train_dice_scores)
     train_losses.append(avg_train_loss)
     dice_scores.append(avg_train_dice)
 
+    # Print training epoch stats
     print(f'Epoch [{epoch+1}/{EPOCHS}] - Train Loss: {avg_train_loss:.4f} - Dice Score: {avg_train_dice:.4f}')
 
     # Validation phase
@@ -123,7 +131,11 @@ for epoch in range(EPOCHS):
     avg_val_dice = np.mean(val_dice_scores)
     val_losses.append(avg_val_loss)
 
+    # Print validation epoch stats
     print(f'Epoch [{epoch+1}/{EPOCHS}] - Val Loss: {avg_val_loss:.4f} - Val Dice Score: {avg_val_dice:.4f}')
+
+    # Update learning rate scheduler based on validation Dice Score
+    scheduler.step(avg_val_dice)
 
     # Save model if validation Dice score improves
     if avg_val_dice > best_dice:
@@ -139,7 +151,7 @@ plt.title('Train and Validation Loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
-plt.savefig('loss_plot.png')
+plt.savefig('loss_plot.png')  # Save loss plot
 plt.show()
 
 # Plot Dice scores
@@ -149,6 +161,5 @@ plt.title('Dice Score Over Epochs')
 plt.xlabel('Epoch')
 plt.ylabel('Dice Score')
 plt.legend()
-plt.savefig('dice_score_plot.png')
+plt.savefig('dice_score_plot.png')  # Save Dice score plot
 plt.show()
-

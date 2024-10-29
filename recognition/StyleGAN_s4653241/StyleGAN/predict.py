@@ -25,6 +25,18 @@ def plot_loss(G_loss,D_loss):
     plt.ylabel("Loss")
     plt.legend()
     plt.savefig('disc_loss.png')
+    plt.close()
+
+def plot_loss_epoch(G_loss, D_loss, epoch):
+    plt.figure(figsize=(10, 5))
+    plt.plot(G_loss, label="Generator Loss", color="blue")
+    plt.plot(D_loss, label="Discriminator Loss", color="red")
+    plt.title(f"Loss During Training (Epoch {epoch})")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(f'loss_epoch_{epoch}.png')
+    plt.close()
 
 def generate_examples(gen, mapping_net,epoch, n=5):
 

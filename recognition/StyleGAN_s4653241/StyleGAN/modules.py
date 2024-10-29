@@ -1,7 +1,3 @@
-"""
-Containing the source code of the components of your model. Each component must be
-implementated as a class or a function
-"""
 import torch
 from torch.autograd.profiler_util import Kernel
 import torch.nn as nn
@@ -10,8 +6,18 @@ import numpy as np
 from math import sqrt
 from config import *
 
+# Mapping Network used for mapping latent vector z to intermediate latent vector w
 class MappingNetwork(nn.Module):
+    """
+    Initializes a mapping network to map a latent space to another latent space.
+    
+    Args:
+        z_dim (int): Dimension of input latent vector z.
+        w_dim (int): Dimension of intermediate latent vector w.
+        activation (nn.Module): Activation function used in the mapping layers.
+    """
     def __init__(self,z_dim,w_dim,activation = nn.ReLU()):
+        
         super().__init__()
 
         # Mapping network
@@ -39,12 +45,17 @@ class MappingNetwork(nn.Module):
         return self.mapping(x)
 
 # Equalizer for the fully connected layer
-'''
-Linear layer with learning rate equalizing weights and bias
-Returns the output of the linear transformation of the tensor with bias
-'''
 class EqualizerStraights(nn.Module):
+    """
+    Fully connected layer with learnable weights and bias.
+    
+    Args:
+        in_chanel (int): Input dimension.
+        out_chanel (int): Output dimension.
+        bias (float): Initial bias value.
+    """
     def __init__(self, in_chanel, out_chanel, bias=0.0):
+        
         super().__init__()
         self.weight = EquilizerKG([out_chanel, in_chanel])
         self.bias = nn.Parameter(torch.ones(out_chanel) * bias)
@@ -58,13 +69,15 @@ class EqualizerStraights(nn.Module):
 
 
 # Weight equalizer
-'''
-Maintains the weights in the network  at a similar scale during training.
-Scale the weights at each layer with a constant such that,
- weight w' is scaled as w' = w * c where c is constant at each layer
-'''
 class EquilizerKG(nn.Module):
+    """
+    Weight equalizer to stabilize network weights across layers.
+    
+    Args:
+        shape (list): Shape of the weight tensor.
+    """
     def __init__(self,shape):
+        
         super().__init__()
         # self.constanted =  1 / sqrt(torch.prod(shape[1:])) # yet to use
         self.constanted = 1 / sqrt(np.prod(shape[1:]))
@@ -73,11 +86,19 @@ class EquilizerKG(nn.Module):
     def forward(self):
         return self.weight * self.constanted
 
-# -----------------Synthesis Network-----------------#
 
-# Drip Block, basically Style Block
+# DripBlock for the generator, essentially a style block with noise and transformation
 class DripBlock(nn.Module):
+    """
+    Style-based block with noise addition and activation.
+    
+    Args:
+        W_DIM (int): Dimension of style vector w.
+        in_chanel (int): Input channels.
+        out_chanel (int): Output channels.
+    """
     def __init__(self,W_DIM, in_chanel, out_chanel):
+        
         super().__init__()
 
         self.need_face = EqualizerStraights(W_DIM, in_chanel,bias=1.0)
@@ -99,6 +120,16 @@ class DripBlock(nn.Module):
 
 
 class Weight_Demod(nn.Module):
+    """
+    Weight demodulation for adaptive instance normalization.
+    
+    Args:
+        in_chanel (int): Input channels.
+        out_chanel (int): Output channels.
+        kernel_size (int): Kernel size.
+        demodulate (bool): Whether to apply weight demodulation.
+        eps (float): Small value for numerical stability.
+    """
     def __init__(
         self,
         in_chanel,
@@ -107,6 +138,7 @@ class Weight_Demod(nn.Module):
         demodulate = True,
         eps = 1e-8
     ):
+    
 
         super().__init__()
         self.out_chanel = out_chanel
@@ -144,14 +176,17 @@ class Weight_Demod(nn.Module):
         # return x in shape of [batch_size, out_features, height, width]
         return x.reshape(-1, self.out_chanel, h, w)
 
-'''
-Generators RGB  images from the feature maps
-CHANNELS: Number of channels in the RGB image
-'''
 
 class ToRGB(nn.Module):
-
+    """
+    Converts feature maps to RGB images in the generator.
+    
+    Args:
+        W_DIM (int): Style vector dimension.
+        features (int): Number of features.
+    """
     def __init__(self, W_DIM, features):
+        
         super().__init__()
         self.to_style = EqualizerStraights(W_DIM, features, bias=1.0)
 
@@ -164,50 +199,20 @@ class ToRGB(nn.Module):
         style = self.to_style(w)
         x = self.conv(x, style)
         return self.activation(x + self.bias[None, :, None, None])
-'''
-Not implemented yet
-'''
-class GeneratorNOT(nn.Module):
-    def __init__(self, log_reso,w_dim, n_features = 32, max_features = 256):
-        super().__init__()
 
-        features = [min(max_features, n_features * (2 ** i)) for i in range(log_reso - 2, -1, -1)]
-        self.n_blocks = len(features)
-
-        # Initialize the trainable 4x4 constant tensor
-        self.initial_constant = nn.Parameter(torch.randn((1, features[0], 4, 4)))
-
-        # First style block and it's rgb output. Initialises the generator.
-        self.style_block = DripBlock(w_dim, features[0], features[0])
-        self.to_rgb = ToRGB(w_dim, features[0])
-
-        # Creates a series of Generator Blocks based on features length. 5 in this case.
-        blocks = [GeneratorBlock(w_dim, features[i - 1], features[i]) for i in range(1, self.n_blocks)]
-        self.blocks = nn.ModuleList(blocks)
-
-    def forward(self, w, input_noise):
-        batch_size = w.shape[1]
-
-        # Expand the learnt constant to match the batch size
-        x = self.initial_constant.expand(batch_size, -1, -1, -1)
-
-        # Get the first style block and the rgb img
-        x = self.style_block(x, w[0], input_noise[0][1])
-        rgb = self.to_rgb(x, w[0])
-
-        # Rest of the blocks upsample the img using interpolation set in the config file and add to the rgb from the block
-        for i in range(1, self.n_blocks):
-            x = F.interpolate(x, scale_factor=2, mode="bilinear")
-            x, rgb_new = self.blocks[i - 1](x, w[i], input_noise[i])
-            rgb = F.interpolate(rgb, scale_factor=2, mode="bilinear") + rgb_new
-
-        # tanh is used to output rgb pixel values form -1 to 1
-        return torch.tanh(rgb)
 
 class Generator(nn.Module):
-
+    """
+    Progressive growing GAN generator.
+    
+    Args:
+        log_resolution (int): Resolution level (e.g., log2 of image width).
+        W_DIM (int): Style vector dimension.
+        n_features (int): Base number of features.
+        max_features (int): Maximum feature limit per layer.
+    """
     def __init__(self, log_resolution, W_DIM, n_features = 32, max_features = 256):
-
+        
         super().__init__()
 
         features = [min(max_features, n_features * (2 ** i)) for i in range(log_resolution - 2, -1, -1)]
@@ -235,10 +240,17 @@ class Generator(nn.Module):
             rgb = F.interpolate(rgb, scale_factor=2, mode="bilinear") + rgb_new
 
         return torch.tanh(rgb)
-'''
-Testing
-'''
+
+
 class GeneratorBlock(nn.Module):
+    """
+    A block within the generator, consisting of styled layers and RGB output conversion.
+
+    Args:
+        W_DIM (int): Dimensionality of the style vector `w`.
+        in_channel (int): Number of input channels.
+        out_channel (int): Number of output channels.
+    """
     def __init__(self,W_DIM, in_chanel, out_chanel):
         super().__init__()
 
@@ -259,28 +271,22 @@ class GeneratorBlock(nn.Module):
 
         return x, rgb
 
-#-----------Discriminator----------------#
-'''
-Implementation of the discriminator network
-Is mostly the same as GAN discriminator network
-'''
+
+# Discriminator for assessing real vs. generated images
 class Discriminator(nn.Module):
+    """
+    The discriminator network for distinguishing real from generated images.
+
+    Args:
+        log_reso (int): Logarithmic resolution of the image (e.g., `log_reso=8` for 256x256 images).
+        n_features (int): Initial number of features.
+        max_features (int): Maximum number of features per layer.
+    """
     def __init__(self, log_reso, n_features = 64, max_features = 256,): # log resolution 2^log_reso= image size
         super().__init__()
 
         features = [min(max_features, n_features*(2**i)) for i in range(log_reso - 1)]
 
-        # # Not RGB unless trainined on CIFAR-10 images
-        # if rgb:
-        #     self.rgb = nn.Sequential(
-        #         Dis_Conv2d(1, n_features, 1),
-        #         nn.LeakyReLU(0.2, True)
-        #     )
-        # else:
-        #     self.rgb = nn.Sequential(
-        #         Dis_Conv2d(1, n_features, 1),
-        #         nn.LeakyReLU(0.2, True)
-        #     )
         self.from_rgb = nn.Sequential(
             Dis_Conv2d(CHANNELS, n_features, 1), # Change here
             nn.LeakyReLU(0.2, True)
@@ -313,10 +319,15 @@ class Discriminator(nn.Module):
         x = x.reshape(x.shape[0], -1)
         return self.final(x)
 
-
-
-
 class DiscriminatorBlock(nn.Module):
+    """
+    A block within the discriminator that includes convolutional layers, downsampling, and residual connections.
+
+    Args:
+        in_channel (int): Input channels.
+        out_channel (int): Output channels.
+        activation (nn.Module, optional): Activation function to use within the block. Defaults to LeakyReLU(0.2).
+    """
     def __init__(self,in_chanel,out_chanel,activation = nn.LeakyReLU(0.2,True)):
         super().__init__()
 
@@ -346,6 +357,15 @@ class DiscriminatorBlock(nn.Module):
 
 #  Discriminator convolutional layer with equalized learning rate
 class Dis_Conv2d(nn.Module):
+    """
+    Convolutional layer with equalized learning rate for the discriminator.
+
+    Args:
+        in_channel (int): Number of input channels.
+        out_channel (int): Number of output channels.
+        kernel_size (int): Kernel size.
+        padding (int, optional): Padding for convolution. Defaults to 0.
+    """
     def __init__(self,in_chanel,out_chanel,kernel_size,padding=0):
         super().__init__()
         # self.kernel_size = kernel_size
@@ -356,10 +376,14 @@ class Dis_Conv2d(nn.Module):
     def forward(self, x: torch.Tensor):
 
         return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
-#---------------------------#
 
 class PathLengthPenalty(nn.Module):
-
+    """
+    Path length penalty to regularize the generator by penalizing deviation in pixel norms.
+    
+    Args:
+        beta (float): Decay rate for moving average of path length.
+    """
     def __init__(self, beta):
         super().__init__()
 

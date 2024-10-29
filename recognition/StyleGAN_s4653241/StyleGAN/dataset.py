@@ -1,5 +1,3 @@
-
-# Importing libraries
 import os
 from config import *
 from PIL import Image
@@ -9,8 +7,17 @@ from torchvision.transforms import ToPILImage
 import matplotlib.pyplot as plt
 import torch
 
+# Function to combine datasets based on configuration
 def combine_datasets(transform):
-
+    """
+    Combines datasets for training and testing based on specified conditions.
+    
+    Args:
+        transform (callable): The transformations to be applied to images.
+        
+    Returns:
+        ConcatDataset: Concatenated training and testing datasets.
+    """
     if BRAIN == 'AD':
         train = ImageDataset(AD_train, transform)
         test = ImageDataset(AD_test, transform)
@@ -20,13 +27,15 @@ def combine_datasets(transform):
         test = ImageDataset(NC_test,transform)
         return ConcatDataset([train, test])
 
-# Dataset class
+# Custom Dataset class to handle image loading and transformations
 class ImageDataset(Dataset):
     def __init__(self, root, transform=None):
         """
+        Initializes the dataset by setting the root directory and transformations.
+        
         Args:
-            root (str): The root directory of the dataset
-            transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed version.
+            root (str): Directory of images.
+            transform (callable, optional): Transformations applied to each image.
         """
         self.root = root
         self.transform = transform
@@ -34,6 +43,15 @@ class ImageDataset(Dataset):
         self.files = sorted(os.listdir(root))
 
     def __getitem__(self, index):
+        """
+        Loads an image and applies transformations.
+        
+        Args:
+            index (int): Index of the image to load.
+        
+        Returns:
+            Tensor: Transformed image.
+        """
         img = Image.open(os.path.join(self.root, self.files[index]))
 
         if self.transform:
@@ -59,10 +77,17 @@ class ImageDataset(Dataset):
         return raw_img
 
     def compare(self, index):
+        """
+        Returns original and transformed versions of an image.
+        
+        Args:
+            index (int): Index of the image.
+            
+        Returns:
+            tuple: Original and transformed images.
+        """
         img = Image.open(os.path.join(self.root, self.files[index]))
-        # img_path = os.path.join(self.root, self.files[index])
-        # raw_img = Image.open(img_path).convert("L")  # Always return the raw image in RGB format
-
+        
         if self.transform:
             trans_img = self.transform(img)
             to_pil = transforms.ToPILImage()
@@ -73,18 +98,45 @@ class ImageDataset(Dataset):
 
         return img, trans_img,
 
-def get_transform(image_size=(256, 256)):
+
+# Function to apply transformation to images
+def get_transform(image_size=(256, 240)):
+    """
+    Defines transformations for resizing, grayscale conversion, and data augmentation.
+    
+    Args:
+        image_size (tuple): Desired output image size.
+        
+    Returns:
+        transforms.Compose: A composition of image transformations.
+    """
     transform = transforms.Compose([
         transforms.Resize((image_height, image_width), interpolation=transforms.InterpolationMode.BICUBIC),
         # transforms.CenterCrop(image_size),
         transforms.Grayscale(),
+
+        transforms.RandomRotation(15),  # Rotate image by ±15 degrees
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),  # Randomly adjust brightness and contrast
+        transforms.RandomHorizontalFlip(p=0.5),  # Flip 50% of the images horizontally
+
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])  #Singel channel image
     ])
     return transform
 
 # Function to get the dataloader
-def get_dataloader(image_size=IMAGE_SIZE, batch_size=BATCH_SIZE, shuffle = False): # Size of image (256,240)
+def get_dataloader(image_size=IMAGE_SIZE, batch_size=BATCH_SIZE, shuffle = False):
+    """
+    Creates a DataLoader with specified transformations, batch size, and shuffle settings.
+    
+    Args:
+        image_size (tuple): Desired image size.
+        batch_size (int): Number of images per batch.
+        shuffle (bool): Whether to shuffle the dataset.
+        
+    Returns:
+        DataLoader: DataLoader for the combined dataset.
+    """
     transform = get_transform(image_size)
 
 

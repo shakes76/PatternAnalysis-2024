@@ -6,8 +6,9 @@ from torch import optim
 from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import torch.nn.functional as F
+import argparse
 
-def train():
+def train(root_dir, batch_size, num_epochs, output_dir):
     dataloader, dataset = get_dataloader(root_dir, batch_size)
     generator = Generator(z_dim=512, w_dim=512, in_channels=512, img_channels=1).to(device)
     discriminator = Discriminator(in_channels=512, img_channels=1).to(device)
@@ -16,6 +17,8 @@ def train():
     disc_optimizer = optim.Adam(discriminator.parameters(), lr=0.0005, betas=(0.5, 0.999))
     
     scaler = GradScaler()
+    
+    os.makedirs(output_dir, exist_ok=True)
     
     print(f"Loaded {len(dataset)} images for training.")
     for epoch in range(num_epochs):
@@ -63,8 +66,19 @@ def train():
         print(f"Epoch [{epoch+1}/{num_epochs}] Generator Loss: {avg_gen_loss:.4f}, Discriminator Loss: {avg_disc_loss:.4f}")
 
 if __name__ == "__main__":
-    root_dir = '/path/to/data'
-    batch_size = 16
-    num_epochs = 10
+    parser = argparse.ArgumentParser(description='Train StyleGAN2 on ADNI Dataset')
+    parser.add_argument('--data_root', type=str, default='/path/to/data', help='Path to training data')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
+    parser.add_argument('--output_dir', type=str, default='./training_outputs', help='Directory to save training plots')
+    args = parser.parse_args()
+    
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    train()
+    print(f"Using device: {device}")
+    
+    train(
+        root_dir=args.data_root,
+        batch_size=args.batch_size,
+        num_epochs=args.num_epochs,
+        output_dir=args.output_dir
+    )

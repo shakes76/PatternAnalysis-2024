@@ -10,8 +10,10 @@ model = YOLO("yolo11n.pt").to(device)
 
 settings = {
         'data': DATA_YML,
-        'epochs': 30,
-        'imgsz': 640
+        'epochs': 10,
+        'imgsz': 640,
+        'batch': -1,
+        'iterations': 10
     }
 
 

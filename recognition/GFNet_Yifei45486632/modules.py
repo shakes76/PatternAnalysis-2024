@@ -13,7 +13,8 @@ class GlobalFilterLayer(layers.Layer):
             name='freq_filters',
             shape=input_shape[1:],  # 匹配输入特征图的形状
             initializer='glorot_uniform',
-            trainable=True
+            trainable=True,
+            regularizer=tf.keras.regularizers.l2(0.01)  # 添加L2正则化
         )
 
     def call(self, x):

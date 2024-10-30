@@ -45,28 +45,31 @@ Each of these categories is also accompanied by the same number of black and whi
 |---|---|
 |![Dermoscopic Example](/images/ISIC_0000000.jpg)|![Ground Truth Example](/images/ISIC_0000000_segmentation.png)|
 
+### Using the Dataset
 
+To use the ISIC 2018 dataset with YOLOv11, preprocessing must be performed and the data must be arranged in the correct locations. To setup the dataset correctly follow the following steps.
+1. Ensure that the variables *ISC2018_TRUTH_TRAIN*, *ISC2018_TRUTH_VALIDATE* and *ISC2018_TRUTH_TEST* point to the location where the appropriate Ground Truth files are stored.
+2. Run dataset.py. This should create the required file structure for the YOLOv11 model and convert the ground truth images into labels formatted for use in YOLOv11.
+
+Running dataset.py will produce the following file structure if it does not yet exist:
+```
+data
+├── images
+│   ├── test
+│   ├── train
+│   └── validate
+└── labels
+    ├── test
+    ├── train
+    └── validate
+```
+3. Copy the dermoscopic images into their respective test, train and validate folders.
 
 ## Requirements (Polish with exact versions later)
 torch
 torchvision
 ultralytics
 opencv
-
-## Dataset File Structure
-The dataset should be stored in the following file structure
-```
-data
-|- train
-    |- labels
-    |- images
-|- validate
-    |- labels
-    |- images
-|- test
-    |- labels
-    |- images
-```
 
 ## References
 https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71

@@ -1,13 +1,18 @@
 import os
 import cv2 as cv
 
-
+# Modify these to the path of your ground truths.
 ISC2018_TRUTH_TRAIN = "./data-ISC2018/ISIC2018_Task1_Training_GroundTruth_x2"
 ISC2018_TRUTH_VALIDATE = "./data-ISC2018/ISIC2018_Task1_Validation_GroundTruth"
 ISC2018_TRUTH_TEST = "./data-ISC2018/ISIC2018_Task1_Test_GroundTruth"
+
+
 OUTPUT_TRAIN = "./data/labels/train"
 OUTPUT_VALIDATE = "./data/labels/validate"
 OUTPUT_TEST = "./data/labels/test"
+IMAGE_TRAIN = "./data/images/train"
+IMAGE_VALIDATE = "./data/images/validate"
+IMAGE_TEST = "./data/images/test"
 CLASS_NO = "0" #Only testing for 1 class: skin lesions.
 
 """
@@ -59,6 +64,12 @@ def mask2label(input_path, output_path):
 #Make directories needed for processing if they do not already exist
 os.makedirs(OUTPUT_TRAIN, exist_ok=True)
 os.makedirs(OUTPUT_VALIDATE, exist_ok=True)
+os.makedirs(OUTPUT_TEST, exist_ok=True)
+os.makedirs(IMAGE_TRAIN, exist_ok=True)
+os.makedirs(IMAGE_VALIDATE, exist_ok=True)
+os.makedirs(IMAGE_TEST, exist_ok=True)
+
+#Convert Truths to Labels
 mask2label(ISC2018_TRUTH_TRAIN, OUTPUT_TRAIN)
 mask2label(ISC2018_TRUTH_VALIDATE, OUTPUT_VALIDATE)
 mask2label(ISC2018_TRUTH_TEST, OUTPUT_TEST)

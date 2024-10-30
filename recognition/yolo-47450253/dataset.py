@@ -8,7 +8,7 @@ ISC2018_TRUTH_TEST = "./data-ISC2018/ISIC2018_Task1_Test_GroundTruth"
 OUTPUT_TRAIN = "./data/labels/train"
 OUTPUT_VALIDATE = "./data/labels/validate"
 OUTPUT_TEST = "./data/labels/test"
-CLASS_NO = "0" #Only testing for 1 class: skin legions.
+CLASS_NO = "0" #Only testing for 1 class: skin lesions.
 
 """
 create_label(mask)

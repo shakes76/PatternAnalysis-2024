@@ -27,7 +27,6 @@ num_res_layers = 2  # Number of residual layers
 hidden_channels = 64  # Hidden dimension of the VQVAE
 
 # Data directories
-/home/groups/comp3710/HipMRI_Study_open/keras_slices_data
 #train_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_train"
 #val_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_validate"
 #test_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_test"

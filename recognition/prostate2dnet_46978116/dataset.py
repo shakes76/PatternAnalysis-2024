@@ -1,6 +1,10 @@
+# dataset.py
 import numpy as np
 import nibabel as nib
-from tqdm import tqdm
+import torch
+from torch.utils.data import Dataset
+from skimage.transform import resize
+
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     channels = np.unique(arr)
@@ -10,188 +14,82 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
         res[..., c:c+1][arr == c] = 1
     return res
 
-# Load medical image functions
-def load_data_2D(
-    imageNames,
-    normImage=False,
-    categorical=False,
-    dtype=np.float32,
-    getAffines=False,
-    early_stop=False
-):
+def load_data_2D(image_names, norm_image=False, categorical=False, dtype=np.float32, get_affines=False, early_stop=False, target_size=(256, 256)):
     '''
     Load medical image data from names, cases list provided into a list for each.
 
-    This function pre-allocates 4D arrays for conv2d to avoid excessive memory usage.
+    This function resizes images to a fixed size to ensure consistency.
 
-    Parameters:
-    - imageNames: List of image file paths.
-    - normImage: bool (normalize the image to 0.0 - 1.0).
-    - categorical: bool (convert to categorical channels).
-    - dtype: data type for the images.
-    - getAffines: bool (return affine transformations).
-    - early_stop: bool (stop loading prematurely for quick loading and testing).
-
-    Returns:
-    - images: Loaded image data as a NumPy array.
-    - affines (optional): List of affine transformations if getAffines is True.
+    norm_image: bool (normalize the image)
+    early_stop: Stop loading prematurely, leaves arrays mostly empty, for quick loading and testing scripts.
     '''
     affines = []
-
-    # Get fixed size
-    num = len(imageNames)
-    first_case = nib.load(imageNames[0]).get_fdata(caching='unchanged')
-    if len(first_case.shape) == 3:
-        first_case = first_case[:, :, 0]  # Sometimes extra dims, remove
-    if categorical:
-        first_case = to_channels(first_case, dtype=dtype)
-        rows, cols, channels = first_case.shape
-        images = np.zeros((num, rows, cols, channels), dtype=dtype)
-    else:
-        rows, cols = first_case.shape
-        images = np.zeros((num, rows, cols), dtype=dtype)
-
-    for i, inName in enumerate(tqdm(imageNames)):
+    images = []
+    
+    for i, inName in enumerate(image_names):
         niftiImage = nib.load(inName)
-        inImage = niftiImage.get_fdata(caching='unchanged')  # Read disk only
+        inImage = niftiImage.get_fdata(caching='unchanged')
         affine = niftiImage.affine
         if len(inImage.shape) == 3:
-            inImage = inImage[:, :, 0]  # Sometimes extra dims in HipMRI_study data
+            inImage = inImage[:, :, 0]  # Remove extra dimension if present
         inImage = inImage.astype(dtype)
-        if normImage:
-            # Normalize the image
+        if norm_image:
             inImage = (inImage - inImage.mean()) / inImage.std()
         if categorical:
             inImage = to_channels(inImage, dtype=dtype)
-            images[i, :, :, :] = inImage
         else:
-            images[i, :, :] = inImage
-
+            # Resize the image to the target size
+            inImage = resize(inImage, target_size, anti_aliasing=True, preserve_range=True)
+        images.append(inImage)
         affines.append(affine)
         if i > 20 and early_stop:
             break
 
-    if getAffines:
+    images = np.array(images, dtype=dtype)
+
+    if get_affines:
         return images, affines
     else:
         return images
 
-
-def load_single_data_2D(
-    imagePath,
-    maskPath,
-    normImage=False,
-    categorical=False,
-    dtype=np.float32
-):
-    '''
-    Load a single pair of image and mask.
-
-    Parameters:
-    - imagePath: Path to the image file.
-    - maskPath: Path to the mask file.
-    - normImage: bool (normalize the image to 0.0- 1.0).
-    - categorical: bool (convert to categorical channels).
-    - dtype: data type for the images.
-
-    Returns:
-    - image: Loaded and processed image as a NumPy array.
-    - mask: Loaded and processed mask as a NumPy array.
-    '''
-    # Load image
-    niftiImage = nib.load(imagePath)
-    image = niftiImage.get_fdata(caching='unchanged')
-    if len(image.shape) == 3:
-        image = image[:, :, 0]  # Remove extra dimensions
-    image = image.astype(dtype)
-    if normImage:
-        # Normalize the image to have zero mean and unit variance
-        image = (image - image.mean()) / image.std()
-
-    # Load mask
-    niftiMask = nib.load(maskPath)
-    mask = niftiMask.get_fdata(caching='unchanged')
-    if len(mask.shape) == 3:
-        mask = mask[:, :, 0]  # Remove extra dimensions
-    mask = mask.astype(dtype)
-
-    if categorical:
-        mask = to_channels(mask, dtype=np.uint8)
-    else:
-        mask = (mask > 0).astype(np.float32)  # Binary mask
-
-    return image, mask
-
-class ProstateMRIDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, transform=None, norm=True, categorical=False, early_stop=False):
-        """
-        Initializes the dataset by loading all images and masks into memory.
-
-        Parameters:
-        - image_dir (str): Directory containing image Nifti files.
-        - mask_dir (str): Directory containing mask Nifti files.
-        - transform (callable, optional): Optional transform to be applied on a sample.
-        - norm (bool): Whether to normalize the images.
-        - categorical (bool): Whether masks are categorical (multi-class).
-        - early_stop (bool): If True, stops loading after 20 samples for quick testing.
-        """
-        self.image_dir = image_dir
-        self.mask_dir = mask_dir
+class ProstateDataset(Dataset):
+    def __init__(self, image_paths, mask_paths, norm_image=False, transform=None):
         self.transform = transform
-        self.norm = norm
-        self.categorical = categorical
-        self.early_stop = early_stop
 
-        # Retrieve sorted lists of image and mask filenames
-        self.image_files = sorted([f for f in os.listdir(image_dir) if f.endswith('.nii') or f.endswith('.nii.gz')])
-        self.mask_files = sorted([f for f in os.listdir(mask_dir) if f.endswith('.nii') or f.endswith('.nii.gz')])
+        # Load images and masks using load_data_2D
+        self.images = load_data_2D(image_paths, norm_image=norm_image, categorical=False, dtype=np.float32)
+        self.masks = load_data_2D(mask_paths, norm_image=False, categorical=False, dtype=np.uint8)
 
-        assert len(self.image_files) == len(self.mask_files), "Number of images and masks must be equal."
+        # Expand dimensions if needed (e.g., add channel dimension)
+        if len(self.images.shape) == 3:
+            # Shape is (N, H, W), we need (N, 1, H, W)
+            self.images = self.images[:, np.newaxis, :, :]
+        elif len(self.images.shape) == 4:
+            pass  # Shape is already (N, H, W, channels)
+        else:
+            raise ValueError(f"Unexpected image shape: {self.images.shape}")
 
-        # Full paths
-        self.image_paths = [os.path.join(image_dir, f) for f in self.image_files]
-        self.mask_paths = [os.path.join(mask_dir, f) for f in self.mask_files]
-
-        # Early stop handling
-        if self.early_stop:
-            self.image_paths = self.image_paths[:20]
-            self.mask_paths = self.mask_paths[:20]
+        if len(self.masks.shape) == 3:
+            # Shape is (N, H, W), we need (N, 1, H, W)
+            self.masks = self.masks[:, np.newaxis, :, :]
+        elif len(self.masks.shape) == 4:
+            pass  # Shape is already (N, H, W, channels)
+        else:
+            raise ValueError(f"Unexpected mask shape: {self.masks.shape}")
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.images)
 
     def __getitem__(self, idx):
-        """
-        Retrieves the image and mask at the specified index.
+        image = self.images[idx]
+        mask = self.masks[idx]
 
-        Parameters:
-        - idx (int): Index of the sample to retrieve.
+        # Convert to tensors
+        image = torch.from_numpy(image).float()
+        mask = torch.from_numpy(mask).float()
 
-        Returns:
-        - image (torch.Tensor): Image tensor.
-        - mask (torch.Tensor): Corresponding mask tensor.
-        """
-        image_path = self.image_paths[idx]
-        mask_path = self.mask_paths[idx]
-
-        # Load image and mask
-        image, mask = load_single_data_2D(
-            imagePath=image_path,
-            maskPath=mask_path,
-            normImage=self.norm,
-            categorical=self.categorical,
-            dtype=np.float32
-        )
-
-        # Convert image to tensor
-        image = torch.from_numpy(image).unsqueeze(0).float() 
-        if self.categorical:
- 
-            mask = torch.from_numpy(mask).permute(2, 0, 1).float()  
-    
-            mask = torch.from_numpy(mask).unsqueeze(0).float() 
-
+        # Apply transformations if any
         if self.transform:
-            image = self.transform(image)
+            image, mask = self.transform(image, mask)
 
         return image, mask

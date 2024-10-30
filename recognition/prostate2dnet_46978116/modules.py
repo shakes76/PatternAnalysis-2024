@@ -1,18 +1,15 @@
-'''containing the source code of the components of your model. Each component must be
-implementated as a class or a function
-'''
-
+# modules.py
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 class UNet(nn.Module):
-    def __init__(self, num_classes=1, in_channels=1):
+    def __init__(self, num_classes=6):
         super(UNet, self).__init__()
 
-        # down path with max pooling
-        self.encoder_conv1 = self.conv_block(in_channels, 64)
+        # Down path
+        self.encoder_conv1 = self.conv_block(1, 64)
         self.encoder_pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         self.encoder_conv2 = self.conv_block(64, 128)
@@ -27,7 +24,7 @@ class UNet(nn.Module):
         # Bottleneck
         self.bottleneck_conv = self.conv_block(512, 1024)
 
-        # up path
+        # Up path
         self.upconv6 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
         self.decoder_conv6 = self.conv_block(1024, 512)
 
@@ -45,7 +42,7 @@ class UNet(nn.Module):
 
     def conv_block(self, in_channels, out_channels):
         """
-        Double convolution block with Relu activation function
+        Double convolution block with ReLU activation.
         """
         block = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
@@ -77,28 +74,18 @@ class UNet(nn.Module):
 
         # Up Path
         u6 = self.upconv6(c5)
-        # At eacj stage ensure that size matchs corresponding down path level
-        # If not resize accordingly
-        if u6.size() != c4.size():
-            u6 = F.interpolate(u6, size=c4.size()[2:], mode='bilinear', align_corners=True)
         concat6 = torch.cat([u6, c4], dim=1)
         c6 = self.decoder_conv6(concat6)
 
         u7 = self.upconv7(c6)
-        if u7.size() != c3.size():
-            u7 = F.interpolate(u7, size=c3.size()[2:], mode='bilinear', align_corners=True)
         concat7 = torch.cat([u7, c3], dim=1)
         c7 = self.decoder_conv7(concat7)
 
         u8 = self.upconv8(c7)
-        if u8.size() != c2.size():
-            u8 = F.interpolate(u8, size=c2.size()[2:], mode='bilinear', align_corners=True)
         concat8 = torch.cat([u8, c2], dim=1)
         c8 = self.decoder_conv8(concat8)
 
         u9 = self.upconv9(c8)
-        if u9.size() != c1.size():
-            u9 = F.interpolate(u9, size=c1.size()[2:], mode='bilinear', align_corners=True)
         concat9 = torch.cat([u9, c1], dim=1)
         c9 = self.decoder_conv9(concat9)
 
@@ -107,23 +94,32 @@ class UNet(nn.Module):
 
         return output
 
+class MultiClassDiceLoss(nn.Module):
+    def __init__(self, num_classes=6, smooth=1e-6):
+        super(MultiClassDiceLoss, self).__init__()
+        self.num_classes = num_classes
+        self.smooth = smooth
 
-
-
-import torch
-from modules import UNet
-
-# Instantiate the model
-model = UNet(num_classes=1, in_channels=1)
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model.to(device)
-
-# Example input tensor
-input_tensor = torch.randn(1, 1, 256, 256).to(device)
-
-# Forward pass
-output = model(input_tensor)
-
-print(output.shape)  # Expected output shape: (1, 1, 256, 256)
-
+    def forward(self, inputs, targets):
+        """
+        inputs: (B, C, H, W) - Raw logits from the network.
+        targets: (B, H, W) - Ground truth labels with class indices (0 to num_classes - 1).
+        """
+        # Ensure targets have shape (B, H, W)
+        if targets.dim() == 4 and targets.size(1) == 1:
+            targets = targets.squeeze(1)  # Remove channel dimension
+        # Convert targets to one-hot encoding
+        targets_one_hot = F.one_hot(targets, num_classes=self.num_classes)  # (B, H, W, C)
+        targets_one_hot = targets_one_hot.permute(0, 3, 1, 2).float()  # (B, C, H, W)
+        
+        # Apply softmax to get class probabilities
+        inputs_softmax = F.softmax(inputs, dim=1)
+        
+        # Compute Dice loss for each class
+        intersection = (inputs_softmax * targets_one_hot).sum(dim=(0, 2, 3))
+        cardinality = (inputs_softmax + targets_one_hot).sum(dim=(0, 2, 3))
+        dice_per_class = (2.0 * intersection + self.smooth) / (cardinality + self.smooth)
+        
+        # Compute mean Dice loss over classes
+        dice_loss = 1.0 - dice_per_class.mean()
+        return dice_loss

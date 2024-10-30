@@ -6,6 +6,7 @@ def get_dataloaders(data_dir, batch_size=128):
     data_transforms = {
         'train': transforms.Compose([
             transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
         ]),
         'test': transforms.Compose([

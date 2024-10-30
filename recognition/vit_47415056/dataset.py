@@ -18,5 +18,6 @@ def get_dataloaders(data_dir, batch_size=128):
                       for x in ['train', 'test']}
     dataloaders = {x: DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True)
                    for x in ['train', 'test']}
+    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'test']}
     
-    return dataloaders
+    return dataloaders, dataset_sizes

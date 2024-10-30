@@ -108,3 +108,22 @@ class UNet(nn.Module):
         return output
 
 
+
+
+import torch
+from modules import UNet
+
+# Instantiate the model
+model = UNet(num_classes=1, in_channels=1)
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.to(device)
+
+# Example input tensor
+input_tensor = torch.randn(1, 1, 256, 256).to(device)
+
+# Forward pass
+output = model(input_tensor)
+
+print(output.shape)  # Expected output shape: (1, 1, 256, 256)
+

@@ -23,7 +23,7 @@ loss_fn = tf.keras.losses.Dice()
 x_test_batches, y_test_batches = batch_paths(testPaths, testSegPaths, 32)
 for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
     x_test = load_data_2D(test_x_paths, normImage=True)
-    y_test = load_data_2D(test_y_paths)
+    y_test = load_data_2D(test_y_paths, categorical=True)
     
     x_test_tensor = tf.convert_to_tensor(x_test, dtype=tf.float32)
     y_test_tensor = tf.convert_to_tensor(y_test, dtype=tf.float32)

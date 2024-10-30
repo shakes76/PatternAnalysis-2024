@@ -25,13 +25,16 @@ validationSegPaths = get_all_paths(VALIDATION_SEG_PATH)
 
 # Hyperparameters
 BATCH_SIZE = 32
-EPOCHS = 20
+EPOCHS = 15
 LEARNING_RATE = 0.001
 
 # load or initialize model
 unet = UNetSegmentation(MODEL_PATH)
 optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 loss_fn = tf.keras.losses.Dice()
+
+# track previous epoch loss to find convergence
+prev_loss = 0
 
 # testing save
 unet.model.save(MODEL_PATH)
@@ -66,7 +69,7 @@ for epoch in range(EPOCHS):
     x_validation_batches, y_validation_batches = batch_paths(validationPaths, validationSegPaths, BATCH_SIZE)
     for val_x_paths, val_y_paths in zip(x_validation_batches, y_validation_batches):
         x_val = load_data_2D(val_x_paths, normImage=True)
-        y_val = load_data_2D(val_y_paths)
+        y_val = load_data_2D(val_y_paths, categorical=True)
         
         x_val_tensor = tf.convert_to_tensor(x_val, dtype=tf.float32)
         y_val_tensor = tf.convert_to_tensor(y_val, dtype=tf.float32)
@@ -77,5 +80,9 @@ for epoch in range(EPOCHS):
     
     print(f"Validation loss after epoch {epoch+1}: {val_loss.result().numpy():.4f}")
     unet.model.save(MODEL_PATH)
+    if val_loss.result() - prev_loss < 0.05:
+        print(f"this epoch improved loss by {val_loss.result() - prev_loss}. Stopping Early")
+        #break
+    prev_loss = val_loss.result()
 
 print(f"completed {EPOCHS} epochs, final loss was {loss_value}")

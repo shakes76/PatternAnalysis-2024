@@ -94,6 +94,6 @@ def batch_paths(samplePaths, segPaths, batchSize):
     shuffledSamples = [samplePaths[i] for i in indicies]
     shuffledSegs = [segPaths[i] for i in indicies]
     # batch the shuffled data
-    batchedSamples = [shuffledSamples[i: min(i + batchSize, count - 1)] for i in range(count)]
-    batchedSegs = [shuffledSegs[i: min(i + batchSize, count - 1)] for i in range(count)]
+    batchedSamples = [shuffledSamples[i: min(i + batchSize, count - 1)] for i in range(0, count, batchSize)]
+    batchedSegs = [shuffledSegs[i: min(i + batchSize, count - 1)] for i in range(0, count, batchSize)]
     return batchedSamples, batchedSegs

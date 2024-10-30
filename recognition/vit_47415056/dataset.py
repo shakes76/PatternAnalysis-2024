@@ -19,8 +19,10 @@ def get_dataloaders(data_dir, batch_size=128):
 
     image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x])
                       for x in ['train', 'test']}
-    dataloaders = {x: DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True)
-                   for x in ['train', 'test']}
+    dataloaders = {
+        'train': DataLoader(image_datasets['train'], batch_size=batch_size, shuffle=True),
+        'test': DataLoader(image_datasets['test'], batch_size=batch_size, shuffle=False)
+    }
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'test']}
     
     return dataloaders, dataset_sizes

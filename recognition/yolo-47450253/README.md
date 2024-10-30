@@ -34,9 +34,9 @@ The biggest change between YOLOv11 and its last major predecessor YOLOv8, this b
 |   |   |
 |---|---|
 | Start: Stage 0 - Conv Features | Pooling: Stage 9 - SPPF Features|
-|![Conv Features](/images/stage0_Conv_features.png)|![SPPF Features](/images/stage9_SPPF_features.png)|
+|![Conv Features](/recognition/yolo-47450253/images/stage0_Conv_features.png)|![SPPF Features](/recognition/yolo-47450253/images/stage9_SPPF_features.png)|
 |Attention Mechanism: Stage 10 - C2PSA Features| Final: Stage 22 - C3K2 Features|
-|![C2PSA Features](/images/stage10_C2PSA_features.png)|![C3K2 Features](/images/stage22_C3k2_features.png)|
+|![C2PSA Features](/recognition/yolo-47450253/images/stage10_C2PSA_features.png)|![C3K2 Features](/recognition/yolo-47450253/images/stage22_C3k2_features.png)|
 
 ## About the ISIC2018 Dataset
 ### Dataset Breakdown
@@ -49,7 +49,7 @@ Each of these categories is also accompanied by the same number of black and whi
 
 |Dermoscopic Image|Ground Truth|
 |---|---|
-|![Dermoscopic Example](/images/ISIC_0000000.jpg)|![Ground Truth Example](/images/ISIC_0000000_segmentation.png)|
+|![Dermoscopic Example](/recognition/yolo-47450253/images/ISIC_0000000.jpg)|![Ground Truth Example](/recognition/yolo-47450253/images/ISIC_0000000_segmentation.png)|
 
 ### Using the Dataset
 
@@ -87,9 +87,9 @@ The model took approximately 40 minutes to train and seemed to produce good look
 
 |   |   |
 |---|---|
-|![Validation Batch Labels](/images/val_batch1_labels.jpg)|![Validation Batch Predictions](/images/val_batch1_pred.jpg)|
+|![Validation Batch Labels](/recognition/yolo-47450253/images/val_batch1_labels.jpg)|![Validation Batch Predictions](/recognition/yolo-47450253/images/val_batch1_pred.jpg)|
 
-![Training Results](/images/training_results.png)
+![Training Results](/recognition/yolo-47450253/images/training_results.png)
 The graphs refer to the following relevant metrics:
 - box_loss: Box Loss - Error in the predicted boxes compared to labels
 - cls_loss: Class Loss - Error in prediction of classes
@@ -110,7 +110,7 @@ If you wish to do so, while for this run the model was not tuned further, you ca
 
 ### Evaluating Against the Test Set
 It was also decided to validate the model against the set of test data, given that the dataset provided by ISIC contained ground truthes for these images as well. This was performed with an IOU threshold of 0.8 and confidence threshold of 0.5 as the predictions would also require these thresholds as specified by the task. This validation resulted in a precision of 0.965 and Recall of 0.939 for the model.
-![Validations results of the modal against Test set](/images/testvalidate.png)
+![Validations results of the modal against Test set](/recognition/yolo-47450253/images/testvalidate.png)
 
 If you wish to run this for yourself, simply run evaluate.py.
 
@@ -121,7 +121,7 @@ Here is some predictions and their true labels to compare to:
 
 |Prediction|Reality|
 |---|---|
-|![Model's Prediction](/images/test_batch2_labels.jpg)|![Reality](/images/test_batch2_pred.jpg)|
+|![Model's Prediction](/recognition/yolo-47450253/images/test_batch2_labels.jpg)|![Reality](/recognition/yolo-47450253/images/test_batch2_pred.jpg)|
 
 To perform the prediction on the test set, simply run predict.py
 

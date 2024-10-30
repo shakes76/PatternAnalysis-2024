@@ -77,3 +77,121 @@ def load_data_2D(
         return images
 
 
+def load_single_data_2D(
+    imagePath,
+    maskPath,
+    normImage=False,
+    categorical=False,
+    dtype=np.float32
+):
+    '''
+    Load a single pair of image and mask.
+
+    Parameters:
+    - imagePath: Path to the image file.
+    - maskPath: Path to the mask file.
+    - normImage: bool (normalize the image to 0.0- 1.0).
+    - categorical: bool (convert to categorical channels).
+    - dtype: data type for the images.
+
+    Returns:
+    - image: Loaded and processed image as a NumPy array.
+    - mask: Loaded and processed mask as a NumPy array.
+    '''
+    # Load image
+    niftiImage = nib.load(imagePath)
+    image = niftiImage.get_fdata(caching='unchanged')
+    if len(image.shape) == 3:
+        image = image[:, :, 0]  # Remove extra dimensions
+    image = image.astype(dtype)
+    if normImage:
+        # Normalize the image to have zero mean and unit variance
+        image = (image - image.mean()) / image.std()
+
+    # Load mask
+    niftiMask = nib.load(maskPath)
+    mask = niftiMask.get_fdata(caching='unchanged')
+    if len(mask.shape) == 3:
+        mask = mask[:, :, 0]  # Remove extra dimensions
+    mask = mask.astype(dtype)
+
+    if categorical:
+        mask = to_channels(mask, dtype=np.uint8)
+    else:
+        mask = (mask > 0).astype(np.float32)  # Binary mask
+
+    return image, mask
+
+class ProstateMRIDataset(Dataset):
+    def __init__(self, image_dir, mask_dir, transform=None, norm=True, categorical=False, early_stop=False):
+        """
+        Initializes the dataset by loading all images and masks into memory.
+
+        Parameters:
+        - image_dir (str): Directory containing image Nifti files.
+        - mask_dir (str): Directory containing mask Nifti files.
+        - transform (callable, optional): Optional transform to be applied on a sample.
+        - norm (bool): Whether to normalize the images.
+        - categorical (bool): Whether masks are categorical (multi-class).
+        - early_stop (bool): If True, stops loading after 20 samples for quick testing.
+        """
+        self.image_dir = image_dir
+        self.mask_dir = mask_dir
+        self.transform = transform
+        self.norm = norm
+        self.categorical = categorical
+        self.early_stop = early_stop
+
+        # Retrieve sorted lists of image and mask filenames
+        self.image_files = sorted([f for f in os.listdir(image_dir) if f.endswith('.nii') or f.endswith('.nii.gz')])
+        self.mask_files = sorted([f for f in os.listdir(mask_dir) if f.endswith('.nii') or f.endswith('.nii.gz')])
+
+        assert len(self.image_files) == len(self.mask_files), "Number of images and masks must be equal."
+
+        # Full paths
+        self.image_paths = [os.path.join(image_dir, f) for f in self.image_files]
+        self.mask_paths = [os.path.join(mask_dir, f) for f in self.mask_files]
+
+        # Early stop handling
+        if self.early_stop:
+            self.image_paths = self.image_paths[:20]
+            self.mask_paths = self.mask_paths[:20]
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        """
+        Retrieves the image and mask at the specified index.
+
+        Parameters:
+        - idx (int): Index of the sample to retrieve.
+
+        Returns:
+        - image (torch.Tensor): Image tensor.
+        - mask (torch.Tensor): Corresponding mask tensor.
+        """
+        image_path = self.image_paths[idx]
+        mask_path = self.mask_paths[idx]
+
+        # Load image and mask
+        image, mask = load_single_data_2D(
+            imagePath=image_path,
+            maskPath=mask_path,
+            normImage=self.norm,
+            categorical=self.categorical,
+            dtype=np.float32
+        )
+
+        # Convert image to tensor
+        image = torch.from_numpy(image).unsqueeze(0).float() 
+        if self.categorical:
+ 
+            mask = torch.from_numpy(mask).permute(2, 0, 1).float()  
+    
+            mask = torch.from_numpy(mask).unsqueeze(0).float() 
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, mask

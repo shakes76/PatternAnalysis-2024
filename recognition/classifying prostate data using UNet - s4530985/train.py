@@ -59,7 +59,25 @@ def Save_UNet():
 
 
 
-def main(File_path):
+def create_Unet(train, test, size, force_CPU = False):
+    '''
+    ideally, this should be the only function a person wishing to use this package will need to call
+    Parameters:
+        train (Dataset_3d): the segment of the data to be trained on
+        test (Dataset_3d): the segment of the data to be tested on
+        size (int): the N*N*N dimension of the train & test data
+        force_CPU (bool): if true, allow the program to run on CPU, otherwise will abort if no GPU detected
+        
+    return:
+        The trained Unet model
+    '''
+    device = modules.test_GPU_connection(force_CPU)
+    #load
+    epochs = 10
+    batch_size = 4
+    dim = size
+    
+
 
     
     print("test")
@@ -68,9 +86,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("File_path", help="file path to the dataset to be ??????? modelled on?????")
     parser.add_argument("-fc","--force_CPU", help="set if you wish to allow usage of CPU, if GPU not available", action="store_true", default=False)
-    parser.add_argument("dimensionality", help="specify wether the data is a 2d or 2d segment", type=int, default=2)
-    parser.add_argument("size", help="the n by n dimensions of the images in the dataset")
+    #parser.add_argument("dimensionality", help="specify wether the data is a 2d or 2d segment", type=int, default=3)
+    parser.add_argument("size", help="the N*N*N dimensions of the images in the dataset", type=int)
     args = parser.parse_args()
 
-    modules.test_GPU_connection(args.force_CPU)
-    main(args.File_path)
+    
+    create_Unet(args.File_path, args.size, args.force_CPU)

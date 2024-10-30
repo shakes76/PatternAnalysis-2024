@@ -11,3 +11,4 @@ requirements:
 tqdm - >version 4.66.5
 nilearn - >version 0.10.4
 pytorch - compute platform = cuda 11.8
+pip install pyimgaug3d

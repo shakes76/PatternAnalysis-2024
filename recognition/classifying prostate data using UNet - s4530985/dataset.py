@@ -8,6 +8,7 @@ import nibabel as nib
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 
+#### provided code from 2024 specsheet
 def to_channels ( arr : np.ndarray , dtype = np.uint8 ) -> np.ndarray :
     channels = np.unique( arr )
     res = np.zeros ( arr.shape + ( len(channels) ,) , dtype = dtype )
@@ -139,8 +140,9 @@ def load_data_3D ( imageNames , normImage = False , categorical = False , dtype 
         return images , affines
     else :
         return images
-    
-class Dataset_2d(Dataset):
+#### end of provided code
+
+class Dataset_3d(Dataset):
     """
     """
     def __init__(self, image_dir, mask_dir):

@@ -28,3 +28,15 @@ class ResidualLayer(nn.Module):
         return out
 
 
+class ResidualStack(nn.Module):
+    """Stack of residual layers."""
+    def __init__(self, in_channels, out_channels, num_layers):
+        super(ResidualStack, self).__init__()
+        layers = [ResidualLayer(in_channels, out_channels) for _ in range(num_layers)]
+        self.stack = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.stack(x)
+
+
+

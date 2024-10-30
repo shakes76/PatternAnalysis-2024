@@ -39,37 +39,31 @@ def load_data_2D(imageNames, normImage=False, categorical=False, dtype=np.float3
 
     images = np.stack(images)
     if getAffines:
-        return torch.tensor(images, dtype=torch.float32), affines
+        return images, affines
     else:
-        return torch.tensor(images, dtype=torch.float32)
+        return images
 
 class ProstateDataset(Dataset):
     def __init__(self, image_path, mask_path, norm_image=False, transform=None, target_size=(128, 64)):
         self.transform = transform
-        self.image_paths = sorted([os.path.join(image_path, img) for img in os.listdir(image_path) if img.endswith(('.nii', '.nii.gz'))])
-        self.mask_paths = sorted([os.path.join(mask_path, img) for img in os.listdir(mask_path) if img.endswith(('.nii', '.nii.gz'))])
-        self.norm_image = norm_image
+        self.image_path = image_path
+        self.mask_path = mask_path
+        self.images = os.listdir(self.image_path)
+        self.masks = os.listdir(self.mask_path)
         self.target_size = target_size
+        self.transform = transform
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.images)
 
     def __getitem__(self, idx):
-        image = load_data_2D([self.image_paths[idx]], normImage=True)
-        mask = load_data_2D([self.mask_paths[idx]])
+        img_pth = os.path.join(self.image_path,self.images[idx])
+        mask_pth= os.path.join(self.mask_path,self.images[idx].replace('case', 'seg'))
+        image = load_data_2D([img_pth], normImage=True)
+        mask = load_data_2D([mask_pth])
 
-        # Ensure image has shape (C, H, W)
-        if image.dim() == 2:
-            image = image.unsqueeze(0)
-        elif image.dim() == 3 and image.shape[0] != 1:
-            image = image.permute(2, 0, 1)
-
-        # Ensure mask is of type torch.LongTensor
-        mask = mask.long()
-
-
+        if self.transform is not None:
+            augm = self.transform(image=image,mask=mask)
         
-        image = transforms.Resize((128, 64))(image)
-        mask = transforms.Resize((128, 64))(mask)
 
         return image, mask

@@ -4,8 +4,8 @@ import torch
 
 import numpy as np
 import nibabel as nib
+import matplotlib.pyplot as plt
 
-from tqdm import tqdm
 from typing import Sequence, Mapping
 from torch.utils.data._utils.collate import default_collate
 from config import (IMAGE_DIR, MASK_DIR)
@@ -27,7 +27,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     for c in channels:
         c = int(c)
         res[..., c: c + 1][arr == c] = 1
-
+    print("one hot:" + str(res.shape))
     return res
 
 
@@ -106,4 +106,18 @@ def collate_batch(batch: Sequence):
             batch_list[key] = collate_fn(data_for_batch)
     else:
         batch_list = collate_fn(data)
+    print(batch_list.shape)
     return batch_list
+
+
+def plot_and_save(x, y_data, labels, title, xlabel, ylabel, filename):
+    plt.figure()
+    for y, label in zip(y_data, labels):
+        plt.plot(x, y, label=label)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(filename)
+    plt.close()

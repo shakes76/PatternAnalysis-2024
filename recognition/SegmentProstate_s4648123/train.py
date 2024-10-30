@@ -3,11 +3,11 @@ import time
 import numpy as np
 import torch
 
-from utils import one_hot_mask
 from dataset import get_dataloaders
 from torch.utils.tensorboard import SummaryWriter
 
 from modules import UNet3D
+from utils import plot_and_save
 from config import MODEL_PATH
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -36,18 +36,15 @@ class Dice(torch.nn.Module):
             torch.Tensor: Dice coefficients for each class.
         """
         # Apply softmax to logits to get probabilities
-        input = torch.softmax(pred, dim=1)  # (B, C, D, H, W)
-
-        # Convert target to one-hot encoding along the class dimension
-        target = one_hot_mask(target)  # (B, C, D, H, W)
+        pred = torch.softmax(pred, dim=1)  # (B, C, D, H, W)
 
         # Define the axes for reduction (batch, depth, height, width)
-        reduce_axis = [0] + list(range(2, len(input.shape)))  # [0, 2, 3, 4]
+        reduce_axis = [0] + list(range(2, len(pred.shape)))  # [0, 2, 3, 4]
 
         # Compute the intersection and union for each class
-        intersection = torch.sum(input * target, dim=reduce_axis)  # (num_classes,)
+        intersection = torch.sum(pred * target, dim=reduce_axis)  # (num_classes,)
         ground_o = torch.sum(target, dim=reduce_axis)  # (num_classes,)
-        pred_o = torch.sum(input, dim=reduce_axis)  # (num_classes,)
+        pred_o = torch.sum(pred, dim=reduce_axis)  # (num_classes,)
 
         # Compute the denominator for Dice coefficient
         denominator = ground_o + pred_o
@@ -116,7 +113,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(log_dir="./runs/unet_training")  # Specify the log directory
 
     # Set up datasets and DataLoaders
-    batch_size = 8
+    batch_size = 2
     train_loader, val_loader, test_loader = get_dataloaders(train_batch=batch_size, val_batch=batch_size)
 
     # Initialize model
@@ -131,46 +128,55 @@ if __name__ == '__main__':
     best_metric = float(0.)
     best_state = unet.state_dict()
 
+    train_losses, val_losses = [], []
+    dice_scores_per_class = [[] for _ in range(5)]
+    lrs, weight_decays = [], []
+
     train_start_time = time.time()
 
     # Training and evaluation loop
     for epoch in range(epochs):
-        # # Training
         train_loss = train(unet, train_loader, optimizer, criterion)
-        train_loss_avg = train_loss / len(train_loader)
-        print(f"Train Epoch {epoch + 1}/{epochs}, Training Loss: {train_loss_avg:.4f}")
+        train_losses.append(train_loss)
 
-        # Log training loss to TensorBoard
-        writer.add_scalar("Loss/Train", train_loss_avg, epoch)
+        dice_scores = validate(unet, val_loader, criterion)
+        val_loss = 1.0 - np.mean(dice_scores)
+        val_losses.append(val_loss)
 
-        # Log learning rate for each param group in the optimizer
-        for param_group_idx, param_group in enumerate(optimizer.param_groups):
-            writer.add_scalar(f"LR/Group_{param_group_idx}", param_group['lr'], epoch)
-            writer.add_scalar(f"Weight_Decay/Group_{param_group_idx}", param_group['weight_decay'], epoch)
+        for i, score in enumerate(dice_scores):
+            dice_scores_per_class[i].append(score)
+
+        lrs.append([pg['lr'] for pg in optimizer.param_groups])
+        weight_decays.append([pg['weight_decay'] for pg in optimizer.param_groups])
+
         scheduler.step()
 
-        # # Validation
-        dice_scores = validate(unet, val_loader, criterion)
-        dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in dice_scores])
-        print(f"Test Epoch {epoch + 1}/{epochs}, Dice Coefficients: [{dice_coeff_str}]")
+        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Dice: {dice_scores}")
 
-        # Log validation loss to TensorBoard
-        validation_loss = 1. - float(np.mean(dice_scores))  # Average validation loss
-        writer.add_scalar("Loss/Validation", validation_loss, epoch)
-
-        # Log Dice score for each class to TensorBoard
-        for class_idx, dice_scores in enumerate(dice_scores):
-            writer.add_scalar(f"Dice_Score/Class_{class_idx}", dice_scores, epoch)
-
-        # if this is the best performance so far, save this state
-        if validation_loss < best_metric:
-            best_metric = validation_loss
+        if val_loss < best_metric:
+            best_metric = val_loss
             best_state = unet.state_dict()
             torch.save(best_state, MODEL_PATH)
 
     train_time = time.time() - train_start_time  # Calculate elapsed time
     print(f"Total training time: {train_time:.2f} seconds")
-    writer.close()
+
+    # Prepare x-axis values
+    epochs_range = range(1, epochs + 1)
+
+    # Plot (1) Train and validation loss vs epochs
+    plot_and_save(epochs_range, [train_losses, val_losses], ["Train Loss", "Validation Loss"],
+        "Train and Validation Loss", "Epochs", "Loss", "train_val_loss.png")
+
+    # Plot (2) Dice score of each class vs epochs
+    plot_and_save(epochs_range, dice_scores_per_class, [f"Class {i}" for i in range(5)],
+        "Dice Score per Class", "Epochs", "Dice Score", "dice_scores.png")
+
+    # Plot (3) Learning rate and weight decay vs epochs
+    lr_values = [lr[0] for lr in lrs]
+    wd_values = [wd[0] for wd in weight_decays]
+    plot_and_save(epochs_range, [lr_values, wd_values], ["Learning Rate", "Weight Decay"],
+        "Learning Rate and Weight Decay", "Epochs", "Value", "lr_wd.png")
 
     # # Load the best model state (if not loaded already)
     # unet.load_state_dict(best_state)

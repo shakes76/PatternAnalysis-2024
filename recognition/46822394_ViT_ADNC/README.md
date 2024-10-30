@@ -181,6 +181,19 @@ This will:
    - Per-class accuracy
 4. Save results to a timestamped directory
 
+#### Cross-Validation
+
+The system supports model ensemble through cross-validation:
+```python
+predictions, true_labels, probabilities = cross_validate_models(
+    model1_path="./checkpoints/model1.pt",
+    model2_path="./checkpoints/model2.pt",
+    test_loader=test_loader,
+    device=device,
+    classes=CLASSES
+)
+```
+
 ### Output
 
 The evaluation script generates the following outputs in a timestamped directory:
@@ -223,23 +236,75 @@ The system evaluates models using multiple metrics:
 | Model 1 | ./checkpoints/best_model_20241029_234652.pt |
 | Model 2 | ./checkpoints/best_model_20241029_224507.pt |
 
-![confusion matrix](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/confusion_matrix.png)
 
-![ROC curve](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/roc_curves.png)
+## Visual Analysis of Results
+
+### Confusion Matrix Insights
+![Confusion Matrix](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/confusion_matrix.png)
+
+The confusion matrix reveals several key patterns:
+
+1. **CN Classification (Top Row)**
+   - Strong true negative rate: 4,344 correct CN identifications
+   - Relatively low false positives: 196 MCI cases wrongly classified as CN
+   - Shows model's strength in identifying normal cases
+
+2. **MCI Classification (Bottom Row)**
+   - Notable true positive rate: 3,275 correct MCI identifications
+   - Higher false negatives: 1,185 CN cases misclassified as MCI
+   - Indicates more conservative MCI detection
+
+### ROC Curve Analysis
+![ROC Curve](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/roc_curves.png)
+
+The ROC curves provide compelling evidence of model performance:
+
+1. **Overall Performance**
+   - Both classes achieve AUC = 0.96, significantly above random classification (dashed line)
+   - Curves show similar performance for both CN and MCI classification
+   - Sharp initial rise indicates excellent discrimination at high confidence thresholds
+
+2. **Curve Characteristics**
+   - Nearly identical curves for CN and MCI suggest balanced performance
+   - Strong early climb (0.0-0.2 FPR range) indicates high confidence predictions are very reliable
+   - Plateaus around 0.95 TPR, showing diminishing returns in sensitivity gains
+
+## Quantitative Performance Breakdown
+
+### Class-Specific Metrics
+| Class | Key Strengths | Areas for Improvement |
+|-------|---------------|----------------------|
+| CN | 95.7% Recall | 78.6% Precision |
+| MCI | 94.4% Precision | 73.4% Recall |
+
+### Overall Performance Metrics
+- **Accuracy**: 84.7%
+- **Macro Average F1**: 0.844
+- **Weighted Average F1**: 0.845
+
+## Clinical Implications
+
+1. **Screening Utility**
+   - High CN recall (95.7%) makes it reliable for ruling out cognitive impairment
+   - High MCI precision (94.4%) suggests confident positive predictions are trustworthy
+
+2. **Risk Assessment**
+   - False negative rate for MCI (26.6%) suggests need for additional verification of CN predictions
+   - Could serve as an effective initial screening tool, with positive cases requiring clinical confirmation
+
+## Recommendations
+
+1. **Model Application**
+   - Best suited for initial screening where high sensitivity to CN cases is desired
+   - Consider threshold adjustments to balance precision/recall based on clinical priorities
+
+2. **Future Improvements**
+   - Focus on reducing CN false positives without sacrificing MCI detection if possible
+   - Consider additional features or data augmentation to improve MCI recall
+   - Investigate cases in the overlap region to identify potential distinguishing features
 
 
-## Cross-Validation
 
-The system supports model ensemble through cross-validation:
-```python
-predictions, true_labels, probabilities = cross_validate_models(
-    model1_path="./checkpoints/model1.pt",
-    model2_path="./checkpoints/model2.pt",
-    test_loader=test_loader,
-    device=device,
-    classes=CLASSES
-)
-```
 
 ## License
 
@@ -247,5 +312,5 @@ Apache License - Version 2.0, January 2004 (http://www.apache.org/licenses/)
 
 ## Acknowledgments
 
-- ADNI for providing the dataset
+- ADNI for providing the dataset https://adni.loni.usc.edu/
 - Vision Transformer (ViT) original implementation

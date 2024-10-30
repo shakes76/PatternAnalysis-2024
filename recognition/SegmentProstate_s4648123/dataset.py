@@ -1,10 +1,10 @@
 import numpy as np
-from utils import load_image_and_label_3D, get_images, collate_batch, load_data_3D
+from utils import get_images, collate_batch, load_data_3D
 from monai.transforms import (Compose, ToTensord, Spacingd, ScaleIntensityRanged, CropForegroundd,
                               Orientationd, RandCropByPosNegLabeld)
 from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
-from config import NUM_WORKERS, EARLY_STOP
+from config import NUM_WORKERS, EARLY_STOP, BATCH_SIZE
 
 # test other transforms
 train_transforms = Compose(
@@ -98,7 +98,7 @@ class MRIDataset(Dataset):
         return data
 
 
-def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, DataLoader]:
+def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataLoader, DataLoader, DataLoader]:
     image_files, mask_files = get_images()
 
     num_samples = len(image_files)
@@ -135,7 +135,7 @@ def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, Dat
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def get_test_dataloader(batch_size):
+def get_test_dataloader(batch_size=BATCH_SIZE):
     image_files, mask_files = get_images()
     num_samples = len(image_files)
     np.random.seed(42)

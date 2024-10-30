@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import os
+from torchvision import transforms
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     """Convert an array to a one-hot encoded channel format.
@@ -67,6 +68,12 @@ class MedicalImageDataset(Dataset):
             rows, cols = first_case.shape
             images = np.zeros((num_images, rows, cols), dtype=self.dtype)
 
+        # Define a transform for resizing
+        resize_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize((256, 128))  # Resize to (128, 256) to match expected shape
+        ])
+
         # Load and preprocess each image
         for i, img_path in enumerate(tqdm(self.image_paths)):
             nifti_image = nib.load(img_path)  # Load NIfTI image
@@ -76,6 +83,9 @@ class MedicalImageDataset(Dataset):
                 image_data = image_data[:, :, 0]  # Remove extra dimension if necessary
 
             image_data = image_data.astype(self.dtype)  # Convert to specified dtype
+
+            # Resize the image to the expected size
+            image_data = resize_transform(image_data)
 
             # Normalize the image if the flag is set
             if self.norm_image:

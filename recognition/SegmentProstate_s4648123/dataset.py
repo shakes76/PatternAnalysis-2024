@@ -1,11 +1,10 @@
 import numpy as np
-from utils import load_image_and_label_3D, get_images, collate_batch
+from utils import load_image_and_label_3D, get_images, collate_batch, load_data_3D
 from monai.transforms import (Compose, ToTensord, Spacingd, ScaleIntensityRanged, CropForegroundd,
                               Orientationd, RandCropByPosNegLabeld)
 from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
-from config import NUM_WORKERS
-
+from config import NUM_WORKERS, EARLY_STOP
 
 # test other transforms
 train_transforms = Compose(
@@ -69,12 +68,12 @@ class MRIDataset(Dataset):
         :param mode: Dataset split type ('train', 'valid')
         """
         self.transform = transforms_dict.get(mode)
-        self.image_files = image_files
-        self.label_files = label_files
+        self.images = load_data_3D(image_files, early_stop=EARLY_STOP)
+        self.labels = load_data_3D(label_files, early_stop=EARLY_STOP)
 
     def __len__(self):
         # Return the number of images in the dataset.
-        return len(self.image_files)
+        return self.images.shape[0]
 
     def __getitem__(self, index):
         """
@@ -83,11 +82,19 @@ class MRIDataset(Dataset):
         :param index: Index of the item to retrieve
         :return: Dictionary with transformed image and mask
         """
-        img_and_mask = load_image_and_label_3D(self.image_files[index], self.label_files[index])
+        # Get image and label at index
+        img = self.images[index]  # Retrieve the image at the specified index
+        label = self.labels[index]  # Retrieve the label at the specified index
 
-        # Load image and segmentation
-        data = {'image': img_and_mask[0], 'label': img_and_mask[1]}
-        data = self.transform(data)  # Apply transformations
+        # Move channel dimension to the front of the label (channels, rows, cols, depth)
+        label = np.transpose(label, (3, 0, 1, 2))
+
+        # Add a new channel dimension to the image (1, rows, cols, depth)
+        img = np.expand_dims(img, axis=0)
+
+        # Apply transformations
+        data = self.transform({'image': img, 'label': label})
+
         return data
 
 

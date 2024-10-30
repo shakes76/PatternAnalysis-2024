@@ -13,7 +13,7 @@ YOLOv11 is the 11th major iteration in the "You Only Look Once" family of object
 ### Model Architecture
 YOLOv11 provides significant advancements over older versions of YOLO, with various improvements to the components that make up its architecture, but ultimately follows a very similar structure to its predecessors.
 
-![Architecture Diagram of YOLOv11](/yolo-47450253/images/YOLOv11Architecture.png)
+![Architecture Diagram of YOLOv11](/recognition/yolo-47450253/images/YOLOv11Architecture.png)
 *Correction: the SPFF block in this diagram should be refered to as SPPF*
 
 The Architecture can be broken down into a backbone (the primary feature extractor), neck (Intermediate Processing) and head (Prediction), stages of each segment being comprised of the following blocks:

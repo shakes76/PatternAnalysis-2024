@@ -223,6 +223,9 @@ The system evaluates models using multiple metrics:
 | Model 1 | ./checkpoints/best_model_20241029_234652.pt |
 | Model 2 | ./checkpoints/best_model_20241029_224507.pt |
 
+![confusion matrix](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/confusion_matrix.png)
+
+![ROC curve](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/roc_curves.png)
 
 
 ## Cross-Validation

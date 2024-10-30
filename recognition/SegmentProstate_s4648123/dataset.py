@@ -1,7 +1,8 @@
 import numpy as np
-from utils import load_image_and_label_3D, collate_batch, get_images
-from monai.transforms import (Compose, ToTensord, Spacingd, EnsureChannelFirstd, ScaleIntensityRanged, CropForegroundd,
+from utils import load_image_and_label_3D, get_images, collate_batch
+from monai.transforms import (Compose, ToTensord, Spacingd, ScaleIntensityRanged, CropForegroundd,
                               Orientationd, RandCropByPosNegLabeld)
+from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
 from config import NUM_WORKERS
 
@@ -19,7 +20,7 @@ train_transforms = Compose(
         ),
         CropForegroundd(keys=["image", "label"], source_key="image"),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
-        Spacingd(keys=["image", "label"], pixdim=(1.5, 1.5, 2.0), mode=("bilinear", "nearest")),
+        Spacingd(keys=["image", "label"], pixdim=(1., 1., 1.), mode=("bilinear", "nearest")),
         RandCropByPosNegLabeld(
             keys=["image", "label"],
             label_key="label",
@@ -45,7 +46,7 @@ val_transforms = Compose(
         ),
         CropForegroundd(keys=["image", "label"], source_key="image"),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
-        Spacingd(keys=["image", "label"], pixdim=(1.5, 1.5, 2.0), mode=("bilinear", "nearest")),
+        Spacingd(keys=["image", "label"], pixdim=(1., 1., 1.), mode=("bilinear", "nearest")),
         ToTensord(keys=["image", "label"], device="cuda")
     ]
 )
@@ -138,5 +139,5 @@ def get_test_dataloader(batch_size):
     test_images, test_masks = image_files[test_idx], mask_files[test_idx]
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
     test_dataloader = DataLoader(test_ds, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True,
-                                 collate_fn=collate_batch)
+                                 collate_fn=list_data_collate)
     return test_dataloader

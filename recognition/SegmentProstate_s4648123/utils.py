@@ -122,6 +122,27 @@ def collate_batch(batch: Sequence):
     return batch_list
 
 
+def compute_class_weights(target):
+    """
+    Compute class weights based on the inverse of class frequency.
+
+    Args:
+        target (Tensor): Ground truth labels (B, C, D, H, W).
+
+    Returns:
+        Tensor: Class weights of shape (num_classes,).
+    """
+    reduce_axis = [0] + list(range(2, target.dim()))  # Reduce over batch and spatial dims
+    class_counts = torch.sum(target, dim=reduce_axis)  # (C,)
+    total = torch.sum(class_counts)  # Total pixel count
+
+    # Inverse frequency weighting
+    class_weights = total / (class_counts + 1e-6)  # Avoid division by zero
+    class_weights = class_weights / class_weights.sum()  # Normalize
+
+    return class_weights
+
+
 def plot_and_save(x, y_data, labels, title, xlabel, ylabel, filename):
     plt.figure()
     for y, label in zip(y_data, labels):

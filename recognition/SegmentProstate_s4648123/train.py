@@ -6,7 +6,7 @@ import torch
 from dataset import get_dataloaders
 
 from modules import UNet3D
-from utils import plot_and_save
+from utils import plot_and_save, compute_class_weights
 from config import MODEL_PATH
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -23,7 +23,7 @@ class Dice(torch.nn.Module):
         super(Dice, self).__init__()
         self.smooth = smooth
 
-    def dice(self, pred, target):
+    def dice_scores_per_class(self, pred, target):
         """
         Compute the Dice coefficient between 3D predictions and targets.
 
@@ -64,8 +64,10 @@ class Dice(torch.nn.Module):
         Returns:
             Tensor: Dice loss.
         """
-        coeff = self.dice(logits, target)  # Compute Dice coefficient
-        dice_loss = 1 - torch.mean(coeff)  # Mean over classes
+
+        class_weights = compute_class_weights(target)
+        coeff = self.dice_scores_per_class(logits, target) * class_weights
+        dice_loss = 1 - torch.sum(coeff) / torch.sum(self.class_weights) # Weighted mean
 
         return dice_loss
 
@@ -97,17 +99,27 @@ def train(model, dataloader, optimizer, crit, early_stop=False):
 def validate(model, dataloader, crit):
     model.eval()  # Set model to evaluation mode
     dice_scores = []
+    dice_losses = []
 
     with torch.no_grad():  # Disable gradient computation
         torch.manual_seed(2809)  # reproducibility
         for batch_data in dataloader:
             images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
             pred = model(images)  # Forward pass
-            new_dice_score = crit.dice(pred, labels)
-            dice_scores.append(new_dice_score.cpu().numpy())
+
+            # dice scores per class
+            new_dice_scores = crit.dice_scores_per_class(pred, labels)
+            dice_scores.append(new_dice_scores.cpu().numpy())
+
+            #dice loss
+            class_weights=compute_class_weights(labels)
+            weighted_scores= class_weights* new_dice_scores
+            dice_loss = 1 - torch.sum(weighted_scores) / torch.sum(class_weights) # Weighted mean
+            dice_losses.append(dice_loss.cpu().numpy())
 
     dice_scores = np.mean(dice_scores, axis=0)
-    return dice_scores
+    dice_loss = np.mean(dice_losses)
+    return dice_scores, dice_loss
 
 if __name__ == '__main__':
     """
@@ -115,8 +127,7 @@ if __name__ == '__main__':
     """
 
     # Set up datasets and DataLoaders
-    batch_size = 4
-    train_loader, val_loader, test_loader = get_dataloaders(train_batch=batch_size, val_batch=batch_size)
+    train_loader, val_loader, test_loader = get_dataloaders()
 
     # Initialize model
     unet = UNet3D(n_channels=1, n_classes=6)
@@ -134,7 +145,7 @@ if __name__ == '__main__':
     dice_scores_per_class = [[] for _ in range(6)]
     lrs, weight_decays = [], []
 
-    early_stop=True
+    early_stop=False
     train_start_time = time.time()
 
     # Training and evaluation loop
@@ -145,8 +156,7 @@ if __name__ == '__main__':
 
         print(f"Train Loss: {train_loss:.4f}")
 
-        dice_scores = validate(unet, val_loader, criterion)
-        val_loss = 1.0 - np.mean(dice_scores)
+        dice_scores, val_loss = validate(unet, val_loader, criterion)
         val_losses.append(val_loss)
 
         print(f"Validation Loss: {val_loss:.4f}, Dice Scores: {dice_scores}")

@@ -6,7 +6,7 @@ DATA_YML = "./data.yml"
 OUTPUT = "./models"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' #default to gpu
-model = YOLO("yolo11n.pt").to('cuda')
+model = YOLO("yolo11n.pt").to(device)
 
 settings = {
         'data': DATA_YML,

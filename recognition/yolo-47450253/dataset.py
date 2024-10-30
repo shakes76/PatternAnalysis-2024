@@ -4,8 +4,10 @@ import cv2 as cv
 
 ISC2018_TRUTH_TRAIN = "./data-ISC2018/ISIC2018_Task1_Training_GroundTruth_x2"
 ISC2018_TRUTH_VALIDATE = "./data-ISC2018/ISIC2018_Task1_Validation_GroundTruth"
+ISC2018_TRUTH_TEST = "./data-ISC2018/ISIC2018_Task1_Test_GroundTruth"
 OUTPUT_TRAIN = "./data/labels/train"
 OUTPUT_VALIDATE = "./data/labels/validate"
+OUTPUT_TEST = "./data/labels/test"
 CLASS_NO = "0" #Only testing for 1 class: skin legions.
 
 """
@@ -61,3 +63,4 @@ os.makedirs(OUTPUT_TRAIN, exist_ok=True)
 os.makedirs(OUTPUT_VALIDATE, exist_ok=True)
 mask2label(ISC2018_TRUTH_TRAIN, OUTPUT_TRAIN)
 mask2label(ISC2018_TRUTH_VALIDATE, OUTPUT_VALIDATE)
+mask2label(ISC2018_TRUTH_TEST, OUTPUT_TEST)

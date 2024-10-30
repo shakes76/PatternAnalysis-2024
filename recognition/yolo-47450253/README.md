@@ -1,6 +1,12 @@
 # Detecting Skin Lesions using YOLO11
 Since 2016, the International Skin Imaging Collaboration (ISIC) have run annual challenges with the aim of developing imaging tools to aid in the automated diagnosis of melanoma from dermoscopic images. This repository focuses on detecting skin lesions within dermoscopic images. This data could then be taken and used in furthor diagnostic tools and is a useful first step in achieving this. As specified by the task requirements, this repository makes use of YOLOv11 to perform image detection on the provided dataset by the ISIC.
 
+## Dependencies
+- PyTorch 2.5.1+cu124
+- Torchvision 0.20.1+cu124
+- Ultralytics 8.3.24
+- Opencv-python 4.10.0.84
+
 ## About YOLO11
 YOLOv11 is the 11th major iteration in the "You Only Look Once" family of object detection models and is a very recent development, having released in September 2024. YOLOv11 provides significant increases in accuracy and small object detection in comparison to previous versions, while still maintaining high efficiency and speed. The YOLO family of models are very flexible and can easily be trained to detect objects on a variety of custom datasets with little to occasionally no fine tuning needed provided that the dataset and labels are provided to it in the necessary formats.
 
@@ -34,7 +40,7 @@ The biggest change between YOLOv11 and its last major predecessor YOLOv8, this b
 
 ## About the ISIC2018 Dataset
 ### Dataset Breakdown
-The [ISIC 2018 Task 1](https://challenge.isic-archive.com/data/#2018) dataset is comprised of 3694 dermoscopic full colour images broken down into three categories:
+The [ISIC 2018 Task 1 Dataset](https://challenge.isic-archive.com/data/#2018) is comprised of 3694 dermoscopic full colour images broken down into three categories:
 - 2594 Training Images
 - 100 Validation Images
 - 1000 Testing Images
@@ -65,13 +71,67 @@ data
 ```
 3. Copy the dermoscopic images into their respective test, train and validate folders.
 
-## Requirements (Polish with exact versions later)
-torch
-torchvision
-ultralytics
-opencv
+
+## Training the Model
+Once the dataset is correctly structured, the model is then able to be trained. The model was trained with hyperparameters fairly similar to YOLOv11's default values as a starting point, with plans to fine tune these values if needed:
+- Epochs: 75
+- Learning Rate: 0.01
+- Momentum: 0.937
+- Weight Decay: 0.0005
+- Batch Size: -1 (This sets the batch size such that it consumes ~60% of total VRAM on the provided GPU, in this case 3.66GB on a RTX2060)
+
+The model can be trained by running train.py.
+
+### Training Results
+The model took approximately 40 minutes to train and seemed to produce good looking results upon comparing a validation batch vs its labels.
+
+|   |   |
+|---|---|
+|![Validation Batch Labels](/images/val_batch1_labels.jpg)|![Validation Batch Predictions](/images/val_batch1_pred.jpg)|
+
+![Training Results](/images/training_results.png)
+The graphs refer to the following relevant metrics:
+- box_loss: Box Loss - Error in the predicted boxes compared to labels
+- cls_loss: Class Loss - Error in prediction of classes
+- Precision: Proportion of True positive predictions vs All predicted positives, measures how prone the model is to false positives.
+- Recall: Proportion of True positive predictions vs All true positives, measures the models ability to predict lesions.
+
+
+Inspection of the final metrics on the validation sets after training completion showed the following.
+
+|Box Loss|Class Loss|Precision|Recall|
+|---|---|---|---|
+|1.22463|0.45896|0.94926|0.96|
+
+This was a significantly better result than expected given that the selected hyperparameters were intended to be a starting point that may need further tuning. As such it was decided just to leave these values as is due to the computational intensity of YOLO's tuning genetic algorithm and the strong performance displayed by the validation of training data not warranting the time required to manually tune these values.
+
+### Tuning the Model
+If you wish to do so, while for this run the model was not tuned further, you can get access to optimized hyperparameters by running tune.py. This file will run YOLOv11s hyperparameter optimizer that makes use of a genetic algorithm to determine the best hyperparameters for a given dataset. Be aware that even on powerful hardware such as the Nvidia A100, this process can take upwards of 6 hours even for small datasets.
+
+### Evaluating Against the Test Set
+It was also decided to validate the model against the set of test data, given that the dataset provided by ISIC contained ground truthes for these images as well. This was performed with an IOU threshold of 0.8 and confidence threshold of 0.5 as the predictions would also require these thresholds as specified by the task. This validation resulted in a precision of 0.965 and Recall of 0.939 for the model.
+![Validations results of the modal against Test set](/images/testvalidate.png)
+
+If you wish to run this for yourself, simply run evaluate.py.
+
+## Predicting Lesions
+Once validation was complete and it was ensured that the model was performing well, it was then used to detect lesions in the test dataset.
+
+Here is some predictions and their true labels to compare to:
+
+|Prediction|Reality|
+|---|---|
+|![Model's Prediction](/images/test_batch2_labels.jpg)|![Reality](/images/test_batch2_pred.jpg)|
+
+To perform the prediction on the test set, simply run predict.py
+
+## A note on the lack of modules.py
+As mentioned in Ed Post #336, using ultralytics to perform this task is an allowed method and as mentioned in Ed Post #444, this means that all of the functionality that would be stored in modules.py is already provided by the pretrained model itself. As anything that would be added to this would essentially just be a simple wrapper for YOLO's methods I elected to not include this file.
 
 ## References
-https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71
-https://arxiv.org/html/2410.17725v1
-https://abintimilsina.medium.com/yolov8-architecture-explained-a5e90a560ce5
+- [ISIC Challenge Website](https://challenge.isic-archive.com)
+- [ISIC 2018 Task 1 Dataset](https://challenge.isic-archive.com/data/#2018)
+- [YOLOv11 Architecture Explained: Next-Level Object Detection with Enhanced Speed and Accuracy - By S Nikhileswara Rao](https://medium.com/@nikhil-rao-20/yolov11-explained-next-level-object-detection-with-enhanced-speed-and-accuracy-2dbe2d376f71)
+- [YOLOv11: An Overview of the Key Architectural Enhancements - By Rahima Khanam and Muhammad Hussain](https://arxiv.org/html/2410.17725v1)
+- [YOLOv8 Architecture Explained! - By Abin Timilsina](https://abintimilsina.medium.com/yolov8-architecture-explained-a5e90a560ce5)
+- [Ultralytics Docs: Performance Metrics Deep Dive](https://docs.ultralytics.com/guides/yolo-performance-metrics/#object-detection-metrics)

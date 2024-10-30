@@ -1,59 +1,39 @@
 import os
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+from torchvision import transforms, datasets
 from PIL import Image
 
-class BrainDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.image_paths = []
-        self.labels = []
-        self.transform = transform
+def get_dataloader(image_size=64, batch_size=16, data_root='/home/groups/comp3710/ADNI/AD_NC/train', shuffle=True, num_workers=4):
+    """
+    Returns a DataLoader and the dataset for training.
 
-        ad_path = os.path.join(root_dir, 'AD')
-        nc_path = os.path.join(root_dir, 'NC')
+    Args:
+        image_size (int): Desired image size after transformations.
+        batch_size (int): Number of samples per batch.
+        data_root (str): Root directory of the dataset.
+        shuffle (bool): Whether to shuffle the data.
+        num_workers (int): Number of subprocesses for data loading.
 
-        if os.path.isdir(ad_path):
-            for file_name in os.listdir(ad_path):
-                file_path = os.path.join(ad_path, file_name)
-                if file_name.lower().endswith(('png', 'jpg', 'jpeg')):
-                    self.image_paths.append(file_path)
-                    self.labels.append(0)
-
-        if os.path.isdir(nc_path):
-            for file_name in os.listdir(nc_path):
-                file_path = os.path.join(nc_path, file_name)
-                if file_name.lower().endswith(('png', 'jpg', 'jpeg')):
-                    self.image_paths.append(file_path)
-                    self.labels.append(1)
-
-        print(f"Loaded {len(self.image_paths)} images from {root_dir}")
-
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        image = Image.open(self.image_paths[idx]).convert("RGB")
-        label = self.labels[idx]
-        if self.transform:
-            image = self.transform(image)
-        return image, label
-
-
-def get_dataloader(root_dir, batch_size=32):
+    Returns:
+        DataLoader: PyTorch DataLoader for the dataset.
+        Dataset: The underlying dataset.
+    """
     transform = transforms.Compose([
-        transforms.Resize(128),
+        transforms.Resize(image_size),
+        transforms.CenterCrop(image_size),
+        transforms.Grayscale(num_output_channels=1),
         transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+        transforms.Normalize([0.5], [0.5]),
     ])
-    dataset = BrainDataset(root_dir, transform=transform)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-if __name__ == "__main__":
-    root_dir = 'D:/Documents/UQsem5subjects/COMP3710/ADNI_AD_NC_2D/AD_NC/train'
-    dataloader = get_dataloader(root_dir, batch_size=32)
     
-    for images, labels in dataloader:
-        print(f"Batch image shape: {images.shape}")
-        print(f"Batch labels: {labels}")
-        break
-
+    dataset = datasets.ImageFolder(root=data_root, transform=transform)
+    
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=True
+    )
+    
+    return dataloader, dataset

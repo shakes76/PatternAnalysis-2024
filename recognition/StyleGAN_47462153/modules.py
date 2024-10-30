@@ -1,92 +1,171 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+class PixelNorm(nn.Module):
+    def __init__(self):
+        super(PixelNorm, self).__init__()
+        self.epsilon = 1e-8
+
+    def forward(self, x):
+        # Normalizing input by dividing by its mean square root
+        return x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + self.epsilon)
+
+class AdaIN(nn.Module):
+    def __init__(self, channels, w_dim):
+        super(AdaIN, self).__init__()
+        self.instance_norm = nn.InstanceNorm2d(channels, affine=False)
+        self.style_scale = WSLinear(w_dim, channels)
+        self.style_bias = WSLinear(w_dim, channels)
+
+    def forward(self, x, w):
+        # Applying instance normalization followed by learned style transformations
+        x = self.instance_norm(x)
+        style_scale = self.style_scale(w).unsqueeze(2).unsqueeze(3)
+        style_bias = self.style_bias(w).unsqueeze(2).unsqueeze(3)
+        return style_scale * x + style_bias
+
+class WSLinear(nn.Module):
+    def __init__(self, in_features, out_features):
+        super(WSLinear, self).__init__()
+        self.linear = nn.Linear(in_features, out_features)
+        self.scale = (2 / in_features) ** 0.5
+        self.bias = self.linear.bias
+        self.linear.bias = None
+        nn.init.normal_(self.linear.weight, mean=0.0, std=1.0)
+        nn.init.zeros_(self.bias)
+
+    def forward(self, x):
+        # Applying weight scaling and add bias
+        return self.linear(x * self.scale) + self.bias
+
+class WSConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
+        super(WSConv2d, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.scale = (2 / (in_channels * kernel_size ** 2)) ** 0.5
+        self.bias = self.conv.bias
+        self.conv.bias = None
+        nn.init.normal_(self.conv.weight, mean=0.0, std=1.0)
+        nn.init.zeros_(self.bias)
+
+    def forward(self, x):
+        # Scaling weights and add bias after convolution
+        return self.conv(x * self.scale) + self.bias.view(1, -1, 1, 1)
+
+class InjectNoise(nn.Module):
+    def __init__(self, channels):
+        super(InjectNoise, self).__init__()
+        self.weight = nn.Parameter(torch.zeros(1, channels, 1, 1))
+
+    def forward(self, x):
+        noise = torch.randn(x.size(0), 1, x.size(2), x.size(3)).to(x.device)
+        return x + self.weight * noise
+
+class GenBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, w_dim):
+        super(GenBlock, self).__init__()
+        self.conv1 = WSConv2d(in_channels, out_channels)
+        self.conv2 = WSConv2d(out_channels, out_channels)
+        self.leaky = nn.LeakyReLU(0.2)
+        self.inject_noise1 = InjectNoise(out_channels)
+        self.inject_noise2 = InjectNoise(out_channels)
+        self.adain1 = AdaIN(out_channels, w_dim)
+        self.adain2 = AdaIN(out_channels, w_dim)
+
+    def forward(self, x, w):
+        # Passing input through two convolution layers with AdaIN and noise injection
+        x = self.conv1(x)
+        x = self.inject_noise1(x)
+        x = self.leaky(x)
+        x = self.adain1(x, w)
+        x = self.conv2(x)
+        x = self.inject_noise2(x)
+        x = self.leaky(x)
+        x = self.adain2(x, w)
+        return x
 
 class MappingNetwork(nn.Module):
     def __init__(self, z_dim, w_dim):
-        super().__init__()
-        self.mapping = nn.Sequential(
-            nn.Linear(z_dim, w_dim),
-            nn.ReLU(),
-            nn.Linear(w_dim, w_dim)
-        )
-    
-    def forward(self, z):
-        return self.mapping(z)
+        super(MappingNetwork, self).__init__()
+        layers = [PixelNorm()]
+        for _ in range(8):  # 8 fully connected layers as per StyleGAN
+            layers.append(WSLinear(z_dim if _ == 0 else w_dim, w_dim))
+            layers.append(nn.LeakyReLU(0.2))
+        self.mapping = nn.Sequential(*layers)
 
-class StyleGANGenerator(nn.Module):
-    def __init__(self, z_dim, w_dim, img_channels):
-        super().__init__()
+    def forward(self, x):
+        return self.mapping(x)
+
+class Generator(nn.Module):
+    def __init__(self, z_dim=512, w_dim=512, in_channels=512, img_channels=1):
+        super(Generator, self).__init__()
+        self.initial_constant = nn.Parameter(torch.ones(1, in_channels, 4, 4))
+        self.initial_noise = InjectNoise(in_channels)
+        self.initial_conv = WSConv2d(in_channels, in_channels)
+        self.leaky = nn.LeakyReLU(0.2)
         self.mapping = MappingNetwork(z_dim, w_dim)
-        self.synthesis = nn.Sequential(
-            nn.ConvTranspose2d(w_dim, 256, kernel_size=4, stride=1, padding=0),
-            nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, img_channels, kernel_size=4, stride=2, padding=1),
-            nn.Tanh()
-        )
+        self.initial_adain = AdaIN(in_channels, w_dim)
 
-    def forward(self, z):
-        w = self.mapping(z)
-        w = w.view(w.size(0), -1, 1, 1)
-        generated_image = self.synthesis(w)
-        return generated_image
-    
-    @staticmethod
-    def generator_loss(fake_output):
-        return torch.mean((fake_output - 1) ** 2)
+        self.progression_blocks = nn.ModuleList([
+            GenBlock(in_channels, in_channels, w_dim),  # 8x8
+            GenBlock(in_channels, in_channels, w_dim),  # 16x16
+            GenBlock(in_channels, in_channels, w_dim),  # 32x32
+            GenBlock(in_channels, in_channels, w_dim),  # 64x64
+        ])
 
-class StyleGANDiscriminator(nn.Module):
-    def __init__(self, img_channels):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.Conv2d(img_channels, 128, kernel_size=4, stride=2, padding=1),  
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  
-            nn.LeakyReLU(0.2)
-        )
-        self.flatten = nn.Flatten()
-        self.fc = nn.Linear(256 * 8 * 8, 1)
+        self.to_rgb = WSConv2d(in_channels, img_channels, kernel_size=1, padding=0)
 
-    def forward(self, img):
-        x = self.model(img)
-        x = self.flatten(x)
-        x = self.fc(x)
+    def forward(self, noise):
+        # Forward pass through mapping and synthesis networks
+        w = self.mapping(noise)
+        x = self.initial_constant.repeat(noise.size(0), 1, 1, 1)
+        x = self.initial_noise(x)
+        x = self.leaky(self.initial_conv(x))
+        x = self.initial_adain(x, w)
+
+        for block in self.progression_blocks:
+            x = nn.functional.interpolate(x, scale_factor=2, mode='nearest')
+            x = block(x, w)
+
+        out = self.to_rgb(x)
+        return out
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(ConvBlock, self).__init__()
+        self.conv1 = WSConv2d(in_channels, in_channels)
+        self.conv2 = WSConv2d(in_channels, out_channels)
+        self.leaky = nn.LeakyReLU(0.2)
+
+    def forward(self, x):
+        # Pass input through two convolutional layers
+        x = self.leaky(self.conv1(x))
+        x = self.leaky(self.conv2(x))
         return x
 
-    @staticmethod
-    def discriminator_loss(real_output, fake_output):
-        real_loss = torch.mean((real_output - 1) ** 2)
-        fake_loss = torch.mean(fake_output ** 2)
-        return (real_loss + fake_loss) / 2
+class Discriminator(nn.Module):
+    def __init__(self, in_channels=512, img_channels=1):
+        super(Discriminator, self).__init__()
+        self.from_rgb = WSConv2d(img_channels, in_channels, kernel_size=1, padding=0)
+        self.progression_blocks = nn.ModuleList([
+            ConvBlock(in_channels, in_channels),  # 64x64
+            ConvBlock(in_channels, in_channels),  # 32x32
+            ConvBlock(in_channels, in_channels),  # 16x16
+            ConvBlock(in_channels, in_channels),  # 8x8
+        ])
 
-if __name__ == "__main__":
-    z_dim = 128
-    w_dim = 512
-    img_channels = 3
+        self.leaky = nn.LeakyReLU(0.2)
+        self.final_conv = WSConv2d(in_channels, in_channels, kernel_size=3, padding=1)
+        self.linear = WSLinear(in_channels * 4 * 4, 1)
 
-    generator = StyleGANGenerator(z_dim, w_dim, img_channels)
-    discriminator = StyleGANDiscriminator(img_channels)
-
-    generator.eval()
-    discriminator.eval()
-
-    z = torch.randn(1, z_dim)
-
-    with torch.no_grad():
-        fake_image = generator(z)
-
-    real_image = torch.randn(1, img_channels, 16, 16)
-
-    with torch.no_grad():
-        real_output = discriminator(real_image)
-        fake_output = discriminator(fake_image)
-
-    print(f"Real output shape: {real_output.shape}")
-    print(f"Fake output shape: {fake_output.shape}")
-
-    gen_loss = generator.generator_loss(fake_output)
-    disc_loss = discriminator.discriminator_loss(real_output, fake_output)
-
-    print(f"Generator loss: {gen_loss.item()}")
-    print(f"Discriminator loss: {disc_loss.item()}")
+    def forward(self, x):
+        # Forward pass through the discriminator
+        x = self.from_rgb(x)
+        for block in self.progression_blocks:
+            x = block(x)
+            x = nn.functional.avg_pool2d(x, 2)
+        x = self.leaky(self.final_conv(x))
+        x = x.view(x.size(0), -1)
+        x = self.linear(x)
+        return x

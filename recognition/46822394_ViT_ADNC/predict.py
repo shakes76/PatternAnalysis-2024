@@ -1,4 +1,6 @@
 """
+Author: Ella WANG
+
 This module is used to show example usage the trained ViT model by using the model to predict
 on a testing set from the ADNI brain dataset
 

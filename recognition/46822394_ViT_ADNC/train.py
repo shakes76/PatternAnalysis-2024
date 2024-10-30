@@ -1,4 +1,6 @@
 """
+Author: Ella WANG
+
 containing the source code for training, validating, testing and saving the ViT.
 
 The model should be imported from “modules.py” and the data loader should be imported from “dataset.py”.

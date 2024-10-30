@@ -49,6 +49,8 @@ This project implements a Vision Transformer (ViT) based classification system f
 
 ## Installation
 
+0. Install `python 3.11.2`
+
 1. Clone the repository:
 ```bash
 git clone <repository-url>
@@ -69,6 +71,7 @@ pip install torch==2.0.0 \
 ```
 
 3. Prepare the ADNI dataset in the following structure:
+Download from https://filesender.aarnet.edu.au/?s=download&token=a2baeb2d-4b19-45cc-b0fb-ab8df33a1a24
 ```
 AD_NC/
 ├── train/
@@ -104,7 +107,7 @@ test_loader = get_dataloader(batch_size=64, train=False)
 Two main model architectures are provided in `modules.py`:
 
 1. `ViTClassifier`: Basic Vision Transformer adapted for grayscale images
-2. `EnhancedViTClassifier`: Advanced version with additional features
+2. `EnhancedViTClassifier`: Advanced version with additional features, but the performance seems worse
 
 ```python
 from modules import ViTClassifier, EnhancedViTClassifier

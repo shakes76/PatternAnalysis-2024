@@ -39,4 +39,31 @@ class ResidualStack(nn.Module):
         return self.stack(x)
 
 
+class Encoder(nn.Module):
+    """Encoder for the VQVAE model."""
+    def __init__(self, input_channels, hidden_channels, num_res_layers):
+        super(Encoder, self).__init__()
+        self.conv1 = nn.Conv2d(input_channels, hidden_channels, kernel_size=4, stride=2, padding=1)
+        self.residual_stack = ResidualStack(hidden_channels, hidden_channels, num_res_layers)
+        self.conv2 = nn.Conv2d(hidden_channels, hidden_channels * 2, kernel_size=4, stride=2, padding=1)
 
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.residual_stack(x)
+        x = self.conv2(x)
+        return x
+
+
+class Decoder(nn.Module):
+    """Decoder for the VQVAE model."""
+    def __init__(self, hidden_channels, output_channels, num_res_layers):
+        super(Decoder, self).__init__()
+        self.conv1 = nn.ConvTranspose2d(hidden_channels * 2, hidden_channels, kernel_size=4, stride=2, padding=1)
+        self.residual_stack = ResidualStack(hidden_channels, hidden_channels, num_res_layers)
+        self.conv2 = nn.ConvTranspose2d(hidden_channels, output_channels, kernel_size=4, stride=2, padding=1)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.residual_stack(x)
+        x = self.conv2(x)
+        return x

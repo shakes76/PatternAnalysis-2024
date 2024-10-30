@@ -36,16 +36,16 @@ This project implements a Vision Transformer (ViT) based classification system f
 ```
 
 ## Requirements
-
-- PyTorch
-- torchvision
+- python (3.11.2)
+- PyTorch (2.0.0)
+- torchvision (0.15.1)
 - PIL (Python Imaging Library)
-- numpy
-- matplotlib
-- seaborn
-- scikit-learn
-- pandas
-- tqdm
+- numpy (1.26.4)
+- matplotlib (3.7.1)
+- seaborn (0.12.2)
+- scikit-learn (1.2.1)
+- pandas (1.5.3)
+- tqdm (4.66.2)
 
 ## Installation
 
@@ -57,7 +57,15 @@ cd <repository-name>
 
 2. Install dependencies:
 ```bash
-pip install torch torchvision pillow numpy matplotlib seaborn scikit-learn pandas tqdm
+pip install torch==2.0.0 \
+            torchvision==0.15.1 \
+            pillow \
+            numpy==1.26.4 \
+            matplotlib==3.7.1 \
+            seaborn==0.12.2 \
+            scikit-learn==1.2.1 \
+            pandas==1.5.3 \
+            tqdm==4.66.2
 ```
 
 3. Prepare the ADNI dataset in the following structure:
@@ -302,9 +310,6 @@ The ROC curves provide compelling evidence of model performance:
    - Focus on reducing CN false positives without sacrificing MCI detection if possible
    - Consider additional features or data augmentation to improve MCI recall
    - Investigate cases in the overlap region to identify potential distinguishing features
-
-
-
 
 ## License
 

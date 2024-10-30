@@ -10,14 +10,12 @@ def predict():
     device = 'cuda' if torch.cuda.is_available() else 'cpu' #default to gpu
     model = YOLO(TRAINED_WEIGHTS).to(device)
 
-    validate = model.val(data=DATA_YML, split='test', iou=0.8)
-
+    # Perform predictions with a minimum iou threshold of 0.8
     results = model.predict(source=TEST_SET,
                             imgsz=640,
                             conf=0.5,
                             iou=0.8,
-                            save=False,
-                            visualize=True)
+                            save=True)
 
 
 if __name__ == '__main__':

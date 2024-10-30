@@ -52,8 +52,6 @@ def mask2label(input_path, output_path):
             if label:
                 with open(label_path, "w") as f:
                     f.write(label)
-                #hidden because printing was actually slowing the process down
-                #print("Created label for: " + file)
             else:
                 print(file + " is missing contours.")
 

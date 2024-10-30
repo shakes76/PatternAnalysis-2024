@@ -1,7 +1,5 @@
 import os
 
-import torch
-
 import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
@@ -27,7 +25,6 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     for c in channels:
         c = int(c)
         res[..., c: c + 1][arr == c] = 1
-    print("one hot:" + str(res.shape))
     return res
 
 
@@ -106,7 +103,6 @@ def collate_batch(batch: Sequence):
             batch_list[key] = collate_fn(data_for_batch)
     else:
         batch_list = collate_fn(data)
-    print(batch_list.shape)
     return batch_list
 
 

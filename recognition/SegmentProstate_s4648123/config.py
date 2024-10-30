@@ -5,4 +5,4 @@ IMAGE_DIR = "Data/semantic_MRs"
 MASK_DIR = "Data/semantic_labels_only"
 MODEL_PATH = "best_unet.pth"
 
-NUM_WORKERS = 1
+NUM_WORKERS = 0

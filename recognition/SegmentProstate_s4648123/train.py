@@ -4,7 +4,6 @@ import numpy as np
 import torch
 
 from dataset import get_dataloaders
-from torch.utils.tensorboard import SummaryWriter
 
 from modules import UNet3D
 from utils import plot_and_save
@@ -71,19 +70,28 @@ class Dice(torch.nn.Module):
         return dice_loss
 
 
-def train(model, dataloader, optimizer, crit):
+def train(model, dataloader, optimizer, crit, early_stop=False):
     model.train()
     epoch_loss = 0
     torch.manual_seed(2809)  # reproducibility
-    for batch_data in dataloader:
-        images, masks = batch_data["img"].to(device), batch_data["mask"].to(device)
+    # Determine the number of batches to process
+    num_batches = 4 if early_stop else len(dataloader)
+
+    for i, batch_data in enumerate(dataloader):
+        if i >= num_batches:  # Stop if we have processed the desired number of batches
+            break
+
+        torch.cuda.empty_cache()
+        images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
         optimizer.zero_grad()  # Zero the gradients
         outputs = model(images)  # Forward pass
-        loss = crit(outputs, masks)  # Compute loss
+        loss = crit(outputs, labels)  # Compute loss
         loss.backward()  # Backward pass
         optimizer.step()  # Update weights
 
         epoch_loss += loss.item()  # Accumulate loss
+
+    epoch_loss = epoch_loss / num_batches
     return epoch_loss
 
 
@@ -94,30 +102,26 @@ def validate(model, dataloader, crit):
     with torch.no_grad():  # Disable gradient computation
         torch.manual_seed(2809)  # reproducibility
         for batch_data in dataloader:
-            imgs, masks = batch_data["img"].to(device), batch_data["mask"].to(device)
-            pred = model(imgs)  # Forward pass
-            new_dice_score = crit.dice(pred, masks)
+            torch.cuda.empty_cache()
+            images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
+            pred = model(images)  # Forward pass
+            new_dice_score = crit.dice(pred, labels)
             dice_scores.append(new_dice_score.cpu().numpy())
 
     dice_scores = np.mean(dice_scores, axis=0)
     return dice_scores
 
-
-# TODO: Test method with visualisation
-
-
 if __name__ == '__main__':
     """
     Main function to run the training and validation processes.
     """
-    writer = SummaryWriter(log_dir="./runs/unet_training")  # Specify the log directory
 
     # Set up datasets and DataLoaders
-    batch_size = 2
+    batch_size = 8
     train_loader, val_loader, test_loader = get_dataloaders(train_batch=batch_size, val_batch=batch_size)
 
     # Initialize model
-    unet = UNet3D(n_channels=1, n_classes=5)
+    unet = UNet3D(n_channels=1, n_classes=6)
     unet = unet.to(device)
 
     epochs = 15
@@ -132,26 +136,29 @@ if __name__ == '__main__':
     dice_scores_per_class = [[] for _ in range(5)]
     lrs, weight_decays = [], []
 
+    early_stop=True
     train_start_time = time.time()
 
     # Training and evaluation loop
     for epoch in range(epochs):
-        train_loss = train(unet, train_loader, optimizer, criterion)
+        print(f"Epoch {epoch+1}/{epochs}")
+        train_loss = train(unet, train_loader, optimizer, criterion, early_stop)
         train_losses.append(train_loss)
+
+        print(f"Train Loss: {train_loss:.4f}")
 
         dice_scores = validate(unet, val_loader, criterion)
         val_loss = 1.0 - np.mean(dice_scores)
         val_losses.append(val_loss)
+
+        print(f"Validation Loss: {val_loss:.4f}, Dice Scores: {dice_scores}")
 
         for i, score in enumerate(dice_scores):
             dice_scores_per_class[i].append(score)
 
         lrs.append([pg['lr'] for pg in optimizer.param_groups])
         weight_decays.append([pg['weight_decay'] for pg in optimizer.param_groups])
-
         scheduler.step()
-
-        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Dice: {dice_scores}")
 
         if val_loss < best_metric:
             best_metric = val_loss
@@ -178,14 +185,3 @@ if __name__ == '__main__':
     plot_and_save(epochs_range, [lr_values, wd_values], ["Learning Rate", "Weight Decay"],
         "Learning Rate and Weight Decay", "Epochs", "Value", "lr_wd.png")
 
-    # # Load the best model state (if not loaded already)
-    # unet.load_state_dict(best_state)
-    #
-    # # test the model on separate test dataset
-    # test_start_time = time.time()  # Start timer
-    # final_dice_score = validate(unet, test_loader, criterion)
-    #
-    # test_time = time.time() - test_start_time  # Calculate elapsed time
-    # dice_coeff_str = ', '.join([f"{dc:.2f}" for dc in final_dice_score])
-    # print(f"Final Dice Coefficients for each class: [{dice_coeff_str}]")
-    # print(f"Total test time: {test_time:.2f} seconds")

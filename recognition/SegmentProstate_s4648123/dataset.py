@@ -31,7 +31,7 @@ train_transforms = Compose(
             image_key="image",
             image_threshold=0,
         ),
-        ToTensord(keys=["image", "label"], device="cuda"),
+        ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
 val_transforms = Compose(
@@ -47,7 +47,7 @@ val_transforms = Compose(
         CropForegroundd(keys=["image", "label"], source_key="image"),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
         Spacingd(keys=["image", "label"], pixdim=(1., 1., 1.), mode=("bilinear", "nearest")),
-        ToTensord(keys=["image", "label"], device="cuda")
+        ToTensord(keys=["image", "label"], device="cpu", track_meta=False)
     ]
 )
 
@@ -118,12 +118,12 @@ def get_dataloaders(train_batch, val_batch) -> tuple[DataLoader, DataLoader, Dat
 
     # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
-    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, pin_memory=True,
-                                  shuffle=True, collate_fn=collate_batch)
-    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, pin_memory=True, shuffle=True,
-                                collate_fn=collate_batch)
-    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=NUM_WORKERS, pin_memory=True, shuffle=True,
-                                 collate_fn=collate_batch)
+    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+                                  shuffle=True, pin_memory=True)
+    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+                                shuffle=True, pin_memory=True)
+    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+                                 shuffle=True, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader
 

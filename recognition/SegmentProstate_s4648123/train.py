@@ -81,7 +81,6 @@ def train(model, dataloader, optimizer, crit, early_stop=False):
         if i >= num_batches:  # Stop if we have processed the desired number of batches
             break
 
-        torch.cuda.empty_cache()
         images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
         optimizer.zero_grad()  # Zero the gradients
         outputs = model(images)  # Forward pass
@@ -102,7 +101,6 @@ def validate(model, dataloader, crit):
     with torch.no_grad():  # Disable gradient computation
         torch.manual_seed(2809)  # reproducibility
         for batch_data in dataloader:
-            torch.cuda.empty_cache()
             images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
             pred = model(images)  # Forward pass
             new_dice_score = crit.dice(pred, labels)
@@ -117,7 +115,7 @@ if __name__ == '__main__':
     """
 
     # Set up datasets and DataLoaders
-    batch_size = 8
+    batch_size = 4
     train_loader, val_loader, test_loader = get_dataloaders(train_batch=batch_size, val_batch=batch_size)
 
     # Initialize model
@@ -133,7 +131,7 @@ if __name__ == '__main__':
     best_state = unet.state_dict()
 
     train_losses, val_losses = [], []
-    dice_scores_per_class = [[] for _ in range(5)]
+    dice_scores_per_class = [[] for _ in range(6)]
     lrs, weight_decays = [], []
 
     early_stop=True

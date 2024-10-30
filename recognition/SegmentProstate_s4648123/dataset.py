@@ -1,10 +1,10 @@
 import numpy as np
-from utils import get_images, collate_batch, load_data_3D
+from utils import get_images, collate_batch, load_image_and_label_3D
 from monai.transforms import (Compose, ToTensord, Spacingd, ScaleIntensityRanged, CropForegroundd,
                               Orientationd, RandCropByPosNegLabeld)
 from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
-from config import NUM_WORKERS, EARLY_STOP, BATCH_SIZE
+from config import NUM_WORKERS, BATCH_SIZE
 
 # test other transforms
 train_transforms = Compose(
@@ -58,22 +58,17 @@ transforms_dict = {
 
 class MRIDataset(Dataset):
     """
-    Custom Dataset class for loading MRI images and masks with MONAI transformations.
+    Custom Dataset class for loading MRI images_files and label_files with MONAI transformations.
     """
 
-    def __init__(self, image_files, label_files, mode: str):
-        """
-        Initialize the dataset by loading file paths and transformations.
-
-        :param mode: Dataset split type ('train', 'valid')
-        """
+    def __init__(self, images_files, label_files, mode: str):
         self.transform = transforms_dict.get(mode)
-        self.images = load_data_3D(image_files, early_stop=EARLY_STOP)
-        self.labels = load_data_3D(label_files, early_stop=EARLY_STOP)
+        self.image_files = images_files
+        self.label_files = label_files
 
     def __len__(self):
-        # Return the number of images in the dataset.
-        return self.images.shape[0]
+        # Return the number of images_files in the dataset.
+        return len(self.image_files)
 
     def __getitem__(self, index):
         """
@@ -82,24 +77,16 @@ class MRIDataset(Dataset):
         :param index: Index of the item to retrieve
         :return: Dictionary with transformed image and mask
         """
-        # Get image and label at index
-        img = self.images[index]  # Retrieve the image at the specified index
-        label = self.labels[index]  # Retrieve the label at the specified index
+        img_and_mask = load_image_and_label_3D(self.image_files[index], self.label_files[index])
 
-        # Move channel dimension to the front of the label (channels, rows, cols, depth)
-        label = np.transpose(label, (3, 0, 1, 2))
-
-        # Add a new channel dimension to the image (1, rows, cols, depth)
-        img = np.expand_dims(img, axis=0)
-
-        # Apply transformations
-        data = self.transform({'image': img, 'label': label})
-
+        # Load image and segmentation
+        data = {'image': img_and_mask[0], 'label': img_and_mask[1]}
+        data = self.transform(data)  # Apply transformations
         return data
 
 
-def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataLoader, DataLoader, DataLoader]:
-    image_files, mask_files = get_images()
+def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataLoader, DataLoader]:
+    image_files, label_files = get_images()
 
     num_samples = len(image_files)
     np.random.seed(42)
@@ -112,16 +99,14 @@ def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataL
     # use numpy advanced indexing (pass a list of indices)
     train_idx = indices[:train_split]
     val_idx = indices[train_split:val_split]
-    test_idx = indices[val_split:]
 
-    train_images, train_masks = image_files[train_idx], mask_files[train_idx]
-    val_images, val_masks = image_files[val_idx], mask_files[val_idx]
-    test_images, test_masks = image_files[test_idx], mask_files[test_idx]
+    train_image_files, train_label_files = image_files[train_idx], label_files[train_idx]
+    val_image_files, val_label_files = image_files[val_idx], label_files[val_idx]
+
 
     # get datasets
-    train_ds = MRIDataset(train_images, train_masks, mode='train')
-    val_ds = MRIDataset(val_images, val_masks, mode='valid')
-    test_ds = MRIDataset(test_images, test_masks, mode='valid')
+    train_ds = MRIDataset(train_image_files, train_label_files, mode='train')
+    val_ds = MRIDataset(val_image_files, val_label_files, mode='valid')
 
     # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
@@ -129,10 +114,8 @@ def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataL
                                   shuffle=True, pin_memory=True)
     val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
                                 shuffle=True, pin_memory=True)
-    test_dataloader = DataLoader(test_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-                                 shuffle=True, pin_memory=True)
 
-    return train_dataloader, val_dataloader, test_dataloader
+    return train_dataloader, val_dataloader
 
 
 def get_test_dataloader(batch_size=BATCH_SIZE):
@@ -145,6 +128,6 @@ def get_test_dataloader(batch_size=BATCH_SIZE):
     test_idx = indices[split:]
     test_images, test_masks = image_files[test_idx], mask_files[test_idx]
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
-    test_dataloader = DataLoader(test_ds, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True,
+    test_dataloader = DataLoader(test_ds, batch_size=batch_size, num_workers=NUM_WORKERS, pin_memory=True, shuffle=True,
                                  collate_fn=list_data_collate)
     return test_dataloader

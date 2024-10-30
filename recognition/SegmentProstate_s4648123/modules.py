@@ -105,7 +105,7 @@ class UNet3D(nn.Module):
 
     Args:
         n_channels (int): Number of input channels (e.g., 3 for RGB).
-        n_classes (int): Number of output classes (labels).
+        n_classes (int): Number of output classes (label_files).
     """
     def __init__(self, n_channels, n_classes):
         super(UNet3D, self).__init__()

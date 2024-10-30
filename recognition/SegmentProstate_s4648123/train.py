@@ -9,7 +9,7 @@ from modules import UNet3D
 from utils import plot_and_save, compute_class_weights
 from config import MODEL_PATH
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0")
 
 
 class Dice(torch.nn.Module):
@@ -72,17 +72,12 @@ class Dice(torch.nn.Module):
         return dice_loss
 
 
-def train(model, dataloader, optimizer, crit, early_stop=False):
+def train(model, dataloader, optimizer, crit):
     model.train()
     epoch_loss = 0
     torch.manual_seed(2809)  # reproducibility
-    # Determine the number of batches to process
-    num_batches = 4 if early_stop else len(dataloader)
 
-    for i, batch_data in enumerate(dataloader):
-        if i >= num_batches:  # Stop if we have processed the desired number of batches
-            break
-
+    for batch_data in dataloader:
         images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
         optimizer.zero_grad()  # Zero the gradients
         outputs = model(images)  # Forward pass
@@ -92,7 +87,7 @@ def train(model, dataloader, optimizer, crit, early_stop=False):
 
         epoch_loss += loss.item()  # Accumulate loss
 
-    epoch_loss = epoch_loss / num_batches
+    epoch_loss = epoch_loss / len(dataloader)
     return epoch_loss
 
 
@@ -104,7 +99,7 @@ def validate(model, dataloader, crit):
     with torch.no_grad():  # Disable gradient computation
         torch.manual_seed(2809)  # reproducibility
         for batch_data in dataloader:
-            images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
+            images, labels = batch_data["image"], batch_data["label"]
             pred = model(images)  # Forward pass
 
             # dice scores per class
@@ -127,7 +122,7 @@ if __name__ == '__main__':
     """
 
     # Set up datasets and DataLoaders
-    train_loader, val_loader, test_loader = get_dataloaders()
+    train_loader, val_loader = get_dataloaders()
 
     # Initialize model
     unet = UNet3D(n_channels=1, n_classes=6)
@@ -138,20 +133,19 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(unet.parameters())
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
-    best_metric = float(0.)
+    best_metric = float(100.)
     best_state = unet.state_dict()
 
     train_losses, val_losses = [], []
     dice_scores_per_class = [[] for _ in range(6)]
     lrs, weight_decays = [], []
 
-    early_stop=False
     train_start_time = time.time()
 
     # Training and evaluation loop
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}/{epochs}")
-        train_loss = train(unet, train_loader, optimizer, criterion, early_stop)
+        train_loss = train(unet, train_loader, optimizer, criterion)
         train_losses.append(train_loss)
 
         print(f"Train Loss: {train_loss:.4f}")

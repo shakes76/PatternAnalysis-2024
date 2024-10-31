@@ -54,8 +54,6 @@ def train_fn(loader,model,optimizer,loss_fn,scaler):
         loop.set_postfix(loss=loss.item())
     return total_loss / len(loader)
 
-import torch
-import torch.nn as nn
 
 class DiceLoss(nn.Module):
     def __init__(self, smooth=1e-5, ignore_index=None, num_classes=6, threshold=0.75, k=20.0):
@@ -138,7 +136,7 @@ class DiceLoss(nn.Module):
         return self.last_dice_coeff
 
 
-# Define Combined Loss
+# Combined Loss (cross with dice)
 class CombinedLoss(nn.Module):
     def __init__(self, ce_weight=None, dice_weight=1.0, ce_weight_factor=1.0, dice_weight_factor=3.0, cross=False):
         super(CombinedLoss, self).__init__()

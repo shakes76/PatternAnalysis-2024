@@ -81,17 +81,17 @@ The StyleGAN model is based on a style-based generator that includes a mapping n
 
 The work was dedicated to the preliminary modification of the StyleGAN model, training it on the ADNI dataset in order to synthesize realistic grayscale MRI brain scans. The style-based synthesis methodology of the model allows effective and detailed manipulation of the characteristics of an image, which makes this model proficient at generating high-resolution MRI images with diverse details.
 
-![Style-based Generator Architecture](recognition\StyleGAN_47462153\readme\Standard-StyleGAN-architecture-In-this-figure-FC-stands-for-fully-connected-layer-A.png)
+![Style-based Generator Architecture](readme/Standard-StyleGAN-architecture-In-this-figure-FC-stands-for-fully-connected-layer-A.png)
 
 ## 6. Dataset  
 The used dataset in this work was obtained from the publicly available ADNI dataset, comprising MRI images classified into two classes, namely: Alzheimer's Disease (AD) and Normal Controls (NC). A total of approximately 4,424 MRI images are used, labeled in separate folders for training and testing. The number of scans in the training dataset is 2,315 for Alzheimer's Disease (AD) and 2,109 for Normal Control (NC).
 
 ### **Example Images**  
 - **AD Image:**  
-  ![AD Image](recognition\StyleGAN_47462153\readme\388206_78.jpeg)
-
+  ![AD Image](readme/388206_78.jpeg)
+  
 - **NC Image:**  
-  ![NC Image](recognition\StyleGAN_47462153\readme\1182968_94.jpeg)
+  ![NC Image](readme/1182968_94.jpeg)
 
 ## 7. Data Preparation and Segmentation  
 Data preprocessing comprises image resizing into 64x64 pixels, converting them to grayscale, and normalizing the pixel values in the range of [-1, 1]. This makes the images compatible with the StyleGAN model.
@@ -108,7 +108,7 @@ This pre-defined split ensures a clear distinction between training and testing 
 ## **8. Model Training**  
 In this model, the Adam optimizer used a learning rate of 0.001 for the generator and 0.0005 for the discriminator. The training process included a loop running up to 30 epochs, with continuous observation of the generator and discriminator losses. The following plot illustrates the training loss over the epochs:
 
-![Training Loss Plot](recognition\StyleGAN_47462153\readme\loss_plot.png)
+![Training Loss Plot](readme/loss_plot.png)
 
 ## **9. Model Evaluation**  
 Evaluation included the generation of synthetic MRI images using the trained generator. The generated images were compared with the original dataset to assess quality. The model’s ability to retain the distinctive features of the two classes, AD and NC, was also evaluated.
@@ -116,7 +116,7 @@ Evaluation included the generation of synthetic MRI images using the trained gen
 ### **t-SNE Representations**  
 Finally, a t-SNE plot was generated to display the embeddings of authentic images, allowing for an easy assessment of how well AD and NC images cluster (classes 0, 1 respectively):
 
-![t-SNE Embeddings](recognition\StyleGAN_47462153\readme\tsne_embeddings.png)
+![t-SNE Embeddings](readme/tsne_embeddings.png)
 
 ## **10. Overview of Performance**  
 With the StyleGAN model, there was a distinctive capability in generating synthetic MRI images that were relatively similar to real MRI images from the ADNI dataset. The generated images retained identifiable anatomic features representative of both Alzheimer's Disease (AD) and Normal Control (NC) classes. A comparison is shown below, where the generated image on the right has fairly maintained the structural information of the real MRI image on the left from the test set but is noisier with less resolution.
@@ -128,17 +128,17 @@ The results obtained so far underline the ability of the model to generate visua
 
 ### **Comparison of AD Images**  
 Real AD Image from Test Set:  
-![Real AD Image](recognition\StyleGAN_47462153\readme\388206_78.jpeg)  
+![Real AD Image](readme/388206_78.jpeg)  
 
 Generated AD Image:  
-![Generated AD Image](recognition\StyleGAN_47462153\readme\generated_seed_0.png)  
+![Generated AD Image](readme/generated_seed_0.png)  
 
 ### **Comparison of NC Images**  
 Real NC Image from Test Set:  
-![Real NC Image](recognition\StyleGAN_47462153\readme\1182968_94.jpeg)  
+![Real NC Image](readme/1182968_94.jpeg)  
 
 Generated NC Image:  
-![Generated NC Image](recognition\StyleGAN_47462153\readme\generated_seed_9.png)  
+![Generated NC Image](readme/generated_seed_9.png)  
 
 ## 11. Future Improvements 
 

@@ -33,9 +33,9 @@ def build_model(input_shape=(224,224,3)):
     # 输入层和数据增强
     inputs = tf.keras.Input(shape=input_shape)
     x = tf.keras.Sequential([
-        layers.RandomRotation(0.2),
+        layers.RandomRotation(0.1),
         layers.RandomFlip("horizontal"),
-        layers.RandomZoom(0.2)
+        layers.RandomZoom(0.1)
     ])(inputs)
 
     base_model = EfficientNetB0(include_top=False, input_shape=input_shape, pooling='avg')

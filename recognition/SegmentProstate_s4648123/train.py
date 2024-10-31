@@ -36,18 +36,18 @@ class Dice(torch.nn.Module):
             torch.Tensor: Dice coefficients for each class excluding the background.
         """
         # Apply softmax to logits to get probabilities
-        target_one_hot = one_hot(target.squeeze(1).long(), num_classes=6).permute(0, 4, 1, 2, 3).float()
+        # target = one_hot(target.squeeze(1).long(), num_classes=6).permute(0, 4, 1, 2, 3).float()
         pred = torch.softmax(pred, dim=1)  # (B, C, H, W, D)
 
         # Exclude background by slicing from class 1 onward
-        pred, target_one_hot = pred[:, 1:], target_one_hot[:, 1:]  # Skip the background class (C=0)
+        pred, target = pred[:, 1:], target[:, 1:]  # Skip the background class (C=0)
 
         # Define the axes for reduction (batch, depth, height, width)
         reduce_axis = [0] + list(range(2, len(pred.shape)))  # [0, 2, 3, 4]
 
         # Compute the intersection and union for each class
-        intersection = torch.sum(pred * target_one_hot, dim=reduce_axis)
-        ground_o = torch.sum(target_one_hot, dim=reduce_axis)
+        intersection = torch.sum(pred * target, dim=reduce_axis)
+        ground_o = torch.sum(target, dim=reduce_axis)
         pred_o = torch.sum(pred, dim=reduce_axis)
 
         # Compute Dice coefficient for each class excluding background
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     epochs = 20
     criterion = Dice()
-    optimizer = torch.optim.Adam(unet.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(unet.parameters(), lr=0.005)
 
     best_metric = float(100.)
     best_state = unet.state_dict()

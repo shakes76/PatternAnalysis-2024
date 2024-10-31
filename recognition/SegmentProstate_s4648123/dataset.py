@@ -1,7 +1,6 @@
 import numpy as np
 from utils import get_images, collate_batch, load_image_and_label_3D
 from monai.transforms import (Compose, ToTensord, RandCropByLabelClassesd, RandFlipd, NormalizeIntensityd, Resized)
-from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
 
 train_transforms = Compose(
@@ -10,9 +9,9 @@ train_transforms = Compose(
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=1),
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=2),
         NormalizeIntensityd(keys='image', nonzero=True),
-        Resized(keys=["image", "label"],spatial_size=(256,256,128)),
-        # RandCropByLabelClassesd(keys=["image", "label"], label_key="label", image_key="image",
-        #                         spatial_size=(96, 96, 48), num_samples=6, ratios=[1,2,3,4,4,4]),
+        # Resized(keys=["image", "label"], spatial_size=(256, 256, 128)),
+        RandCropByLabelClassesd(keys=["image", "label"], label_key="label", image_key="image",
+                                spatial_size=(96, 96, 48), num_samples=6, ratios=[1, 2, 3, 4, 4, 4]),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
@@ -75,12 +74,10 @@ def get_dataloaders() -> tuple[DataLoader, DataLoader]:
     train_image_files, train_label_files = image_files[train_idx], label_files[train_idx]
     val_image_files, val_label_files = image_files[val_idx], label_files[val_idx]
 
-
     # get datasets
     train_ds = MRIDataset(train_image_files, train_label_files, mode='train')
     val_ds = MRIDataset(val_image_files, val_label_files, mode='valid')
 
-    # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
     # train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
     #                               shuffle=True)

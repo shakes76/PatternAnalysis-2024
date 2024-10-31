@@ -1,20 +1,18 @@
 import torch
-from yolov7.models.yolo import Model
 
 class LesionDetectionModel:
     def __init__(self, model_weights='yolov7.pt', device='cpu'):
         """
-        Initializes the YOLOv7 model for lesion detection.
+        Initializes the YOLOv7 model for lesion detection using PyTorch Hub.
 
         Parameters:
             model_weights (str): Path to the pre-trained YOLOv7 weights.
             device (str): Device to load the model on ('cuda' or 'cpu').
         """
-        # Set device based on availability
         self.device = torch.device('cuda' if device == 'cuda' and torch.cuda.is_available() else 'cpu')
         
-        # Load the complete model directly from the checkpoint
-        self.model = torch.load(model_weights, map_location=self.device)
+        # Load the model using PyTorch Hub, specifying custom weights if needed
+        self.model = torch.hub.load('WongKinYiu/yolov7', 'custom', model_weights, source='github')
         self.model.to(self.device)
 
     def forward(self, images):
@@ -47,28 +45,3 @@ class LesionDetectionModel:
         pred = self.forward(images)
         detections = non_max_suppression(pred, conf_thres, iou_thres)
         return detections
-
-#Helper function to process model output 
-def process_detections(detections, img_size):
-    """
-    Processes the model output to obtain filtered bounding boxes.
-
-    Parameters:
-        detections (list of torch.Tensor): Raw model detections.
-        img_size (tuple): Size of the image for scaling boxes.
-
-    Returns:
-        list of dicts: Processed bounding boxes with class labels and coordinates.
-    """
-    processed_detections = []
-    for det in detections:
-        if det is not None:
-            det[:, :4] = scale_coords(img_size, det[:, :4])  #Scale boxes
-            for *xyxy, conf, cls in det:
-                box = {
-                    'coordinates': [int(x.item()) for x in xyxy],  #Convert to int
-                    'confidence': conf.item(),
-                    'class': int(cls.item())
-                }
-                processed_detections.append(box)
-    return processed_detections

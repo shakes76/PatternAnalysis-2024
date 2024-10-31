@@ -4,7 +4,7 @@ import torch.nn as nn
 from modules import create_model
 from dataset import get_dataloaders
 
-def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batch_size=128, learning_rate=1e-4, num_classes=2):
+def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batch_size=128, learning_rate=1e-4, num_classes=2, model_path='best_model.pth'):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
@@ -59,3 +59,7 @@ def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batc
         test_acc = (running_corrects.double() / dataset_sizes['test']) * 100
         test_losses.append(test_loss)
         test_accuracies.append(test_acc)
+
+        if test_acc > best_acc:
+            best_acc = test_acc
+            torch.save(model.state_dict(), model_path)

@@ -55,7 +55,7 @@ The attention mechanism of the model underlines important brain areas that corre
 2. ViT can be easily scaled up or down by changing the number of patches, the embedding dimension, or the number of Transformer blocks.
 3. Attention maps provide insights into which regions of the image are most important for the model’s decision-making process, making ViT a valuable tool for medical image analysis.
 
-![ViT Architecture](recognition/vit_47415056/images/vit_architecture.jpg.)
+![ViT Architecture](/images/vit_architecture.jpg)
 
 
 ## 3. Dependencies

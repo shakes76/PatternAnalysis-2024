@@ -63,3 +63,5 @@ def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batc
         if test_acc > best_acc:
             best_acc = test_acc
             torch.save(model.state_dict(), model_path)
+
+        print(f"Epoch [{epoch}/{num_epochs}] | Train Loss: {train_loss:.5f} | Train Acc: {train_acc:.2f}% | Test Loss: {test_loss:.5f} | Test Acc: {test_acc:.2f}%")

@@ -10,18 +10,11 @@ class LesionDetectionModel:
             model_weights (str): Path to the pre-trained YOLOv7 weights.
             device (str): Device to load the model on ('cuda' or 'cpu').
         """
-        # Directly assign device based on availability, without select_device
+        # Set device based on availability
         self.device = torch.device('cuda' if device == 'cuda' and torch.cuda.is_available() else 'cpu')
         
-        # Initialize YOLO model and load weights
-        self.model = Model(cfg='yolov7/cfg/training/yolov7.yaml')  #Using the path to the selected YAML file
-
-        # Load the checkpoint and extract only the model weights
-        checkpoint = torch.load(model_weights, map_location=self.device, weights_only=True)
-        state_dict = checkpoint.get('model', checkpoint)  # Try extracting 'model' or fallback to checkpoint
-        
-        # Load the model weights
-        self.model.load_state_dict(state_dict)
+        # Load the complete model directly from the checkpoint
+        self.model = torch.load(model_weights, map_location=self.device)
         self.model.to(self.device)
 
     def forward(self, images):

@@ -32,7 +32,11 @@ model.compile(# optimizer='adam',
 # Define callback function
 print("Setting up callbacks...")
 callbacks = [
-    tf.keras.callbacks.EarlyStopping(patience=5, monitor='val_loss'),
+    tf.keras.callbacks.EarlyStopping(patience=10,
+                                     monitor='val_accuracy',
+                                     mode='max',
+                                     restore_best_weights=False),
+
     tf.keras.callbacks.ModelCheckpoint('best_mode.keras', 
                                      save_best_only=True, 
                                      monitor='val_accuracy')

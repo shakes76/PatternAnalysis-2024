@@ -37,7 +37,7 @@ class ISICDataset(Dataset):
             transform (callable): Transformation pipeline with resizing, normalization, and conversion to tensor.
         """
         return transforms.Compose([
-            transforms.Resize((640, 640)),  # Resizing to 640x640 for YOLO compatibility
+            transforms.Resize((640, 640)),  # Resizing to 640x640 for consistent dimensions
             transforms.ToTensor(),  # Converting image to PyTorch tensor
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # Normalizing with ImageNet standard 
         ])
@@ -74,6 +74,7 @@ class ISICDataset(Dataset):
             # Apply transformations to the image and mask
             if self.transform:
                 image = self.transform(image)
+                mask = transforms.Resize((640, 640))(mask)  # Resize mask to match image dimensions
                 mask = transforms.ToTensor()(mask)  # Convert mask to tensor (binary mask)
 
             # Return both the transformed image and mask

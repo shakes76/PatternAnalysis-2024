@@ -1,6 +1,6 @@
 # Generative VQ-VAE model for the CSIRO HipMRI 2D Slices
 
-**Author:** Bairu
+**Author:** Bairu An (s4702833)
 
 ## Overview
 

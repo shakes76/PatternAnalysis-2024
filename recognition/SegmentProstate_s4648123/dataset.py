@@ -1,7 +1,6 @@
 import numpy as np
 from utils import get_images, collate_batch, load_image_and_label_3D
-from monai.transforms import (Compose, ToTensord, Spacingd, ScaleIntensityRanged, CropForegroundd,
-                              Orientationd, RandCropByPosNegLabeld)
+from monai.transforms import (Compose, ToTensord, RandCropByPosNegLabeld, RandFlipd, NormalizeIntensityd, Resized)
 from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
 from config import NUM_WORKERS, BATCH_SIZE
@@ -9,44 +8,24 @@ from config import NUM_WORKERS, BATCH_SIZE
 # test other transforms
 train_transforms = Compose(
     [
-        ScaleIntensityRanged(
-            keys=["image"],
-            a_min=-57,
-            a_max=164,
-            b_min=0.0,
-            b_max=1.0,
-            clip=True,
-        ),
-        CropForegroundd(keys=["image", "label"], source_key="image"),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
-        Spacingd(keys=["image", "label"], pixdim=(1., 1., 1.), mode=("bilinear", "nearest")),
-        RandCropByPosNegLabeld(
-            keys=["image", "label"],
-            label_key="label",
-            spatial_size=(96, 96, 96),
-            pos=1,
-            neg=1,
-            num_samples=4,
-            image_key="image",
-            image_threshold=0,
-        ),
+        RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
+        RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=1),
+        RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=2),
+        NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
+        # RandScaleIntensityd(keys='image', factors=0.1, prob=1.0),
+        Resized(keys=["image", "label"],spatial_size=(256,256,128)),
+        # RandCropByPosNegLabeld(
+        #     keys=["image", "label"],
+        #     label_key="label", spatial_size=(96, 96, 96), pos=3, neg=1,
+        #     num_samples=4, image_key="image", image_threshold=0,
+        # ),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
 val_transforms = Compose(
     [
-        ScaleIntensityRanged(
-            keys=["image"],
-            a_min=-57,
-            a_max=164,
-            b_min=0.0,
-            b_max=1.0,
-            clip=True,
-        ),
-        CropForegroundd(keys=["image", "label"], source_key="image"),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
-        Spacingd(keys=["image", "label"], pixdim=(1., 1., 1.), mode=("bilinear", "nearest")),
-        ToTensord(keys=["image", "label"], device="cpu", track_meta=False)
+        NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
+        ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
 
@@ -110,10 +89,13 @@ def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataL
 
     # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
-    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-                                  shuffle=True, pin_memory=True)
-    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-                                shuffle=True, pin_memory=True)
+    # train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+    #                               shuffle=True)
+    # val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+    #                             shuffle=True)
+
+    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, shuffle=True)
+    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, shuffle=True)
 
     return train_dataloader, val_dataloader
 

@@ -104,7 +104,7 @@ class UNet3D(nn.Module):
     """3D U-Net architecture for volumetric data segmentation.
 
     Args:
-        n_channels (int): Number of input channels (e.g., 3 for RGB).
+        n_channels (int): Number of input channels (1).
         n_classes (int): Number of output classes (label_files).
     """
     def __init__(self, n_channels, n_classes):
@@ -128,10 +128,10 @@ class UNet3D(nn.Module):
         """Forward pass through the 3D U-Net model.
 
         Args:
-            x (Tensor): Input tensor with shape (batch_size, channels, depth, height, width).
+            x (Tensor): Input tensor with shape (batch_size, channels, height, width, depth).
 
         Returns:
-            Tensor: Output tensor with shape (batch_size, n_classes, depth, height, width).
+            Tensor: Output tensor with shape (batch_size, n_classes, height, width, depth).
         """
         # Analysis path
         x1 = self.inc(x)

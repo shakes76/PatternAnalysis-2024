@@ -1,9 +1,16 @@
-from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
 import os
+from torchvision import transforms
 
 class BrainDataset(Dataset):
+    """
+    A custom Dataset class for loading and preprocessing brain images for generation and classification.
+
+    Attributes:
+        image_paths (list): List of file paths for brain image types.
+        transform (callable, optional): A transformation to apply to the images.
+    """
     def __init__(self, image_paths, transform=None):
         self.image_paths = image_paths
         self.transform = transform
@@ -18,8 +25,11 @@ class BrainDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         return image, label
-
+    
 class DataHandler:
+    """
+    Class to handle training and testing data set paths.
+    """
     @staticmethod
     def load_data_paths():
         train_ad = 'recognition/47364417/AD_NC/train/AD'
@@ -39,7 +49,8 @@ class DataHandler:
         if not os.path.exists(directory):
             raise FileNotFoundError(f"Directory not found: {directory}")
         return [os.path.join(directory, img) for img in os.listdir(directory)]
-    
+
+# Basic transform applied to images for model input.
 default_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor()

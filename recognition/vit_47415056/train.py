@@ -1,138 +1,66 @@
 import torch
-import torch.optim as optim
 import torch.nn as nn
+import torch.optim as optim
 import matplotlib.pyplot as plt
-import time
-from modules import create_model
-from dataset import get_dataloaders
+from sklearn.metrics import confusion_matrix, accuracy_score
+from modules import initialize_model
+from dataset import get_train_val_loaders, get_test_loader
 
-def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batch_size=128, learning_rate=1e-4, num_classes=2, model_path='best_model.pth'):
-    """
-    Train a Vision Transformer model on a given dataset.
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    Parameters:
-    - data_dir (str): Path to the dataset directory.
-    - num_epochs (int): Number of epochs for training.
-    - batch_size (int): Number of samples per batch.
-    - learning_rate (float): Learning rate for the optimizer.
-    - num_classes (int): Number of output classes.
-    - model_path (str): Path to save the best model.
+def train_and_validate(train_loader, val_loader, test_loader, model, criterion, optimizer, scheduler, num_epochs=11, model_path="model_weights.pth"):
+    best_val_accuracy = 0
+    val_losses, val_accuracies = [], []
 
-    Returns:
-    - model_path (str): Path of the saved model with the best accuracy.
-    """
-    # Set device to GPU if available, otherwise use CPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-
-    # Load data using custom DataLoader function
-    dataloaders, dataset_sizes = get_dataloaders(data_dir, batch_size)
-
-    # Initialize the model and move it to the selected device
-    model = create_model(num_classes)
-    model = model.to(device)
-
-    # Define the loss function and optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
-
-    # Initialize lists to store losses and accuracies
-    train_losses, test_losses = [], []
-    train_accuracies, test_accuracies = [], []
-    best_acc = 0.0
-    since = time.time()
-
-    for epoch in range(1, num_epochs + 1):
-        # Training phase
+    for epoch in range(num_epochs):
         model.train()
-        running_loss = 0.0
-        running_corrects = 0
+        total_correct, total_samples = 0, len(train_loader.dataset)
 
-        # Iterate over training data
-        for inputs, labels in dataloaders['train']:
-            inputs, labels = inputs.to(device), labels.to(device)
-
-            # Zero the parameter gradients
+        for images, labels in train_loader:
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(inputs)
-            _, preds = torch.max(outputs, 1)
+            outputs = model(images)
             loss = criterion(outputs, labels)
-
-            # Backward pass and optimization
             loss.backward()
             optimizer.step()
+            total_correct += outputs.argmax(dim=1).eq(labels).sum().item()
 
-            # Accumulate loss and correct predictions
-            running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(preds == labels.data)
+        train_accuracy = total_correct / total_samples
+        print(f"Epoch {epoch + 1}: Training Accuracy: {train_accuracy:.2%}")
 
-        # Calculate average loss and accuracy for the training set
-        train_loss = running_loss / dataset_sizes['train']
-        train_acc = (running_corrects.double() / dataset_sizes['train']) * 100
-        train_losses.append(train_loss)
-        train_accuracies.append(train_acc)
-
-        # Validation phase
+        # Validation logic
         model.eval()
-        running_loss = 0.0
-        running_corrects = 0
-
+        val_correct, val_loss = 0, 0
         with torch.no_grad():
-            for inputs, labels in dataloaders['test']:
-                inputs, labels = inputs.to(device), labels.to(device)
+            for images, labels in val_loader:
+                images, labels = images.to(DEVICE), labels.to(DEVICE)
+                outputs = model(images)
+                val_loss += criterion(outputs, labels).item()
+                val_correct += outputs.argmax(dim=1).eq(labels).sum().item()
 
-                # Forward pass
-                outputs = model(inputs)
-                _, preds = torch.max(outputs, 1)
-                loss = criterion(outputs, labels)
+        val_accuracy = val_correct / len(val_loader.dataset)
+        val_losses.append(val_loss / len(val_loader))
+        val_accuracies.append(val_accuracy)
 
-                # Accumulate loss and correct predictions
-                running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+        print(f"Epoch {epoch + 1}: Validation Loss: {val_losses[-1]:.4f}, Validation Accuracy: {val_accuracies[-1]:.2%}")
+        scheduler.step()
 
-        # Calculate average loss and accuracy for the validation set
-        test_loss = running_loss / dataset_sizes['test']
-        test_acc = (running_corrects.double() / dataset_sizes['test']) * 100
-        test_losses.append(test_loss)
-        test_accuracies.append(test_acc)
-
-        # Save the model if it has the best accuracy so far
-        if test_acc > best_acc:
-            best_acc = test_acc
+        if val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
             torch.save(model.state_dict(), model_path)
+            print(f"Model saved at Epoch {epoch + 1} with Validation Accuracy: {best_val_accuracy:.2%}\n")
 
-        # Print epoch results
-        print(f"Epoch [{epoch}/{num_epochs}] | Train Loss: {train_loss:.5f} | Train Acc: {train_acc:.2f}% | Test Loss: {test_loss:.5f} | Test Acc: {test_acc:.2f}%")
+    # Testing logic
+    model.eval()
+    all_preds, all_labels = [], []
+    print("\nTesting the model on the test dataset...\n")
+    for images, labels in test_loader:
+        images = images.to(DEVICE)
+        with torch.no_grad():
+            predictions = model(images).argmax(dim=1)
+        all_preds.extend(predictions.cpu().numpy())
+        all_labels.extend(labels.numpy())
 
-    # Plot training and validation loss and accuracy
-    plt.figure(figsize=(12, 4))
-    plt.subplot(1, 2, 1)
-    plt.plot(range(1, num_epochs + 1), train_losses, label='Train Loss')
-    plt.plot(range(1, num_epochs + 1), test_losses, label='Test Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-
-    plt.subplot(1, 2, 2)
-    plt.plot(range(1, num_epochs + 1), train_accuracies, label='Train Accuracy')
-    plt.plot(range(1, num_epochs + 1), test_accuracies, label='Test Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy (%)')
-    plt.title('Training and Validation Accuracy')
-    plt.legend()
-
-    plt.tight_layout()
-    plt.show()
-
-    # Calculate total training time
-    total_time = time.time() - since
-    total_minutes = int(total_time // 60)
-    total_seconds = int(total_time % 60)
-    print(f"Training complete in {total_minutes}m {total_seconds}s")
-    print(f"Best Test Accuracy: {best_acc:.2f}%")
-
-    return model_path
+    conf_matrix = confusion_matrix(all_labels, all_preds)
+    accuracy = accuracy_score(all_labels, all_preds)
+    print(f"Confusion Matrix:\n{conf_matrix}\nTest Accuracy: {accuracy:.2%}")

@@ -21,9 +21,12 @@ img_height = 256
 img_width = 128
 num_classes = 6
 best_model_path = "savedmodels/bestDice.pth"  # Path to the saved best model
-test_image_dir = 'keras_slices_data/keras_slices_test'
-test_mask_dir = 'keras_slices_data/keras_slices_seg_test'
-output_folder = 'dice_test_predictions'
+test_image_dir = 'keras_slices_data/keras_slices_test' # Ensure these match test folder
+test_mask_dir = 'keras_slices_data/keras_slices_seg_test'# 
+output_folder = 'dice_test_predictions' 
+
+#
+
 
 def main():
     # Define transformation pipeline for testing (no augmentations, only resizing and normalization)
@@ -58,7 +61,7 @@ def main():
         return
 
     # Define the loss function (same as used during training)
-    ce_weights = torch.tensor([1, 1, 1, 2, 10, 4], dtype=torch.float).to(device)  # Ensure these match training
+    ce_weights = torch.tensor([1, 1, 1, 2, 10, 4], dtype=torch.float).to(device)
     loss_fn = CombinedLoss(ce_weight=ce_weights)
 
     # Evaluate the model on the test set and save dice scores

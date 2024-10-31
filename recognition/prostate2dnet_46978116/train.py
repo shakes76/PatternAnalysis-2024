@@ -27,7 +27,7 @@ learning_rate = 0.0005
 
 
 
-# path to image
+# path to image folders ensure they are same
 train_image_dir = 'keras_slices_data/keras_slices_train'
 train_mask_dir = 'keras_slices_data/keras_slices_seg_train'
 val_image_dir = 'keras_slices_data/keras_slices_validate'

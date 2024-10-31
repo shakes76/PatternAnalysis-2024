@@ -25,51 +25,56 @@ class Dice(torch.nn.Module):
 
     def dice_scores_per_class(self, pred, target):
         """
-        Compute the Dice coefficient between 3D predictions and targets.
+        Compute the Dice coefficient for each class, excluding the background.
 
         Args:
-            pred (torch.Tensor): Model predictions with shape (batch_size, classes/channels, depth, height, width).
-            target (torch.Tensor): Ground truth with shape (batch_size, 1, depth, height, width).
+            pred (torch.Tensor): Model predictions with shape (batch_size, classes, depth, height, width).
+            target (torch.Tensor): Ground truth with shape (batch_size, classes, depth, height, width).
 
         Returns:
-            torch.Tensor: Dice coefficients for each class.
+            torch.Tensor: Dice coefficients for each class excluding the background.
         """
         # Apply softmax to logits to get probabilities
-        pred = torch.softmax(pred, dim=1)  # (B, C, D, H, W)
+        pred = torch.softmax(pred, dim=1)  # (B, C, H, W, D)
+
+        # Exclude background by slicing from class 1 onward
+        pred, target = pred[:, 1:], target[:, 1:]  # Skip the background class (C=0)
 
         # Define the axes for reduction (batch, depth, height, width)
         reduce_axis = [0] + list(range(2, len(pred.shape)))  # [0, 2, 3, 4]
 
         # Compute the intersection and union for each class
-        intersection = torch.sum(pred * target, dim=reduce_axis)  # (num_classes,)
-        ground_o = torch.sum(target, dim=reduce_axis)  # (num_classes,)
-        pred_o = torch.sum(pred, dim=reduce_axis)  # (num_classes,)
+        intersection = torch.sum(pred * target, dim=reduce_axis)  # (num_classes - 1,)
+        ground_o = torch.sum(target, dim=reduce_axis)  # (num_classes - 1,)
+        pred_o = torch.sum(pred, dim=reduce_axis)  # (num_classes - 1,)
 
         # Compute the denominator for Dice coefficient
         denominator = ground_o + pred_o
 
-        # Compute Dice coefficient for each class
+        # Compute Dice coefficient for each class excluding background
         f = (2.0 * intersection + self.smooth) / (denominator + self.smooth)
 
         return f
 
-    def forward(self, logits, target):
+    def calculate_total_loss(self, class_dice_scores, target):
+        class_weights = compute_class_weights(target)
+        coeff = class_dice_scores * class_weights
+        dice_loss = 1 - torch.sum(coeff) / torch.sum(class_weights)  # Weighted mean
+        return dice_loss
+
+    def forward(self, pred, target):
         """
-        Compute the Dice loss.
+        Compute the Dice loss, excluding background class.
 
         Args:
-            logits (Tensor): Model outputs with shape (batch_size, num_classes, height, width).
-            target (Tensor): Ground truth with shape (batch_size, 1, height, width).
+            pred (Tensor): Model outputs with shape (batch_size, num_classes, height, width, depth).
+            target (Tensor): Ground truth with shape (batch_size, num_classes, height, width, depth).
 
         Returns:
             Tensor: Dice loss.
         """
-
-        class_weights = compute_class_weights(target)
-        coeff = self.dice_scores_per_class(logits, target) * class_weights
-        dice_loss = 1 - torch.sum(coeff) / torch.sum(class_weights) # Weighted mean
-
-        return dice_loss
+        dice_scores = self.dice_scores_per_class(pred, target)
+        return self.calculate_total_loss(dice_scores, target)
 
 
 def train(model, dataloader, optimizer, crit, accumulation_steps=8):
@@ -118,9 +123,7 @@ def validate(model, dataloader, crit):
             dice_scores.append(new_dice_scores.cpu().numpy())
 
             #dice loss
-            class_weights=compute_class_weights(labels)
-            weighted_scores= class_weights * new_dice_scores
-            dice_loss = 1 - torch.sum(weighted_scores) / torch.sum(class_weights) # Weighted mean
+            dice_loss = crit.calculate_total_loss(new_dice_scores, labels) # Weighted mean
             dice_losses.append(dice_loss.cpu().numpy())
 
     dice_scores = np.mean(dice_scores, axis=0)
@@ -136,7 +139,7 @@ if __name__ == '__main__':
     train_loader, val_loader = get_dataloaders()
 
     # Initialize model
-    unet = UNet3D(n_channels=1, n_classes=6)
+    unet = UNet3D(1, 6)
     unet = unet.to(device)
 
     epochs = 20

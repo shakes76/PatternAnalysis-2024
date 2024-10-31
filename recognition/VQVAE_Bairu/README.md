@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project aimed to develop a generative model for the HipMRI Study on Prostate Cancer using processed 2D MRI slice images available from the CSIRO study [[1](https://data.csiro.au/collection/csiro:51392v2?redirected=true)]. The model utilizes a Vector Quantized Variational Autoencoder (VQVAE), which is trained to learn a discrete latent representation of the data. The goal is to accurately reconstruct these MRI slices, achieving a “reasonably clear image” with a Structured Similarity (SSIM) of over 0.6.
+This project aimed to develop a generative model for the HipMRI Study on Prostate Cancer using processed 2D MRI slice images available from the CSIRO study [[1](https://data.csiro.au/collection/csiro:51392v2?redirected=true)]. The model utilizes a Vector Quantized Variational Autoencoder (VQVAE), which is trained to learn a discrete latent representation of the data. The goal is to accurately reconstruct these MRI slices, achieving a “reasonably clear image” with a Structural Similarity Index Measure (SSIM) of over 0.6.
 
 Vector Quantized Variational Autoencoders (VQ-VAEs) are an advanced variant of the traditional Variational Autoencoder (VAE), enhanced by integrating a vector quantization layer between the encoder and decoder. While standard VAEs learn continuous latent representations of data and aim to minimize the reconstruction loss between the original and reconstructed images, they often face challenges like "posterior collapse." This phenomenon occurs when the latent space becomes overly simplistic and the model fails to leverage the information effectively during reconstruction [[3](https://arxiv.org/abs/1711.00937)].
 

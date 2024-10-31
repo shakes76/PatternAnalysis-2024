@@ -12,10 +12,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch.optim.lr_scheduler as lr_scheduler
+import matplotlib.pyplot as plt
 
 
 batch_size = 64
-N_epochs = 50
+N_epochs = 100
 n_workers = 2
 pin = True
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -57,7 +58,7 @@ import torch
 import torch.nn as nn
 
 class DiceLoss(nn.Module):
-    def __init__(self, smooth=1e-5, ignore_index=None, num_classes=6, threshold=0.75, k=10.0):
+    def __init__(self, smooth=1e-5, ignore_index=None, num_classes=6, threshold=0.75, k=20.0):
         """
         Initializes the DiceLoss.
         
@@ -119,7 +120,7 @@ class DiceLoss(nn.Module):
         # Average Dice coefficient over batch
         dice_coeff = dice_coeff.mean(dim=0)  # [num_classes]
 
-                # Store the Dice coefficients
+        # Store the Dice coefficients
         self.last_dice_coeff = dice_coeff.detach().cpu().numpy()
 
         # Compute penalty using sigmoid
@@ -131,13 +132,15 @@ class DiceLoss(nn.Module):
         # Compute dice_cost as the sum of squared costs
         dice_cost = torch.sum(cost ** 2)
 
-        return dice_cost, self.last_dice_coeff
+        return dice_cost
 
+    def get_last_dice_coeff(self):
+        return self.last_dice_coeff
 
 
 # Define Combined Loss
 class CombinedLoss(nn.Module):
-    def __init__(self, ce_weight=None, dice_weight=1.0, ce_weight_factor=1.0, dice_weight_factor=3.0):
+    def __init__(self, ce_weight=None, dice_weight=1.0, ce_weight_factor=1.0, dice_weight_factor=3.0, cross=False):
         super(CombinedLoss, self).__init__()
         self.ce_loss = nn.CrossEntropyLoss(weight=ce_weight)
         dice_cost = 0
@@ -145,19 +148,21 @@ class CombinedLoss(nn.Module):
         self.ce_weight = ce_weight_factor
         self.dice_weight = dice_weight_factor
         self.last_dice_coeff = None
+        self.cross = cross
 
     def forward(self, inputs, targets):
         dl = self.dice_loss(inputs, targets)
-        self.last_dice_coeff = dl[1]
+        self.last_dice_coeff = self.dice_loss.get_last_dice_coeff()
         ce = self.ce_loss(inputs, targets)
-        return self.ce_weight * ce + self.dice_weight * dl[0]
+        if not self.cross:
+            return self.ce_weight * ce + self.dice_weight * dl
+        else:
+            return ce
+        
     
     def get_last_dice_coeff(self):
         """
         Retrieves the last computed Dice coefficients.
-
-        Returns:
-            np.ndarray: Array of Dice coefficients for each class.
         """
         return self.last_dice_coeff
 
@@ -177,10 +182,10 @@ def main():
     val_dataset = ProstateDataset(val_image_dir, val_mask_dir, norm_image=True,transform=train_trainsform)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, pin_memory=True)
 
-    weights = [1, 1, 1, 2, 10, 4]
+    weights = [1, 1, 1, 2, 6, 3]
     weights = torch.tensor(weights, dtype=torch.float).to(device)
     model = UNet().to(device=device)
-    loss_fn = CombinedLoss(ce_weight=weights)
+    loss_fn = CombinedLoss(ce_weight=weights, cross=False)
     scaler = torch.amp.GradScaler(device=device)
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)
     train_losses = []
@@ -200,73 +205,17 @@ def main():
         val_dice_scores.append(val_loss[1])
         print(f"Average Validation Loss: {val_loss[0]:.4f}")
         print(f"Dice Coeff: {val_loss[1]}")
-
-        if val_loss[0] < best_val_loss:
-            best_val_loss = val_loss[0]
-            # Save the best model
-            torch.save(model.state_dict(), "bestsofar_unet2d.pth")
+        if epoch >= 9:
+            torch.save(model.state_dict(), f"dice/bestsofarDICE_{epoch}unet2d.pth")
             print("Best model saved.")
-                  # Save prediction images at the end of training if not saved already
-            if (epoch + 1) % 5 != 0:
-                print("Saving best prediction images")
-                save_img(val_loader, model, folder=f"images/NEWepoch_{epoch}", device=device, num_classes=6, epoch=epoch)
-
-        # Save images every 5 epochs
-        if (epoch + 1) % 5 == 0:
-            print(f"Saving prediction images for epoch {epoch+1}")
-            save_img(val_loader, model, folder=f"images/NEWepoch_{epoch+1}", device=device, num_classes=6, epoch=epoch+1)
-
-      # Save prediction images at the end of training if not saved already
-    if N_epochs % 5 != 0:
-        print("Saving prediction images at the end of training.")
-        save_img(val_loader, model, folder=f"images/NEWepoch_{N_epochs}", device=device, num_classes=6, epoch=N_epochs)
+            # Save prediction images
+            print("Saving best prediction images")
+            save_img(val_loader, model, folder=f"dice/DICEONLY10epoch_{epoch}", device=device, num_classes=6, epoch=epoch, max_images_per_class=10)
+            save_img(val_loader, model, folder=f"dice/DICEONLY2epoch_{epoch}", device=device, num_classes=6, epoch=epoch, max_images_per_class=2)
+            # Plot metrics
+            plot_metrics(train_losses,val_losses, val_dice_scores, num_classes=6, save_path=f"dice/DICEONLYmetrics_plot_epoch_{epoch}.png")
 
 
-
-
-    # Plot metrics after training
-    plot_metrics(train_losses,val_losses, val_dice_scores, num_classes=6, save_path="BIGONEmetrics_plot.png")
-
-    #save the model after training
-    torch.save(model.state_dict(), "unet2d_final.pth")
-
-def dice_score(loader, model, num_classes=6):
-    model.eval()
-    dice_dict = {cls: 0.0 for cls in range(num_classes)}
-    with torch.no_grad():
-        for x, y in loader:
-            x = x.to(device)
-            y = y.to(device).long()
-            
-            # Remove any extra singleton dimensions
-            while y.dim() > 3:
-                y = y.squeeze(1)
-            
-            preds = model(x)
-            preds = preds.argmax(dim=1)  # Shape: [batch_size, H, W]
-
-            for cls in range(num_classes):
-                pred_cls = (preds == cls).float()
-                true_cls = (y == cls).float()
-
-                intersection = (pred_cls * true_cls).sum()
-                union = pred_cls.sum() + true_cls.sum()
-
-                if union == 0:
-                    dice = 1.0  # Perfect score if both pred and true have no pixels for this class
-                else:
-                    dice = (2.0 * intersection + 1e-8) / (union + 1e-8)
-                
-                dice_dict[cls] += dice.item()
-
-    # Average Dice score per class
-    for cls in dice_dict:
-        dice_dict[cls] /= len(loader)
-
-    print(f"Dice Scores per class: {dice_dict}")
-    return dice_dict
-
-import matplotlib.pyplot as plt
 
 def plot_metrics(train_losses, val_losses, val_dice_scores, num_classes=6, save_path="metrics_plot.png"):
     """
@@ -305,11 +254,10 @@ def plot_metrics(train_losses, val_losses, val_dice_scores, num_classes=6, save_
     
     plt.tight_layout()
     plt.savefig(save_path)
-    plt.show()
 
 
 
-def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_images_per_class=6, epoch=1, classes_per_row=3):
+def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_images_per_class=10, epoch=1, classes_per_row=3):
     """
     Saves prediction images for each class, stacking multiple classes on the same page.
     

@@ -1,7 +1,6 @@
 
 import numpy as np
 import nibabel as nib
-import glob
 import os
 import torch
 from tqdm import tqdm
@@ -71,14 +70,18 @@ def load_data_2D(imageNames, normImage = False, categorical = False, dtype = np.
     else:
         return torch.tensor(images, dtype = torch.float32)
 
-
+# Dataset structure for loading images and masks into dataloader
 class ProstateDataset(Dataset):
     def __init__(self, image_path, mask_path, norm_image=False, transform=None, target_size=(128, 64)):
         self.transform = transform
         self.image_path = image_path
         self.mask_path = mask_path
+
+        # list of paths
         self.images = os.listdir(self.image_path)
         self.masks = os.listdir(self.mask_path)
+
+
         self.target_size = target_size
         self.transform = transform
 
@@ -86,6 +89,7 @@ class ProstateDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
+        # load with helper 
         img_pth = os.path.join(self.image_path,self.images[idx])
         mask_pth= os.path.join(self.mask_path,self.images[idx].replace('case', 'seg'))
         image = load_data_2D([img_pth], normImage=True)

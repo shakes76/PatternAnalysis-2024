@@ -7,8 +7,17 @@ if applicable.
 5. Describe any specific pre-processing you have used with references if any. Justify your training, validation
 and testing splits of the data.
 
+# classifying 3d HipMRI study data using Unet
+## purpose
+blah
+## overview of the model
+blah
+## example usage
+
+## dependecies
 requirements:
 tqdm - >version 4.66.5
 nilearn - >version 0.10.4
 pytorch - compute platform = cuda 11.8
-pip install pyimgaug3d
+torchio - >version 0.20.1
+

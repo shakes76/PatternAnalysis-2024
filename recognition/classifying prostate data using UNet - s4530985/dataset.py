@@ -6,7 +6,28 @@ import os
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+import torchio as tio
+
+# dice loss function from
+# https://www.kaggle.com/code/bigironsphere/loss-function-library-keras-pytorch?fbclid=IwAR3q7bjIDoKFlc5IDGpd24TW8QhQdzbxh2TrIP6FCXb7A8FaluU_HhTqmHA
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.0):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+        
+    def forward(self, predict, target):
+        # flatten tensors
+        predict = predict.view(-1)
+        target = target.view(-1)
+
+        # calculate the intersect value
+        intersect = (predict * target).sum()
+        # compute dice score
+        dice = (2.*intersect + self.smooth)/(predict.sum() + target.sum() + self.smooth)
+
+        return 1 - dice
 
 #### provided code from 2024 specsheet
 def to_channels ( arr : np.ndarray , dtype = np.uint8 ) -> np.ndarray :
@@ -142,18 +163,26 @@ def load_data_3D ( imageNames , normImage = False , categorical = False , dtype 
         return images
 #### end of provided code
 
-class Dataset_3d(Dataset):
+class Dataset_2d(Dataset):
     """
     """
     def __init__(self, image_dir, mask_dir):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
+        self.transform = tio.CropOrPad((256,128))
         self.images = os.listdir(image_dir)
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, index):
+        img_path = os.path.join(self.image_dir, self.images[index])
+        mask_path = os.path.join(self.mask_dir, self.images[index])
+
+        image = tio.ScalarImage(img_path)
+        
+        image = self.transform(image)
+
         DataLoader()
 
         return image, mask

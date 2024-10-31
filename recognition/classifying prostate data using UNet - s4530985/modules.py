@@ -36,23 +36,23 @@ class conv_seg(nn.Module):
     def __init__(self, in_channel_n, out_channel_n):
         super(conv_seg, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv3d(in_channel_n, out_channel_n, 3, 1, 1, bias=False),
-            nn.BatchNorm3d(out_channel_n),
+            nn.Conv2d(in_channel_n, out_channel_n, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(out_channel_n),
             nn.ReLU(inplace=True),
-            nn.Conv3d(out_channel_n, out_channel_n, 3, 1, 1, bias=False),
-            nn.BatchNorm3d(out_channel_n),
+            nn.Conv2d(out_channel_n, out_channel_n, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(out_channel_n),
             nn.ReLU(inplace=True),
         )
 
     def forward(self, out):
         return self.conv(out)
 
-class Unet3d(nn.Module):
+class Unet2d(nn.Module):
     def __init__(self, in_channel_n=1, out_channel_n=1, features=[64, 128, 256, 512]):
-        super(Unet3d, self).__init__()
+        super(Unet2d, self).__init__()
         self.upward = nn.ModuleList()
         self.downward = nn.ModuleList()
-        self.pool = nn.MaxPool3d(2,2)
+        self.pool = nn.MaxPool2d(2,2)
 
         # downwards portion of Unet
         for feature in features:
@@ -68,7 +68,7 @@ class Unet3d(nn.Module):
             self.upward.append(conv_seg(feature*2, feature))
 
         #final conv layer
-        self.last = nn.Conv3d(features[0], out_channel_n, 1)
+        self.last = nn.Conv2d(features[0], out_channel_n, 1)
 
     def forward(self, out):
         skips = []
@@ -95,12 +95,14 @@ class Unet3d(nn.Module):
         return out
         
 def test():
-    x = torch.randn((3,1,160,160, 160))
-    model = Unet3d(1,1)
+    x = torch.randn((3,1,160,160))
+    model = Unet2d(1,1)
     preds = model(x)
     print(preds.shape)
     print(x.shape)
-    assert preds.shape == x.shape
+    assert preds.shape[0] == x.shape[0], "Batch size mismatch"
+    assert preds.shape[2:] == x.shape[2:], "Spatial dimensions mismatch"
+    assert preds.shape[1] == 1, "Output channels mismatch"
 
 if __name__ == "__main__":
     #put on the cluster

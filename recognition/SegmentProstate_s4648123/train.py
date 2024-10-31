@@ -117,7 +117,7 @@ def validate(model, dataloader, crit):
             dice_scores.append(new_dice_scores)  # Keep on GPU
 
             # Calculate the dice loss directly with raw predictions and labels
-            dice_loss = crit.calculate_loss(new_dice_scores, labels)
+            dice_loss = crit.calculate_loss(new_dice_scores)
             dice_losses.append(dice_loss.item())
 
     # Average dice scores across batches, then convert to numpy
@@ -137,9 +137,9 @@ if __name__ == '__main__':
     unet = UNet3D()
     unet = unet.to(device)
 
-    epochs = 20
+    epochs = 18
     criterion = Dice()
-    optimizer = torch.optim.Adam(unet.parameters(), lr=0.005)
+    optimizer = torch.optim.Adam(unet.parameters(), lr=0.001)
 
     best_metric = float(100.)
     best_state = unet.state_dict()

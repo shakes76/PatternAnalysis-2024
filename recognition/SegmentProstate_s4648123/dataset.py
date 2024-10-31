@@ -83,7 +83,7 @@ def get_dataloaders() -> tuple[DataLoader, DataLoader]:
     #                               shuffle=True)
     # val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
     #                             shuffle=True)
-    train_dataloader = DataLoader(train_ds, batch_size=1, num_workers=0)
+    train_dataloader = DataLoader(train_ds, batch_size=1, num_workers=0, collate_fn=collate_batch)
     val_dataloader = DataLoader(val_ds, batch_size=1, num_workers=0)
 
     return train_dataloader, val_dataloader

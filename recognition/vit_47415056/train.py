@@ -28,7 +28,7 @@ def train_and_validate(train_loader, val_loader, test_loader, model, criterion, 
         train_accuracy = total_correct / total_samples
         print(f"Epoch {epoch + 1}: Training Accuracy: {train_accuracy:.2%}")
 
-        # Validation logic
+        # Validation phase
         model.eval()
         val_correct, val_loss = 0, 0
         with torch.no_grad():
@@ -64,3 +64,34 @@ def train_and_validate(train_loader, val_loader, test_loader, model, criterion, 
     conf_matrix = confusion_matrix(all_labels, all_preds)
     accuracy = accuracy_score(all_labels, all_preds)
     print(f"Confusion Matrix:\n{conf_matrix}\nTest Accuracy: {accuracy:.2%}")
+
+    # Plotting metrics
+    plt.figure()
+    plt.plot(range(1, num_epochs + 1), val_losses, label="Validation Loss")
+    plt.plot(range(1, num_epochs + 1), val_accuracies, label="Validation Accuracy")
+    plt.xlabel("Epochs")
+    plt.ylabel("Metrics")
+    plt.legend()
+    plt.title("Training Metrics")
+    plt.show()
+
+def main():
+    # Paths to data directories
+    train_data_dir = "/home/groups/comp3710/ADNI/AD_NC/train"
+    test_data_dir = "/home/groups/comp3710/ADNI/AD_NC/test"
+
+    # Load data loaders with 90-10 split
+    train_loader, val_loader = get_train_val_loaders(train_data_dir)
+    test_loader = get_test_loader(test_data_dir)
+
+    # Initialize model, loss, optimizer, and scheduler
+    model = initialize_model()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=0)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+
+    # Train, validate, and test the model
+    train_and_validate(train_loader, val_loader, test_loader, model, criterion, optimizer, scheduler)
+
+if __name__ == "__main__":
+    main()

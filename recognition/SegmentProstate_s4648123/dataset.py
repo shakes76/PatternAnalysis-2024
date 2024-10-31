@@ -1,30 +1,24 @@
 import numpy as np
 from utils import get_images, collate_batch, load_image_and_label_3D
-from monai.transforms import (Compose, ToTensord, RandCropByPosNegLabeld, RandFlipd, NormalizeIntensityd, Resized)
+from monai.transforms import (Compose, ToTensord, RandCropByLabelClassesd, RandFlipd, NormalizeIntensityd, Resized)
 from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
 from config import NUM_WORKERS, BATCH_SIZE
 
-# test other transforms
 train_transforms = Compose(
     [
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=1),
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=2),
-        NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-        # RandScaleIntensityd(keys='image', factors=0.1, prob=1.0),
-        Resized(keys=["image", "label"],spatial_size=(256,256,128)),
-        # RandCropByPosNegLabeld(
-        #     keys=["image", "label"],
-        #     label_key="label", spatial_size=(96, 96, 96), pos=3, neg=1,
-        #     num_samples=4, image_key="image", image_threshold=0,
-        # ),
+        NormalizeIntensityd(keys='image', nonzero=True),
+        # RandCropByLabelClassesd(keys=["image", "label"], label_key="label", image_key="image",
+        #                         spatial_size=(96, 96, 48), num_samples=6, ratios=[0.05, 0.07, 0.22, 0.22, 0.22, 0.22]),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
 val_transforms = Compose(
     [
-        NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
+        NormalizeIntensityd(keys='image', nonzero=True),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
@@ -57,7 +51,6 @@ class MRIDataset(Dataset):
         :return: Dictionary with transformed image and mask
         """
         img_and_mask = load_image_and_label_3D(self.image_files[index], self.label_files[index])
-
         # Load image and segmentation
         data = {'image': img_and_mask[0], 'label': img_and_mask[1]}
         data = self.transform(data)  # Apply transformations
@@ -89,13 +82,10 @@ def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataL
 
     # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
-    # train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-    #                               shuffle=True)
-    # val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-    #                             shuffle=True)
-
-    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, shuffle=True)
-    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, shuffle=True)
+    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+                                  shuffle=True)
+    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+                                shuffle=True)
 
     return train_dataloader, val_dataloader
 

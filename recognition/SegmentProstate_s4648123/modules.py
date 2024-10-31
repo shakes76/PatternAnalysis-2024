@@ -147,5 +147,5 @@ class UNet3D(nn.Module):
         x = self.up4(x, x1)
 
         # Final output layer
-        logits = self.outc(x)
-        return logits
+        pred = self.outc(x)
+        return pred

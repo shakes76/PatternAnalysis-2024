@@ -5,8 +5,10 @@ from dataset import load_data_2D, get_all_paths, batch_paths
 import random
 import numpy as np
 
+# where the model will be attempted to be loaded from and saved to
 MODEL_PATH = "unetSeg.keras"
 
+# path to each of the folders containing each data split
 TRAIN_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 TRAIN_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
 
@@ -15,6 +17,11 @@ VALIDATION_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data
 
 TEST_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 TEST_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
+
+# Hyperparameters
+BATCH_SIZE = 32
+EPOCHS = 15
+LEARNING_RATE = 0.001
 
 # create list of paths to each of the datasets
 trainPaths = get_all_paths(TRAIN_PATH)
@@ -25,10 +32,6 @@ validationSegPaths = get_all_paths(VALIDATION_SEG_PATH)
 
 testPaths = get_all_paths(TEST_PATH)
 testSegPaths = get_all_paths(TEST_SEG_PATH)
-# Hyperparameters
-BATCH_SIZE = 32
-EPOCHS = 15
-LEARNING_RATE = 0.001
 
 # load or initialize model
 unet = UNetSegmentation(MODEL_PATH)
@@ -109,7 +112,7 @@ test_loss = tf.keras.metrics.Mean()
 
 loss_fn = tf.keras.losses.Dice()
 
-prostateLoss = [] # loss specifically for the prostate label
+classLosses = [[], [], [], [], []] # losses for each class in testing
 
 # batching test to reduce memory usage
 x_test_batches, y_test_batches = batch_paths(testPaths, testSegPaths, 32)
@@ -122,15 +125,17 @@ for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
 
     test_logits = unet.model(x_test_tensor, training=False)
     # calculate loss for prostate class
-    prosPredMasks = test_logits[:, :, :, 0]
-    prosRealMasks = y_test_tensor[:, :, :, 0]
-    prosDice = 1 -  (2 * tf.reduce_sum(prosPredMasks * prosRealMasks) + 1e-6) / (tf.reduce_sum(prosPredMasks + prosRealMasks) + 1e-6)
-    prostateLoss.append(prosDice)
+    for i in range(5):
+        PredMasks = test_logits[:, :, :, i]
+        RealMasks = y_test_tensor[:, :, :, i]
+        Dice = 1 -  (2 * tf.reduce_sum(PredMasks * RealMasks) + 1e-6) / (tf.reduce_sum(prosPredMasks + prosRealMasks) + 1e-6)
+        classLosses[i].append(Dice)
     
     test_loss_value = loss_fn(y_test_tensor, test_logits)
     test_loss.update_state(test_loss_value)
 
-print(f"prostateLoss: {np.mean(prostateLoss)}")
+for i in range(5):
+    print(f"dice coefficient for class {i}: {np.mean(classLosses[i])}")
 print(f"untrained loss: {preTrain_loss.result().numpy():.4f}")
 print(f"validation loss at each epoch: {epochLoss}")
 print(f"test loss: {test_loss.result().numpy():.4f}")

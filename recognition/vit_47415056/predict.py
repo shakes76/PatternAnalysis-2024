@@ -12,6 +12,15 @@ def predict_and_visualize(model_path, test_data_dir):
 
     # Load test data
     test_loader = get_test_loader(test_data_dir)
+    
+    all_preds, all_labels = [], []
+    print("\nTesting the model again on the test dataset...\n")
+    for images, labels in test_loader:
+        images = images.to(DEVICE)
+        with torch.no_grad():
+            predictions = model(images).argmax(dim=1)
+        all_preds.extend(predictions.cpu().numpy())
+        all_labels.extend(labels.numpy())
 
 if __name__ == "__main__":
     model_path = "model_weights.pth"

@@ -4,9 +4,9 @@
 
 **Name:** Swastik Lohchab
 
-**Description** 
+**Description:** 
 This project focuses on classifying Alzheimer’s Disease from MRI scans using Vision Transformers (ViT). The approach leverages ViT’s ability to capture spatial correlations across different regions of the brain, aiming to identify key areas associated with Alzheimer’s Disease. This project was conducted as part of the COMP3710 course at the University of Queensland and achieved a test accuracy of 68.20%.
----
+
 
 ## Table of Contents
 1. [How It Works](#1-how-it-works)
@@ -55,7 +55,7 @@ The attention mechanism of the model underlines important brain areas that corre
 2. ViT can be easily scaled up or down by changing the number of patches, the embedding dimension, or the number of Transformer blocks.
 3. Attention maps provide insights into which regions of the image are most important for the model’s decision-making process, making ViT a valuable tool for medical image analysis.
 
-![ViT Architecture](/images/vit_architecture.jpg)
+![ViT Architecture](/Images/vit_architecture.jpg)
 
 
 ## 3. Dependencies
@@ -126,9 +126,9 @@ AD_NC
 ```
 
 ### Image 1 -> AD
-![AD image from train set](images/AD.jpeg)
+![AD image from train set](Images/AD.jpeg)
 ### Image 2 -> NC
-![NC image from train set](images/NC.jpeg)
+![NC image from train set](Images/NC.jpeg)
 
 ### Splitting Strategy
 The training set was further divided into 90% for training and 10% for validation. The split ensured that images from the same patient were not present in both subsets to maintain data integrity.
@@ -153,16 +153,16 @@ The training loop monitored both accuracy and loss metrics. Early stopping was i
 ### Performance 
 The final model achieved an accuracy of 68.20% on the test set.
 
-![Training and Testing Accuracy](images/result.jpg)
+![Training and Testing Accuracy](Images/result.jpg)
 
 ### Training and Validation Plots
-1. Accuracy vs. Epochs:  ![Training and Testing Accuracy VS No. of epochs graph](images/accuracy_graph.jpg)
-2. Loss vs. Epochs:  ![Training and Testing loss VS No. of epochs graph](images/loss_graph.jpg)
+1. Accuracy vs. Epochs:  ![Training and Testing Accuracy VS No. of epochs graph](Images/accuracy_graph.jpg)
+2. Loss vs. Epochs:  ![Training and Testing loss VS No. of epochs graph](Images/loss_graph.jpg)
 
 ### Confusion Matrix
 The confusion matrix provides insights into the model’s classification performance:
 
-![Covariance Matrix](images/covariance_matrix.jpg)
+![Covariance Matrix](Images/covariance_matrix.jpg)
 
 
 ## 9. Future Improvements

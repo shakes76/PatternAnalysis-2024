@@ -67,27 +67,38 @@ class Dice(torch.nn.Module):
 
         class_weights = compute_class_weights(target)
         coeff = self.dice_scores_per_class(logits, target) * class_weights
-        dice_loss = 1 - torch.sum(coeff) / torch.sum(self.class_weights) # Weighted mean
+        dice_loss = 1 - torch.sum(coeff) / torch.sum(class_weights) # Weighted mean
 
         return dice_loss
 
 
-def train(model, dataloader, optimizer, crit):
+def train(model, dataloader, optimizer, crit, accumulation_steps=8):
     model.train()
     epoch_loss = 0
     torch.manual_seed(2809)  # reproducibility
 
-    for batch_data in dataloader:
+    optimizer.zero_grad()  # Initialize gradients to zero
+    batch_loss = 0  # To accumulate losses for logging
+
+    for i, batch_data in enumerate(dataloader):
         images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
-        optimizer.zero_grad()  # Zero the gradients
         outputs = model(images)  # Forward pass
         loss = crit(outputs, labels)  # Compute loss
-        loss.backward()  # Backward pass
-        optimizer.step()  # Update weights
 
-        epoch_loss += loss.item()  # Accumulate loss
+        # Scale the loss by the number of accumulation steps
+        loss = loss / accumulation_steps
+        loss.backward()  # Backward pass (accumulate gradients)
 
-    epoch_loss = epoch_loss / len(dataloader)
+        batch_loss += loss.item()  # Accumulate loss for logging
+
+        # Update model weights after accumulating gradients
+        if (i + 1) % accumulation_steps == 0 or (i + 1) == len(dataloader):
+            optimizer.step()  # Perform optimization step
+            optimizer.zero_grad()  # Reset gradients
+
+        epoch_loss += loss.item() * accumulation_steps  # Accumulate total loss
+
+    epoch_loss /= len(dataloader)  # Average the loss over all batches
     return epoch_loss
 
 
@@ -99,7 +110,7 @@ def validate(model, dataloader, crit):
     with torch.no_grad():  # Disable gradient computation
         torch.manual_seed(2809)  # reproducibility
         for batch_data in dataloader:
-            images, labels = batch_data["image"], batch_data["label"]
+            images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
             pred = model(images)  # Forward pass
 
             # dice scores per class
@@ -108,7 +119,7 @@ def validate(model, dataloader, crit):
 
             #dice loss
             class_weights=compute_class_weights(labels)
-            weighted_scores= class_weights* new_dice_scores
+            weighted_scores= class_weights * new_dice_scores
             dice_loss = 1 - torch.sum(weighted_scores) / torch.sum(class_weights) # Weighted mean
             dice_losses.append(dice_loss.cpu().numpy())
 
@@ -128,7 +139,7 @@ if __name__ == '__main__':
     unet = UNet3D(n_channels=1, n_classes=6)
     unet = unet.to(device)
 
-    epochs = 15
+    epochs = 20
     criterion = Dice()
     optimizer = torch.optim.Adam(unet.parameters())
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)

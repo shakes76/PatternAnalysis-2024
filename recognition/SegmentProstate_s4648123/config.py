@@ -5,4 +5,4 @@ MODEL_PATH = "/home/Student/s4648123/MRI/best_unet.pth"
 
 NUM_WORKERS = 2
 EARLY_STOP = True
-BATCH_SIZE = 6
+BATCH_SIZE = 4

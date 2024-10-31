@@ -72,7 +72,7 @@ class Dice(torch.nn.Module):
         return self.calculate_weighted_loss(dice_scores, target)
 
 
-def train(model, dataloader, optimizer, crit, accumulation_steps=8):
+def train(model, dataloader, optimizer, crit, accumulation_steps=12):
     model.train()
     epoch_loss = 0
     torch.manual_seed(2809)  # reproducibility
@@ -83,7 +83,6 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=8):
         # Forward pass
         outputs = model(images)
         loss = crit(outputs, labels)  # Compute loss
-
 
         loss = loss / accumulation_steps
         loss.backward()

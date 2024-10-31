@@ -11,8 +11,9 @@ train_transforms = Compose(
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=1),
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=2),
         NormalizeIntensityd(keys='image', nonzero=True),
+        Resized(keys=["image", "label"],spatial_size=(256,256,128)),
         # RandCropByLabelClassesd(keys=["image", "label"], label_key="label", image_key="image",
-        #                         spatial_size=(96, 96, 48), num_samples=6, ratios=[0.05, 0.07, 0.22, 0.22, 0.22, 0.22]),
+        #                         spatial_size=(96, 96, 48), num_samples=6, ratios=[1,2,3,4,4,4]),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )

@@ -39,7 +39,17 @@ The experimental dataset comprises 9,000 brain MRI scans, categorized into a bin
 
 ## 3. Model Overview
 
-### Structure of Model (使用的layers, 激活函数, 优化器)
+The structure of a complete GFNet mainly includes frequency domain operations, hierarchical structure, multi-layer global filters, etc. Below is a detailed description of GFNet, including the layers used, activation functions, and optimizer.
+
+### Structure of Model
+
+1. **Input layer:** Input shape (224,224,3), which is a standard 224x224 size RGB image;
+2. **Data augmentation layer:** This model uses *RandomRotation*, *RandomFlip*, and *RandomZoom* to increase the diversity of the input images to help the model generalize better;
+3. **Feature extraction layer:** *EfficientNetB0* is used as the backbone feature extractor, where *include_top=False* removes the classification head of the original model and only retains the feature extraction part.
+这里可以考虑pooling的问题
+4. **Global filter layer:** The Global Filter Layer performs frequency domain conversion, global filtering, and inverse frequency domain conversion. A 2D FFT is used to transform the input feature map from the spatial domain to the frequency domain. We apply a learnable frequency domain filter to capture global features by element-wise multiplication (Hadamard product). The processed frequency domain features were returned to the spatial domain by inverse FFT (iFFT) to prepare features for the subsequent classification layer.
+5. **Classification layer:** A fully connected layer is added to the classification layer with an output dimension of 128, an activation function of ReLU, and L2 regularization is used to prevent overfitting. The output of Dense layer is batch normalized to make the model training more stable. *Dropout (rate=0.3)* was used to further prevent overfitting.
+6. **Output layer:** The final output layer is *Dense(2, activation='softmax')*, which is used for binary classification tasks and outputs the probability distribution of the two classes.
 
 ### 模型的设计和实验
 

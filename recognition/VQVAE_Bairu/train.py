@@ -1,3 +1,12 @@
+"""
+Contains the code for training, validating, testing, and saving the VQ-VAE model. 
+It imports the model from modules.py and the data loader from dataset.py, 
+and includes functionality to plot losses and metrics during the training process.
+
+Author: Bairu An, s4702833.
+"""
+
+
 import os
 import torch
 import torch.optim as optim
@@ -24,16 +33,19 @@ num_res_layers = 2  # Number of residual layers
 hidden_channels = 64  # Hidden dimension of the VQVAE
 
 # Data directories
-#train_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_train"
-#val_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_validate"
-#test_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_test"
+# Local paths
+# train_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_train"
+# val_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_validate"
+# test_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/HipMRI_study_keras_slices_data/keras_slices_test"
 
+# Rangpur paths
 train_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
 val_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
 test_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 
 # Create a directory for saving plots
-#plot_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/plots"
+# Local plot directory
+# plot_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/plots"
 plot_dir = "/home/Student/s4702833/project/plots"
 os.makedirs(plot_dir, exist_ok=True)
 
@@ -73,9 +85,6 @@ def save_reconstructed_images(original_images, reconstructed_images, embeddings,
     plt.savefig(os.path.join(save_dir, f'epoch_{epoch + 1}_images.png'))
     plt.close()
     print(f'Saved images for epoch {epoch + 1} in {save_dir}')
-
-
-
 
 # Function to plot losses and SSIM
 def plot_losses_and_ssim(train_losses, val_losses, train_ssims, val_ssims):

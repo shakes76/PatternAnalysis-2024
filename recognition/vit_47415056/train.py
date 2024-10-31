@@ -15,3 +15,7 @@ def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', batch_size=128, lea
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+
+    train_losses, test_losses = [], []
+    train_accuracies, test_accuracies = [], []
+    best_acc = 0.0

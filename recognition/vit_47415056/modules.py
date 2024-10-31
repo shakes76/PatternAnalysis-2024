@@ -1,6 +1,8 @@
 import torch
 import timm
-import torch.nn as nn
+
+# Configure the device to use GPU if available, otherwise use CPU
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def create_model(num_classes=2):
     """
@@ -14,8 +16,6 @@ def create_model(num_classes=2):
     """
     
     # Initialize a Vision Transformer (ViT) model from the timm library
-    # The 'vit_tiny_patch16_224' model is used with 16x16 patches and a 224x224 input resolution
-    # Set pretrained to False to initialize with random weights
     model = timm.create_model('vit_tiny_patch16_224', pretrained=False, num_classes=num_classes)
     
-    return model
+    return model.to(DEVICE)  # Move the model to the configured device

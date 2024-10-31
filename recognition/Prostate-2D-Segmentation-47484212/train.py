@@ -1,4 +1,4 @@
-from modules import UNetSegmentation
+from modules import UNetSegmentation, dice_loss
 import tensorflow as tf
 import os
 from dataset import load_data_2D, get_all_paths, batch_paths
@@ -20,8 +20,8 @@ TEST_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras
 
 # Hyperparameters
 BATCH_SIZE = 32
-EPOCHS = 15
-LEARNING_RATE = 0.001
+EPOCHS = 3
+LEARNING_RATE = 0.00001
 
 # create list of paths to each of the datasets
 trainPaths = get_all_paths(TRAIN_PATH)
@@ -41,7 +41,7 @@ loss_fn = tf.keras.losses.Dice()
 # testing
 preTrain_loss = tf.keras.metrics.Mean()
 
-loss_fn = tf.keras.losses.Dice()
+loss_fn = dice_loss
 
 # batching test to reduce memory usage
 x_test_batches, y_test_batches = batch_paths(testPaths, testSegPaths, 32)
@@ -76,7 +76,9 @@ for epoch in range(EPOCHS):
 
         x_tensor = tf.convert_to_tensor(x_batch, dtype=tf.float32)
         y_tensor = tf.convert_to_tensor(y_batch, dtype=tf.float32)
-
+        
+        unet.model.fit(x_tensor, y_tensor)
+        '''
         # use gradient tape for auto differentiation
         with tf.GradientTape() as tape:
             pred = unet.call(x_tensor, training=True) 
@@ -84,7 +86,7 @@ for epoch in range(EPOCHS):
         # get the gradients and apply to model
         grads = tape.gradient(loss_value, unet.get_trainable_weights())
         optimizer.apply_gradients(zip(grads, unet.get_trainable_weights()))
-
+        '''
     # Validation at the end of each epoch (batched to reduce memory)
     val_loss = tf.keras.metrics.Mean()
 
@@ -105,7 +107,7 @@ for epoch in range(EPOCHS):
     unet.model.save(MODEL_PATH)
     epochLoss.append(float(val_loss.result()))
 
-print(f"completed {EPOCHS} epochs, final validation loss was {loss_value}")
+#print(f"completed {EPOCHS} epochs, final validation loss was {loss_value}")
 
 # testing
 test_loss = tf.keras.metrics.Mean()
@@ -128,7 +130,7 @@ for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
     for i in range(5):
         PredMasks = test_logits[:, :, :, i]
         RealMasks = y_test_tensor[:, :, :, i]
-        Dice = 1 -  (2 * tf.reduce_sum(PredMasks * RealMasks) + 1e-6) / (tf.reduce_sum(prosPredMasks + prosRealMasks) + 1e-6)
+        Dice = 1 -  (2 * tf.reduce_sum(PredMasks * RealMasks) + 1e-6) / (tf.reduce_sum(PredMasks + RealMasks) + 1e-6)
         classLosses[i].append(Dice)
     
     test_loss_value = loss_fn(y_test_tensor, test_logits)

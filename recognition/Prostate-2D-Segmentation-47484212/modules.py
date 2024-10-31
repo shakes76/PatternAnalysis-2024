@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, Input, MaxPooling2D, \
     BatchNormalization, ReLU, Conv2DTranspose, Concatenate, Cropping2D
+import numpy as np
 
 class UNetSegmentation():
 
@@ -16,7 +17,7 @@ class UNetSegmentation():
                 self.model = self.build()
         else:
             self.model = self.build()
-        # self.model.compile(optimizer='adam', loss=tf.keras.losses.Dice()) <- dunno if i need this
+        self.model.compile(optimizer='adam', loss=dice_loss) 
 
     def build(self):
         '''
@@ -96,3 +97,11 @@ class UNetSegmentation():
 
     def get_trainable_weights(self):
         return self.model.trainable_weights
+
+def dice_loss(y_true, y_pred):
+    classLosses = []
+    for i in range(5):
+        PredMasks = y_pred[:, :, :, i]
+        RealMasks = y_true[:, :, :, i]
+        classLosses.append(1 -  (2 * tf.reduce_sum(PredMasks * RealMasks) + 1e-9) / (tf.reduce_sum(PredMasks + RealMasks) + 1e-9))
+    return tf.reduce_mean(classLosses)

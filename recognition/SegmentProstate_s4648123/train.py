@@ -36,7 +36,7 @@ class Dice(torch.nn.Module):
             torch.Tensor: Dice coefficients for each class excluding the background.
         """
         # Apply softmax to logits to get probabilities
-        target_one_hot = one_hot(target[1].squeeze(1).long(),num_classes=6).permute(0,4,1,2,3).float()
+        target_one_hot = one_hot(target.squeeze(1).long(), num_classes=6).permute(0, 4, 1, 2, 3).float()
         pred = torch.softmax(pred, dim=1)  # (B, C, H, W, D)
 
         # Exclude background by slicing from class 1 onward
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     epochs = 20
     criterion = Dice()
-    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-5)
+    optimizer = torch.optim.Adam(unet.parameters(), lr=0.001)
 
     best_metric = float(100.)
     best_state = unet.state_dict()

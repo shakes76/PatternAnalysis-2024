@@ -83,10 +83,12 @@ def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataL
 
     # TODO: reproducibility, may need to add worker_init_fn to dataloaders
     # get dataloaders
-    train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-                                  shuffle=True)
-    val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-                                shuffle=True)
+    # train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+    #                               shuffle=True)
+    # val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
+    #                             shuffle=True)
+    train_dataloader = DataLoader(train_ds, batch_size=1, num_workers=0)
+    val_dataloader = DataLoader(val_ds, batch_size=1, num_workers=0)
 
     return train_dataloader, val_dataloader
 

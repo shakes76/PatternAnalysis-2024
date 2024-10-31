@@ -1,5 +1,6 @@
 import torch
 from sklearn.metrics import confusion_matrix, accuracy_score
+import matplotlib.pyplot as plt
 from modules import initialize_model
 from dataset import get_test_loader
 
@@ -23,10 +24,19 @@ def predict_and_visualize(model_path, test_data_dir):
         all_preds.extend(predictions.cpu().numpy())
         all_labels.extend(labels.numpy())
 
-    # Calculate metrics
+    # Calculate metrics and plot confusion matrix
     conf_matrix = confusion_matrix(all_labels, all_preds)
     accuracy = accuracy_score(all_labels, all_preds)
     print(f"Confusion Matrix:\n{conf_matrix}\nTest Accuracy: {accuracy:.2%}")
+
+    # Plotting the confusion matrix
+    plt.figure()
+    plt.matshow(conf_matrix, cmap='viridis')
+    plt.title("Confusion Matrix")
+    plt.colorbar()
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.show()
 
 if __name__ == "__main__":
     model_path = "model_weights.pth"

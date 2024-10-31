@@ -1,7 +1,3 @@
-# containing the source code for training, validating, testing and saving your model. 
-# The model should be imported from “modules.py” and the data loader should be imported from “dataset.py”. 
-# Make sure to plot the losses and metrics during training
-
 import os
 import torch
 import torch.optim as optim
@@ -36,14 +32,49 @@ train_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_sli
 val_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
 test_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 
+# Create a directory for saving plots
+#plot_dir = "/Users/bairuan/Documents/uqsem8/comp3710/report/cloned/PatternAnalysis-2024/recognition/VQVAE_Bairu/plots"
+plot_dir = "/home/Student/s4702833/project/plots"
+os.makedirs(plot_dir, exist_ok=True)
 
+# Function to calculate loss
 def loss_fn(reconstructed, original, quantization_loss):
     """Calculate total loss."""
     recon_loss = F.mse_loss(reconstructed, original)
     total_loss = recon_loss + quantization_loss
     return total_loss
 
+# Function to save images for visualization
+def save_reconstructed_images(original_images, reconstructed_images, embeddings, epoch):
+    save_dir = os.path.join(plot_dir, f'epoch_{epoch + 1}')
+    os.makedirs(save_dir, exist_ok=True)
 
+    num_images = min(5, original_images.size(0))  # Limit to first 5 images for clarity
+    fig, axes = plt.subplots(nrows=3, ncols=num_images, figsize=(num_images * 3, 9))
+
+    for i in range(num_images):
+        # Original Image
+        axes[0, i].imshow(original_images[i].cpu().numpy(), cmap='gray')
+        axes[0, i].axis('off')
+        axes[0, i].set_title(f'Original {i + 1}')
+
+        # Reconstructed Image
+        axes[1, i].imshow(reconstructed_images[i].cpu().numpy(), cmap='gray')
+        axes[1, i].axis('off')
+        axes[1, i].set_title(f'Reconstructed {i + 1}')
+
+        # Embedding Visual (flatten embeddings to visualize if necessary)
+        embedding_img = embeddings[i].view(16, 8).cpu().numpy()  # Adjust shape if necessary
+        axes[2, i].imshow(embedding_img, cmap='gray')
+        axes[2, i].axis('off')
+        axes[2, i].set_title(f'Embedding {i + 1}')
+
+    plt.suptitle(f'Epoch {epoch + 1} Reconstruction')
+    plt.savefig(os.path.join(save_dir, f'epoch_{epoch + 1}_images.png'))
+    plt.close()
+    print(f'Saved images for epoch {epoch + 1} in {save_dir}')
+
+# Function to plot losses and SSIM
 def plot_losses_and_ssim(train_losses, val_losses, train_ssims, val_ssims):
     """Plot training and validation losses and SSIM."""
     fig, ax1 = plt.subplots(figsize=(10, 5))
@@ -66,9 +97,8 @@ def plot_losses_and_ssim(train_losses, val_losses, train_ssims, val_ssims):
 
     plt.title('Training and Validation Loss & SSIM')
     plt.grid()
-    plt.savefig('loss_ssim_plot.png')
-    plt.show()
-
+    plt.savefig(os.path.join(plot_dir, 'loss_ssim_plot.png'))
+    plt.close()  # Close the figure to avoid display in interactive environments
 
 if __name__ == '__main__':
     # Create data loaders
@@ -78,6 +108,7 @@ if __name__ == '__main__':
     model = VQVAE(1, hidden_channels, num_embeddings, embedding_dim, num_res_layers).to(device)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+    # Initialize metrics and lists for plotting
     train_losses = []
     val_losses = []
     train_ssims = []
@@ -130,6 +161,9 @@ if __name__ == '__main__':
         val_losses.append(avg_val_loss)
         val_ssims.append(avg_val_ssim)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Average Validation Loss: {avg_val_loss:.4f}, Average Validation SSIM: {avg_val_ssim:.4f}")
+
+        # Save reconstructed images and embeddings for visualization
+        save_reconstructed_images(batch, reconstructed, model.quantizer.embeddings.weight, epoch)  # Adjusted to save images
 
         # Save the model at the end of training
         if (epoch + 1) % 10 == 0:  # Save every 10 epochs

@@ -1,3 +1,4 @@
+from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
 import os
@@ -38,3 +39,8 @@ class DataHandler:
         if not os.path.exists(directory):
             raise FileNotFoundError(f"Directory not found: {directory}")
         return [os.path.join(directory, img) for img in os.listdir(directory)]
+    
+default_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])

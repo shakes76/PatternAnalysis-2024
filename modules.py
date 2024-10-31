@@ -2,7 +2,7 @@ import torch
 from yolov7.models.yolo import Model
 
 class LesionDetectionModel:
-    def __init__(self, model_weights='yolov7_weights.pth', device='cpu'):
+    def __init__(self, model_weights='yolov7.pt', device='cpu'):
         """
         Initializes the YOLOv7 model for lesion detection.
 
@@ -15,8 +15,14 @@ class LesionDetectionModel:
         
         # Initialize YOLO model and load weights
         self.model = Model(cfg='yolov7/cfg/training/yolov7.yaml')  #Using the path to the selected YAML file
-        self.model.load_state_dict(torch.load(model_weights, map_location=self.device))  # Load weights to specified device
-        self.model.to(self.device)  # Move model to the specified device
+
+        # Load the checkpoint and extract only the model weights
+        checkpoint = torch.load(model_weights, map_location=self.device, weights_only=True)
+        state_dict = checkpoint.get('model', checkpoint)  # Try extracting 'model' or fallback to checkpoint
+        
+        # Load the model weights
+        self.model.load_state_dict(state_dict)
+        self.model.to(self.device)
 
     def forward(self, images):
         """

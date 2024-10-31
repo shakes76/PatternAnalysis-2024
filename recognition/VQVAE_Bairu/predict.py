@@ -45,7 +45,31 @@ def main():
         for batch_idx, batch in tqdm(enumerate(test_loader), total=len(test_loader)):
             batch = batch.to(device)
             
-            
+            # Forward pass through the model
+            reconstructed_data, quantization_loss = model(batch)
+
+            # Denormalize images
+            original_image = (batch.cpu().numpy().squeeze() * 0.5 + 0.5)
+            reconstructed_image = (reconstructed_data.cpu().numpy().squeeze() * 0.5 + 0.5)
+
+            # Calculate SSIM
+            ssim_score = ssim(batch, reconstructed_data, data_range=1.0).item()
+            ssim_scores.append(ssim_score)
+
+            # Save images
+            plt.figure(figsize=(10, 5))
+            plt.subplot(1, 2, 1)
+            plt.imshow(original_image, cmap='gray')
+            plt.title(f'Original Image {batch_idx + 1}')
+            plt.axis('off')
+
+            plt.subplot(1, 2, 2)
+            plt.imshow(reconstructed_image, cmap='gray')
+            plt.title(f'Reconstructed Image {batch_idx + 1}\nSSIM: {ssim_score:.4f}')
+            plt.axis('off')
+
+            plt.savefig(os.path.join(save_dir, f'image_{batch_idx + 1}.png'))
+            plt.close()
 
     # SSIM statistics
     average_ssim = np.mean(ssim_scores)

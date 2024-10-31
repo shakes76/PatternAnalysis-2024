@@ -13,8 +13,8 @@ TRAIN_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/kera
 VALIDATION_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
 VALIDATION_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate"
 
-TEST_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_test"
-TEST_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/HipMRI_study_keras_slices_data/keras_slices_seg_test"
+TEST_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
+TEST_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
 
 # create list of paths to each of the datasets
 trainPaths = get_all_paths(TRAIN_PATH)
@@ -23,6 +23,8 @@ trainSegPaths = get_all_paths(TRAIN_SEG_PATH)
 validationPaths = get_all_paths(VALIDATION_PATH)
 validationSegPaths = get_all_paths(VALIDATION_SEG_PATH)
 
+testPaths = get_all_paths(TEST_PATH)
+testSegPaths = get_all_paths(TEST_SEG_PATH)
 # Hyperparameters
 BATCH_SIZE = 32
 EPOCHS = 15
@@ -33,11 +35,29 @@ unet = UNetSegmentation(MODEL_PATH)
 optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 loss_fn = tf.keras.losses.Dice()
 
+# testing
+preTrain_loss = tf.keras.metrics.Mean()
+
+loss_fn = tf.keras.losses.Dice()
+
+# batching test to reduce memory usage
+x_test_batches, y_test_batches = batch_paths(testPaths, testSegPaths, 32)
+for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
+    x_test = load_data_2D(test_x_paths, normImage=True)
+    y_test = load_data_2D(test_y_paths, categorical=True)
+
+    x_test_tensor = tf.convert_to_tensor(x_test, dtype=tf.float32)
+    y_test_tensor = tf.convert_to_tensor(y_test, dtype=tf.float32)
+
+    test_logits = unet.model(x_test_tensor, training=False)
+    test_loss_value = loss_fn(y_test_tensor, test_logits)
+    preTrain_loss.update_state(test_loss_value)
+
+
 # track previous epoch loss to find convergence
 prev_loss = 0
 
-# testing save
-unet.model.save(MODEL_PATH)
+epochLoss = [] # keep track of validation loss at each epoch
 
 for epoch in range(EPOCHS):
     # randomly sample without replacement to divide the dataset into batches of BATCH_SIZE for each epoch
@@ -80,9 +100,37 @@ for epoch in range(EPOCHS):
     
     print(f"Validation loss after epoch {epoch+1}: {val_loss.result().numpy():.4f}")
     unet.model.save(MODEL_PATH)
-    if val_loss.result() - prev_loss < 0.05:
-        print(f"this epoch improved loss by {val_loss.result() - prev_loss}. Stopping Early")
-        #break
-    prev_loss = val_loss.result()
+    epochLoss.append(float(val_loss.result()))
 
-print(f"completed {EPOCHS} epochs, final loss was {loss_value}")
+print(f"completed {EPOCHS} epochs, final validation loss was {loss_value}")
+
+# testing
+test_loss = tf.keras.metrics.Mean()
+
+loss_fn = tf.keras.losses.Dice()
+
+prostateLoss = [] # loss specifically for the prostate label
+
+# batching test to reduce memory usage
+x_test_batches, y_test_batches = batch_paths(testPaths, testSegPaths, 32)
+for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
+    x_test = load_data_2D(test_x_paths, normImage=True)
+    y_test = load_data_2D(test_y_paths, categorical=True)
+
+    x_test_tensor = tf.convert_to_tensor(x_test, dtype=tf.float32)
+    y_test_tensor = tf.convert_to_tensor(y_test, dtype=tf.float32)
+
+    test_logits = unet.model(x_test_tensor, training=False)
+    # calculate loss for prostate class
+    prosPredMasks = test_logits[:, :, :, 0]
+    prosRealMasks = y_test_tensor[:, :, :, 0]
+    prosDice = 1 -  (2 * tf.reduce_sum(prosPredMasks * prosRealMasks) + 1e-6) / (tf.reduce_sum(prosPredMasks + prosRealMasks) + 1e-6)
+    prostateLoss.append(prosDice)
+    
+    test_loss_value = loss_fn(y_test_tensor, test_logits)
+    test_loss.update_state(test_loss_value)
+
+print(f"prostateLoss: {np.mean(prostateLoss)}")
+print(f"untrained loss: {preTrain_loss.result().numpy():.4f}")
+print(f"validation loss at each epoch: {epochLoss}")
+print(f"test loss: {test_loss.result().numpy():.4f}")

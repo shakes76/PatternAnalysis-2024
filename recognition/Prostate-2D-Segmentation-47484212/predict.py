@@ -4,6 +4,7 @@ import os
 from dataset import load_data_2D, get_all_paths, batch_paths
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 TEST_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 TEST_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
@@ -14,6 +15,21 @@ testPaths = get_all_paths(TEST_PATH)
 testSegPaths = get_all_paths(TEST_SEG_PATH)
 
 unet = UNetSegmentation(MODEL_PATH)
+# load and predict 1 image
+exampleImg = load_data_2D([testPaths[0]], normImage=True)
+exampleSeg = load_data_2D([testSegPaths[0]])
+predSeg = np.argmax(unet.call(exampleImg, training=False)[0], axis=-1)
+
+fig, (ax1, ax2) = plt.subplots(1, 2)
+ax1.imshow(exampleImg[0], cmap='gray')
+ax1.imshow(predSeg, alpha=0.3)
+ax1.set_title("Predicted Image Mask")
+ax2.imshow(exampleImg[0], cmap='gray')
+ax2.imshow(exampleSeg[0], alpha=0.3)
+ax2.set_title("Actual Image Mask")
+
+plt.show()
+
 # testing
 test_loss = tf.keras.metrics.Mean()
 
@@ -33,3 +49,4 @@ for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
     test_loss.update_state(test_loss_value)
 
 print(f"test loss: {test_loss.result().numpy():.4f}")
+

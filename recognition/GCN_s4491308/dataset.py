@@ -26,3 +26,13 @@ def load_data(data_file_path):
     return data 
 
 
+def index_to_mask(index, size):
+    """
+    Function to get a boolen mask of given size for the given indices 
+    Reference: Inspired and adapted from code at https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/utils/mask.py#L41
+    """
+    mask = index.new_zeros(size, dtype = torch.bool)
+    mask[index] = True 
+    return mask 
+
+

@@ -9,6 +9,10 @@ from dataset import get_train_val_loaders, get_test_loader
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train_and_validate(train_loader, val_loader, test_loader, model, criterion, optimizer, scheduler, num_epochs=11, model_path="model_weights.pth"):
+    """
+    Train, validate, and test a model, saving the best model based on validation accuracy.
+
+    """
     best_val_accuracy = 0
     val_losses, val_accuracies = [], []
 
@@ -76,6 +80,11 @@ def train_and_validate(train_loader, val_loader, test_loader, model, criterion, 
     plt.show()
 
 def main():
+    """
+    Main function to set up data loaders, initialize the model and training parameters, 
+    and call the training and validation process.
+
+    """
     # Paths to data directories
     train_data_dir = "/home/groups/comp3710/ADNI/AD_NC/train"
     test_data_dir = "/home/groups/comp3710/ADNI/AD_NC/test"

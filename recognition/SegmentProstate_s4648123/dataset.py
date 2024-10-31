@@ -3,7 +3,6 @@ from utils import get_images, collate_batch, load_image_and_label_3D
 from monai.transforms import (Compose, ToTensord, RandCropByLabelClassesd, RandFlipd, NormalizeIntensityd, Resized)
 from monai.data import list_data_collate
 from torch.utils.data import Dataset, DataLoader
-from config import NUM_WORKERS, BATCH_SIZE
 
 train_transforms = Compose(
     [
@@ -58,7 +57,7 @@ class MRIDataset(Dataset):
         return data
 
 
-def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataLoader, DataLoader]:
+def get_dataloaders() -> tuple[DataLoader, DataLoader]:
     image_files, label_files = get_images()
 
     num_samples = len(image_files)
@@ -93,7 +92,7 @@ def get_dataloaders(train_batch=BATCH_SIZE, val_batch=BATCH_SIZE) -> tuple[DataL
     return train_dataloader, val_dataloader
 
 
-def get_test_dataloader(batch_size=BATCH_SIZE):
+def get_test_dataloader():
     image_files, mask_files = get_images()
     num_samples = len(image_files)
     np.random.seed(42)
@@ -103,6 +102,5 @@ def get_test_dataloader(batch_size=BATCH_SIZE):
     test_idx = indices[split:]
     test_images, test_masks = image_files[test_idx], mask_files[test_idx]
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
-    test_dataloader = DataLoader(test_ds, batch_size=batch_size, num_workers=NUM_WORKERS, pin_memory=True, shuffle=True,
-                                 collate_fn=list_data_collate)
+    test_dataloader = DataLoader(test_ds, batch_size=1, num_workers=0)
     return test_dataloader

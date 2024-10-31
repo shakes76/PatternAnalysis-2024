@@ -55,9 +55,8 @@ class Dice(torch.nn.Module):
 
         return f
 
-    def calculate_weighted_loss(self, class_dice_scores, target):
-        dice_loss = 1 - torch.mean(class_dice_scores)
-        return dice_loss
+    def calculate_loss(self, class_dice_scores):
+        return 1 - torch.mean(class_dice_scores)
 
     def forward(self, pred, target):
         """
@@ -71,12 +70,13 @@ class Dice(torch.nn.Module):
             Tensor: Dice loss.
         """
         dice_scores = self.dice_scores_per_class(pred, target)
-        return self.calculate_weighted_loss(dice_scores, target)
+        return self.calculate_loss(dice_scores)
 
 
-def train(model, dataloader, optimizer, crit, accumulation_steps=12):
+def train(model, dataloader, optimizer, crit, accumulation_steps=8):
     model.train()
     epoch_loss = 0
+    batch_dice_losses = []
     torch.manual_seed(2809)  # reproducibility
 
     for i, batch_data in enumerate(dataloader):
@@ -85,6 +85,7 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=12):
         # Forward pass
         outputs = model(images)
         loss = crit(outputs, labels)  # Compute loss
+        batch_dice_losses.append(loss.item())
 
         loss = loss / accumulation_steps
         loss.backward()
@@ -98,7 +99,7 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=12):
 
     # Average the epoch loss over all batches
     epoch_loss /= len(dataloader)
-    return epoch_loss
+    return epoch_loss, batch_dice_losses
 
 
 def validate(model, dataloader, crit):
@@ -116,7 +117,7 @@ def validate(model, dataloader, crit):
             dice_scores.append(new_dice_scores)  # Keep on GPU
 
             # Calculate the dice loss directly with raw predictions and labels
-            dice_loss = crit.calculate_weighted_loss(new_dice_scores, labels)
+            dice_loss = crit.calculate_loss(new_dice_scores, labels)
             dice_losses.append(dice_loss.item())
 
     # Average dice scores across batches, then convert to numpy
@@ -145,21 +146,23 @@ if __name__ == '__main__':
 
     train_losses, val_losses = [], []
     dice_scores_per_class = [[] for _ in range(5)]
+    batch_dice_loss_history = []
 
     train_start_time = time.time()
 
     # Training and evaluation loop
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}/{epochs}")
-        train_loss = train(unet, train_loader, optimizer, criterion)
+        train_loss, batch_dice_losses = train(unet, train_loader, optimizer, criterion)
         train_losses.append(train_loss)
+        batch_dice_loss_history.extend(batch_dice_losses)
 
         print(f"Train Loss: {train_loss:.4f}")
 
         dice_scores, val_loss = validate(unet, val_loader, criterion)
         val_losses.append(val_loss)
 
-        print(f"Validation Loss: {val_loss:.4f}, Dice Scores: {dice_scores}")
+        print(f"Validation Loss: {val_loss:.4f}, Dice Scores: {[f'{score:.4f}' for score in dice_scores.tolist()]}")
 
         for i, score in enumerate(dice_scores):
             dice_scores_per_class[i].append(score)
@@ -183,4 +186,8 @@ if __name__ == '__main__':
     plot_and_save(epochs_range, dice_scores_per_class, [f"Class {i}" for i in range(5)],
         "Dice Score per Class", "Epochs", "Dice Score", "dice_scores.png")
 
+    iterations = range(1, len(batch_dice_loss_history) + 1)  # x-axis for the iterations
+    plot_and_save(x=iterations, y_data=[batch_dice_loss_history], labels=["Dice Loss"],
+                  title="Train Dice Loss Over Iterations", xlabel="Iterations", ylabel="Dice Loss",
+                  filename="train_dice_loss_iterations.png")
 

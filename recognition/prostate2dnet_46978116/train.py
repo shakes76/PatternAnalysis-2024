@@ -5,29 +5,28 @@ from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm
 import torch.nn as nn
 import torch.optim as optim
-from modules import UNet
 from dataset import ProstateDataset
 from torch.utils.data import DataLoader
-from modulesnew import UNet
+from modules import UNet
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch.optim.lr_scheduler as lr_scheduler
 
 
-batch_size = 32
-N_epochs = 25
-n_workers = 4
+batch_size = 64
+N_epochs = 50
+n_workers = 2
 pin = True
 device = "cuda" if torch.cuda.is_available() else "cpu"
 load_model = False
 img_height = 256
 img_width = 128
-learning_rate = 0.005
+learning_rate = 0.0005
 
 
 
-# Data directories
+# path to image
 train_image_dir = 'keras_slices_data/keras_slices_train'
 train_mask_dir = 'keras_slices_data/keras_slices_seg_train'
 val_image_dir = 'keras_slices_data/keras_slices_validate'
@@ -54,7 +53,113 @@ def train_fn(loader,model,optimizer,loss_fn,scaler):
         loop.set_postfix(loss=loss.item())
     return total_loss / len(loader)
 
+import torch
+import torch.nn as nn
 
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1e-5, ignore_index=None, num_classes=6, threshold=0.75, k=10.0):
+        """
+        Initializes the DiceLoss.
+        
+        Parameters:
+            smooth (float): Smoothing factor to avoid division by zero.
+            ignore_index (int, optional): Specifies a target value that is ignored 
+                                          and does not contribute to the input gradient.
+            num_classes (int): Number of segmentation classes.
+            threshold (float): Dice score threshold below which additional penalty is applied.
+            k (float): Steepness parameter for the sigmoid function to approximate the step penalty.
+        """
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+        self.ignore_index = ignore_index
+        self.num_classes = num_classes
+        self.threshold = threshold
+        self.k = k
+        self.last_dice_coeff = None
+
+    def forward(self, inputs, targets):
+        """
+        Forward pass for DiceLoss.
+        
+        Parameters:
+            inputs (torch.Tensor): Predicted logits from the model (before softmax).
+                                   Shape: [batch_size, num_classes, H, W]
+            targets (torch.Tensor): Ground truth mask.
+                                   Shape: [batch_size, H, W]
+        
+        Returns:
+            torch.Tensor: Computed Dice loss.
+        """
+        # Ensure targets are of type long
+        targets = targets.long()
+
+        # Convert targets to one-hot encoding
+        targets_one_hot = torch.zeros_like(inputs)
+        targets_one_hot.scatter_(1, targets.unsqueeze(1), 1)
+
+        if self.ignore_index is not None:
+            mask = targets != self.ignore_index
+            inputs = inputs * mask.unsqueeze(1)
+            targets_one_hot = targets_one_hot * mask.unsqueeze(1)
+
+        # Apply softmax to get probabilities
+        inputs = torch.softmax(inputs, dim=1)
+
+        # Flatten the tensors
+        inputs = inputs.view(inputs.size(0), inputs.size(1), -1)  # [batch_size, num_classes, H*W]
+        targets_one_hot = targets_one_hot.view(targets_one_hot.size(0), targets_one_hot.size(1), -1)  # [batch_size, num_classes, H*W]
+
+        # Compute intersection and union
+        intersection = (inputs * targets_one_hot).sum(-1)  # [batch_size, num_classes]
+        total = inputs.sum(-1) + targets_one_hot.sum(-1)  # [batch_size, num_classes]
+
+        # Compute Dice coefficient
+        dice_coeff = (2. * intersection + self.smooth) / (total + self.smooth)  # [batch_size, num_classes]
+
+        # Average Dice coefficient over batch
+        dice_coeff = dice_coeff.mean(dim=0)  # [num_classes]
+
+                # Store the Dice coefficients
+        self.last_dice_coeff = dice_coeff.detach().cpu().numpy()
+
+        # Compute penalty using sigmoid
+        penalty = torch.sigmoid(self.k * (self.threshold - dice_coeff))  # [num_classes]
+
+        # Compute cost per class
+        cost = 1 - dice_coeff + penalty  # [num_classes]
+
+        # Compute dice_cost as the sum of squared costs
+        dice_cost = torch.sum(cost ** 2)
+
+        return dice_cost, self.last_dice_coeff
+
+
+
+# Define Combined Loss
+class CombinedLoss(nn.Module):
+    def __init__(self, ce_weight=None, dice_weight=1.0, ce_weight_factor=1.0, dice_weight_factor=3.0):
+        super(CombinedLoss, self).__init__()
+        self.ce_loss = nn.CrossEntropyLoss(weight=ce_weight)
+        dice_cost = 0
+        self.dice_loss = DiceLoss()
+        self.ce_weight = ce_weight_factor
+        self.dice_weight = dice_weight_factor
+        self.last_dice_coeff = None
+
+    def forward(self, inputs, targets):
+        dl = self.dice_loss(inputs, targets)
+        self.last_dice_coeff = dl[1]
+        ce = self.ce_loss(inputs, targets)
+        return self.ce_weight * ce + self.dice_weight * dl[0]
+    
+    def get_last_dice_coeff(self):
+        """
+        Retrieves the last computed Dice coefficients.
+
+        Returns:
+            np.ndarray: Array of Dice coefficients for each class.
+        """
+        return self.last_dice_coeff
 
 def main():
     train_trainsform = A.Compose(
@@ -68,20 +173,20 @@ def main():
     )
 
     train_dataset = ProstateDataset(train_image_dir, train_mask_dir, norm_image=True, transform=train_trainsform)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=n_workers, pin_memory=True)
     val_dataset = ProstateDataset(val_image_dir, val_mask_dir, norm_image=True,transform=train_trainsform)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, pin_memory=True)
 
-
+    weights = [1, 1, 1, 2, 10, 4]
+    weights = torch.tensor(weights, dtype=torch.float).to(device)
     model = UNet().to(device=device)
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = CombinedLoss(ce_weight=weights)
     scaler = torch.amp.GradScaler(device=device)
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-
     train_losses = []
     val_dice_scores = []
     val_losses = []
+    best_val_loss = float('inf')
 
     for epoch in range(N_epochs):
         print(f"\nEpoch [{epoch+1}/{N_epochs}]")
@@ -89,25 +194,38 @@ def main():
         train_losses.append(avg_loss)
         print(f"Average Training Loss: {avg_loss:.4f}")
 
-        print("Evaluating Dice Score on Validation Set:")
-        dice_dict = dice_score(val_loader, model, num_classes=6)
-        val_dice_scores.append(dice_dict)
-
         # Validation Phase - Compute Validation Loss
         val_loss = validate_fn(val_loader, model, loss_fn)
-        val_losses.append(val_loss)
-        print(f"Average Validation Loss: {val_loss:.4f}")
+        val_losses.append(val_loss[0])
+        val_dice_scores.append(val_loss[1])
+        print(f"Average Validation Loss: {val_loss[0]:.4f}")
+        print(f"Dice Coeff: {val_loss[1]}")
 
-        scheduler.step()
+        if val_loss[0] < best_val_loss:
+            best_val_loss = val_loss[0]
+            # Save the best model
+            torch.save(model.state_dict(), "bestsofar_unet2d.pth")
+            print("Best model saved.")
+                  # Save prediction images at the end of training if not saved already
+            if (epoch + 1) % 5 != 0:
+                print("Saving best prediction images")
+                save_img(val_loader, model, folder=f"images/NEWepoch_{epoch}", device=device, num_classes=6, epoch=epoch)
+
+        # Save images every 5 epochs
+        if (epoch + 1) % 5 == 0:
+            print(f"Saving prediction images for epoch {epoch+1}")
+            save_img(val_loader, model, folder=f"images/NEWepoch_{epoch+1}", device=device, num_classes=6, epoch=epoch+1)
+
+      # Save prediction images at the end of training if not saved already
+    if N_epochs % 5 != 0:
+        print("Saving prediction images at the end of training.")
+        save_img(val_loader, model, folder=f"images/NEWepoch_{N_epochs}", device=device, num_classes=6, epoch=N_epochs)
 
 
 
-
-    print("Saving Prediction Images:")
-    save_img(val_loader, model, folder=f"images/epoch_{epoch+1}", device=device, num_classes=6)
 
     # Plot metrics after training
-    plot_metrics(train_losses, val_dice_scores, num_classes=6, save_path="metrics_plot.png")
+    plot_metrics(train_losses,val_losses, val_dice_scores, num_classes=6, save_path="BIGONEmetrics_plot.png")
 
     #save the model after training
     torch.save(model.state_dict(), "unet2d_final.pth")
@@ -191,10 +309,9 @@ def plot_metrics(train_losses, val_losses, val_dice_scores, num_classes=6, save_
 
 
 
-def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_images=10):
+def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_images_per_class=6, epoch=1, classes_per_row=3):
     """
-    Saves prediction images for each class, showing input image, ground truth mask, and predicted mask.
-    Uses two colors: green for 'Yes' (class present) and black for 'No' (class absent).
+    Saves prediction images for each class, stacking multiple classes on the same page.
     
     Parameters:
         loader (DataLoader): DataLoader for the dataset to save images from.
@@ -202,7 +319,9 @@ def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_i
         folder (str): Directory to save the images.
         device (str): Device to perform computations on ('cuda' or 'cpu').
         num_classes (int): Number of segmentation classes.
-        max_images (int): Maximum number of images to save.
+        max_images_per_class (int): Maximum number of images to save per class.
+        epoch (int): Current epoch number for filename reference.
+        classes_per_row (int): Number of classes to display per row in the stacked image.
     """
     model.eval()
     os.makedirs(folder, exist_ok=True)
@@ -210,12 +329,11 @@ def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_i
     green = [0, 255, 0]    # Green
     black = [0, 0, 0]       # Black
 
-    saved_images = 0
+    # Dictionary to hold images for each class
+    class_images = {cls: [] for cls in range(num_classes)}
+
     with torch.no_grad():
         for batch_idx, (x, y) in enumerate(loader):
-            if saved_images >= max_images:
-                break
-
             x = x.to(device=device)
             y = y.to(device=device).long()
 
@@ -229,9 +347,6 @@ def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_i
             y = y.cpu().numpy()  # Shape: [batch_size, H, W]
 
             for i in range(x.shape[0]):
-                if saved_images >= max_images:
-                    break
-
                 input_img = x[i].squeeze(0)  # Shape: [H, W]
                 input_img = (input_img * 255).astype(np.uint8)  # Scale to [0, 255]
 
@@ -239,6 +354,9 @@ def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_i
                 pred_mask = preds[i]  # Shape: [H, W]
 
                 for cls in range(num_classes):
+                    if len(class_images[cls]) >= max_images_per_class:
+                        continue  # Skip if already have enough images for this class
+
                     # Create binary masks for the current class
                     gt_binary = (true_mask == cls).astype(np.uint8)
                     pred_binary = (pred_mask == cls).astype(np.uint8)
@@ -254,33 +372,45 @@ def save_img(loader, model, folder="images", device="cuda", num_classes=6, max_i
                     pred_color[pred_binary == 1] = green
                     pred_color[pred_binary == 0] = black
 
-                    # Plot input image, ground truth mask, and predicted mask for the current class
-                    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-                    
-                    axs[0].imshow(input_img, cmap='gray')
-                    axs[0].set_title('Input Image')
-                    axs[0].axis('off')
+                    # Combine input, ground truth, and predicted masks horizontally
+                    combined = np.hstack((input_img[..., np.newaxis].repeat(3, axis=2), gt_color, pred_color))
+                    class_images[cls].append(combined)
 
-                    axs[1].imshow(gt_color)
-                    axs[1].set_title(f'Ground Truth - Class {cls}')
-                    axs[1].axis('off')
+                    if len(class_images[cls]) >= max_images_per_class:
+                        continue  # Stop collecting images for this class
 
-                    axs[2].imshow(pred_color)
-                    axs[2].set_title(f'Predicted Mask - Class {cls}')
-                    axs[2].axis('off')
+    # Now, create stacked images per class group
+    for row_start in range(0, num_classes, classes_per_row):
+        classes_in_row = list(range(row_start, min(row_start + classes_per_row, num_classes)))
+        fig, axs = plt.subplots(1, classes_per_row, figsize=(15, 5))
 
-                    plt.tight_layout()
-                    save_path = os.path.join(folder, f"img_{saved_images}_class_{cls}.png")
-                    plt.savefig(save_path)
-                    plt.close(fig)
+        for idx, cls in enumerate(classes_in_row):
+            if idx >= len(axs):
+                break  # In case num_classes is not a multiple of classes_per_row
 
-                saved_images +=1
-                if saved_images >= max_images:
-                    break
+            if len(class_images[cls]) == 0:
+                axs[idx].axis('off')
+                axs[idx].set_title(f'Class {cls} - No Images')
+                continue
 
-    print(f"Saved {saved_images} prediction images to '{folder}' folder.")
+            # Concatenate images for the class vertically
+            imgs = class_images[cls]
+            concatenated = np.vstack(imgs)
+            axs[idx].imshow(concatenated)
+            axs[idx].set_title(f'Class {cls}')
+            axs[idx].axis('off')
+
+        # Hide any unused subplots
+        for idx in range(len(classes_in_row), classes_per_row):
+            axs[idx].axis('off')
+
+        plt.tight_layout()
+        save_path = os.path.join(folder, f"epoch_{epoch}_classes_{row_start}-{row_start + classes_per_row -1}.png")
+        plt.savefig(save_path)
+        plt.close(fig)
+
+    print(f"Saved stacked prediction images for epoch {epoch} to '{folder}' folder.")
     return
-
 
 def validate_fn(loader, model, loss_fn):
     """
@@ -296,6 +426,7 @@ def validate_fn(loader, model, loss_fn):
     """
     model.eval()
     total_loss = 0.0
+    dice_coeffs = []
     with torch.no_grad():
         for batch_idx, (data, targets) in enumerate(loader):
             data = data.to(device=device)
@@ -307,9 +438,21 @@ def validate_fn(loader, model, loss_fn):
                 loss = loss_fn(predictions, targets)
             
             total_loss += loss.item()
+                    # Retrieve Dice coefficients from the loss function
+            dice_coeff = loss_fn.get_last_dice_coeff()  # [num_classes]
+            dice_coeffs.append(dice_coeff)
+
     
     average_loss = total_loss / len(loader)
-    return average_loss
+    average_loss = total_loss / len(loader)
+    
+    # Convert list of Dice coefficients to a NumPy array for averaging
+    dice_coeffs = np.array(dice_coeffs)  # Shape: [num_batches, num_classes]
+    mean_dice_coeff = dice_coeffs.mean(axis=0)  # Shape: [num_classes]
+    
+    # Create a dictionary for easy interpretation
+    dice_dict = {cls: mean_dice_coeff[cls] for cls in range(len(mean_dice_coeff))}
+    return average_loss, dice_dict
 
 
 

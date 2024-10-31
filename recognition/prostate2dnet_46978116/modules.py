@@ -2,6 +2,70 @@ import torch
 import torch.nn as nn
 import torchvision.transforms.functional as TF
 
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+
+        # Down double conv layers
+        self.down1 = DoubleConv(in_channels=1, out_channels=32)
+        self.down2 = DoubleConv(in_channels=32, out_channels=64)
+        self.down3 = DoubleConv(in_channels=64, out_channels=128)
+
+        # Bottle neck
+        self.down4 = DoubleConv(in_channels=128, out_channels=256)
+
+        #max pool layer
+        self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # Up transpose layers + Double Conv
+        self.up_trans1 = nn.ConvTranspose2d(in_channels=256,out_channels=128,kernel_size=2,stride=2)
+        self.up1 = DoubleConv(256, 128)
+
+
+        self.up_trans2 = nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=2,stride=2)
+        self.up2 = DoubleConv(128, 64) 
+
+        self.up_trans3 = nn.ConvTranspose2d(in_channels=64,out_channels=32,kernel_size=2,stride=2)
+        self.up3 = DoubleConv(64, 32)
+
+
+        self.final = nn.Conv2d(in_channels=32,out_channels=6,kernel_size=1)
+
+
+    def forward(self, initial):
+
+
+        # down 
+        c1 = self.down1(initial)
+        p1 = self.max_pool(c1)
+
+        c2 = self.down2(p1)
+        p2 = self.max_pool(c2)
+
+        c3 = self.down3(p2)
+        p3 = self.max_pool(c3)
+
+
+
+        c4 = self.down4(p3)
+
+        # upsample
+        t1 = self.up_trans1(c4)
+        d1 = self.up1(torch.cat([t1, c3], 1))
+
+        t2 = self.up_trans2(d1)
+        d2 = self.up2(torch.cat([t2, c2], 1))
+
+        t3 = self.up_trans3(d2)
+        d3 = self.up3(torch.cat([t3, c1], 1))
+
+
+        # output
+        out = self.final(d3)
+        return out
+
+
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
@@ -16,51 +80,3 @@ class DoubleConv(nn.Module):
         )
     def forward(self,x):
         return self.conv(x)
-
-class UNet(nn.Module):
-    def __init__(
-            self, in_channels=1, out_channels=6, features = [64, 128, 256, 512],
-    ):
-        super(UNet, self).__init__()
-        self.ups = nn.ModuleList()
-        self.downs = nn.ModuleList()
-        self.pool = nn.MaxPool2d(kernel_size=2,  stride=2)
-
-        # going down
-        for feature in features:
-            self.downs.append(DoubleConv(in_channels=in_channels,out_channels=feature))
-            in_channels = feature
-
-        # going up
-
-        for feature in reversed(features):
-            self.ups.append(
-                nn.ConvTranspose2d(
-                    feature * 2,feature, kernel_size=2, stride=2
-                )
-
-            )
-            self.ups.append(DoubleConv(feature*2,feature))
-
-        self.bottleneck = DoubleConv(features[-1], features[-1]*2)
-
-
-        self.final = nn.Conv2d(features[0], out_channels=out_channels, kernel_size=1)
-
-
-    def forward(self, x):
-        skips = []
-        for layer in self.downs:
-            x = layer(x)
-            skips.append(x)
-            x = self.pool(x)
-        x = self.bottleneck(x)
-        skips = skips[::-1]
-        for idx in range(0, len(self.ups), 2):
-            x = self.ups[idx](x)
-            skip_connection = skips[idx // 2]
-            if x.shape != skip_connection.shape:
-                x = TF.resize(x, size=skip_connection.shape[2:])
-            concat_skip = torch.cat((skip_connection, x), dim=1)
-            x = self.ups[idx + 1](concat_skip)
-        return self.final(x)

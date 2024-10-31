@@ -7,31 +7,36 @@ from modules import LesionDetectionModel
 from dataset import ISICDataset
 import os
 
-#Hyperparameters and configuration
+# Hyperparameters and configuration
 NUM_EPOCHS = 20
 BATCH_SIZE = 8
 LEARNING_RATE = 0.001
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = 'cpu' if not torch.cuda.is_available() else 'cuda'  # Set to CPU if CUDA is unavailable
 MODEL_SAVE_PATH = 'model_checkpoints'
 
-#Ensuring the model save directory exists
+# Ensuring the model save directory exists
 os.makedirs(MODEL_SAVE_PATH, exist_ok=True)
 
-#Loading Model and Data
+# Loading Model and Data
 model = LesionDetectionModel(model_weights='yolov7_weights.pth', device=DEVICE).model
 criterion = nn.BCEWithLogitsLoss()  
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-#Load training and validation datasets
-train_dataset = ISICDataset(img_dir='ISIC2018_Task1-2_Training_Input_x2', 
-                            annot_dir='ISIC2018_Task1_Training_GroundTruth_x2', 
-                            mode='train')
+# Load training and validation datasets
+train_dataset = ISICDataset(
+    img_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1-2_Training_Input_x2',
+    annot_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1_Training_GroundTruth_x2',
+    mode='train'
+)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-val_dataset = ISICDataset(img_dir='ISIC2018_Task1-2_Test_Input', mode='test')
+val_dataset = ISICDataset(
+    img_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1-2_Test_Input',
+    mode='test'
+)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-#Lists to store loss and accuracy for plotting
+# Lists to store loss and accuracy for plotting
 train_losses = []
 val_losses = []
 
@@ -46,11 +51,11 @@ def train_one_epoch():
         images = images.to(DEVICE)
         targets = targets.to(DEVICE)
 
-        #Forward pass
+        # Forward pass
         outputs = model(images)
         loss = criterion(outputs, targets)
 
-        #Backward pass and optimization
+        # Backward pass and optimization
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -97,14 +102,14 @@ def plot_metrics():
     plt.legend()
     plt.show()
 
-#Training Loop
+# Training Loop
 for epoch in range(NUM_EPOCHS):
     print(f"Epoch {epoch+1}/{NUM_EPOCHS}")
     train_loss = train_one_epoch()
     val_loss = validate()
 
-    #Saving the model checkpoint after each epoch
+    # Saving the model checkpoint after each epoch
     torch.save(model.state_dict(), os.path.join(MODEL_SAVE_PATH, f"model_epoch_{epoch+1}.pth"))
 
-#Plotting the metrics after training
+# Plotting the metrics after training
 plot_metrics()

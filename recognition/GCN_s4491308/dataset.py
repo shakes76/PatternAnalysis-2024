@@ -1,7 +1,7 @@
 """
 Author: Ananya Dubey 
 Student No : 44913083 
-This file contains code to load, process and split the dataset from the facebook.npz file. 
+This script contains code to load, process and split the dataset from the facebook.npz file. 
 """
 
 import torch

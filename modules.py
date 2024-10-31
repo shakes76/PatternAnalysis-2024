@@ -1,6 +1,5 @@
 import torch
 from yolov7.models.yolo import Model
-from yolov7.utils.torch_utils import select_device
 
 class LesionDetectionModel:
     def __init__(self, model_weights='yolov7_weights.pth', device='cpu'):
@@ -11,11 +10,13 @@ class LesionDetectionModel:
             model_weights (str): Path to the pre-trained YOLOv7 weights.
             device (str): Device to load the model on ('cuda' or 'cpu').
         """
-        self.device = device if device == 'cpu' else select_device(device)
-        #Initialize YOLO model and load weights
-        self.model = Model()  #Instantiate YOLO model
-        self.model.load_state_dict(torch.load(model_weights, map_location=self.device))  #Load weights to specified device
-        self.model.to(self.device)  #Move model to the specified device
+        # Directly assign device based on availability, without select_device
+        self.device = torch.device('cuda' if device == 'cuda' and torch.cuda.is_available() else 'cpu')
+        
+        # Initialize YOLO model and load weights
+        self.model = Model(cfg='yolov7/cfg/training/yolov7.yaml')  #Using the path to the selected YAML file
+        self.model.load_state_dict(torch.load(model_weights, map_location=self.device))  # Load weights to specified device
+        self.model.to(self.device)  # Move model to the specified device
 
     def forward(self, images):
         """
@@ -29,7 +30,7 @@ class LesionDetectionModel:
         """
         with torch.no_grad():
             images = images.to(self.device)
-            pred = self.model(images)[0]  #Get predictions
+            pred = self.model(images)[0]  # Get predictions
         return pred
 
     def detect(self, images, conf_thres=0.25, iou_thres=0.8):

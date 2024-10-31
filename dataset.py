@@ -2,7 +2,6 @@ import os
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
-import json  
 import torchvision.transforms as transforms
 
 class ISICDataset(Dataset):
@@ -28,7 +27,7 @@ class ISICDataset(Dataset):
 
         # If in training mode, load the annotation files
         if mode == 'train' and annot_dir is not None:
-            self.annot_files = sorted([f for f in os.listdir(annot_dir) if f.endswith('.json')]) 
+            self.annot_files = sorted([f for f in os.listdir(annot_dir) if f.endswith('_segmentation.png')]) 
 
     def default_transforms(self):
         """
@@ -60,7 +59,7 @@ class ISICDataset(Dataset):
             idx (int): Index of the image to retrieve.
 
         Returns:
-            tuple: If in train mode, returns (image, boxes), else returns image.
+            tuple: If in train mode, returns (image, mask), else returns image.
         """
         # Loading images from file
         img_path = os.path.join(self.img_dir, self.img_files[idx])
@@ -68,47 +67,20 @@ class ISICDataset(Dataset):
 
         # If in training mode, load annotations
         if self.mode == 'train' and self.annot_dir is not None:
-            # Load corresponding annotation file
-            annot_path = os.path.join(self.annot_dir, self.img_files[idx].replace('.jpg', '.json'))
-            with open(annot_path, 'r') as f:
-                annot_data = json.load(f)
-
-            # Parse bounding boxes and labels from the annotation file
-            boxes = []
-            for obj in annot_data['objects']:
-                # Parse bounding box in YOLO format (x_center, y_center, width, height)
-                x_center, y_center, width, height = self.parse_bbox(obj['bbox'])
-                boxes.append([obj['class_id'], x_center, y_center, width, height])  # Append [class_id, bbox]
-
-            # Converting boxes to a tensor
-            boxes = torch.tensor(boxes)
-
-            # Apply transformations to the image
+            # Load corresponding annotation (segmentation mask) file
+            mask_path = os.path.join(self.annot_dir, self.img_files[idx].replace('.jpg', '_segmentation.png'))
+            mask = Image.open(mask_path).convert("L")  # Load mask as grayscale
+            
+            # Apply transformations to the image and mask
             if self.transform:
                 image = self.transform(image)
+                mask = transforms.ToTensor()(mask)  # Convert mask to tensor (binary mask)
 
-            # Return both the transformed image and bounding boxes
-            return image, boxes
+            # Return both the transformed image and mask
+            return image, mask
         else:
             # If in test mode, only return the transformed image (no annotations)
             if self.transform:
                 image = self.transform(image)
                 
             return image
-
-    def parse_bbox(self, bbox):
-        """
-        Parses the bounding box coordinates from (x_min, y_min, x_max, y_max) to YOLO format.
-
-        Parameters:
-            bbox (list): Bounding box coordinates in [x_min, y_min, x_max, y_max].
-
-        Returns:
-            tuple: Bounding box in YOLO format (x_center, y_center, width, height).
-        """
-        x_min, y_min, x_max, y_max = bbox
-        x_center = (x_min + x_max) / 2
-        y_center = (y_min + y_max) / 2
-        width = x_max - x_min
-        height = y_max - y_min
-        return x_center, y_center, width, height

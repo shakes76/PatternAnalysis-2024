@@ -18,6 +18,7 @@ def get_dataloader(image_size=64, batch_size=16, data_root='/home/groups/comp371
         DataLoader: PyTorch DataLoader for the dataset.
         Dataset: The underlying dataset.
     """
+    # Series of transformations: resize, center crop, convert to grayscale, tensor conversion, and normalization
     transform = transforms.Compose([
         transforms.Resize(image_size),
         transforms.CenterCrop(image_size),
@@ -28,12 +29,13 @@ def get_dataloader(image_size=64, batch_size=16, data_root='/home/groups/comp371
     
     dataset = datasets.ImageFolder(root=data_root, transform=transform)
     
+    # DataLoader with the dataset, batch size, shuffling, and multiprocessing workers for efficient data loading
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=True  # Enable pin_memory for faster data transfer to GPU
     )
     
     return dataloader, dataset

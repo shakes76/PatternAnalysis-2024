@@ -197,6 +197,7 @@ def predict():
             print(f"Error loading generator_final.pth: {e}")
             sys.exit(1)
     else:
+        # If the finalized generator model is not found, attempt to load from a checkpoint
         if os.path.exists(checkpoint_path):
             try:
                 checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -219,6 +220,8 @@ def predict():
                 print("Failed to save generator_final.pth after training.")
                 sys.exit(1)
 
+
+    # Parse the seed input to generate a list of seed values
     seed_input = args.seeds.split(',')
     seeds = []
     for part in seed_input:

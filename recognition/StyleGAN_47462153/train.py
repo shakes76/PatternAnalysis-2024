@@ -124,6 +124,7 @@ def train(args):
         gen = Generator(z_dim=Z_DIM, w_dim=W_DIM, in_channels=IN_CHANNELS, img_channels=IMG_CHANNELS).to(DEVICE)
         disc = Discriminator(in_channels=IN_CHANNELS, img_channels=IMG_CHANNELS).to(DEVICE)
 
+        # Initialize optimizers with specific learning rates and betas
         gen_optimizer = optim.Adam(gen.parameters(), lr=LEARNING_RATE_GEN, betas=(0, 0.99), eps=1e-8)
         disc_optimizer = optim.Adam(disc.parameters(), lr=LEARNING_RATE_DISC, betas=(0, 0.99), eps=1e-8)
 
@@ -162,7 +163,7 @@ def train(args):
                 batch_size_current = real.size(0)
                 noise = torch.randn(batch_size_current, Z_DIM).to(DEVICE)
 
-                # Training the discriminator
+                # Training the discriminator with R1 regularization and mixed precision
                 disc_optimizer.zero_grad()
                 with autocast():
                     fake = gen(noise)
@@ -181,7 +182,7 @@ def train(args):
                 scaler.update()
                 disc_loss_accum += disc_loss.item()
 
-                # Training the generator
+                # Training the generator to maximize the discriminator's error
                 gen_optimizer.zero_grad()
                 with autocast():
                     fake = gen(noise)
@@ -227,6 +228,7 @@ def train(args):
         traceback.print_exc()
         sys.exit(1)
 
+    # Plotting the loss curves to analyze training progression
     plt.figure(figsize=(10, 5))
     plt.title("Generator and Discriminator Loss During Training")
     plt.plot(gen_losses, label="Generator")

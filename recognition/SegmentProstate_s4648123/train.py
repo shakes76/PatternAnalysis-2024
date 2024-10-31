@@ -6,7 +6,7 @@ import torch
 from dataset import get_dataloaders
 
 from modules import UNet3D
-from utils import plot_and_save, compute_class_weights
+from utils import plot_and_save
 from config import MODEL_PATH
 
 device = torch.device("cuda:0")
@@ -44,22 +44,17 @@ class Dice(torch.nn.Module):
         reduce_axis = [0] + list(range(2, len(pred.shape)))  # [0, 2, 3, 4]
 
         # Compute the intersection and union for each class
-        intersection = torch.sum(pred * target, dim=reduce_axis)  # (num_classes - 1,)
-        ground_o = torch.sum(target, dim=reduce_axis)  # (num_classes - 1,)
-        pred_o = torch.sum(pred, dim=reduce_axis)  # (num_classes - 1,)
-
-        # Compute the denominator for Dice coefficient
-        denominator = ground_o + pred_o
+        intersection = torch.sum(pred * target, dim=reduce_axis)
+        ground_o = torch.sum(target, dim=reduce_axis)
+        pred_o = torch.sum(pred, dim=reduce_axis)
 
         # Compute Dice coefficient for each class excluding background
-        f = (2.0 * intersection + self.smooth) / (denominator + self.smooth)
+        f = (2.0 * intersection + self.smooth) / (ground_o + pred_o + self.smooth)
 
         return f
 
-    def calculate_total_loss(self, class_dice_scores, target):
-        class_weights = compute_class_weights(target)
-        coeff = class_dice_scores * class_weights
-        dice_loss = 1 - torch.sum(coeff) / torch.sum(class_weights)  # Weighted mean
+    def calculate_weighted_loss(self, class_dice_scores, target):
+        dice_loss = 1 - torch.mean(class_dice_scores)
         return dice_loss
 
     def forward(self, pred, target):
@@ -74,7 +69,7 @@ class Dice(torch.nn.Module):
             Tensor: Dice loss.
         """
         dice_scores = self.dice_scores_per_class(pred, target)
-        return self.calculate_total_loss(dice_scores, target)
+        return self.calculate_weighted_loss(dice_scores, target)
 
 
 def train(model, dataloader, optimizer, crit, accumulation_steps=8):
@@ -82,28 +77,26 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=8):
     epoch_loss = 0
     torch.manual_seed(2809)  # reproducibility
 
-    optimizer.zero_grad()  # Initialize gradients to zero
-    batch_loss = 0  # To accumulate losses for logging
-
     for i, batch_data in enumerate(dataloader):
         images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
-        outputs = model(images)  # Forward pass
+
+        # Forward pass
+        outputs = model(images)
         loss = crit(outputs, labels)  # Compute loss
 
-        # Scale the loss by the number of accumulation steps
+
         loss = loss / accumulation_steps
-        loss.backward()  # Backward pass (accumulate gradients)
+        loss.backward()
 
-        batch_loss += loss.item()  # Accumulate loss for logging
+        if (i + 1) % accumulation_steps == 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
-        # Update model weights after accumulating gradients
-        if (i + 1) % accumulation_steps == 0 or (i + 1) == len(dataloader):
-            optimizer.step()  # Perform optimization step
-            optimizer.zero_grad()  # Reset gradients
+        # Accumulate the loss for tracking
+        epoch_loss += loss.item() * accumulation_steps
 
-        epoch_loss += loss.item() * accumulation_steps  # Accumulate total loss
-
-    epoch_loss /= len(dataloader)  # Average the loss over all batches
+    # Average the epoch loss over all batches
+    epoch_loss /= len(dataloader)
     return epoch_loss
 
 
@@ -113,20 +106,20 @@ def validate(model, dataloader, crit):
     dice_losses = []
 
     with torch.no_grad():  # Disable gradient computation
-        torch.manual_seed(2809)  # reproducibility
         for batch_data in dataloader:
             images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
             pred = model(images)  # Forward pass
 
-            # dice scores per class
+            # Calculate per-class dice scores directly
             new_dice_scores = crit.dice_scores_per_class(pred, labels)
-            dice_scores.append(new_dice_scores.cpu().numpy())
+            dice_scores.append(new_dice_scores)  # Keep on GPU
 
-            #dice loss
-            dice_loss = crit.calculate_total_loss(new_dice_scores, labels) # Weighted mean
-            dice_losses.append(dice_loss.cpu().numpy())
+            # Calculate the dice loss directly with raw predictions and labels
+            dice_loss = crit.calculate_weighted_loss(new_dice_scores, labels)
+            dice_losses.append(dice_loss.item())
 
-    dice_scores = np.mean(dice_scores, axis=0)
+    # Average dice scores across batches, then convert to numpy
+    dice_scores = torch.mean(torch.stack(dice_scores), dim=0).cpu().numpy()
     dice_loss = np.mean(dice_losses)
     return dice_scores, dice_loss
 
@@ -139,20 +132,18 @@ if __name__ == '__main__':
     train_loader, val_loader = get_dataloaders()
 
     # Initialize model
-    unet = UNet3D(1, 6)
+    unet = UNet3D()
     unet = unet.to(device)
 
     epochs = 20
     criterion = Dice()
-    optimizer = torch.optim.Adam(unet.parameters())
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-5)
 
     best_metric = float(100.)
     best_state = unet.state_dict()
 
     train_losses, val_losses = [], []
-    dice_scores_per_class = [[] for _ in range(6)]
-    lrs, weight_decays = [], []
+    dice_scores_per_class = [[] for _ in range(5)]
 
     train_start_time = time.time()
 
@@ -171,10 +162,6 @@ if __name__ == '__main__':
 
         for i, score in enumerate(dice_scores):
             dice_scores_per_class[i].append(score)
-
-        lrs.append([pg['lr'] for pg in optimizer.param_groups])
-        weight_decays.append([pg['weight_decay'] for pg in optimizer.param_groups])
-        scheduler.step()
 
         if val_loss < best_metric:
             best_metric = val_loss
@@ -195,9 +182,4 @@ if __name__ == '__main__':
     plot_and_save(epochs_range, dice_scores_per_class, [f"Class {i}" for i in range(5)],
         "Dice Score per Class", "Epochs", "Dice Score", "dice_scores.png")
 
-    # Plot (3) Learning rate and weight decay vs epochs
-    lr_values = [lr[0] for lr in lrs]
-    wd_values = [wd[0] for wd in weight_decays]
-    plot_and_save(epochs_range, [lr_values, wd_values], ["Learning Rate", "Weight Decay"],
-        "Learning Rate and Weight Decay", "Epochs", "Value", "lr_wd.png")
 

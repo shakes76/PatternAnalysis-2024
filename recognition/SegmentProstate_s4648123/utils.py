@@ -3,9 +3,7 @@ import os
 import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
-import torch
 
-from tqdm import tqdm
 from typing import Sequence, Mapping
 from torch.utils.data._utils.collate import default_collate
 from config import (IMAGE_DIR, MASK_DIR)
@@ -13,14 +11,15 @@ from config import (IMAGE_DIR, MASK_DIR)
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
     """
-    Converts an array to one-hot encoded channels.
+    Converts an array to one-hot encoded channels with a fixed number of classes.
 
     Parameters:
     - arr: Input array with categorical values.
+    - num_classes: Total number of classes to ensure consistent channel encoding.
     - dtype: Data type for the output array.
 
     Returns:
-    - One-hot encoded 4D NumPy array.
+    - One-hot encoded 4D NumPy array with a fixed number of channels.
     """
     channels = np.unique(arr)
     res = np.zeros(arr.shape + (len(channels),), dtype=dtype)
@@ -100,27 +99,6 @@ def collate_batch(batch: Sequence):
     else:
         batch_list = collate_fn(data)
     return batch_list
-
-
-def compute_class_weights(target):
-    """
-    Compute class weights based on the inverse of class frequency, excluding background.
-
-    Args:
-        target (Tensor): Ground truth label_files (B, C, H, W, D).
-
-    Returns:
-        Tensor: Class weights of shape (num_classes - 1,).
-    """
-    reduce_axis = [0] + list(range(2, target.dim()))  # Reduce over batch and spatial dims
-    class_counts = torch.sum(target[:, 1:], dim=reduce_axis)  # Exclude background (C > 0)
-    total = torch.sum(class_counts)  # Total pixel count excluding background
-
-    # Inverse frequency weighting
-    class_weights = total / (class_counts + 1e-6)  # Avoid division by zero
-    class_weights = class_weights / class_weights.sum()  # Normalize
-
-    return class_weights
 
 
 def plot_and_save(x, y_data, labels, title, xlabel, ylabel, filename):

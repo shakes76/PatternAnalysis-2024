@@ -45,9 +45,9 @@ def perform_split(data, train_ratio, validation_ratio, test_ratio):
     #randomly shuffle the nodes 
     indices = torch.randperm(total_nodes)
     # sizes for the train, test and validation sets 
-    test_size = int(total_nodes * test_ratio)
     train_size = int(total_nodes * train_ratio)
     validation_size = int(total_nodes * validation_ratio)
+    test_size = total_nodes - train_size - validation_size
     # indices for the test, train and validation data
     train_indices = indices[ :train_size]
     validation_indices = indices[train_size:train_size + validation_size]

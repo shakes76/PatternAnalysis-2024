@@ -24,7 +24,7 @@ The VQ-VAE model employs a loss function comprised of three key components to op
 
 3. **Commitment Loss**: Regularizes the encoder to prevent complexity, encouraging it to commit to specific codebook embeddings and stabilizing training.
 
-![VQ-VAE loss function](loss_function.webp)
+![VQ-VAE loss function](resources/loss_function.webp)
 
 These components collaboratively ensure the VQ-VAE learns meaningful representations while generating high-quality images.
 

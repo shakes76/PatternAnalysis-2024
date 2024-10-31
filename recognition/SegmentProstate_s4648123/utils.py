@@ -45,22 +45,18 @@ def load_image_and_label_3D(image_file, label_file, dtype=np.float32):
     # Load the image data (non-categorical)
     nifti_image = nib.load(image_file)
     image = nifti_image.get_fdata(caching='unchanged').astype(dtype)
-
     if len(image.shape) == 4:
         image = image[:, :, :, 0]  # Remove extra dimensions if present
-
     # Add a channel dimension at the front: (1, rows, cols, depth)
     image = np.expand_dims(image, axis=0)
 
-    # Load the label data (categorical)
+    # Load the label data
     nifti_label = nib.load(label_file)
     label = nifti_label.get_fdata(caching='unchanged').astype(np.uint8)
     if len(label.shape) == 4:
         label = label[:, :, :, 0]  # Remove extra dimensions if present
-    # Convert label to categorical (one-hot encoded) format
-    label = to_channels(label, dtype=dtype)
-    # Reorder label to (channels, rows, cols, depth)
-    label = np.transpose(label, (3, 0, 1, 2))
+    label = np.expand_dims(label, axis=0)
+
     return image, label
 
 

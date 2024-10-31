@@ -1,6 +1,8 @@
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import time
 from modules import create_model
 from dataset import get_dataloaders
 
@@ -65,3 +67,23 @@ def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batc
             torch.save(model.state_dict(), model_path)
 
         print(f"Epoch [{epoch}/{num_epochs}] | Train Loss: {train_loss:.5f} | Train Acc: {train_acc:.2f}% | Test Loss: {test_loss:.5f} | Test Acc: {test_acc:.2f}%")
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 2, 1)
+    plt.plot(range(1, num_epochs + 1), train_losses, label='Train Loss')
+    plt.plot(range(1, num_epochs + 1), test_losses, label='Test Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(range(1, num_epochs + 1), train_accuracies, label='Train Accuracy')
+    plt.plot(range(1, num_epochs + 1), test_accuracies, label='Test Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy (%)')
+    plt.title('Training and Validation Accuracy')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()

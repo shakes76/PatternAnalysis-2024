@@ -1,3 +1,9 @@
+"""
+Author: Ananya Dubey 
+Student No : 44913083 
+This file contains code to load, process and split the dataset from the facebook.npz file. 
+"""
+
 import torch
 from torch_geometric.data import Data
 import numpy as np

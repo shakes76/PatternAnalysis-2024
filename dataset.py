@@ -6,7 +6,9 @@ import json
 import torchvision.transforms as transforms
 
 class ISICDataset(Dataset):
-    def __init__(self, img_dir, annot_dir=None, mode='train', transform=None):
+    def __init__(self, img_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1-2_Training_Input_x2', 
+                 annot_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1_Training_GroundTruth_x2', 
+                 mode='train', transform=None):
         """
         Initializes the ISICDataset.
 
@@ -17,14 +19,14 @@ class ISICDataset(Dataset):
             transform (callable, optional): Optional transformations to apply to the images.
         """
         self.img_dir = img_dir
-        self.annot_dir = annot_dir
+        self.annot_dir = annot_dir if mode == 'train' else None  # Set to None in test mode
         self.mode = mode
         self.transform = transform if transform else self.default_transforms()
         
-        #Get a list of all image files in the directory
+        # Get a list of all image files in the directory
         self.img_files = sorted([f for f in os.listdir(img_dir) if f.endswith('.jpg')])
 
-        #If in training mode, load the annotation files
+        # If in training mode, load the annotation files
         if mode == 'train' and annot_dir is not None:
             self.annot_files = sorted([f for f in os.listdir(annot_dir) if f.endswith('.json')]) 
 
@@ -36,9 +38,9 @@ class ISICDataset(Dataset):
             transform (callable): Transformation pipeline with resizing, normalization, and conversion to tensor.
         """
         return transforms.Compose([
-            transforms.Resize((640, 640)),  #Resizing to 640x640 for YOLO compatibility
-            transforms.ToTensor(),  #Converting image to PyTorch tensor
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  #Normalizing with ImageNet standard 
+            transforms.Resize((640, 640)),  # Resizing to 640x640 for YOLO compatibility
+            transforms.ToTensor(),  # Converting image to PyTorch tensor
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # Normalizing with ImageNet standard 
         ])
 
     def __len__(self):
@@ -60,35 +62,35 @@ class ISICDataset(Dataset):
         Returns:
             tuple: If in train mode, returns (image, boxes), else returns image.
         """
-        #Loading images from file
+        # Loading images from file
         img_path = os.path.join(self.img_dir, self.img_files[idx])
         image = Image.open(img_path).convert("RGB")  # Ensure image is in RGB format
 
-        #If in training mode, load annotations
+        # If in training mode, load annotations
         if self.mode == 'train' and self.annot_dir is not None:
-            #Load corresponding annotation file
+            # Load corresponding annotation file
             annot_path = os.path.join(self.annot_dir, self.img_files[idx].replace('.jpg', '.json'))
             with open(annot_path, 'r') as f:
                 annot_data = json.load(f)
 
-            #Parse bounding boxes and labels from the annotation file
+            # Parse bounding boxes and labels from the annotation file
             boxes = []
             for obj in annot_data['objects']:
-                #Parse bounding box in YOLO format (x_center, y_center, width, height)
+                # Parse bounding box in YOLO format (x_center, y_center, width, height)
                 x_center, y_center, width, height = self.parse_bbox(obj['bbox'])
                 boxes.append([obj['class_id'], x_center, y_center, width, height])  # Append [class_id, bbox]
 
-            #Converting boxes to a tensor
+            # Converting boxes to a tensor
             boxes = torch.tensor(boxes)
 
-            #Apply transformations to the image
+            # Apply transformations to the image
             if self.transform:
                 image = self.transform(image)
 
-            #Return both the transformed image and bounding boxes
+            # Return both the transformed image and bounding boxes
             return image, boxes
         else:
-            #If in test mode, only return the transformed image (no annotations)
+            # If in test mode, only return the transformed image (no annotations)
             if self.transform:
                 image = self.transform(image)
                 

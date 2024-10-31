@@ -5,18 +5,16 @@ from modules import VQVAE
 from dataset import get_dataloader
 from skimage.metrics import structural_similarity as ssim 
 
-# Define the function for loading the VQVAE model
-def load_vqvae_model(model_path, in_channels=1, hidden_channels=128, res_channels=32, nb_res_layers=2, nb_levels=3, embed_dim=64, nb_entries=512, scaling_rates=[8, 4, 2], device='cpu'):
+def load_vqvae_model(model_path, in_channels=1, hidden_channels=128, res_channels=32, nb_res_layers=2, nb_levels=3, embed_dim=128, nb_entries=1024, scaling_rates=[8, 4, 2], device='cpu'):
     vqvae = VQVAE(in_channels=in_channels, hidden_channels=hidden_channels, res_channels=res_channels, nb_res_layers=nb_res_layers, nb_levels=nb_levels, embed_dim=embed_dim, nb_entries=nb_entries, scaling_rates=scaling_rates)
     
     # Load the pre-trained model weights
     vqvae.load_state_dict(torch.load(model_path, map_location=device))  
-    
     vqvae.to(device)
     vqvae.eval()  # Set to evaluation mode
     return vqvae
 
-def predict_vqvae(model, image_dir, save_images=True, output_dir='reconstructed_images', num_images=20, device='cpu'):
+def predict_vqvae(model, image_dir, save_images=True, output_dir='reconstructed_images', num_images=30, device='cpu'):
     # Load test data
     test_loader = get_dataloader(image_dir, batch_size=1, shuffle=False, device=device)
     
@@ -43,7 +41,7 @@ def predict_vqvae(model, image_dir, save_images=True, output_dir='reconstructed_
             reconstructed_image_np = reconstructed.squeeze(0).permute(1, 2, 0).cpu().numpy()  # HWC format
 
             # Calculate SSIM with dynamically adjusted win_size
-            min_dim = min(original_image_np.shape[:2])  # smallest of height or width
+            min_dim = min(original_image_np.shape[:2])  
             win_size = min(5, min_dim) if min_dim >= 5 else min_dim  # Ensure win_size <= min_dim and is odd
 
             ssim_value = ssim(
@@ -54,7 +52,7 @@ def predict_vqvae(model, image_dir, save_images=True, output_dir='reconstructed_
             )
             ssim_list.append(ssim_value)
 
-            # Visualize and save images as before
+            # Visualise and save images as before
             plt.figure(figsize=(10, 5))
             plt.subplot(1, 2, 1)
             plt.title('Original Image')

@@ -74,6 +74,7 @@ def get_all_paths(dir):
     for subdir, _, files in os.walk(dir):
         for file in files:
             paths.append(os.path.join(subdir, file))
+    paths.sort()
     return paths
 
 def batch_paths(samplePaths, segPaths, batchSize):

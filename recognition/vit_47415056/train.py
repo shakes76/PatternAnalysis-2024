@@ -36,3 +36,8 @@ def train_model(data_dir='/home/groups/comp3710/ADNI/AD_NC', num_epochs=20, batc
 
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
+
+        train_loss = running_loss / dataset_sizes['train']
+        train_acc = (running_corrects.double() / dataset_sizes['train']) * 100
+        train_losses.append(train_loss)
+        train_accuracies.append(train_acc)

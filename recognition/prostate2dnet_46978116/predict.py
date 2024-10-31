@@ -61,19 +61,11 @@ def main():
     ce_weights = torch.tensor([1, 1, 1, 2, 10, 4], dtype=torch.float).to(device)  # Ensure these match training
     loss_fn = CombinedLoss(ce_weight=ce_weights)
 
-    # Evaluate the model on the test set
+    # Evaluate the model on the test set and save dice scores
     print("Evaluating the model on the test set...")
     test_loss, test_dice = validate_fn(test_loader, model, loss_fn)
     print(f"Test Loss: {test_loss:.4f}")
     print(f"Test Dice Coefficients per class: {test_dice}")
-
-    # Optionally, compare test loss with training and validation losses
-    # Assuming you have access to training loss history (e.g., from 'train_losses')
-    # If not, you can skip this comparison or load it from a saved file
-    # For demonstration, we'll assume it's not available
-
-    # Plot and save metrics (if training history is available)
-    # plot_metrics(train_losses, val_losses, val_dice_scores, num_classes=num_classes, save_path="test_metrics_plot.png")
 
     # Save prediction images for qualitative assessment
     print(f"Saving prediction images to '{output_folder}'...")
@@ -83,7 +75,7 @@ def main():
     average_dice = np.mean(list(test_dice.values()))
     print(f"Average Dice Score across all classes: {average_dice:.4f}")
 
-    # Optionally, save the Dice scores to a file
+    # save dice scores to file
     with open(os.path.join(output_folder, 'test_dice_scores.txt'), 'w') as f:
         for cls, score in test_dice.items():
             f.write(f"Class {cls}: {score:.4f}\n")

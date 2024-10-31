@@ -32,6 +32,7 @@ class GlobalFilterLayer(layers.Layer):
 def build_model(input_shape=(224,224,3)):
     # 输入层和数据增强
     inputs = tf.keras.Input(shape=input_shape)
+
     x = tf.keras.Sequential([
         layers.RandomRotation(0.1),
         layers.RandomFlip("horizontal"),
@@ -43,11 +44,13 @@ def build_model(input_shape=(224,224,3)):
     x = base_model.output
 
     # 添加GFNet特有的全局频率滤波
-    x = GlobalFilterLayer()(x)
+    for _ in range(3):  # 使用 3 个全局滤波器层
+        x = GlobalFilterLayer()(x)
 
     # Gradient usually use "relu"
-    x = layers.Dense(128, activation='relu')(x) #128 output dimensions (neurons)
-    x = layers.Dropout(0.5)(x)
+    x = layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001))(x) #128 output dimensions (neurons)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.3)(x)
     # To solve a binary classification problem
     # softmax/sigmod - focus on binary or multi-classification/just 2-classification
     predictions = layers.Dense(2, activation='softmax')(x)

@@ -54,17 +54,17 @@ def save_reconstructed_images(original_images, reconstructed_images, embeddings,
 
     for i in range(num_images):
         # Original Image
-        axes[0, i].imshow(original_images[i].cpu().numpy(), cmap='gray')
+        axes[0, i].imshow(original_images[i].cpu().detach().numpy().squeeze(), cmap='gray')
         axes[0, i].axis('off')
         axes[0, i].set_title(f'Original {i + 1}')
 
         # Reconstructed Image
-        axes[1, i].imshow(reconstructed_images[i].cpu().numpy(), cmap='gray')
+        axes[1, i].imshow(reconstructed_images[i].cpu().detach().numpy().squeeze(), cmap='gray')
         axes[1, i].axis('off')
         axes[1, i].set_title(f'Reconstructed {i + 1}')
 
-        # Embedding Visual (flatten embeddings to visualize if necessary)
-        embedding_img = embeddings[i].view(16, 8).cpu().numpy()  # Adjust shape if necessary
+        # Embedding Visual
+        embedding_img = embeddings[i].detach().view(8, 8).cpu().numpy()  # Detach before converting to numpy
         axes[2, i].imshow(embedding_img, cmap='gray')
         axes[2, i].axis('off')
         axes[2, i].set_title(f'Embedding {i + 1}')
@@ -73,6 +73,9 @@ def save_reconstructed_images(original_images, reconstructed_images, embeddings,
     plt.savefig(os.path.join(save_dir, f'epoch_{epoch + 1}_images.png'))
     plt.close()
     print(f'Saved images for epoch {epoch + 1} in {save_dir}')
+
+
+
 
 # Function to plot losses and SSIM
 def plot_losses_and_ssim(train_losses, val_losses, train_ssims, val_ssims):

@@ -8,29 +8,29 @@ class UNet(nn.Module):
         super(UNet, self).__init__()
 
         # Down double conv layers
-        self.down1 = DoubleConv(in_channels=1, out_channels=32)
-        self.down2 = DoubleConv(in_channels=32, out_channels=64)
-        self.down3 = DoubleConv(in_channels=64, out_channels=128)
+        self.down1 = DoubleConv(in_channels=1, out_channels=64)
+        self.down2 = DoubleConv(in_channels=64, out_channels=128)
+        self.down3 = DoubleConv(in_channels=128, out_channels=256)
 
         # Bottle neck
-        self.down4 = DoubleConv(in_channels=128, out_channels=256)
+        self.down4 = DoubleConv(in_channels=256, out_channels=512)
 
         #max pool layer
         self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # Up transpose layers + Double Conv
-        self.up_trans1 = nn.ConvTranspose2d(in_channels=256,out_channels=128,kernel_size=2,stride=2)
-        self.up1 = DoubleConv(256, 128)
+        self.up_trans1 = nn.ConvTranspose2d(in_channels=512,out_channels=256,kernel_size=2,stride=2)
+        self.up1 = DoubleConv(512, 256)
 
 
-        self.up_trans2 = nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=2,stride=2)
-        self.up2 = DoubleConv(128, 64) 
+        self.up_trans2 = nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=2,stride=2)
+        self.up2 = DoubleConv(256, 128) 
 
-        self.up_trans3 = nn.ConvTranspose2d(in_channels=64,out_channels=32,kernel_size=2,stride=2)
-        self.up3 = DoubleConv(64, 32)
+        self.up_trans3 = nn.ConvTranspose2d(in_channels=128,out_channels=64,kernel_size=2,stride=2)
+        self.up3 = DoubleConv(128, 64)
 
 
-        self.final = nn.Conv2d(in_channels=32,out_channels=6,kernel_size=1)
+        self.final = nn.Conv2d(in_channels=64,out_channels=6,kernel_size=1)
 
 
     def forward(self, initial):
@@ -78,5 +78,7 @@ class DoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
+
+
     def forward(self,x):
         return self.conv(x)

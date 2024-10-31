@@ -5,4 +5,5 @@ from modules import create_model
 from dataset import get_dataloaders
 
 def train_model():
-    pass
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")

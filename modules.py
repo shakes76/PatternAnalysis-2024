@@ -1,11 +1,9 @@
 import torch
-import torch.nn as nn
-from yolov7.models.yolo import Model  
-from yolov7.utils.general import non_max_suppression  
-from yolov7.utils.torch_utils import select_device, time_synchronized
+from yolov7.models.yolo import Model
+from yolov7.utils.torch_utils import select_device
 
 class LesionDetectionModel:
-    def __init__(self, model_weights, device='cuda'):
+    def __init__(self, model_weights='yolov7_weights.pth', device='cpu'):
         """
         Initializes the YOLOv7 model for lesion detection.
 
@@ -13,10 +11,11 @@ class LesionDetectionModel:
             model_weights (str): Path to the pre-trained YOLOv7 weights.
             device (str): Device to load the model on ('cuda' or 'cpu').
         """
-        self.device = select_device(device)
-        self.model = Model(cfg='yolov7/cfg/training/yolov7-custom.yaml').to(self.device)
-        self.model.load_state_dict(torch.load(model_weights, map_location=self.device)['model'])
-        self.model.eval()
+        self.device = device if device == 'cpu' else select_device(device)
+        #Initialize YOLO model and load weights
+        self.model = Model()  #Instantiate YOLO model
+        self.model.load_state_dict(torch.load(model_weights, map_location=self.device))  #Load weights to specified device
+        self.model.to(self.device)  #Move model to the specified device
 
     def forward(self, images):
         """

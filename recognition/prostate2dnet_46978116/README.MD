@@ -4,17 +4,15 @@ In this report, we will attempt to segment HipMRI data based on the part of the 
 
 # Understanding the Dataset
 
-The dataset consists 2D MRI slices of the male pelvis collected from a radiation therapy study at Calvary Mater Newcastle Hospital. Each MRI image has a corresponding segmentation image, which we will refer to as the mask, that segments the MRI image based on the part of the body depicted in each segment. There are six classes to these segments: the background, bladder, body, bone, rectum and prostate. Each image is roughly 256 x 128 pixels although some a slightly larger than this so they have all been resized to 256x256. Our task is to develop a method that accurately segments MRI data of the male pelvis based on the training data collected from these images and their masks. 
+The dataset consists of 2D MRI slices of the male pelvis collected from a radiation therapy study at Calvary Mater Newcastle Hospital. Each MRI image has a corresponding segmentation image, which we will refer to as the mask, that segments the MRI image based on the part of the body depicted in each segment. There are six classes to these segments: the background, bladder, body, bone, rectum and prostate. Each image is roughly 256 x 128 pixels although some are slightly larger than this so they have all been resized to 256 x 256. Our task is to develop a method that accurately segments MRI data of the male pelvis based on training data collected from these images and their masks. 
 
 # The 2D U-Net Model
 
 The chosen model to learn this segmentation is a 2D U-Net. The 2D U-Net a deep neural network developed by Ronneburg, etal in 2015. This model shows promising performance in segmentation of medical data, making it an ideal fit for the task. The 2D U-Net utilisizes an encoder-decoder structure with skip connections. This makes it effective in computervision segmentation problems as it can capture the spatial information of the data well and retains information through the skip connections between the encoder and decoder layers. The model also trains quickly with high accuracy.
 
-The architecture consists of two 2D convolutional layers which are followed by max pooling layers. The activation function is ReLu and a 2D Batch normalization is used as well. Although Batch normalization was not used in the original paper (because it wasn't developed yet) we have used it here to improve performance. The data is downsampled using these blocks until it reaches a bottleneck at 512 feature channels. Here, it is upscaled back to the original image size using upsampling layers with skip connections to retain information while reaching a detailed resolution. The final layer has 6 outchannels which corresponds with the 6 classes of segmentation
-
-
 ![2D U-Net Architecture](images\2dunet_architecture.png)
 
+The architecture consists of two 2D convolutional layers which are each followed by max pooling layers. The activation function is ReLu and a 2D Batch normalization is used as well. Although Batch normalization was not used in the original paper (because it wasn't developed yet) we have used it here to improve performance. The data is downsampled using these blocks until it reaches a bottleneck at 512 feature channels. Here, it is upscaled back to the original image size using upsampling layers with skip connections to retain information while reaching a detailed resolution. The final layer has 6 outchannels which corresponds with the 6 classes of segments.
 
 # Output and Results
 
@@ -39,7 +37,7 @@ And the predictions made by the model:
 ![Best Predictions [Epoch 17] CrossEntropyLoss (Classes: 3, 4, 5)](images\predictions\bestcross10\epoch_test_classes_3-5.png)
 
 
-with less images for close up:
+close up predictions:
 
 
 ![Best Predictions Close Up [Epoch 17] CrossEntropyLoss (Classes: 0, 1, 2)](images\predictions\bestcross2\epoch_test_classes_0-2.png)
@@ -61,7 +59,7 @@ Class 4: 0.6833
 Class 5: 0.8711
 Average Dice Score: 0.8543
 
-And the plots of training performance also show improvement:
+And the plots of training performance and predictions also show improvement:
 
 ![Training Performance DiceLoss](images\graphs\diceplot.png)
 
@@ -72,7 +70,7 @@ The predictions made by the model:
 ![Best Predictions [Epoch 40] DiceLoss (Classes: 3, 4, 5)](images\predictions\bestdice10\epoch_test_classes_3-5.png)
 
 
-with less images for close up:
+close up predictions:
 
 ![Best Predictions Close Up [Epoch 40] DiceLoss (Classes: 0, 1, 2)](images\predictions\bestdice2\epoch_test_classes_0-2.png)
 

@@ -30,7 +30,7 @@ The dataset is provided by Alzheimer's Disease Neuroimaging Initiative (ADNI), w
 A comprehensive data preprocessing pipeline was implemented for training a deep learning model using TensorFlow. The pipeline involves several crucial steps designed to prepare image data for effective model training.
 
 1. Each image file path undergoes a series of transformations to ensure it's adequately prepared for the model. This includes reading the image from disk, decoding it into a JPEG format, resizing it to a uniform size (224x224 pixels to match the GFNet model input requirements), and normalizing pixel values to the range [0,1] for better neural network performance. Apart from taht, labels are converted from string format to numerical indices, which are necessary for the model to process the labels effectively. This step also includes creating a unique index for each label which aids in classification tasks.
-2. The dataset was construsts by using TensorFlow's tf.data.Dataset API, from the image paths and their corresponding numeric labels, and then enhanced with mapping functions that apply the preprocessing steps concurrently, leveraging TensorFlow’s AUTOTUNE feature to optimize loading and transformation operations. To ensure that the model receives data in manageable sizes and in random order, the dataset is batched and shuffled. This step is crucial for training deep learning models as it helps to reduce memory overhead and introduces randomness in the training process, which can improve the model's generalization ability.
+2. The dataset was construsts by using TensorFlow's tf.data.Dataset API, from the image paths and their corresponding numeric labels, and then enhanced with mapping functions that apply the preprocessing steps concurrently, leveraging TensorFlow’s AUTOTUNE feature to optimize loading and transformation operations. To ensure that the model receives data in manageable sizes and in random order, the dataset is batched and shuffled. This step is crucial for training deep learning models as it helps to reduce memory overhead and introduces randomness in the training process, which can improve the model's generalization ability [^3].
 3. The dataset is divided into training and validation sets using a stratified approach based on the labels to ensure that each set represents the overall dataset's distribution accurately. This split helps evaluate the model’s performance during training, providing insight into how well the model might perform on unseen data.
 
 ### 2.3 Data Size & Categorical Distribution
@@ -41,7 +41,7 @@ The experimental dataset comprises 9,000 brain MRI scans, categorized into a bin
 
 The structure of a complete GFNet mainly includes frequency domain operations, hierarchical structure, multi-layer global filters, etc. Below is a detailed description of GFNet, including the layers used, activation functions, and optimizer.
 
-### Structure of Model
+### 3.1 Structure of Model
 
 1. **Input layer:** Input shape (224,224,3), which is a standard 224x224 size RGB image;
 2. **Data augmentation layer:** This model uses *RandomRotation*, *RandomFlip*, and *RandomZoom* to increase the diversity of the input images to help the model generalize better;
@@ -51,13 +51,31 @@ The structure of a complete GFNet mainly includes frequency domain operations, h
 5. **Classification layer:** A fully connected layer is added to the classification layer with an output dimension of 128, an activation function of ReLU, and L2 regularization is used to prevent overfitting. The output of Dense layer is batch normalized to make the model training more stable. *Dropout (rate=0.3)* was used to further prevent overfitting.
 6. **Output layer:** The final output layer is *Dense(2, activation='softmax')*, which is used for binary classification tasks and outputs the probability distribution of the two classes.
 
-### 模型的设计和实验
+### 3.2 Design and Experimentation
 
-### 模型训练的过程和结果，概述训练参数
+In order to verify the effectiveness of the model, the experiments mainly focus on the training performance of the model and the generalization ability on the test set.
+
+#### Dataset
+
+The standard binary classification dataset is selected to ensure that the amount of data is sufficient to support the training of deep learning models, and a reasonable split between training and validation sets is ensured.
+
+#### Training parameters
+
+1. **Batch size:** Confirm the memory utilization and training efficiency;
+2. **Learning rate:** The adaptive optimizer *Adam* is used with an initial learning rate around 0.0001 - 0.001 and adaptively adjusted during training based on the validation loss;
+3. **Callbacks:** *ReduceLROnPlateau* and *EarlyStopping* callbacks are introduced to reduce the learning rate or stop training early if there is no improvement in the validation loss.
+
+#### Evaluation indicators
+
+1. **Accuracy:** This evaluates how accurate the model is on the validation and test sets;
+2. **Loss:** Binary cross-entropy loss to track the performance of the model during training and validation;
+3. **Confusion matrix:** This analyzes the classification accuracy of the model on the test set, including the distribution of correct and incorrect classifications.
+
+### 3.3 Training Process and Results
 
 回调函数的设置 (early stop)
 
-### Challenges and Solutions
+### 3.4 Challenges and Solutions
 
 #### Memory Usage
 
@@ -65,7 +83,15 @@ During the implementation of our GFNet model, the significant memory management,
 
 This project implements a multifaceted approach to optimize memory usage, combining batch data processing, regular memory cleanup, and GPU memory growth management. The system is configured to handle smaller batches, down from 16 to 4, with automatic memory cleanup after every 4 batches. This strategy, along with TensorFlow's dynamic memory allocation, enables efficient training on GPU hardware while maintaining model performance.
 
-## 5. 评估结果
+#### Overfitting
+
+In the early stage of project operation, there will be a situation where the training accuracy is above 0.9, but the validation accuracy is only maintained at about 0.5, which can be seen in the figure below.
+![Low validation accuracy](images/low_val_accuracy.png)
+To solve this problem, first the callback function (early stop) is enabled in this project. This project initially used patience = 5, but the validation accuracy fluctuated a lot during training, then tried increasing patience to 10. The second is to use Dropout layers to reduce the model's dependence on training data by randomly dropping a subset of neurons during training. 30% were discarded in the project to help the model learn features more robustly. The third is to add L2 regularization, which adds a penalty term related to the sum of squares of the model weights to the loss function to limit the growth of the weights and prevent the model from becoming overly complex.
+
+## 5. Dependencies
+
+
 
 ### 列出
 
@@ -73,3 +99,4 @@ This project implements a multifaceted approach to optimize memory usage, combin
 
 [^1]: Y.Rao, W.Zhao, Z.Zhu, J.Zhou, and J.Lu, “GFNet: Global Filter Networks for Visual Recognition,” IEEE Transactions on Pattern Analysis and Machine Intelligence, vol.45, no.9, pp.10960–10973, Apr.2023, doi: <https://doi.org/10.1109/tpami.2023.3263824>
 [^2]: “Alzheimer’s Disease Neuroimaging Initiative,” ADNI. <https://adni.loni.usc.edu/>
+[^3]: “Better performance with the tf.data API | TensorFlow Core,” TensorFlow. <https://www.tensorflow.org/guide/data_performance>

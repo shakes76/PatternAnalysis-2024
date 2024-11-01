@@ -95,6 +95,11 @@ In the provided dataset folder structure, each lesion type is represented by hig
 The model outputs bounding boxes and classification labels. 
 
 
+<img width="457" alt="Screen Shot 2024-11-01 at 16 57 28" src="https://github.com/user-attachments/assets/900889e5-c126-4688-ad3d-8a7b276c1831">
+
+
+<img width="448" alt="Screen Shot 2024-11-01 at 16 57 50" src="https://github.com/user-attachments/assets/007b5afe-ddbb-4ca5-9b13-6f681333b823">
+
 ## Results Visualization
 
 After training, the model can detect melanoma with high accuracy. 

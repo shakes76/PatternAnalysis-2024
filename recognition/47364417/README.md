@@ -19,9 +19,7 @@ A Vision Transformer (ViT) is a deep learning model that applies the transformer
 **4. Self-Attention Mechanism in the Transformer Encoder:** The patch embeddings (alongside the class token) are passed through multiple layers of transformer encoders, where the self-attention mechanism enables the model to capture both local and global dependencies across patches. Unlike CNNs, which primarily capture local features, self-attention allows each patch to relate to every other patch, providing a holistic view of the image.
 
 **5. Classification Layer:** After passing through the encoder layers, the class token contains a learned representation of the entire image. This token is then fed into a final linear layer for classification, where it predicts the image’s class based on the relationships it has learned across patches.
-
-
-
+<br><br>
 ## Usage
 To install required libraries:
 ```

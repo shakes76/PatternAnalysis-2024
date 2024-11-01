@@ -1,5 +1,5 @@
 import numpy as np
-from utils import get_images, collate_batch, load_image_and_label_3D
+from utils import get_images, collate_batch, load_image_and_label_3D, RANDOM_SEED
 from monai.transforms import (Compose, ToTensord, RandCropByLabelClassesd, RandFlipd, NormalizeIntensityd, Resized)
 from torch.utils.data import Dataset, DataLoader
 
@@ -10,7 +10,7 @@ train_transforms = Compose(
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=2),
         NormalizeIntensityd(keys='image', nonzero=True),
         RandCropByLabelClassesd(keys=["image", "label"], label_key="label", image_key="image",
-                                spatial_size=(96, 96, 48), num_samples=6, ratios=[1, 2, 3, 4, 4, 4]),
+                                spatial_size=(96, 96, 48), num_samples=6),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
@@ -56,11 +56,12 @@ class MRIDataset(Dataset):
         data = self.transform(data)  # Apply transformations
         return data
 
+
 def get_dataloaders(batch_size=1) -> tuple[DataLoader, DataLoader]:
     image_files, label_files = get_images()
 
     num_samples = len(image_files)
-    np.random.seed(42)
+    np.random.seed(RANDOM_SEED)
     indices = np.random.permutation(num_samples)
 
     # Define split sizes (80% train, 10% val, 10% test)
@@ -78,26 +79,21 @@ def get_dataloaders(batch_size=1) -> tuple[DataLoader, DataLoader]:
     train_ds = MRIDataset(train_image_files, train_label_files, mode='train')
     val_ds = MRIDataset(val_image_files, val_label_files, mode='valid')
 
-    # get dataloaders
-    # train_dataloader = DataLoader(train_ds, batch_size=train_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-    #                               shuffle=True)
-    # val_dataloader = DataLoader(val_ds, batch_size=val_batch, num_workers=NUM_WORKERS, collate_fn=collate_batch,
-    #                             shuffle=True)
-    train_dataloader = DataLoader(train_ds, batch_size=1, num_workers=0, collate_fn=collate_batch)
-    val_dataloader = DataLoader(val_ds, batch_size=1, num_workers=0)
+    train_dataloader = DataLoader(train_ds, batch_size=batch_size, num_workers=0, collate_fn=collate_batch)
+    val_dataloader = DataLoader(val_ds, batch_size=batch_size, num_workers=0, collate_fn=collate_batch)
 
     return train_dataloader, val_dataloader
 
 
-def get_test_dataloader():
+def get_test_dataloader(batch_size=2):
     image_files, mask_files = get_images()
     num_samples = len(image_files)
-    np.random.seed(42)
+    np.random.seed(RANDOM_SEED)
     indices = np.random.permutation(num_samples)
 
     split = int(0.9 * num_samples)
     test_idx = indices[split:]
     test_images, test_masks = image_files[test_idx], mask_files[test_idx]
     test_ds = MRIDataset(test_images, test_masks, mode='valid')
-    test_dataloader = DataLoader(test_ds, batch_size=1, num_workers=0)
+    test_dataloader = DataLoader(test_ds, batch_size=batch_size, num_workers=0)
     return test_dataloader

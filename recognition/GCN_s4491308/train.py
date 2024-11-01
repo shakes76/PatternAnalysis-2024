@@ -43,7 +43,7 @@ dropout = 0.3
 model = GCN(in_channels, hidden_channels, out_channels, dropout)
 model = model.to(device)
 data = data.to(device)
-optimizer = Adam(model.parameters(), lr=0.01)
+optimizer = Adam(model.parameters(), lr=0.05)
 loss_criterion = torch.nn.CrossEntropyLoss()
 
 # list for train, test and validation losses 

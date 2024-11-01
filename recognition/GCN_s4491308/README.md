@@ -49,10 +49,22 @@ Data split    Test Accuracy
 70:15:15      0.93
 80:10:10      0.9332
 ```
-The 80:10:10 split was chosen as having more training data can help expose the algorithm to more information about the graph structure and the neigbouring nodes information. The 10% validation and testing sets provide sufficient data for testing performance as facebook dataset is substantial in size. 
+The 80:10:10 split was chosen as having more training data can help expose the algorithm to more information about the graph structure and the neigbouring nodes information. The 10% validation and testing sets provide sufficient data for testing performance as facebook dataset is substantial in size.
+
+### ADAM optimiser learning rates 
+Various learning rates were tried for the ADAM optimiser while training: 
+```
+Learning Rate    Test Accuracy
+0.001            0.8838
+0.005            0.9208
+0.01             0.9337
+0.05             0.9408
+0.1              0.9372
+```
+A learning rate of 0.05 yielded the best balance between convergence and generalisation performance. 
 
 ## Results 
-The design successfully achieved an accuracy of 93.37% on the test set. The training and validation losses are shown in the figure below over 200 epochs. The loses significantly decrease from 1.4 to around 0.1 over the first 150 epochs then the plot platues and there isn't much improvement. To counter this early stopping could be implemented. Also there is a small consistent gap between the validation loss and the training loss indicating slight overfitting further hyperparameter tuning and l2 regularisation can be used to further reduce the gap. Overall, the model is generalising well. 
+The design successfully achieved an accuracy of 93.99% on the test set. The training and validation losses are shown in the figure below over 200 epochs. The loses significantly decrease from 1.4 to around 0.1 over the first 150 epochs then the plot platues and there isn't much improvement. To counter this early stopping could be implemented. Also there is a small consistent gap between the validation loss and the training loss indicating slight overfitting further hyperparameter tuning and l2 regularisation can be used to further reduce the gap. Overall, the model is generalising well. 
 ![Training and Validation loss over 200 epochs](training_validation_loss.png)
 
 The scatter plot below presents the tSNE node embeddings of the model in two dimensions. The colours corresponding to labels 0, 1, 2 and 3 represent the four classes in the Facebook Dataset. Overall, the plot shows good class separation as indicated by the accuracy of 93% there are some areas of overlap which could possibly be improved by trying to introduce some GAT layers along with the GCN layers and further hyperparameter tuning. 

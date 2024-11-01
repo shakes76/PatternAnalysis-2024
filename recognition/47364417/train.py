@@ -88,3 +88,28 @@ def train_model():
         val_epoch_loss = val_running_loss / val_total_samples
         val_epoch_acc = val_running_corrects.double() / val_total_samples * 100
         print(f'Validation loss: {val_epoch_loss:.4f}, Acc: {val_epoch_acc:.2f}%')
+
+        test_running_loss, test_running_corrects, test_total_samples = 0.0, 0, 0
+        all_preds, all_labels = [], []
+
+        with torch.no_grad():
+            for inputs, labels in dataloaders['test']:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+                with torch.cuda.amp.autocast():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
+
+                _, preds = torch.max(outputs, 1)
+                test_running_loss += loss.item() * inputs.size(0)
+                test_running_corrects += torch.sum(preds == labels.data)
+                test_total_samples += inputs.size(0)
+
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+
+        test_epoch_acc = test_running_corrects.double() / test_total_samples * 100
+        if test_epoch_acc >= 80.0:
+            print(f"Test accuracy reached 80% at epoch {epoch}. Stopping early.")
+            break

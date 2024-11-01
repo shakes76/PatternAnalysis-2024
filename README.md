@@ -118,6 +118,3 @@ This project demonstrates the power of YOLO11 for real-time melanoma detection i
 - ISIC Archive: [ISIC 2018: Skin Lesion Analysis Towards Melanoma Detection](https://www.isic-archive.com/)
 - Ultralytics YOLO Documentation: [YOLO Docs](https://docs.ultralytics.com/)
 
----
-
-This README provides comprehensive guidance on setup, training, and usage of YOLO11 for melanoma detection. Adjust paths and parameters as necessary for optimal performance on your dataset.

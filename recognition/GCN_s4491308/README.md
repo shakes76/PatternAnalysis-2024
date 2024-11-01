@@ -12,7 +12,7 @@ Graphical data is very insighful becuase it has the ability to capture the inher
 GCN works by learning fatures by aggregating information from the neighbouring nodes. Each layer in the GCN performs convolution and updates the representation of a node based on its features as well as the features of the neighbours it is connected to. This project utilised [PyTorch Geometric GCN model](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.models.GCN.html) to build a two layer GCN based on [arXiv:1609.02907 ](https://arxiv.org/pdf/1609.02907). The forward pass ouput for the model is 
 
 $$
-Z = f(X, A) = \text{softmax}\left(\hat{A} \, \text{ReLU} \left(\hat{A} X W^{(0)}\right) W^{(1)}\right)
+Z = f(X, A) = \text{softmax}\left(\hat{A} \cdot \text{ReLU} \left(\hat{A} X W^{(0)}\right) W^{(1)}\right)
 $$
 
  This is shown in the image below 

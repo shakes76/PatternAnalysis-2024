@@ -35,30 +35,8 @@ testSegPaths = get_all_paths(TEST_SEG_PATH)
 
 # load or initialize model
 unet = UNetSegmentation(MODEL_PATH)
-optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
-loss_fn = tf.keras.losses.Dice()
-
-# testing
-preTrain_loss = tf.keras.metrics.Mean()
 
 loss_fn = dice_loss
-
-# batching test to reduce memory usage
-x_test_batches, y_test_batches = batch_paths(testPaths, testSegPaths, 32)
-for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
-    x_test = load_data_2D(test_x_paths, normImage=True)
-    y_test = load_data_2D(test_y_paths, categorical=True)
-
-    x_test_tensor = tf.convert_to_tensor(x_test, dtype=tf.float32)
-    y_test_tensor = tf.convert_to_tensor(y_test, dtype=tf.float32)
-
-    test_logits = unet.model(x_test_tensor, training=False)
-    test_loss_value = loss_fn(y_test_tensor, test_logits)
-    preTrain_loss.update_state(test_loss_value)
-
-
-# track previous epoch loss to find convergence
-prev_loss = 0
 
 epochLoss = [] # keep track of validation loss at each epoch
 
@@ -78,15 +56,7 @@ for epoch in range(EPOCHS):
         y_tensor = tf.convert_to_tensor(y_batch, dtype=tf.float32)
         
         unet.model.fit(x_tensor, y_tensor)
-        '''
-        # use gradient tape for auto differentiation
-        with tf.GradientTape() as tape:
-            pred = unet.call(x_tensor, training=True) 
-            loss_value = loss_fn(y_tensor, pred)
-        # get the gradients and apply to model
-        grads = tape.gradient(loss_value, unet.get_trainable_weights())
-        optimizer.apply_gradients(zip(grads, unet.get_trainable_weights()))
-        '''
+    
     # Validation at the end of each epoch (batched to reduce memory)
     val_loss = tf.keras.metrics.Mean()
 
@@ -107,7 +77,7 @@ for epoch in range(EPOCHS):
     unet.model.save(MODEL_PATH)
     epochLoss.append(float(val_loss.result()))
 
-#print(f"completed {EPOCHS} epochs, final validation loss was {loss_value}")
+print(f"completed {EPOCHS} epochs, final validation loss was {epochLoss[-1]}")
 
 # testing
 test_loss = tf.keras.metrics.Mean()
@@ -138,6 +108,5 @@ for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
 
 for i in range(5):
     print(f"dice coefficient for class {i}: {np.mean(classLosses[i])}")
-print(f"untrained loss: {preTrain_loss.result().numpy():.4f}")
 print(f"validation loss at each epoch: {epochLoss}")
 print(f"test loss: {test_loss.result().numpy():.4f}")

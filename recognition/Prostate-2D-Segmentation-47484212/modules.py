@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, Input, MaxPooling2D, \
-    BatchNormalization, ReLU, Conv2DTranspose, Concatenate, Cropping2D
+    BatchNormalization, ReLU, Conv2DTranspose, Concatenate
 import numpy as np
 
 class UNetSegmentation():
@@ -11,7 +11,7 @@ class UNetSegmentation():
         '''
         if modelPath is not None:
             try:
-                self.model = tf.keras.models.load_model(modelPath)
+                self.model = tf.keras.models.load_model(modelPath, custom_objects={'dice_loss':dice_loss})
             except Exception:
                 print(f"model at {modelPath} could not be loaded, initializing new model")
                 self.model = self.build()
@@ -95,10 +95,10 @@ class UNetSegmentation():
     def call(self, inputs, training=False):
         return self.model(inputs, training=training)
 
-    def get_trainable_weights(self):
-        return self.model.trainable_weights
-
 def dice_loss(y_true, y_pred):
+    '''
+    my implementation of dice loss
+    '''
     classLosses = []
     for i in range(5):
         PredMasks = y_pred[:, :, :, i]

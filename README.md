@@ -27,6 +27,24 @@
 - `Pillow`: for handling image file loading
 - `matplotlib`: for plotting and visualizing results
 
+## How It Works
+
+### Data Preprocessing
+For consistent input dimensions, each image is resized to 640x640 pixels. Data augmentation includes random horizontal and vertical flips, color jitter, and normalization based on ImageNet statistics to improve model generalization. A custom transformation pipeline is applied using PyTorch's `torchvision.transforms`.
+
+### Model Implementation
+The `LesionDetectionModel` class implements the YOLOv7 model for lesion detection. This class loads pre-trained YOLOv7 weights via PyTorch Hub, allowing for efficient and accurate lesion detection on dermoscopic images. The model is loaded onto the specified device (either CPU or GPU) and optimized to use the available hardware resources.
+
+1. **Model Initialization**:
+   The model is initialized with pre-trained YOLOv7 weights, loading it onto the designated device. If the model’s backbone layers are detected, they are frozen to retain learned features and accelerate training by focusing only on the last layers for lesion-specific learning.
+
+2. **Forward Pass**:
+   The `forward` method performs a direct pass through the model, processing each image batch and returning bounding box predictions for lesions. This is done with `torch.no_grad()` to prevent gradient computation, making the inference process faster.
+
+   ```python
+   # Example of a forward pass
+   pred = model.forward(images)
+
 ## Example Installation
 > To install these dependencies, you can use the following command:
   ```bash

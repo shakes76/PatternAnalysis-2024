@@ -29,7 +29,7 @@ A Vision Transformer (ViT) is a deep learning model that applies the transformer
 ### Training Process
 The training dataset contains images labeled as AD (Alzheimer’s Disease) and NC (Cognitive Normal), organized into training, validation, and test sets.
 
-## Folder Structure
+#### Folder Structure
 
 ```
 AD_NC/
@@ -41,7 +41,7 @@ AD_NC/
     └── NC/
 ```
 
-#### Preprocessing:
+### Preprocessing:
 1. **Data Splitting:**
    - **Training Set:** 80% of the images in the original training folder.
    - **Validation Set:** 20% of the training subset, derived from the training set split.
@@ -52,7 +52,7 @@ AD_NC/
    - **Training:** Includes random horizontal and vertical flips, random rotations up to 10 degrees, random affine transformations, and color jittering to improve generalization.
    - **Validation and Testing:** Only resized and normalized to ensure consistency and avoid data leakage from augmentations during evaluation.
 
-#### Hyperparameters:
+### Hyperparameters:
 The following hyperparameters are used in the training process:
 
 | Hyperparameter           | Value              |

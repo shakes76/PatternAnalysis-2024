@@ -2,6 +2,8 @@ import os
 import torch
 from modules import create_model
 from dataset import get_dataloaders
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 def predict():
     """
@@ -59,3 +61,10 @@ def predict():
     # Calculate testing accuracy.
     test_acc = test_running_corrects.double() / test_total_samples * 100
     print(f'Test Accuracy: {test_acc:.2f}%')
+
+    # Generate confusion matrix.
+    cm = confusion_matrix(all_labels, all_preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix')
+    plt.show()

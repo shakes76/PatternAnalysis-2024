@@ -45,10 +45,50 @@ The `LesionDetectionModel` class implements the YOLOv7 model for lesion detectio
    # Example of a forward pass
    pred = model.forward(images)
 
-## Example Installation
-> To install these dependencies, you can use the following command:
-  ```bash
-  pip install torch torchvision numpy opencv-python Pillow matplotlib
+### Training Process
+The training pipeline is built using PyTorch and includes data loading, model optimization, and performance tracking over multiple epochs. Key configurations include 10 epochs, a batch size of 16, and a learning rate of 0.001.
+
+1. **Model and Data Loading**:
+   - The YOLOv7-based `LesionDetectionModel` is loaded with pre-trained weights and set to the available device (GPU or CPU).
+   - Data loaders for the ISIC training and validation datasets are set up with batch sizes for efficient processing.
+
+2. **Training and Validation**:
+   - During each epoch, the model performs a forward pass on the training data, calculates loss using binary cross-entropy (BCEWithLogitsLoss), and optimizes using Adam. A learning rate scheduler adjusts the rate to improve convergence.
+   - Validation loss is computed without gradients to assess performance on unseen data, helping prevent overfitting.
+
+   ```python
+   # Example training and validation process
+   for epoch in range(NUM_EPOCHS):
+       train_loss = train_one_epoch()
+       val_loss = validate()
+
+### Prediction Process
+The prediction pipeline in `predict.py` loads a trained YOLOv7 model to detect lesions in new images. It includes preprocessing, model inference, and result visualization.
+
+1. **Model Loading**:
+   - The `LesionDetectionModel` class loads the model with the trained weights on the specified device (GPU or CPU). The model is set to evaluation mode to prevent gradient computations, optimizing it for inference.
+
+2. **Image Preprocessing**:
+   - Each test image is resized to 640x640, converted to RGB, and normalized. These transformations ensure consistency with the model’s expected input.
+
+3. **Inference**:
+   - The `predict_image` function performs a forward pass, generating bounding box predictions for lesions. Non-maximum suppression is applied to filter out overlapping boxes, retaining only the most confident predictions based on IoU and confidence thresholds.
+
+   ```python
+   detections = predict_image(image_path)
+
+## Code Comments and Usage Documentation
+
+### Usage
+To run the training and prediction scripts, follow these instructions:
+
+1. **Training**: Use `training.py` to train the lesion detection model. Ensure you have specified the correct paths for data directories and adjust hyperparameters as needed.
+   ```bash
+   python training.py --data_dir path/to/data --epochs 10 --batch_size 16
+
+2. **Predictiom**: Use predict.py to run inference with the trained model. Make sure to specify the path to the saved model weights.
+```python
+   python predict.py --model_path path/to/model_checkpoint.pth
 
 ## References
 

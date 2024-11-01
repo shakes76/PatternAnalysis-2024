@@ -2,7 +2,7 @@ from modules import UNetSegmentation
 import tensorflow as tf
 from dataset import load_data_2D, get_all_paths, batch_paths
 import matplotlib.pyplot as plt
-
+import numpy as np
 TEST_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
 TEST_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
 

@@ -33,3 +33,37 @@ def train_model():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+
+    scaler = torch.cuda.amp.GradScaler()
+
+    num_epochs = 13
+    train_losses, train_accs = [], []
+
+    for epoch in range(1, num_epochs + 1):
+        model.train()
+        running_loss, running_corrects, total_samples = 0.0, 0, 0
+
+        for inputs, labels in dataloaders['train']:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            optimizer.zero_grad()
+
+            with torch.cuda.amp.autocast():
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            _, preds = torch.max(outputs, 1)
+            running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+            total_samples += inputs.size(0)
+
+        epoch_loss = running_loss / total_samples
+        epoch_acc = running_corrects.double() / total_samples * 100
+        train_losses.append(epoch_loss)
+        train_accs.append(epoch_acc.item())
+
+        print(f'Epoch [{epoch}/{num_epochs}] - Train loss: {epoch_loss:.4f}, Acc: {epoch_acc:.2f}%')

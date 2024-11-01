@@ -10,7 +10,7 @@ import numpy as np
 from dataset import load_data, perform_split
 from modules import GCN
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.manifold import TSNE
 
 #set the seed for reproducability
 seed = 42
@@ -52,6 +52,7 @@ test_acc = (pred == true_labels).sum().item() / test_mask.sum().item()
 print(f'Test Accuracy: {test_acc:.4f}')
 
 #t-SNE visualisation function 
+#Reference: https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial
 def plotTSNE (model_out, labels):
   z = TSNE(n_components=2).fit_transform(model_out.detach().cpu().numpy())
   plt.figure(figsize=(10, 10))

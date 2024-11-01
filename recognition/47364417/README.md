@@ -67,6 +67,7 @@ The following hyperparameters are used in the training process:
 | **Mixed Precision**      | Enabled (torch.amp) |
 | **Criterion**            | CrossEntropyLoss  |
 <br><br>
+
 ### Training, Validation, and Testing Results
 Below are the plots and statistics from the training process:
 
@@ -111,8 +112,9 @@ Below are the plots and statistics from the training process:
 
 3. **Confusion Matrix:**
    - The model performed better on the NC class, correctly identifying 3101 out of the total NC images, compared to 2575 correctly classified AD images.
-   - The misclassification rates (1885 AD images as NC and 1439 NC images as AD) indicate that while the model has some discriminative power, it still struggles with certain cases, potentially due to overlapping features or insufficient training diversity.
+   - The misclassification rates (1885 AD images as NC and 1439 NC images as AD) indicate that while the model has some discriminative power, it still struggles with certain cases, potentially due to overlapping features or insufficient training diversity.4
 <br>
+
 ### Future Improvements
 
 - **Overfitting:**
@@ -127,6 +129,7 @@ Below are the plots and statistics from the training process:
 - **Class Imbalance:**
    - From the confusion matrix, it seems that the model might benefit from techniques to handle class imbalance more effectively (if present in the dataset), such as oversampling, under-sampling, or cost-sensitive learning.
 <br>
+
 ## Usage
 To install required libraries:
 ```bash

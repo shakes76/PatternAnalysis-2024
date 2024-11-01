@@ -14,7 +14,7 @@
 
 ## YOLOv7 Architecture:
 
-![YOLOv7 Architecture](/PatternAnalysis-2024-topic-recognition/recognition/YOLO-47604364/yolov7_architecture.jpg)
+![YOLOv7 Architecture](yolov7_architecture.jpg)
 
 ## References
 

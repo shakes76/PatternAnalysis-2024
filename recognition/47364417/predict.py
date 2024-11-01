@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn as nn
 from modules import create_model
 from dataset import get_dataloaders
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ def predict():
     """
     Loads a saved model (or trains a new one if none exists) and tests it on the testing data.
     """
+
     # Set device to GPU if available.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'Using device: {device}')
@@ -23,7 +25,7 @@ def predict():
     num_classes = len(class_names)
     print(f'Classes: {class_names}')
 
-    # Initialize the model.
+    # Initialize the ViT model.
     model = create_model(num_classes)
     model = model.to(device)
 
@@ -68,3 +70,6 @@ def predict():
     disp.plot(cmap=plt.cm.Blues)
     plt.title('Confusion Matrix')
     plt.show()
+
+if __name__ == '__main__':
+    predict()

@@ -2,13 +2,10 @@ import time
 
 import numpy as np
 import torch
-from torch.nn.functional import one_hot
 
 from dataset import get_dataloaders
-
 from modules import UNet3D
-from utils import plot_and_save
-from config import MODEL_PATH
+from utils import plot_and_save, MODEL_PATH
 
 device = torch.device("cuda:0")
 
@@ -87,18 +84,19 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=8):
         loss = crit(outputs, labels)  # Compute loss
         batch_dice_losses.append(loss.item())
 
+        # Scale the loss for accumulation
         loss = loss / accumulation_steps
         loss.backward()
 
+        # Update the weights every 'accumulation_steps' batches
         if (i + 1) % accumulation_steps == 0:
             optimizer.step()
             optimizer.zero_grad()
 
-        # Accumulate the loss for tracking
-        epoch_loss += loss.item() * accumulation_steps
+        epoch_loss += loss.item()
 
     # Average the epoch loss over all batches
-    epoch_loss /= len(dataloader)
+    epoch_loss = epoch_loss * accumulation_steps / len(dataloader)
     return epoch_loss, batch_dice_losses
 
 
@@ -125,11 +123,11 @@ def validate(model, dataloader, crit):
     dice_loss = np.mean(dice_losses)
     return dice_scores, dice_loss
 
+
 if __name__ == '__main__':
     """
     Main function to run the training and validation processes.
     """
-
     # Set up datasets and DataLoaders
     train_loader, val_loader = get_dataloaders()
 
@@ -138,22 +136,28 @@ if __name__ == '__main__':
     unet = unet.to(device)
 
     epochs = 18
+    lr = 0.001
+    accumulation_steps = 8
+    batch_size = 2
     criterion = Dice()
-    optimizer = torch.optim.Adam(unet.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(unet.parameters(), lr=lr)
 
+    # tracking best model
     best_metric = float(100.)
     best_state = unet.state_dict()
 
+    # logging info
     train_losses, val_losses = [], []
     dice_scores_per_class = [[] for _ in range(5)]
     batch_dice_loss_history = []
 
     train_start_time = time.time()
-
+    print(f"training parameters: {epochs} epochs, {batch_size} batch size, {lr} learning rate, "
+          f"{accumulation_steps} gradient accumulation steps")
     # Training and evaluation loop
     for epoch in range(epochs):
-        print(f"Epoch {epoch+1}/{epochs}")
-        train_loss, batch_dice_losses = train(unet, train_loader, optimizer, criterion)
+        print(f"Epoch {epoch + 1}/{epochs}")
+        train_loss, batch_dice_losses = train(unet, train_loader, optimizer, criterion, accumulation_steps)
         train_losses.append(train_loss)
         batch_dice_loss_history.extend(batch_dice_losses)
 
@@ -180,14 +184,12 @@ if __name__ == '__main__':
 
     # Plot (1) Train and validation loss vs epochs
     plot_and_save(epochs_range, [train_losses, val_losses], ["Train Loss", "Validation Loss"],
-        "Train and Validation Loss", "Epochs", "Loss", "train_val_loss.png")
+                  "Train and Validation Loss", "Epochs", "Loss", "train_val_loss.png")
 
     # Plot (2) Dice score of each class vs epochs
     plot_and_save(epochs_range, dice_scores_per_class, [f"Class {i}" for i in range(5)],
-        "Dice Score per Class", "Epochs", "Dice Score", "dice_scores.png")
+                  "Dice Score per Class", "Epochs", "Dice Score", "dice_scores.png")
 
     iterations = range(1, len(batch_dice_loss_history) + 1)  # x-axis for the iterations
-    plot_and_save(x=iterations, y_data=[batch_dice_loss_history], labels=["Dice Loss"],
-                  title="Train Dice Loss Over Iterations", xlabel="Iterations", ylabel="Dice Loss",
-                  filename="train_dice_loss_iterations.png")
-
+    plot_and_save(iterations, batch_dice_loss_history, "Dice Loss","Train Dice Loss Over Iterations",
+                  "Iterations", "Dice Loss", "train_dice_loss_iterations.png")

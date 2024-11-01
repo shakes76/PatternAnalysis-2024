@@ -9,7 +9,6 @@ train_transforms = Compose(
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=1),
         RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=2),
         NormalizeIntensityd(keys='image', nonzero=True),
-        # Resized(keys=["image", "label"], spatial_size=(256, 256, 128)),
         RandCropByLabelClassesd(keys=["image", "label"], label_key="label", image_key="image",
                                 spatial_size=(96, 96, 48), num_samples=6, ratios=[1, 2, 3, 4, 4, 4]),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
@@ -18,6 +17,8 @@ train_transforms = Compose(
 val_transforms = Compose(
     [
         NormalizeIntensityd(keys='image', nonzero=True),
+        # most images already in this shape (256, 256, 128), resized is for consistency
+        Resized(keys=["image", "label"], spatial_size=(256, 256, 128)),
         ToTensord(keys=["image", "label"], device="cpu", track_meta=False),
     ]
 )
@@ -55,8 +56,7 @@ class MRIDataset(Dataset):
         data = self.transform(data)  # Apply transformations
         return data
 
-
-def get_dataloaders() -> tuple[DataLoader, DataLoader]:
+def get_dataloaders(batch_size=1) -> tuple[DataLoader, DataLoader]:
     image_files, label_files = get_images()
 
     num_samples = len(image_files)

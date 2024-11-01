@@ -4,7 +4,34 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from PIL import Image
 
 def get_dataloaders(data_dir, batch_size=32, num_workers=4):
-    pass
+    """
+    Returns training, validation, and testing dataloaders along with class names.
+    """
+    # Define transformations for training, validation, and testing
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(10),
+            transforms.RandomAffine(5),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+        ]),
+        'test': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+        ]),
+    }
 
 
 class BrainDataset(Dataset):

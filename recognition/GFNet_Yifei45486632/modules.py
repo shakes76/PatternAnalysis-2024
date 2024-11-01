@@ -3,34 +3,33 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.applications import EfficientNetB0
 
 class GlobalFilterLayer(layers.Layer):
-    """全局频率滤波层"""
     def __init__(self, **kwargs):
         super(GlobalFilterLayer, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        # 初始化可学习的频域滤波器
+        # Initialize learnable frequency domain filters
         self.filters = self.add_weight(
             name='freq_filters',
-            shape=input_shape[1:],  # 匹配输入特征图的形状
+            shape=input_shape[1:],
             initializer='glorot_uniform',
             trainable=True,
-            regularizer=tf.keras.regularizers.l2(0.01)  # 添加L2正则化
+            regularizer=tf.keras.regularizers.l2(0.01)
         )
 
     def call(self, x):
-        # 转换到频域
+        # Convert to the frequency domain
         x_freq = tf.signal.fft2d(tf.cast(x, tf.complex64))
         
-        # 应用频域滤波器
+        # Apply a frequency domain filter
         x_filtered = x_freq * tf.cast(self.filters, tf.complex64)
         
-        # 转换回空间域
+        # Convert back to the spatial domain
         x_spatial = tf.signal.ifft2d(x_filtered)
         
         return tf.math.real(x_spatial)
 
 def build_model(input_shape=(224,224,3)):
-    # 输入层和数据增强
+    # Input layers and data augmentation
     inputs = tf.keras.Input(shape=input_shape)
 
     x = tf.keras.Sequential([
@@ -39,21 +38,21 @@ def build_model(input_shape=(224,224,3)):
         layers.RandomZoom(0.1)
     ])(inputs)
 
+    # EfficientNetB0 serves as the base feature extractor
     base_model = EfficientNetB0(include_top=False, input_shape=input_shape, pooling='avg')
+    x = base_model(x)
 
-    x = base_model.output
+    # Add a global frequency filter layer
+    x = GlobalFilterLayer()(x)
 
-    # 添加GFNet特有的全局频率滤波
-    for _ in range(3):  # 使用 3 个全局滤波器层
-        x = GlobalFilterLayer()(x)
-
-    # Gradient usually use "relu"
-    x = layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001))(x) #128 output dimensions (neurons)
+    # Classification layer
+    x = layers.Dense(128, activation='leaky_relu', kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.3)(x)
-    # To solve a binary classification problem
-    # softmax/sigmod - focus on binary or multi-classification/just 2-classification
+    
+    # Output layer
     predictions = layers.Dense(2, activation='softmax')(x)
 
-    model = models.Model(inputs=base_model.input, outputs=predictions)
+    # Model building
+    model = models.Model(inputs=inputs, outputs=predictions)
     return model

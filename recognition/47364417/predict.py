@@ -30,4 +30,7 @@ def predict():
         print(f'Loading saved model from {final_model_path}')
         model.load_state_dict(torch.load(final_model_path, map_location=device))
     else:
-        print('No saved model found.')
+        print('No saved model found. Training a new model...')
+        from train import train_model
+        train_model()
+        model.load_state_dict(torch.load(final_model_path, map_location=device))

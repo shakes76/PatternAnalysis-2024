@@ -9,17 +9,22 @@ from torch.utils.data import DataLoader
 from modules import uNet
 from newdataset import NIFTIDataset
 import  torch.nn.functional as F
+import os
 
 #Hyperparameters
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
-NUM_EPOCHS = 3
+NUM_EPOCHS = 5
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 256
 PIN_MEMORY = True
 LOAD_MODEL = False
+MODEL_DIR = "models"
+os.makedirs(MODEL_DIR, exist_ok=True)
+MODEL_PATH = os.path.join(MODEL_DIR, "unet_model.pth")
+
 
 if __name__ == '__main__':
     #images dataset
@@ -93,3 +98,6 @@ if __name__ == '__main__':
         val_loss = validate(model, val_loader, criterion, DEVICE)
 
         print(f"Epoch {epoch+1}/{NUM_EPOCHS}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+
+    torch.save(model.state_dict(), MODEL_PATH)    
+    print(f"Model saved to {MODEL_PATH}")

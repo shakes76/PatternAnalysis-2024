@@ -1,13 +1,13 @@
 import os
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split, Dataset
-from PIL import Image
+from torch.utils.data import DataLoader, random_split
 
 def get_dataloaders(data_dir, batch_size=32, num_workers=4):
     """
     Returns training, validation, and testing dataloaders along with class names.
     """
-    # Define transformations for training, validation, and testing
+
+    # Define data transformations for training, validation, and testing.
     data_transforms = {
         'train': transforms.Compose([
             transforms.Resize((224, 224)),
@@ -33,61 +33,29 @@ def get_dataloaders(data_dir, batch_size=32, num_workers=4):
         ]),
     }
 
+    # Set up directories for training and testing data.
     train_dir = os.path.join(data_dir, 'train')
     test_dir = os.path.join(data_dir, 'test')
+
+    # Create the training and testing datasets.
     train_dataset = datasets.ImageFolder(train_dir, transform=data_transforms['train'])
     test_dataset = datasets.ImageFolder(test_dir, transform=data_transforms['test'])
 
+    # Split the training dataset into training and validation subsets.
+    train_size = int(0.8 * len(train_dataset))
+    val_size = len(train_dataset) - train_size
+    train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
-class BrainDataset(Dataset):
-    """
-    A custom Dataset class for loading and preprocessing brain images for generation and classification.
+    # Transform the validation dataset.
+    val_dataset.dataset.transform = data_transforms['val']
 
-    Attributes:
-        image_paths (list): List of file paths for brain image types.
-        transform (callable, optional): A transformation to apply to the images.
-    """
-    def __init__(self, image_paths, transform=None):
-        self.image_paths = image_paths
-        self.transform = transform
+    # Create dataloaders
+    dataloaders = {
+        'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True),
+        'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True),
+        'test': DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True),
+    }
 
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
-        label = 0 if 'NC' in image_path else 1
-        image = Image.open(image_path).convert('RGB')
-        if self.transform:
-            image = self.transform(image)
-        return image, label
-    
-class DataHandler:
-    """
-    Class to handle training and testing data set paths.
-    """
-    @staticmethod
-    def load_data_paths():
-        train_ad = 'recognition/47364417/AD_NC/train/AD'
-        train_nc = 'recognition/47364417/AD_NC/train/NC'
-        test_ad = 'recognition/47364417/AD_NC/test/AD'
-        test_nc = 'recognition/47364417/AD_NC/test/NC'
-        
-        train_paths = [os.path.join(train_ad, img) for img in os.listdir(train_ad)] + \
-                      [os.path.join(train_nc, img) for img in os.listdir(train_nc)]
-        test_paths = [os.path.join(test_ad, img) for img in os.listdir(test_ad)] + \
-                     [os.path.join(test_nc, img) for img in os.listdir(test_nc)]
-        
-        return train_paths, test_paths
-    
-    @staticmethod
-    def _get_image_paths(directory):
-        if not os.path.exists(directory):
-            raise FileNotFoundError(f"Directory not found: {directory}")
-        return [os.path.join(directory, img) for img in os.listdir(directory)]
-
-# Basic transform applied to images for model input.
-default_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor()
-])
+    # Get class names and dataloaders.
+    class_names = train_dataset.dataset.classes
+    return dataloaders, class_names

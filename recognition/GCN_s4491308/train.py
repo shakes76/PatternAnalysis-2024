@@ -37,7 +37,7 @@ train_mask, val_mask, test_mask = perform_split(data, 0.80, 0.10, 0.10)
 in_channels = data.num_features
 hidden_channels = 16
 out_channels = len(data.y.unique())
-dropout = 0.5
+dropout = 0.3
 
 # Initialize model, optimizer, and loss function
 model = GCN(in_channels, hidden_channels, out_channels, dropout)
@@ -60,7 +60,7 @@ for epoch in range(1, epochs + 1):
     loss = loss_criterion(out[train_mask], data.y[train_mask])
     loss.backward()
     optimizer.step()
-    train_losses.append(loss.item())
+    train_losses.append(loss.cpu().item())
 
     # Validation accuracy
     model.eval()
@@ -69,7 +69,7 @@ for epoch in range(1, epochs + 1):
         val_pred = val_out[val_mask].argmax(dim=1)
         val_loss = loss_criterion(val_out[val_mask], data.y[val_mask])
         val_acc = (val_pred == data.y[val_mask]).sum().item() / val_mask.sum().item()
-        validation_losses.append(val_loss)
+        validation_losses.append(val_loss.cpu().item())
 
     print(f'Epoch {epoch:03d}, Training Loss: {loss:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
     

@@ -66,7 +66,7 @@ The following hyperparameters are used in the training process:
 | **Batch Size**           | 32                |
 | **Mixed Precision**      | Enabled (torch.amp) |
 | **Criterion**            | CrossEntropyLoss  |
-
+<br><br>
 ### Training, Validation, and Testing Results
 Below are the plots and statistics from the training process:
 
@@ -75,27 +75,27 @@ Below are the plots and statistics from the training process:
 <p align="center">
   <img src="assets/AD.jpeg" alt="Alzheimer's Disease" width="20%">
   <img src="assets/NC.jpeg" alt="Cognitive Normal" width="20%">
-</p>
+</p><br>
 
 - **Epoch Output**
 <p align="center">
     <img width="1000" src="assets/output.png">
-</p>
+</p><br>
 
 - **Loss vs Epochs**
 <p align="center">
     <img width="700" src="assets/loss_vs_epochs.png">
-</p>
+</p><br>
 
 - **Accuracy vs Epochs**
 <p align="center">
     <img width="700" src="assets/accuracy_vs_epochs.png">
-</p>
+</p><br>
 
 - **Confusion Matrix**
 <p align="center">
     <img width="500" src="assets/confusion_matrix.png">
-</p>
+</p><br>
 
 ### Observations
 
@@ -112,7 +112,7 @@ Below are the plots and statistics from the training process:
 3. **Confusion Matrix:**
    - The model performed better on the NC class, correctly identifying 3101 out of the total NC images, compared to 2575 correctly classified AD images.
    - The misclassification rates (1885 AD images as NC and 1439 NC images as AD) indicate that while the model has some discriminative power, it still struggles with certain cases, potentially due to overlapping features or insufficient training diversity.
-
+<br>
 ### Future Improvements
 
 - **Overfitting:**
@@ -126,7 +126,7 @@ Below are the plots and statistics from the training process:
 
 - **Class Imbalance:**
    - From the confusion matrix, it seems that the model might benefit from techniques to handle class imbalance more effectively (if present in the dataset), such as oversampling, under-sampling, or cost-sensitive learning.
-
+<br>
 ## Usage
 To install required libraries:
 ```bash

@@ -4,6 +4,7 @@
 # Classifying Alzheimer’s Disease using a Vision Transformer (ViT)
 
 This project aims to classify Alzheimer’s disease (normal and AD) using ADNI brain data and a Vision Transformer model, specifically `vit_small_patch16_224`. The primary objective is to achieve a test accuracy above 80% on the ADNI test set.
+<br>
 
 ## Model
 
@@ -23,6 +24,7 @@ A Vision Transformer (ViT) is a deep learning model that applies the transformer
 - **Self-Attention Mechanism in the Transformer Encoder:** The patch embeddings, along with the class token, pass through multiple layers of transformer encoders. The self-attention mechanism enables the model to capture both local and global dependencies across patches. Unlike CNNs, which primarily capture local features, self-attention allows each patch to relate to every other patch, providing a holistic view of the image.
 
 - **Classification Layer:** After passing through the encoder layers, the class token contains a learned representation of the entire image. This token is then fed into a final linear layer for classification, predicting the image’s class based on the relationships it has learned across patches.
+<br>
 
 ## Testing and Results
 
@@ -40,6 +42,7 @@ AD_NC/
     ├── AD/
     └── NC/
 ```
+<br>
 
 #### Preprocessing:
 1. **Data Splitting:**
@@ -51,6 +54,7 @@ AD_NC/
 2. **Data Augmentation:**
    - **Training:** Includes random horizontal and vertical flips, random rotations up to 10 degrees, random affine transformations, and color jittering to improve generalization.
    - **Validation and Testing:** Only resized and normalized to ensure consistency and avoid data leakage from augmentations during evaluation.
+<br>
 
 #### Hyperparameters:
 The following hyperparameters are used in the training process:
@@ -66,6 +70,7 @@ The following hyperparameters are used in the training process:
 | **Batch Size**           | 32                |
 | **Mixed Precision**      | Enabled (torch.amp) |
 | **Criterion**            | CrossEntropyLoss  |
+
 <br><br>
 
 ### Training, Validation, and Testing Results
@@ -148,6 +153,7 @@ To predict accuracy on the test set using a trained model:
 cd recognition/47364417
 python predict.py
 ```
+<br>
 
 ## References
 

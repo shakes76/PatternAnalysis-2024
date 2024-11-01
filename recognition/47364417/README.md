@@ -5,6 +5,18 @@
 
 This project aims to classify Alzheimer’s disease (normal and AD) using ADNI brain data and a Vision Transformer model, specifically `vit_small_patch16_224`. The primary objective is to achieve a test accuracy above 80% on the ADNI test set.
 
+## Folder Structure
+
+```
+AD_NC/
+├── train/
+│   ├── AD/
+│   └── NC/
+└── test/
+    ├── AD/
+    └── NC/
+```
+
 ## Model
 
 ### ViT Architecture:
@@ -57,6 +69,13 @@ The following hyperparameters are used in the training process:
 
 ### Training, Validation, and Testing Results
 Below are the plots and statistics from the training process:
+
+### Alzheimer's Disease (AD) vs Cognitive Normal (NC)
+
+<p align="center">
+  <img src="assets/AD.jpeg" alt="Alzheimer's Disease" width="45%">
+  <img src="assets/NC.jpeg" alt="Cognitive Normal" width="45%">
+</p>
 
 - **Epoch Output**
 <p align="center">
@@ -126,3 +145,9 @@ To predict accuracy on the test set using a trained model:
 cd recognition/47364417
 python predict.py
 ```
+
+## References
+
+- Y. Rao, W. Zhao, Z. Zhu, J. Zhou, and J. Lu, “GFNet: Global Filter Networks for Visual Recognition,” *IEEE Transactions on Pattern Analysis and Machine Intelligence*, vol. 45, no. 9, pp. 10960–10973, Sep. 2023. [Online]. Available: [https://ieeexplore.ieee.org/document/10091201?denied=](https://ieeexplore.ieee.org/document/10091201?denied=)
+
+- Alzheimer’s Disease Neuroimaging Initiative (ADNI), *Data and Methods for Alzheimer’s Research*, [Online]. Available: [https://adni.loni.usc.edu/](https://adni.loni.usc.edu/)

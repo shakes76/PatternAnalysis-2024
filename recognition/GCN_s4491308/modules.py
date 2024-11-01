@@ -1,3 +1,8 @@
+"""
+Author: Ananya Dubey 
+Student No : 44913083 
+This script contains code to define the GCN model.  
+"""
 # Initial GCN model using Pytorch geometric 
 # Reference: Taken from https://www.datacamp.com/tutorial/comprehensive-introduction-graph-neural-networks-gnns-tutorial
 import torch
@@ -15,10 +20,14 @@ class GCNLayer(torch.nn.Module):
         self.bn =nn.BatchNorm1d(out_channels)
 
     def forward(self, x, edge_index):
+        """
+        defines forward pass
+        """
         x = self.conv(x, edge_index)
         x = self.bn(x)
         x = x.relu()
         return x 
+        
 class GCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, dropout):
         super(GCN, self).__init__()

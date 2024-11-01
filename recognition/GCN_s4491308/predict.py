@@ -26,7 +26,7 @@ if torch.cuda.is_available():
 # Load and split data
 file_path = '/content/drive/MyDrive/comp3710_project/facebook.npz'
 data = load_data(file_path)
-train_mask, val_mask, test_mask = perform_split(data, 0.70, 0.15, 0.15)
+train_mask, val_mask, test_mask = perform_split(data, 0.60, 0.20, 0.20)
 
 # Model configuration
 in_channels = data.num_features

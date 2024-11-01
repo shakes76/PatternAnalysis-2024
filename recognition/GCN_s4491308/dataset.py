@@ -9,6 +9,9 @@ from torch_geometric.data import Data
 import numpy as np
 
 def load_data(data_file_path):
+    """
+    Loads data from the npz file and converts the arrays to tensors 
+    """
     # Load data from the npz file 
     data = np.load(data_file_path)
     #check for arrays stored in npz file 
@@ -19,16 +22,13 @@ def load_data(data_file_path):
     edges = data['edges']
     #target 
     target = data['target']
-    #check shape 
-    #print(f"Features shape:{features.shape}, Edges shape:{edges.shape}, Target Shape:{target.shape}")
     #load the arrays to tensors 
     x = torch.tensor(features, dtype=torch.float)
     edges = torch.tensor(edges, dtype=torch.long).T.contiguous()
     y = torch.tensor(target, dtype=torch.long)
     #creating data object for PyTorch geometric 
     data = Data(x=x, edge_index=edges, y=y)
-    #print("graph data object", data)
-
+    
     return data 
 
 
@@ -64,25 +64,7 @@ def perform_split(data, train_ratio, validation_ratio, test_ratio):
     data.test_mask = index_to_mask(test_indices, total_nodes)
     return data.train_mask, data.validation_mask, data.test_mask
 
-# Test for the dataloader 
-# file_path = '/content/facebook.npz'  # Replace with the path to your .npz file
-# data = load_data(file_path)
-# train_mask, validation_mask, test_mask = perform_split(data, 0.80, 0.10, 0.10)
-# # checking splits 
-# total_nodes = data.num_nodes
-# print(f"Total nodes: {total_nodes}")
-# print(f"Train nodes (expected {int(0.80 * total_nodes)}): {train_mask.sum().item()}")
-# print(f"Validation nodes (expected {int(0.10 * total_nodes)}): {validation_mask.sum().item()}")
-# print(f"Test nodes (expected {int(0.10 * total_nodes)}): {test_mask.sum().item()}")
 
-# check for overlap
-# train_and_val_overlap = (train_mask & validation_mask).sum().item()
-# train_and_test_overlap = (train_mask & test_mask).sum().item()
-# val_and_test_overlap = (validation_mask & test_mask).sum().item()
-
-# print(f"Train and validation overlap: {train_and_val_overlap}")
-# print(f"Train and test overlap: {train_and_test_overlap}")
-# print(f"Validation and test overlap: {val_and_test_overlap}")
 
 
 

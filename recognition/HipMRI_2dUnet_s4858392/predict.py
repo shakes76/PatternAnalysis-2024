@@ -12,7 +12,7 @@ import torch.nn.functional as F
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL_PATH = "models/unet_model.pth"  
 OUTPUT_DIR = "/home/Student/s4858392/PAR/results" 
-GROUND_TRUTH_DIR = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
+GROUND_TRUTH_DIR = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
 
 def load_model(model_path):
     model = uNet(in_channels=1, out_channels=1).to(DEVICE)
@@ -22,9 +22,14 @@ def load_model(model_path):
 
 
 def predict(model, dataset_loader):
+    model.eval()
     predictions = []
     with torch.no_grad():
-        for images in dataset_loader:
+        for batch in dataset_loader:
+            images, _ = batch
+            if isinstance(images, list):
+                images = torch.stack(images)
+
             images = images.to(DEVICE)
             if images.dim() == 3:  # Check if it's a 3D tensor
                 images = images.unsqueeze(1)  # Add a channel dimension if necessary
@@ -65,7 +70,7 @@ if __name__ == '__main__':
     model = load_model(MODEL_PATH)
 
     # Prepare your new dataset (adjust the path to your new images)
-    test_image_dir = "//home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+    test_image_dir = "//home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
     test_dataset = NIFTIDataset(imageDir=test_image_dir)
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     ground_truth_masks = load_ground_truth(GROUND_TRUTH_DIR)

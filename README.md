@@ -16,6 +16,22 @@
 
 ![YOLOv7 Architecture](yolov7_architecture.png)
 
+## Dependencies:
+
+> The following libraries and versions are required to run the lesion detection project:
+
+- `torch` (PyTorch): for deep learning model implementation and training
+- `torchvision`: for transformations applied to the images
+- `numpy`: for numerical operations and array manipulation
+- `opencv-python` (cv2): for image processing tasks
+- `Pillow`: for handling image file loading
+- `matplotlib`: for plotting and visualizing results
+
+## Example Installation
+> To install these dependencies, you can use the following command:
+  ```bash
+  pip install torch torchvision numpy opencv-python Pillow matplotlib
+
 ## References
 
 - "Skin Cancer Detection Using Convolutional Neural Networks: A Systematic Review," *National Center for Biotechnology Information (NCBI)*, https://pmc.ncbi.nlm.nih.gov/articles/PMC9324455/

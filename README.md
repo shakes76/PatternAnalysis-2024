@@ -87,7 +87,7 @@ To run the training and prediction scripts, follow these instructions:
    python training.py --data_dir path/to/data --epochs 10 --batch_size 16
 
 2. **Predictiom**: Use predict.py to run inference with the trained model. Make sure to specify the path to the saved model weights.
-```python
+   ```python
    python predict.py --model_path path/to/model_checkpoint.pth
 
 ## References

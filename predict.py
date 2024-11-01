@@ -1,5 +1,5 @@
 import torch
-from modules import LesionDetectionModel, process_detections
+from modules import LesionDetectionModel
 from dataset import ISICDataset
 from torchvision import transforms
 import matplotlib.pyplot as plt
@@ -15,6 +15,15 @@ CONFIDENCE_THRESHOLD = 0.25
 #Load the trained model
 model = LesionDetectionModel(model_weights=MODEL_CHECKPOINT, device=DEVICE).model
 model.eval()
+
+def calculate_iou(box1, box2):
+    x1, y1, x2, y2 = box1
+    x1g, y1g, x2g, y2g = box2
+    xi1, yi1 = max(x1, x1g), max(y1, y1g)
+    xi2, yi2 = min(x2, x2g), min(y2, y2g)
+    inter_area = max(0, xi2 - xi1) * max(0, yi2 - yi1)
+    box1_area, box2_area = (x2 - x1) * (y2 - y1), (x2g - x1g) * (y2g - y1g)
+    return inter_area / (box1_area + box2_area - inter_area)
 
 #Define transformations for test images
 test_transforms = transforms.Compose([

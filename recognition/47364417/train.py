@@ -5,6 +5,8 @@ import torch.optim as optim
 import time
 from dataset import get_dataloaders
 from modules import create_model
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 def train_model():
     """
@@ -127,3 +129,30 @@ def train_model():
     final_model_path = os.path.join(checkpoints_dir, 'final_model.pth')
     torch.save(model.state_dict(), final_model_path)
     print(f'Final model saved at {final_model_path}')
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, len(train_losses) + 1), train_losses, label='train loss')
+    plt.plot(range(1, len(val_losses) + 1), val_losses, label='val loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss vs Epochs')
+    plt.legend()
+    plt.savefig(os.path.join(output_dir, 'loss_vs_epochs.png'))
+    plt.show()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, len(train_accs) + 1), train_accs, label='train acc')
+    plt.plot(range(1, len(val_accs) + 1), val_accs, label='val acc')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy (%)')
+    plt.title('Accuracy vs Epochs')
+    plt.legend()
+    plt.savefig(os.path.join(output_dir, 'accuracy_vs_epochs.png'))
+    plt.show()
+
+    cm = confusion_matrix(all_labels, all_preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix')
+    plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
+    plt.show()

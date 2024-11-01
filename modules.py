@@ -11,9 +11,14 @@ class LesionDetectionModel:
         """
         self.device = torch.device('cuda' if device == 'cuda' and torch.cuda.is_available() else 'cpu')
         
-        # Load the model using PyTorch Hub, specifying custom weights if needed
-        self.model = torch.hub.load('WongKinYiu/yolov7', 'custom', model_weights, source='github')
+        # Load the YOLO model without the autoShape wrapper to get direct access to its layers
+        self.model = torch.hub.load('WongKinYiu/yolov7', 'custom', model_weights, source='github', autoshape=False)
         self.model.to(self.device)
+
+        # Attempt to freeze backbone layers if they exist in the model
+        if hasattr(self.model, 'backbone'):
+            for param in self.model.backbone.parameters():
+                param.requires_grad = False
 
     def forward(self, images):
         """
@@ -25,8 +30,8 @@ class LesionDetectionModel:
         Returns:
             torch.Tensor: Model output with predictions for each bounding box.
         """
+        images = images.to(self.device)
         with torch.no_grad():
-            images = images.to(self.device)
             pred = self.model(images)[0]  # Get predictions
         return pred
 

@@ -32,7 +32,7 @@ train_mask, val_mask, test_mask = perform_split(data, 0.80, 0.10, 0.10)
 in_channels = data.num_features
 hidden_channels = 16
 out_channels = len(data.y.unique())
-dropout = 0.5
+dropout = 0.3
 
 # Initialize model and load saved weights
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

@@ -4,6 +4,9 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Clear any existing session state
+tf.keras.backend.clear_session()
+
 # Configure GPU memory growth
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -32,7 +35,7 @@ model.compile(# optimizer='adam',
 # Define callback function
 print("Setting up callbacks...")
 callbacks = [
-    tf.keras.callbacks.EarlyStopping(patience=10,
+    tf.keras.callbacks.EarlyStopping(patience=5,
                                      monitor='val_accuracy',
                                      mode='max',
                                      restore_best_weights=False),

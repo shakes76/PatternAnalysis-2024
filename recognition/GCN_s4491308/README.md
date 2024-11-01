@@ -10,7 +10,7 @@ Graphical data is very insighful becuase it has the ability to capture the inher
 
 ## How it works 
 GCN works by learning fatures by aggregating information from the neighbouring nodes. Each layer in the GCN performs convolution and updates the representation of a node based on its features as well as the features of the neighbours it is connected to. This project utilised [PyTorch Geometric GCN model](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.models.GCN.html) to build a two layer GCN based on [arXiv:1609.02907 ](https://arxiv.org/pdf/1609.02907) as shown in the mage below 
-![GCN Architecture](path/to/image.png)
+![GCN Architecture](C:\Users\dubey\OneDrive\Desktop\stat3006\PatternAnalysis-2024\recognition\GCN_s4491308\GCN_image .jpg)
 
 ## Description of Architecture 
 The model itself consists of two GCN layers defined using GCNConv. The first layer takes in the node features and the edges as the input and performs convolution to update the feature nodes. Batch normalisation was applied after this layer to help stabalise the training process. ReLu activation was also applied to introduce non lineraity. After the first layer a dropout layer was also added to prevent overfitting. The second and final layer takes in the output of the first layer as input applies further agrregation from the neighbours and produces the final node embeddings used for the classification of the sites and for plotting the t-SNE plot.

@@ -34,3 +34,28 @@ def predict():
         from train import train_model
         train_model()
         model.load_state_dict(torch.load(final_model_path, map_location=device))
+
+    # Test the model.
+    model.eval()
+    test_running_corrects = 0
+    test_total_samples = 0
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        for inputs, labels in dataloaders['test']:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+
+            test_running_corrects += torch.sum(preds == labels.data)
+            test_total_samples += inputs.size(0)
+
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    # Calculate testing accuracy.
+    test_acc = test_running_corrects.double() / test_total_samples * 100
+    print(f'Test Accuracy: {test_acc:.2f}%')

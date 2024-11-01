@@ -41,6 +41,10 @@ Data split    Test Accuracy
 The 80:10:10 split was chosen as having more training data can help expose the algorithm to more information about the graph structure and the neigbouring nodes information. The 10% validation and testing sets provide sufficient data for testing performance as facebook dataset is substantial in size. 
 
 ## Results 
+The design successfully achieved an accuracy of 93.37% on the test set. The training and validation losses are shown in the figure below over 200 epochs. The loses significantly decrease from 1.4 to around 0.1 over the first 150 epochs then the plot platues and there isn't much improvement. To counter this early stopping could be implemented. Also there is a small consistent gap between the validation loss and the training loss indicating slight overfitting further hyperparameter tuning and l2 regularisation can be used to further reduce the gap. Overall, the model is generalising well. 
+![Training and Validation loss over 200 epochs](training_validation_loss.png)
+
+
 
 
 

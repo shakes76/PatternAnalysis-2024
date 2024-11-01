@@ -14,7 +14,7 @@
 
 ## YOLOv7 Architecture:
 
-![YOLOv7 Architecture](yolov7_architecture.jpg)
+![YOLOv7 Architecture](yolov7_architecture.png)
 
 ## References
 

@@ -20,6 +20,7 @@ A Vision Transformer (ViT) is a deep learning model that applies the transformer
 
 **5. Classification Layer:** After passing through the encoder layers, the class token contains a learned representation of the entire image. This token is then fed into a final linear layer for classification, where it predicts the image’s class based on the relationships it has learned across patches.
 
+
 ## Usage
 To install required libraries:
 ```

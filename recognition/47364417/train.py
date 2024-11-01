@@ -28,3 +28,8 @@ def train_model():
     # Initialize the model
     model = create_model(num_classes)
     model = model.to(device)
+
+    # Set up the loss function, optimizer, and scheduler.
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)

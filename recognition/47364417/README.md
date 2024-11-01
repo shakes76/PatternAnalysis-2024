@@ -5,18 +5,6 @@
 
 This project aims to classify Alzheimer’s disease (normal and AD) using ADNI brain data and a Vision Transformer model, specifically `vit_small_patch16_224`. The primary objective is to achieve a test accuracy above 80% on the ADNI test set.
 
-## Folder Structure
-
-```
-AD_NC/
-├── train/
-│   ├── AD/
-│   └── NC/
-└── test/
-    ├── AD/
-    └── NC/
-```
-
 ## Model
 
 ### ViT Architecture:
@@ -40,6 +28,18 @@ A Vision Transformer (ViT) is a deep learning model that applies the transformer
 
 ### Training Process
 The training dataset contains images labeled as AD (Alzheimer’s Disease) and NC (Cognitive Normal), organized into training, validation, and test sets.
+
+## Folder Structure
+
+```
+AD_NC/
+├── train/
+│   ├── AD/
+│   └── NC/
+└── test/
+    ├── AD/
+    └── NC/
+```
 
 #### Preprocessing:
 1. **Data Splitting:**
@@ -70,11 +70,11 @@ The following hyperparameters are used in the training process:
 ### Training, Validation, and Testing Results
 Below are the plots and statistics from the training process:
 
-### Alzheimer's Disease (AD) vs Cognitive Normal (NC)
+- **Alzheimer's Disease (AD) vs Cognitive Normal (NC)**
 
 <p align="center">
-  <img src="assets/AD.jpeg" alt="Alzheimer's Disease" width="45%">
-  <img src="assets/NC.jpeg" alt="Cognitive Normal" width="45%">
+  <img src="assets/AD.jpeg" alt="Alzheimer's Disease" width="20%">
+  <img src="assets/NC.jpeg" alt="Cognitive Normal" width="20%">
 </p>
 
 - **Epoch Output**

@@ -11,7 +11,7 @@ This project aims to classify Alzheimer’s disease (normal and AD) using ADNI b
 A Vision Transformer (ViT) is a deep learning model that applies the transformer architecture, traditionally used in natural language processing, to image recognition tasks. Unlike conventional convolutional neural networks (CNNs), which analyze image data locally through sliding filters, the Vision Transformer uses self-attention to capture global relationships among image patches.
 
 <p align="center">
-    <img width="700" src="assets/transformer.png">
+    <img width="1000" src="assets/transformer.png">
 </p>
 
 - **Patch Embedding Creation:** The input image is split into fixed-size patches, each of which is flattened and transformed into a vector through a linear embedding layer. This process converts each patch into a sequence of embeddings, allowing the image to be represented as a series of tokens (similar to words in text), enabling processing by the transformer.
@@ -60,22 +60,22 @@ Below are the plots and statistics from the training process:
 
 - **Epoch Output**
 <p align="center">
-    <img width="700" src="assets/output.png">
+    <img width="1000" src="assets/output.png">
 </p>
 
 - **Loss vs Epochs**
 <p align="center">
-    <img width="500" src="assets/loss_vs_epochs.png">
+    <img width="700" src="assets/loss_vs_epochs.png">
 </p>
 
 - **Accuracy vs Epochs**
 <p align="center">
-    <img width="500" src="assets/accuracy_vs_epochs.png">
+    <img width="700" src="assets/accuracy_vs_epochs.png">
 </p>
 
 - **Confusion Matrix**
 <p align="center">
-    <img width="300" src="assets/confusion_matrix.png">
+    <img width="500" src="assets/confusion_matrix.png">
 </p>
 
 ### Observations and Future Improvements

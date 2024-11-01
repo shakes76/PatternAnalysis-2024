@@ -85,6 +85,8 @@ The dataset used for melanoma detection consists of dermoscopic images from the 
 <img width="332" alt="Screen Shot 2024-11-01 at 15 57 33" src="https://github.com/user-attachments/assets/f7a7d701-5c88-4927-b76f-fd55857d0f65">
 
 In the provided dataset folder structure, each lesion type is represented by high-resolution .jpg images. Additionally, there are auxiliary files with names ending in _superpixels.png or _perpixels.png, which appear to contain data that may be used for other types of analysis, such as texture segmentation or pixel intensity mapping. However, for the purpose of training a melanoma detection model, only the main dermoscopic images in .jpg format are used.
+
+
 <img width="452" alt="image" src="https://github.com/user-attachments/assets/37b86b10-2843-4971-b537-d7c7ca75c936">
 
 

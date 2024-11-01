@@ -22,16 +22,17 @@ class ISICDataset(Dataset):
         """
     
         self.img_dir = img_dir
+        self.img_size = img_size
         self.annot_dir = annot_dir if mode == 'train' else None
         self.mode = mode
-        self.transform = transform if transform else self.default_transforms(img_size)
+        self.transform = transform if transform else self.default_transforms()
         self.img_files = sorted([f for f in os.listdir(img_dir) if f.endswith('.jpg')])
         self.img_size = img_size
         self.grid_size = grid_size
         self.num_anchors = 3
         
 
-    def default_transforms(self, img_size):
+    def default_transforms(self):
         """
         Defines default transformations for images if none are provided.
 
@@ -39,8 +40,11 @@ class ISICDataset(Dataset):
             transform (callable): Transformation pipeline with resizing, normalization, and conversion to tensor.
         """
         return transforms.Compose([
-            transforms.Resize((640, 640)),  # Resizing to 640x640 for consistent dimensions
+            transforms.Resize((self.img_size, self.img_size)),  # Resizing for consistent dimensions
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
             transforms.ToTensor(),  # Converting image to PyTorch tensor
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # Normalizing with ImageNet standard 
         ])
 
@@ -89,7 +93,7 @@ class ISICDataset(Dataset):
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
             boxes.append([x, y, x + w, y + h])
-        
+            
         return boxes
 
     def __getitem__(self, idx):
@@ -119,7 +123,7 @@ class ISICDataset(Dataset):
             
             # Open the mask file as a grayscale image
             mask = Image.open(annot_path).convert("L")  # Convert to grayscale
-            mask = mask.resize((640, 640))  # Resize to match image dimensions
+            mask = mask.resize((self.img_size, self.img_size)) # Resize to match image dimensions
             boxes = self.mask_to_bounding_boxes(mask)
             img_width, img_height = mask.size
 

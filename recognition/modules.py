@@ -222,16 +222,18 @@ def single_iou(pred, label):
         # compute the iou
         iou = intersect / (area_a + area_b - intersect)
         return iou
-    
-def filter_boxes(pred):
+ 
+def get_highest_confidence_box(pred):
     """
-    Returns highest confidence box that has detected something
+    Returns the box with the highest confidence score that has detected an object.
     """
-    best_box = None
-    highest_conf = 0
-    for i in range(pred.size(0)):
-        box = pred[i,:]
-        if box[4] >= highest_conf:
-            best_box = box
-            highest_conf = box[4]
-    return best_box
+    highest_conf_box = None
+    max_confidence = 0
+
+    for box in pred:
+        confidence = box[4]  # Assuming confidence score is at index 4
+        if confidence > max_confidence:
+            highest_conf_box = box
+            max_confidence = confidence
+
+    return highest_conf_box

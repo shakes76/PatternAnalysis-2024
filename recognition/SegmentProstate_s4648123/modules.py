@@ -2,10 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
 
 def conv_block(in_channels, out_channels):
     # Defines a convolutional block with two convolutions, each followed by BN and ReLU

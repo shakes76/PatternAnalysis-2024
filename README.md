@@ -1,32 +1,5 @@
-<<<<<<< HEAD
-# Pattern Analysis
-Pattern Analysis of various datasets by COMP3710 students in 2024 at the University of Queensland.
+# Lesion Detection on ISIC Dataset with YOLOv7
 
-We create pattern recognition and image processing library for Tensorflow (TF), PyTorch or JAX.
+## Description:
 
-This library is created and maintained by The University of Queensland [COMP3710](https://my.uq.edu.au/programs-courses/course.html?course_code=comp3710) students.
-
-The library includes the following implemented in Tensorflow:
-* fractals 
-* recognition problems
-
-In the recognition folder, you will find many recognition problems solved including:
-* segmentation
-* classification
-* graph neural networks
-* StyleGAN
-* Stable diffusion
-* transformers
-etc.
-=======
-# Recognition Tasks
-Various recognition tasks solved in deep learning frameworks.
-
-Tasks may include:
-* Image Segmentation
-* Object detection
-* Graph node classification
-* Image super resolution
-* Disease classification
-* Generative modelling with StyleGAN and Stable Diffusion
->>>>>>> efda9ce (Initial commit for COMP3710)
+> This project aims to detect lesions in dermoscopic images from the ISIC 2017/2018 dataset using the YOLOv7 object detection model. The primary goal is to implement a solution that achieves a minimum Intersection Over Union (IoU) of 0.8 on the test set, ensuring reliable detection and localization of lesions within each image. Additionally, the model is expected to achieve a suitable accuracy for lesion classification, enhancing the utility of this approach for real-world applications in skin cancer detection.

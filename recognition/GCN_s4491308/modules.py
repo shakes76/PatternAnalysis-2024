@@ -11,7 +11,7 @@ class GCNLayer(torch.nn.Module):
         super(GCNLayer, self).__init__()
         self.conv = GCNConv(in_channels, out_channels)
 
-    def forward(self,x, edge_index):
+    def forward(self, x, edge_index):
         x = self.conv(x, edge_index)
         x = x.relu()
         return x 
@@ -26,7 +26,7 @@ class GCN(torch.nn.Module):
         # First layer
         x = self.conv1(x, edge_index)
         # Apply dropout for regularization
-        x = F.dropout(x, p=0.5, training=self.training)
+        x = F.dropout(x, p=self.dropout, training=self.training)
         # Second layer
         x = self.conv2(x, edge_index)
         return x 

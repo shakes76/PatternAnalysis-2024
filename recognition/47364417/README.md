@@ -24,7 +24,7 @@ A Vision Transformer (ViT) is a deep learning model that applies the transformer
 
 - **Classification Layer:** After passing through the encoder layers, the class token contains a learned representation of the entire image. This token is then fed into a final linear layer for classification, predicting the image’s class based on the relationships it has learned across patches.
 
-## Results
+## Testing and Results
 
 ### Training Process
 The training dataset contains images labeled as AD (Alzheimer’s Disease) and NC (Cognitive Normal), organized into training, validation, and test sets.
@@ -41,7 +41,7 @@ AD_NC/
     └── NC/
 ```
 
-### Preprocessing:
+#### Preprocessing:
 1. **Data Splitting:**
    - **Training Set:** 80% of the images in the original training folder.
    - **Validation Set:** 20% of the training subset, derived from the training set split.
@@ -52,7 +52,7 @@ AD_NC/
    - **Training:** Includes random horizontal and vertical flips, random rotations up to 10 degrees, random affine transformations, and color jittering to improve generalization.
    - **Validation and Testing:** Only resized and normalized to ensure consistency and avoid data leakage from augmentations during evaluation.
 
-### Hyperparameters:
+#### Hyperparameters:
 The following hyperparameters are used in the training process:
 
 | Hyperparameter           | Value              |
@@ -97,7 +97,7 @@ Below are the plots and statistics from the training process:
     <img width="500" src="assets/confusion_matrix.png">
 </p>
 
-### Observations and Future Improvements
+### Observations
 
 1. **Loss vs. Epochs:**
    - **Training Loss:** Decreased consistently across epochs, indicating effective learning from the data.
@@ -113,7 +113,7 @@ Below are the plots and statistics from the training process:
    - The model performed better on the NC class, correctly identifying 3101 out of the total NC images, compared to 2575 correctly classified AD images.
    - The misclassification rates (1885 AD images as NC and 1439 NC images as AD) indicate that while the model has some discriminative power, it still struggles with certain cases, potentially due to overlapping features or insufficient training diversity.
 
-#### Future Improvements:
+### Future Improvements
 
 - **Overfitting:**
    - The training accuracy is significantly higher than the test accuracy, suggesting overfitting. Despite the data augmentation, the model may be over-specializing to the training data.
@@ -127,7 +127,7 @@ Below are the plots and statistics from the training process:
 - **Class Imbalance:**
    - From the confusion matrix, it seems that the model might benefit from techniques to handle class imbalance more effectively (if present in the dataset), such as oversampling, under-sampling, or cost-sensitive learning.
 
-### Usage
+## Usage
 To install required libraries:
 ```bash
 cd recognition/47364417

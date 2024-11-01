@@ -4,11 +4,26 @@
 
 #foreign libraries
 import argparse
+from tqdm import tqdm
+from torchvision.utils import save_image
+import torch .optim as optim
+import torch
+import torch.nn as nn
 
 #local libraries
 import modules
 import dataset
 
+learning_rate = 1e-4
+epochs = 3
+batch_size = 16
+dim = (256,128)
+train_im_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_train"
+train_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_train"
+test_im_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
+test_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
+val_im_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_validate"
+val_mask_dir = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_validate"
 
 def validate_UNet():
     '''
@@ -23,7 +38,7 @@ def validate_UNet():
     '''
     return None
 
-def train_UNet():
+def train_UNet(loader, model, opt, loss, scaler, device):
     '''
     function for training the model.
     Parameters:
@@ -32,6 +47,21 @@ def train_UNet():
     return:
         updated model?
     '''
+    loop = tqdm(loader)
+    for batch, (data,targets) in enumerate(loop):
+        data = data.to(device=device)
+        target = targets.float().unsqueeze().to(device=device)
+
+        with torch.amp.autocast():
+            predict = model(data)
+            loss = loss(predict, targets)
+        
+        opt.zero_grad()
+        scaler.scale(loss).backwards()
+        scaler.step(opt)
+        scaler.update()
+
+        loop.set_postfix(loss=loss.item())
     return None
 
 def test_UNet():
@@ -59,7 +89,7 @@ def Save_UNet():
 
 
 
-def create_Unet(train, test, size, force_CPU = False):
+def create_Unet(force_CPU = False):
     '''
     ideally, this should be the only function a person wishing to use this package will need to call
     Parameters:
@@ -72,15 +102,18 @@ def create_Unet(train, test, size, force_CPU = False):
         The trained Unet model
     '''
     device = modules.test_GPU_connection(force_CPU)
-    #load
-    epochs = 10
-    batch_size = 4
-    dim = size
-    
+    model = modules.Unet2d(3,1).to(device)
+    loss = modules.DiceLoss(4)
+    opt = optim.Adam(model.parameters(), lr = learning_rate)
 
-
+    train_load = dataset.Dataset_2d(train_im_dir, train_mask_dir)
+    test_load = dataset.Dataset_2d(test_im_dir, test_mask_dir)
+    val_load = dataset.Dataset_2d(val_im_dir, val_mask_dir)
     
-    print("test")
+    scaler = torch.amp.grad_scaler()
+    for epoch in range(epochs):
+        train_UNet(train_load, model, opt, loss, scaler)
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -91,4 +124,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     
-    create_Unet(args.File_path, args.size, args.force_CPU)
+    #create_Unet(args.File_path, args.size, args.force_CPU)

@@ -6,7 +6,24 @@ import torch
 import torch.nn as nn
 #from pyimgaug3d.augmentation import GridWarp, Flip, Identity
 
+# dice loss function from
+# https://www.kaggle.com/code/bigironsphere/loss-function-library-keras-pytorch?fbclid=IwAR3q7bjIDoKFlc5IDGpd24TW8QhQdzbxh2TrIP6FCXb7A8FaluU_HhTqmHA
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.0):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+        
+    def forward(self, predict, target):
+        # flatten tensors
+        predict = predict.view(-1)
+        target = target.view(-1)
 
+        # calculate the intersect value
+        intersect = (predict * target).sum()
+        # compute dice score
+        dice = (2.*intersect + self.smooth)/(predict.sum() + target.sum() + self.smooth)
+
+        return 1 - dice
 
 def test_GPU_connection(force_CPU):
     '''

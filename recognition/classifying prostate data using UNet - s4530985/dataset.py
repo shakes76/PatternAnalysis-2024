@@ -10,24 +10,6 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import torchio as tio
 
-# dice loss function from
-# https://www.kaggle.com/code/bigironsphere/loss-function-library-keras-pytorch?fbclid=IwAR3q7bjIDoKFlc5IDGpd24TW8QhQdzbxh2TrIP6FCXb7A8FaluU_HhTqmHA
-class DiceLoss(nn.Module):
-    def __init__(self, smooth=1.0):
-        super(DiceLoss, self).__init__()
-        self.smooth = smooth
-        
-    def forward(self, predict, target):
-        # flatten tensors
-        predict = predict.view(-1)
-        target = target.view(-1)
-
-        # calculate the intersect value
-        intersect = (predict * target).sum()
-        # compute dice score
-        dice = (2.*intersect + self.smooth)/(predict.sum() + target.sum() + self.smooth)
-
-        return 1 - dice
 
 #### provided code from 2024 specsheet
 def to_channels ( arr : np.ndarray , dtype = np.uint8 ) -> np.ndarray :
@@ -180,9 +162,9 @@ class Dataset_2d(Dataset):
         mask_path = os.path.join(self.mask_dir, self.images[index])
 
         image = tio.ScalarImage(img_path)
+        mask = tio.ScalarImage(mask_path)
         
         image = self.transform(image)
-
-        DataLoader()
+        mask = self.transform(mask)
 
         return image, mask

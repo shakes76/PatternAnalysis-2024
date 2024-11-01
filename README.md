@@ -12,6 +12,7 @@ Melanoma is one of the most aggressive forms of skin cancer, and early detection
 
 YOLO11 is a single-stage object detection model that processes the entire image in a single forward pass, predicting bounding boxes and classification scores simultaneously. It divides the input image into a grid, with each grid cell responsible for detecting an object within its bounds. Using anchor boxes, the model generates bounding box coordinates and confidence scores, optimized for melanoma detection by training on a labeled dataset of dermoscopic images. The final model can localize and classify skin lesions as either melanoma or benign in real time.
 
+
 ## Dependencies
 
 To run this project, the following dependencies are required:
@@ -93,6 +94,11 @@ In the provided dataset folder structure, each lesion type is represented by hig
 
 ### Output
 The model outputs bounding boxes and classification labels. 
+
+<img width="457" alt="Screen Shot 2024-11-01 at 16 57 28" src="https://github.com/user-attachments/assets/900889e5-c126-4688-ad3d-8a7b276c1831">
+
+
+<img width="448" alt="Screen Shot 2024-11-01 at 16 57 50" src="https://github.com/user-attachments/assets/007b5afe-ddbb-4ca5-9b13-6f681333b823">
 
 
 ## Results Visualization

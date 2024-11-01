@@ -59,3 +59,5 @@ and uses the prebuilt [Pytorch Geometric GCN model for the layers](https://pytor
 The data preprocessing code is inspired from [pytorch-geometric example](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/utils/mask.py#L41)
 
 The training and testing loops are inspired and adapted from code at [pytorch-gcn.py](https://github.com/pyg-team/pytorch_geometric/blob/master/examples/gcn.py#L81)
+
+Used ChatGPT to debug parts of the code and to understand how to set seed for reproducability. 

@@ -15,6 +15,12 @@ GCN works by learning fatures by aggregating information from the neighbouring n
 ## Description of Architecture 
 The model itself consists of two GCN layers defined using GCNConv. The first layer takes in the node features and the edges as the input and performs convolution to update the feature nodes. Batch normalisation was applied after this layer to help stabalise the training process. ReLu activation was also applied to introduce non lineraity. After the first layer a dropout layer was also added to prevent overfitting. The second and final layer takes in the output of the first layer as input applies further agrregation from the neighbours and produces the final node embeddings used for the classification of the sites and for plotting the t-SNE plot.
 
+## Usage 
+1. Download the facebook.npz file and place it within the recognition\GCN_s4491308 folder.
+2. Update this file path in the training.py and test.py files in the file_path variable before loading the dataset.
+3. Then run the train.py file and the prediction.py. 
+   Change the location of the plots and the model stored to your working directory.
+
 ## Data pre processing steps 
 The features, edges and target numpy vectors from facebook.npz file are loaded to tensors to ensure compatibility with the GCNlayers. The data was also split into training, validation and test sets using boolean tensors to define the indices of points belonging to each set. 
 

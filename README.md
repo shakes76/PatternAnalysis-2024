@@ -97,21 +97,12 @@ The model outputs bounding boxes and classification labels.
 
 ## Results Visualization
 
-After training, the model can detect melanoma with high accuracy. Below is a visualization of the performance metrics on the validation set:
+After training, the model can detect melanoma with high accuracy. 
 
-<p align="center">
-  <img src="path/to/metrics_plot.jpg" width="70%" alt="Training metrics">
-</p>
+<img width="452" alt="image" src="https://github.com/user-attachments/assets/c70abb36-df4a-4a52-a73f-26c3c1b41004">
 
-*Figure: Training and validation loss over epochs*
+*Figure: Training and validation loss over epochs. This was from an earlier test, eventually, 31 epochs were chosen*
 
-## Exporting the Model
-
-To export the model for deployment, YOLO11 provides options for various formats. For instance, to export the model to ONNX:
-
-```python
-model.export(format='onnx')
-```
 
 ## Conclusion
 

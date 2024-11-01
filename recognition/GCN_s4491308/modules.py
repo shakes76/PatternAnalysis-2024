@@ -4,20 +4,29 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
-class GCN(torch.nn.Module):
+
+# defining a GCN layer as a separate class 
+class GCNLayer(torch.nn.module):
     def __init__(self, in_channels, hidden_channels, out_channels):
         super(GCN, self).__init__()
-        self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, out_channels)
+        self.conv = GCNConv(in_channels, out_channels)
+    def forward(self,x, edge_index):
+        x = self.conv(x, edge_index)
+        x = x.relu()
+        return x 
+class GCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, dropout):
+        super(GCN, self).__init__()
+        self.conv1 = GCNLayer(in_channels, hidden_channels)
+        self.conv2 = GCNLayer(hidden_channels, out_channels)
+        self.dropout = dropout 
 
     def forward(self, x, edge_index):
-        # First layer: GCN + ReLU activation
+        # First layer
         x = self.conv1(x, edge_index)
-        x = x.relu()
-        
         # Apply dropout for regularization
         x = F.dropout(x, p=0.5, training=self.training)
-        
-        # Second layer: GCN to output logits
+        # Second layer
         x = self.conv2(x, edge_index)
-        return x
+        return x 
+    

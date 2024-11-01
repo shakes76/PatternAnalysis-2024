@@ -34,20 +34,24 @@ To reproduce the results, a GPU with CUDA support is recommended. The model was 
 
 The model was trained on the ISIC (International Skin Imaging Collaboration) dataset, a comprehensive collection of dermoscopic images labeled for melanoma and benign conditions. The dataset was divided as follows:
 
-- **Training Set**: 70% of the data
-- **Validation Set**: 20% of the data
+- **Training Set**: 80% of the data
+- **Validation Set**: 10% of the data
 - **Testing Set**: 10% of the data
-
-<img width="452" alt="image" src="https://github.com/user-attachments/assets/63603c7f-6a5d-419f-8472-81e105ee35ca">
 
 This split ensures the model has a sufficient amount of data for learning while keeping a balanced validation and testing set for evaluating performance.
 
 ### Pre-Processing
 
-1. **Resizing**: Images were resized to 640x640 pixels to ensure consistency and efficient processing.
-2. **Normalization**: Pixel values were normalized to [0, 1] for faster convergence during training.
-3. **Bounding Box Conversion**: Annotations in the ISIC dataset were converted to YOLO format, with bounding boxes specified by the center (x, y), width, and height, normalized by image dimensions.
-4. **Data Augmentation**: Techniques such as random rotation, scaling, and flipping were applied to the training data to improve the model’s robustness to variations.
+Pre-Processing
+The preprocessing pipeline prepares the melanoma dataset for efficient and consistent model training. First, a metadata CSV file is generated for each dataset split (train, validation, and test). This metadata file serves as an index, listing each image path along with its corresponding class label (nevus, seborrheic keratosis, or melanoma). Labels are mapped to integers, with benign classes (nevus and seborrheic keratosis) labeled as 0 and malignant (melanoma) as 1. This structure allows for efficient data loading and simplifies referencing images during training. See below.
+
+<img width="452" alt="image" src="https://github.com/user-attachments/assets/63603c7f-6a5d-419f-8472-81e105ee35ca">
+
+Each image is then processed by:
+Decoding from JPEG format and resizing to a standardized size of 299x299 pixels, ensuring consistency in model input dimensions.
+Normalization, where pixel values are scaled to the [0,1] range for optimized training.
+Caching the dataset to reduce I/O bottlenecks, and shuffling the training data with a buffer size of 1000 to ensure varied batches.
+Batching and Prefetching: Images are batched into sets of 64, and prefetch is used to load data in the background, preventing delays and ensuring data availability during model training.
 
 For more details on the dataset and augmentation methods, refer to the [ISIC Archive](https://www.isic-archive.com/).
 

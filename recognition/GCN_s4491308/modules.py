@@ -6,10 +6,11 @@ from torch_geometric.nn import GCNConv
 
 
 # defining a GCN layer as a separate class 
-class GCNLayer(torch.nn.module):
-    def __init__(self, in_channels, hidden_channels, out_channels):
-        super(GCN, self).__init__()
+class GCNLayer(torch.nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(GCNLayer, self).__init__()
         self.conv = GCNConv(in_channels, out_channels)
+
     def forward(self,x, edge_index):
         x = self.conv(x, edge_index)
         x = x.relu()

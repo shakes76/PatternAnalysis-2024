@@ -113,3 +113,17 @@ def train_model():
         if test_epoch_acc >= 80.0:
             print(f"Test accuracy reached 80% at epoch {epoch}. Stopping early.")
             break
+
+        if epoch % 5 == 0:
+            checkpoint_path = os.path.join(checkpoints_dir, f'checkpoint_epoch_{epoch}.pth')
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': epoch_loss,
+            }, checkpoint_path)
+            print(f'Checkpoint saved at epoch {epoch}')
+
+    final_model_path = os.path.join(checkpoints_dir, 'final_model.pth')
+    torch.save(model.state_dict(), final_model_path)
+    print(f'Final model saved at {final_model_path}')

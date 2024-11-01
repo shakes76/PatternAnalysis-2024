@@ -5,7 +5,8 @@ import torch
 
 from dataset import get_dataloaders
 from modules import UNet3D
-from utils import plot_and_save, MODEL_PATH
+from utils import plot_and_save, MODEL_PATH, RANDOM_SEED
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 device = torch.device("cuda:0")
 
@@ -33,11 +34,7 @@ class Dice(torch.nn.Module):
             torch.Tensor: Dice coefficients for each class excluding the background.
         """
         # Apply softmax to logits to get probabilities
-        # target = one_hot(target.squeeze(1).long(), num_classes=6).permute(0, 4, 1, 2, 3).float()
         pred = torch.softmax(pred, dim=1)  # (B, C, H, W, D)
-
-        # Exclude background by slicing from class 1 onward
-        pred, target = pred[:, 1:], target[:, 1:]  # Skip the background class (C=0)
 
         # Define the axes for reduction (batch, depth, height, width)
         reduce_axis = [0] + list(range(2, len(pred.shape)))  # [0, 2, 3, 4]
@@ -73,8 +70,6 @@ class Dice(torch.nn.Module):
 def train(model, dataloader, optimizer, crit, accumulation_steps=8):
     model.train()
     epoch_loss = 0
-    batch_dice_losses = []
-    torch.manual_seed(2809)  # reproducibility
 
     for i, batch_data in enumerate(dataloader):
         images, labels = batch_data["image"].to(device), batch_data["label"].to(device)
@@ -82,7 +77,6 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=8):
         # Forward pass
         outputs = model(images)
         loss = crit(outputs, labels)  # Compute loss
-        batch_dice_losses.append(loss.item())
 
         # Scale the loss for accumulation
         loss = loss / accumulation_steps
@@ -97,7 +91,8 @@ def train(model, dataloader, optimizer, crit, accumulation_steps=8):
 
     # Average the epoch loss over all batches
     epoch_loss = epoch_loss * accumulation_steps / len(dataloader)
-    return epoch_loss, batch_dice_losses
+
+    return epoch_loss
 
 
 def validate(model, dataloader, crit):
@@ -135,12 +130,12 @@ if __name__ == '__main__':
     unet = UNet3D()
     unet = unet.to(device)
 
-    epochs = 18
-    lr = 0.001
-    accumulation_steps = 8
-    batch_size = 2
+    epochs = 17
+    lr = 0.01
+    accumulation_steps = 2
     criterion = Dice()
     optimizer = torch.optim.Adam(unet.parameters(), lr=lr)
+    scheduler = CosineAnnealingLR(optimizer, T_max=len(train_loader) * epochs)
 
     # tracking best model
     best_metric = float(100.)
@@ -148,18 +143,16 @@ if __name__ == '__main__':
 
     # logging info
     train_losses, val_losses = [], []
-    dice_scores_per_class = [[] for _ in range(5)]
-    batch_dice_loss_history = []
+    dice_scores_per_class = [[] for _ in range(6)]
 
     train_start_time = time.time()
-    print(f"training parameters: {epochs} epochs, {batch_size} batch size, {lr} learning rate, "
+    print(f"training parameters: {epochs} epochs, {lr} initial learning rate, "
           f"{accumulation_steps} gradient accumulation steps")
     # Training and evaluation loop
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}")
-        train_loss, batch_dice_losses = train(unet, train_loader, optimizer, criterion, accumulation_steps)
+        train_loss = train(unet, train_loader, optimizer, criterion, accumulation_steps)
         train_losses.append(train_loss)
-        batch_dice_loss_history.extend(batch_dice_losses)
 
         print(f"Train Loss: {train_loss:.4f}")
 
@@ -176,6 +169,8 @@ if __name__ == '__main__':
             best_state = unet.state_dict()
             torch.save(best_state, MODEL_PATH)
 
+        scheduler.step()
+
     train_time = time.time() - train_start_time  # Calculate elapsed time
     print(f"Total training time: {train_time:.2f} seconds")
 
@@ -187,9 +182,5 @@ if __name__ == '__main__':
                   "Train and Validation Loss", "Epochs", "Loss", "train_val_loss.png")
 
     # Plot (2) Dice score of each class vs epochs
-    plot_and_save(epochs_range, dice_scores_per_class, [f"Class {i}" for i in range(5)],
+    plot_and_save(epochs_range, dice_scores_per_class, [f"Class {i}" for i in range(6)],
                   "Dice Score per Class", "Epochs", "Dice Score", "dice_scores.png")
-
-    iterations = range(1, len(batch_dice_loss_history) + 1)  # x-axis for the iterations
-    plot_and_save(iterations, batch_dice_loss_history, "Dice Loss","Train Dice Loss Over Iterations",
-                  "Iterations", "Dice Loss", "train_dice_loss_iterations.png")

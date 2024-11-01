@@ -18,8 +18,7 @@ GCN works by learning fatures by aggregating information from the neighbouring n
 
 
 ## Data pre processing steps 
-
-
+The features, edges and target numpy vectors from facebook.npz file are loaded to tensors to ensure compatibility with the GCNlayers. The data was also split into training, validation and test sets using boolean tensors to define the indices of points belonging to each set. 
 
 ## Design choices 
 

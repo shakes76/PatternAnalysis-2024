@@ -44,6 +44,10 @@ The 80:10:10 split was chosen as having more training data can help expose the a
 The design successfully achieved an accuracy of 93.37% on the test set. The training and validation losses are shown in the figure below over 200 epochs. The loses significantly decrease from 1.4 to around 0.1 over the first 150 epochs then the plot platues and there isn't much improvement. To counter this early stopping could be implemented. Also there is a small consistent gap between the validation loss and the training loss indicating slight overfitting further hyperparameter tuning and l2 regularisation can be used to further reduce the gap. Overall, the model is generalising well. 
 ![Training and Validation loss over 200 epochs](training_validation_loss.png)
 
+The scatter plot below presents the tSNE node embeddings of the model in two dimensions. 
+![tSNE embeddings](tSNE-embedding.png)
+
+
 
 
 

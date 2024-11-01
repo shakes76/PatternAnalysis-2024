@@ -4,8 +4,9 @@
 
 Melanoma is one of the most aggressive forms of skin cancer, and early detection can significantly increase survival rates. This project leverages the YOLO11 (You Only Look Once) deep learning algorithm by Ultralytics to automatically detect melanoma in dermoscopic images, distinguishing it from other skin conditions like benign lesions and nevus. YOLO11 is a state-of-the-art object detection model. 
 
+<img width="126" alt="image" src="https://github.com/user-attachments/assets/9860b174-fe24-42f1-bf8c-41f44a9a1440">
 
-*Figure: Sample output of YOLO11 detecting melanoma in a dermoscopic image*
+*Figure: Sample output of YOLO11 detecting a lesion in a dermoscopic image*
 
 ## How it Works
 

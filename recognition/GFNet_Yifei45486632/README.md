@@ -73,7 +73,7 @@ The standard binary classification dataset is selected to ensure that the amount
 
 ### 3.3 Training Process and Results
 
-回调函数的设置 (early stop)
+
 
 ### 3.4 Challenges and Solutions
 
@@ -91,7 +91,19 @@ To solve this problem, first the callback function (early stop) is enabled in th
 
 ## 5. Dependencies
 
+Python 3.7 or higher
 
+### 5.1 Major libraries
+
+TensorFlow 2.x
+NumPy
+Matplottlib
+scikit-learn
+
+### 5.2 GPU support (optional)
+
+CUDA 10.x (The version should match the TensorFlow GPU version)
+cuDNN (The version should match the CUDA and TensorFlow version)
 
 ### 列出
 

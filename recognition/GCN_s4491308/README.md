@@ -9,7 +9,7 @@ This project utilises Graph Convolutional Network (GCN) to perform the semi supe
 Graphical data is very insighful becuase it has the ability to capture the inherent structural relationships in the data and in hence widely used in various real-world application domains such social media analysis, medical imaging of molecular structures and transportation system. Traditional CNN's fail to work on graphical data that is where GCN's come in. The identification of classes in the facebook data using GCN can provide great insights into consumer behaviour like help in providing targetted recommendations to customers based on usage history etc.
 
 ## How it works 
-GCN works by learning fatures by aggregating information from the neighbouring nodes. Each layer in the GCN performs convolution and updates the representation of a node based on its features as well as the features of the neighbours it is connected to. This project utilised [PyTorch Geometric GCN model](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.models.GCN.html) to build a two layer GCN based on [arXiv:1609.02907 ](https://arxiv.org/pdf/1609.02907) as shown in the mage below 
+GCN works by learning fatures by aggregating information from the neighbouring nodes. Each layer in the GCN performs convolution and updates the representation of a node based on its features as well as the features of the neighbours it is connected to. This project utilised [PyTorch Geometric GCN model](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.models.GCN.html) to build a two layer GCN based on [arXiv:1609.02907 ](https://arxiv.org/pdf/1609.02907) as shown in the image below 
 ![GCN Architecture](GCN_image.jpg)
 
 ## Description of Architecture 

@@ -24,3 +24,10 @@ def predict():
     # Initialize the model.
     model = create_model(num_classes)
     model = model.to(device)
+
+    # Load the saved model if possible.
+    if os.path.exists(final_model_path):
+        print(f'Loading saved model from {final_model_path}')
+        model.load_state_dict(torch.load(final_model_path, map_location=device))
+    else:
+        print('No saved model found.')

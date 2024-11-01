@@ -17,6 +17,16 @@ The model itself consists of two GCN layers defined using GCNConv. The first lay
 ## Data pre processing steps 
 The features, edges and target numpy vectors from facebook.npz file are loaded to tensors to ensure compatibility with the GCNlayers. The data was also split into training, validation and test sets using boolean tensors to define the indices of points belonging to each set. 
 
+## Dependencies 
+
+```
+torch:2.5.0+cu121
+torch_geometric:2.6.1
+numpy:1.26.4
+matplotlib:3.8.0 
+scikit-learn:1.3.1
+```
+
 ## Design choices 
 ### Data Splits 
 Various combinations of data splits were tried as follows: 

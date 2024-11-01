@@ -19,9 +19,15 @@ The features, edges and target numpy vectors from facebook.npz file are loaded t
 
 ## Design choices 
 ### Data Splits 
+Various combinations of data splits were tried as follows: 
 
-
-
+```
+Data split    Test Accuracy
+60:20:20      0.9248
+70:15:15      0.93
+80:10:10      0.9332
+```
+The 80:10:10 split was chosen as having more training data can help expose the algorithm to more information about the graph structure and the neigbouring nodes information. The 10% validation and testing sets provide sufficient data for testing performance as facebook dataset is substantial in size. 
 
 ## Results 
 

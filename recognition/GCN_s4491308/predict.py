@@ -24,9 +24,9 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
 
 # Load and split data
-file_path = '/content/facebook.npz'
+file_path = '/content/drive/MyDrive/comp3710_project/facebook.npz'
 data = load_data(file_path)
-train_mask, val_mask, test_mask = perform_split(data, 0.80, 0.10, 0.10)
+train_mask, val_mask, test_mask = perform_split(data, 0.70, 0.15, 0.15)
 
 # Model configuration
 in_channels = data.num_features

@@ -52,7 +52,7 @@ validation_losses = []
 
 
 # Training loop
-epochs = 400
+epochs = 200
 for epoch in range(1, epochs + 1):
     model.train()
     optimizer.zero_grad()

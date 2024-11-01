@@ -33,6 +33,11 @@ def get_dataloaders(data_dir, batch_size=32, num_workers=4):
         ]),
     }
 
+    train_dir = os.path.join(data_dir, 'train')
+    test_dir = os.path.join(data_dir, 'test')
+    train_dataset = datasets.ImageFolder(train_dir, transform=data_transforms['train'])
+    test_dataset = datasets.ImageFolder(test_dir, transform=data_transforms['test'])
+
 
 class BrainDataset(Dataset):
     """

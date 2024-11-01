@@ -4,16 +4,16 @@ import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-import matplotlib.patches as patches
 from mpl_toolkits.mplot3d import Axes3D
 
 from typing import Sequence, Mapping
 from torch.utils.data._utils.collate import default_collate
 
-# user defined parameters
+# User-defined parameters for file directories and model path
 IMAGE_DIR = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
 MASK_DIR = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
 MODEL_PATH = "/home/Student/s4648123/MRI3/best_unet.pth"
+VISUALISE_RESULTS = True
 RANDOM_SEED = 42
 
 
@@ -23,7 +23,6 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 
     Parameters:
     - arr: Input array with categorical values.
-    - num_classes: Total number of classes to ensure consistent channel encoding.
     - dtype: Data type for the output array.
 
     Returns:
@@ -40,6 +39,7 @@ def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
 def load_image_and_label_3D(image_file, label_file, dtype=np.float32):
     """
     Load a 3D medical image and its corresponding label file.
+
     Parameters:
     - image_file: Path to the medical image (non-categorical).
     - label_file: Path to the label file (categorical).
@@ -49,7 +49,6 @@ def load_image_and_label_3D(image_file, label_file, dtype=np.float32):
     - image: 4D NumPy array (1, rows, cols, depth) for the input image.
     - label: 4D NumPy array (channels, rows, cols, depth) for the categorical label.
     """
-
     # Load the image data (non-categorical)
     nifti_image = nib.load(image_file)
     image = nifti_image.get_fdata(caching='unchanged').astype(dtype)
@@ -72,11 +71,18 @@ def load_image_and_label_3D(image_file, label_file, dtype=np.float32):
 
 
 def get_images():
+    """
+    Retrieves and sorts image and mask file paths from the specified directories.
+
+    Returns:
+    - A tuple of two numpy arrays: sorted image file paths and sorted mask file paths.
+    """
+
     def extract_keys(file_path):
         parts = os.path.basename(file_path).split('_')
         return parts[0], str(parts[1])[-1]
 
-    # List of image and mask filepaths
+    # List of image and mask file paths
     image_files = [os.path.join(IMAGE_DIR, fname) for fname in os.listdir(IMAGE_DIR) if fname.endswith('.nii.gz')]
     mask_files = [os.path.join(MASK_DIR, fname) for fname in os.listdir(MASK_DIR) if fname.endswith('.nii.gz')]
     image_files, mask_files = sorted(image_files, key=extract_keys), sorted(mask_files, key=extract_keys)
@@ -86,13 +92,7 @@ def get_images():
 
 def collate_batch(batch: Sequence):
     """
-    Enhancement for PyTorch DataLoader default collate.
-    If dataset already returns a list of batch data that generated in transforms, need to merge all data to 1 list.
-    Then it's same as the default collate behavior.
-
-    Note:
-        Need to use this collate if apply some transforms that can generate batch data.
-
+    Ensures that data collates correctly after Monai transformations
     """
     elem = batch[0]
     data = [i for k in batch for i in k] if isinstance(elem, list) else batch
@@ -100,16 +100,18 @@ def collate_batch(batch: Sequence):
     if isinstance(elem, Mapping):
         batch_list = {}
         for k in elem:
-            key = k
-            data_for_batch = [d[key] for d in data]
-            batch_list[key] = collate_fn(data_for_batch)
+            data_for_batch = [d[k] for d in data]
+            batch_list[k] = collate_fn(data_for_batch)
     else:
         batch_list = collate_fn(data)
     return batch_list
 
 
-# # PLOTTING METHODS
+# PLOTTING METHODS
 def plot_and_save(x, y_data, labels, title, xlabel, ylabel, filename):
+    """
+    Plot multiple data series and save the figure to a file.
+    """
     plt.figure()
     for y, label in zip(y_data, labels):
         plt.plot(x, y, label=label)
@@ -120,10 +122,18 @@ def plot_and_save(x, y_data, labels, title, xlabel, ylabel, filename):
     plt.grid(True)
     plt.savefig(filename)
     plt.close()
-import numpy as np
-import matplotlib.pyplot as plt
+    return
 
-def visualise_slices(images, targets, preds):
+
+def visualise_slices(images: np.ndarray, targets: np.ndarray, preds: np.ndarray):
+    """
+    Visualize slices of images, target labels, and predictions in a grid layout.
+
+    Parameters:
+    - images: Input images with shape (batch_size, channels, height, width, depth).
+    - targets: One-hot encoded target labels with shape (batch_size, channels, height, width, depth).
+    - preds: One-hot encoded model predictions with shape (batch_size, channels, height, width, depth).
+    """
     # Get the batch size
     batch_size = images.shape[0]
 
@@ -136,9 +146,9 @@ def visualise_slices(images, targets, preds):
 
     for i in range(batch_size):
         # Define the center slices for each dimension
-        z_center = images.shape[4] // 2  # depth axis (fixed z-axis)
-        y_center = images.shape[2] // 2  # height axis (fixed y-axis)
-        x_center = images.shape[3] // 2  # width axis (fixed x-axis)
+        z_center = images.shape[4] // 2  # Depth axis (fixed z-axis)
+        y_center = images.shape[2] // 2  # Height axis (fixed y-axis)
+        x_center = images.shape[3] // 2  # Width axis (fixed x-axis)
 
         # Extract and rotate slices for the input image
         image_slices = [
@@ -187,36 +197,39 @@ def visualise_slices(images, targets, preds):
 
     return
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import patches
-from matplotlib.animation import FuncAnimation
 
-def animate_segmentation(images, predictions, filename='segmentation_animation.gif'):
+def animate_segmentation(images: np.ndarray, labels: np.ndarray, predictions: np.ndarray,
+                         filename='segmentation_animation.gif'):
     """
     Animate through an aerial view of the input image and the predicted segmentation.
 
     Args:
-        images (torch.Tensor): Input images with shape (batch_size, channels, height, width, depth).
-        predictions (torch.Tensor): Model predictions with shape (batch_size, classes, height, width, depth).
-        filename (str): The name of the output GIF file.
+        images (np.ndarray): Input images with shape (batch_size, channels, height, width, depth).
+        labels (np.ndarray): Input images with shape (batch_size, channels, height, width, depth).
+        predictions (np.ndarray): Model predictions with shape (batch_size, channels, height, width, depth).
+        filename (str): Output filename for the GIF animation.
     """
-    # Get the number of slices and their dimensions
-    num_slices = images.shape[4]  # Depth of the image
-    num_classes = predictions.shape[1]  # Number of classes in the prediction
 
-    # Create an array for grayscale predictions
-    grayscale_predictions = np.zeros((predictions.shape[0], predictions.shape[2], predictions.shape[3], predictions.shape[4]))
+    # Get the number of slices and their dimensions
+    num_slices = images.shape[4]
+    num_classes = predictions.shape[1]
+
+    # Create an array for grayscale predictions/labels
+    grayscale_preds = np.zeros(
+        (predictions.shape[0], predictions.shape[2], predictions.shape[3], predictions.shape[4]))
+    grayscale_labels = np.zeros((labels.shape[0], labels.shape[2], labels.shape[3], labels.shape[4]))
 
     # Create grayscale images from one-hot encoding
     for i in range(predictions.shape[0]):
-        grayscale_predictions[i] = np.argmax(predictions[i], axis=0)
+        grayscale_preds[i] = np.argmax(predictions[i], axis=0)
+        grayscale_labels[i] = np.argmax(labels[i], axis=0)
 
     # Normalize grayscale predictions to range [0, 1] based on number of classes
-    grayscale_predictions /= (num_classes - 1)
+    grayscale_preds /= (num_classes - 1)
+    grayscale_labels /= (num_classes - 1)
 
     # Set up the figure and axes
-    fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(15, 5))  # Increase width for better spacing
+    fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(13, 5))
     for ax in axs:
         ax.axis('off')  # Turn off the axes
 
@@ -227,17 +240,15 @@ def animate_segmentation(images, predictions, filename='segmentation_animation.g
 
         # Plot input image on the left (first channel) rotated 90 degrees
         axs[0].imshow(np.rot90(images[0, 0, :, :, frame]), cmap='gray', vmin=0, vmax=1)
-        axs[0].set_title('Input Image', fontsize=12)
+        axs[0].set_title('Input Image', fontsize=18)
+
+        # Plot the label segmentation on the right rotated 90 degrees
+        axs[1].imshow(np.rot90(grayscale_labels[0, :, :, frame]), cmap='gray', vmin=0, vmax=1)
+        axs[1].set_title('Actual Segmentation', fontsize=18)
 
         # Plot the predicted segmentation on the right rotated 90 degrees
-        axs[2].imshow(np.rot90(grayscale_predictions[0, :, :, frame]), cmap='gray', vmin=0, vmax=1)
-        axs[2].set_title('Predicted Segmentation', fontsize=12)
-
-        # Create an arrow that points from the input image to the predicted segmentation
-        arrow = patches.FancyArrowPatch((0.3, 0.5), (0.7, 0.5), mutation_scale=20, color='black', lw=2)
-        axs[1].add_patch(arrow)
-
-        plt.tight_layout()  # Adjust layout to minimize padding
+        axs[2].imshow(np.rot90(grayscale_preds[0, :, :, frame]), cmap='gray', vmin=0, vmax=1)
+        axs[2].set_title('Predicted Segmentation', fontsize=18)
 
     # Create animation
     ani = FuncAnimation(fig, update, frames=num_slices, repeat=False)
@@ -247,26 +258,25 @@ def animate_segmentation(images, predictions, filename='segmentation_animation.g
     plt.close(fig)
     return
 
-
-
-def animate_3d_segmentation(predictions, filename='3d_segmentation_animation.gif'):
+def animate_3d_segmentation(labels: np.ndarray, filename='3d_segmentation_animation.gif'):
     """
-    Animate the last 4 classes of the predicted segmentation in a rotating invisible 3D plot.
+    Animate the last 4 classes of the segmentation in a rotating 3D plot.
 
     Args:
-        predictions (torch.Tensor): Model predictions with shape (batch_size, classes, depth, height, width).
+        labels (np.ndarray): One-hot encoded segmented data with shape (batch_size, classes, height, width, depth).
         filename (str): The name of the output GIF file.
     """
-    last_4_classes = predictions[:, -4:, :, :, :]  # Select the last 4 classes
+    # Select the first image in the batch and the last 4 classes
+    last_4_classes = labels[0, -4:, :, :, :]  # Shape: (4, height, width, depth)
 
     # Get dimensions
-    num_classes = last_4_classes.shape[1]  # Number of classes (4)
-    depth, height, width = last_4_classes.shape[2], last_4_classes.shape[3], last_4_classes.shape[4]
+    num_classes = last_4_classes.shape[0]  # Number of classes (4)
+    height, width, depth = last_4_classes.shape[1], last_4_classes.shape[2], last_4_classes.shape[3]
 
     # Create a meshgrid for the 3D plot
-    x = np.linspace(0, width - 1, width)
-    y = np.linspace(0, height - 1, height)
-    z = np.linspace(0, depth - 1, depth)
+    x = np.arange(width)
+    y = np.arange(height)
+    z = np.arange(depth)
     x, y, z = np.meshgrid(x, y, z, indexing='ij')
 
     # Set up the figure and 3D axis
@@ -275,25 +285,30 @@ def animate_3d_segmentation(predictions, filename='3d_segmentation_animation.gif
 
     # Function to plot each class
     def plot_classes(ax, class_data):
-        ax.clear()
+        ax.clear()  # Clear the axis for the new frame
         ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_zticks([])
 
+        # Hide the axis
+        ax.set_axis_off()
+
         # Define shades of gray for the classes
-        gray_colors = [0.3, 0.5, 0.7, 0.9]  # Dark to light gray
+        shades = [0.3, 0.5, 0.7, 0.9]
 
         # Plot each class
         for i in range(num_classes):
             # Create a mask for the current class
             mask = class_data[i] > 0  # Boolean mask for the current class
-            ax.scatter(x[mask], y[mask], z[mask], alpha=0.5, s=1, color=(gray_colors[i],) * 3, label=f'Class {i + 1}')
+            if np.any(mask):
+                points = ax.scatter(x[mask], y[mask], z[mask], s=1)  # Create scatter plot
+                points.set_facecolor((shades[i], shades[i], shades[i], 0.5))
 
     # Update function for animation
     def update(frame):
-        ax.view_init(elev=10, azim=frame)  # Rotate around the azimuth angle
-        plot_classes(ax, last_4_classes[0])  # Plot classes for the first image in the batch
+        ax.view_init(elev=20, azim=frame)  # Rotate around the azimuth angle
+        plot_classes(ax, last_4_classes)
         return ax,
 
     # Create animation
@@ -302,4 +317,5 @@ def animate_3d_segmentation(predictions, filename='3d_segmentation_animation.gif
     # Save the animation as a GIF
     ani.save(filename, writer='pillow', fps=10)
     plt.close(fig)
+
     return

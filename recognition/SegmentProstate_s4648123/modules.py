@@ -2,9 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-def conv_block(in_channels, out_channels):
-    # Defines a convolutional block with two convolutions, each followed by BN and ReLU
+def conv_block(in_channels, out_channels) -> nn.Sequential:
+    """
+    Creates a convolutional block consisting of two convolutional layers followed by batch normalization
+    and ReLU activation.
+    """
     return nn.Sequential(
         nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
         nn.BatchNorm3d(out_channels),
@@ -16,7 +18,15 @@ def conv_block(in_channels, out_channels):
 
 
 class UNet3D(nn.Module):
-    def __init__(self, in_channel=1, out_channel=6):
+    """
+    A 3D U-Net architecture for volumetric data segmentation.
+
+    Args:
+        in_channel (int): Number of input channels. Default is 1.
+        out_channel (int): Number of output channels (classes). Default is 6.
+    """
+
+    def __init__(self, in_channel= 1, out_channel= 6) -> None:
         super(UNet3D, self).__init__()
 
         # Analysis Path
@@ -38,7 +48,17 @@ class UNet3D(nn.Module):
         # Output layer
         self.output_conv = nn.Conv3d(32, out_channel, kernel_size=1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass through the network.
+
+        Args:
+            x (torch.Tensor): Input tensor with shape (B, C, H, W, D), where B is the batch size, C is the number of
+                            channels, H is the height, W is the width, and D is the depth.
+
+        Returns:
+            torch.Tensor: Output tensor after passing through the U-Net.
+        """
         # Analysis path with skip connections
         enc1 = self.encoder1(x)
         enc2 = self.encoder2(F.max_pool3d(enc1, kernel_size=2, stride=2))

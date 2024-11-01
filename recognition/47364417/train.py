@@ -67,3 +67,24 @@ def train_model():
         train_accs.append(epoch_acc.item())
 
         print(f'Epoch [{epoch}/{num_epochs}] - Train loss: {epoch_loss:.4f}, Acc: {epoch_acc:.2f}%')
+
+        model.eval()
+        val_running_loss, val_running_corrects, val_total_samples = 0.0, 0, 0
+
+        with torch.no_grad():
+            for inputs, labels in dataloaders['val']:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+                with torch.cuda.amp.autocast():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
+
+                _, preds = torch.max(outputs, 1)
+                val_running_loss += loss.item() * inputs.size(0)
+                val_running_corrects += torch.sum(preds == labels.data)
+                val_total_samples += inputs.size(0)
+
+        val_epoch_loss = val_running_loss / val_total_samples
+        val_epoch_acc = val_running_corrects.double() / val_total_samples * 100
+        print(f'Validation loss: {val_epoch_loss:.4f}, Acc: {val_epoch_acc:.2f}%')

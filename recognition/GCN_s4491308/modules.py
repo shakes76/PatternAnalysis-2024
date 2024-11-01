@@ -3,6 +3,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
+import torch.nn as nn 
 
 
 # defining a GCN layer as a separate class 
@@ -10,9 +11,12 @@ class GCNLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(GCNLayer, self).__init__()
         self.conv = GCNConv(in_channels, out_channels)
+        #adding batch normalisation to stabalise training
+        self.bn =nn.BatchNorm1d(out_channels)
 
     def forward(self, x, edge_index):
         x = self.conv(x, edge_index)
+        x = self.bn(x)
         x = x.relu()
         return x 
 class GCN(torch.nn.Module):

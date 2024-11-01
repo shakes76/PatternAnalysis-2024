@@ -2,10 +2,7 @@
 
 ## Overview
 
-Melanoma is one of the most aggressive forms of skin cancer, and early detection significantly increases survival rates. This project leverages the YOLO11 (You Only Look Once) deep learning algorithm by Ultralytics to automatically detect melanoma in dermoscopic images. YOLO11 is a cutting-edge object detection model that can detect multiple objects within an image in real time. This project adapts YOLO11 for binary classification of skin lesions as either *melanoma* or *benign*, making it a powerful tool for aiding in early skin cancer diagnosis. The project detects lesions within the ISIC 2017/8 data set with all detections having a minimum Intersection Over Union of 0.8 on the test set and a suitable accuracy for classification.
-
-
-
+Melanoma is one of the most aggressive forms of skin cancer, and early detection can significantly increase survival rates. This project leverages the YOLO11 (You Only Look Once) deep learning algorithm by Ultralytics to automatically detect melanoma in dermoscopic images, distinguishing it from other skin conditions like benign lesions and nevus. YOLO11 is a state-of-the-art object detection model. 
 
 
 *Figure: Sample output of YOLO11 detecting melanoma in a dermoscopic image*
@@ -41,6 +38,8 @@ The model was trained on the ISIC (International Skin Imaging Collaboration) dat
 - **Validation Set**: 20% of the data
 - **Testing Set**: 10% of the data
 
+<img width="452" alt="image" src="https://github.com/user-attachments/assets/63603c7f-6a5d-419f-8472-81e105ee35ca">
+
 This split ensures the model has a sufficient amount of data for learning while keeping a balanced validation and testing set for evaluating performance.
 
 ### Pre-Processing
@@ -57,7 +56,6 @@ For more details on the dataset and augmentation methods, refer to the [ISIC Arc
 To train the YOLO11 model, we use transfer learning from a pre-trained checkpoint, fine-tuning it on the melanoma dataset for 50 epochs. The training configuration is specified in the `melanoma.yaml` file, where the dataset paths and class names are defined.
 
 In the training set, these images are associated with various labels. 
-<img width="452" alt="image" src="https://github.com/user-attachments/assets/63603c7f-6a5d-419f-8472-81e105ee35ca">
 
 
 ### Example Training Command

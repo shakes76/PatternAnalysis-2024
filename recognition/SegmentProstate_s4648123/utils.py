@@ -270,7 +270,7 @@ def animate_3d_segmentation(labels: np.ndarray, filename='3d_segmentation_animat
     last_4_classes = labels[0, -4:, :, :, :]  # Shape: (4, height, width, depth)
 
     # Get dimensions
-    num_classes = last_4_classes.shape[0]  # Number of classes (4)
+    num_classes = 4
     height, width, depth = last_4_classes.shape[1], last_4_classes.shape[2], last_4_classes.shape[3]
 
     # Create a meshgrid for the 3D plot
@@ -283,39 +283,28 @@ def animate_3d_segmentation(labels: np.ndarray, filename='3d_segmentation_animat
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    # Function to plot each class
-    def plot_classes(ax, class_data):
-        ax.clear()  # Clear the axis for the new frame
-        ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
+    # Define shades of gray for the classes
+    gray_colors = [0.40, 0.85, 0.70, 0.55]
 
-        # Hide the axis
-        ax.set_axis_off()
+    # Plot each class once
+    for i in reversed(range(num_classes)):
+        # Create a mask for the current class
+        mask = last_4_classes[i] > 0  # Boolean mask for the current class
+        scatter = ax.scatter(x[mask], y[mask], z[mask], alpha=0.65, s=5, color=(gray_colors[i],) * 3)
 
-        # Define shades of gray for the classes
-        shades = [0.3, 0.5, 0.7, 0.9]
-
-        # Plot each class
-        for i in range(num_classes):
-            # Create a mask for the current class
-            mask = class_data[i] > 0  # Boolean mask for the current class
-            if np.any(mask):
-                points = ax.scatter(x[mask], y[mask], z[mask], s=1)  # Create scatter plot
-                points.set_facecolor((shades[i], shades[i], shades[i], 0.5))
+    ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+    ax.set_axis_off()  # Hide the axis
 
     # Update function for animation
-    def update(frame):
+    def rotate(frame):
         ax.view_init(elev=20, azim=frame)  # Rotate around the azimuth angle
-        plot_classes(ax, last_4_classes)
-        return ax,
 
     # Create animation
-    ani = FuncAnimation(fig, update, frames=np.arange(0, 360, 5), repeat=False)
+    ani = FuncAnimation(fig, rotate, frames=np.arange(0, 360, 5), repeat=False)
 
     # Save the animation as a GIF
-    ani.save(filename, writer='pillow', fps=10)
+    ani.save(filename, writer='pillow', fps=8)
     plt.close(fig)
-
-    return

@@ -33,9 +33,11 @@ def build_model(input_shape=(224,224,3)):
     inputs = tf.keras.Input(shape=input_shape)
 
     x = tf.keras.Sequential([
-        layers.RandomRotation(0.1),
+        layers.RandomRotation(0.2),
         layers.RandomFlip("horizontal"),
-        layers.RandomZoom(0.1)
+        layers.RandomZoom(0.2),
+        layers.RandomContrast(0.2),
+        layers.RandomBrightness(0.2),
     ])(inputs)
 
     # EfficientNetB0 serves as the base feature extractor

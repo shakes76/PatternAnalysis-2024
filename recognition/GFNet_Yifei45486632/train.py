@@ -1,92 +1,194 @@
-from modules import build_model
-from dataset import get_test_dataset, get_train_validation_dataset
-import tensorflow as tf
-import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
 import matplotlib.pyplot as plt
+from torchvision import models
+from torch.utils.data import DataLoader, random_split
+from torchvision import transforms
+from tqdm import tqdm
+from dataset import CustomImageDataset
+from modules import GFNet
+from functools import partial
+import os
+import numpy as np
 
-# Clear any existing session state
-tf.keras.backend.clear_session()
+# Defining devices
+batch_size = 32
 
-# Configure GPU memory growth
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-    except RuntimeError as e:
-        print(e)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
-print(tf.__version__)
-print(tf.config.list_physical_devices('GPU'))
 
-# Loading training data and test data
-print("Loading training data and test data...")
-train_dataset, val_dataset = get_train_validation_dataset()
-test_dataset = get_test_dataset()
+def auto_crop_black_edges(image, threshold=5):
+    """
+    Adaptively crop the black background of the image.
 
-# Build model
-print("Building model...")
-model = build_model()
-model.compile(# optimizer='adam',
-              optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+    Parameters:
+    -image: PIL Image object
+    -threshold: This is the threshold of the gray value below which the region is considered black
 
-# Define callback function
-print("Setting up callbacks...")
-callbacks = [
-    tf.keras.callbacks.EarlyStopping(patience=5,
-                                     monitor='val_accuracy',
-                                     mode='max',
-                                     restore_best_weights=False),
+    Returns:
+    - Cropped PIL Image object
+    """
+    # Convert the image to grayscale mode and convert to numpy array
+    grayscale_image = image.convert("L")
+    np_image = np.array(grayscale_image)
+    
+    # Find all regions where the pixel value is greater than the threshold
+    mask = np_image > threshold
+    
+    # Find all regions where the pixel value is greater than the threshold
+    mask = np_image > threshold
+    
+    # Find the boundary of the non-black region
+    coords = np.argwhere(mask)
+    if coords.size == 0:
+        # If it is all black, the original image is returned
+        return image
+    
+    # Getting boundary coordinates
+    y_min, x_min = coords.min(axis=0)
+    y_max, x_max = coords.max(axis=0)
+    
+    # Cropping the image
+    cropped_image = image.crop((x_min, y_min, x_max + 1, y_max + 1))
+    
+    return cropped_image
 
-    tf.keras.callbacks.ModelCheckpoint('best_mode.keras', 
-                                     save_best_only=True, 
-                                     monitor='val_accuracy')
-]
+# Define the dataset catalog and transformation
+directory = "./train"
+save_dir = "./models"
 
-# Training model
-print("Start model training...")
-with tf.device('/GPU:0'):
-    history = model.fit(
-        train_dataset,  
-        epochs=50,
-        validation_data=val_dataset,
-        callbacks=callbacks,
-        verbose=1
-    )
-print("Model training completed.")
+# Define the data augmentation transformation
+# train_transform = transforms.Compose([
+#     transforms.Lambda(lambda img: auto_crop_black_edges(img)),  
+#     transforms.Resize((224, 224)),                              
+#     transforms.RandomHorizontalFlip(),
+#     transforms.RandomRotation(20),
+#     transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+#     transforms.ColorJitter(contrast=0.2, brightness=0.2),
+#     transforms.ToTensor(),
+#     transforms.RandomErasing()
+# ])
 
-print("Evaluating model on test data...")
-test_loss, test_accuracy = model.evaluate(test_dataset)
-print(f"Test loss: {test_loss}")
-print(f"Test accuracy: {test_accuracy}")
+train_transform = transforms.Compose([
+    transforms.Lambda(lambda img: auto_crop_black_edges(img)),
+    transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(contrast=(1.2, 1.2)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5]),
+])
 
-# Save the trained model
-model.save('final_model.keras')
-print("Model saved as final_model.keras")
+val_transform = transforms.Compose([
+    transforms.Lambda(lambda img: auto_crop_black_edges(img)),  # 自适应裁剪
+    transforms.Resize((224, 224)),     
+    transforms.ColorJitter(contrast=(1.2, 1.2)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5]),   
+])
 
-# Plot and save loss curve
-plt.figure(figsize=(10, 6))
-plt.plot(history.history['loss'], label='train loss')
-plt.plot(history.history['val_loss'], label='val loss')
-plt.title('Loss Curve')
-plt.xlabel('Epochs')
+train_dataset = CustomImageDataset(directory='./train', transform=train_transform)
+val_dataset = CustomImageDataset(directory='./test', transform=val_transform)
+
+# Define the data loader
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+model = GFNet(
+    img_size=224, 
+    patch_size=16, in_chans=3, num_classes=2,
+    embed_dim=256, depth=10, mlp_ratio=4, drop_path_rate=0.15,
+    norm_layer=partial(nn.LayerNorm, eps=1e-6)
+)
+
+if torch.cuda.device_count() > 1:
+    print(f"Using {torch.cuda.device_count()} GPUs!")
+    model = nn.DataParallel(model)  # 使用 DataParallel
+
+model.to(device)
+
+# Define the loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+
+# Training and validation
+num_epochs = 20
+train_losses, val_losses = [], []
+train_accuracies, val_accuracies = [], []
+
+for epoch in range(num_epochs):
+    # Training
+    model.train()
+    train_loss = 0
+    correct = 0
+    total = 0
+    for images, labels in tqdm(train_loader, desc=f"Training Epoch {epoch+1}/{num_epochs}"):
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        
+        train_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total += labels.size(0)
+        correct += predicted.eq(labels).sum().item()
+        
+    train_losses.append(train_loss / len(train_loader))
+    train_accuracies.append(100. * correct / total)
+    
+    # Validation
+    model.eval()
+    val_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in tqdm(val_loader, desc=f"Validation Epoch {epoch+1}/{num_epochs}"):
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            
+            val_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
+            
+    val_losses.append(val_loss / len(val_loader))
+    val_accuracies.append(100. * correct / total)
+
+    print(f"Epoch [{epoch+1}/{num_epochs}], "
+          f"Train Loss: {train_losses[-1]:.4f}, Train Acc: {train_accuracies[-1]:.2f}%, "
+          f"Val Loss: {val_losses[-1]:.4f}, Val Acc: {val_accuracies[-1]:.2f}%")
+    
+     # Save model
+    checkpoint_path = os.path.join(save_dir, f"model_epoch_{epoch+1}.pth")
+    torch.save({
+        'epoch': epoch + 1,
+        'model_state_dict': model.state_dict(),
+    }, checkpoint_path)
+    print(f"Model saved to {checkpoint_path}")
+
+# Plot the loss and accuracy curves
+epochs = range(1, num_epochs + 1)
+
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(epochs, train_losses, label='Train Loss')
+plt.plot(epochs, val_losses, label='Val Loss')
+plt.xlabel('Epoch')
 plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
 plt.legend()
-plt.savefig('loss_curve.png')
-plt.close()
 
-# Plot and save accuracy curve
-plt.figure(figsize=(10, 6))
-plt.plot(history.history['accuracy'], label='train accuracy')
-plt.plot(history.history['val_accuracy'], label='val accuracy')
-plt.title('Accuracy Curve')
-plt.xlabel('Epochs')
+plt.subplot(1, 2, 2)
+plt.plot(epochs, train_accuracies, label='Train Accuracy')
+plt.plot(epochs, val_accuracies, label='Val Accuracy')
+plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
+plt.title('Training and Validation Accuracy')
 plt.legend()
-plt.savefig('accuracy_curve.png')
-plt.close()
 
-# Training end
-print("Training plots have been saved as 'loss_curve.png' and 'accuracy_curve.png'")
+plt.tight_layout()
+plt.show()

@@ -1,17 +1,9 @@
 
 # Using a 3D UNet to segment MR images of the male pelvis
-The task is to segment the down-sampled Prostate 3D dataset (Dowling & Greer, 2021) using a 3D U-Net model based on the architecture detailed by Çiçek et al. (2016) in the paper *3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation*. The objective is to achieve a minimum Dice similarity coefficient of 0.7 for all labels on the test set. There are a total of 6 labels: (1) Background, (2) Body, (3) Bones, (4) Bladder, (5) Rectum and (6) Prostate. Below is an example of the 3D MRI segmentation prediction from the U-Net, specifically showing the Bones, Bladder, Rectum and Prostate classes:
-
+The task is to segment the down-sampled Prostate 3D dataset (Dowling & Greer, 2021) using a 3D U-Net model based on the architecture detailed by Çiçek et al. (2016) in the paper *3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation*. The objective is to achieve a minimum Dice similarity coefficient of 0.7 for all labels on the test set. There are a total of 6 labels: (1) Background, (2) Body, (3) Bones, (4) Bladder, (5) Rectum and (6) Prostate. Below is an example of the 3D MRI segmentation prediction from the U-Net, compared to the original MRI and the labelled data:
 
 <div align="center">
-  <div style="display: inline-block; text-align: center;">
-    <img src="images/3d_labels.gif" width="500"/>
-    <div>Label</div>
-  </div>
-  <div style="display: inline-block; text-align: center;">
-    <img src="images/3d_predictions.gif" width="500"/>
-    <div>Prediction</div>
-  </div>
+  <img src="images/segmentation_animation.gif" width="800"/>
 </div>
 
 ---
@@ -22,7 +14,7 @@ The task is to segment the down-sampled Prostate 3D dataset (Dowling & Greer, 20
 - Mathplotlib 3.9.2
 - nibabel 5.3.2
 
-After the imports in utils.py, you will find several user-defined parameters that can be adjusted as needed:
+After the imports in config.py, you will find several user-defined parameters that can be adjusted as needed:
 ```python
 # user defined parameters
 IMAGE_DIR="/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
@@ -104,8 +96,14 @@ The following image shows the centre slice along all 3 planes of the 3D image, w
   <img src="images/segmentation_visualization.png" width="600"/>
 </div>
 
-However, this is just a snippet of the 3D image. We can also view the whole segmentation by comparing all frames 
-along the x-y plane:
-<div align="center">
-  <img src="images/segmentation_animation.gif" width="800"/>
-</div>
+The U-Net segmentation results show a strong alignment between the predicted and labeled segmentations across all three planes (axial, coronal, and sagittal) of the 3D image. The model accurately identifies key structures, with minimal discrepancies in boundary regions, suggesting that it effectively captures the anatomical features. However, there are differences in the coronal and sagittal views, particularly for the body class, indicating areas for further refinement to improve boundary accuracy in those planes. The full segmentation for this particular image, can be seen at the start of this file, as it traverses through all the frames on the axial plane. In this animation we see the model struggled most at the lowest and highest layers (at the edges of the image), this could be improved by adjusting the data augmentation further, for example widening the crop size in RandCropByLabelClassesd, adding padding to the image before making crops and using a mixture of cropped sub-samples and non-cropped sample.
+
+
+## References
+Çiçek, Ö., Abdulkadir, A., Lienkamp, Soeren S, Brox, T., & Ronneberger, O. (2016). 3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation. ArXiv.org. https://arxiv.org/abs/1606.06650
+
+Dowling, J., & Greer, P. (2021). Labelled weekly MR images of the male pelvis. v2. CSRIO. Database Collection. https://doi.org/doi.org/10.25919/45t8-p065
+
+MONAI Consortium. (2024). MONAI 1.4.0 Documentation. Docs.monai.io. https://docs.monai.io/en/latest/api.html
+
+Nunez-Iglesias, J. (2017, April 19). Viewing 3D Volumetric Data With Matplotlib. Datacamp.com; DataCamp. https://www.datacamp.com/tutorial/matplotlib-3d-volumetric-data

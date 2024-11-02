@@ -8,13 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from typing import Sequence, Mapping
 from torch.utils.data._utils.collate import default_collate
-
-# User-defined parameters for file directories and model path
-IMAGE_DIR = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
-MASK_DIR = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
-MODEL_PATH = "/home/Student/s4648123/MRI3/best_unet.pth"
-VISUALISE_RESULTS = True
-RANDOM_SEED = 42
+from config import IMAGE_DIR, MASK_DIR
 
 
 def to_channels(arr: np.ndarray, dtype=np.uint8) -> np.ndarray:
@@ -257,54 +251,3 @@ def animate_segmentation(images: np.ndarray, labels: np.ndarray, predictions: np
     ani.save(filename, writer='pillow', fps=10)
     plt.close(fig)
     return
-
-def animate_3d_segmentation(labels: np.ndarray, filename='3d_segmentation_animation.gif'):
-    """
-    Animate the last 4 classes of the segmentation in a rotating 3D plot.
-
-    Args:
-        labels (np.ndarray): One-hot encoded segmented data with shape (batch_size, classes, height, width, depth).
-        filename (str): The name of the output GIF file.
-    """
-    # Select the first image in the batch and the last 4 classes
-    last_4_classes = labels[0, -4:, :, :, :]  # Shape: (4, height, width, depth)
-
-    # Get dimensions
-    num_classes = 4
-    height, width, depth = last_4_classes.shape[1], last_4_classes.shape[2], last_4_classes.shape[3]
-
-    # Create a meshgrid for the 3D plot
-    x = np.arange(width)
-    y = np.arange(height)
-    z = np.arange(depth)
-    x, y, z = np.meshgrid(x, y, z, indexing='ij')
-
-    # Set up the figure and 3D axis
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Define shades of gray for the classes
-    gray_colors = [0.40, 0.85, 0.70, 0.55]
-
-    # Plot each class once
-    for i in reversed(range(num_classes)):
-        # Create a mask for the current class
-        mask = last_4_classes[i] > 0  # Boolean mask for the current class
-        ax.scatter(x[mask], y[mask], z[mask], alpha=0.65, s=5, color=(gray_colors[i],) * 3)
-
-    ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_zticks([])
-    ax.set_axis_off()  # Hide the axis
-
-    # Update function for animation
-    def rotate(frame):
-        ax.view_init(elev=20, azim=frame)  # Rotate around the azimuth angle
-
-    # Create animation
-    ani = FuncAnimation(fig, rotate, frames=np.arange(0, 360, 5), repeat=False)
-
-    # Save the animation as a GIF
-    ani.save(filename, writer='pillow', fps=8)
-    plt.close(fig)

@@ -6,14 +6,13 @@ import matplotlib.pyplot as plt
 from modules import LesionDetectionModel
 from dataset import ISICDataset
 import os
-
-os.environ['TORCH_HOME'] = '/home/Student/s4760436/torch_cache'
+from torch.utils.data import Subset
 
 # Hyperparameters and configuration
-NUM_EPOCHS = 10
-BATCH_SIZE = 16
+NUM_EPOCHS = 1
+BATCH_SIZE = 4 
 LEARNING_RATE = 0.001
-DEVICE = 'cpu' if not torch.cuda.is_available() else 'cuda'  # Set to CPU if CUDA is unavailable
+DEVICE = 'cpu' if not torch.cuda.is_available() else 'cuda'
 MODEL_SAVE_PATH = 'model_checkpoints'
 
 # Ensuring the model save directory exists
@@ -22,23 +21,24 @@ os.makedirs(MODEL_SAVE_PATH, exist_ok=True)
 # Loading Model and Data
 model = LesionDetectionModel(model_weights='yolov7.pt', device=DEVICE).model
 criterion = nn.BCEWithLogitsLoss()  
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=LEARNING_RATE)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
 # Loading training and validation datasets
 train_dataset = ISICDataset(
-    img_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1-2_Training_Input_x2',
-    annot_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1_Training_GroundTruth_x2',
+    img_dir='/home/Student/s4760436/recognition/YOLO-47604364/ISIC2018/ISIC2018/ISIC2018_Task1-2_Training_Input_x2',
+    annot_dir='/home/Student/s4760436/recognition/YOLO-47604364/ISIC2018/ISIC2018/ISIC2018_Task1_Training_GroundTruth_x2',
     mode='train'
 )
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+train_dataset = Subset(train_dataset, range(100))  # Use first 100 samples
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
 val_dataset = ISICDataset(
-    img_dir='/home/groups/comp3710/ISIC2018/ISIC2018_Task1-2_Test_Input',
+    img_dir='/home/Student/s4760436/recognition/YOLO-47604364/ISIC2018/ISIC2018/ISIC2018_Task1-2_Test_Input',
     mode='test'
 )
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+val_dataset = Subset(val_dataset, range(20))      # Use first 20 samples
 
 # Lists to store loss and accuracy for plotting
 train_losses, val_losses = [], []
@@ -63,7 +63,6 @@ def train_one_epoch():
 
     train_losses.append(epoch_loss / len(train_loader))
     return train_losses[-1]
-
         
 def validate():
     """
@@ -74,16 +73,35 @@ def validate():
     num_batches = 0  # Count batches with valid loss
 
     with torch.no_grad():
-        for data in val_loader:
-            images = data[0] if isinstance(data, tuple) else data
+        for batch_idx, data in enumerate(val_loader):
+            # Check if `data` contains both images and targets
+            if isinstance(data, tuple) and len(data) == 2:
+                print(f"Batch {batch_idx}: Targets available.")
+                images, targets = data
+                targets = targets.to(DEVICE)
+            else:
+                images = data
+                targets = None  # No targets in test mode
+                print(f"Batch {batch_idx}: No targets.")
+
             images = images.to(DEVICE)
             outputs = model(images)[0].to(DEVICE)
-            val_loss += criterion(outputs, data[1]).item() if isinstance(data, tuple) else 0
-            num_batches += 1
+
+            # Compute loss only if targets are available
+            if targets is not None:
+                loss = criterion(outputs, targets)
+                val_loss += loss.item()
+                num_batches += 1
+            else:
+                print("Warning: Shape mismatch - skipping batch in validation.")
+
+
     avg_val_loss = val_loss / num_batches if num_batches > 0 else None
     val_losses.append(avg_val_loss)
+    print(f"Validation Loss: {avg_val_loss if avg_val_loss is not None else 'N/A'}")
     return avg_val_loss
 
+#Training Loop 
 for epoch in range(NUM_EPOCHS):
     print(f"Epoch {epoch+1}/{NUM_EPOCHS}")
     train_loss = train_one_epoch()
@@ -91,6 +109,7 @@ for epoch in range(NUM_EPOCHS):
     scheduler.step()
     print(f"Training Loss: {train_loss:.4f}, Validation Loss: {val_loss if val_loss else 'N/A'}")
 
+    # Save model only when validation loss improves
     if val_loss and val_loss < best_val_loss:
         best_val_loss, trigger_times = val_loss, 0
         torch.save(model.state_dict(), os.path.join(MODEL_SAVE_PATH, f"model_epoch_{epoch+1}.pth"))
@@ -101,9 +120,6 @@ for epoch in range(NUM_EPOCHS):
             break
 
 def plot_metrics():
-    """
-    Plot training and validation losses over epochs.
-    """
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, label="Training Loss")
     plt.plot(val_losses, label="Validation Loss")
@@ -112,15 +128,5 @@ def plot_metrics():
     plt.legend()
     plt.show()
 
-    # Training Loop
-    for epoch in range(NUM_EPOCHS):
-        print(f"Epoch {epoch+1}/{NUM_EPOCHS}")
-        train_loss = train_one_epoch()
-        val_loss = validate()
-
-        # Saving the model checkpoint after each epoch
-        torch.save(model.state_dict(), os.path.join(MODEL_SAVE_PATH, f"model_epoch_{epoch+1}.pth"))
-
-    # Plotting the metrics after training
-    plot_metrics()
-
+plot_metrics()
+   

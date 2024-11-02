@@ -3,21 +3,20 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from torchvision import models
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 from dataset import CustomImageDataset
-from modules import GFNet
+from modules import GFNet, GFNetPyramid
 from functools import partial
 import os
 import numpy as np
+import kornia
 
-# Defining devices
-batch_size = 32
-
+# 定义设备
+batch_size = 128
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
-
 
 def auto_crop_black_edges(image, threshold=5):
     """
@@ -30,27 +29,15 @@ def auto_crop_black_edges(image, threshold=5):
     Returns:
     - Cropped PIL Image object
     """
-    # Convert the image to grayscale mode and convert to numpy array
     grayscale_image = image.convert("L")
     np_image = np.array(grayscale_image)
-    
-    # Find all regions where the pixel value is greater than the threshold
     mask = np_image > threshold
-    
-    # Find all regions where the pixel value is greater than the threshold
-    mask = np_image > threshold
-    
-    # Find the boundary of the non-black region
     coords = np.argwhere(mask)
     if coords.size == 0:
-        # If it is all black, the original image is returned
         return image
     
-    # Getting boundary coordinates
     y_min, x_min = coords.min(axis=0)
     y_max, x_max = coords.max(axis=0)
-    
-    # Cropping the image
     cropped_image = image.crop((x_min, y_min, x_max + 1, y_max + 1))
     
     return cropped_image
@@ -58,62 +45,65 @@ def auto_crop_black_edges(image, threshold=5):
 # Define the dataset catalog and transformation
 directory = "./train"
 save_dir = "./models"
+os.makedirs(save_dir, exist_ok=True)
 
 # Define the data augmentation transformation
-# train_transform = transforms.Compose([
-#     transforms.Lambda(lambda img: auto_crop_black_edges(img)),  
-#     transforms.Resize((224, 224)),                              
-#     transforms.RandomHorizontalFlip(),
-#     transforms.RandomRotation(20),
-#     transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
-#     transforms.ColorJitter(contrast=0.2, brightness=0.2),
-#     transforms.ToTensor(),
-#     transforms.RandomErasing()
-# ])
-
 train_transform = transforms.Compose([
     transforms.Lambda(lambda img: auto_crop_black_edges(img)),
     transforms.Resize((224, 224)),
     transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(contrast=(1.2, 1.2)),
+    transforms.RandomRotation(degrees=15),
     transforms.ToTensor(),
+    transforms.Lambda(lambda img: kornia.enhance.equalize_clahe(img, clip_limit=2.0, grid_size=(8,8))),  # CLAHE 增强
+    transforms.Lambda(lambda img: kornia.enhance.adjust_gamma(img, gamma=1.2)),  # Gamma 调整
     transforms.Normalize(mean=[0.5], std=[0.5]),
 ])
 
 val_transform = transforms.Compose([
-    transforms.Lambda(lambda img: auto_crop_black_edges(img)),  # 自适应裁剪
+    transforms.Lambda(lambda img: auto_crop_black_edges(img)),
     transforms.Resize((224, 224)),     
-    transforms.ColorJitter(contrast=(1.2, 1.2)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5]),   
+    transforms.Lambda(lambda img: kornia.enhance.equalize_clahe(img, clip_limit=2.0, grid_size=(8,8))),  # CLAHE 增强
+    transforms.Lambda(lambda img: kornia.enhance.adjust_gamma(img, gamma=1.2)),  # Gamma 调整
+    transforms.Normalize(mean=[0.5], std=[0.5])
 ])
 
-train_dataset = CustomImageDataset(directory='./train', transform=train_transform)
-val_dataset = CustomImageDataset(directory='./test', transform=val_transform)
+# Instantiate the dataset
+dataset = CustomImageDataset(directory='./train')
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+
+train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+train_dataset.dataset.transform = train_transform
+val_dataset.dataset.transform = val_transform
 
 # Define the data loader
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
+
+# Instantiate a model
 model = GFNet(
     img_size=224, 
     patch_size=16, in_chans=3, num_classes=2,
-    embed_dim=256, depth=10, mlp_ratio=4, drop_path_rate=0.15,
+    embed_dim=256, depth=6, mlp_ratio=4, drop_path_rate=0.15,
     norm_layer=partial(nn.LayerNorm, eps=1e-6)
 )
 
+
 if torch.cuda.device_count() > 1:
     print(f"Using {torch.cuda.device_count()} GPUs!")
-    model = nn.DataParallel(model)  # 使用 DataParallel
+    model = nn.DataParallel(model)
 
 model.to(device)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
 
 # Training and validation
-num_epochs = 20
+num_epochs = 50
 train_losses, val_losses = [], []
 train_accuracies, val_accuracies = [], []
 
@@ -162,13 +152,13 @@ for epoch in range(num_epochs):
           f"Train Loss: {train_losses[-1]:.4f}, Train Acc: {train_accuracies[-1]:.2f}%, "
           f"Val Loss: {val_losses[-1]:.4f}, Val Acc: {val_accuracies[-1]:.2f}%")
     
-     # Save model
+    # Save the model for each epoch
     checkpoint_path = os.path.join(save_dir, f"model_epoch_{epoch+1}.pth")
-    torch.save({
-        'epoch': epoch + 1,
-        'model_state_dict': model.state_dict(),
-    }, checkpoint_path)
-    print(f"Model saved to {checkpoint_path}")
+    torch.save(model.state_dict(), checkpoint_path)
+    print(f"Model saved to {checkpoint_path} at epoch {epoch+1}")
+
+    # Update the learning rate scheduler
+    scheduler.step()
 
 # Plot the loss and accuracy curves
 epochs = range(1, num_epochs + 1)

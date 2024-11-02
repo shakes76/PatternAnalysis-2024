@@ -14,7 +14,7 @@ The task is to segment the down-sampled Prostate 3D dataset (Dowling & Greer, 20
 - Mathplotlib 3.9.2
 - nibabel 5.3.2
 
-After the imports in config.py, you will find several user-defined parameters that can be adjusted as needed:
+In config.py, you will find several user-defined parameters that can be adjusted as needed:
 ```python
 # user defined parameters
 IMAGE_DIR="/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"

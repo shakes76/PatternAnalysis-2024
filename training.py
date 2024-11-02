@@ -6,11 +6,10 @@ import matplotlib.pyplot as plt
 from modules import LesionDetectionModel
 from dataset import ISICDataset
 import os
-from torch.utils.data import Subset
 
 # Hyperparameters and configuration
-NUM_EPOCHS = 1
-BATCH_SIZE = 4 
+NUM_EPOCHS = 10
+BATCH_SIZE = 16
 LEARNING_RATE = 0.001
 DEVICE = 'cpu' if not torch.cuda.is_available() else 'cuda'
 MODEL_SAVE_PATH = 'model_checkpoints'
@@ -30,15 +29,14 @@ train_dataset = ISICDataset(
     annot_dir='/home/Student/s4760436/recognition/YOLO-47604364/ISIC2018/ISIC2018/ISIC2018_Task1_Training_GroundTruth_x2',
     mode='train'
 )
-train_dataset = Subset(train_dataset, range(100))  # Use first 100 samples
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
 val_dataset = ISICDataset(
+
     img_dir='/home/Student/s4760436/recognition/YOLO-47604364/ISIC2018/ISIC2018/ISIC2018_Task1-2_Test_Input',
     mode='test'
 )
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
-val_dataset = Subset(val_dataset, range(20))      # Use first 20 samples
 
 # Lists to store loss and accuracy for plotting
 train_losses, val_losses = [], []

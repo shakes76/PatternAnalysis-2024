@@ -5,7 +5,8 @@ import torch
 
 from dataset import get_dataloaders
 from modules import UNet3D
-from utils import plot_and_save, MODEL_PATH, RANDOM_SEED, VISUALISE_RESULTS
+from utils import plot_and_save
+from config import MODEL_PATH, VISUALISE_RESULTS
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 device = torch.device("cuda:0")

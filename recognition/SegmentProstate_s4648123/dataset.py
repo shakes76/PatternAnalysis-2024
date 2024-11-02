@@ -1,5 +1,6 @@
 import numpy as np
-from utils import get_images, collate_batch, load_image_and_label_3D, RANDOM_SEED
+from utils import get_images, collate_batch, load_image_and_label_3D
+from config import RANDOM_SEED
 from monai.transforms import (Compose, ToTensord, RandCropByLabelClassesd, RandFlipd, NormalizeIntensityd, Resized)
 from torch.utils.data import Dataset, DataLoader
 

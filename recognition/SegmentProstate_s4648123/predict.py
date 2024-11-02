@@ -7,7 +7,8 @@ import torch.nn.functional as F
 from dataset import get_test_dataloader
 from modules import UNet3D
 from train import validate, Dice
-from utils import MODEL_PATH, animate_segmentation, animate_3d_segmentation, visualise_slices, VISUALISE_RESULTS
+from utils import (animate_segmentation, animate_3d_segmentation, visualise_slices)
+from config import MODEL_PATH, VISUALISE_RESULTS
 
 if __name__ == '__main__':
     """

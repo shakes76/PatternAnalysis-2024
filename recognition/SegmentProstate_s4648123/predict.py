@@ -52,7 +52,7 @@ if __name__ == '__main__':
             # Create and save visualisations to running directory
             visualise_slices(images, labels, preds)
             animate_segmentation(images, labels, preds)
-            animate_3d_segmentation(labels, "3d_predictions.gif")
+            animate_3d_segmentation(preds, "3d_predictions.gif")
 
     else:
         print("No saved model found, cannot make predictions: try running train.py first")

@@ -1,6 +1,7 @@
 
 # Using a 3D UNet to segment MR images of the male pelvis
-The task is to segment the down-sampled Prostate 3D dataset (Dowling & Greer, 2021) using a 3D U-Net model based on the architecture detailed by Çiçek et al. (2016) in the paper *3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation*. The objective is to achieve a minimum Dice similarity coefficient of 0.7 for all labels on the test set. There are a total of 6 labels: (1) Background, (2) Body, (3) Bones, (4) Bladder, (5) Rectum and (6) Prostate. Below is an example of the 3D MRI segmented, specifically showing the Bones, Bladder, Rectum and Prostate classes:
+The task is to segment the down-sampled Prostate 3D dataset (Dowling & Greer, 2021) using a 3D U-Net model based on the architecture detailed by Çiçek et al. (2016) in the paper *3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation*. The objective is to achieve a minimum Dice similarity coefficient of 0.7 for all labels on the test set. There are a total of 6 labels: (1) Background, (2) Body, (3) Bones, (4) Bladder, (5) Rectum and (6) Prostate. Below is an example of the 3D MRI segmentation prediction from the U-Net, specifically showing the Bones, Bladder, Rectum and Prostate classes:
+
 
 <div align="center">
   <div style="display: inline-block; text-align: center;">

@@ -290,7 +290,7 @@ def animate_3d_segmentation(labels: np.ndarray, filename='3d_segmentation_animat
     for i in reversed(range(num_classes)):
         # Create a mask for the current class
         mask = last_4_classes[i] > 0  # Boolean mask for the current class
-        scatter = ax.scatter(x[mask], y[mask], z[mask], alpha=0.65, s=5, color=(gray_colors[i],) * 3)
+        ax.scatter(x[mask], y[mask], z[mask], alpha=0.65, s=5, color=(gray_colors[i],) * 3)
 
     ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
     ax.set_xticks([])

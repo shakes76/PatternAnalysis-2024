@@ -46,6 +46,7 @@ This indicates that the dataset has a relatively balanced distribution of catego
 ## 3. Model Overview
 
 The structure of a complete GFNet mainly includes frequency domain operations, hierarchical structure, multi-layer global filters, etc. Below is a detailed description of GFNet, including the layers used, activation functions, and optimizer [^1].
+![Model structure](model_structure.png)
 
 ### 3.1 Structure of Model
 

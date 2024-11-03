@@ -45,16 +45,19 @@ This indicates that the dataset has a relatively balanced distribution of catego
 
 ## 3. Model Overview
 
-The structure of a complete GFNet mainly includes frequency domain operations, hierarchical structure, multi-layer global filters, etc. Below is a detailed description of GFNet, including the layers used, activation functions, and optimizer.
+The structure of a complete GFNet mainly includes frequency domain operations, hierarchical structure, multi-layer global filters, etc. Below is a detailed description of GFNet, including the layers used, activation functions, and optimizer [^1].
 
 ### 3.1 Structure of Model
 
-1. **Input layer:** Input shape (224,224,3), which is a standard 224x224 size RGB image;
-2. **Data augmentation layer:** This model uses *RandomRotation*, *RandomFlip*, and *RandomZoom* to increase the diversity of the input images to help the model generalize better;
-3. **Feature extraction layer:** *EfficientNetB0* is used as the backbone feature extractor, where *include_top=False* removes the classification head of the original model and only retains the feature extraction part.
-4. **Global filter layer:** The Global Filter Layer performs frequency domain conversion, global filtering, and inverse frequency domain conversion. A 2D FFT is used to transform the input feature map from the spatial domain to the frequency domain. We apply a learnable frequency domain filter to capture global features by element-wise multiplication (Hadamard product). The processed frequency domain features were returned to the spatial domain by inverse FFT (iFFT) to prepare features for the subsequent classification layer.
-5. **Classification layer:** A fully connected layer is added to the classification layer with an output dimension of 128, an activation function of ReLU, and L2 regularization is used to prevent overfitting. The output of Dense layer is batch normalized to make the model training more stable. *Dropout (rate=0.3)* was used to further prevent overfitting.
-6. **Output layer:** The final output layer is *Dense(2, activation='softmax')*, which is used for binary classification tasks and outputs the probability distribution of the two classes.
+1. **Input layer:** Input shape (224,224,1), which is a standard 224x224 size RGB image;
+2. **Block Embedding Layer:** This model uses the PatchEmbed layer to divide the input image into blocks and embed each block into a higher dimensional space. This is done with a convolutional layer (nn.Conv2d) whose kernel size and step size are set to the patch size (16x16 in this case), resulting in a set of embeddings that can be handled by a transformer-based architecture;
+3. **Position Embedding Layer:** We add a learnable position embedding (pos_embed) to the patch embedding to incorporate spatial information, which is essential for Transformers due to their lack of inherent spatial structure. This position information helps the model learn the relative position of the blocks in the original image;
+4. **Global Filter Layer:** The global filter layer performs the frequency domain transformation. It uses 2D FFT to convert spatial domain features to the frequency domain, where learnable complex weight filters are applied through element-wise multiplication. The modified features are then transformed back into the spatial domain via inverse FFT (iFFT), enabling the model to capture global dependencies;
+5. **Transformer Blocks:** This model consists of multiple block layers (12 by default), each containing Normalization and filtering,descent path and MLP layer;
+6. **Normalization Layer:** After the transformer chunking, a final normalization layer (nn.LayerNorm) is applied to normalize the features prior to classification;
+7. **Classification layer:** If specified, the model contains an optional representation_size layer, which is a fully connected layer with Tanh activation. This amounts to a pre-logits layer that transforms the features before they reach the final classifier head;
+8. **Dropout layer:** An optional Final Dropout (dropcls) is applied before the classification head to prevent overfitting;
+9. **Output Layer:** The final output layer (self.head) is a fully connected layer (nn.Linear) whose size matches the number of categories (1000 by default). Output cross-class probability distribution, suitable for multi-class classification.
 
 ### 3.2 Design and Experimentation
 
@@ -96,19 +99,19 @@ To solve this problem, first the callback function (early stop) is enabled in th
 
 ## 5. Dependencies
 
-Python 3.7 or higher
-
-### 5.1 Major libraries
-
-TensorFlow 2.x
-NumPy
-Matplottlib
-scikit-learn
+```bash
+pip install Python 3.x
+pip install torch
+pip install torchvision
+pip install pillow
+pip install timm
+pip install numpy
+pip install kornia
+```
 
 ### 5.2 GPU support (optional)
 
-CUDA 10.x (The version should match the TensorFlow GPU version)
-cuDNN (The version should match the CUDA and TensorFlow version)S
+CUDA 11.8 (The version should match the TensorFlow GPU version)
 
 ## 6. Reference
 

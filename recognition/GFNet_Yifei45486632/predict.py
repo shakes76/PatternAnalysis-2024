@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-epoch = 4
+epoch = 23
 test_data_dir = "./test"  
 checkpoint_path = f"./models/model_epoch_{epoch}.pth" 
 

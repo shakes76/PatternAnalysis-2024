@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 from dataset import CustomImageDataset
-from modules import GFNet, GFNetPyramid
+from modules import GFNet
 from functools import partial
 import os
 import numpy as np

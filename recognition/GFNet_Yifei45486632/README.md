@@ -29,13 +29,19 @@ The dataset is provided by Alzheimer's Disease Neuroimaging Initiative (ADNI), w
 
 A comprehensive data preprocessing pipeline was implemented for training a deep learning model using TensorFlow. The pipeline involves several crucial steps designed to prepare image data for effective model training.
 
-1. Each image file path undergoes a series of transformations to ensure it's adequately prepared for the model. This includes reading the image from disk, decoding it into a JPEG format, resizing it to a uniform size (224x224 pixels to match the GFNet model input requirements), and normalizing pixel values to the range [0,1] for better neural network performance. Apart from taht, labels are converted from string format to numerical indices, which are necessary for the model to process the labels effectively. This step also includes creating a unique index for each label which aids in classification tasks.
-2. The dataset was construsts by using TensorFlow's tf.data.Dataset API, from the image paths and their corresponding numeric labels, and then enhanced with mapping functions that apply the preprocessing steps concurrently, leveraging TensorFlow’s AUTOTUNE feature to optimize loading and transformation operations. To ensure that the model receives data in manageable sizes and in random order, the dataset is batched and shuffled. This step is crucial for training deep learning models as it helps to reduce memory overhead and introduces randomness in the training process, which can improve the model's generalization ability [^3].
-3. The dataset is divided into training and validation sets using a stratified approach based on the labels to ensure that each set represents the overall dataset's distribution accurately. This split helps evaluate the model’s performance during training, providing insight into how well the model might perform on unseen data.
+1. Use *transforms.Resize((224, 224))* to resize all images to a uniform size of 224x224 pixels. Ensure that all input images have the same size so that they can be processed by the model [^3].
+2. Using *transforms. RandomHorizontalFlip ()* for random flip horizontal. In this way, the diversity of the dataset can be increased. Images may contain similar features in different directions, and random flipping can help the model learn the features of these different directions, thus improving the generalization ability [^4].
+3. Convert the image to grayscale using *transforms.Grayscale(1)* and set the number of channels to 1. The amount of computation and memory usage can be reduced by converting to grayscale images. This can help the model focus only on the basic features of the image such as shape, edges, etc.
+4. Use *transforms.RandomErasing()* to randomize a small region of the image (i.e., "erase"). Increasing the robustness of the data helps the model adapt to local information loss [^5].
 
 ### 2.3 Data Size & Categorical Distribution
 
-The experimental dataset comprises 9,000 brain MRI scans, categorized into a binary classification problem: Alzheimer's Disease (AD) and Normal Control (NC). The categorical distribution demonstrates a well-balanced representation with AD samples accounting for 4,460 images (49.56%) and NC samples comprising 4,540 images (50.44%). The variance between classes is minimal (Δ = 80 samples, ~0.88%), indicating a naturally balanced dataset that mitigates the need for class balancing techniques during model training.
+In this dataset, a total of 21,520 images were loaded and divided into two categories:
+
+- AD class (labeled 0) : 10,400 images
+- NC category (labeled 1) : 11,120 images
+
+This indicates that the dataset has a relatively balanced distribution of categories, although there are slightly more NC categories. This balanced class distribution is beneficial for classification tasks because it reduces the likelihood that the model will be biased towards one class over another. In addition, the large amount of training data helps the model to capture more features, thus improving the generalization ability of the model.
 
 ## 3. Model Overview
 
@@ -46,7 +52,6 @@ The structure of a complete GFNet mainly includes frequency domain operations, h
 1. **Input layer:** Input shape (224,224,3), which is a standard 224x224 size RGB image;
 2. **Data augmentation layer:** This model uses *RandomRotation*, *RandomFlip*, and *RandomZoom* to increase the diversity of the input images to help the model generalize better;
 3. **Feature extraction layer:** *EfficientNetB0* is used as the backbone feature extractor, where *include_top=False* removes the classification head of the original model and only retains the feature extraction part.
-这里可以考虑pooling的问题
 4. **Global filter layer:** The Global Filter Layer performs frequency domain conversion, global filtering, and inverse frequency domain conversion. A 2D FFT is used to transform the input feature map from the spatial domain to the frequency domain. We apply a learnable frequency domain filter to capture global features by element-wise multiplication (Hadamard product). The processed frequency domain features were returned to the spatial domain by inverse FFT (iFFT) to prepare features for the subsequent classification layer.
 5. **Classification layer:** A fully connected layer is added to the classification layer with an output dimension of 128, an activation function of ReLU, and L2 regularization is used to prevent overfitting. The output of Dense layer is batch normalized to make the model training more stable. *Dropout (rate=0.3)* was used to further prevent overfitting.
 6. **Output layer:** The final output layer is *Dense(2, activation='softmax')*, which is used for binary classification tasks and outputs the probability distribution of the two classes.
@@ -103,12 +108,12 @@ scikit-learn
 ### 5.2 GPU support (optional)
 
 CUDA 10.x (The version should match the TensorFlow GPU version)
-cuDNN (The version should match the CUDA and TensorFlow version)
-
-### 列出
+cuDNN (The version should match the CUDA and TensorFlow version)S
 
 ## 6. Reference
 
 [^1]: Y.Rao, W.Zhao, Z.Zhu, J.Zhou, and J.Lu, “GFNet: Global Filter Networks for Visual Recognition,” IEEE Transactions on Pattern Analysis and Machine Intelligence, vol.45, no.9, pp.10960–10973, Apr.2023, doi: <https://doi.org/10.1109/tpami.2023.3263824>
 [^2]: “Alzheimer’s Disease Neuroimaging Initiative,” ADNI. <https://adni.loni.usc.edu/>
-[^3]: “Better performance with the tf.data API | TensorFlow Core,” TensorFlow. <https://www.tensorflow.org/guide/data_performance>
+[^3]: A. Krizhevsky, I. Sutskever, and G. E. Hinton, “ImageNet Classification with Deep Convolutional Neural Networks,” Communications of the ACM, vol. 60, no. 6, pp. 84–90, May 2012, Available: <https://proceedings.neurips.cc/paper_files/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf>
+[^4]: Th. S. Kumar, “Enhancement of Image Classification through Data Augmentation using Machine Learning,” International Journal of Computer Sciences and Engineering, vol. 6, no. 9, pp. 220–224, Sep. 2018, doi: <https://doi.org/10.26438/ijcse/v6i9.220224>
+[^5]: Z. Zhong, L. Zheng, G. Kang, S. Li, and Y. Yang, “Random Erasing Data Augmentation,” Proceedings of the AAAI Conference on Artificial Intelligence, vol. 34, no. 07, pp. 13001–13008, Apr. 2020, doi: <https://doi.org/10.1609/aaai.v34i07.7000>

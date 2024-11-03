@@ -1,11 +1,12 @@
 # U-Net Image Segmentation
 
 ## Overview
-This project implements a U-Net architecture for MRI segmentation tasks, mainly on Hip MRIs. The U-Net model is made to learn the features to provide accurate segmentations. This project has data preproccessing, training, predictions and evaluation metrics included.
+This project implements a U-Net architecture for MRI segmentation tasks, mainly on Hip MRIs. The U-Net model consist of two main parts, an encoder and decoder, the encoder progressibely reduces the spatial dimensions of the input image while extracting features, while the decoder reconstructs the image by upsampling and refining features. The model uses skip connections between the encoder and decoder to retain spatial information. A bottleneck layer sits between the encoder and decoder, connecting the two.
+This project has data preproccessing, training, predictions and evaluation metrics included.
 
 ## Table of Contents
 - [Features](#features)
-- [Usage](#usage)
+- [Dependencies](#dependencies)
 - [Hyperparameters](#hyperparameters)
 - [Training and Evaluation](#training-and-evaluation)
 - [Results](#results)
@@ -19,8 +20,12 @@ This project implements a U-Net architecture for MRI segmentation tasks, mainly 
 - CUDA ready with Cpu backup
 - Predictions on new unseen images
 
-## Installation
-Clone the repository and install the required dependencies
+## Dependencies
+- Pytorch 2.3.0
+- Numpy 1.26.4
+- Nibabel 
+- Albumentations 1.2.0
+- tqdm 4.66.5
 
 ## Hyperparameters
 - Learning Rate: 1e-5

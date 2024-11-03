@@ -82,7 +82,13 @@ The standard binary classification dataset is selected to ensure that the amount
 
 ### 3.3 Training Process and Results
 
+This plot shows the Loss and Accuracy during training and validation as the number of epochs increases. The left plot is the loss on the training and validation sets, and the right plot is the accuracy. From this, it can be concluded that both the training loss and the validation loss gradually decrease and become stable near the 10th epoch. Ultimately, the loss value is close to 0, which indicates that the model has a high fit on both the training and validation sets. The loss decreases faster and levels off after the first few epochs, which indicates that the model converges well. There is almost no significant gap between training and validation losses, indicating that the model does not suffer from significant overfitting. The validation accuracy is very close to the training accuracy, which indicates that the model performs well on the validation set and does not overfit or underfit. The accuracy of the model is very high on both the training set and the validation set, which indicates that the model has good generalization ability. In the last few epochs, the training and validation accuracy reaches 98%, indicating that the model performs extremely well on this task.
+![Training result](images/train_result.png)
+Given that the test accuracy achieved so far is 74.85%, here is a summary of the efforts already made to improve accuracy, as well as suggestions for potential future improvements.
 
+Several measures have been tried in this project to improve the accuracy of the model. Firstly, a series of methods are applied to data augmentation, including random scaling and cropping, horizontal flipping, random rotation, CLAHE (Contrast Limited adaptive Histogram equalization) contrast enhancement, gamma adjustment, etc., to help the model generalize better on diverse samples and enhance the robustness to image appearance changes. Secondly, a custom function is used to automatically crop the black edges of the image to reduce irrelevant background information and make the model pay more attention to the key features of the target region. In the model architecture, GFNet, a specially designed architecture with global filtering function, is used to capture high-level context information. At the same time, DropPath and MLP layers are used to enhance feature extraction and reduce the risk of overfitting. In addition, hyperparameter tuning is performed to adjust the depth, embedding dimension, dropout rate, and cosine annealing learning rate scheduling is applied to optimize the convergence speed. Finally, we prevent overfitting by stopping early, stopping training when the validation set accuracy stagnates, and saving model checkpoints for each epoch to ensure that the best-performing model version is retained.
+
+In the future, there is time to continue to optimize the model architecture, introduce the Self-Attention mechanism, and add a Multi-Head self-attention (MHSA) layer in each Block to enhance the ability of the model to capture long-distance dependencies. The jump connection or gating mechanism is added to the Mlp module to increase the diversity of feature representation, so that the network can capture richer feature information. Or choose something that takes time but is effective and use semi-supervised or self-supervised learning.
 
 ### 3.4 Challenges and Solutions
 
@@ -94,9 +100,15 @@ This project implements a multifaceted approach to optimize memory usage, combin
 
 #### Overfitting
 
-In the early stage of project operation, there will be a situation where the training accuracy is above 0.9, but the validation accuracy is only maintained at about 0.5, which can be seen in the figure below.
-![Low validation accuracy](images/low_val_accuracy.png)
+In the early stage of project operation, there will be a situation where the training accuracy is above 0.9, but the validation accuracy is only maintained at about 0.5 finally.
+
 To solve this problem, first the callback function (early stop) is enabled in this project. This project initially used patience = 5, but the validation accuracy fluctuated a lot during training, then tried increasing patience to 10. The second is to use Dropout layers to reduce the model's dependence on training data by randomly dropping a subset of neurons during training. 30% were discarded in the project to help the model learn features more robustly. The third is to add L2 regularization, which adds a penalty term related to the sum of squares of the model weights to the loss function to limit the growth of the weights and prevent the model from becoming overly complex.
+
+#### Great fluctuation of accuracy on the validation set
+
+While the training set grew steadily, the validation set showed a large fluctuation as shown below.
+![Informal validation accuracy](images/informal_val_acc.png)
+Finally, it was found that data augmentation was also performed in the validation dataset, which affected the extraction of features, and only doing it on the training dataset would get better results. In addition, the TensorFlow version caused some core computing power to be ignored, and in order to avoid the problem of tool, the final choice was to replace the pytorch code and rewrite the code to run.
 
 ## 5. Dependencies
 

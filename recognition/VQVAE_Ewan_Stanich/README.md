@@ -12,7 +12,7 @@ The VQVAE is a generative machine learning model that improves upon variational 
 
 ### VQVAE Architecture
 
-![Architecture of a VQVAE](./markdown_images/vqvae_architecture.png)
+![Architecture of a VQVAE](markdown_images/vqvae_architecture.png)
 
 The diagram above depicts the classic architecture of a VQVAE, consisting of three main components: the encoder, the vector quantizer, and the decoder.
 
@@ -28,7 +28,7 @@ After the encoder transforms an image into the latent space, it is then passed i
 
 The VQVAE is trained using a loss function of three components: reconstruction, quantization, and commitment loss. These subloss functions combine to form the loss function,
 
-![VQVAE Loss Function](./markdown_images/loss_function.png)
+![VQVAE Loss Function](markdown_images/loss_function.png)
 
 Where:
 
@@ -39,8 +39,8 @@ Where:
 
 Due to the nature of a VQVAE, that is having multiple segments, a combined loss function allows the training of each part of the model. An example of the loss of this function can be found in the plot below, followed by a plot of SSIM scores that demonstrate the model's progressive improvement.
 
-![Log Loss of the Training Loop](./markdown_images/loss_scores.png)  
-![Validation SSIM Scores](./markdown_images/ssim_scores.png)
+![Log Loss of the Training Loop](markdown_images/loss_scores.png)  
+![Validation SSIM Scores](markdown_images/ssim_scores.png)
 
 ### Image Generation
 
@@ -48,9 +48,9 @@ Images were generated in a grid of 8x4, where the first two rows contain the ori
 
 #### First Epoch
 
-![Image Generated From First Epoch](./markdown_images/epoch1.png)  
+![Image Generated From First Epoch](markdown_images/epoch1.png)  
 This image demonstrates the baseline of the model at the first epoch; clearly, the results are unsatisfactory and the model will need substantial training.  
-![Image Generated From Final Model](./markdown_images/final_image.png)  
+![Image Generated From Final Model](markdown_images/final_image.png)  
 This image demonstrates the full capability of the model to generate recognizable images with an SSIM greater than 0.6 after a full training process. This image achieved an SSIM score of 0.80886, achieving well above the required 0.6 and thus completing the aim of this project.
 
 ## Dependencies
@@ -71,15 +71,15 @@ This image demonstrates the full capability of the model to generate recognizabl
 To reproduce the results, complete the following:
 
 1. Install all required dependencies.
-2. Ensure to change the folder destination strings at the top of the `load_data` and `load_test_data` functions in [`dataset.py`](./dataset.py) to wherever you have the nifti files stored.
-3. Run the [`train.py`](./train.py) file; this will create/wipe all necessary output folders and train the model. The training loop will update the SSIM scores plot and training loss plot on each epoch completion, and at specified intervals will generate output images to compare progression. After training is complete, the final image will be output.
-4. Run the [`predict.py`](./predict.py) file to generate more reconstructed images.
+2. Ensure to change the folder destination strings at the top of the `load_data` and `load_test_data` functions in [`dataset.py`](dataset.py) to wherever you have the nifti files stored.
+3. Run the [`train.py`](train.py) file; this will create/wipe all necessary output folders and train the model. The training loop will update the SSIM scores plot and training loss plot on each epoch completion, and at specified intervals will generate output images to compare progression. After training is complete, the final image will be output.
+4. Run the [`predict.py`](predict.py) file to generate more reconstructed images.
 
 It is recommended to run these files on a device with a GPU; otherwise, training may take much longer than intended. By following these steps, it will be possible to replicate the above results.
 
 #### Hyperparameters
 
-The hyperparameters are specified at the top of the [`train.py`](./train.py) file; these have been carefully chosen to best fit this model and dataset, so it is not recommended to make any changes. However, if you wish to implement it for a new dataset, you may change them as you wish; they can easily be interpreted by their names.
+The hyperparameters are specified at the top of the [`train.py`](train.py) file; these have been carefully chosen to best fit this model and dataset, so it is not recommended to make any changes. However, if you wish to implement it for a new dataset, you may change them as you wish; they can easily be interpreted by their names.
 
 ## Inputs and Outputs
 
@@ -95,7 +95,7 @@ Reconstructed images compared with their original images based on the best model
 
 ### Plots
 
-Plots of training loss and validation SSIM scores are also output over each epoch. Note that the folder names of the models, epoch reconstructions, and the outputs can be specified at the top of the [`train.py`](./train.py) file; it is only necessary to change the names there.
+Plots of training loss and validation SSIM scores are also output over each epoch. Note that the folder names of the models, epoch reconstructions, and the outputs can be specified at the top of the [`train.py`](train.py) file; it is only necessary to change the names there.
 
 ## Preprocessing the Data
 
@@ -111,22 +111,22 @@ The data was split into training, validation, and testing data loaders to allow 
 
 This project contains the following files:
 
-#### [modules.py](./modules.py)
+#### [modules.py](modules.py)
 
 This file contains the models for this project, including the Residual Layer, Residual Stack, Vector Quantiser, and the VQVAE. The structure of the VQVAE can be interpreted from the class; also, the calculation of the quantization and commitment loss can be found in the Vector Quantizer class.
 
-#### [dataset.py](./dataset.py)
+#### [dataset.py](dataset.py)
 
 This file contains the functions used to load in the data from the specified folders containing Nifti files. This file contains two functions: the main data loader that creates the train, validation, and test data loaders for the training of the function, and a basic load data file that only creates the test loader, intended for use when generating images and not wanting to unnecessarily load in the training dataset.
 
-#### [train.py](./train.py)
+#### [train.py](train.py)
 
 This file contains the main training loop for the project, initializing all required models, folders, and optimizers before running through the training process. Hyperparameters are also specified at the top of this file for ease of changing.
 
-#### [test.py](./test.py)
+#### [test.py](test.py)
 
 This file contains a single function used to generate an 8x4 grid of images, where the first row of images are originals taken from a dataset and the second row of images are the reconstructions after being fed through the fully trained VQVAE.
 
-#### [utils.py](./utils.py)
+#### [utils.py](utils.py)
 
 This file contains many helper functions that assist with loading data, managing output folders, initialising models, calculating SSIM scores and plotting metrics.

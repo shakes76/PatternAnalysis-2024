@@ -330,14 +330,15 @@ Testing took 283.58 secs or 4.72 mins in total
 ## Results
 
 ### Accuracy
-![Accuracy of the model over the training period](./assets/acc.png)
+![Accuracy of the model over the training period](./assets/acc_fix.png)
 
-The accuracy graph seen above is the result of a large hyperparameters grid
-search and several days of training. The final model was extracted from the
-training period at epoch 320 where the accuracy peaked at 78.01%. The model was
-not trained any more past 600 epochs to ensure that training was not preventing
-others from using computation resources even though it is likely that to
-continue training would increase model accuracy.
+The graph above depicts the accuracy of the entire test-set at various stages
+in training. The test-set accuracy is depicted by the orange line which
+indicates the maximum performance of the model. The final model was extracted
+from the training period at epoch 320 where the accuracy peaked at 78.01%. The
+model was not trained any more past 600 epochs to ensure that training was not
+preventing others from using computation resources even though it is likely
+that to continue training would increase model accuracy.
 
 ### Training Loss
 ![Training loss over the training period](./assets/plot-loss.png)

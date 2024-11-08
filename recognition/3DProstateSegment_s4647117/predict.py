@@ -15,20 +15,47 @@ import torch
 import numpy as np
 import nibabel as nib
 from torch.utils.data import DataLoader
-
 from modules import UNet3D
 from dataset import NiftiDataset
 from utils import per_class_dice_components
 
-# Paths to test data
+# Paths to images and labels
 images_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_MRs"
 labels_path = "/home/groups/comp3710/HipMRI_Study_open/semantic_labels_only"
 model_path = 'unet_model.pth'
 
+# Recreate the dataset split with a fixed seed
+image_filenames = sorted([os.path.join(images_path, f) for f in os.listdir(images_path) if f.endswith('.nii.gz')])
+label_filenames = sorted([os.path.join(labels_path, f) for f in os.listdir(labels_path) if f.endswith('.nii.gz')])
+
+def get_subject_id(filename):
+    basename = os.path.basename(filename)
+    return '_'.join(basename.split('_')[:-1])
+
+image_dict = {get_subject_id(f): f for f in image_filenames}
+label_dict = {get_subject_id(f): f for f in label_filenames}
+common_subject_ids = sorted(set(image_dict.keys()).intersection(set(label_dict.keys())))
+image_filenames = [image_dict[sid] for sid in common_subject_ids]
+label_filenames = [label_dict[sid] for sid in common_subject_ids]
+
+data_pairs = list(zip(image_filenames, label_filenames))
+random.seed(42)
+random.shuffle(data_pairs)
+
+# Recreate logic in train.py to ensure we pull from the test set
+train_ratio, val_ratio, test_ratio = 0.7, 0.15, 0.15
+total_samples = len(data_pairs)
+train_count = int(total_samples * train_ratio)
+val_count = int(total_samples * val_ratio)
+
+# Extract test pairs
+test_pairs = data_pairs[train_count + val_count:]
+test_image_filenames, test_label_filenames = zip(*test_pairs)
+
 # Load the test dataset
 test_dataset = NiftiDataset(
-    image_filenames=sorted([os.path.join(images_path, f) for f in os.listdir(images_path) if f.endswith('.nii.gz')]),
-    label_filenames=sorted([os.path.join(labels_path, f) for f in os.listdir(labels_path) if f.endswith('.nii.gz')]),
+    image_filenames=test_image_filenames,
+    label_filenames=test_label_filenames,
     dtype=np.float32,
     transform=None
 )

@@ -138,7 +138,7 @@ As above, colored are the predicted labels, and greyscale is actual label
 </div>
 
 
-## Plots an values:
+## Plots and results:
 
 ### Training and Validation loss:
 <div align="left">

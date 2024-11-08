@@ -140,7 +140,9 @@ Where the details are:
 - Optimizer: ADAM (Adaptive Moment Estimation)
 - Scheduler: StepLR
 
-It uses early stopping mechanism, hence during the training, if the validation loss keep not improving after 10 epochs, it will stop the training. 
+### Early Stopping Mechanism
+
+Early stopping prevents overfitting by monitoring validation loss during training. If the loss doesn’t improve for 10 consecutive epochs, training stops automatically. Therefore, the model stops learning when it’s no longer improving, helping it generalize better to new data.
 
 ## Results
 After training for the number of epochs = 100, the early stopping mechanism is triggered at the 43th epochs by resulting:

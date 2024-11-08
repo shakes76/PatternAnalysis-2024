@@ -6,7 +6,7 @@ This project aims to identify Alzheimer’s disease (AD) using brain images from
 <br>
 
 ## How It Works
-The GFNet model processes brain images by breaking them down into smaller sections, called patches. Each patch is then transformed into a format that the model can understand. We also add a special token to represent the overall image, along with information about where each patch is located.
+The Vision Transformer model processes brain images by breaking them down into smaller sections, called patches. Each patch is then transformed into a format that the model can understand. We also add a special token to represent the overall image, along with information about where each patch is located.
 
 The model uses a series of layers that work together to recognize patterns and features in the images, which helps it determine whether an image shows a healthy brain or one affected by Alzheimer’s. Finally, the model outputs a prediction based on what it has learned from the images.
 

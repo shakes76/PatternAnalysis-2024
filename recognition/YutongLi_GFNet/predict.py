@@ -1,3 +1,8 @@
+"""
+This script is to the predict. The validate function is for val set and the final_validate
+is for final test. You can run this script to get the results. It requires the model.pth and
+datasets' paths. The model.pth will saved after the model training.
+"""
 import numpy as np
 import torch
 import torch.optim as optim
@@ -86,6 +91,10 @@ def final_validate(model, test_loader, criterion, device):
 
 
 if __name__ == "__main__":
+    """
+    Make sure you already finished the model training and get the gfnet_model_latest.pth.
+    Then set to right data path.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2)

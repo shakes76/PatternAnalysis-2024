@@ -42,19 +42,23 @@ class HipMRIDataset(Dataset):
             torch.Tensor: the image data at the given index.
         """
         file_path = os.path.join(self.data_dir, self.file_names[idx])
+        
+        # Load the image data from the NIfTI file
         nii_image = nib.load(file_path)
         image_data = nii_image.get_fdata()
         
+        # Normalize the image data
         image_data = (image_data - np.min(image_data)) / (np.max(image_data) - np.min(image_data)) * 255  # Normalize to 0-255
         image_data = image_data.astype(np.uint8)
         image_data = Image.fromarray(image_data)
-
+        
+        # Apply the transforms
         image_data = self.transform(image_data)
 
         return image_data
     
 
-def get_dataloader(data_dir, batch_size, transform, num_samples, shuffle) -> DataLoader:
+def get_dataloader(data_dir: str, batch_size: int, transform: transforms, num_samples: int, shuffle: bool) -> DataLoader:
     """Return a DataLoader object for the HipMRI dataset.
     
     Args:

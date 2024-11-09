@@ -84,10 +84,16 @@ class Encoder(nn.Module):
             downscale_factor (int): downscale factor.
         """
         super(Encoder, self).__init__()
+        
+        # Check if downscale factor is a power of 2
         assert log2(downscale_factor) % 1 == 0, "Downscale must be a power of 2"
         downscale_steps = int(log2(downscale_factor))
+        
+        # Create the layers
         layers = []
         c_channel, n_channel = in_channels, hidden_channels // 2
+        
+        # Create the downscaling layers
         for _ in range(downscale_steps):
             layers.append(nn.Sequential(
                 nn.Conv2d(c_channel, n_channel, 4, stride=2, padding=1),
@@ -135,11 +141,17 @@ class Decoder(nn.Module):
             upscale_factor (int): upscale factor.
         """
         super(Decoder, self).__init__()
+        
+        # Check if upscale factor is a power of 2
         assert log2(upscale_factor) % 1 == 0, "Upscale must be a power of 2"
         upscale_steps = int(log2(upscale_factor))
+        
+        # Create the layers
         layers = [nn.Conv2d(in_channels, hidden_channels, 3, stride=1, padding=1)]
         layers.append(ResidualStack(hidden_channels, res_channels, nb_res_layers))
         c_channel, n_channel = hidden_channels, hidden_channels // 2
+        
+        # Create the upscaling layers
         for _ in range(upscale_steps):
             layers.append(nn.Sequential(
                 nn.ConvTranspose2d(c_channel, n_channel, 4, stride=2, padding=1),
@@ -176,12 +188,16 @@ class VectorQuantizer(nn.Module):
         """
         super(VectorQuantizer, self).__init__()
         self.conv_in = nn.Conv2d(in_channels, embed_dim, 1)
-        self.dim = embed_dim
-        self.n_embed = nb_entries
-        self.decay = 0.99
-        self.eps = 1e-5
+        self.dim = embed_dim  # Dimension of each embedding
+        self.n_embed = nb_entries  # Number of embeddings (codebook entries)
+        self.decay = 0.99  # Decay rate for moving averages in embedding updates
+        self.eps = 1e-5  # Small epsilon for numerical stability
+        
+        # Initialize the codebook embeddings randomly
         embed = torch.randn(embed_dim, nb_entries, dtype=torch.float32)
         self.register_buffer("embed", embed)
+        
+        # Initialize the cluster size and average embeddings for updating the codebook
         self.register_buffer("cluster_size", torch.zeros(nb_entries, dtype=torch.float32))
         self.register_buffer("embed_avg", embed.clone())
 
@@ -196,32 +212,47 @@ class VectorQuantizer(nn.Module):
             torch.Tensor: difference between the input and quantized tensor.
             torch.Tensor: indices of the embeddings.
         """
+        # Reshape the input tensor from (B, C, H, W) to (B, H, W, C) and flatten
         x = self.conv_in(x).permute(0, 2, 3, 1)
         flatten = x.reshape(-1, self.dim)
+        
+        # Calculate the distances between the input and the embeddings
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
             - 2 * flatten @ self.embed
             + self.embed.pow(2).sum(0, keepdim=True)
         )
+        
+        # Find the closest embeddings
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).type(flatten.dtype)
         embed_ind = embed_ind.view(*x.shape[:-1])
+        
+        # Quantize the input tensor using the embeddings
         quantize = self.embed_code(embed_ind)
 
         if self.training:
+            # Update the codebook embeddings using the moving averages
             embed_onehot_sum = embed_onehot.sum(0)
             embed_sum = flatten.transpose(0, 1) @ embed_onehot
+            
+            # Update the cluster size and average embeddings using exponential moving averages
             self.cluster_size.data.mul_(self.decay).add_(embed_onehot_sum, alpha=1 - self.decay)
             self.embed_avg.data.mul_(self.decay).add_(embed_sum, alpha=1 - self.decay)
+            
+            # Normalize the average embeddings
             n = self.cluster_size.sum()
             cluster_size = (
                 (self.cluster_size + self.eps) / (n + self.n_embed * self.eps) * n
             )
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
-
+            
+        # Calculate the difference between the input and quantized tensor
         diff = (quantize.detach() - x).pow(2).mean()
         quantize = x + (quantize - x).detach()
+        
+        # Reshape the quantized tensor from (B, H, W, C) to (B, C, H, W)
         return quantize.permute(0, 3, 1, 2), diff, embed_ind
 
     def embed_code(self, embed_id: torch.Tensor) -> torch.Tensor:

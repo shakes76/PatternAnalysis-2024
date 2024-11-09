@@ -36,15 +36,19 @@ def predict(config: dict) -> None:
     Args:
         config (dict): configuration dictionary.
     """
+    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
+    # Load configuration
     model_parameters = config['model_parameters']
     pretrained_path = config['pretrained_path']
     dataset_dir = config['dataset_dir']
     save_dir = config['save_dir']
     
+    # Create save directory
     os.makedirs(save_dir, exist_ok=True)
     
+    # Load the dataset and model
     transforms = get_transforms(config['transforms'])
     data_loader = get_dataloader(dataset_dir, 1, transforms, num_samples=None, shuffle=False)
     

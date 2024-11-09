@@ -64,17 +64,25 @@ def train_one_epoch(
     for train_batch in tqdm(train_loader, desc=f"Training Epoch {epoch}/{num_epochs}"):
         train_batch = train_batch.to(device).float()
         optimizer.zero_grad()
+        
+        # Get model output
         train_reconstructed, train_commitment_loss = model(train_batch)
+        
+        # Calculate loss
         train_recon_loss = criterion(train_reconstructed, train_batch)
         train_loss = train_recon_loss + train_commitment_loss
+        
+        # Backpropagation
         train_loss.backward()
         optimizer.step()
         
+        # Update losses and SSIM
         train_total_commitment_loss += train_commitment_loss.item()
         train_total_recon_loss += train_recon_loss.item()
         train_total_loss += train_loss.item()
         train_total_ssim += calculate_batch_ssim(train_batch, train_reconstructed)
     
+    # Calculate average losses and SSIM
     avg_train_commitment_loss = train_total_commitment_loss / len(train_loader)
     avg_train_recon_loss = train_total_recon_loss / len(train_loader)
     avg_train_loss = train_total_loss / len(train_loader)
@@ -115,6 +123,7 @@ def validate_one_epoch(
     Returns:
         tuple: the average commitment loss, average reconstruction loss, average total loss, average SSIM, original image, and reconstructed image.
     """
+    # Keep track of losses and SSIM
     val_total_commitment_loss = 0.0
     val_total_recon_loss = 0.0
     val_total_loss = 0.0
@@ -122,20 +131,27 @@ def validate_one_epoch(
     with torch.no_grad():
         for val_batch in tqdm(val_loader, desc=f"Validation Epoch {epoch}/{num_epochs}"):
             val_batch = val_batch.to(device).float()
+            
+            # Get model output
             val_reconstructed, val_commitment_loss = model(val_batch)
+            
+            # Calculate loss
             val_recon_loss = criterion(val_reconstructed, val_batch)
             val_loss = val_recon_loss + val_commitment_loss
             
+            # Update losses and SSIM
             val_total_commitment_loss += val_commitment_loss.item()
             val_total_recon_loss += val_recon_loss.item()
             val_total_loss += val_loss.item()
             val_total_ssim += calculate_batch_ssim(val_batch, val_reconstructed)
             
+    # Calculate average losses and SSIM
     avg_val_commitment_loss = val_total_commitment_loss / len(val_loader)
     avg_val_recon_loss = val_total_recon_loss / len(val_loader)
     avg_val_loss = val_total_loss / len(val_loader)
     avg_val_ssim = val_total_ssim / len(val_loader)
             
+    # Get original and reconstructed images of the first image
     val_original_image = val_batch[0, 0].cpu().detach().numpy()
     val_reconstructed_image = val_reconstructed[0, 0].cpu().detach().numpy()
     
@@ -168,6 +184,7 @@ def save_epoch_image(
         image_log_dir (str): the directory to save the images.
     """
     with torch.no_grad():
+        # Combine original and reconstructed images
         train_image = combine_images(train_original_image, train_reconstructed_image)
         val_image = combine_images(val_original_image, val_reconstructed_image)
         
@@ -194,6 +211,7 @@ def train(config: dict) -> None:
     Args:
         config (dict): configuration dictionary.
     """
+    # Load configuration
     model_parameters = config['model_parameters']
     
     log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
@@ -217,6 +235,7 @@ def train(config: dict) -> None:
     train_transforms = config['train_transforms']
     val_test_transforms = config['val_test_transforms']
     
+    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set up logging
@@ -225,16 +244,18 @@ def train(config: dict) -> None:
     logging.basicConfig(filename=os.path.join(log_dir, 'training.log'), level=logging.INFO, 
                         format='%(asctime)s - %(levelname)s - %(message)s')
     shutil.copy(config_path, log_dir)
-
+    
+    # Load model
     model = VQVAE(**model_parameters).to(device)
     
+    # Optimizer and Loss
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.MSELoss()
     
+    # Data Loaders
     train_transform = get_transforms(train_transforms)
     val_test_transform = get_transforms(val_test_transforms)
     
-    # Data Loaders
     train_loader = get_dataloader(train_dataset_dir, batch_size, train_transform, train_num_samples, shuffle=True)
     val_loader = get_dataloader(val_dataset_dir, batch_size, val_test_transform, val_num_samples, shuffle=False)
     test_loader = get_dataloader(test_dataset_dir, 1, val_test_transform, test_num_samples, shuffle=False)
@@ -297,7 +318,7 @@ def train(config: dict) -> None:
     end_time = time.time()
     logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes\n")
         
-    # Save metrics
+    # Plot metrics
     train_metrics = [
         train_commitment_losses, 
         train_recon_losses,
@@ -342,15 +363,22 @@ def train(config: dict) -> None:
     with torch.no_grad():
         for test_batch in tqdm(test_loader, desc="Evaluation"):
             test_batch = test_batch.to(device).float()
+            
+            # Get model output
             test_reconstructed, test_commitment_loss = model(test_batch)
+            
+            # Calculate loss
             test_recon_loss = criterion(test_reconstructed, test_batch)
             
+            # Get original and reconstructed images
             test_original_image = test_batch[0, 0].cpu().detach().numpy()
             test_reconstructed_image = test_reconstructed[0, 0].cpu().detach().numpy()
             
+            # Update losses and SSIM
             test_losses.append(test_recon_loss.item() + test_commitment_loss.item())
             test_ssim_values.append(calculate_ssim(test_original_image, test_reconstructed_image))
         
+    # Log test metrics
     logging.info(f"Test Loss: {sum(test_losses) / len(test_losses):.4f}, Test SSIM: {sum(test_ssim_values) / len(test_ssim_values):.4f}")
     
     # Save distribution of scores

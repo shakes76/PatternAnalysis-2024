@@ -1,3 +1,7 @@
+"""
+This script do the model training. In your first running time, it will split the val set for you.
+You only need to run this once. It will create AD_NC_new.
+"""
 import time
 import torch
 import torch.nn as nn
@@ -13,7 +17,8 @@ from predict import validate, final_validate
 
 def train(model, train_loader, criterion, optimizer, device):
     """
-    Train function. Return loss and accuracy.
+    Train function. Input the model, train_loader, criterion, optimizer and device.
+    Return loss and accuracy.
     """
     model.train()
     running_loss = 0.0
@@ -54,15 +59,19 @@ if __name__ == "__main__":
 
     train_loader, val_loader, test_loader = get_data_loaders(train_dir, val_dir, test_dir)
 
+    # get the GFnet and set some hyperparameters
     model = GFNet(img_size=224, patch_size=16, in_chans=1, num_classes=2)
     model = model.to(device)
 
+    # use cross entropy loss and Adam optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
+    # this can make the model continue training on the previous pth
     if os.path.exists('gfnet_model_latest.pth'):
         load_model(model, optimizer, 'gfnet_model_latest.pth')
 
+    # set the number of epochs here
     num_epochs = 50
 
     for epoch in range(num_epochs):
@@ -72,6 +81,7 @@ if __name__ == "__main__":
         end_time = time.time()
         run_time = end_time - start_time
         print(f"Epoch {epoch + 1}/{num_epochs}. Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}. val Loss: {val_loss:.4f}, val Acc: {val_acc:.4f}. time: {run_time}")
+        # store the training log
         append_training_log(train_loss, train_acc, val_loss, val_acc, run_time)
 
     print("saving model parameters")

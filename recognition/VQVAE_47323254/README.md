@@ -95,13 +95,13 @@ pip install -r recognition/VQVAE_47323254/requirements.txt
 ## Training
 Create a configuration file and run the following command. An example configuration file is provided in `recognition/VQVAE_47323254/configs/example_train_config.yaml`.
 ```bash
-python recognition/VQVAE_47323254/train.py --config path/to/config.yaml
+python recognition/VQVAE_47323254/src/train.py --config path/to/config.yaml
 ```
 
 ## Predict
 Create a configuration file and run the following command. An example configuration file is provided in `recognition/VQVAE_47323254/configs/example_predict_config.yaml`.
 ```bash
-python recognition/VQVAE_47323254/predict.py --config path/to/config.yaml
+python recognition/VQVAE_47323254/src/predict.py --config path/to/config.yaml
 ```
 
 # Example Output
@@ -112,7 +112,7 @@ Here is the result of running training with `example_train_config.yaml`. This do
 - best_model.pth
 - lastest_model.pth
 - train_metrics.png (loss and SSIM score curves)
-<br><img src="images/metrics_plot.png" alt="metrics plot" width="500"/>
+<br><img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/metrics_plot.png" alt="metrics plot" width="500"/>
 
 - training.log (This log is from epoch 1 to 5 and at the end of training)
 ```text
@@ -129,17 +129,17 @@ Here is the result of running training with `example_train_config.yaml`. This do
 ```
 
 - Original and reconstructed images during training (This image is from epoch 1)
-<br><img src="images/epoch_1.png" alt="image at epoch 1" width="500"/>
+<br><img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/epoch_1.png" alt="image at epoch 1" width="500"/>
 
 - test_metrics.png (Histogram of loss and SSIM score) 
-<br><img src="images/evaluation_metrics.png" alt="histogram" width="500"/>
+<br><img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/evaluation_metrics.png" alt="histogram" width="500"/>
 
 - test_images.png (Original and reconstructed images during inference)
-<br><img src="images/evaluation_images.png" alt="inference" width="500"/>
+<br><img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/evaluation_images.png" alt="inference" width="500"/>
 
 ## Prediction
 - Original and reconstructed images
-<br><img src="images/predict.png" alt="predict" width="200"/>
+<br><img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/predict.png" alt="predict" width="250"/>
 
 # Experiments
 I experimented with several settings to find the optimal hyperparameters for the model. The experiments include changing learning rate, augmentations and the complexity of the model. I also tried increasing the downscaling factors to see the performance of the model on more compressed codebooks.
@@ -155,8 +155,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0753 | 0.6455 |
 | Test  | 0.0936 | 0.6469 |
 
-<img src="images/train_plot_small_lr.png" alt="learning rate 0.0001" height="250"/>
-<img src="images/small_lr_metrics.png" alt="learning rate 0.0001" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/train_plot_small_lr.png" alt="learning rate 0.0001" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/small_lr_metrics.png" alt="learning rate 0.0001" height="250"/>
 
 ### Learning Rate = 0.0005
 
@@ -166,8 +166,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0090 | 0.8958 |
 | Test  | 0.0134 | 0.8673 |
 
-<img src="images/train_plot_mid_lr.png" alt="learning rate 0.0005" height="250"/>
-<img src="images/mid_lr_metrics.png" alt="learning rate 0.0005" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/train_plot_mid_lr.png" alt="learning rate 0.0005" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/mid_lr_metrics.png" alt="learning rate 0.0005" height="250"/>
 
 ### Learning Rate = 0.001
 
@@ -177,8 +177,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0053 | 0.9053 |
 | Test  | 0.0053 | 0.9175 |
 
-<img src="images/train_plot_high_lr.png" alt="learning rate 0.001" height="250"/>
-<img src="images/high_lr_metrics.png" alt="learning rate 0.001" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/train_plot_high_lr.png" alt="learning rate 0.001" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/high_lr_metrics.png" alt="learning rate 0.001" height="250"/>
 
 ### Learning Rate = 0.005
 
@@ -188,8 +188,8 @@ I experimented with different learning rates to find the optimal learning rate f
 | Val   | 0.0048 | 0.9012 |
 | Test  | 0.0045 | 0.9124 |
 
-<img src="images/train_plot_highest_lr.png" alt="learning rate 0.005" height="250"/>
-<img src="images/highest_lr_metrics.png" alt="learning rate 0.005" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/train_plot_highest_lr.png" alt="learning rate 0.005" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/highest_lr_metrics.png" alt="learning rate 0.005" height="250"/>
 
 ## Augmentations
 I experimented with various augmentations to evaluate their impact on the model's performance. These augmentations included random horizontal and vertical flips, translations, brightness, contrast, saturation, hue adjustments, and Gaussian blur. Additionally, I resized the images to 256x256. The experiment was conducted using a downscale factor of 4 over 30 epochs, with a learning rate of 0.001. The model performed better with the augmented data, and resizing the images to a square further improved its performance. Without augmentations, the performance of the model was inconsistent across different images, but with augmentations, the model was able to perform accurately on various images.
@@ -201,8 +201,8 @@ I experimented with various augmentations to evaluate their impact on the model'
 | Val   | 0.0036 | 0.9373 |
 | Test  | 0.0039 | 0.9366 |
 
-<img src="images/augmentation_metrics.png" alt="no resize" height="250"/>
-<img src="images/augmentation_images.png" alt="no resize" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/augmentation_metrics.png" alt="no resize" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/augmentation_images.png" alt="no resize" height="250"/>
 
 ### Augmentations with resizing
 |       | Loss   | SSIM   |
@@ -211,8 +211,8 @@ I experimented with various augmentations to evaluate their impact on the model'
 | Val   | 0.0020 | 0.9596 |
 | Test  | 0.0023 | 0.9574 |
 
-<img src="images/augmentation_resize_metrics.png" alt="resize" height="250"/>
-<img src="images/augmentation_resize_images.png" alt="resize" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/augmentation_resize_metrics.png" alt="resize" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/augmentation_resize_images.png" alt="resize" height="250"/>
 
 ## Downscale Factor
 I experimented with different downscale factors, 8 and 16, to evaluate the model's performance with more compressed codebooks. The experiments were conducted over 100 epochs, using a learning rate of 0.001 and augmentations with resizing. I also changed the model complexity by adjusting the number of hidden channels in the encoder and decoder, the number and size of residual blocks, the number of embeddings, and the embedding size.
@@ -235,8 +235,8 @@ The results with higher downscale factors were more inconsistent compared to a d
 | Val   | 0.0083 | 0.8320 |
 | Test  | 0.0090 | 0.8270 |
 
-<img src="images/downscale_8_metrics.png" alt="downscale 8" height="250"/>
-<img src="images/downscale_8_images.png" alt="downscale 8" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/downscale_8_metrics.png" alt="downscale 8" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/downscale_8_images.png" alt="downscale 8" height="250"/>
 
 ### Downscale Factor = 16
 |       | Loss   | SSIM   |
@@ -245,8 +245,8 @@ The results with higher downscale factors were more inconsistent compared to a d
 | Val   | 0.0204 | 0.5958 |
 | Test  | 0.0202 | 0.6294 |
 
-<img src="images/downscale_16_metrics.png" alt="downscale 16" height="250"/>
-<img src="images/downscale_16_images.png" alt="downscale 16" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/downscale_16_metrics.png" alt="downscale 16" height="250"/>
+<img src="https://raw.githubusercontent.com/shakes76/PatternAnalysis-2024/b392575c841f80d4a5a4671bf29b3926ed949614/recognition/VQVAE_47323254/images/downscale_16_images.png" alt="downscale 16" height="250"/>
 
 ## Observations
 There was no observable overfitting during my experiments. The model often performed better on the validation and test sets than on the training data. I carefully checked there was no data leakage in the training phase. I believe the following factors contributed to this result:

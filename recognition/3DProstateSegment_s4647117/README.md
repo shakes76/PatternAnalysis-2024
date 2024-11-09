@@ -13,9 +13,8 @@ The problem it solves is efficient and accurate segmentation of anatomical struc
 In this instance, the model is trained to segment the following 6 classes: Background, Body, Bones, Bladder, Rectum, Prostate.
 
 ### How it works:
-
 <div align="center">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/Screenshot%202024-10-22%20141306.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="90%">
+    <img src="imgs/Screenshot%202024-10-22%20141306.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="90%">
 </div>
 
 The 3D U-Net follows an encoder-decoder architecture, designed to process and segment volumetric (3D) medical data. This structure allows the network to learn rich features at multiple scales while preserving spatial information, which is essential for accurate segmentation.
@@ -123,12 +122,12 @@ Input images have dimensions [256, 256, 128]. Some of the data the model was tra
 Here is an example input image:
 
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/input_image.png" alt="Overlayed comparison gif"width="50%">
+    <img src="imgs/input_image.png" alt="Overlayed comparison gif"width="50%">
 </div>
 For training, each input image has a corresponding label image:
 
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/input_label.png" alt="Overlayed comparison gif"width="50%">
+    <img src="imgs/input_label.png" alt="Overlayed comparison gif"width="50%">
 </div>
 
 ## Example outputs and Comparison with true labels:
@@ -138,15 +137,15 @@ Left is Actual label (ground truth), and right is the predicted label
 ### Side by side gif:
 
 <div style="display: flex; justify-content: space-around;">
-  <img src="https://github.com/JosephSav/Markdown/blob/main/actual-ezgif.com.gif" alt="GIF 1" width="45%" style="margin-right: 10px;">
-  <img src="https://github.com/JosephSav/Markdown/blob/main/pred-ezgif.com.gif" alt="GIF 2" width="45%">
+  <img src="imgs/actual-ezgif.com.gif" alt="GIF 1" width="45%" style="margin-right: 10px;">
+  <img src="imgs/pred-ezgif.com.gif" alt="GIF 2" width="45%">
 </div>
 
 ### Side by side slice:
 
 <div style="display: flex; justify-content: space-around;">
-  <img src="https://github.com/JosephSav/Markdown/blob/main/actual_seperate.png" alt="Actual label" width="45%" style="margin-right: 10px;">
-  <img src="https://github.com/JosephSav/Markdown/blob/main/pred_seperate.png" alt="Predicted label" width="45%">
+  <img src="imgs/actual_seperate.png" alt="Actual label" width="45%" style="margin-right: 10px;">
+  <img src="imgs/pred_seperate.png" alt="Predicted label" width="45%">
 </div>
 
 ### Overlayed gif:
@@ -154,7 +153,7 @@ Left is Actual label (ground truth), and right is the predicted label
 As above, colored are the predicted labels, and greyscale is actual label
 
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/comparison.gif" alt="Overlayed comparison gif"width="50%">
+    <img src="imgs/comparison.gif" alt="Overlayed comparison gif"width="50%">
 </div>
 
 ## Plots and results:
@@ -162,14 +161,14 @@ As above, colored are the predicted labels, and greyscale is actual label
 ### Training and Validation loss:
 
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/loss_new.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
+    <img src="imgs/loss_new (1).png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
 </div>
 We observed a spike in the validation loss during training, which is not surprising given our choice of a smaller batch size (due to memory limitations), as it tends to introduce more variability in the training process.
 
 ### Learning rate:
 
 <div align="left">
-    <img src="https://github.com/JosephSav/Markdown/blob/main/learning_rate_new.png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
+    <img src="imgs/learning_rate_new (1).png" alt="3DUnet Architecture" title="3DUnet Architecture" width="70%">
 </div>
 We can observe how our learning rate scheduler works from this graph.
 

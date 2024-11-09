@@ -3,8 +3,8 @@ import tensorflow as tf
 from dataset import load_data_2D, get_all_paths, batch_paths
 import matplotlib.pyplot as plt
 import numpy as np
-TEST_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_test"
-TEST_SEG_PATH = "/home/groups/comp3710/HipMRI_Study_open/keras_slices_data/keras_slices_seg_test"
+TEST_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/testData/x_test"
+TEST_SEG_PATH = "C:/Users/rjmah/Documents/Sem2 2024/COMP3710/testData/Y_test"
 
 MODEL_PATH = "unetSeg.keras"
 
@@ -34,7 +34,7 @@ for test_x_paths, test_y_paths in zip(x_test_batches, y_test_batches):
     for i in range(5):
         PredMasks = test_logits[:, :, :, i]
         RealMasks = y_test_tensor[:, :, :, i]
-        Dice = 1 -  (2 * tf.reduce_sum(PredMasks * RealMasks) + 1e-6) / (tf.reduce_sum(PredMasks + RealMasks) + 1e-6)
+        Dice = (2 * tf.reduce_sum(PredMasks * RealMasks) + 1e-6) / (tf.reduce_sum(PredMasks + RealMasks) + 1e-6)
         classLosses[i].append(Dice)
     
     test_loss_value = loss_fn(y_test_tensor, test_logits)
@@ -49,6 +49,9 @@ exampleImg = load_data_2D([testPaths[0]], normImage=True)
 exampleSeg = load_data_2D([testSegPaths[0]])
 predSeg = tf.argmax(unet.call(exampleImg, training=False)[0], axis=-1)
 
+plt.imshow(exampleImg[0], cmap='gray')
+plt.show()
+
 fig, (ax1, ax2) = plt.subplots(1, 2)
 ax1.imshow(exampleImg[0], cmap='gray')
 ax1.imshow(predSeg, alpha=0.6)
@@ -57,3 +60,4 @@ ax2.imshow(exampleImg[0], cmap='gray')
 ax2.imshow(exampleSeg[0], alpha=0.6)
 ax2.set_title("Actual Image Mask")
 
+plt.show()

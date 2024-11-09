@@ -17,6 +17,7 @@ In this instance, the 2D U-Net has been applied to slices of MR Images from the 
 2. 'dataset.py' - Contains functions for loading data into numpy arrays and general data handling (getting file paths, creating batches)
 3. 'train.py' - Contains the source code for training, validating, testing and saving the model.
 4. 'predict.py' - Provides an example usage of the algorithm by predicting the test set and provides a visualisation of a predicted mask compared to an actual mask, both of which are overlayed on an original image
+5. 'utils.py' - Contains a helper function for the data loading function in dataset.py
 
 ## Dependencies/Libraries
 - Tensorflow (2.16.1)

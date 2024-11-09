@@ -19,13 +19,13 @@ class UNet3D(nn.Module):
 		self.in_channels = in_channels
 		self.n_classes = n_classes
 		self.base_n_filter = base_n_filter
-
+		
         # Activation, dropout, upsampling, and softmax layers
 		self.lrelu = nn.LeakyReLU()
 		self.dropout3d = nn.Dropout3d(p=0.3)
 		self.upsacle = nn.Upsample(scale_factor=2, mode='nearest')
 		self.softmax = nn.Softmax(dim=1)
-
+		
         # Context pathway layers
 		# Level 1 context pathway
 		self.conv3d_c1_1 = nn.Conv3d(self.in_channels, self.base_n_filter, kernel_size=3, stride=1, padding=1, bias=False)

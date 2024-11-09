@@ -1,3 +1,7 @@
+"""
+This script identify the GFnet model. It's reference from https://github.com/raoyongming/GFNet. 
+Make a little change and only use the basic GFnet part.
+"""
 import math
 import torch
 import torch.nn as nn
@@ -94,7 +98,20 @@ class GFNet(nn.Module):
                  mlp_ratio=4., representation_size=None, uniform_drop=False,
                  drop_rate=0., drop_path_rate=0.1, norm_layer=None,
                  dropcls=0):
-
+        """
+        Args:
+            img_size (int, tuple): input image size
+            patch_size (int, tuple): patch size
+            in_chans (int): number of input channels
+            num_classes (int): number of classes for classification head
+            embed_dim (int): embedding dimension
+            depth (int): depth of transformer
+            mlp_ratio (int): ratio of mlp hidden dim to embedding dim
+            representation_size (Optional[int]): enable and set representation layer (pre-logits) to this value if set
+            drop_rate (float): dropout rate
+            drop_path_rate (float): stochastic depth rate
+            norm_layer: (nn.Module): normalization layer
+        """
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models

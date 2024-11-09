@@ -1,3 +1,6 @@
+"""
+This script have some tools with the val set split. model loading and log.
+"""
 import os
 import shutil
 import random
@@ -65,7 +68,7 @@ def split_val_set(original_dataset_path, new_dataset_path, split_ratio):
 
 def load_model(model, optimizer, filepath):
     """
-    load the model parameters.
+    load the model parameters if the pth exist.
     """
     checkpoint = torch.load(filepath)
     model.load_state_dict(checkpoint['model_state_dict'])
@@ -74,6 +77,9 @@ def load_model(model, optimizer, filepath):
 
 
 def append_training_log(train_loss, train_acc, val_loss, val_acc, run_time, file_name="training_log.csv"):
+    """
+    Add new log to the log file to save the training process.
+    """
     file_exists = os.path.isfile(file_name)
 
     with open(file_name, mode='a', newline='') as file:
@@ -89,6 +95,9 @@ def append_training_log(train_loss, train_acc, val_loss, val_acc, run_time, file
 
 
 def draw_training_log(file_name="training_log.csv"):
+    """
+    Use the saved training log to draw the training process graph.
+    """
     data = pd.read_csv(file_name)
 
     plt.figure(figsize=(12, 6))

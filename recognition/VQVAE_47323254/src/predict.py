@@ -12,14 +12,30 @@ from modules import VQVAE
 from utils import calculate_ssim, read_yaml_file, combine_images
 
 
-if __name__ == '__main__':
-    # Load configuration
-    parser = argparse.ArgumentParser(description='Predict using VQVAE model.')
-    parser.add_argument('--config', type=str, required=True, 
-                        help='Path to the configuration YAML file.')
-    config_path = parser.parse_args().config
-    config = read_yaml_file(config_path)
+def save_combined_image(original: torch.Tensor, reconstructed: torch.Tensor, save_path: str, title: str) -> None:
+    """Save a combined image with the original and reconstructed image side by side.
     
+    Args:
+        original (torch.Tensor): the original image.
+        reconstructed (torch.Tensor): the reconstructed image.
+        save_path (str): path to save the image.
+        title (str): title for the image.
+    """
+    combined_image = combine_images(original, reconstructed)
+    plt.imshow(combined_image, cmap='gray')
+    plt.title(title)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+    
+    
+def predict(config: dict) -> None:
+    """Predict using the VQVAE model.
+
+    Args:
+        config (dict): configuration dictionary.
+    """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     model_parameters = config['model_parameters']
@@ -53,13 +69,22 @@ if __name__ == '__main__':
             
             ssim = calculate_ssim(original_image, reconstructed_image)
             
-            combined_image = combine_images(original_image, reconstructed_image)
-            
-            plt.imshow(combined_image, cmap='gray')
-            plt.title(f"Loss: {loss.item():.4f}, SSIM: {ssim:.4f}")
-            plt.axis('off')
-            plt.tight_layout()
-            plt.savefig(os.path.join(save_dir, f'image_{image_count}.png'))
-            plt.close()
+            save_combined_image(
+                original_image, 
+                reconstructed_image, 
+                os.path.join(save_dir, f'image_{image_count}.png'), 
+                f"Loss: {loss.item():.4f}, SSIM: {ssim:.4f}"
+            )
             
             image_count += 1
+    
+
+if __name__ == '__main__':
+    # Load configuration
+    parser = argparse.ArgumentParser(description='Predict using VQVAE model.')
+    parser.add_argument('--config', type=str, required=True, 
+                        help='Path to the configuration YAML file.')
+    config_path = parser.parse_args().config
+    config = read_yaml_file(config_path)
+    
+    predict(config)

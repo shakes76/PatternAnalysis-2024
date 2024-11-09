@@ -4,25 +4,196 @@ import os
 import time
 
 import matplotlib.pyplot as plt
+import numpy as np
 import shutil
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataset import get_dataloader, get_transforms
 from modules import VQVAE
 from utils import calculate_ssim, read_yaml_file, combine_images
     
- 
-if __name__ == '__main__':
-    # Load configuration
-    parser = argparse.ArgumentParser(description='Train VQVAE model.')
-    parser.add_argument('--config', type=str, required=True, 
-                        help='Path to the configuration YAML file.')
+
+def calculate_batch_ssim(batch: torch.Tensor, reconstructed_batch: torch.Tensor) -> float:
+    """Calculate the Structural Similarity Index (SSIM) for a batch of images.
     
-    config_path = parser.parse_args().config
-    config = read_yaml_file(config_path)
+    Args:
+        batch (torch.Tensor): the batch of images.
+        
+    Returns:
+        float: the average SSIM for the batch of images.
+    """
+    batch_ssim = 0.0
+    for i in range(batch.size(0)):
+        original_image = batch[i, 0].cpu().detach().numpy()
+        reconstructed_image = reconstructed_batch[i, 0].cpu().detach().numpy()
+        batch_ssim += calculate_ssim(original_image, reconstructed_image)
+    return batch_ssim / batch.size(0)
+
+
+def train_one_epoch(
+    model: VQVAE, 
+    train_loader: DataLoader, 
+    criterion: nn.Module, 
+    optimizer: torch.optim.Optimizer, 
+    device: torch.device,
+    epoch: int,
+    num_epochs: int
+) -> tuple:
+    """Train the model for one epoch.
     
+    Args:
+        model (VQVAE): the model to train.
+        train_loader (DataLoader): the DataLoader for the training data.
+        criterion (nn.Module): the loss function.
+        optimizer (torch.optim.Optimizer): the optimizer.
+        device (torch.device): the device to train on.
+        epoch (int): the current epoch.
+        num_epochs (int): the total number of epochs.
+        
+    Returns:
+        tuple: the average commitment loss, average reconstruction loss, average total loss, average SSIM, original image, and reconstructed image.
+    """
+    # Keep track of losses and SSIM
+    train_total_commitment_loss = 0.0
+    train_total_recon_loss = 0.0
+    train_total_loss = 0.0
+    train_total_ssim = 0.0
+    for train_batch in tqdm(train_loader, desc=f"Training Epoch {epoch}/{num_epochs}"):
+        train_batch = train_batch.to(device).float()
+        optimizer.zero_grad()
+        train_reconstructed, train_commitment_loss = model(train_batch)
+        train_recon_loss = criterion(train_reconstructed, train_batch)
+        train_loss = train_recon_loss + train_commitment_loss
+        train_loss.backward()
+        optimizer.step()
+        
+        train_total_commitment_loss += train_commitment_loss.item()
+        train_total_recon_loss += train_recon_loss.item()
+        train_total_loss += train_loss.item()
+        train_total_ssim += calculate_batch_ssim(train_batch, train_reconstructed)
+    
+    avg_train_commitment_loss = train_total_commitment_loss / len(train_loader)
+    avg_train_recon_loss = train_total_recon_loss / len(train_loader)
+    avg_train_loss = train_total_loss / len(train_loader)
+    avg_train_ssim = train_total_ssim / len(train_loader)
+        
+    # Get original and reconstructed images of the first image
+    train_original_image = train_batch[0, 0].cpu().detach().numpy()
+    train_reconstructed_image = train_reconstructed[0, 0].cpu().detach().numpy()
+    
+    return (
+        avg_train_commitment_loss,
+        avg_train_recon_loss,
+        avg_train_loss,
+        avg_train_ssim,
+        train_original_image,
+        train_reconstructed_image
+    )
+
+
+def validate_one_epoch(
+    model: VQVAE,
+    val_loader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+    epoch: int,
+    num_epochs: int
+) -> tuple:
+    """Validate the model for one epoch.
+    
+    Args:
+        model (VQVAE): the model to validate.
+        val_loader (DataLoader): the DataLoader for the validation data.
+        criterion (nn.Module): the loss function.
+        device (torch.device): the device to validate on.
+        epoch (int): the current epoch.
+        num_epochs (int): the total number of epochs.
+        
+    Returns:
+        tuple: the average commitment loss, average reconstruction loss, average total loss, average SSIM, original image, and reconstructed image.
+    """
+    val_total_commitment_loss = 0.0
+    val_total_recon_loss = 0.0
+    val_total_loss = 0.0
+    val_total_ssim = 0.0
+    with torch.no_grad():
+        for val_batch in tqdm(val_loader, desc=f"Validation Epoch {epoch}/{num_epochs}"):
+            val_batch = val_batch.to(device).float()
+            val_reconstructed, val_commitment_loss = model(val_batch)
+            val_recon_loss = criterion(val_reconstructed, val_batch)
+            val_loss = val_recon_loss + val_commitment_loss
+            
+            val_total_commitment_loss += val_commitment_loss.item()
+            val_total_recon_loss += val_recon_loss.item()
+            val_total_loss += val_loss.item()
+            val_total_ssim += calculate_batch_ssim(val_batch, val_reconstructed)
+            
+    avg_val_commitment_loss = val_total_commitment_loss / len(val_loader)
+    avg_val_recon_loss = val_total_recon_loss / len(val_loader)
+    avg_val_loss = val_total_loss / len(val_loader)
+    avg_val_ssim = val_total_ssim / len(val_loader)
+            
+    val_original_image = val_batch[0, 0].cpu().detach().numpy()
+    val_reconstructed_image = val_reconstructed[0, 0].cpu().detach().numpy()
+    
+    return (
+        avg_val_commitment_loss,
+        avg_val_recon_loss,
+        avg_val_loss,
+        avg_val_ssim,
+        val_original_image,
+        val_reconstructed_image
+    )
+    
+    
+def save_epoch_image(
+    train_original_image: np.ndarray,
+    train_reconstructed_image: np.ndarray,
+    val_original_image: np.ndarray,
+    val_reconstructed_image: np.ndarray,
+    epoch: int,
+    image_log_dir: str
+) -> None:
+    """Save the original and reconstructed images for the train and validation sets.
+    
+    Args:
+        train_original_image (np.ndarray): the original image from the training set.
+        train_reconstructed_image (np.ndarray): the reconstructed image from the training set.
+        val_original_image (np.ndarray): the original image from the validation set.
+        val_reconstructed_image (np.ndarray): the reconstructed image from the validation set.
+        epoch (int): the current epoch.
+        image_log_dir (str): the directory to save the images.
+    """
+    with torch.no_grad():
+        train_image = combine_images(train_original_image, train_reconstructed_image)
+        val_image = combine_images(val_original_image, val_reconstructed_image)
+        
+        plt.figure(figsize=(8, 4))
+
+        plt.subplot(1, 2, 1)
+        plt.imshow(train_image, cmap='gray')
+        plt.title("Train Original and Reconstructed Image")
+        plt.axis('off')
+
+        plt.subplot(1, 2, 2)
+        plt.imshow(val_image, cmap='gray')
+        plt.title("Validation Original and Reconstructed Image")
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(image_log_dir, f'epoch_{epoch}.png'))
+        plt.close()
+    
+
+def train(config: dict) -> None:
+    """Train the VQVAE model.
+    
+    Args:
+        config (dict): configuration dictionary.
+    """
     model_parameters = config['model_parameters']
     
     log_dir = os.path.join(config['logs_root'], config['log_dir_name']) if config['log_dir_name'] else \
@@ -84,90 +255,45 @@ if __name__ == '__main__':
     for epoch in range(1, num_epochs + 1):
         # Train
         model.train()
-        train_total_commitment_loss = 0.0
-        train_total_recon_loss = 0.0
-        train_total_loss = 0.0
-        train_total_ssim = 0.0
-        for train_batch in tqdm(train_loader, desc=f"Training Epoch {epoch}/{num_epochs}"):
-            train_batch = train_batch.to(device).float()
-            optimizer.zero_grad()
-            train_reconstructed, train_commitment_loss = model(train_batch)
-            train_recon_loss = criterion(train_reconstructed, train_batch)
-            train_loss = train_recon_loss + train_commitment_loss
-            train_loss.backward()
-            optimizer.step()
-            
-            train_total_commitment_loss += train_commitment_loss.item()
-            train_total_recon_loss += train_recon_loss.item()
-            train_total_loss += train_loss.item()
-            train_total_ssim += calculate_ssim(train_batch[0, 0].cpu().detach().numpy(), 
-                                        train_reconstructed[0, 0].cpu().detach().numpy())
+        train_commitment_loss, train_recon_loss, train_loss, train_ssim, train_original_image, train_reconstructed_image = \
+            train_one_epoch(model, train_loader, criterion, optimizer, device, epoch, num_epochs)
         
         # Validation
         model.eval()
-        val_total_commitment_loss = 0.0
-        val_total_recon_loss = 0.0
-        val_total_loss = 0.0
-        val_total_ssim = 0.0
-        with torch.no_grad():
-            for val_batch in tqdm(val_loader, desc=f"Validation Epoch {epoch}/{num_epochs}"):
-                val_batch = val_batch.to(device).float()
-                val_reconstructed, val_commitment_loss = model(val_batch)
-                val_recon_loss = criterion(val_reconstructed, val_batch)
-                val_loss = val_recon_loss + val_commitment_loss
-                
-                val_total_commitment_loss += val_commitment_loss.item()
-                val_total_recon_loss += val_recon_loss.item()
-                val_total_loss += val_loss.item()
-                val_total_ssim += calculate_ssim(val_batch[0, 0].cpu().detach().numpy(), 
-                                        val_reconstructed[0, 0].cpu().detach().numpy())
+        val_commitment_loss, val_recon_loss, val_loss, val_ssim, val_original_image, val_reconstructed_image = \
+            validate_one_epoch(model, val_loader, criterion, device, epoch, num_epochs)
         
         # Save original and reconstructed images
         if epoch % image_frequency == 0:
-            with torch.no_grad():
-                train_original_image = train_batch[0, 0].cpu().detach().numpy()
-                train_reconstructed_image = train_reconstructed[0, 0].cpu().detach().numpy()
-                val_original_image = val_batch[0, 0].cpu().detach().numpy()
-                val_reconstructed_image = val_reconstructed[0, 0].cpu().detach().numpy()
-                train_image = combine_images(train_original_image, train_reconstructed_image)
-                val_image = combine_images(val_original_image, val_reconstructed_image)
-                
-                plt.figure(figsize=(8, 4))
-
-                plt.subplot(1, 2, 1)
-                plt.imshow(train_image, cmap='gray')
-                plt.title("Train Original and Reconstructed Image")
-                plt.axis('off')
-
-                plt.subplot(1, 2, 2)
-                plt.imshow(val_image, cmap='gray')
-                plt.title("Validation Original and Reconstructed Image")
-                plt.axis('off')
-
-                plt.tight_layout()
-                plt.savefig(os.path.join(image_log_dir, f'epoch_{epoch}.png'))
-                plt.close()
+            save_epoch_image(
+                train_original_image, 
+                train_reconstructed_image, 
+                val_original_image, 
+                val_reconstructed_image, 
+                epoch, 
+                image_log_dir
+            )
         
-        train_loss = train_total_loss / len(train_loader)
-        val_loss = val_total_loss / len(val_loader)
-        train_commitment_losses.append(train_total_commitment_loss / len(train_loader))
-        train_recon_losses.append(train_total_recon_loss / len(train_loader))
+        # Save metrics
+        train_commitment_losses.append(train_commitment_loss)
+        train_recon_losses.append(train_recon_loss)
         train_total_losses.append(train_loss)
-        train_ssim_scores.append(train_total_ssim / len(train_loader))
-        val_commitment_losses.append(val_total_commitment_loss / len(val_loader))
-        val_recon_losses.append(val_total_recon_loss / len(val_loader))
+        train_ssim_scores.append(train_ssim)
+        val_commitment_losses.append(val_commitment_loss)
+        val_recon_losses.append(val_recon_loss)
         val_total_losses.append(val_loss)
-        val_ssim_scores.append(val_total_ssim / len(val_loader))
+        val_ssim_scores.append(val_ssim)
         
         # Log
         if epoch % log_frequency == 0:
-            logging.info(f"Epoch [{epoch}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train SSIM: {train_total_ssim / len(train_loader):.4f}, Val SSIM: {val_total_ssim / len(val_loader):.4f}")
+            logging.info(f"Epoch [{epoch}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train SSIM: {train_ssim:.4f}, Val SSIM: {val_ssim:.4f}")
             
         # Save best model
         if val_loss < best_val_loss:
             torch.save(model.state_dict(), os.path.join(log_dir, 'best_model.pth'))
             best_val_loss = val_loss
     
+    # Log training time
     end_time = time.time()
     logging.info(f"Training took {(end_time - start_time) / 60:.2f} minutes\n")
         
@@ -265,3 +391,15 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig(os.path.join(log_dir, f'test_images.png'))
     plt.close()
+ 
+ 
+if __name__ == '__main__':
+    # Load configuration
+    parser = argparse.ArgumentParser(description='Train VQVAE model.')
+    parser.add_argument('--config', type=str, required=True, 
+                        help='Path to the configuration YAML file.')
+    
+    config_path = parser.parse_args().config
+    config = read_yaml_file(config_path)
+    
+    train(config)

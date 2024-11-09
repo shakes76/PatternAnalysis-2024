@@ -111,12 +111,12 @@ def main():
     class_weights = torch.tensor([1.0, 1.2]).to(device)
     model = get_vit_model().to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
 
     print("Beginning training now.")
     # Train the model and get training loss and accuracy
-    train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, num_epochs=50)
+    train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, num_epochs=20)
 
     print("Beginning testing now.")
     # Test the model and get test loss and accuracy
@@ -126,7 +126,7 @@ def main():
     plot_metrics(train_loss, train_acc, test_loss, test_accuracy)
 
     # Save the model
-    torch.save(model.state_dict(), 'gfnet_adni_model.pth')
+    torch.save(model.state_dict(), 'vit_adni_model.pth')
     print(f'Model saved with Test Accuracy: {test_accuracy:.2f}%')
 
 if __name__ == '__main__':

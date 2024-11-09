@@ -31,11 +31,11 @@ The model achieved a loss of 0.0224 on the test set after 3 epochs, with dice co
 
 |Class | Dice Co |
 |------|---------|
-| 0    | 4.002e-3|
-| 1    | 1.752e-2|
-| 2    | 6.699e-2|
-| 3    | 3.716e-2|
-| 4    | 1.256e-1|
+| 0    | 0.9960  |
+| 1    | 0.9600  |
+| 2    | 0.9330  |
+| 3    | 0.9628  |
+| 4    | 0.8744  |
 
 ### Example Segmentation
 ![alt text](imgs/ExampleMask.png)

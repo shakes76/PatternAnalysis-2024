@@ -40,7 +40,7 @@ class TransformerBlock(nn.Module):
 
 # Define the Vision Transformer Model
 class SimpleViT(nn.Module):
-    def __init__(self, image_size=224, patch_size=32, num_classes=2, dim=128, depth=8, heads=8, mlp_dim=256):
+    def __init__(self, image_size=224, patch_size=16, num_classes=2, dim=128, depth=8, heads=8, mlp_dim=256):
         super(SimpleViT, self).__init__()
         
         # Calculate the number of patches and the dimension of each patch
@@ -75,7 +75,7 @@ class SimpleViT(nn.Module):
         batch_size = x.size(0)
         
         # Extract patches from the input image tensor
-        patches = x.unfold(2, 32, 32).unfold(3, 32, 32)
+        patches = x.unfold(2, 16, 16).unfold(3, 16, 16)
         patches = patches.permute(0, 2, 3, 1, 4, 5).reshape(batch_size, self.num_patches, -1)
         
         # Embed the patches

@@ -3,16 +3,30 @@ import torch
 
 class UNet3D(nn.Module):
 	def __init__(self, in_channels, n_classes, base_n_filter = 8):
+		"""
+		3D U-Net model for volumetric segmentation.
+
+        This model is designed for tasks such as medical image segmentation. It follows 
+        the standard U-Net architecture, featuring context pathways and localization 
+        pathways for feature extraction and precise localization.
+
+        Args:
+            in_channels (int): Number of input channels.
+            n_classes (int): Number of output segmentation classes.
+            base_n_filter (int, optional): Base number of filters for the convolutional layers. Defaults to 8.
+		"""
 		super(UNet3D, self).__init__()
 		self.in_channels = in_channels
 		self.n_classes = n_classes
 		self.base_n_filter = base_n_filter
 
+        # Activation, dropout, upsampling, and softmax layers
 		self.lrelu = nn.LeakyReLU()
 		self.dropout3d = nn.Dropout3d(p=0.3)
 		self.upsacle = nn.Upsample(scale_factor=2, mode='nearest')
 		self.softmax = nn.Softmax(dim=1)
 
+        # Context pathway layers
 		# Level 1 context pathway
 		self.conv3d_c1_1 = nn.Conv3d(self.in_channels, self.base_n_filter, kernel_size=3, stride=1, padding=1, bias=False)
 		self.conv3d_c1_2 = nn.Conv3d(self.base_n_filter, self.base_n_filter, kernel_size=3, stride=1, padding=1, bias=False)
@@ -42,6 +56,7 @@ class UNet3D(nn.Module):
 		self.conv3d_l0 = nn.Conv3d(self.base_n_filter*8, self.base_n_filter*8, kernel_size = 1, stride=1, padding=0, bias=False)
 		self.inorm3d_l0 = nn.InstanceNorm3d(self.base_n_filter*8)
 
+        # Localization pathway layers
 		# Level 1 localization pathway
 		self.conv_norm_lrelu_l1 = self.conv_norm_lrelu(self.base_n_filter*16, self.base_n_filter*16)
 		self.conv3d_l1 = nn.Conv3d(self.base_n_filter*16, self.base_n_filter*8, kernel_size=1, stride=1, padding=0, bias=False)
@@ -64,25 +79,30 @@ class UNet3D(nn.Module):
 		self.ds2_1x1_conv3d = nn.Conv3d(self.base_n_filter*8, self.n_classes, kernel_size=1, stride=1, padding=0, bias=False)
 		self.ds3_1x1_conv3d = nn.Conv3d(self.base_n_filter*4, self.n_classes, kernel_size=1, stride=1, padding=0, bias=False)
 
-
+   
+    # Helper functions for creating layers
 	def conv_norm_lrelu(self, feat_in, feat_out):
+		"""Creates a Conv3D layer followed by InstanceNorm3D and LeakyReLU."""
 		return nn.Sequential(
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
 			nn.InstanceNorm3d(feat_out),
 			nn.LeakyReLU())
 
 	def norm_lrelu_conv(self, feat_in, feat_out):
+		"""Creates a layer with InstanceNorm3D, LeakyReLU, and Conv3D."""
 		return nn.Sequential(
 			nn.InstanceNorm3d(feat_in),
 			nn.LeakyReLU(),
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False))
 
 	def lrelu_conv(self, feat_in, feat_out):
+		"""Creates a LeakyReLU followed by Conv3D."""
 		return nn.Sequential(
 			nn.LeakyReLU(),
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False))
 
 	def norm_lrelu_upscale_conv_norm_lrelu(self, feat_in, feat_out):
+		"""Creates a layer with InstanceNorm3D, LeakyReLU, Upsampling, Conv3D, and another InstanceNorm3D with LeakyReLU."""
 		return nn.Sequential(
 			nn.InstanceNorm3d(feat_in),
 			nn.LeakyReLU(),
@@ -93,6 +113,8 @@ class UNet3D(nn.Module):
 			nn.LeakyReLU())
 
 	def forward(self, x):
+		"""Defines the forward pass for the 3D U-Net."""
+		
 		#  Level 1 context pathway
 		out = self.conv3d_c1_1(x)
 		residual_1 = out
@@ -184,6 +206,10 @@ class UNet3D(nn.Module):
 		ds1_ds2_sum_upscale_ds3_sum_upscale = self.upsacle(ds1_ds2_sum_upscale_ds3_sum)
 
 		out = out_pred + ds1_ds2_sum_upscale_ds3_sum_upscale
+		# Output without the softmax activation function
 		seg_layer = out.contiguous()
+		out = out.permute(0, 2, 3, 4, 1).contiguous().view(-1, self.n_classes)
+		#out = out.view(-1, self.n_classes)
+		out = self.softmax(out)
 
 		return seg_layer

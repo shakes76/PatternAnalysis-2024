@@ -6,3 +6,7 @@
 recognition/46822394_ViT_ADNC/predict_old.py
 recognition/46822394_ViT_ADNC/train3.py
 
+recognition/46822394_ViT_ADNC/ADNI/meta_data_with_label.json
+*.pyc
+*.pdf
+*.typ

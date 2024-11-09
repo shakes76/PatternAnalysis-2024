@@ -140,30 +140,6 @@ def plot_confusion_matrix(y_true, y_pred, classes, save_path):
     per_class_accuracy = cm.diagonal() / cm.sum(axis=1)
     return per_class_accuracy, present_class_names
 
-def evaluate_model(model, test_loader, device, classes):
-    """
-    Evaluate model performance on test set
-    """
-    model.eval()
-
-    # Initialize lists to store predictions and true labels
-    all_preds = []
-    all_labels = []
-    all_probs = []
-
-    # Testing loop
-    with torch.no_grad():
-        for images, labels in tqdm(test_loader, desc="Evaluating"):
-            images = images.to(device)
-            outputs = model(images)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)
-            _, predicted = torch.max(outputs.data, 1)
-
-            all_preds.extend(predicted.cpu().numpy())
-            all_labels.extend(labels.numpy())
-            all_probs.extend(probabilities.cpu().numpy())
-
-    return np.array(all_preds), np.array(all_labels), np.array(all_probs)
 
 def save_metrics(metrics, save_path):
     """
@@ -192,6 +168,116 @@ def save_metrics(metrics, save_path):
     with open(metrics_file, 'w') as f:
         json.dump(metrics_json, f, indent=4, sort_keys=True, default=convert_numpy)
 
+def save_sample_images(images, predictions, true_labels, classes, save_path, probabilities):
+    """
+    Save sample images for all classes (CN, MCI, AD, SMC) and false positives
+
+    Args:
+        images: Tensor of input images
+        predictions: Model predictions
+        true_labels: True labels
+        classes: List of class names
+        save_path: Directory to save images
+        probabilities: Model prediction probabilities
+    """
+    def save_grid(img_list, title, filename):
+        if len(img_list) == 0:
+            return
+
+        # Take up to 5 images
+        img_list = img_list[:5]
+
+        # Create a grid of images
+        grid = vutils.make_grid(img_list, nrow=len(img_list), padding=2, normalize=True)
+        plt.figure(figsize=(15, 3))
+        plt.axis('off')
+        plt.title(title)
+        plt.imshow(grid.permute(1, 2, 0).cpu())
+        plt.savefig(save_path / filename, bbox_inches='tight', dpi=300)
+        plt.close()
+
+    # Lists to store sample images for each class
+    correct_samples = {class_name: [] for class_name in classes}
+    correct_probs = {class_name: [] for class_name in classes}
+
+    # Dictionary to store false positives for each misclassification type
+    false_positive_samples = {
+        f"{true_class}->{pred_class}": []
+        for true_class in classes
+        for pred_class in classes
+        if true_class != pred_class
+    }
+    false_positive_probs = {
+        f"{true_class}->{pred_class}": []
+        for true_class in classes
+        for pred_class in classes
+        if true_class != pred_class
+    }
+
+    # Collect samples
+    for img, pred, true_label, prob in zip(images, predictions, true_labels, probabilities):
+        pred_class = classes[pred]
+        true_class = classes[true_label]
+
+        if pred == true_label:
+            if len(correct_samples[true_class]) < 5:
+                correct_samples[true_class].append(img)
+                correct_probs[true_class].append(prob[pred])
+        else:
+            key = f"{true_class}->{pred_class}"
+            if len(false_positive_samples[key]) < 5:
+                false_positive_samples[key].append(img)
+                false_positive_probs[key].append(prob[pred])
+
+    # Save correct classifications
+    for class_name in classes:
+        if correct_samples[class_name]:
+            save_grid(
+                correct_samples[class_name],
+                f"Correct {class_name} Samples\nConfidence: {[f'{p:.2f}' for p in correct_probs[class_name]]}",
+                f'{class_name.lower()}_correct_samples.png'
+            )
+
+    # Save false positives grouped by misclassification type
+    for misclass_type, samples in false_positive_samples.items():
+        if samples:
+            true_class, pred_class = misclass_type.split('->')
+            save_grid(
+                samples,
+                f"False Positives: {misclass_type}\n" + \
+                f"True: {true_class}, Predicted: {pred_class}\n" + \
+                f"Confidence: {[f'{p:.2f}' for p in false_positive_probs[misclass_type]]}",
+                f'false_positive_{true_class.lower()}_to_{pred_class.lower()}.png'
+            )
+
+def evaluate_model(model, test_loader, device, classes):
+    """
+    Evaluate model performance on test set
+    """
+    model.eval()
+
+    # Initialise lists to store predictions, true labels, and images
+    all_preds = []
+    all_labels = []
+    all_probs = []
+    all_images = []
+
+    # Testing loop
+    with torch.no_grad():
+        for images, labels in tqdm(test_loader, desc="Evaluating"):
+            images = images.to(device)
+            outputs = model(images)
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            _, predicted = torch.max(outputs.data, 1)
+
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.numpy())
+            all_probs.extend(probabilities.cpu().numpy())
+            all_images.extend(images.cpu())
+
+    return (np.array(all_preds), np.array(all_labels),
+            np.array(all_probs), torch.stack(all_images))
+
 def main():
     # Configuration
     BATCH_SIZE = 64
@@ -212,8 +298,8 @@ def main():
     print(f"Test set size: {len(test_dataset)} images")
 
     # Define paths for both models
-    model1_path = "./checkpoints/best_model_20241029_234652.pt"
-    model2_path = "./checkpoints/best_model_20241029_224507.pt"
+    model1_path = "./checkpoints/best_model_20241109_190825.pt"
+    model2_path = "./checkpoints/checkpoint_epoch_1_20241109_195852.pt"
     print(f"Loading models from:\nModel 1: {model1_path}\nModel 2: {model2_path}")
 
     # Perform cross-validation
@@ -221,6 +307,10 @@ def main():
     predictions, true_labels, probabilities = cross_validate_models(
         model1_path, model2_path, test_loader, device, CLASSES
     )
+
+    # Save sample images
+    print("\nSaving sample images...")
+    save_sample_images(images, predictions, true_labels, CLASSES, results_dir, probabilities)
 
     # Get unique classes present in the data
     present_classes = np.unique(true_labels)
@@ -243,7 +333,7 @@ def main():
     )
 
     # Plot ROC curves only for present classes
-    if len(present_classes) > 1:  # Only plot ROC curves if there are multiple classes
+    if len(present_classes) > 1:
         plot_roc_curves(true_labels, probabilities[:, present_classes],
                        present_class_names, results_dir)
 
@@ -275,9 +365,22 @@ def main():
     print(f"\nDetailed results have been saved to {results_dir}")
     print("Files generated:")
     print("- confusion_matrix.png")
+    print("- cn_correct_samples.png")
+    print("- mci_correct_samples.png")
+    print("- ad_correct_samples.png")
+    print("- smc_correct_samples.png")
+
+    # List false positive files that were actually generated
+    generated_fp_files = list(results_dir.glob('false_positive_*.png'))
+    if generated_fp_files:
+        print("\nFalse positive analysis files:")
+        for fp_file in generated_fp_files:
+            print(f"- {fp_file.name}")
+
     if len(present_classes) > 1:
         print("- roc_curves.png")
     print("- evaluation_metrics.json")
+
 
 if __name__ == "__main__":
     try:

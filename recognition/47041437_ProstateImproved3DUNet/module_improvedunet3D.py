@@ -1,19 +1,19 @@
 import torch.nn as nn
 import torch
 
+'''
+Improved 3D U-Net model for volumetric segmentation.
+
+This model is designed for tasks such as medical image segmentation. It follows 
+the an improved U-Net architecture, featuring context pathways and localization 
+pathways for feature extraction and precise localization.
+
+Args:
+    in_channels (int): Number of input channels.
+    n_classes (int): Number of output segmentation classes.
+    base_n_filter (int, optional): Base number of filters for the convolutional layers. Defaults to 8.
+'''
 class UNet3D(nn.Module):
-	"""
-    3D U-Net model for volumetric segmentation.
-
-    This model is designed for tasks such as medical image segmentation. It follows 
-    the standard U-Net architecture, featuring context pathways and localization 
-    pathways for feature extraction and precise localization.
-
-    Args:
-        in_channels (int): Number of input channels.
-        n_classes (int): Number of output segmentation classes.
-        base_n_filter (int, optional): Base number of filters for the convolutional layers. Defaults to 8.
-    """
 	def __init__(self, in_channels, n_classes, base_n_filter = 8):
 		super(UNet3D, self).__init__()
 		self.in_channels = in_channels
@@ -82,27 +82,27 @@ class UNet3D(nn.Module):
    
     # Helper functions for creating layers
 	def conv_norm_lrelu(self, feat_in, feat_out):
-		"""Creates a Conv3D layer followed by InstanceNorm3D and LeakyReLU."""
+		'''reates a Conv3D layer followed by InstanceNorm3D and LeakyReLU.'''
 		return nn.Sequential(
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
 			nn.InstanceNorm3d(feat_out),
 			nn.LeakyReLU())
 
 	def norm_lrelu_conv(self, feat_in, feat_out):
-		"""Creates a layer with InstanceNorm3D, LeakyReLU, and Conv3D."""
+		'''Creates a layer with InstanceNorm3D, LeakyReLU, and Conv3D.'''
 		return nn.Sequential(
 			nn.InstanceNorm3d(feat_in),
 			nn.LeakyReLU(),
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False))
 
 	def lrelu_conv(self, feat_in, feat_out):
-		"""Creates a LeakyReLU followed by Conv3D."""
+		'''Creates a LeakyReLU followed by Conv3D.'''
 		return nn.Sequential(
 			nn.LeakyReLU(),
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False))
 
 	def norm_lrelu_upscale_conv_norm_lrelu(self, feat_in, feat_out):
-		"""Creates a layer with InstanceNorm3D, LeakyReLU, Upsampling, Conv3D, and another InstanceNorm3D with LeakyReLU."""
+		'''Creates a layer with InstanceNorm3D, LeakyReLU, Upsampling, Conv3D, and another InstanceNorm3D with LeakyReLU.'''
 		return nn.Sequential(
 			nn.InstanceNorm3d(feat_in),
 			nn.LeakyReLU(),
@@ -113,7 +113,7 @@ class UNet3D(nn.Module):
 			nn.LeakyReLU())
 
 	def forward(self, x):
-		"""Defines the forward pass for the 3D U-Net."""
+		'''Defines the forward pass for the 3D U-Net.'''
 		
 		#  Level 1 context pathway
 		out = self.conv3d_c1_1(x)

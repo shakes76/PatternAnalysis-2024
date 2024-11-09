@@ -82,7 +82,7 @@ class UNet3D(nn.Module):
    
     # Helper functions for creating layers
 	def conv_norm_lrelu(self, feat_in, feat_out):
-		'''reates a Conv3D layer followed by InstanceNorm3D and LeakyReLU.'''
+		'''Creates a Conv3D layer followed by InstanceNorm3D and LeakyReLU.'''
 		return nn.Sequential(
 			nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
 			nn.InstanceNorm3d(feat_out),

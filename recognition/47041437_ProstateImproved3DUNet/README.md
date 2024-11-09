@@ -11,7 +11,7 @@ The use of both the original 3D U-Net by Ozgün Çiçek et al. and the improved 
 
 The original U-Net architecture is a powerful convolutional neural network, featuring a symmetrical structure that includes encoder and decoder paths. The encoder progressively down-samples the input through various convolutional layers to capture context and enable the model to learn the varied features present. The output from the encoder is then reconstructed in the decoder path, wherein skip connections from the encoder enables the model to retain the spatial information and produce accurate segmentations of bodies within the images. 
 
-The improved U-Net is a more complex and modern model that enhances the foundational design of the original U-Net. Improved 3D U-Net uses a deeper architecture with multiple convolutional layers, which enables the model to learn intricate pattern and relationships in the data more effectively. Furthermore, the inclusion of batch normalisation, improved skip connections and up-sampling aid in the stabilisation, generalisation, and the transfer of finer details. Therefore, these enhancements in the improved U-Net model leads to more sophisticated, accurate and high-quality segmentations compared to the original U-Net.
+The improved U-Net is a more complex and modern model that enhances the foundational design of the original U-Net. Improved 3D U-Net uses a deeper architecture with multiple convolutional layers, which enables the model to learn intricate pattern and relationships in the data more effectively. Furthermore, the inclusion of batch normalisation, deep supervision layers and improved skip connections and up-sampling aid in the stabilisation, generalisation, and the transfer of finer details. Therefore, these enhancements in the improved U-Net model leads to more sophisticated, accurate and high-quality segmentations compared to the original U-Net.
 
 ![U-Net architecture diagram](images/UNet%20architecture.jpg)
 
@@ -35,11 +35,6 @@ This report specifically looks at a 3D prostate dataset and attempts to extract 
 ## Parameters and Results
 The dataset consisted of prostate 3D MRI data for 3D tasks of 38 patients with 211 3D MRI volumes. The body outline, bone, bladder, rectum and prostate regions are segmented in 3D by a MR physicist with more than 10 years of experience. Thus, a total of 6 labels are present and expected in the output. A batch size of 1 was employed because of the small dataset and to lessen the load on the GPU. An epoch number of 40 was used for the 3D U-Net and 45 for the improved 3D U-Net. 181, 15, 15 images were used for training, validating and testing, respectively. 
 
-The below was inserted into the Rangpur runner file:
-
-```python
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-```
 
 With the 3D U-Net model, all labels achieved a **DSC of at least 0.75.** The plots for the 6 labels can be found below.
 
@@ -185,7 +180,7 @@ pillow = 10.2.0
 
 **[2]**: Isensee, F., Kickingereder, P., Wick, W., Bendszus, M., Maier-Hein, K.H. (2018). Brain Tumor Segmentation and Radiomics Survival Prediction: Contribution to the BRATS 2017 Challenge. In: Crimi, A., Bakas, S., Kuijf, H., Menze, B., Reyes, M. (eds) Brainlesion: Glioma, Multiple Sclerosis, Stroke and Traumatic Brain Injuries. BrainLes 2017. Lecture Notes in Computer Science(), vol 10670. Springer, Cham. https://doi.org/10.1007/978-3-319-75238-9_25
 
-**[3]**: Arshad221b (2023). 3D-UNet-Image-Segmentation. GitHub. https://github.com/Arshad221b/3D-UNet-Image-Segmentation
+**[3]**: pykao (2018). Modified 3D U-Net Pytorch. GitHub. https://github.com/pykao/Modified-3D-UNet-Pytorch
 
 **[4]**: aCoalBall (2022). segmentation-of-3d-prostate. GitHub. https://github.com/aCoalBall/segmentation-of-3d-prostate
 

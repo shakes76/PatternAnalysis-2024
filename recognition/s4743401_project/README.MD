@@ -93,6 +93,11 @@ Upon setting filepaths for the model to save in modules.py, predict.py and train
 run predict.py. It will train the model, and print a loss graph, confusion matrix and accuracy stats as well as a prediction for the given image.
 Upon running train from within predict.py once, it is possible to comment out the training and just work with the saved model.
 
+### Results
+The model's training and validation loss curves (in the graphs folder) indicate that it effectively learned throughout the 10 epochs, as both losses show a decreasing trend, suggesting convergence without significant overfitting. The final test accuracy achieved is 59.57%. From the classification report, the precision, recall, and F1-score values reveal a slight imbalance in the model’s performance across the two classes: "NC" (Normal Control) and "AD" (Alzheimer's Disease). Specifically, the model performs better on "AD" with a recall of 0.67 compared to 0.52 for "NC", showing that it identifies "AD" cases more effectively.
+
+The confusion matrix further supports these findings, showing a larger number of true positives for "AD" and more false negatives for "NC". Overall, while the model demonstrates some capability to distinguish between "NC" and "AD", improvements are needed to enhance its accuracy and balance across classes.
+
 
 ### References
 TheDeepHub. (2022, March 10). Building Vision Transformer from Scratch using PyTorch: An Image worth 16x16 words. Medium. https://medium.com/thedeephub/building-vision-transformer-from-scratch-using-pytorch-an-image-worth-16x16-words-24db5f159e27

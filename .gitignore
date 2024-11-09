@@ -10,3 +10,4 @@ recognition/46822394_ViT_ADNC/ADNI/meta_data_with_label.json
 *.pyc
 *.pdf
 *.typ
+/recognition/46822394_ViT_ADNC/cross_validation_results_20241110_030810

@@ -247,6 +247,8 @@ The system evaluates models using multiple metrics:
 | Model 1 | ./checkpoints/best_model_20241029_234652.pt |
 | Model 2 | ./checkpoints/best_model_20241029_224507.pt |
 
+## Sample Predictions
+
 
 ## Visual Analysis of Results
 

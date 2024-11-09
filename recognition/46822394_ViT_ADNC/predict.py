@@ -7,19 +7,24 @@ on a testing set from the ADNI brain dataset
 Evaluation metrics will be printed and evaluation figures will be saved to the current folder.
 """
 
+# Standard library imports
+import json
+from datetime import datetime
+from pathlib import Path
+
+# Third-party imports
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import torchvision.utils as vutils
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
-import pandas as pd
-from pathlib import Path
-import json
-from datetime import datetime
 
+# Local imports
 from dataset import get_dataset
 from modules import ViTClassifier
 

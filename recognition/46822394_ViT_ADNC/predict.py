@@ -50,20 +50,21 @@ def cross_validate_models(model1_path, model2_path, test_loader, device, classes
     # Choose predictions based on which model performs better for each class
     all_preds = np.zeros_like(preds1)
     all_probs = np.zeros_like(probs1)
-    
+    model_choices = {}  # Track which model was chosen for each class
+
     for class_idx in range(len(classes)):
         if class_idx in accuracy_per_class1:
-            # Use predictions from the model with higher accuracy for this class
+            mask = (labels1 == class_idx)
             if accuracy_per_class1[class_idx] >= accuracy_per_class2[class_idx]:
-                mask = (labels1 == class_idx)
                 all_preds[mask] = preds1[mask]
                 all_probs[mask] = probs1[mask]
+                model_choices[class_idx] = 1
             else:
-                mask = (labels1 == class_idx)
                 all_preds[mask] = preds2[mask]
                 all_probs[mask] = probs2[mask]
+                model_choices[class_idx] = 2
 
-    return all_preds, labels1, all_probs
+    return all_preds, labels1, all_probs, model_choices
 
 def plot_roc_curves(y_true, y_prob, classes, save_path):
     """
@@ -168,17 +169,18 @@ def save_metrics(metrics, save_path):
     with open(metrics_file, 'w') as f:
         json.dump(metrics_json, f, indent=4, sort_keys=True, default=convert_numpy)
 
-def save_sample_images(images, predictions, true_labels, classes, save_path, probabilities):
+def save_sample_images(images, predictions, true_labels, classes, save_path, probabilities, model_choices):
     """
-    Save sample images for all classes (CN, MCI, AD, SMC) and false positives
+    Save sample images for all classes and false positives after cross-validation
 
-    Args:
+     Args:
         images: Tensor of input images
         predictions: Model predictions
         true_labels: True labels
         classes: List of class names
         save_path: Directory to save images
         probabilities: Model prediction probabilities
+        model_choices: Models
     """
     def save_grid(img_list, title, filename):
         if len(img_list) == 0:
@@ -187,7 +189,6 @@ def save_sample_images(images, predictions, true_labels, classes, save_path, pro
         # Take up to 5 images
         img_list = img_list[:5]
 
-        # Create a grid of images
         grid = vutils.make_grid(img_list, nrow=len(img_list), padding=2, normalize=True)
         plt.figure(figsize=(15, 3))
         plt.axis('off')
@@ -218,6 +219,7 @@ def save_sample_images(images, predictions, true_labels, classes, save_path, pro
     for img, pred, true_label, prob in zip(images, predictions, true_labels, probabilities):
         pred_class = classes[pred]
         true_class = classes[true_label]
+        used_model = model_choices.get(true_label, "unknown")
 
         if pred == true_label:
             if len(correct_samples[true_class]) < 5:
@@ -231,10 +233,12 @@ def save_sample_images(images, predictions, true_labels, classes, save_path, pro
 
     # Save correct classifications
     for class_name in classes:
+        class_idx = classes.index(class_name)
         if correct_samples[class_name]:
             save_grid(
                 correct_samples[class_name],
-                f"Correct {class_name} Samples\nConfidence: {[f'{p:.2f}' for p in correct_probs[class_name]]}",
+                f"Correct {class_name} Samples (Using Model {model_choices[class_idx]})\n" + \
+                f"Confidence: {[f'{p:.2f}' for p in correct_probs[class_name]]}",
                 f'{class_name.lower()}_correct_samples.png'
             )
 
@@ -249,7 +253,6 @@ def save_sample_images(images, predictions, true_labels, classes, save_path, pro
                 f"Confidence: {[f'{p:.2f}' for p in false_positive_probs[misclass_type]]}",
                 f'false_positive_{true_class.lower()}_to_{pred_class.lower()}.png'
             )
-
 def evaluate_model(model, test_loader, device, classes):
     """
     Evaluate model performance on test set
@@ -260,7 +263,6 @@ def evaluate_model(model, test_loader, device, classes):
     all_preds = []
     all_labels = []
     all_probs = []
-    all_images = []
 
     # Testing loop
     with torch.no_grad():
@@ -273,13 +275,11 @@ def evaluate_model(model, test_loader, device, classes):
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.numpy())
             all_probs.extend(probabilities.cpu().numpy())
-            all_images.extend(images.cpu())
 
-    return (np.array(all_preds), np.array(all_labels),
-            np.array(all_probs), torch.stack(all_images))
+    return np.array(all_preds), np.array(all_labels), np.array(all_probs)
 
 def main():
-    # Configuration
+     # Configuration
     BATCH_SIZE = 64
     CLASSES = ['CN', 'MCI', 'AD', 'SMC']
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -304,13 +304,29 @@ def main():
 
     # Perform cross-validation
     print("\nPerforming cross-validation...")
-    predictions, true_labels, probabilities = cross_validate_models(
+    predictions, true_labels, probabilities, model_choices = cross_validate_models(
         model1_path, model2_path, test_loader, device, CLASSES
     )
 
+    # Save model choice information
+    model_choice_info = {
+        CLASSES[class_idx]: f"Model {model_num}"
+        for class_idx, model_num in model_choices.items()
+    }
+    with open(results_dir / 'model_choices.json', 'w') as f:
+        json.dump(model_choice_info, f, indent=4)
+
+    # Get all images for visualization
+    all_images = []
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
+    for images, _ in tqdm(test_loader, desc="Collecting images for visualization"):
+        all_images.extend(images)
+    all_images = torch.stack(all_images)
+
     # Save sample images
     print("\nSaving sample images...")
-    save_sample_images(images, predictions, true_labels, CLASSES, results_dir, probabilities)
+    save_sample_images(all_images, predictions, true_labels, CLASSES, results_dir,
+                      probabilities, model_choices)
 
     # Get unique classes present in the data
     present_classes = np.unique(true_labels)

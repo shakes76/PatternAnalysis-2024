@@ -248,6 +248,10 @@ The system evaluates models using multiple metrics:
 | Model 2 | ./checkpoints/best_model_20241029_224507.pt |
 
 ## Sample Predictions
+![Correct CN Samples](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/cn_correct_samples.png)
+![False Positives: MCI->CN](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/false_positive_mci_to_cn.png)
+![False Positives: CN->MCI](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/false_positive_cn_to_mci.png)
+![Correct MCI Samples](https://github.com/Ei3-kw/PatternAnalysis-2024/blob/topic-recognition/recognition/46822394_ViT_ADNC/img/mci_correct_samples.png)
 
 
 ## Visual Analysis of Results

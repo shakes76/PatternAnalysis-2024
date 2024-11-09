@@ -94,6 +94,8 @@ run predict.py. It will train the model, and print a loss graph, confusion matri
 Upon running train from within predict.py once, it is possible to comment out the training and just work with the saved model.
 
 ### Results
+See the "graphs" folder for loss plots, confusion matrix and other data.
+
 The model was trained for 10 epochs using Vision Transformer architecture. The training and validation loss curves indicate a steady decrease over epochs, suggesting that the model successfully learned without significant overfitting. This is further supported by the alignment of the training and validation losses, which converge towards a similar minimum by the end of training. However, the limited training duration of 10 epochs likely constrained the model from reaching full convergence, and further training would improve accuracy.
 
 After tuning key hyperparameters such as batch size, patch size, number of attention heads, weight decay, and learning rate, the model achieved a final test accuracy of 59.57%. Adjustments to the patch size (e.g., using larger patches for computational efficiency), batch size (to stabilize gradients), and learning rate (adjusted to 0.001) each provided slight improvements in accuracy over a range of shorter training runs (5–10 epochs), initially raising accuracy from around 50%. The final configuration, with a patch size of 16, eight attention heads, and a learning rate of 0.001, reflects a compromise between accuracy and computational limitations and waiting time.

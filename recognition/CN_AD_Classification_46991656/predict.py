@@ -38,7 +38,7 @@ def main():
 
     # Initialize model and load state_dict
     model = get_vit_model()
-    model.load_state_dict(torch.load('gfnet_adni_model.pth', map_location=device))
+    model.load_state_dict(torch.load('vit_adni_model.pth', map_location=device))
     model.to(device)  # Move model to the appropriate device
 
     print("Starting predictions...")

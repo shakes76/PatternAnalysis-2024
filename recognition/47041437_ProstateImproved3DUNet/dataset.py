@@ -139,6 +139,6 @@ class augmentation:
             image = self.rand_flip_2(image)
             label = self.rand_flip_2(label)
 
-        image = self.oneof(image)
+        #image = self.oneof(image)
         
         return image, label

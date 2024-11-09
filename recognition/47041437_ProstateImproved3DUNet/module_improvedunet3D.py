@@ -2,19 +2,19 @@ import torch.nn as nn
 import torch
 
 class UNet3D(nn.Module):
+	"""
+    3D U-Net model for volumetric segmentation.
+
+    This model is designed for tasks such as medical image segmentation. It follows 
+    the standard U-Net architecture, featuring context pathways and localization 
+    pathways for feature extraction and precise localization.
+
+    Args:
+        in_channels (int): Number of input channels.
+        n_classes (int): Number of output segmentation classes.
+        base_n_filter (int, optional): Base number of filters for the convolutional layers. Defaults to 8.
+    """
 	def __init__(self, in_channels, n_classes, base_n_filter = 8):
-		"""
-		3D U-Net model for volumetric segmentation.
-
-        This model is designed for tasks such as medical image segmentation. It follows 
-        the standard U-Net architecture, featuring context pathways and localization 
-        pathways for feature extraction and precise localization.
-
-        Args:
-            in_channels (int): Number of input channels.
-            n_classes (int): Number of output segmentation classes.
-            base_n_filter (int, optional): Base number of filters for the convolutional layers. Defaults to 8.
-		"""
 		super(UNet3D, self).__init__()
 		self.in_channels = in_channels
 		self.n_classes = n_classes

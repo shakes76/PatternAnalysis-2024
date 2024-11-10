@@ -80,8 +80,6 @@ An image in the data set may look like this (This is an image if the NC set, wit
 
 `LICENSE` - License file containing the MIT License of the original repo found in [Inspiration](#inspiration).
 
-`main.py` - Obsolete python file that was created and does not serve a purpose in the repo structure. Left as proof of progress.
-
 `predict.py` - Python file used to test the accuracy of a given model, which should be located at `test/model/GFNet.pth`
 
 `README.md` - This markdown file which describes everything about the repo.

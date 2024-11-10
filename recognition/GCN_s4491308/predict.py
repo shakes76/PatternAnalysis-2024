@@ -37,7 +37,7 @@ dropout = 0.3
 # Initialize model and load saved weights
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = GCN(in_channels, hidden_channels, out_channels, dropout).to(device)
-model.load_state_dict(torch.load('gcn_model.pth'))
+model.load_state_dict(torch.load('best_gcn_model.pth'))
 model.eval()
 data = data.to(device)
 

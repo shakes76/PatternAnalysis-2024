@@ -85,6 +85,8 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
 
                 plt.show()
 
+          return dice
+
 
 # Program entrance
 if __name__ == "__main__":

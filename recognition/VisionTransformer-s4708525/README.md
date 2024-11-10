@@ -190,6 +190,12 @@ From the prediction results above, it shows that the model is capable to classif
 ## Conclusion
 Convolutional Vision Transformer can be used to perform the image classification on the ADNI brain data. However, it needs further improvement in this architecture to improve the generalization and robustness of the model because the accuracy of the test data (66.26%) is lower than the accuracy of the validation (74.1%) data indicating slight overfitting from this experiment.
 
+## Future Improvements
+This model has had some initial hyperparameter tuning, but further adjustments can improve its generalization. Key improvements include:
+- trying different methods of data augmentation to make the model more adaptable
+- running more epochs such as 200-300 to allow the model capture more patterns in the data
+- adding minimum number to trigger early stopping mechanism
+- increasing CvT model depth such as by adding the number of transformer blocks or layers to capture more complex representations.
 
 ## References
 - Alzheimer's Disease Neuroimaging Initiative. (n.d.). ADNI data. Retrieved October 22, 2024, from https://adni.loni.usc.edu/data-samples/adni-data/

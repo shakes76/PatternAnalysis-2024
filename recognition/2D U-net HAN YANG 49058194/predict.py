@@ -65,7 +65,7 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
     # Not calculating gradient inference
     with torch.no_grad():
         for i in range(num_samples):
-            image = dataset[i]
+            image, ground_truth = dataset[i]
             output = model(image.unsqueeze(0))
             prediction = torch.sigmoid(output).squeeze(0).numpy()
 

@@ -49,10 +49,10 @@ ngf = 64 # Num generator features
 ndf = 64 # Num discriminator features
 batch_size = 8
 num_epochs = 100
-lr_g = 0.001
-lr_d = 0.00005
-beta1 = 0.5
-beta2 = 0.999  # Adam betas
+lr_g = 0.0001 # Final G LR
+lr_d = 0.00001 # FInal D LR
+beta1 = 0.0
+beta2 = 0.99  # Adam betas
 r1_gamma = 50.0  # R1 regularisation weight
 d_reg_interval = 16  # Discrim regularisation interval
 max_grad_norm_d = 1.0  # Maximum norms for grad clipping
@@ -64,6 +64,11 @@ ada_start_p = 0  # start ADA aug %
 ada_target = 0.6  # Target ADA aug %
 ada_interval = 4  # ADA update interval
 ada_kimg = 500  # ADA adjustment speed (lower -> faster)
+
+# Warmup parameters
+warmup_steps = 2000  # Number of iterations for warmup
+warmup_start_lr_g = lr_g / 20  # Start with very low LR
+warmup_start_lr_d = lr_d / 20
 
 class ADAStats:
     """
@@ -93,15 +98,21 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_worker
 generator = StyleGAN2Generator(z_dim, w_dim, num_mapping_layers, mapping_dropout, label_dim, num_layers, ngf).to(device)
 discriminator = StyleGAN2Discriminator(image_size=(256, 256), num_channels=1, ndf=ndf, num_layers=num_layers).to(device)
 
-# Init optimisers
-g_optim = optim.Adam(generator.parameters(), lr=lr_g, betas=(beta1, beta2))
-d_optim = optim.Adam(discriminator.parameters(), lr=lr_d, betas=(beta1, beta2))
+# Modified optimiser initialisation
+g_optim = optim.Adam(generator.parameters(), lr=warmup_start_lr_g, betas=(0.0, 0.99))
+d_optim = optim.Adam(discriminator.parameters(), lr=warmup_start_lr_d, betas=(0.0, 0.99))
 
 # Loss function
 # criterion = nn.BCEWithLogitsLoss()
 
 # Init GradScaler
 scaler = amp.GradScaler()
+
+def warmup_lr(optimiser, start_lr, end_lr, step, total_steps):
+    """Linear warmup of learning rate"""
+    if step >= total_steps:
+        return end_lr
+    return start_lr + (end_lr - start_lr) * (step / total_steps)
 
 # Helper funcs
 def requires_grad(model, flag=True):
@@ -196,82 +207,108 @@ fixed_z = torch.randn(16, z_dim).to(device) # Fixed noise for progress images
 fixed_labels = torch.cat([torch.zeros(8), torch.ones(8)], dim=0).long().to(device)
 d_losses = [] # track D loss
 g_losses = [] # Track G loss
+# learning rate tracking
+g_lr_history = []
+d_lr_history = []
 ada_stats = ADAStats(ada_start_p)
-d_update_freq = 1 # Update D every x G updates 
+d_update_freq = 1 # Update D every x G updates
+total_steps = 0 # Track total training steps
 
 for epoch in range(num_epochs):
-    clear_cache() # Free up GPU mem
+    clear_cache()
+    
     for i, (real_images, labels) in enumerate(dataloader):
         real_images, labels = real_images.to(device), labels.to(device)
         
-        ### Train Generator ### (every iteration)
-        requires_grad(generator, True) # Unfreeze G
-        requires_grad(discriminator, False) # Freeze D
+        # Update learning rates during warmup period
+        if total_steps < warmup_steps:
+            new_g_lr = warmup_lr(warmup_start_lr_g, lr_g, total_steps, warmup_steps)
+            new_d_lr = warmup_lr(warmup_start_lr_d, lr_d, total_steps, warmup_steps)
+            
+            for param_group in g_optim.param_groups:
+                param_group['lr'] = new_g_lr
+            for param_group in d_optim.param_groups:
+                param_group['lr'] = new_d_lr
+                
+            g_lr_history.append(new_g_lr)
+            d_lr_history.append(new_d_lr)
+            
+            if total_steps % 100 == 0:
+                print(f"Warmup step {total_steps}/{warmup_steps}, "
+                      f"G_lr: {new_g_lr:.8f}, D_lr: {new_d_lr:.8f}")
+        
+        ### Train Generator ###
+        requires_grad(generator, True)
+        requires_grad(discriminator, False)
         
         with amp.autocast(device_type='cuda'):
-            z = torch.randn(real_images.size(0), z_dim).to(device) # Gen noise
-            fake_images = generator(z, labels) # Gen fakes
-            fake_pred = discriminator(fake_images) # D classify fakes
-            g_loss = g_loss_fn(fake_pred) # Non-saturating GAN loss
-            g_losses.append(g_loss.item()) # Record loss
+            z = torch.randn(real_images.size(0), z_dim).to(device)
+            fake_images = generator(z, labels)
+            fake_pred = discriminator(fake_images)
+            g_loss = g_loss_fn(fake_pred)
+            g_losses.append(g_loss.item())
         
-        g_optim.zero_grad() # Reset grads
-        scaler.scale(g_loss).backward() # Backward pass
-        scaler.unscale_(g_optim) # Unscale
-        clip_grad_norm_(generator.parameters(), max_grad_norm_g) # Clip grads
-        scaler.step(g_optim) # Update G param
-        scaler.update() # Step scaler state
-
-        ### Train Discriminator ### (every d_update_freq iterations)
+        g_optim.zero_grad()
+        scaler.scale(g_loss).backward()
+        scaler.unscale_(g_optim)
+        g_grad_norm = clip_grad_norm_(generator.parameters(), max_grad_norm_g)
+        scaler.step(g_optim)
+        scaler.update()
+        
+        ### Train Discriminator ###
         if i % d_update_freq == 0:
             # Apply ADA to real images
             real_images_aug = ada_augment(real_images, ada_stats.p)
             
-            requires_grad(generator, False) # Freeze G
-            requires_grad(discriminator, True) # unfreeze D
+            requires_grad(generator, False)
+            requires_grad(discriminator, True)
             
             with amp.autocast(device_type='cuda'):
-                z = torch.randn(real_images.size(0), z_dim).to(device) # Create noise
-                fake_images = generator(z, labels) # Gen fakes
-                fake_output = discriminator(fake_images.detach()) #D classify fakes
-                real_output = discriminator(real_images_aug) # D classify reals
-                d_loss = d_loss_fn(real_output, fake_output) # non-saturated GAN loss with R1 regularisation
-                d_losses.append(d_loss.item()) # Record loss
+                z = torch.randn(real_images.size(0), z_dim).to(device)
+                fake_images = generator(z, labels)
+                fake_output = discriminator(fake_images.detach())
+                real_output = discriminator(real_images_aug)
+                d_loss = d_loss_fn(real_output, fake_output)
+                d_losses.append(d_loss.item())
             
-            # D backprop    
-            d_optim.zero_grad() # Reset grads
-            scaler.scale(d_loss).backward() # Backward pass with scaling
-            scaler.unscale_(d_optim) # Unscale for clipping and step
-            clip_grad_norm_(discriminator.parameters(), max_grad_norm_d) #Clip grads
-            scaler.step(d_optim) # Update D params
-            scaler.update() # Step scaler state
+            d_optim.zero_grad()
+            scaler.scale(d_loss).backward()
+            scaler.unscale_(d_optim)
+            d_grad_norm = clip_grad_norm_(discriminator.parameters(), max_grad_norm_d)
+            scaler.step(d_optim)
+            scaler.update()
             
-            # Update ADA stats and prob
+            # Update ADA stats
             ada_stats, adjust_p = update_ada(ada_stats, real_output, ada_target, ada_interval, i, ada_kimg)
             
-            # D R1 regularisation 
+            # R1 regularisation
             if i % d_reg_interval == 0:
-                real_images.requires_grad = True # Enable grad calc
+                real_images.requires_grad = True
                 with amp.autocast(device_type='cuda'):
                     real_pred = discriminator(real_images)
                     r1_loss = d_r1_loss(real_pred, real_images)
-                d_optim.zero_grad() # Reset grads
-                scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward() # Backward pass
-                scaler.unscale_(d_optim) # Unscale
-                clip_grad_norm_(discriminator.parameters(), max_grad_norm_d) # Clip grads
-                scaler.step(d_optim) # Update d params
-                scaler.update() # update scaler state
-                real_images.requires_grad = False  # Reset requires_grad
-
-        # Print losses and check for NaN
+                    
+                d_optim.zero_grad()
+                scaler.scale(r1_gamma / 2 * r1_loss * d_reg_interval).backward()
+                scaler.unscale_(d_optim)
+                clip_grad_norm_(discriminator.parameters(), max_grad_norm_d)
+                scaler.step(d_optim)
+                scaler.update()
+                real_images.requires_grad = False
+        
+        # Print progress
         if i % print_interval == 0:
             print(f"Epoch [{epoch+1}/{num_epochs}] Batch [{i+1}/{total_batches}] "
                   f"D_loss: {d_loss.item():.4f} G_loss: {g_loss.item():.4f} "
-                  f"ADA_p: {ada_stats.p:.4f}")
-            
+                  f"G_lr: {g_optim.param_groups[0]['lr']:.8f} "
+                  f"D_lr: {d_optim.param_groups[0]['lr']:.8f} "
+                  f"G_grad: {g_grad_norm:.4f} D_grad: {d_grad_norm:.4f}")
+        
         if torch.isnan(d_loss) or torch.isnan(g_loss):
-            print(f"NaN loss detected at Epoch {epoch+1}, Batch {i+1}. Break.")
+            print(f"NaN loss detected at Epoch {epoch+1}, Batch {i+1}. Breaking.")
             break
+            
+        total_steps += 1
     
     print(f"Epoch [{epoch+1}/{num_epochs}] completed")
     

@@ -37,12 +37,34 @@ The train-validation/test split is 80-20.
 # Results
 ![Alt text](figures/results.png?raw=true "Training results")
 
-It is observed that the loss for the algorithm decreases steadily over 30 epochs. 
-The metric mAP50-95(M) is mean average precision where a 'true' positive is defined by having Intersection over Union (IoU) with the ground truth mask from 0.5-0.95, the algorithm is able to reach 0.7318 mAP50-95 on the test set after 30 epochs. 
+Model Training Observations
+The training process of the fine-tuned YOLOv8 model was monitored over 30 epochs, during which a steady decline in the loss function was observed. This indicates that the model effectively minimized the error and adapted well to the underlying patterns in the training data. The decreasing trend of the loss function suggests a successful learning process, as the model adjusted its weights to better fit the provided examples.
+
+Evaluation Metric: mAP50-95 (Mean Average Precision)
+The key evaluation metric used to assess the model's performance is the mean Average Precision (mAP50-95). This metric measures the model's ability to correctly identify and segment objects across a range of Intersection over Union (IoU) thresholds, from 0.5 to 0.95 with a step size of 0.05. The IoU threshold determines the extent of overlap required between the predicted mask and the ground truth mask for a prediction to be considered a true positive:
+
+At an IoU threshold of 0.5, predictions need to overlap with the ground truth by at least 50%.
+At an IoU threshold of 0.95, the overlap requirement is much stricter, requiring a 95% overlap for a correct prediction.
+By evaluating the model across multiple IoU thresholds, the mAP50-95 provides a comprehensive measure of the model's performance, capturing both precision (correctness of the predictions) and recall (coverage of all relevant instances).
+
+Performance Results
+The fine-tuned YOLOv8 model achieved a mean Average Precision (mAP50-95) of 0.7318 on the test set after 30 epochs. This score reflects the model's strong capability in accurately detecting and segmenting the target objects. The relatively high mAP score across a wide range of IoU thresholds indicates that the model is not only making accurate predictions but is also robust to variations in the overlap requirement, showcasing its generalization capability across different levels of object localization precision.
+
 
 These are some detections predicted by the fine-tuned YOLOv8-segmentation visualized.
 ![Alt text](figures/prediction_test.jpg?raw=true "Sample prediction 1")
 ![Alt text](figures/prediction_test2.jpg?raw=true "Sample prediction 2")
+
+# Reproducibility
+
+In order to reproduce the results:
+- Use train-test split of 80%-20%, random state 40.
+- YOLOv8n-seg model from Ultralytics.
+- 30 epochs of training.
+- Use the libraries' version specified in 'Requirements' section.
+- Use batch size of 4.
+- Learning rate of 0.01 (default)
+
 
 # To run the algorithm
 Run: ./test_script.sh in order to run the algorithm, note that the algorithm assumes the position of the dataset being the location it is situated in Rangpur and the current location for training is '/home/Student/s4671748/comp3710-project/'. If the location differs, changes inside 'dataset.py' for data loading and 'train.py' must be made in order to run properly

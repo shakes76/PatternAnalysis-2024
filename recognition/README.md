@@ -12,7 +12,7 @@ Positional embeddings are then added to these patch embeddings to retain spacial
 which is then finally processed by a multi-layered perceptron (MLP) which performs the image classification. Figure 1
 
 <p align="center">
-  <img src="transfomrer_diagram.png" alt="Figure 1: Structure of the Vision Transformer (Karim et al., n.a)" />
+  <img src="ClassifyingAlzheimers47491461/transfomrer_diagram.png" alt="Figure 1: Structure of the Vision Transformer (Karim et al., n.a)" />
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@ into the spatial domain. Within the context of the task, this process allows GFN
 with log linear time complexity compared to ViT`s quadratic time complexity. This allows it to scale farther and is not intractable for ultra high resolution image recognition.
 
 <p align="center">
-  <img src="fftDisplay.PNG" alt="Figure 2: The Structure of GFNet (Yongming Rao et al., 2021)" />
+  <img src="ClassifyingAlzheimers47491461/fftDisplay.PNG" alt="Figure 2: The Structure of GFNet (Yongming Rao et al., 2021)" />
 </p>
 
 <p align="center">
@@ -43,7 +43,7 @@ to gain context. However, I realised this was not the case. random rotations, re
 Each image was then resized to fit the default format for teh GFNet (224x224), converted to a tensor, and normalised using the mean and standard deviation of the original cropped dataset.
 
 <p align="center">
-  <img src="processedVUnprocessed.PNG" alt="Figure 3: Before and After Preprocessing Of Data" />
+  <img src="ClassifyingAlzheimers47491461/processedVUnprocessed.PNG" alt="Figure 3: Before and After Preprocessing Of Data" />
 </p>
 
 <p align="center">
@@ -242,11 +242,11 @@ torchvision==0.16.0+cu121
 <table>
   <tr>
     <td align="center">
-      <img src="TrainandValidatrionAccuracy.png" alt="Figure 4: Train and Validation Accuracy" />
+      <img src="ClassifyingAlzheimers47491461/TrainandValidatrionAccuracy.png" alt="Figure 4: Train and Validation Accuracy" />
       <p>Figure 4: Train and Validation Accuracy</p>
     </td>
     <td align="center">
-      <img src="Reak_train_AND_VALIDATE_LOSS.png" alt="Figure 5: Train and Validation Loss" />
+      <img src="ClassifyingAlzheimers47491461/Reak_train_AND_VALIDATE_LOSS.png" alt="Figure 5: Train and Validation Loss" />
       <p>Figure 5: Train and Validation Loss</p>
     </td>
   </tr>
@@ -256,7 +256,7 @@ torchvision==0.16.0+cu121
 The training and validation graphs indicate that the model is learning effectively, with both training and validation losses decreasing steadily over the epochs. The accuracy plot shows a strong upward trend in both training and validation accuracy, stabilizing around 90% training accuracy and 80% validation accuracy, suggesting that the model generalizes well on the validation set without severe overfitting. However, when tested on unseen data, the model achieved a 68% accuracy, which, while decent, reveals a performance gap between validation and test data. This gap may suggest that the model learned patterns specific to the validation set but struggles with generalization to entirely new data. A future attempt where all 19 of each patient's brain MRI scans are parsed as a 3D object may improve accuracy on unseen data.
 
 <p align="center">
-  <img src="UpdatedConfusion.PNG" alt="Figure 6: Confusion Matrix (Class0=Normal, Class1=Alzheimers)" />
+  <img src="ClassifyingAlzheimers47491461/UpdatedConfusion.PNG" alt="Figure 6: Confusion Matrix (Class0=Normal, Class1=Alzheimers)" />
 </p>
 
 <p align="center">

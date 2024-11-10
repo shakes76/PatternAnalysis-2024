@@ -58,7 +58,7 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
             images = images.to(device)
             optimizer.zero_grad()
             outputs = model(images)
-            loss = criterion(outputs, images)
+            loss = criterion(outputs, ground_truth)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()

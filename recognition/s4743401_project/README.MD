@@ -104,11 +104,11 @@ The classification report provides deeper insights into the model's performance 
 
 Overall, while the model demonstrates some ability to distinguish between "NC" and "AD," further tuning and extended training are needed to enhance accuracy and balance. Possible improvements include increasing the number of epochs to around the 30–100 range with early stopping, experimenting with gradient accumulation to simulate larger batch sizes, and applying more advanced data augmentation techniques. Additionally, future experiments with increased attention heads or smaller patch sizes may enable the model to capture finer details within the MRI images, potentially boosting performance further.
 
-## Conclusion
+### Conclusion
 
 This project explored the use of a Vision Transformer (ViT) model for classifying Alzheimer’s Disease (AD) versus Normal Cognition (NC) from MRI brain scans in the ADNI dataset. The model achieved a test accuracy of 59%, which, while providing a basic level of classification, indicates there is significant room for improvement. The training and validation loss plots suggest the model was beginning to converge, demonstrating how further training could enhance accuracy. Given that the model was trained for a maximum of 10 epochs, with hyperparameters chosen such as a smaller patch size and fewer attention heads selected to prioritize computational efficiency, a higher accuracy could likely be achieved with parameters tuned more for quality. Specifically, increasing the number of epochs to 30 or more would allow the model to converge more fully, and adjusting the patch size to be smaller (e.g., 8x8) to capture finer details would improve feature extraction. Increasing the number of attention heads from 8 to 12 or more would also help the model capture complex patterns in MRI data, though this would increase memory requirements. Additionally, reducing the learning rate from 0.001 to a smaller value would allow for more stable and fine-grained learning, further boosting accuracy. The confusion matrix also indicates a slight imbalance in class performance, suggesting further tuning could improve sensitivity for both AD and NC cases. With these targeted hyperparameter adjustments, the ViT model could likely achieve even stronger accuracy and generalization in distinguishing between AD and NC cases.
 
-## Future Improvements
+### Future Improvements
 
 To improve the model’s accuracy and generalization, the following adjustments to the training process and hyperparameters should be considered:
 

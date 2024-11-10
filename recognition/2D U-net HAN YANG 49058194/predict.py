@@ -84,8 +84,10 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
                 plt.title("Prediction")
 
                 plt.show()
-
-          return dice
+                
+    # Calculate and return the average Dice score
+    average_dice = total_dice_score / num_samples
+    return average_dice
 
 
 # Program entrance

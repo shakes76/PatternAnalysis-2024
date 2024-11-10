@@ -118,7 +118,10 @@ At epoch 500, we achieved a train loss of 0.25 and a validation loss of 0.2201.
 
 Both the validation and train loss decreased steadily which is a good sign that the model is continually learning and getting better. It also suggests that the model is generalizing well to unseen data in the validation set.
 
-The test accuracy achieved by running `predict.py` was 73%. This shows a decent result in the model's performance but we are still slightly overfitting to the training set. Perhaps running the training phase for more epochs could yield a better performance on the training set.
+The test accuracy achieved by running `predict.py` was 73%. This shows a decent result in the model's performance but we are still slightly overfitting to the training set. Perhaps running the training phase for more epochs could yield a better performance on the training set. The confusion matrix for the test set and a few sample predictions are shown below.
+
+![alt text](images/sample_output.png)
+![alt text](images/confusion_matrix.png)
 
 The original ViT paper was trained on datasets with around 300M images, while our dataset was only about 30K images. This significant difference in dataset size highlights one of the key challenges of using transformer models for smaller datasets, as they typically perform best when trained on very large datasets.
 

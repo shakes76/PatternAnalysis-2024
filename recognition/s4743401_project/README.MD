@@ -86,7 +86,7 @@ scikit-learn: 0.24.2
 matplotlib: 3.4.3 
 
 ### Reproducability 
-To reproduce my results of 60% accuracy, it would be necessary to download AD_NC data into the correct filepaths provided in graphs folder that has been committed to this repository. 
+To reproduce my results of 59.57%% accuracy, it would be necessary to download AD_NC data into the correct filepaths provided in graphs folder that has been committed to this repository. 
 
 Upon setting filepaths for the model to save in modules.py, predict.py and train.py, and setting data_dir in dataset.py and predict.py
 (and also setting the filepath for a chosen image within the data_dir)

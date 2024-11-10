@@ -50,9 +50,17 @@ loss_criterion = torch.nn.CrossEntropyLoss()
 train_losses = []
 validation_losses = []
 
+# early stopping paramaters 
+# wait for 10 epochs to see improvement 
+patience = 10
+best_val_loss = float('inf')
+epochs_without_improvement = 0
+
+#number of epochs to train for 
+epochs = 200
 
 # Training loop
-epochs = 200
+
 for epoch in range(1, epochs + 1):
     model.train()
     optimizer.zero_grad()
@@ -72,11 +80,21 @@ for epoch in range(1, epochs + 1):
         validation_losses.append(val_loss.cpu().item())
 
     print(f'Epoch {epoch:03d}, Training Loss: {loss:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
-    
 
-# Save the trained model
-torch.save(model.state_dict(), 'gcn_model.pth')
-print("Model saved as gcn_model.pth")
+    # Early stopping check and save best model 
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        epochs_without_improvement = 0
+        # Save the best model
+        torch.save(model.state_dict(), 'best_gcn_model.pth')
+    else:
+        epochs_without_improvement += 1
+        
+    if epochs_without_improvement >= patience:
+        print(f"Early stopping triggered at epoch {epoch}")
+        break
+    
+print("Training complete. Best model saved as best_gcn_model.pth")
 
 #plot the losses 
 plt.figure(figsize=(10, 6))

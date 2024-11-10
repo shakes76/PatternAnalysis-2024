@@ -104,6 +104,35 @@ The classification report provides deeper insights into the model's performance 
 
 Overall, while the model demonstrates some ability to distinguish between "NC" and "AD," further tuning and extended training are needed to enhance accuracy and balance. Possible improvements include increasing the number of epochs to around the 30–100 range with early stopping, experimenting with gradient accumulation to simulate larger batch sizes, and applying more advanced data augmentation techniques. Additionally, future experiments with increased attention heads or smaller patch sizes may enable the model to capture finer details within the MRI images, potentially boosting performance further.
 
+## Conclusion
+
+This project explored the use of a Vision Transformer (ViT) model for classifying Alzheimer’s Disease (AD) versus Normal Cognition (NC) from MRI brain scans in the ADNI dataset. The model achieved a test accuracy of 59%, which, while providing a basic level of classification, indicates there is significant room for improvement. The training and validation loss plots suggest the model was beginning to converge, demonstrating how further training could enhance accuracy. Given that the model was trained for a maximum of 10 epochs, with hyperparameters chosen such as a smaller patch size and fewer attention heads selected to prioritize computational efficiency, a higher accuracy could likely be achieved with parameters tuned more for quality. Specifically, increasing the number of epochs to 30 or more would allow the model to converge more fully, and adjusting the patch size to be smaller (e.g., 8x8) to capture finer details would improve feature extraction. Increasing the number of attention heads from 8 to 12 or more would also help the model capture complex patterns in MRI data, though this would increase memory requirements. Additionally, reducing the learning rate from 0.001 to a smaller value would allow for more stable and fine-grained learning, further boosting accuracy. The confusion matrix also indicates a slight imbalance in class performance, suggesting further tuning could improve sensitivity for both AD and NC cases. With these targeted hyperparameter adjustments, the ViT model could likely achieve even stronger accuracy and generalization in distinguishing between AD and NC cases.
+
+## Future Improvements
+
+To improve the model’s accuracy and generalization, the following adjustments to the training process and hyperparameters should be considered:
+
+1. Extended Training Duration
+Training the model for longer than 10 epochs is one of the most direct ways to allow it to learn more nuanced patterns in the data. Increasing the epochs to 30–100 would likely improve convergence and generalization on unseen data, enabling the model to fully capture complex features.
+
+2. Learning Rate Adjustment
+The learning rate affects both stability and convergence speed. The current rate of 0.001 could be reduced to values such as 0.0001 for more gradual, stable learning. Lower learning rates could allow for more fine-grained updates, potentially improving final accuracy.
+
+3. Batch Size Tuning
+Batch size impacts gradient estimates during training. Since smaller batches improve generalization due to noisier gradients while larger batches speed up training, smaller batch sizes would help to improve the accuracy of the model. 
+
+4. Patch Size Refinement
+The patch size in Vision Transformers determines the granularity of spatial information. A patch size of 16 has been used as a compromise between detail and efficiency. Decreasing to a smaller patch size, like 8, would improve detail capture (although increasing computational demand).
+
+5. Increasing Attention Heads
+More attention heads allow the model to capture complex dependencies. Although 8 heads are currently used, increasing this to 12 could improve the model’s ability to learn intricate patterns.
+
+6. Weight Decay Regularization
+Weight decay penalizes large weights, helping to reduce overfitting. Adjusting this rate could control model complexity, preventing over-reliance on specific features and improving generalization. A higher decay rate would offer more effective regularization.
+
+7. Increased Model Complexity
+Adjusting the Vision Transformer architecture by adding transformer layers or further increasing the number of attention heads (as discussed before) could capture finer details in MRI images and improve classification accuracy.
+
 ### References
 TheDeepHub. (2022, March 10). Building Vision Transformer from Scratch using PyTorch: An Image worth 16x16 words. Medium. https://medium.com/thedeephub/building-vision-transformer-from-scratch-using-pytorch-an-image-worth-16x16-words-24db5f159e27
 

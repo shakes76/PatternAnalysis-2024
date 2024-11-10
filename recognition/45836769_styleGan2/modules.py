@@ -457,7 +457,7 @@ class StyleGAN2Generator(nn.Module):
     
         # Apply the final convolution to get 1 channel output
         x = self.to_rgb(x)
-        # Center the values before scaling and tanh
+        # Center the values before scaling down and tanh
         x = x - x.mean()
         x = x * 0.5
         # print(f"Pre-tanh stats (after scale down) - min: {x.min():.4f}, max: {x.max():.4f}, mean: {x.mean():.4f}")

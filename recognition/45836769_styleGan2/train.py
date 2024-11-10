@@ -39,8 +39,8 @@ import torch.nn.functional as F
 from torchvision import transforms
 
 # Hyperparams - mostly following StyleGAN2 paper, adjusted for smaller network
-z_dim = 128 # Latent dims (z: input, w: intermediate)
-w_dim = 128  
+z_dim = 512 # Latent dims (z: input, w: intermediate)
+w_dim = 512
 num_mapping_layers = 8
 mapping_dropout = 0.0
 label_dim = 2  # AD and NC

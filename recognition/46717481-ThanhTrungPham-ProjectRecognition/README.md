@@ -74,3 +74,26 @@ Run: ./test_script.sh in order to run the algorithm, note that the algorithm ass
 - ISIC 2018 Challenge organizers
 - Ultralytics for YOLOv8
 - Contributors to the ISIC archive
+
+## Conclusion
+
+This work showed the application of YOLOv8-segmentation for skin lesion detection using the ISIC 2018 Challenge dataset. The model achieved a mAP50-95 score of 0.7318 on the test set, suggesting a strong performance in accurately segmenting skin lesions across various IoU thresholds. The implementation leverages YOLOv8's architectural advantages, including its efficient single-pass detection approach, feature fusion capabilities, and dedicated segmentation branch.
+
+## Future Improvements
+
+Several potential enhancements could further improve the algorithm's performance and utility:
+
+1. **Data Augmentation Enhancement**
+   - Implement more augmentation techniques to generate additional data
+   - Include domain-specific transformations that reflect real variations in skin lesion appearances
+   - Introduce synthetic data generation to address class imbalance issues
+
+
+2. **Performance Optimization**
+   - Fine-tune hyperparameters using advanced search techniques
+
+3. **Validation and Testing**
+   - Expand testing to multiple external datasets
+   - Add metrics specific to medical imaging evaluation
+
+These improvements would enhance both the technical performance and practical utility of the system, making it a more valuable tool for dermatological diagnosis support.

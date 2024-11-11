@@ -218,6 +218,26 @@ The following are the hyperparameters present in the model, with their default v
 
 Due to the nature of machine learning and augmentation having varying effects on the training of the model, the model was able to consistently reach a similar accuracy/output of around mid~high 70%, but the consistency of training in terms of running the same hyperparameter and getting the exact same result was unmeasured due to time constraints. However, the prediction is reasonably consistent - given the same model, results returned have been always the exact same as expected in the tests I have conducted.
 
+## Conclusion
+
+The GFNet model was able to achieve a maximum accuracy of 78.4% on the test set, using the hyperparameters listed in [Hyperparameters](#hyperparameters).
+
+For all training/validating sessions completed, overfitting was observed, where the training loss approached zero but the validation loss continuously increased. [Hyperparameters](#hyperparameters) were continuously modified to try and mitigate overfitting, but it was found that sometimes, more severe overfitting actually returned better accuracy on the test set.
+
+The changes that were made to the hyperparameters are documented in the commit logs.
+
+## Future Steps
+
+To improve the model from here, I could:
+
+- Adjust hyperparameters further to increase accuracy on validation set
+- Change transformations applied to the training set to reduce overfitting
+  - This was considered and implemented during the training process, however was discarded as test loss did decrease, but test accuracy decreased with it.
+- Use more complex/verbose versions of the model such as GFNet-B or GFNet-H-B
+  - This step could potentially make overfitting to the training data worse, experimenting should done before committing to the change.
+- Experiment with the original repo's _DistillationLoss_, and potentially experiment with the scheduler and optimiser.
+- Experiment with ModelEma
+
 ## Why the PR has 2 LICENSE files
 
 Since the original repo (found in [Inspiration](#inspiration)) used the MIT License, a copy of the MIT License has also been included in this sub-folder, while also containing the Apache license of Shakes' repo.

@@ -108,10 +108,15 @@ After training, the model can detect melanoma with high accuracy.
 
 *Figure: Training and validation loss over epochs. This was from an earlier test, eventually, 31 epochs were chosen*
 
+## Discussion of Testing (input, output, results)
 
 ## Conclusion
 
 This project demonstrates the power of YOLO11 for real-time melanoma detection in dermoscopic images. With proper training and pre-processing, YOLO11 achieves high accuracy, making it a valuable tool for early skin cancer diagnosis.
+
+## Future Improvements
+
+
 
 ## References
 

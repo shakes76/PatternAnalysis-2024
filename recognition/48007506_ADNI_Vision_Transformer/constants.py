@@ -5,7 +5,7 @@ Defined constants.
 
 Author: Chiao-Yu Wang (Student No. 48007506)
 """
-IMAGE_SIZE = 128
+IMAGE_SIZE = 224
 BATCH_SIZE = 32
 LEARNING_RATE = 0.0005
 NUM_EPOCHS = 30

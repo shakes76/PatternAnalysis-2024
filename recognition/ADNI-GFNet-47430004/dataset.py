@@ -14,9 +14,7 @@ import os
 
 
 class ADNIDataset(Dataset):
-    """
-    Custom-made dataset for ADNI data
-    """
+    """ Custom-made dataset for ADNI data """
     def __init__(self, root_dir, transform=None, train=True):
         """
         Initiates the dataset
@@ -28,9 +26,7 @@ class ADNIDataset(Dataset):
         self.images, self.labels = self.load_data()
     
     def load_data(self):
-        """
-        Loads data from directory specified
-        """
+        """ Loads data from directory specified """
         images = []
         labels = []
 
@@ -47,15 +43,11 @@ class ADNIDataset(Dataset):
         return images, labels
     
     def __len__(self):
-        """
-        Returns the number of images in the dataset
-        """
+        """ Returns the number of images in the dataset """
         return len(self.images)
     
     def __getitem__(self, index):
-        """
-        Returns an image from the dataset at index [index]
-        """
+        """ Returns an image from the dataset at index [index] """
         img_path = self.images[index]
         image = Image.open(img_path).convert('L')
         label = self.labels[index]
@@ -66,9 +58,7 @@ class ADNIDataset(Dataset):
         return image, label
 
 def get_dataloaders(data_dir, batch_size=32, crop_size=224, image_size=224):
-    """
-    Creates and returns the dataloaders
-    """
+    """ Creates and returns the dataloaders """
     if data_dir is None:
         # Rangpur
         data_dir = "/home/groups/comp3710/ADNI/AD_NC"

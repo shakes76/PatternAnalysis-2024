@@ -106,11 +106,13 @@ In the provided dataset folder structure, each lesion type is represented by hig
 The model outputs bounding boxes and classification labels. 
 
 
-TRAIN BATCH:
+From the TRAIN BATCH:
+
 ￼<img width="803" alt="Screen Shot 2024-11-12 at 08 56 53" src="https://github.com/user-attachments/assets/bd7f530b-0f77-4b25-ae61-24f47d04cdfc">
 
 
-VAL BATCH
+From the VALIDATION BATCH:
+
 ￼<img width="1199" alt="Screen Shot 2024-11-12 at 08 57 38" src="https://github.com/user-attachments/assets/d408e126-993f-41e9-9cc2-7d010c89784b">
 
 

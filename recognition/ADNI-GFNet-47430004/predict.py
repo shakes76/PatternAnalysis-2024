@@ -80,6 +80,7 @@ def accuracy(output, target, topk=(1,)):
 
 def validate(test_loader, model, criterion):
     # This function is taken from the original source
+    """ Computes the accuracy of the model, and returns a list of top 1 accuracies"""
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -121,6 +122,9 @@ def validate(test_loader, model, criterion):
 
 if __name__ == '__main__':
     # This function was written by me, getting some inspiration from the original source
+    """
+    Main function of predict.py, that runs the validation process
+    """
     print("Main of Predict")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)

@@ -38,6 +38,9 @@ project = "ADNI-GFNet"
 group = "GFNet",
 
 def get_args_parser():
+    """
+    Parses the arguments to apply changes to the model.
+    """
     parser = argparse.ArgumentParser('ADNI training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
     parser.add_argument('--epochs', default=300, type=int)
@@ -182,6 +185,9 @@ def train_one_epoch(model: torch.nn.Module, criterion,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
                     model_ema = None, mixup_fn: Optional[Mixup] = None,
                     set_training_mode=True):
+    """
+    Trains the model using a single epoch.
+    """
     model.train(set_training_mode)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -222,6 +228,9 @@ def train_one_epoch(model: torch.nn.Module, criterion,
 
 @torch.no_grad()
 def evaluate(data_loader, model, device):
+    """
+    Evaluates the accuracy and loss of model using the test set (validation set).
+    """
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -251,6 +260,9 @@ def evaluate(data_loader, model, device):
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 if __name__ == '__main__':
+    """
+    Main function of train that runs the entire training process.
+    """
     print("Training GFNet for ADNI brain data\n")
     parser = argparse.ArgumentParser('GFNet training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()

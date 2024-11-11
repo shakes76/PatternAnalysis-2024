@@ -15,20 +15,34 @@ from dataset import load_data
 from constants import MODEL_SAVE_PATH
 
 def predict(load_path, test_loader):
+    """
+    Loads a trained GFNet model and performs predictions on the test dataset.
+    Computes and displays the confusion matrix for the predictions.
+
+    Args:
+        load_path (str): Path to the saved model weights file.
+        test_loader (DataLoader): DataLoader for the test dataset.
+
+    Returns:
+        None
+    """
     # Load the trained model
     model = GFNet(num_classes=2)
     model.load_state_dict(torch.load(load_path))
+
+    # Set the model to evaluation mode
     model.eval()
 
+    # Store true and predicted labels
     y_true = []
     y_pred = []
 
     # Disable gradient computation for inference
     with torch.no_grad():
         for images, labels in test_loader:
-            images, labels = images.float(), labels
+            images, labels = images.float(), labels         # Ensure images are floats
             y_true.extend(labels.cpu().numpy())             # Collect true labels
-            outputs = model(images)
+            outputs = model(images)                         # Perform forward pass and compute predictions
             predicted = F.softmax(outputs, dim=1)           # Apply softmax to get probabilities
             y_pred.extend(predicted.argmax(dim=1).numpy())  # Collect predicted labels
 

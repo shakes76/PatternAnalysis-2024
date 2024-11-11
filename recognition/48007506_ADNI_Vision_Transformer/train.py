@@ -17,6 +17,12 @@ import matplotlib.pyplot as plt
 def plot_metrics(train_losses, val_losses, train_accuracies, val_accuracies):
     """
     Plots the training and validation losses and accuracies over the epochs.
+
+    Args:
+        train_losses (list): List of average training losses for each epoch.
+        val_losses (list): List of average validation losses for each epoch.
+        train_accuracies (list): List of training accuracies for each epoch.
+        val_accuracies (list): List of validation accuracies for each epoch.
     """
     # Plot losses for training and validation
     plt.figure(figsize=(10, 5))
@@ -130,8 +136,17 @@ def train_model():
 
 def validate_model(model, val_loader, criterion):
     """
-    Validates the model on the validation set and returns the average validation loss
-    and accuracy.
+    Evaluates the model on the validation dataset and returns the average validation loss and accuracy.
+
+    Args:
+        model (nn.Module): The neural network model to validate.
+        val_loader (DataLoader): DataLoader for the validation dataset.
+        criterion (nn.Module): Loss function used for evaluation.
+
+    Returns:
+        tuple: A tuple containing:
+            - avg_val_loss (float): Average validation loss.
+            - accuracy (float): Validation accuracy as a percentage.
     """
     # Set the device (MPS, CUDA, or CPU)
     device = torch.device("mps" if torch.backends.mps.is_available() 
@@ -161,7 +176,7 @@ def validate_model(model, val_loader, criterion):
             loss = criterion(outputs, labels)
             val_loss += loss.item()
 
-    # Calculate accuracy
+    # Calculate validation accuracy
     accuracy = 100 * correct / total
     print(f'Validation Accuracy: {accuracy:.2f}%')
 
@@ -171,5 +186,6 @@ def validate_model(model, val_loader, criterion):
     
     return avg_val_loss, accuracy
 
+# Run the training process if this script is executed directly
 if __name__ == '__main__':
     train_model()

@@ -105,10 +105,14 @@ In the provided dataset folder structure, each lesion type is represented by hig
 ### Output
 The model outputs bounding boxes and classification labels. 
 
-<img width="457" alt="Screen Shot 2024-11-01 at 16 57 28" src="https://github.com/user-attachments/assets/900889e5-c126-4688-ad3d-8a7b276c1831">
+
+TRAIN BATCH:
+￼<img width="803" alt="Screen Shot 2024-11-12 at 08 56 53" src="https://github.com/user-attachments/assets/bd7f530b-0f77-4b25-ae61-24f47d04cdfc">
 
 
-<img width="448" alt="Screen Shot 2024-11-01 at 16 57 50" src="https://github.com/user-attachments/assets/007b5afe-ddbb-4ca5-9b13-6f681333b823">
+VAL BATCH
+￼<img width="1199" alt="Screen Shot 2024-11-12 at 08 57 38" src="https://github.com/user-attachments/assets/d408e126-993f-41e9-9cc2-7d010c89784b">
+
 
 
 ## Results Visualization
@@ -119,13 +123,6 @@ After training, the model can detect lesions with high accuracy.
 
 *Figure: Training and validation loss over epochs. This was from an earlier test, eventually, 31 epochs were chosen*
 
-
-TRAIN BATCH:
-￼<img width="803" alt="Screen Shot 2024-11-12 at 08 56 53" src="https://github.com/user-attachments/assets/bd7f530b-0f77-4b25-ae61-24f47d04cdfc">
-
-
-VAL BATCH
-￼<img width="1199" alt="Screen Shot 2024-11-12 at 08 57 38" src="https://github.com/user-attachments/assets/d408e126-993f-41e9-9cc2-7d010c89784b">
 
 
 <img width="1591" alt="Screen Shot 2024-11-12 at 08 56 27" src="https://github.com/user-attachments/assets/403a5e6a-7ad6-434a-88ec-9c63b0c49f05">
@@ -140,6 +137,9 @@ Normalised Confusion Matrix
 
 
 ## Testing
+All detections have a minimum Intersection Over Union of 0.8 on the test set. The following are some pictures of lesions identified from the test set.
+
+<img width="1481" alt="Screen Shot 2024-11-12 at 09 31 33" src="https://github.com/user-attachments/assets/cfa0c1f2-a059-472a-8502-d90911de3c30">
 
 
 ## Conclusion
@@ -147,6 +147,13 @@ Normalised Confusion Matrix
 This project demonstrates the power of YOLO11 for real-time melanoma detection in dermoscopic images. With proper training and pre-processing, YOLO11 achieves high accuracy, making it a valuable tool for early skin cancer diagnosis.
 
 ## Future Improvements
+
+In future, this model may also be used not just in classifying lesions, but in differentiating melanoma and benign lesions. Much training is required, but see the following test output as an example of this in action. 
+
+<img width="457" alt="Screen Shot 2024-11-01 at 16 57 28" src="https://github.com/user-attachments/assets/900889e5-c126-4688-ad3d-8a7b276c1831">
+
+<img width="448" alt="Screen Shot 2024-11-01 at 16 57 50" src="https://github.com/user-attachments/assets/007b5afe-ddbb-4ca5-9b13-6f681333b823">
+
 
 
 

@@ -52,7 +52,7 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        for num, images in enumerate(dataloader):
+        for num, (images, ground_truth) in enumerate(dataloader):
             if num%10==0:
                 print(f"The {num} batches is processing.")
             images = images.to(device)

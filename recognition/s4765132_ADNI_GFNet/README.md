@@ -28,7 +28,7 @@ This project uses the ADNI dataset obatined from the Alzheimer’s Disease Neuro
 
 Some examples of the images from dataset is shown below.
 
-![Samples of images](Before_Preprocessing_data_sample.png)
+![Samples of images](./images/Before_Preprocessing_data_sample.png)
 
 
 ## Data Preprocessing
@@ -63,7 +63,7 @@ The training phase was conducted over a maximum of 100 epochs, with early stoppi
 
 The training loss and the train and validation accuracy plots are shown below.is shown below. According to the training loss plot, we can see that the training loss fluctuated slightly around a similar value across epochs, and the loss has no clear downward trend. For the train and validation accuracy, it can be seen that the model's accuracy fluctuated in a range around 51% - 52%. This indicates that both the training and validation accuracy remained close to random guessing levels (around 50%), which means the model struggled to learn meaningful patterns from the data.
 
-![Train Loss](train_loss.png) ![Train and Validation Accuracy](train_val_accuracy.png)
+![Train Loss](./images/train_loss.png) ![Train and Validation Accuracy](./images/train_val_accuracy.png)
 
 
 ### Prediction Results
@@ -71,7 +71,13 @@ The prediction results show the model's performance on the unseen data. During t
 
 The confusion matrix is shown below. According to the plot, it can be seen that the model tends to classify most images as AD. Only a small number of NC images were classified correctly, while most of NC were misclassified as AD. On the other hand, a large number of AD cases were correctly classified, with very few predicted as NC.
 
-![Confusion Matrix](confusion_matrix.png)
+![Confusion Matrix](./images/confusion_matrix.png)
+
+
+## Conclusion
+This project used a model to classify Alzheimer’s Disease (AD) and Normal Control (NC) cases using images from the ADNI dataset. The model incorporated frequency-domain analysis through the Global Filter module, which was adapted to better suit the dataset’s requirements by dynamically adjusting the filter weights. Despite these adaptations, the model's performance remained close to random guessing levels, with an accuracy of around 50% on both the validation and test sets.
+
+The confusion matrix revealed that the model predominantly classified images as AD, which might suggest an issue with class imbalance or inadequate feature extraction capabilities for distinguishing NC from AD. Additionally, both the training and validation accuracies fluctuated, indicating the model struggled to learn meaningful patterns from the data.
 
 
 ## Future Work

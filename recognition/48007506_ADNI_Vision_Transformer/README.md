@@ -90,13 +90,11 @@ An example of a MRI brain image within the ADNI dataset is shown below.
 Before the training data was loaded into the model, augmentation layers including `RandomResizedCrop`, `RandomHorizontalFlip`, `RandomRotation` and `Normalize` were applied. This augmentation process contributed to minimising overfitting when training the model on the relatively small dataset. For reproducibility of augmentation results, a seed was also set.
 
 ## GFNet Implementation/Results
-While similar to the original GFNet concept, the constructed model differs in its integration of a pretrained ResNet backbone and a Feed Forward Network (FNN) design with normalization and dropout layers. 
+The GFNet architecture incorporates Patch Embedding (`PatchEmbed`) as its first layer, whereby dividing input images into smaller non-overlapping patches, images can be passed into a transformer encoder and processed as a sequence of tokens.
 
-The original GFNet architecture incorporates Patch Embedding as its first layer, whereby dividing input images into smaller non-overlapping patches, images can be passed into a transformer encoder and processed as a sequence of tokens. Instead of utilising a Patch Embedding layer, the provided implementation begins with a pretrained ResNet-18 (`resnet-18`) backbone that serves as a feature extractor, extracting hierarchical feature maps from the input image using convolutional layers. These high-level feature maps can then be used to represent complex patterns within the image. Due to the flexibility that comes with convolutional networks, the Patch Embedding layer was substituted with a ResNet-18 backbone.
+The embedded patches are then processed by a Global Filter Layer (`GlobalFilterLayer`), which applies a learnable filter in the frequency domain using Fast Fourier Transform (FFT). This allows the model to efficiently capture global image patterns by performing element-wise multiplication between the FFT of the input and the FFT of the learnable filter, followed by an inverse FFT to return the filtered features back to the spatial domain.
 
-Similar to the original architecture, the extracted feature maps are then processed by a Global Filter Layer (`GlobalFilterLayer`), which applies a learnable filter in the frequency domain using Fast Fourier Transform (FFT). This allows the model to efficiently capture global image patterns by performing element-wise multiplication between the FFT of the input and the FFT of the learnable filter, followed by an inverse FFT to return the filtered features back to the spatial domain.
-
-The next step involves a Feed Forward Network (FFN), which is a combination of Layer Normalization (`LayerNorm`) and a Multi-Layer Perceptron (`MLP`). The FFN further processes the flattened feature maps by transforming them through linear layers (`Linear`), batch normalisation (`BatchNorm1d`), and GELU activation functions (`GELU`), introducing non-linearity and regularisation through dropout layers (`Dropout`). After passing through the MLP, the features are reshaped and reduced in dimensionality using Global Average Pooling (`AdaptiveAvgPool2d`), which condenses the spatial information from the feature maps into a smaller representation.
+The next step involves a Feed Forward Network (FFN), which is a combination of Layer Normalization (`LayerNorm`) and a Multi-Layer Perceptron (`MLP`). The FFN further processes the flattened feature maps by transforming them through linear layers (`Linear`) and GELU activation functions (`GELU`), introducing non-linearity and regularisation through dropout layers (`Dropout`). After passing through the MLP, the features are reshaped and reduced in dimensionality using Global Average Pooling (`mean(1)`), which performs an average global pooling operation and computes the mean across the patch dimension.
 
 Finally, the pooled features are passed to a classifier layer (`Linear`) that maps the features to the target class probabilities. 
 
@@ -124,6 +122,11 @@ the GFNet model achieved the following classification metrics and results.
 </p>
 
 Through several trials, the selected hyperparameters above achieved the most optimal balance between training and validation loss and accuracy. While the validation loss did not decrease as smoothly as the training loss, it remained relatively controlled throughout the later epochs in the range of 0.6 to 0.8, indicating that the model avoided severe overfitting. The consistent validation accuracy at around 70% to 75% also suggests that the model generalised well despite the instability during the first few epochs. Although the minimum accuracy target of 80% was not achieved, the GFNet model was able to maintain a reasonable accuracy of approximately 74% throughout training and also managed to classify the test data with an accuracy of 75.11%, as shown in the confusion matrix above.
+
+## Conclusion and Future Improvements
+In summary, the GFNet model has the potential to reach a minimum test accuracy of 80%. However, to increase the accuracy of the current model from 75.11% to above 80%, further fine-tuning of hyperparameters and increased epochs will be required.
+
+Another potential improvement that would likely lead to higher accuracy is utilising a larger dataset.
 
 ## References
 [1] GFNet: Global Filter Networks for Visual Recognition, from: https://openreview.net/pdf?id=K_Mnsw5VoOW

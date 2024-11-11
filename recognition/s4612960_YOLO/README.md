@@ -57,6 +57,16 @@ Batching and Prefetching: Images are batched into sets of 64, and prefetch is us
 
 For more details on the dataset and augmentation methods, refer to the [ISIC Archive](https://www.isic-archive.com/).
 
+## File Structure
+The file structure should be organised as follows, with the labels folders being generated from the dataset code.  
+
+<img width="220" alt="COMP3710_YOLO" src="https://github.com/user-attachments/assets/a0847c14-9b3c-4a48-b1b4-64926a327a16">
+
+Label files look as follows, giving the location of the lesion bounding box.
+
+<img width="506" alt="0 565326 0 458000 0 234375 0 269000" src="https://github.com/user-attachments/assets/c6dc9445-c395-4a45-b3fd-7b332bbaca26">
+
+
 ## Training the Model
 
 To train the YOLO11 model, we use transfer learning from a pre-trained checkpoint, fine-tuning it on the melanoma dataset for 50 epochs. The training configuration is specified in the `melanoma.yaml` file, where the dataset paths and class names are defined.

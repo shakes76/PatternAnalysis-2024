@@ -103,22 +103,47 @@ The model outputs bounding boxes and classification labels.
 
 ## Results Visualization
 
-After training, the model can detect melanoma with high accuracy. 
+After training, the model can detect lesions with high accuracy. 
 
 <img width="452" alt="image" src="https://github.com/user-attachments/assets/c70abb36-df4a-4a52-a73f-26c3c1b41004">
 
 *Figure: Training and validation loss over epochs. This was from an earlier test, eventually, 31 epochs were chosen*
 
 
+TRAIN BATCH:
+￼<img width="803" alt="Screen Shot 2024-11-12 at 08 56 53" src="https://github.com/user-attachments/assets/bd7f530b-0f77-4b25-ae61-24f47d04cdfc">
+
+
+VAL BATCH
+￼<img width="1199" alt="Screen Shot 2024-11-12 at 08 57 38" src="https://github.com/user-attachments/assets/d408e126-993f-41e9-9cc2-7d010c89784b">
+
+
+<img width="1591" alt="Screen Shot 2024-11-12 at 08 56 27" src="https://github.com/user-attachments/assets/403a5e6a-7ad6-434a-88ec-9c63b0c49f05">
+
+Normalised Confusion Matrix
+
+<img width="881" alt="Confusion Matrix Normalized" src="https://github.com/user-attachments/assets/8a5ec5d0-cef7-4746-87c9-9beb8a4ffffa">
+
+<img width="1173" alt="F1-Confidence Curve" src="https://github.com/user-attachments/assets/2fb3fc9f-443a-452e-b7de-f45d0357fb51">
+<img width="1169" alt="Screen Shot 2024-11-12 at 08 56 05" src="https://github.com/user-attachments/assets/4888d724-aa53-4f65-8b12-3a1ab37cec51">
+<img width="1194" alt="Precision-Recall Curve" src="https://github.com/user-attachments/assets/a9d9c0f6-acfc-433d-b8a5-b6306ca20dd3">
+
+
+## Testing
+
+
 ## Conclusion
 
 This project demonstrates the power of YOLO11 for real-time melanoma detection in dermoscopic images. With proper training and pre-processing, YOLO11 achieves high accuracy, making it a valuable tool for early skin cancer diagnosis.
+
+## Future Improvements
+
+
 
 ## References
 
 - ISIC Archive: [ISIC 2018: Skin Lesion Analysis Towards Melanoma Detection](https://www.isic-archive.com/)
 - Ultralytics YOLO Documentation: [YOLO Docs](https://docs.ultralytics.com/)
 
----
 
-This README provides comprehensive guidance on setup, training, and usage of YOLO11 for melanoma detection. Adjust paths and parameters as necessary for optimal performance on your dataset.
+

@@ -11,6 +11,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from modules import VAEResidualBlock, VAEAttentionBlock
 
+SCALING_FACTOR = 0.18215
+
 
 class VAE(nn.Module):
     """
@@ -45,7 +47,7 @@ class VAE(nn.Module):
         z1 = mean + std * noise1
         z2 = mean + std * noise2
         z = torch.cat([z1, z2], dim=1)
-        z *= 0.18215 # VAE scaling factor constant
+        z *= SCALING_FACTOR  # VAE latent scaling factor
         return z
 
     def decode(self, z):
@@ -172,7 +174,7 @@ class VAE_Decoder(nn.Sequential):
         )
 
     def forward(self, x):
-        x /= 0.18215  # remove constant form encoder
+        x /= SCALING_FACTOR  # remove constant from encoder
         for layer in self:
             x = layer(x)
 

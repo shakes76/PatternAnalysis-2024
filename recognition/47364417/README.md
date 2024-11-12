@@ -136,10 +136,28 @@ Below are the plots and statistics from the training process:
 <br>
 
 ## Usage
-To install required libraries:
+The project requires the following libraries and dependencies:
+
+- **Python** 3.7 or higher
+- **PyTorch** 1.7 or higher
+- **torchvision** 0.8 or higher
+- **timm** (PyTorch Image Models) library
+- **NumPy**
+- **Matplotlib**
+- **scikit-learn**
+- **tqdm**
+- **OpenCV-Python**
+
+You can install the required packages using:
+
 ```bash
-cd recognition/47364417
 pip install -r requirements.txt
+```
+
+Alternatively, install them individually:
+
+```bash
+pip install torch torchvision timm numpy matplotlib scikit-learn tqdm opencv-python
 ```
 
 To train the model:
@@ -153,6 +171,11 @@ To predict accuracy on the test set using a trained model:
 cd recognition/47364417
 python predict.py
 ```
+<br>
+
+## Conclusion
+
+In this project, we applied a Vision Transformer (ViT) model to classify Alzheimer's Disease using brain imaging data from the ADNI dataset. While the model achieved high training accuracy above 94%, the test accuracy plateaued around 60-63%, indicating a significant generalization gap likely due to overfitting and dataset limitations. This highlights the challenges of applying advanced deep learning models to limited imaging data. Future work should focus on implementing enhanced regularization techniques, exploring alternative architectures, improving data augmentation methods, and conducting extensive hyperparameter optimization to improve the model's generalization and reliability on the ADNI dataset for Alzheimer's Disease classification.
 <br>
 
 ## References

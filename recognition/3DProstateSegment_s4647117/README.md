@@ -109,6 +109,7 @@ The batch size was kept at 2, since the model is quite memory intensive, and lar
 ```plaintext
 3DProstateSegment_s4647117/
 ├── README.md
+├── imgs         # Directory to hold images used in README.md
 ├── dataset.py   # Custom PyTorch Dataset for Loading and Preprocessing NIfTI Files
 ├── modules.py   # Core components and architecture of the 3DUnet
 ├── train.py     # Training Script for 3DUNet Model, as well as calculating per-class Dice Score

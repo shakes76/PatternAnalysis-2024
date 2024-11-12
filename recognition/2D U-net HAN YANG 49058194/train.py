@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Training model
-def train_model(root_dir, num_epochs=30, lr=0.001):
+def train_model(root_dir, ground_truth_dir, num_epochs=30, lr=0.001):
     """ 
     Trains the U-Net model using the provided training and validation data loaders. 
     Args: 
@@ -56,6 +56,7 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
             if num%10==0:
                 print(f"The {num} batches is processing.")
             images = images.to(device)
+            ground_truth = ground_truth.to(device)
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, ground_truth)
@@ -82,4 +83,6 @@ def train_model(root_dir, num_epochs=30, lr=0.001):
 # Input
 if __name__ == "__main__":
     root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'  
-    train_model(root_dir)
+    ground_truth_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files' 
+    train_model(root_dir, ground_truth_dir)
+

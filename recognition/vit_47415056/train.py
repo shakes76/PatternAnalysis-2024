@@ -108,6 +108,10 @@ def train_and_validate(train_loader, val_loader, test_loader, model, criterion, 
     plt.savefig(os.path.join(output_dir, "covariance_matrix.png"))
 
 def main():
+    """
+    Main function to set up data loaders, model, criterion, optimizer, and
+    scheduler, then start training and validation.
+    """
     train_data_dir = "/home/groups/comp3710/ADNI/AD_NC/train"
     test_data_dir = "/home/groups/comp3710/ADNI/AD_NC/test"
     train_loader, val_loader = get_train_val_loaders(train_data_dir)

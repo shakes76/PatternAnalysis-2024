@@ -5,7 +5,7 @@
 **Name:** Swastik Lohchab
 
 **Description:** 
-This project focuses on classifying Alzheimer’s Disease from MRI scans using Vision Transformers (ViT). The approach leverages ViT’s ability to capture spatial correlations across different regions of the brain, aiming to identify key areas associated with Alzheimer’s Disease. This project was conducted as part of the COMP3710 course at the University of Queensland and achieved a test accuracy of 68.20%.
+This project focuses on classifying Alzheimer’s Disease from MRI scans using Vision Transformers (ViT). The approach leverages ViT’s ability to capture spatial correlations across different regions of the brain, aiming to identify key areas associated with Alzheimer’s Disease. This project was conducted as part of the COMP3710 course at the University of Queensland and achieved a training accuracy of 67.78%, validation accuracy of 69.66% and test accuracy of 68.20%.
 
 
 ## Table of Contents
@@ -125,10 +125,17 @@ AD_NC
     └── NC
 ```
 
-### Image 1 -> AD
+### Images for AD
 ![AD image from train set](Images/AD.jpeg)
-### Image 2 -> NC
+![AD image from train set](Images/AD1.jpeg)
+![AD image from train set](Images/AD2.jpeg)
+![AD image from train set](Images/AD3.jpeg)
+
+### Images for NC
 ![NC image from train set](Images/NC.jpeg)
+![NC image from train set](Images/NC1.jpeg)
+![NC image from train set](Images/NC2.jpeg)
+![NC image from train set](Images/NC3.jpeg)
 
 ### Splitting Strategy
 The training set was further divided into 90% for training and 10% for validation. The split ensured that images from the same patient were not present in both subsets to maintain data integrity.
@@ -140,7 +147,7 @@ The training set was further divided into 90% for training and 10% for validatio
 1. Model: Vision Transformer (ViT) - "vit_small_patch16_224"
 2. Optimizer: Adam with learning rate of 1e-5 and StepLR scheduler
 3. Batch Size: 32
-4. Number of Epochs: 11
+4. Number of Epochs: 10
 5. Loss Function: Cross-Entropy Loss
 6. Early Stopping: Triggered if validation loss did not improve for 7 epochs
 
@@ -151,9 +158,8 @@ The training loop monitored both accuracy and loss metrics. Early stopping was i
 ## 8. Results and Visualizations
 
 ### Performance 
-The final model achieved an accuracy of 68.20% on the test set.
-
-![Training and Testing Accuracy](Images/result.jpg)
+The final model achieved a training accuracy of 67.78%, validation accuracy of 69.66% and test accuracy of 68.20%.
+![Training, Validation and Testing Accuracy](Images/result.jpg)
 
 ### Training and Validation Plots
 1. Accuracy vs. Epochs:  ![Training and Testing Accuracy VS No. of epochs graph](Images/accuracy_graph.jpg)
@@ -172,7 +178,7 @@ The confusion matrix provides insights into the model’s classification perform
 
 
 ## 10. Conclusion
-This project successfully implemented a Vision Transformer (ViT) to classify Alzheimer’s Disease from MRI scans, achieving a test accuracy of 68.20%. While the model shows promise, the accuracy is limited by factors such as the complexity of MRI data, limited dataset size, and potential overfitting.
+This project successfully implemented a Vision Transformer (ViT) to classify Alzheimer’s Disease from MRI scans, achieving a test accuracy of 68.20%. While the model shows promise, the accuracy is limited by factors such as the complexity of MRI data and limited dataset size.
 
 ### Analysis of Training and Validation Graphs
 1. Accuracy vs. Epochs: The accuracy graph shows a steady improvement in both training and validation accuracy over the epochs, indicating that the model is learning meaningful features from the data. However, there are noticeable fluctuations in the validation accuracy, which could be due to overfitting, where the model starts to memorize the training data instead of generalizing well to unseen data.

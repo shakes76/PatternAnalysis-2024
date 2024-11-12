@@ -45,7 +45,7 @@ class VAE(nn.Module):
         z1 = mean + std * noise1
         z2 = mean + std * noise2
         z = torch.cat([z1, z2], dim=1)
-        z *= 0.18215
+        z *= 0.18215 # VAE scaling factor constant
         return z
 
     def decode(self, z):

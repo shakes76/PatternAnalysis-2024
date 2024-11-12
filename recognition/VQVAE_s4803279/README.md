@@ -48,7 +48,7 @@ The training set included 11460 images which is about 90.5% of the data. This me
 During training, several hyperparameters were selected to optimize the model's performance:
 
 #### Learning Rate:
-Set to 0.0003, this rate balances convergence speed and stability.
+Set to 1e-3, this rate balances convergence speed and stability.
 
 #### Batch Size:
 Set to 16, allowing effective memory use and stable gradient updates.
@@ -81,7 +81,11 @@ The testing set included 540 images 4.2% of the data. The testing set is the sma
 ## Structured Similarity Index Measure
 The Structural Similarity Index Measure (SSIM) achieved by the model was 0.8732. SSIM is a perceptual metric that quantifies image quality by comparing structural information between the original and reconstructed images. The closer the SSIM score is to 1, the more structurally similar the images are. In this context, a score of 0.8732 suggests the model preserves a high level of detail and structure from the original medical images, making it effective for generating realistic synthetic images.
 
-The training and validation losses:  
+The SSIM was only calculated during the testing to check the final reconstruction ability of the trained model.
+
+### The training and validation losses
+The training and validation loss curves may appear unusual given the modest number of epochs and a learning rate; however, these settings were help maintain stable and incremental learning in the VQ-VAE2 model, which relies on discrete latent representations. While the final loss values may seem low, the model’s architecture and hyperparameters prioritize structural similarity over pixel accuracy, leading to good perceptual quality in the reconstructed images. This balance, reflected in the SSIM score of 0.8732, suggests the model effectively captures essential image features within a limited number of epochs.
+
 <p align="center">
   <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_plot.png" alt="Loss Plot">
 </p>

@@ -92,8 +92,8 @@ def predict_and_evaluate(root_dir, ground_truth_dir, model_path='unet_model.pth'
 
 # Program entrance
 if __name__ == "__main__":
-    root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'
-    ground_truth_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'
+    root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files/images'
+    ground_truth_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files/masks'
 
     # Call and calculate Dice coefficient
     dice = predict_and_evaluate(root_dir, ground_truth_dir)

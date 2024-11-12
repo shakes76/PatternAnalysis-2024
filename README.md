@@ -1,3 +1,10 @@
+
+# Please see Updated Pull Request for Implemented Feedback!
+https://github.com/shakes76/PatternAnalysis-2024/pull/193#issue-2650661510
+
+
+
+
 # Melanoma Detection using YOLO11
 
 ## Overview

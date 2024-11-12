@@ -18,7 +18,9 @@ if method == 'Local':
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 wandb.init(project="Stable-Diffusion-ADNI-Inference", name="Inference")
 
-# Load Trained Diffusion Model
+# Load Trained Diffusion Model (download either AD or NC checkpoint from below and place in checkpoints/Diffusion)
+# AD Checkpoint: https://drive.google.com/file/d/1eVkB2aPTVc8dtPLJkcCfOaJs6yEOkYS9/view?usp=sharing
+# NC Checkpoint: https://drive.google.com/file/d/1rxdQhUixX2N9tbVXLW_jyyg-jt7HbYWh/view?usp=sharing
 model = torch.load(f'checkpoints/Diffusion/ADNI_diffusion_e500_im{IMAGE_SIZE}.pt').to(device)
 
 

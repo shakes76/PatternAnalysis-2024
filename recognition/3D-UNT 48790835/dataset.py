@@ -11,7 +11,6 @@ from monai.transforms import (
     EnsureChannelFirstd,
     ScaleIntensityd,
     RandRotate90d,
-    RandShiftIntensityd,
 )
 
 # Transforms for training data: load, resize, and apply random flips and rotations
@@ -37,7 +36,7 @@ val_transforms = Compose([
     EnsureTyped(keys=("image", "label"), dtype=torch.float32),
 ])
 
-class MRIDataset_pelvis(Dataset):
+class CustomDataset(Dataset):
     """
     Dataset class for reading pelvic MRI data.
     """
@@ -76,28 +75,48 @@ class MRIDataset_pelvis(Dataset):
 
         if self.mode == 'train':
             augmented = self.train_transform({'image': img_path, 'label': label_path})
-            return augmented['image'], augmented['label']
+            image = augmented['image']
+            label = augmented['label']
+
+            # 确保图像和标签是4D张量
+            if image.dim() == 5:  # 如果是5D张量
+                image = image.squeeze(1)  # 去掉通道维度，变为4D张量 (x, y, z)
+
+            if label.dim() == 5:  # 如果是5D张量
+                label = label.squeeze(1)  # 去掉通道维度，变为4D张量 (x, y, z)
+
+            return image, label
 
         if self.mode == 'test':
             augmented = self.test_transform({'image': img_path, 'label': label_path})
-            return augmented['image'], augmented['label']
+            image = augmented['image']
+            label = augmented['label']
+
+            # 确保图像和标签是4D张量
+            if image.dim() == 5:  # 如果是5D张量
+                image = image.squeeze(1)  # 去掉通道维度，变为4D张量 (x, y, z)
+
+            if label.dim() == 5:  # 如果是5D张量
+                label = label.squeeze(1)  # 去掉通道维度，变为4D张量 (x, y, z)
+
+            return image, label
 
 
 if __name__ == '__main__':
     # Test the dataset
-    test_dataset = MRIDataset_pelvis(mode='test', dataset_path=r"path_to_your_dataset")
+    test_dataset = CustomDataset(mode='test', dataset_path=r"path_to_your_dataset")
     test_dataloader = DataLoader(dataset=test_dataset, batch_size=2, shuffle=False)
     print(len(test_dataset))
     for batch_ndx, sample in enumerate(test_dataloader):
         print('test')
-        print(sample[0].shape)
-        print(sample[1].shape)
+        print(sample[0].shape)  # 应该打印 (batch_size, channels, x, y, z)
+        print(sample[1].shape)  # 应该打印 (batch_size, channels, x, y, z)
         break
 
-    train_dataset = MRIDataset_pelvis(mode='train', dataset_path=r"path_to_your_dataset")
+    train_dataset = CustomDataset(mode='train', dataset_path=r"path_to_your_dataset")
     train_dataloader = DataLoader(dataset=train_dataset, batch_size=2, shuffle=False)
     for batch_ndx, sample in enumerate(train_dataloader):
         print('train')
-        print(sample[0].shape)
-        print(sample[1].shape)
+        print(sample[0].shape)  # 应该打印 (batch_size, channels, x, y, z)
+        print(sample[1].shape)  # 应该打印 (batch_size, channels, x, y, z)
         break

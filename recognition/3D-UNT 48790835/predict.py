@@ -3,7 +3,7 @@ import numpy as np
 import random
 import argparse
 from modules import UNet3D
-from dataset import MRIDataset_pelvis
+from dataset import Dataset
 from torch.utils.data import DataLoader
 import torch.nn as nn
 
@@ -15,11 +15,11 @@ random.seed(seed)
 
 # Load the model
 model = UNet3D(in_channel=1, out_channel=6).cuda()
-model.load_state_dict(torch.load(r'epoch_19_lossdice1.pth'))
+model.load_state_dict(torch.load(r'epoch_2_lossdice1.pth'))
 model.eval()
 
 # Define the test dataloader
-test_dataset = MRIDataset_pelvis(mode='test', dataset_path=r'C:\Users\111\Desktop\3710\新建文件夹\数据集\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1')
+test_dataset = Dataset(mode='test', dataset_path=r'C:\Users\111\Desktop\3710\新建文件夹\数据集\Labelled_weekly_MR_images_of_the_male_pelvis-Xken7gkM-\data\HipMRI_study_complete_release_v1')
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
 
 # Define weighted Dice loss function

@@ -1,93 +1,92 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataset import MRIDataset_pelvis
-from torch.utils.data import DataLoader
 
+class DoubleConv(nn.Module):
+    """(convolution => [BN] => ReLU) * 2"""
 
-class UNet3D(nn.Module):
-    """3D U-Net model for segmentation tasks."""
-
-    def __init__(self, in_channel=1, out_channel=6):
-        super(UNet3D, self).__init__()
-
-        # Encoder layers with Batch Normalization
-        self.encoder1 = self.conv_block(in_channel, 32)
-        self.encoder2 = self.conv_block(32, 64)
-        self.encoder3 = self.conv_block(64, 128)
-        self.encoder4 = self.conv_block(128, 256)
-
-        # Decoder layers with Dropout
-        self.decoder2 = self.deconv_block(256, 128)
-        self.decoder3 = self.deconv_block(128, 64)
-        self.decoder4 = self.deconv_block(64, 32)
-        self.decoder5 = nn.Conv3d(32, out_channel, kernel_size=1)  # Output layer
-
-    def conv_block(self, in_channels, out_channels):
-        return nn.Sequential(
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.double_conv = nn.Sequential(
             nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm3d(out_channels),
-            nn.LeakyReLU(inplace=True)
-        )
-
-    def deconv_block(self, in_channels, out_channels):
-        return nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm3d(out_channels),
-            nn.LeakyReLU(inplace=True),
-            nn.Dropout(0.5)
+            nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
-        # Encoder part
-        out1 = self.encoder1(x)
-        out2 = self.encoder2(F.max_pool3d(out1, kernel_size=2, stride=2))
-        out3 = self.encoder3(F.max_pool3d(out2, kernel_size=2, stride=2))
-        out4 = self.encoder4(F.max_pool3d(out3, kernel_size=2, stride=2))
+        return self.double_conv(x)
 
-        # Decoder part
-        out = F.interpolate(self.decoder2(out4), scale_factor=(2, 2, 2), mode='trilinear')
-        out = out + out3
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
 
-        out = F.interpolate(self.decoder3(out), scale_factor=(2, 2, 2), mode='trilinear')
-        out = out + out2
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool3d(2),
+            DoubleConv(in_channels, out_channels)
+        )
 
-        out = F.interpolate(self.decoder4(out), scale_factor=(2, 2, 2), mode='trilinear')
-        out = out + out1
+    def forward(self, x):
+        return self.maxpool_conv(x)
 
-        out = self.decoder5(out)  # No activation here, will apply softmax during evaluation
-        return out
+class Up(nn.Module):
+    """Upscaling then double conv"""
 
+    def __init__(self, in_channels, out_channels, bilinear=True):
+        super().__init__()
 
-class DiceLoss(nn.Module):
-    """Dice loss for evaluating segmentation accuracy."""
+        # if bilinear, use the normal convolutions to reduce the number of channels
+        if bilinear:
+            self.up = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True)
+            self.conv = DoubleConv(in_channels, out_channels)
+        else:
+            self.up = nn.ConvTranspose3d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+            self.conv = DoubleConv(in_channels, out_channels)
 
-    def __init__(self, smooth=1):
-        super(DiceLoss, self).__init__()
-        self.smooth = smooth
+    def forward(self, x1, x2):
+        x1 = self.up(x1)
+        # input is CHW
+        diffZ = x2.size()[2] - x1.size()[2]
+        diffY = x2.size()[3] - x1.size()[3]
+        diffX = x2.size()[4] - x1.size()[4]
 
-    def forward(self, inputs, targets):
-        assert inputs.shape == targets.shape, f"Shapes don't match: {inputs.shape} != {targets.shape}"
-        inputs = inputs[:, 1:]  # Skip background class
-        targets = targets[:, 1:]  # Skip background class
-        axes = tuple(range(2, len(inputs.shape)))  # Sum over elements per sample and per class
-        intersection = torch.sum(inputs * targets, axes)
-        addition = torch.sum(inputs ** 2 + targets ** 2, axes)
-        return 1 - torch.mean((2 * intersection + self.smooth) / (addition + self.smooth))
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                        diffY // 2, diffY - diffY // 2,
+                        diffZ // 2, diffZ - diffZ // 2])
 
+        x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
 
-if __name__ == '__main__':
-    # Testing the dataset and model
-    test_dataset = MRIDataset_pelvis(mode='test', dataset_path=r"path_to_your_dataset")
-    test_dataloader = DataLoader(dataset=test_dataset, batch_size=2, shuffle=False)
-    model = UNet3D(in_channel=1, out_channel=6)
+class UNet3D(nn.Module):
+    def __init__(self, in_channels=1, out_channels=6):
+        super(UNet3D, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
 
-    for batch_ndx, sample in enumerate(test_dataloader):
-        print('Test batch:')
-        print('Image shape:', sample[0].shape)
-        print('Label shape:', sample[1].shape)
-        output = model(sample[0])
-        print('Output shape:', output.shape)
+        self.inc = DoubleConv(in_channels, 64)
+        self.down1 = Down(64, 128)
+        self.down2 = Down(128, 256)
+        self.down3 = Down(256, 512)
+        self.down4 = Down(512, 512)
+        self.up1 = Up(512, 256)
+        self.up2 = Up(256, 128)
+        self.up3 = Up(128, 64)
+        self.up4 = Up(64, 64)
+        self.outc = nn.Conv3d(64, out_channels, kernel_size=1)
 
-        labely = torch.nn.functional.one_hot(sample[1].squeeze(1).long(), num_classes=6).permute(0, 4, 1, 2, 3).float()
-        break
+    def forward(self, x):
+
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+        logits = self.outc(x)
+        return logits

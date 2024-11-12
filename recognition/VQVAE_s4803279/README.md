@@ -1,13 +1,13 @@
 # COMP3710 Project Farhaan Rashid s4803279
 
 ## Background
-The purpose of this of this model is to learn from historical data and be able to create new images through the use of machine learning. The model I am using is a Vector Quantised Variational Auto Encoder (VQVAE2). This model has 3 main parts, and encoder, a latent vector embedding space and a decoder. The training data is processed through the encoder to match the dimensions of the embedding space where a codebook will map each feature to a matching vector and then the decoder will essentially build back up to the original size of the image.
+The purpose of this of this model is to learn from historical data and be able to generate new images through the use of machine learning. The model I am using is a Vector Quantised Variational Auto Encoder (VQVAE2). This model has 3 main parts, an encoder, a latent vector embedding space, and a decoder. The training data is processed through the encoder to match the dimensions of the embedding space where a codebook will map each feature to a matching vector and then the decoder will essentially build back up to the original size of the image.
 
 ## Purpose
-The purpose of a using a generative model in the medical imaging field has one major benefit, this is that there is not a lot of historical data available or due to the ethics, the data may not be accessible. This make the generation of new and 'fake' imaged helpful. Although the images are fake, they can serve as strong learning tools for students and professionals in the field.
+The purpose of using a generative model in the medical imaging field is its major benefit: there is limited historical data available, or due to ethical concerns, the data may not be accessible.. This make the generation of new and 'fake' imaged helpful. Although the images are fake, they can serve as strong learning tools for students and professionals in the field.
 
 ## Model Description
-The 3 parts of the model are the Encoder, Vector Quantiser and Decoder. The VQVAE2 model is an generative learning model that learns by compressing images and uses a discrete mapping to reconstruct the images as close to the original. This allows it to eventually generate new images by learning how the features are mapped to the latent embedding space.
+The three parts of the model are the Encoder, Vector Quantiser and Decoder. The VQVAE2 model is a generative learning model that learns by compressing images and uses a discrete mapping to reconstruct the images as close to the original. This allows it to eventually generate new images by learning how the features are mapped to the latent embedding space.
 
 ### Pipeline
 <p align="center">
@@ -23,20 +23,20 @@ Input Image -> Encoder -> Vector Quaniser -> Decoder -> Generated Image
 </p>
 
 ### Encoder
-The encoder in the VQ-VAE2 model compresses the input image into a lower-dimensional latent space, capturing essential features while reducing redundancy. This structure functions similarly to a convolutional neural network, where the top and bottom layers are responsible for preserving different levels of detail. The top level retains fine-grained details, while the bottom layer captures coarser, more general image features. By encoding these varying levels of detail, the encoder allows the model to retain a rich, multi-scale feature representation, which supports the decoder in reconstructing detailed images from these compressed embeddings.
+The encoder in the VQ-VAE2 model compresses the input image into a lower-dimensional latent space, effectively capturing essential features while minimizing redundancy. This structure functions similarly to a convolutional neural network, where the top and bottom layers are responsible for preserving different levels of detail. The top level retains fine-grained details, while the bottom layer captures coarser, more general image features. By encoding these varying levels of detail, the encoder allows the model to retain a rich, multi-scale feature representation, which supports the decoder in reconstructing detailed images from these compressed embeddings.
 
 ### Vector Quantiser
-The vector quantiser plays a crucial role by discretizing the latent representations produced by the encoder. This step converts continuous feature embeddings into discrete codes by mapping each encoded feature to the nearest codebook vector. This quantization process introduces a structured, discrete representation of the image, enabling the model to build a more consistent and learnable latent space. By constraining the latent space to a set of fixed vectors, the vector quantiser enhances the generative capability of the model: it allows the decoder to reconstruct images based on a consistent and organized set of features, which aids in producing realistic images with variations learned from the training data.
+The vector quantiser plays a crucial role by discretising the latent representations produced by the encoder. This step converts continuous feature embeddings into discrete codes by mapping each encoded feature to the nearest codebook vector. This quantisation process introduces a structured, discrete representation of the image, enabling the model to build a more consistent and learnable latent space. By constraining the latent space to a set of fixed vectors, the vector quantiser enhances the generative capability of the model, allowing the decoder to reconstruct images based on a consistent and organised set of features, which aids in producing realistic images with variations learned from the training data.
 
 ### Decoder
-The decoder reconstructs the compressed, quantized representations from the vector quantiser back into the original image dimensions. Utilizing transposed convolutional layers, the decoder progressively rebuilds the image, starting from the coarser details and then refining finer structures. The dual-layer architecture of the decoder mirrors the encoder, where the top layer focuses on decoding high-level structural information, and the bottom layer reconstructs lower-level details. This dual-path approach allows the decoder to effectively reconstruct the image while preserving key details, leading to high-quality outputs that reflect the model’s learned structure from the latent space.
+The decoder reconstructs the compressed, quantised representations from the vector quantiser back into the original image dimensions. Utilising transposed convolutional layers, the decoder progressively rebuilds the image, starting from the coarser details and then refining finer structures. The dual-layer architecture of the decoder mirrors the encoder, where the top layer focuses on decoding high-level structural information, and the bottom layer reconstructs lower-level details. This dual-path approach allows the decoder to effectively reconstruct the image while preserving key details, leading to high-quality outputs that reflect the model’s learned structure from the latent space.
 
 ### Loss
 <p align="center">
   <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_eq.PNG" alt="Loss Equation">
 </p>
 
-The VQ-VAE2 model’s loss function consists of three primary components: reconstruction loss, codebook loss, and commitment loss. The reconstruction loss measures the pixel-level difference between the input and reconstructed images, guiding the model to preserve as much of the original image detail as possible. The codebook loss encourages the encoded features to closely match the nearest discrete vector in the codebook, ensuring that the latent representation remains compact and consistent. Finally, the commitment loss penalizes the encoder if its output drifts too far from the discrete codebook values, thereby encouraging tighter alignment between the continuous encoder output and the discrete embeddings. A commitment cost weight of 0.25 balances the strength of this alignment. Together, these loss terms enable the model to compress input images effectively while reconstructing high-quality outputs that align with the learned discrete representation.
+The VQ-VAE2 model’s loss function consists of three primary components: reconstruction loss, codebook loss, and commitment loss. The reconstruction loss measures the pixel-level difference between the input and reconstructed images, guiding the model to preserve as much of the original image detail as possible. The codebook loss encourages the encoded features to closely match the nearest discrete vector in the codebook, ensuring that the latent representation remains compact and consistent. Finally, the commitment loss penalises the encoder if its output drifts too far from the discrete codebook values, thereby encouraging tighter alignment between the continuous encoder output and the discrete embeddings. A commitment cost weight of 0.25 balances the strength of this alignment. Together, these loss terms enable the model to compress input images effectively while reconstructing high-quality outputs that align with the learned discrete representation.
 
 ### Preprocessing
 For this project, the dataset comprised 12,660 medical images, partitioned into 11,460 for training, 660 for validation, and 540 for testing. Each image was resized to a standard 256x128 resolution to ensure uniformity across inputs. Although no data augmentation was applied due to the controlled nature of the medical images, images with dimensions differing from the target size were resized, ensuring that input shape remained consistent. In terms of class imbalance, the dataset does not have explicitly defined classes, as the model is trained on grayscale medical imaging data where each sample represents similar anatomy. This homogeneity helps the model learn relevant feature structures, though it also limits exposure to variations outside this dataset. Overall, these preprocessing steps allowed for consistent input handling and effective training of the VQ-VAE2 model without introducing biases from class imbalances.
@@ -45,7 +45,7 @@ For this project, the dataset comprised 12,660 medical images, partitioned into 
 The training set included 11460 images which is about 90.5% of the data. This meant that the bulk of the data was used for training the model and learning the features and improving the vector quantisation.
 
 ### Hyperparameter for Training
-During training, several hyperparameters were selected to optimize the model's performance:
+During training, several hyperparameters were selected to optimise the model's performance:
 
 #### Learning Rate:
 Set to 1e-3, this rate balances convergence speed and stability.
@@ -57,7 +57,7 @@ Set to 16, allowing effective memory use and stable gradient updates.
 Although only 10 epochs were used due to time and computational constraints, the model was able to achieve reasonable reconstruction quality. However, future work could involve increasing the number of epochs to see if more training leads to better SSIM and a smoother loss curve.
 
 #### Beta (Commitment Loss Weight):
-Set to 0.25, to control how closely the encoder’s output aligns with the quantized embedding. Initial values were selected based on standard practices for VQ-VAE models. After testing with different values, these settings provided the best balance of reconstruction quality and training efficiency. Future work may involve additional fine-tuning to further enhance model generalization.
+Set to 0.25, to control how closely the encoder’s output aligns with the quantised embedding. Initial values were selected based on standard practices for VQ-VAE models. After testing with different values, these settings provided the best balance of reconstruction quality and training efficiency. Future work may involve additional fine-tuning to further enhance model generalisation.
 
 #### Hidden Dimensions:
 Hidden dimensions of [64, 128] were chosen to provide a suitable capacity for capturing both high- and low-level features without overwhelming the memory. These dimensions allow for effective feature extraction in the encoder while keeping model complexity manageable.
@@ -71,7 +71,7 @@ With num_workers set to 4, the data loading process is optimized, reducing bottl
 The training loss: [Training Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/train_losses.txt)
 
 ## Validation
-The validation set includes 660 images, representing approximately 5.3% of the dataset. This set provides unseen data during training, helping to monitor the model's performance on data it has not encountered before. By evaluating on the validation set, we gain insights into the model’s generalization ability and fine-tune the model parameters accordingly, reducing the risk of overfitting.
+The validation set includes 660 images, representing approximately 5.3% of the dataset. This set provides unseen data during training, helping to monitor the model's performance on data it has not encountered before. By evaluating on the validation set, we gain insights into the model’s generalisation ability and fine-tune the model parameters accordingly, reducing the risk of overfitting.
 
 The validation loss: [Validation Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/val_losses.txt)
 
@@ -84,7 +84,7 @@ The Structural Similarity Index Measure (SSIM) achieved by the model was 0.8732.
 The SSIM was only calculated during the testing to check the final reconstruction ability of the trained model.
 
 ### The training and validation losses
-The training and validation loss curves may appear unusual given the modest number of epochs and a learning rate; however, these settings were help maintain stable and incremental learning in the VQ-VAE2 model, which relies on discrete latent representations. While the final loss values may seem low, the model’s architecture and hyperparameters prioritize structural similarity over pixel accuracy, leading to good perceptual quality in the reconstructed images. This balance, reflected in the SSIM score of 0.8732, suggests the model effectively captures essential image features within a limited number of epochs.
+The training and validation loss curves may appear unusual given the modest number of epochs and a learning rate; however, these settings were help maintain stable and incremental learning in the VQ-VAE2 model, which relies on discrete latent representations. While the final loss values may seem low, the model’s architecture and hyperparameters prioritise structural similarity over pixel accuracy, leading to good perceptual quality in the reconstructed images. This balance, reflected in the SSIM score of 0.8732, suggests the model effectively captures essential image features within a limited number of epochs.
 
 <p align="center">
   <img src="https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/loss_plot.png" alt="Loss Plot">

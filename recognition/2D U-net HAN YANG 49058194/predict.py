@@ -44,7 +44,7 @@ def dice_score(pred, target, threshold=0.5, eps=1e-6):
 
 
 # Predicting images and evaluating model performance
-def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
+def predict_and_evaluate(root_dir, ground_truth_dir, model_path='unet_model.pth', threshold=0.5):
     """    
     Loads the model and performs predictions on the test dataset. 
     Args: 
@@ -53,7 +53,7 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
         threshold (float): Threshold for binarizing predictions.
     """
     # Load dataset
-    dataset = ProstateMRIDataset(root_dir)
+    dataset = ProstateMRIDataset(root_dir, ground_truth_dir) 
     model = UNet(n_channels=1, n_classes=1)
     model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
@@ -92,10 +92,11 @@ def predict_and_evaluate(root_dir, model_path='unet_model.pth', threshold=0.5):
 
 # Program entrance
 if __name__ == "__main__":
-    root_dir = 'HipMRI_study_keras_slices_data/processed_nii_files'
+    root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'
+    ground_truth_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'
 
     # Call and calculate Dice coefficient
-    dice = predict_and_evaluate(root_dir)
+    dice = predict_and_evaluate(root_dir, ground_truth_dir)
     if dice >= 0.75:
         print(f"Model achieved the desired Dice score of 0.75 or above: {dice:.2f}")
     else:

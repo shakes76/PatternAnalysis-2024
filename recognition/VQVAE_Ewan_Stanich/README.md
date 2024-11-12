@@ -87,7 +87,7 @@ The original paper for VQVAEs makes mention of many hyperparameters used in its 
 
 ### Input
 
-This model was trained on batches of images taken from the [HipMRI dataset from CSIRO](https://data.csiro.au/collection/csiro:51392v2?redirected=true).
+This model was trained on batches of images taken from the HipMRI dataset from CSIRO which can be found at https://data.csiro.au/collection/csiro:51392v2?redirected=true.
 
 The basic input for reconstruction is a batch of images from the dataset, preferably a batch of 16 images.
 

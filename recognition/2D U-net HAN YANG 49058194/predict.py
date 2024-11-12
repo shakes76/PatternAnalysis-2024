@@ -80,7 +80,7 @@ def predict_and_evaluate(root_dir, ground_truth_dir, model_path='unet_model.pth'
                 plt.title("Original Image")
 
                 plt.subplot(1, 2, 2)
-                plt.imshow(prediction, cmap='gray')
+                plt.imshow(prediction.squeeze(), cmap='gray')
                 plt.title("Prediction")
 
                 plt.show()

@@ -2,7 +2,7 @@
 
 ## Description:
 
-This repository contains an implementation of a [Vector Quantised Variational AutoEncoder (VQVAE)](https://arxiv.org/abs/1711.00937) that generates HipMRI images using data from a CSIRO study. This VQVAE aims to reconstruct recognizable images of provided HipMRI images; this will be measured by a Structural Similarity (SSIM) index, with an acceptable result being a value of over 0.6. The intentions of this project are to allow the generation of high-quality MRI imaging that can be applied in numerous medical settings and extended to producing other MRI imaging if provided with a sufficient dataset to train on.
+This repository contains an implementation of a Vector Quantised Variational AutoEncoder (VQVAE) that generates HipMRI images using data from a CSIRO study. This VQVAE aims to reconstruct recognizable images of provided HipMRI images; this will be measured by a Structural Similarity (SSIM) index, with an acceptable result being a value of over 0.6. The intentions of this project are to allow the generation of high-quality MRI imaging that can be applied in numerous medical settings and extended to producing other MRI imaging if provided with a sufficient dataset to train on. The original paper for VQVAEs can be found at https://arxiv.org/abs/1711.00937.
 
 ## VQVAE Description
 
@@ -14,7 +14,7 @@ The VQVAE is a generative machine learning model that improves upon variational 
 
 ![Architecture of a VQVAE](markdown_images/vqvae_architecture.png)
 
-The diagram above depicts the classic architecture of a VQVAE, consisting of three main components: the encoder, the vector quantizer, and the decoder.
+The diagram above depicts the classic architecture of a VQVAE, consisting of three main components: the encoder, the vector quantizer, and the decoder. The VQVAE in this project is inspired by the Github repository by MishaLaskin which can be found at https://github.com/MishaLaskin/vqvae/blob/master/models/vqvae.py. Modifications to this implementation were made to better suit this problem and cater to its specific needs.
 
 #### Encoder and Decoder
 
@@ -81,6 +81,8 @@ It is recommended to run these files on a device with a GPU; otherwise, training
 
 The hyperparameters are specified at the top of the [`train.py`](train.py) file; these have been carefully chosen to best fit this model and dataset, so it is not recommended to make any changes. However, if you wish to implement it for a new dataset, you may change them as you wish; they can easily be interpreted by their names.
 
+The original paper for VQVAEs makes mention of many hyperparameters used in its implementation, all of which were originally copied into this project to assess how well they worked in this scenario. These included the learning rate, batch size, and details for the layers of the implemented neural networks. These hyperparameters did not provide satisfactory results and were used as a starting point. The hyperparameters were carefully modified to produce better results with the most notable changes being the learning rate from 2e-4 to 3e-4, the batch size from 128 to 16, and the number of residual layers from 2 to 5. The paper also put an emphasis on using a beta value of 0.25 for the commitment loss, this was found to work well for this project. Only after the tuning of the hyperparameters was the model able to achieve a SSIM score of over 0.6.
+
 ## Inputs and Outputs
 
 ### Input
@@ -99,7 +101,7 @@ Plots of training loss and validation SSIM scores are also output over each epoc
 
 ## Preprocessing the Data
 
-The data was taken from the CSIRO HipMRI Dataset in the form of Nifti files. It was found that not all of that data was of the same dimension or shape. As such, when loading in the data, it was checked whether each image had the correct dimension and shape; if they didn't, they either had their dimension reduced, image resized, or both. After this had been ensured, the data was loaded as grayscale with one channel and then normalized to ensure more efficient training and better performance. The data was then put into a PyTorch DataLoader and passed into the model.
+The data was taken from the CSIRO HipMRI Dataset in the form of Nifti files. It was found that not all of that data was of the same dimension or shape, with errors being thrown for shape incompatibilites in the encoder input. This was troubleshooted by printing out the shape of each data point and finding that while most were of the same shape, there were scarce exceptions of data points that did not match. As such, `load_data` was modified to check that a data point was the correct shape. If not they either had their dimension reduced, image resized, or both. After this had been ensured, the data, now of uniform shape, was loaded as grayscale with one channel and then normalized to ensure more efficient training and better performance. The data was then put into a PyTorch DataLoader and passed into the model.
 
 Note that the data itself is grayscale images, but for better interpretation of the generated images, a colormap was used to give more detail and allow better comparison between original and reconstructed images.
 

@@ -8,6 +8,8 @@ This project implements a generative model based on the Vector Quantised Variati
 
 The VQVAE architecture consists of an encoder, a quantisation layer, and a decoder. The encoder compresses input images into a lower-dimensional latent space, while the quantisation layer maps the encoded representations to a discrete space of embeddings. The decoder then reconstructs the images from these embeddings. During training, the model optimises the reconstruction loss along with the quantisation loss, ensuring that generated images maintain high fidelity to the original input images.
 
+All parameters in both training and prediction were compared using a manually committed grid search; multiple requests on the gpu server were used in order to accomplish this. Once the results where found that satisfied the requirements of a SSIM value of above 0.6, the manual grid search was ceased. The only parameter that was limitted by technology was the epoch number, which could only iterate at a maximum of 38 before exceeded the time limited on the gpu server.
+
 ![VQVAE steps](readme_images/image.png)
 *Figure: Visualisation of VQVAE steps*
 
@@ -139,3 +141,14 @@ To reproduce the results:
 - Alter the repository location of stored data in modules to an accurate alternative.
 - Random seeds were fixed across the project by setting TensorFlow's random seed to a 42 using tf.random.set_seed(42).
 - You will not be able to run predict.py without having previously run train.py.
+
+## Future improvements
+
+To create a more accurate VQ-VAE model in the future, a few aspects could be altered:
+- Visualise individual aspects, such as embeddings, to further understand the performance of the model
+- Automatic grid search for all hyperparameters
+- Compare performance using VQ-VAE-2 model
+
+## References
+
+vvvm23. (2021). vqvae-2. GitHub repository. https://github.com/vvvm23/vqvae-2

@@ -53,8 +53,20 @@ Set to 0.0003, this rate balances convergence speed and stability.
 #### Batch Size:
 Set to 16, allowing effective memory use and stable gradient updates.
 
+#### Number of Epochs:
+Although only 10 epochs were used due to time and computational constraints, the model was able to achieve reasonable reconstruction quality. However, future work could involve increasing the number of epochs to see if more training leads to better SSIM and a smoother loss curve.
+
 #### Beta (Commitment Loss Weight):
 Set to 0.25, to control how closely the encoder’s output aligns with the quantized embedding. Initial values were selected based on standard practices for VQ-VAE models. After testing with different values, these settings provided the best balance of reconstruction quality and training efficiency. Future work may involve additional fine-tuning to further enhance model generalization.
+
+#### Hidden Dimensions:
+Hidden dimensions of [64, 128] were chosen to provide a suitable capacity for capturing both high- and low-level features without overwhelming the memory. These dimensions allow for effective feature extraction in the encoder while keeping model complexity manageable.
+
+#### Number of Embeddings and Embedding Dimensions:
+The number of embeddings was set to [256, 256] for the top and bottom levels, ensuring a sufficient codebook size to represent diverse image features while preserving discrete structure. Embedding dimensions of [32, 64] were chosen to balance detail retention with computational efficiency, allowing the model to compress and reconstruct images effectively.
+
+#### Number of Workers:
+With num_workers set to 4, the data loading process is optimized, reducing bottlenecks during training.
 
 The training loss: [Training Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/train_losses.txt)
 

@@ -39,7 +39,7 @@ def train_model(root_dir, ground_truth_dir, num_epochs=30, lr=0.001):
          lr (float): Learning rate for the optimizer.
     """ 
     # Load dataset
-    dataset = ProstateMRIDataset(root_dir)
+    dataset = ProstateMRIDataset(root_dir, ground_truth_dir)
     dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
 
     # Create models, define loss functions, and optimizers

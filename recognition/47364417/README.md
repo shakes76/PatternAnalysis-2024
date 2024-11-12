@@ -4,7 +4,7 @@
 # Classifying Alzheimer’s Disease using a Vision Transformer (ViT)
 
 This project aims to classify Alzheimer’s disease (normal and AD) using ADNI brain data and a Vision Transformer model, specifically `vit_small_patch16_224`. The primary objective is to achieve a test accuracy above 80% on the ADNI test set.
-<br>
+<br><br>
 
 ## Model
 

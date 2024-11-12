@@ -151,6 +151,7 @@ The project requires the following libraries and dependencies:
 You can install the required packages using:
 
 ```bash
+cd recognition/47364417
 pip install -r requirements.txt
 ```
 
@@ -176,7 +177,7 @@ python predict.py
 ## Conclusion
 
 In this project, we applied a Vision Transformer (ViT) model to classify Alzheimer's Disease using brain imaging data from the ADNI dataset. While the model achieved high training accuracy above 94%, the test accuracy plateaued around 60-63%, indicating a significant generalization gap likely due to overfitting and dataset limitations. This highlights the challenges of applying advanced deep learning models to limited imaging data. Future work should focus on implementing enhanced regularization techniques, exploring alternative architectures, improving data augmentation methods, and conducting extensive hyperparameter optimization to improve the model's generalization and reliability on the ADNI dataset for Alzheimer's Disease classification.
-<br>
+<br><br>
 
 ## References
 

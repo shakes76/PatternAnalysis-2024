@@ -2,7 +2,7 @@
 
 ## Overview
 
-Melanoma is one of the most aggressive forms of skin cancer, and early detection can significantly increase survival rates. This project leverages the YOLO11 (You Only Look Once) deep learning algorithm by Ultralytics to automatically detect melanoma in dermoscopic images, distinguishing it from other skin conditions like benign lesions and nevus. YOLO11 is a state-of-the-art object detection model. 
+Melanoma is one of the most aggressive forms of skin cancer, and early detection can significantly increase survival rates. This project leverages the YOLO11 (You Only Look Once) deep learning algorithm by Ultralytics to automatically detect skin lesions in dermoscopic images, including melanoma, benign lesions, and nevus. YOLO11 is a state-of-the-art object detection model. 
 
 <img width="126" alt="image" src="https://github.com/user-attachments/assets/9860b174-fe24-42f1-bf8c-41f44a9a1440">
 
@@ -10,8 +10,7 @@ Melanoma is one of the most aggressive forms of skin cancer, and early detection
 
 ## How it Works
 
-YOLO11 is a single-stage object detection model that processes the entire image in a single forward pass, predicting bounding boxes and classification scores simultaneously. It divides the input image into a grid, with each grid cell responsible for detecting an object within its bounds. Using anchor boxes, the model generates bounding box coordinates and confidence scores, optimized for melanoma detection by training on a labeled dataset of dermoscopic images. The final model can localize and classify skin lesions as either melanoma or benign in real time.
-
+YOLO11 is a single-stage object detection model that processes the entire image in a single forward pass, predicting bounding boxes and classification scores simultaneously. It divides the input image into a grid, with each grid cell responsible for detecting an object within its bounds. Using anchor boxes, the model generates bounding box coordinates and confidence scores, optimized for melanoma detection by training on a labeled dataset of dermoscopic images. The final model can localize and classify skin lesions.
 
 ## Dependencies
 

@@ -114,9 +114,13 @@ In this model, the Adam optimizer used a learning rate of 0.001 for the generato
 Evaluation included the generation of synthetic MRI images using the trained generator. The generated images were compared with the original dataset to assess quality. The model’s ability to retain the distinctive features of the two classes, AD and NC, was also evaluated.
 
 ### **t-SNE Representations**  
+This project involved the development of a t-SNE visualization to investigate clustering and separability from a two-class problem, namely Alzheimer's Disease and Normal Controls, using real MRI scans. The t-SNE method projects high-dimensional feature space, generated from ResNet-18 embeddings, onto a two-dimensional space for visualization. It helps study data distribution and grouping depending on various features that were extracted to gain insight into the model's embedded representation of different classes.
+
 Finally, a t-SNE plot was generated to display the embeddings of authentic images, allowing for an easy assessment of how well AD and NC images cluster (classes 0, 1 respectively):
 
 ![t-SNE Embeddings](readme/tsne_embeddings.png)
+
+These embeddings do not really show distinctly separated clusters, probably because the features recovered by ResNet-18 from real photos may possess limited discriminative ability in this respect, or more t-SNE parameters tuning is required in order to achieve better visual separation. Another approach that might give better results would be the application of t-SNE on a latent space or generated images instead of real images, because in this case, it will more precisely reflect the internal structure acquired by the generator. Embeddings of generated images and latent space of the model might allow for a more informed insight into what kind of distribution was learned and how good the model was at distinguishing the AD classes from the NC classes.
 
 ## **10. Overview of Performance**  
 With the StyleGAN model, there was a distinctive capability in generating synthetic MRI images that were relatively similar to real MRI images from the ADNI dataset. The generated images retained identifiable anatomic features representative of both Alzheimer's Disease (AD) and Normal Control (NC) classes. A comparison is shown below, where the generated image on the right has fairly maintained the structural information of the real MRI image on the left from the test set but is noisier with less resolution.

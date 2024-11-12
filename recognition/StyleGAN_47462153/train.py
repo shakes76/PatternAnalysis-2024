@@ -120,17 +120,33 @@ def plot_embeddings(dataloader, labels, output_path):
     plt.close()
 
 def train(args):
+    """
+    Train function to train the StyleGAN2 model using a generator and discriminator.
+    This function manages model loading, training loop, checkpoint saving, 
+    and handles the entire training process for a specified number of epochs.
+    
+    Args:
+        args (argparse.Namespace): Argument namespace containing data paths, 
+                                   hyperparameters, and other training settings.
+    
+    Raises:
+        Exception: If an error occurs during training, it will print the traceback 
+                   and exit the process.
+    """
     try:
+        # Initialize generator and discriminator models
         gen = Generator(z_dim=Z_DIM, w_dim=W_DIM, in_channels=IN_CHANNELS, img_channels=IMG_CHANNELS).to(DEVICE)
         disc = Discriminator(in_channels=IN_CHANNELS, img_channels=IMG_CHANNELS).to(DEVICE)
 
-        # Initialize optimizers with specific learning rates and betas
+        # Initialize optimizers for both generator and discriminator with specific hyperparameters
         gen_optimizer = optim.Adam(gen.parameters(), lr=LEARNING_RATE_GEN, betas=(0, 0.99), eps=1e-8)
         disc_optimizer = optim.Adam(disc.parameters(), lr=LEARNING_RATE_DISC, betas=(0, 0.99), eps=1e-8)
 
+        # Mixed precision training for performance improvements
         scaler = GradScaler()
 
         checkpoint_path = os.path.join(args.output_dir, CHECKPOINT_FILE)
+        # Load model if checkpoint exists
         if LOAD_MODEL and os.path.exists(checkpoint_path):
             print("Checkpoint found. Loading...")
             checkpoint = torch.load(checkpoint_path, map_location=DEVICE)
@@ -139,21 +155,25 @@ def train(args):
             start_epoch = 0
             print("Starting training from scratch")
 
+        # Set models to training mode
         gen.train()
         disc.train()
 
+        # Ensure directories for output files exist
         os.makedirs(args.output_dir, exist_ok=True)
         os.makedirs(SAVE_IMAGES_PATH, exist_ok=True)
 
+        # Load dataset with data loader
         dataloader, dataset = get_dataloader(FIXED_IMAGE_SIZE, args.batch_size, args.data_root)
         num_epochs = args.num_epochs
         start_time = time.time()
 
+        # Lists to keep track of generator and discriminator losses
         gen_losses, disc_losses = [], []
 
         for epoch in range(start_epoch, num_epochs):
-            gen_loss_accum = 0.0
-            disc_loss_accum = 0.0
+            gen_loss_accum = 0.0  # Accumulator for generator loss per epoch
+            disc_loss_accum = 0.0  # Accumulator for discriminator loss per epoch
 
             for batch_idx, (real, labels) in enumerate(dataloader):
                 if batch_idx >= MAX_BATCHES_PER_EPOCH:
@@ -163,35 +183,35 @@ def train(args):
                 batch_size_current = real.size(0)
                 noise = torch.randn(batch_size_current, Z_DIM).to(DEVICE)
 
-                # Training the discriminator with R1 regularization and mixed precision
+                # Train the discriminator with R1 regularization
                 disc_optimizer.zero_grad()
                 with autocast():
                     fake = gen(noise)
-                    real.requires_grad_()
+                    real.requires_grad_()  # Enable gradients for real images for R1 regularization
                     real_pred = disc(real)
                     fake_pred = disc(fake.detach())
 
                     d_loss_real = F.softplus(-real_pred).mean()
                     d_loss_fake = F.softplus(fake_pred).mean()
                     d_loss = d_loss_real + d_loss_fake
-                    r1_loss = compute_r1_loss(real_pred, real)
-                    disc_loss = d_loss + (R1_GAMMA / 2) * r1_loss
+                    r1_loss = compute_r1_loss(real_pred, real)  # Compute R1 regularization loss
+                    disc_loss = d_loss + (R1_GAMMA / 2) * r1_loss  # Combined loss
 
-                scaler.scale(disc_loss).backward()
-                scaler.step(disc_optimizer)
-                scaler.update()
+                scaler.scale(disc_loss).backward()  # Backward pass for discriminator
+                scaler.step(disc_optimizer)         # Step optimizer for discriminator
+                scaler.update()                     # Update scaler for mixed precision
                 disc_loss_accum += disc_loss.item()
 
-                # Training the generator to maximize the discriminator's error
+                # Train the generator
                 gen_optimizer.zero_grad()
                 with autocast():
                     fake = gen(noise)
                     fake_pred = disc(fake)
                     gen_loss = F.softplus(-fake_pred).mean()
 
-                scaler.scale(gen_loss).backward()
-                scaler.step(gen_optimizer)
-                scaler.update()
+                scaler.scale(gen_loss).backward()  # Backward pass for generator
+                scaler.step(gen_optimizer)         # Step optimizer for generator
+                scaler.update()                    # Update scaler for mixed precision
                 gen_loss_accum += gen_loss.item()
 
                 elapsed_time = time.time() - start_time
@@ -206,11 +226,13 @@ def train(args):
                     }, os.path.join(args.output_dir, CHECKPOINT_FILE))
                     return
 
+            # Calculate and store average losses for each epoch
             avg_gen_loss = gen_loss_accum / len(dataloader)
             avg_disc_loss = disc_loss_accum / len(dataloader)
             gen_losses.append(avg_gen_loss)
             disc_losses.append(avg_disc_loss)
 
+            # Save model checkpoints periodically
             if SAVE_MODEL:
                 save_checkpoint({
                     'gen_state_dict': gen.state_dict(),
@@ -220,6 +242,7 @@ def train(args):
                     'epoch': epoch + 1,
                 }, os.path.join(args.output_dir, CHECKPOINT_FILE))
 
+        # Save the final generator and discriminator models after all epochs
         torch.save(gen.state_dict(), os.path.join(args.output_dir, "generator_final.pth"))
         torch.save(disc.state_dict(), os.path.join(args.output_dir, "discriminator_final.pth"))
 

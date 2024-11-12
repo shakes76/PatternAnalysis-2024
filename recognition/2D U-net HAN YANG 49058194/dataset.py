@@ -61,32 +61,32 @@ class ProstateMRIDataset(Dataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
-    # Load MRI image
-    img_path = self.file_list[idx]
-    image = np.load(img_path)
+        # Load MRI image
+        img_path = self.file_list[idx]
+        image = np.load(img_path)
 
-    # Normalize image data to the range [0, 1]
-    if np.max(image) > 0:  # Avoid division by zero
-        image = image / np.max(image)
-    else:
-        print(f"Warning: Image at {img_path} is empty.")
-        image = np.zeros_like(image)  # Replace empty image with zero array
-
-    image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
-
-    # If ground truth is available, load and normalize it
-    if self.ground_truth_dir:
-        ground_truth_path = self.ground_truth_list[idx]
-        ground_truth = np.load(ground_truth_path)
-
-        if np.max(ground_truth) > 0:  # Avoid division by zero
-            ground_truth = ground_truth / np.max(ground_truth)
+        # Normalize image data to the range [0, 1]
+        if np.max(image) > 0:  # Avoid division by zero
+            image = image / np.max(image)
         else:
-            print(f"Warning: Ground truth at {ground_truth_path} is empty.")
-            ground_truth = np.zeros_like(ground_truth)  # Replace empty ground truth with zero array
+            print(f"Warning: Image at {img_path} is empty.")
+            image = np.zeros_like(image)  # Replace empty image with zero array
 
-        ground_truth = torch.tensor(ground_truth, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
-        return image, ground_truth
+        image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
 
-    # Return only the image if no ground truth is provided
-    return image
+        # If ground truth is available, load and normalize it
+        if self.ground_truth_dir:
+            ground_truth_path = self.ground_truth_list[idx]
+            ground_truth = np.load(ground_truth_path)
+
+            if np.max(ground_truth) > 0:  # Avoid division by zero
+                ground_truth = ground_truth / np.max(ground_truth)
+            else:
+                print(f"Warning: Ground truth at {ground_truth_path} is empty.")
+                ground_truth = np.zeros_like(ground_truth)  # Replace empty ground truth with zero array
+
+            ground_truth = torch.tensor(ground_truth, dtype=torch.float32).unsqueeze(0)  # Add channel dimension
+            return image, ground_truth
+
+        # Return only the image if no ground truth is provided
+        return image

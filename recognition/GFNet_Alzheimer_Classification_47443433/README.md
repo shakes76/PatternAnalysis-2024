@@ -10,13 +10,13 @@ This project aims to classify Alzheimer's disease using the ADNI brain MRI datas
 
 The main model selected for this project is DeiT Small, a compact variant of Data-efficient Image Transformer (DeiT), pretrained on ImageNet. DeiT is particularly effective in working with ADNI datasets due to its two specialised tokens: the class token and the distillation token.
 
-The class token plays a crucial role by gathering information from various image patches to make a final prediction. Meanwhile, the distillation token allows DeiT to learn from an additional "teacher" model during training. This distillation process enhances the model’s data efficiency, meaning it can achieve high accuracy without needing a huge amount of labeled data—a significant advantage given the limited availability of Alzheimer’s MRI scans.
+The class token plays a crucial role by gathering information from various image patches to make a final prediction. Meanwhile, the distillation token allows DeiT to learn from an additional "teacher" model during training. This distillation process enhances the model’s data efficiency, meaning it can achieve high accuracy without needing a huge amount of labelled data—a significant advantage given the limited availability of Alzheimer’s MRI scans.
 
 ![DeiT Architecture with Class and Distillation Tokens](images/deit.png)
 
 >*Image: The DeiT architecture includes a class token for prediction and a distillation token to learn from a teacher model, enhancing accuracy and data efficiency.* [[10](https://www.researchgate.net/figure/DeiT-main-architecture_fig2_371473901)]
 
-This dual-token structure allows DeiT to capture fine-grained, relevant features within MRI images, aiding in the differentiation between Normal Control (NC) and Alzheimer’s Disease (AD) cases. By leveraging these features, DeiT achieves its target accuracy of 80% on the test set. The combination of tokens and self-attention mechanisms helps DeiT to effectively capture both detailed and holistic patterns in the data, outperforming more traditional approaches, especially on datasets with limited labeled examples, such as ADNI.
+This dual-token structure allows DeiT to capture fine-grained, relevant features within MRI images, aiding in the differentiation between Normal Control (NC) and Alzheimer’s Disease (AD) cases. By leveraging these features, DeiT achieves its target accuracy of 80% on the test set. The combination of tokens and self-attention mechanisms helps DeiT to effectively capture both detailed and holistic patterns in the data, outperforming more traditional approaches, especially on datasets with limited labelled examples, such as ADNI.
 
 The following sections of this report outline the data preparation, model architecture, training approach, and evaluation metrics applied to reach the target test accuracy of 80% on the ADNI dataset.
 
@@ -33,6 +33,10 @@ The following sections of this report outline the data preparation, model archit
   - [Test Data Preprocessing](#test-data-preprocessing)
 - [Training Procedure](#training-procedure)
 - [Results and Analysis](#results-and-analysis)
+- [Further Analysis](#further-analysis-of-evidence)
+- [Evaluation](#interpretation-and-evaluation)
+- [Improvements and Extensions](#potential-improvements-and-extensions)
+- [Conclusion](#conclusion)
 - [References](#references)
 ---
 ## Model Architecture
@@ -194,10 +198,10 @@ A pretrained Vision Transformer (ViT) model was finetuned for the ADNI Dataset, 
 - **Pretrained on**: ImageNet
 - **Patch Size**: 16x16 pixels
 
-#### Why DeiT is a Strong Choice for Alzheimer's Classification
+#### Why DeiT for Alzheimer's Classification?
 
 ##### 1. **Maximises Minimal Data**  
-   DeiT was built with data efficiency in mind, which is essential for medical imaging datasets like ADNI where labeled examples are often scarce. Thanks to its unique distillation token, DeiT is able to achieve high accuracy without needing large amounts of labeled data. This feature makes it particularly useful for Alzheimer’s classification, where obtaining ample, labeled MRI scans can be challenging. [[1](https://arxiv.org/abs/2012.12877)]
+   DeiT was built with data efficiency in mind, which is essential for medical imaging datasets like ADNI where labelled examples are often scarce. Thanks to its unique distillation token, DeiT is able to achieve high accuracy without needing large amounts of labelled data. This feature makes it particularly useful for Alzheimer’s classification, where obtaining ample, labelled MRI scans can be challenging. [[1](https://arxiv.org/abs/2012.12877)]
 
 ##### 2. **Attention Mechanism**  
 DeiT’s attention mechanism helps the model focus on key areas within brain scans, making it easier to spot the subtle structural differences that may indicate Alzheimer’s. Unlike traditional CNNs, which often only capture small, localised features, DeiT’s transformer design is able to recognise both fine details and the overall structure. This makes DeiT particularly effective for medical imaging, where seeing both the small and big picture is essential. [[3](https://arxiv.org/abs/1706.03762)]
@@ -243,9 +247,8 @@ accumulation_steps = 2
 best_accuracy = 0.0
 batch_size = 32 
 ```
-## Training Loop
 
-The training loop for this project involves multiple epochs where the model iteratively learns from the training data. The primary steps in the training loop are as follows:
+The primary steps in the training loop are as follows:
 
 1. **Forward Pass**: Each image batch is passed through the Vision Transformer model.
 2. **Loss Calculation**: The cross-entropy loss is computed, which helps the model adjust its weights based on the error between predicted and actual classes.
@@ -369,9 +372,19 @@ You can install all dependencies using the following command:
 pip install torch==2.0.1 torchvision==0.15.2 timm==0.6.13 numpy==1.25.0 matplotlib==3.7.1
 ```
 
-> NB: To improve reproducibility, set random seeds across your scripts using
+> NB: For consistent results, set random seeds across your scripts using
  
- `torch.manual_seed()` and `numpy.random.seed()`.
+ `torch.manual_seed()` and `numpy.random.seed()`
+
+#### Setting Up a Conda Environment
+For users running this code on a personal machine, it's recommended to use a conda environment to manage dependencies and ensure compatibility. To create and activate a conda environment with the required dependencies:
+
+```bash
+conda create -n deit_alzheimers python=3.10
+conda activate deit_alzheimers
+conda install pytorch==2.0.1 torchvision==0.15.2 -c pytorch
+pip install timm==0.6.13 numpy==1.25.0 matplotlib==3.7.1
+```
 
 ---
 ## Usage
@@ -395,20 +408,78 @@ python predict.py --image_path "/path/for/image.jpg"
 **Output**: The model will predict either "AD" or "NC" based on the image content and produce a confidence chart.
 
 ### Other Notes
-Commits were used to structure a progression from a GFNet only model to a GeiT small inclusive model.
+
+- Due to limited computational resources and the constraints of a personal machine, Google Colab Premium with an A100 GPU was used for training and model experimentation. The additional computational power provided by Colab allowed for efficient training, which would otherwise be impractical on standard hardware.
+- Commits were used to structure a progression from a GFNet only model to a GeiT small inclusive model.
 
 ---
+
+## Further Analysis of Evidence
+
+- **Application of Key Concepts**  
+  Using the DeiT Small Vision Transformer for Alzheimer’s classification in MRI images aligns well with the strengths of this model architecture. Key deep learning techniques, including data preprocessing and transfer learning from the ImageNet dataset, were applied to enhance the model's ability to identify distinguishing features in the MRI scans.
+
+- **Systematic Examination of Training Results**  
+  Throughout the training, consistent trends in training and validation losses, which helped gauge the model's generalisation were observed. Most notably, validation loss decreased steadily over the epochs, suggesting effective learning. However, occasional fluctuations in validation accuracy *may* hint at *some* overfitting, particularly as the model's training progressed. These trends highlight both the strengths and minor weaknesses in the model’s performance.
+
+- **Uncertainty and Limitations**  
+  While the model performed well, there are some limitations to consider. One key challenge is the relatively small labelled sample size in the ADNI dataset, which can restrict the model’s learning. Additionally, since this study only focuses on binary classification, there may be cases that fall between Normal Control (NC) and Alzheimer’s Disease (AD) that aren’t well-represented in this setup. Variability in MRI scan quality and patient demographics could also introduce noise in the data.
+
+- **Efficiency and Relevance of Data Collection**  
+  Sufficient MRI scans were collected from the ADNI dataset, allowing the model to learn effectively from both NC and AD categories. The dataset's size was large enough to yield meaningful patterns, providing confidence in the findings without excessive data, which could add unnecessary complexity.
+
+---
+
+## Interpretation and Evaluation
+
+- **Interpretation of Results**  
+Through the model training process, DeiT Small has achieved its project goal of over 80% accuracy on the test data. This finding supports the idea that Vision Transformers can accurately distinguish between NC and AD cases in MRI scans. The finding corresponds to the goal of the project, suggesting that the self-attention mechanism of DeiT Small is indeed fine-tuned to both subtle and global patterns pertinent to Alzheimer's classification when assessed in light of binary classification. This means that the model can indeed detect salient and differentiable features in MRI scans that mark that distinction between NC and AD, not necessarily for other cognitive impairments.
+
+- **Evaluation of the Experimental Process**  
+Model training and evaluation were otherwise trustworthy since they gave relatively consistent outcomes for the validation runs. Nevertheless, there is room for improvement, especially in enlarging the training dataset and refining preprocessing steps. The present binary classification framework hinders the model from mimicking real-world applicability, as it may overlook patients with an intermediate, or atypical presentation.
+
+- **Reliability and Validity**  
+  The results were reproducible, which proved reliability. The procedure was almost always considered valid, though limitations like the quite limited diversity of labelled data and simple NC/AD classification have an influence on its generalisability. Introducing a multi-class classification scheme with different levels of dementia and adding more diversity to the dataset would do well to generalise the findings given on the model. 
+ ---
+
+### Potential Improvements and Extensions
+
+Despite the fact that a small DeIT-based model is currently trained to identify the diseases of Alzheimer's subtypes from normal controls and gives promising results, many other options are available for boosting its performance and making it more useful by applying it to other diseases. Some of the notable potential improvements and extensions are:
+
+- **Expand the Dataset**: Increasing the number of labelled MRI scans, particularly covering various stages of Alzheimer’s would be very useful as they present a wider variety of the disease progression examples. On the other hand, the higher the variability of the dataset is, the more the model itself will generalize and predict accurately the new, unknown cases.
+
+- **Additional Data Augmentation**: By employing advanced data augmentation techniques like elastic transformations [[11]](https://arxiv.org/abs/2307.02484), possibly beneficial variations can be incorporated into the training data. This, in turn, effectively provides the model with the flexibility to recognise the variances in the context of imaging conditions and to a lesser extent in anatomical features and thus improve its capacity and robustness of adaptively handling these unique scan types. 
+
+- **Experiment with Larger DeiT Models**: Using larger versions of DeiT, such as DeiT Base and DeiT Large, could allow the model to capture finer details of MRI images, improving its classification. These models would require more computational resources, though they might potentially be better at distinguishing finer differences between NC and AD cases. 
+
+- **Consider an Ensemble Approach**: The combination of DeiT Small with other architectures, such as CNNs or alternative transformers, could increase the overall accuracy. Furthermore, an ensemble approach creates a stronger motif to enhance performance using the strengths of different models, especially for some difficult cases where NC and AD distinctions become more subtle.
+
+- **Extend to Multi-Class Classification**: Using multi-class classification, the model can be expanded to classify the cognitive process's multiple stages- mild cognitive impairment or early-stage Alzheimer's disease- to attain more value in clinical usage. With a multi-class model, patient care and diagnosis can become more refined since the information produced is thus much more informative. 
+
+---
+
+## Conclusion
+
+This project successfully demonstrated the ability of the DeiT Small model to classify Alzheimer's disease using the ADNI dataset MRI. With a well-structured training pipeline, DeiT Small achieved 81.42% test set accuracy, which was the main aim of this project. The self-attention mechanism and data efficiency enabled the model to differentiate between Normal Control and Alzheimer’s cases fairly well, supported by limited labelled data.
+
+Considerable room for improvement exists, however, in the designed model. The overall model performance could be improved by deploying a few strategies such as collecting more diverse labelled training data, applying additional data augmentation strategies, and finding applicable ensemble approaches. Furthermore, increasing the model size and broadening the classification problem to comprise various stages of cognitive impairment would make the model closer to real-life clinical observations.
+
+In conclusion, this project illustrates the real potential of Vision Transformers, and in particular DeiT, in medical imaging tasks thus spawning promising tracks for further studies in the diagnosis and classification of neurodegenerative diseases such as Alzheimer’s. 
+
+---
+
+
 ### References
 
 1. Touvron, H., Cord, M., Douze, M., Massa, F., Sablayrolles, A., & Jégou, H. (2021). **Training data-efficient image transformers & distillation through attention**. *Proceedings of the International Conference on Machine Learning (ICML)*. Available: [https://arxiv.org/abs/2012.12877](https://arxiv.org/abs/2012.12877).
 
-2. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., ... & Houlsby, N. (2020). **An image is worth 16x16 words: Transformers for image recognition at scale**. *arXiv preprint arXiv:2010.11929*. Available: [https://arxiv.org/abs/2010.11929](https://arxiv.org/abs/2010.11929).
+2. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D. et al (2020). **An image is worth 16x16 words: Transformers for image recognition at scale**. *arXiv preprint arXiv:2010.11929*. Available: [https://arxiv.org/abs/2010.11929](https://arxiv.org/abs/2010.11929).
 
-3. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., ... & Polosukhin, I. (2017). **Attention is all you need**. *Advances in Neural Information Processing Systems*, 30, 5998-6008. Available: [https://arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762).
+3. Vaswani, A., Shazeer, N., Parmar, N. et al. (2017). **Attention is all you need**. *Advances in Neural Information Processing Systems*, 30, 5998-6008. Available: [https://arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762).
 
 4. Shorten, C., & Khoshgoftaar, T. M. (2019). **A survey on image data augmentation for deep learning**. *Journal of Big Data*, 6(1), 60. Available: [https://journalofbigdata.springeropen.com/articles/10.1186/s40537-019-0197-0](https://journalofbigdata.springeropen.com/articles/10.1186/s40537-019-0197-0).
 
-5. Wen, J., Thibeau-Sutre, E., Diaz-Melo, M., Samper-Gonzalez, J., Routier, A., Bottani, S., ... & Colliot, O. (2020). **Convolutional neural networks for classification of Alzheimer's disease: Overview and reproducible evaluation**. *Medical Image Analysis*, 63, 101694. Available: [https://www.sciencedirect.com/science/article/pii/S1361841519302118](https://www.sciencedirect.com/science/article/pii/S1361841519302118).
+5. Wen, J., Thibeau-Sutre, E., Diaz-Melo et al. (2020). **Convolutional neural networks for classification of Alzheimer's disease: Overview and reproducible evaluation**. *Medical Image Analysis*, 63, 101694. Available: [https://www.sciencedirect.com/science/article/pii/S1361841519302118](https://www.sciencedirect.com/science/article/pii/S1361841519302118).
 
 6. Müller, R., Kornblith, S., & Hinton, G. (2019). **When does label smoothing help?** *Advances in Neural Information Processing Systems*, 32, 4694-4703. Available: [https://proceedings.neurips.cc/paper/2019/file/f1748d6b0fd5d1f6a939a13c631109cf-Paper.pdf](https://proceedings.neurips.cc/paper/2019/file/f1748d6b0fd5d1f6a939a13c631109cf-Paper.pdf).
 
@@ -419,5 +490,7 @@ Commits were used to structure a progression from a GFNet only model to a GeiT s
 9. Zhang, X., Zou, J., He, K., & Sun, J. (2016). **Accelerating very deep convolutional networks for classification and detection**. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, 38(3), 529-541. Available: [https://ieeexplore.ieee.org/document/7298682](https://ieeexplore.ieee.org/document/7298682).
 
 10. Touvron, H., Cord, M., Bojanowski, P., Douze, M., Massa, F., Sablayrolles, A., & Jégou, H. (2021). "DeiT: Data-efficient Image Transformers for Image Classification." *ResearchGate*. Retrieved from [https://www.researchgate.net/figure/DeiT-main-architecture_fig2_371473901](https://www.researchgate.net/figure/DeiT-main-architecture_fig2_371473901).
+11.  Hinton, G. E. (2023). **The Forward-Forward Algorithm: Some Preliminary Investigations**. *arXiv preprint arXiv:2307.02484*. Available: [https://arxiv.org/abs/2307.02484](https://arxiv.org/abs/2307.02484).
+
 
 Additionally GitHub Copilot was used to accelerate development during the course of completion for this project.

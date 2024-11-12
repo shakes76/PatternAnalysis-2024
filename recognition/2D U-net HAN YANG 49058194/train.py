@@ -82,7 +82,7 @@ def train_model(root_dir, ground_truth_dir, num_epochs=30, lr=0.001):
 
 # Input
 if __name__ == "__main__":
-    root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files'  
-    ground_truth_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files' 
+    root_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files/images'  
+    ground_truth_dir = '/home/Student/s4905819/HipMRI_study_keras_slices_data/processed_nii_files/masks' 
     train_model(root_dir, ground_truth_dir)
 

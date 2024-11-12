@@ -44,18 +44,30 @@ I did not apply any preprocessing or augment the images as the images were alrea
 ## Training
 The training set included 11460 images which is about 90.5% of the data. This meant that the bulk of the data was used for training the model and learning the features and improving the vector quantisation.
 
+### Hyperparameter for Training
+During training, several hyperparameters were selected to optimize the model's performance:
+
+#### Learning Rate:
+Set to 0.0003, this rate balances convergence speed and stability.
+
+#### Batch Size:
+Set to 16, allowing effective memory use and stable gradient updates.
+
+#### Beta (Commitment Loss Weight):
+Set to 0.25, to control how closely the encoder’s output aligns with the quantized embedding. Initial values were selected based on standard practices for VQ-VAE models. After testing with different values, these settings provided the best balance of reconstruction quality and training efficiency. Future work may involve additional fine-tuning to further enhance model generalization.
+
 The training loss: [Training Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/train_losses.txt)
 
 ## Validation
-The validation set included 660 images which is about 5.3% of the data. This ensures that were is some data that the model has not seen yet and can be used to strengthen the training of the model. This improves the generalisation of the model and improves the back propogation.
+The validation set includes 660 images, representing approximately 5.3% of the dataset. This set provides unseen data during training, helping to monitor the model's performance on data it has not encountered before. By evaluating on the validation set, we gain insights into the model’s generalization ability and fine-tune the model parameters accordingly, reducing the risk of overfitting.
 
 The validation loss: [Validation Loss](https://github.com/farhaan-r/COMP3710-Project/blob/topic-recognition/recognition/VQVAE_s4803279/Results/val_losses.txt)
 
 ## Testing
 The testing set included 540 images 4.2% of the data. The testing set is the smallest as the model should already be in a good spot to generate new images by now so the testing set is used to evaluate how well the model works by comparing the generated images with the original ones. This is why the set is tthe smallest.
 
-## Results
-This model achieved an average Structures Similarity Index Mearure (SSIM) of 0.8732
+## Structured Similarity Index Measure
+The Structural Similarity Index Measure (SSIM) achieved by the model was 0.8732. SSIM is a perceptual metric that quantifies image quality by comparing structural information between the original and reconstructed images. The closer the SSIM score is to 1, the more structurally similar the images are. In this context, a score of 0.8732 suggests the model preserves a high level of detail and structure from the original medical images, making it effective for generating realistic synthetic images.
 
 The training and validation losses:  
 <p align="center">

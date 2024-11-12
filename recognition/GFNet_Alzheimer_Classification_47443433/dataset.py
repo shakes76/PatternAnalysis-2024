@@ -5,6 +5,17 @@ from PIL import Image
 import os
 
 class ADNIDataset(Dataset):
+    """
+    A custom dataset class for loading images from the ADNI dataset for Alzheimer's disease classification.
+    Attributes:
+        root_dir (str): The root directory containing the dataset folders.
+        transform (callable, optional): Optional transform to be applied on a sample.
+        image_paths (list): List of paths to the images.
+        labels (list): List of labels corresponding to the images.
+    Methods:
+        __len__(): Returns the total number of samples in the dataset.
+        __getitem__(idx): Returns the image and label at the specified index.
+    """
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
         self.transform = transform
@@ -25,6 +36,14 @@ class ADNIDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
+        """
+        Retrieves an image and its corresponding label from the dataset at the specified index.
+        Args:
+            idx (int): Index of the image and label to retrieve.
+        Returns:
+            tuple: A tuple containing the image and its label. If an error occurs while loading the image,
+               returns None.
+        """
         image_path = self.image_paths[idx]
         try:
             image = Image.open(image_path).convert('RGB')

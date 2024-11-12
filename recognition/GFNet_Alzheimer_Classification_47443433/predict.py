@@ -31,6 +31,15 @@ def preprocess_image(image_path):
     return image
 
 def predict_image(image_path):
+    """
+    Predicts the class of an image using a pre-trained model.
+
+    Args:
+        image_path (str): The file path to the image to be predicted.
+
+    Returns:
+        str: The predicted class of the image. 'AD' for Alzheimer's Disease, 'NC' for Normal Control.
+    """
     image = preprocess_image(image_path)
     with torch.no_grad():
         output = model(image)

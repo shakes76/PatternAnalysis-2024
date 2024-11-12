@@ -171,7 +171,7 @@ Pre Train VAE Model
 method = 'Local'
 epochs = 100
 batch_size = 16  # will depend on image size and GPU memory
-image_size = 128  # width/height of image
+image_size = 256  # width/height of image must match Diffusion model
 in_channels = 1  # monochrome image so 1 in channel
 latent_dim = 16  # design choice (need ~16 for images @ 256x256)
 

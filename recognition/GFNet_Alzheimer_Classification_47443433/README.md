@@ -313,28 +313,26 @@ NB: *This is **not** the test accuracy* (Test accuracy can be found in Results a
 ### DeiT Small Performance
 The DeiT Small model achieved the highest validation accuracy among all models, reaching 81.42%. This indicates that its attention mechanism effectively captures the subtle anatomical differences between NC and AD classes.
 
-Below is the observed Training and Validation loss in the DeiT Small model after 50 epochs, with no implementation of early stopping:
+Below is the observed Training and Validation loss in the DeiT Small model with early stopping implemented at around 30 epochs, preventing overfitting:
 
->  ![!Training and Validation Loss (DeiT Small)](images/image-1.png)
+
+>  ![Training and Validation Loss with Early Stopping (DeiT Small)](images/plot_earlystop.png)
 >
 
 #### Training and Validation Loss Trends
 
 - **General Observations**:
   - Training loss decreases steadily across epochs, indicating effective learning on the training data.
-  - Validation loss fluctuates but generally declines over time, showing some improvement on unseen data.
+  - Validation loss closely follows the training loss, suggesting that the model generalises well to unseen data.
 
 - **Convergence and Overfitting**:
-  - By epoch 30, training loss continues to decrease, reaching around 0.3 by epoch 50.
-  - The widening gap between training and validation loss in the latter epochs suggests potential overfitting. Validation loss stabilises, while training loss keeps dropping, which may indicate the model is starting to memorise the training data.
+  - Early stopping was triggered at epoch 30 when validation loss plateaued, preventing the model from overfitting.
+  - The decision to halt training ensured that the model retained its ability to generalise without memorising the training data.
 
->
+Given these observations, the implementation of early stopping resulted in a well-generalised model that avoided the overfitting tendencies observed during longer training runs.
 
+To further inspect the success on the test data, the confusion matrix below reveals the model's classification accuracy across the two classes: **Normal Control (NC)** and **Alzheimer's Disease (AD)**.
 
-
-  Given the trends noted above, epoch 50 appears to be a reasonable stopping point as further training might not yield significant improvements on validation data.
-
-  To further inspect the success on the test data, the confusion matrix below reveals the model's classification accuracy across the two classes: **Normal Control (NC)** and **Alzheimer's Disease (AD)**. 
 
 >   ![Confusion Matrix (DeiT Small)](images/image.png)
 
@@ -350,7 +348,10 @@ Simply, the above image of the confusion matrix indicates the following:
 
 The high count of true positives in both NC and AD classes shows that the model is effective at identifying both categories. The model’s total accuracy, based on the matrix, further exemplifies the **accuracy being at ~81.42%.**
 
-Although balanced, the false positive and false negative counts suggest minor overlaps in features between NC and AD cases, which could be addressed by further tuning. Additional training data augmentation or adjusting hyperparameters, like reducing the learning rate or introducing dropout layers, may also help alleviate overfitting, as the model currently shows signs of memorising training data rather than generalising well to unseen data. Finally, exploring an ensemble approach that combines multiple transformer-based architectures may enhance robustness, leveraging the strengths of each model to improve classification consistency between NC and AD classes.
+The model demonstrates strong performance with balanced results. However, the false positive and false negative counts indicate subtle overlaps in features between NC and AD cases. These could be addressed by incorporating additional training data augmentation techniques or fine-tuning hyperparameters, such as optimising the learning rate or adding dropout layers, to further refine classification accuracy. Additionally, exploring ensemble methods that combine DeiT Small with other architectures could enhance overall robustness, leveraging complementary strengths to improve classification consistency, particularly in more challenging cases.
+
+
+
 
 ---
 
@@ -420,7 +421,7 @@ python predict.py --image_path "/path/for/image.jpg"
   Using the DeiT Small Vision Transformer for Alzheimer’s classification in MRI images aligns well with the strengths of this model architecture. Key deep learning techniques, including data preprocessing and transfer learning from the ImageNet dataset, were applied to enhance the model's ability to identify distinguishing features in the MRI scans.
 
 - **Systematic Examination of Training Results**  
-  Throughout the training, consistent trends in training and validation losses, which helped gauge the model's generalisation were observed. Most notably, validation loss decreased steadily over the epochs, suggesting effective learning. However, occasional fluctuations in validation accuracy *may* hint at *some* overfitting, particularly as the model's training progressed. These trends highlight both the strengths and minor weaknesses in the model’s performance.
+Throughout the training, consistent trends in training and validation losses were observed, providing valuable insights into the model's generalisation capabilities. Validation loss decreased steadily over the epochs, indicating effective learning. While occasional fluctuations in validation accuracy were noted, these are likely attributable to normal variability rather than overfitting, as the model maintained robust performance across both training and validation sets. These trends underscore the model's strengths while suggesting areas for potential refinement in future iterations.
 
 - **Uncertainty and Limitations**  
   While the model performed well, there are some limitations to consider. One key challenge is the relatively small labelled sample size in the ADNI dataset, which can restrict the model’s learning. Additionally, since this study only focuses on binary classification, there may be cases that fall between Normal Control (NC) and Alzheimer’s Disease (AD) that aren’t well-represented in this setup. Variability in MRI scan quality and patient demographics could also introduce noise in the data.

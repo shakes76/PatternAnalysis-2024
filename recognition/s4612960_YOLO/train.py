@@ -20,7 +20,7 @@ epochs = 31
 image_size = 640
 batch_size = 16
 
-#Train data - change directories as needed
+#Train data - change directories as needed - the following would be used if your Google Drive is linked to Colab
 MODEL_WEIGHTS_PATH = r'/content/drive/MyDrive/COMP3710_YOLO/yolov8n.pt'
 YAML_CONFIG_PATH = r'/content/drive/MyDrive/COMP3710_YOLO/yolov8n.yaml'
 OUTPUT_PATH = r'/content/drive/MyDrive/COMP3710_YOLO/results'

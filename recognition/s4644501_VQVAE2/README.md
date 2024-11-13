@@ -78,6 +78,10 @@ This loss is used to calculate gradients that are backpropogated through the mod
 
 ![image](visuals/VQVAE.png)
 
+##### Note to Model Choice
+
+Originally a single level VQVAE architecure was used where features are only discretized once. This produced results below the SSIM threshold and was abandoned in early development.
+
 ### Pre-processing (5 on marking)
 
 #### Training, Test, Validation Split
@@ -97,6 +101,14 @@ The images are normalized to help the model converge faster, prevent overfitting
 #### Batch Size
 
 A smaller batch size of 10 (in config.yaml) is used for regularization and stable convergence. When a small batch size is used, the gradients computed during backpropogation are based on fewer samples. As a consequence, the gradients are noisier and more stochastic. This prevents the model from converging too quickly and overfitting to the training data as well as inhibits memorization of training patterns leading to better generalization.
+
+#### Learning Rate
+
+A learning rate of 3e-5 is the learning rate suggested in the literature [1]. Using a small learning rate, such as 3e-5, allows for slow and stable convergence. In the surrounding literature, learning rate schedulers are recommended. Some basic testing of recommended schedulers did not yield performance improvements and so efforts were abandoned.
+
+#### Latent Loss Weight
+
+Latent loss weight of 0.25 was recommended in the literature [1]. No attempts were made to adjust this as the early training logs suggested suitable loss balance.
 
 #### Other
 

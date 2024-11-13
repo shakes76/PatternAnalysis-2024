@@ -125,6 +125,17 @@ Here is some predictions and their true labels to compare to:
 
 To perform the prediction on the test set, simply run predict.py
 
+## Reproduction
+
+To reproduce the results seen above:
+1. Follow the instructions in the *Using the Dataset* section above.
+2. Run train.py and wait for training to complete.
+3. Run predict.py to generate predictions on the test set.
+4. (Optional) Run evaluate.py to generate the exact array of images seen in *Predicting Lesions* and view other metrics regarding the prediction process.
+
+## Conclusion and Improvements
+Overall, while model was able to successfully detect skin lesions within the ISC2018 test set to the required parameters of the task. While the selected hyperparameters were able to train the model such that it solved the task sufficiently, taking the time to run the tuning script to generate more optimal parameters would likely result in a model that is even better at the detection task, or at the bare minimum the ability to train the model in a lower number of epochs, thus speeding up training time.
+
 ## A note on the lack of modules.py
 As mentioned in Ed Post #336, using ultralytics to perform this task is an allowed method and as mentioned in Ed Post #444, this means that all of the functionality that would be stored in modules.py is already provided by the pretrained model itself. As anything that would be added to this would essentially just be a simple wrapper for YOLO's methods I elected to not include this file.
 

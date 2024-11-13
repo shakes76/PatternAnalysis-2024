@@ -1,3 +1,12 @@
+# ====================================================
+# File: dataset.py
+# Description: Handles dataset loading, preprocessing, and transformations.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 import numpy as np
 import torch
 from torch_geometric.data import Data

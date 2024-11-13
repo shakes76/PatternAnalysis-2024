@@ -1,3 +1,12 @@
+# ====================================================
+# File: visualise.py
+# Description: Provides functions for visualizing data, model performance, and predictions.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 import umap
 import matplotlib.pyplot as plt
 

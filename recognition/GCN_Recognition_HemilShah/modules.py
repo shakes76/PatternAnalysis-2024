@@ -1,3 +1,13 @@
+# ====================================================
+# File: modules.py
+# Description: Defines various utility modules and helper functions used across the project,
+#              such as custom layers, activation functions, or loss functions.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv

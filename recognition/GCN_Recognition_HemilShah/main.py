@@ -1,3 +1,13 @@
+# ====================================================
+# File: main.py
+# Description: Entry point of the application. Initializes the workflow, including dataset loading,
+#              model training, evaluation, and prediction.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 from dataset import load_dataset
 from preprocess import preprocess
 from modules import GCN

@@ -1,3 +1,12 @@
+# ====================================================
+# File: predict.py
+# Description: Contains code for loading the trained model and generating predictions on new data.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 import torch
 from sklearn.metrics import accuracy_score, classification_report
 

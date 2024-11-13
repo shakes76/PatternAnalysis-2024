@@ -1,3 +1,12 @@
+# ====================================================
+# File: preprocess.py
+# Description: Handles data preprocessing tasks, such as cleaning, normalization, and feature engineering.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 from torch_geometric.utils import add_remaining_self_loops
 
 def preprocess(graph_data):

@@ -1,3 +1,13 @@
+# ====================================================
+# File: train.py
+# Description: Contains code for training the model, including configuration of hyperparameters,
+#              model saving, and evaluation metrics logging.
+# Author: Hemil Shah
+# Date Created: 14-11-2024
+# Version: 1.0
+# License: MIT License
+# ====================================================
+
 import torch
 from torch.optim import Adam
 from torch.nn import CrossEntropyLoss

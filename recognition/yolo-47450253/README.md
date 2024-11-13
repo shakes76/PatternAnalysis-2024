@@ -119,9 +119,9 @@ Once validation was complete and it was ensured that the model was performing we
 
 Here is some predictions and their true labels to compare to:
 
-|Prediction|Reality|
+|Reality|Prediction|
 |---|---|
-|![Model's Prediction](https://github.com/LonelyNo/PatternAnalysis-2024/blob/topic-recognition/recognition/yolo-47450253/images/test_batch2_labels.jpg)|![Reality](https://github.com/LonelyNo/PatternAnalysis-2024/blob/topic-recognition/recognition/yolo-47450253/images/test_batch2_pred.jpg)|
+|![Reality](https://github.com/LonelyNo/PatternAnalysis-2024/blob/topic-recognition/recognition/yolo-47450253/images/test_batch2_labels.jpg)|![Model's Prediction](https://github.com/LonelyNo/PatternAnalysis-2024/blob/topic-recognition/recognition/yolo-47450253/images/test_batch2_pred.jpg)|
 
 To perform the prediction on the test set, simply run predict.py
 

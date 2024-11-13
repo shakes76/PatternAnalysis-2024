@@ -23,6 +23,16 @@ def save_as_yolo_format(filepath, coordinates):
     with open(filepath, 'w') as file:
         file.write(f"0 {coordinates[0]:.6f} {coordinates[1]:.6f} {coordinates[2]:.6f} {coordinates[3]:.6f}")
 
+
+def normalize_coordinates(x, y, width, height, image_size):
+    img_height, img_width = image_size[:2]
+    center_x = (x + width / 2) / img_width
+    center_y = (y + height / 2) / img_height
+    norm_width = width / img_width
+    norm_height = height / img_height
+    return center_x, center_y, norm_width, norm_height
+
+
 def process_segmentation_files(source, destination):
     create_directory(destination)
     

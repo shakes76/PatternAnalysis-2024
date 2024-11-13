@@ -1,14 +1,6 @@
-#train: C:/Users/mariam/Downloads/COMP3710_YOLO/train
-#val: C:/Users/mariam/Downloads/COMP3710_YOLO/val
-#test: C:/Users/mariam/Downloads/COMP3710_YOLO/test
-
-
-#nc: 1  # Number of classes (lesion detection)
-#names: ['lesion']
-
 train: /content/drive/MyDrive/COMP3710_YOLO/train
 val: /content/drive/MyDrive/COMP3710_YOLO/val
 test: /content/drive/MyDrive/COMP3710_YOLO/test
 
-nc: 1  # Number of classes (lesion detection)
+nc: 1 
 names: ['lesion']

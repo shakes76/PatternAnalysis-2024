@@ -36,17 +36,6 @@ model.load_state_dict(checkpoint['state_dict'])
 
 # Calculate DICE Score on test set
 model.eval()
-with torch.no_grad():
-    dice_score = 0
-    for (x, y) in test_loader:
-        x = x.to(device)
-        y = y.to(device)
-        preds = model(x)
-        preds = (preds > 0.5).float() # convert to binary mask
-        dice_score += (2 * (preds * y).sum()) / ((preds + y).sum() + 1e-8) # add 1e-8 to avoid division by 0
-model.train()
-dice_score = dice_score / len(test_loader)
-dice_score = dice_score.item()
-dice_score = np.round(dice_score, 4)
+dice_score = dice_score(test_loader, device, model)
 
 print(f'Test Dice Score: {dice_score:.4f}')

@@ -89,19 +89,9 @@ for epoch in range(NUM_EPOCHS):
 
     # calculate dice score on validation set
     model.eval()
-    with torch.no_grad():
-        dice_score = 0
-        for _, (x, y) in enumerate(val_loader):
-            x = x.to(device)
-            y = y.to(device)
-            preds = model(x)
-            preds = (preds > 0.5).float() # convert to binary mask
-            dice_score += (2 * (preds * y).sum()) / ((preds + y).sum() + 1e-8) # add 1e-8 to avoid division by 0
-    model.train()
-    dice_score = dice_score / len(val_loader)
-    dice_score = dice_score.item()
-    dice_scores.append(np.round(dice_score, 4))
+    dice_score = dice_score(val_loader, device, model)
     print(f'Validation dice score: {dice_score}')
+    model.train()
 
     # Save a checkpoint after each epoch
     checkpoint = {

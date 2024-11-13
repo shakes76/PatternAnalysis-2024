@@ -1,3 +1,9 @@
+"""
+Author: Harshit Rathore
+Student ID: 48143749
+This module is used for training VQ-VAE Model.
+"""
+
 #Import Libraries
 import torch
 import torch.nn as nn

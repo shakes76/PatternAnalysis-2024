@@ -1,4 +1,8 @@
-### Testing the VQVAE Model working fine
+"""
+Author: Harshit Rathore
+Student ID: 48143749
+This module have all the utility function used by predict.py module.
+"""
 
 import torch
 from torchvision.utils import save_image

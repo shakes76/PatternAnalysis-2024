@@ -1,5 +1,7 @@
 """
-This module have all the deep learning model architecture for the project.
+Author: Harshit Rathore
+Student ID: 48143749
+This module have all the deep learning model architecture used in the project.
 """ 
 
 # Import libraries

@@ -1,5 +1,7 @@
 """
-This module is use train the models.
+Author: Harshit Rathore
+Student ID: 48143749
+This module is used for training VQ-VAE Model.
 """
 
 # Importing libraries and modules

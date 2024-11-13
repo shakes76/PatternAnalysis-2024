@@ -1,3 +1,9 @@
+"""
+Author: Harshit Rathore
+Student ID: 48143749
+This module is used for the generating prediction from VQ-VAE and PixelCNN Models.
+"""
+
 import torch
 import torch.nn.functional as F
 import numpy as np

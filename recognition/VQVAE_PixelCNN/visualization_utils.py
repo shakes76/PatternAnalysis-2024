@@ -1,5 +1,7 @@
 """
-This modules is for visulization utilities.
+Author: Harshit Rathore
+Student ID: 48143749
+This modules is used for visulization utilities.
 """
 
 # Importing libraries

@@ -64,7 +64,7 @@ Note: "/home/groups/comp3710/ADNI/AD_NC/" represents the directory on the UQ HPC
                                             image.jpeg
 ```
 
-An image in the data set may look like this (This is an image if the NC set, within the training set):
+An image in the data set may look like this (This is an image of the NC set, within the training set):
 
 <p align="center">
     <img src="/recognition/ADNI-GFNet-47430004/images/Sample_train_data_808819_88.jpeg" alt="Example ADNI brain data">

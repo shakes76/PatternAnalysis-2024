@@ -16,7 +16,7 @@ if not torch.cuda.is_available():
 
 
 # hyperparameters
-epochs = 10
+epochs = 31
 image_size = 640
 batch_size = 16
 

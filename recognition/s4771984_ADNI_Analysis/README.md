@@ -102,6 +102,9 @@ The confusion matrix shows the number of correct and incorrect classifications f
 ## Notes
 - The ADNI dataset was uploaded to Google Drive and accessed directly from there in Google Colab for training and evaluation. It provides easy integration and fast data loading with powerful GPU resources of Google Colab.
 
+## Conclusion
+The GFNet6 model achieved an accuracy of approximately 90% on training and validation datasets and 79% on the test dataset. While the model shows high performance, minor fluctuations in validation loss point toward potential overfitting. Fine-tuning with techniques like early stopping, further dropout, or regularization could help improve robustness.
+
 ## References
 - Giuliano Giacaglia. (Mar 11, 2019). How Transformers Work. Towards Data Science. https://towardsdatascience.com/transformers-141e32e69591
 - Rao, Y., Zhao, W., Zhu, Z., Lu, J., & Zhou, J. (2021). Global filter networks for image classification [ArXiv preprint arXiv:2107.00645].  

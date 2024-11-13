@@ -27,7 +27,7 @@ Ensure you install the dependencies via:
 pip install ultralytics opencv-python-headless matplotlib
 ```
 
-To reproduce the results, a GPU with CUDA support is recommended. The model was trained on an NVIDIA Tesla T4 GPU for optimal performance.
+To reproduce the results, a GPU with CUDA support is recommended. The model was trained on an NVIDIA Tesla T4 GPU using Google Colab for optimal performance.
 
 ## Dataset Preparation and Pre-Processing
 

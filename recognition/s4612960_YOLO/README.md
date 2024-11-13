@@ -33,13 +33,13 @@ To reproduce the results, a GPU with CUDA support is recommended. The model was 
 
 ### Dataset
 
-The model was trained on the ISIC (International Skin Imaging Collaboration) dataset, a comprehensive collection of dermoscopic images labeled for melanoma and benign conditions. The dataset was divided as follows:
+The model was trained on the ISIC (International Skin Imaging Collaboration) dataset, a comprehensive collection of dermoscopic images labeled for melanoma and benign conditions. The dataset was already divided by ISIC as follows:
 
-- **Training Set**: 80% of the data
-- **Validation Set**: 10% of the data
-- **Testing Set**: 10% of the data
+- **Training Set**: 2000 images - roughly 72%
+- **Validation Set**: 150 images - roughly 6%
+- **Testing Set**: 600 of the data - roughly 22%
 
-This split ensures the model has a sufficient amount of data for learning while keeping a balanced validation and testing set for evaluating performance.
+This split follows the ISIC competition guidelines, and ensures the model has a sufficient amount of data for learning while keeping a validation and testing set for evaluating performance.
 
 ### Pre-Processing
 

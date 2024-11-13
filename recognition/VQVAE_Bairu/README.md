@@ -1,6 +1,6 @@
 # Generative VQ-VAE model for the CSIRO HipMRI 2D Slices
 
-**Author:** Bairu
+**Author:** Bairu An (s4702833)
 
 ## Overview
 
@@ -15,6 +15,7 @@ The VQ-VAE architecture consists of an encoder that compresses input images into
 The figure below illustrates the VQ-VAE model architecture, highlighting the roles of the encoder, vector quantization layer, and decoder in the image reconstruction process.
 
 ![VQ-VAE model architecture](resources/vqvae_diagram.webp)
+Image from: [[2](https://medium.com/analytics-vidhya/an-overview-on-vq-vae-learning-discrete-representation-space-8b7e56cc6337)]
 
 The VQ-VAE model employs a loss function comprised of three key components to optimize the encoder and decoder, ensuring high-quality image reconstructions.
 
@@ -23,6 +24,7 @@ The VQ-VAE model employs a loss function comprised of three key components to op
 3. **Commitment Loss**: Regularizes the encoder to prevent complexity, encouraging it to commit to specific codebook embeddings and stabilizing training.
 
 ![VQ-VAE loss function](resources/loss_function.webp)
+Loss function from: [[2](https://medium.com/analytics-vidhya/an-overview-on-vq-vae-learning-discrete-representation-space-8b7e56cc6337)]
 
 These components collaboratively ensure the VQ-VAE learns meaningful representations while generating high-quality images.
 

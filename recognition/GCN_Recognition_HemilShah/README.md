@@ -82,3 +82,28 @@ The results indicate that the model performs well across all classes with minima
 Using UMAP, we project the high-dimensional embeddings into a 2D space for visualization.This visualization helps confirm that the model has learned meaningful representations for the node categories.
 
 ![Embedding Visualization](Umap_Visualisation.png)
+
+
+## References:
+
+Hamilton, W., Ying, Z., & Leskovec, J. (2017). Inductive representation learning on large graphs. Advances in Neural Information Processing Systems, 30, 1024–1034.
+
+Kingma, D. P., & Ba, J. (2015). Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980. https://doi.org/10.48550/arXiv.1412.6980
+
+Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907. https://doi.org/10.48550/arXiv.1609.02907
+
+Loshchilov, I., & Hutter, F. (2019). Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101. https://doi.org/10.48550/arXiv.1711.05101
+
+McInnes, L., Healy, J., & Melville, J. (2018). UMAP: Uniform manifold approximation and projection for dimension reduction. arXiv preprint arXiv:1802.03426. https://doi.org/10.48550/arXiv.1802.03426
+
+Newman, M. E. J. (2018). Networks. Oxford University Press.
+
+Powers, D. M. W. (2011). Evaluation: From precision, recall and F-measure to ROC, informedness, markedness & correlation. Journal of Machine Learning Technologies, 2(1), 37–63.
+
+Rossi, R. A., & Ahmed, N. K. (2015). The network data repository with interactive graph analytics and visualization. Proceedings of the AAAI Conference on Artificial Intelligence, 4292–4293. https://doi.org/10.1609/aaai.v29i1.9363
+
+Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
+
+Wasserman, S., & Faust, K. (1994). Social network analysis: Methods and applications. Cambridge University Press.
+
+Wu, Z., Pan, S., Chen, F., Long, G., Zhang, C., & Philip, S. Y. (2020). A comprehensive survey on graph neural networks. IEEE Transactions on Neural Networks and Learning Systems, 32(1), 4–24. https://doi.org/10.1109/TNNLS.2020.2978386

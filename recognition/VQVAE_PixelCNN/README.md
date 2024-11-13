@@ -7,45 +7,45 @@ Once the VQ-VAE learns the latent space, PixelCNN models the prior distribution 
 
 ## VQ-VAE: Discrete Latent Space for Efficient Encoding
 
-![VQVAE Model](./Images/vqvae.model.png)
+![VQ-VAE Model](./Images/vqvae.model.png)
 
 ### **Concept of VQ-VAE**
 VQ-VAE improves on traditional VAEs by using **discrete latent variables**. The encoder maps input images to continuous latent vectors, which are then **quantized to discrete codes** by selecting the nearest entry from a **learned codebook**. This quantization ensures that the model focuses on learning useful features rather than trivial or noisy details.
 
 ### **Workflow of VQ-VAE**
-1. **Encoder**: Maps input image \(x\) to a continuous latent vector \(z_e(x)\).
-   \[
+1. **Encoder**: Maps input image $x$ to a continuous latent vector $z_e(x)$.
+   $$
    z_e(x) = \text{Encoder}(x)
-   \]
+   $$
 
-2. **Quantization**: Finds the nearest embedding vector \(e_k\) from the codebook for each latent vector.
-   \[
+2. **Quantization**: Finds the nearest embedding vector $e_k$ from the codebook for each latent vector.
+   $$
    z_q(x) = e_k \quad \text{where} \quad k = \arg \min_j \|z_e(x) - e_j\|^2
-   \]
+   $$
 
-3. **Decoder**: Uses the quantized latent vector \(z_q(x)\) to reconstruct the original image.
-   \[
+3. **Decoder**: Uses the quantized latent vector $z_q(x)$ to reconstruct the original image.
+   $$
    \hat{x} = \text{Decoder}(z_q(x))
-   \]
+   $$
 
 4. **Training Objective**: VQ-VAE minimizes a combination of three losses:
    - **Reconstruction Loss**: Measures the difference between the input and reconstructed image.
-     \[
+     $$
      L_{\text{recon}} = \|x - \hat{x}\|_2^2
-     \]
+     $$
    - **Codebook Loss**: Moves the codebook embeddings closer to the encoder output.
-     \[
+     $$
      L_{\text{codebook}} = \| \text{sg}(z_e(x)) - e_k \|_2^2
-     \]
+     $$
    - **Commitment Loss**: Encourages the encoder to commit to a specific code in the codebook.
-     \[
+     $$
      L_{\text{commit}} = \beta \| z_e(x) - \text{sg}(e_k) \|_2^2
-     \]
+     $$
 
    **Total Loss**:
-   \[
+   $$
    L = L_{\text{recon}} + L_{\text{codebook}} + L_{\text{commit}}
-   \]
+   $$
 
    Here, **sg** denotes the **stop-gradient** operation, preventing the gradients from flowing into the codebook embeddings.
 
@@ -62,15 +62,15 @@ PixelCNN is an **autoregressive model** designed to learn the dependencies betwe
 
 ### **Mathematical Formulation**
 The joint distribution over latent codes is factorized as:
-\[
+$$
 p(z) = \prod_{i=1}^{n} p(z_i | z_1, \ldots, z_{i-1})
-\]
-Where \(z_i\) is the code for the \(i^{th}\) position in the latent space. 
+$$
+Where $z_i$ is the code for the $i^{th}$ position in the latent space. 
 
 During training, PixelCNN maximizes the **log-likelihood** of the latent codes:
-\[
+$$
 L_{\text{PixelCNN}} = - \sum_{i=1}^{n} \log p(z_i | z_1, \ldots, z_{i-1})
-\]
+$$
 
 This formulation ensures that the model learns the dependencies between latent codes, making it capable of generating realistic samples when used in combination with the VQ-VAE decoder.
 
@@ -96,7 +96,7 @@ This two-stage pipeline ensures high-quality and realistic image generation, wit
 
 The dataset used in this project contains 2D Hip MRI **12,460 images**:
 - **12,400 images** are of size **256 × 128 pixels**.
-- **60 images** are of size **256 × 144 pixels**. These were **filtered out** to maintain consistent dimensions during training.
+- **60 images** are of size **256 × 144 pixels**. These were **filtered out (removed)** to maintain consistent dimensions during training.
 
 ![GenSample Dataset Images](./Images/sample_visualization.png)
 
@@ -139,7 +139,7 @@ The following dependencies are required for this project:
 | scikit-image    | 0.23.2   |
 | NiBabel         | 5.2.1    |
 
-Requirements.txt file is provided to install these files.
+Requirements.txt file is provided to install these libraries.
 
 ### 2. Training VQ-VAE
 ```bash
@@ -157,16 +157,37 @@ python predict.py
 
 ## Training and Loss Curves
 
-### Loss Curve for the VQVAE Model
-![VQVAE 50 Epoch Loss](./Images/loss_curve50.png)
+### Hyperparameters for VQ-VAE and PixelCNN Models
 
-Training Loss Curve of VQVAE for first 50 epoch.
+| Hyperparameter       | Value  | Description                                                                                                                                            |
+|----------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **BATCH_SIZE**       | 32     | Number of training samples processed in one forward/backward pass. Affects computation efficiency and frequency of model weight updates.              |
+| **HIDDEN_DIM**       | 128    | Number of hidden units in the model's latent representation. Higher values enable more complex representations.                                        |
+| **NUM_RESIDUAL_LAYER** | 2   | Number of residual layers in the model. Residual layers improve training stability and help capture nuanced data features.                            |
+| **RESIDUAL_HIDDEN_DIM** | 32 | Dimensionality of hidden units within each residual layer. Balances between model efficiency and performance on complex data.                        |
+| **NUM_EMBEDDINGS**   | 128    | Number of embeddings (discrete latent vectors) in the VQ-VAE codebook, allowing for unique quantized representations of the data.                    |
+| **EMBEDDING_DIM**    | 128    | Dimensionality of each embedding vector in the codebook, enhancing data encoding richness for better output quality.                                 |
+| **COMMITMENT_COST**  | 0.25   | Regularization parameter that penalizes differences between encoder output and nearest embedding vector, encouraging effective embedding usage.       |
+| **LEARNING_RATE**    | 1e-2   | Step size for model updates during optimization. Higher values speed up training, while lower rates improve precision.                               |
+| **NUM_EPOCH_VQVAE**  | 1000   | Total number of training epochs for VQ-VAE model (full passes through the dataset). Higher values allow extended training, beneficial for larger datasets.             |
+| **NUM_EPOCH_PixelCNN**  | 150   | Total number of training epochs for PixelCNN model (full passes through the dataset).             |
 
-![VQVAE 50 Beyond Epoch Loss](./Images/loss_curve50beyond.png)
 
-Training Loss Curve for VQVAE beyond 50 epoch.
+### Loss Curve for the VQ-VAE Model
+
+The loss curve is separated in two sections for better visualization. The first loss curve(initial 50 epochs) presents the convergence of the model. The model converged with in 50 epochs, very very slight improvement were seen in the model after that, which is presented in second loss curve. After 50 epoch, the model's loss only improved by 0.003, indicating that the model had reached a plateau in terms of accuracy and loss reduction.
+
+![VQ-VAE 50 Epoch Loss](./Images/loss_curve50.png)
+
+Training Loss Curve of VQ-VAE for first 50 epoch.
+
+![VQ-VAE 50 Beyond Epoch Loss](./Images/loss_curve50beyond.png)
+
+Training Loss Curve for VQ-VAE beyond 50 epoch.
 
 ### Loss Curve for the PixelCNN Model
+
+The model successfully converged after 120 epochs, demonstrating stable training and optimal performance. No significant improvements were observed beyond this point, indicating that the model had reached a plateau in terms of accuracy and loss reduction.
 
 ![PixelCNN Los](./Images/CNN_loss.png)
 
@@ -174,32 +195,78 @@ Training Loss Curve for PixelCNN.
 
 ## Prediction Comparison
 
-### Below is the comparison of the original images and reconstructed images from VQVAE Model. On an average these images have the **SSIM score of 0.90**
+### Below is the comparison of the original images and reconstructed images from VQ-VAE Model. On an average these images have the **SSIM score of 0.90**
 
 ![Original Images](./Images/original_image.jpg)
 
-These are the batch of Original Images passed to the VQVAE Model.
+These are the batch of Original Images passed to the VQ-VAE Model.
 
 ![Generated Images](./Images/generated_image.jpg)
 
-These are the batch of Generated Images passed to the VQVAE Model.
+These are the batch of Generated Images passed to the VQ-VAE Model.
 
-### These are the Latent Spaces and Quantized spaces frpm the model.
+List of SSIM score for this batch:
+
+SSIM Score for image 0: 0.8926769512723215\
+SSIM Score for image 1: 0.8795653320531376\
+SSIM Score for image 2: 0.9128573662257585\
+SSIM Score for image 3: 0.933126552460135\
+SSIM Score for image 4: 0.9201359825896435\
+SSIM Score for image 5: 0.836747427980675\
+SSIM Score for image 6: 0.9237493664158172\
+SSIM Score for image 7: 0.8979885293753421\
+SSIM Score for image 8: 0.8971284876275258\
+SSIM Score for image 9: 0.9257338061315603\
+SSIM Score for image 10: 0.8809121275690736\
+SSIM Score for image 11: 0.8980848514774784\
+SSIM Score for image 12: 0.8787912491735865\
+SSIM Score for image 13: 0.9046357731275627\
+SSIM Score for image 14: 0.9001704167660143\
+SSIM Score for image 15: 0.9013343843847025\
+SSIM Score for image 16: 0.9172732051063757\
+SSIM Score for image 17: 0.9257412775127125\
+SSIM Score for image 18: 0.9061774743932193\
+SSIM Score for image 19: 0.9047303822497517\
+SSIM Score for image 20: 0.8832726799425532\
+SSIM Score for image 21: 0.8771655908608046\
+SSIM Score for image 22: 0.8995690258506869\
+SSIM Score for image 23: 0.9058141686237249\
+SSIM Score for image 24: 0.9233696606931139\
+SSIM Score for image 25: 0.9356542708209303\
+SSIM Score for image 26: 0.9033189999390637\
+SSIM Score for image 27: 0.9217855303746755\
+SSIM Score for image 28: 0.9097960419058799\
+SSIM Score for image 29: 0.912894228213146\
+SSIM Score for image 30: 0.9077796540651165\
+SSIM Score for image 31: 0.9303947841412709
+
+### These are the Latent Spaces and Quantized spaces from the model.
 
 
 ![Single Channel of Latent Space](./Images/latent_space.png)
 
-Single Channel of Latent Space from VQVAE Model.
+Single Channel of Latent Space from VQ-VAE Model.
 
 
 ![Single Channel of Quantised Space](./Images/quantized_space.png)
 
-Single Channel of Quantised Latent Space from VQVAE Model.
+Single Channel of Quantised Latent Space from VQ-VAE Model.
 
-### Image Generated using PixelCNN and VQVAE.
+### Image Generated using PixelCNN and VQ-VAE.
 
 ![PixelCNN Generated Images](./Images/reconstructed_image.png)
 
+## Potential Improvements
+
+1. **Improved Quantization:** Use dynamic or hierarchical codebooks for more adaptive and complex representations.
+
+2. **PixelCNN Variants:** Explore advanced models like PixelSNAIL or Gated PixelCNN for better image sharpness and diversity.
+
+3. **Latent Space Regularization:** Apply techniques like orthogonalization or sparsity regularization to encourage a more structured latent space.
+
+4. **Hybrid Models (VQ-VAE + GANs):** Combine with GANs to improve image realism and detail through adversarial loss.
+
+5. **Broader Evaluation Metrics:** Use additional metrics like FID, PSNR, or Inception Score for a more comprehensive image quality assessment.
 
 ## References
 

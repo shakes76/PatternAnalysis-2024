@@ -14,40 +14,35 @@ VQ-VAE improves on traditional VAEs by using **discrete latent variables**. The 
 
 ### **Workflow of VQ-VAE**
 1. **Encoder**: Maps input image $x$ to a continuous latent vector $z_e(x)$.
-   $$
-   z_e(x) = \text{Encoder}(x)
-   $$
+
+$$z_e(x) = \text{Encoder}(x)$$
 
 2. **Quantization**: Finds the nearest embedding vector $e_k$ from the codebook for each latent vector.
-   $$
-   z_q(x) = e_k \quad \text{where} \quad k = \arg \min_j \|z_e(x) - e_j\|^2
-   $$
+
+$$z_q(x) = e_k \quad \text{where} \quad k = \arg \min_j \|z_e(x) - e_j\|^2$$
 
 3. **Decoder**: Uses the quantized latent vector $z_q(x)$ to reconstruct the original image.
-   $$
-   \hat{x} = \text{Decoder}(z_q(x))
-   $$
+
+$$\hat{x} = \text{Decoder}(z_q(x))$$
 
 4. **Training Objective**: VQ-VAE minimizes a combination of three losses:
    - **Reconstruction Loss**: Measures the difference between the input and reconstructed image.
-     $$
-     L_{\text{recon}} = \|x - \hat{x}\|_2^2
-     $$
+
+$$L_{\text{recon}} = \|x - \hat{x}\|_2^2$$
+
    - **Codebook Loss**: Moves the codebook embeddings closer to the encoder output.
-     $$
-     L_{\text{codebook}} = \| \text{sg}(z_e(x)) - e_k \|_2^2
-     $$
+
+$$L_{\text{codebook}} = \| \text{sg}(z_e(x)) - e_k \|_2^2$$
    - **Commitment Loss**: Encourages the encoder to commit to a specific code in the codebook.
-     $$
-     L_{\text{commit}} = \beta \| z_e(x) - \text{sg}(e_k) \|_2^2
-     $$
+
+$$L_{\text{commit}} = \beta \| z_e(x) - \text{sg}(e_k) \|_2^2$$
 
    **Total Loss**:
-   $$
-   L = L_{\text{recon}} + L_{\text{codebook}} + L_{\text{commit}}
-   $$
+
+$$L = L_{\text{recon}} + L_{\text{codebook}} + L_{\text{commit}}$$
 
    Here, **sg** denotes the **stop-gradient** operation, preventing the gradients from flowing into the codebook embeddings.
+
 
 
 ## PixelCNN: Autoregressive Prior over Latent Codes
@@ -62,15 +57,14 @@ PixelCNN is an **autoregressive model** designed to learn the dependencies betwe
 
 ### **Mathematical Formulation**
 The joint distribution over latent codes is factorized as:
-$$
-p(z) = \prod_{i=1}^{n} p(z_i | z_1, \ldots, z_{i-1})
-$$
+
+$$p(z) = \prod_{i=1}^{n} p(z_i | z_1, \ldots, z_{i-1})$$
+
 Where $z_i$ is the code for the $i^{th}$ position in the latent space. 
 
 During training, PixelCNN maximizes the **log-likelihood** of the latent codes:
-$$
-L_{\text{PixelCNN}} = - \sum_{i=1}^{n} \log p(z_i | z_1, \ldots, z_{i-1})
-$$
+
+$$L_{\text{PixelCNN}} = - \sum_{i=1}^{n} \log p(z_i | z_1, \ldots, z_{i-1})$$
 
 This formulation ensures that the model learns the dependencies between latent codes, making it capable of generating realistic samples when used in combination with the VQ-VAE decoder.
 

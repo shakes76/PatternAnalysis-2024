@@ -43,6 +43,47 @@ if __name__ == "__main__":
 
 
 
+# ----------
+
+import matplotlib.pyplot as plt
+import os
+from PIL import Image
+
+# Path to the directory where predictions are saved
+OUTPUT_DIR = '/content/drive/MyDrive/COMP3710_YOLO/predictions/predict5'
+
+# Number of images to display
+num_images = 5
+
+# Get the list of image files in the output directory, excluding files ending with "_superpixels.jpg"
+image_files = [f for f in os.listdir(OUTPUT_DIR) if (f.endswith('.jpg') or f.endswith('.png')) and not f.endswith('_superpixels.jpg')]
+image_files = sorted(image_files)[:num_images]  # Select the first 'num_images' files
+
+# Check if there are any images to display
+if not image_files:
+    print("No images found in the output directory.")
+else:
+    # Display the images
+    plt.figure(figsize=(15, 10))
+    for i, image_file in enumerate(image_files):
+        image_path = os.path.join(OUTPUT_DIR, image_file)
+
+        # Open and display each image
+        try:
+            image = Image.open(image_path)
+            plt.subplot(1, num_images, i + 1)
+            plt.imshow(image)
+            plt.axis('off')
+            plt.title(f"Prediction {i + 1}")
+        except Exception as e:
+            print(f"Error loading image {image_file}: {e}")
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
 """
 def plot_boxes(image_tensor, bounding_box):
     image_tensor = image_tensor.cpu().permute(1, 2, 0)  # Reshape for plotting

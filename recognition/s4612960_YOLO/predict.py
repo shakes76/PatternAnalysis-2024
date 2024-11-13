@@ -5,15 +5,46 @@ import matplotlib.patches as patches
 import cv2
 import torch
 import numpy as np
+from ultralytics import YOLO
 
+MODEL_PATH = '/content/drive/MyDrive/COMP3710_YOLO/results/train4/weights/best.pt' 
+TEST_IMAGES_PATH = '/content/drive/MyDrive/COMP3710_YOLO/test/images' 
+OUTPUT_DIR = '/content/drive/MyDrive/COMP3710_YOLO/predictions'  
+
+# Create output directory if it doesn't exist
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def run_predictions():
+    # Load the trained YOLOv8 model
+    model = YOLO(MODEL_PATH)
+    print("Model loaded successfully.")
+
+    # Run predictions on the test images
+    print("Running predictions on the test images...")
+    results = model.predict(source=TEST_IMAGES_PATH, imgsz=640, conf=0.5, iou=0.8, save=True, project=OUTPUT_DIR, stream=True)
+
+
+    # Process and print results
+    for result in results:
+        # Display the image path and number of detections
+        print(f"Processed image: {result.path}")
+        print(f"Number of detections: {len(result.boxes)}")
+
+        # Print bounding box details
+        for box in result.boxes.data:
+            x1, y1, x2, y2, conf, cls = box[:6]
+            print(f"Bounding Box - x1: {x1}, y1: {y1}, x2: {x2}, y2: {y2}, Confidence: {conf}, Class: {cls}")
+
+    print(f"Predictions complete! Results are saved in: {OUTPUT_DIR}")
+
+# Run the predictions function
+if __name__ == "__main__":
+    run_predictions()
+
+
+
+"""
 def plot_boxes(image_tensor, bounding_box):
-    """
-    Plots the bounding box and label on an image.
-
-    Args:
-        image_tensor (torch.Tensor): The image tensor of shape (3, 416, 416).
-        bounding_box (torch.Tensor): The bounding box tensor with format [center_x, center_y, width, height, score, label1, label2].
-    """
     image_tensor = image_tensor.cpu().permute(1, 2, 0)  # Reshape for plotting
     fig, ax = plt.subplots()
     ax.imshow(image_tensor)
@@ -34,13 +65,6 @@ def plot_boxes(image_tensor, bounding_box):
     plt.show()
 
 def predict(image_path, model):
-    """
-    Predicts the bounding box and class label for an image using the model.
-
-    Args:
-        image_path (str): Path to the input image.
-        model (YOLO): Trained YOLO model.
-    """
     # Load and preprocess the image
     image = cv2.imread(image_path)
     image = cv2.resize(image, (416, 416))
@@ -62,5 +86,8 @@ model.to(device)
 model.eval()
 
 # Run prediction on an image
+
+
 image_path = "/path/to/your/image.jpg"  # Specify the image path here
 predict(image_path, model)
+"""

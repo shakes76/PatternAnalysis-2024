@@ -1,3 +1,14 @@
+# =====================================================================
+# Filename: main.py
+# Project: ADNI Alzheimer’s Classification with GFNet
+# Author: Siddhant Gaikwad
+# Date: 25/10/2024
+# Description: Main script to run training, evaluation, and prediction
+#              modes for Alzheimer’s disease classification using the GFNet model.
+#              The script allows for command-line configuration of model
+#              parameters, paths, and modes (train, evaluate, predict).
+# =====================================================================
+
 import torch
 import argparse
 from modules import GFNet
@@ -10,6 +21,23 @@ import torch.optim as optim
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main(mode='train', num_epochs=200, lr=0.001, batch_size=64, train_dir='/content/drive/MyDrive/ADNI/AD_NC/train', test_dir='/content/drive/MyDrive/ADNI/AD_NC/test', model_path='saved_model.pth'):
+    
+    """
+    Main function to run the model in training, evaluation, or prediction mode.
+
+    Parameters:
+    - mode (str): Operation mode, either 'train', 'evaluate', or 'predict'.
+    - num_epochs (int): Number of epochs for training.
+    - lr (float): Learning rate for the optimizer.
+    - batch_size (int): Batch size for data loading.
+    - train_dir (str): Path to the training dataset directory.
+    - test_dir (str): Path to the test dataset directory.
+    - model_path (str): Path to save or load the model's weights.
+
+    Returns:
+    - None: Runs the selected mode and displays or saves the results.
+    
+    """
     # Load the data
     train_loader, val_loader, test_loader = get_data_loaders(train_dir, test_dir, batch_size=batch_size)
     
@@ -51,6 +79,7 @@ def main(mode='train', num_epochs=200, lr=0.001, batch_size=64, train_dir='/cont
         plot_confusion_matrix(all_labels, all_preds)
 
 if __name__ == '__main__':
+    # Argument parser for command-line configuration
     parser = argparse.ArgumentParser(description="Run Alzheimer’s disease classification model")
     parser.add_argument('--mode', type=str, choices=['train', 'evaluate', 'predict'], default='train', help='Mode to run the script: train, evaluate, or predict')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of training epochs')
@@ -60,6 +89,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_dir', type=str, required=True, help='Path to the test dataset directory')
     parser.add_argument('--model_path', type=str, default='saved_model.pth', help='Path to save/load the trained model')
 
+    # Parse arguments and execute main function
     args = parser.parse_args()
     main(
         mode=args.mode,

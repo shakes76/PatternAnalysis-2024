@@ -1,9 +1,35 @@
+# =====================================================================
+# Filename: data_loader.py
+# Project: ADNI Alzheimer’s Classification with GFNet
+# Author: Siddhant Gaikwad
+# Date: 25/10/2024
+# Description: This file defines the functions to create and load datasets
+#              from the ADNI Alzheimer's Disease dataset. The function
+#              `get_data_loaders` prepares DataLoaders for training, validation,
+#              and testing with appropriate transformations and splitting.
+# =====================================================================
+
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, SubsetRandomSampler
 import numpy as np
 
 def get_data_loaders(train_dir, test_dir, batch_size=64):
+    
+    """
+   Prepares DataLoaders for training, validation, and testing using the ADNI dataset.
+
+   Parameters:
+   - train_dir (str): Directory path for the training data.
+   - test_dir (str): Directory path for the test data.
+   - batch_size (int): Number of samples per batch (default is 64).
+
+   Returns:
+   - train_loader (DataLoader): DataLoader for the training dataset.
+   - val_loader (DataLoader): DataLoader for the validation dataset.
+   - test_loader (DataLoader): DataLoader for the test dataset.
+   """
+    
     # Define transforms
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),

@@ -2,7 +2,21 @@
 This project aims to create a generative VQVAE model for [HipMRI Study on Prostate Cancer](https://doi.org/10.25919/45t8-p065) using the [processed 2D slices (2D images)](https://filesender.aarnet.edu.au/?s=download&token=76f406fd-f55d-497a-a2ae-48767c8acea2). I achieved over 0.9 Structural Similarity Index Measure on 4 times downscaled image in 35 minutes of training on a single GPU. 
 
 ## Model
-VQVAE is a generative model that integrates the concepts of Variational Autoencoders and vector quantisation. It incorporates a vector quantisation layer to discretise the continuous latent space. The model consists of three main components: an encoder, a quantiser, and a decoder. To enhance training stability, my model uses residual blocks and batch normalisation layers. The encoder and decoder are trained using reconstruction and commitment losses, while the quantiser is optimised with an exponential moving average method. I referenced the code from [vvvm23/vqvae-2](https://github.com/vvvm23/vqvae-2/blob/main/vqvae.py). However, since the original code was designed for VQVAE2, I modified its structure and simplified the implementation to adapt it for this specific project.
+VQVAE is a generative model that integrates the concepts of Variational Autoencoders and vector quantisation. It incorporates a vector quantisation layer to discretise the continuous latent space. The model consists of three main components: an encoder, a quantiser, and a decoder. To enhance training stability, my model uses residual blocks and batch normalisation layers. The encoder and decoder are trained using reconstruction and commitment losses, while the quantiser is optimised with an exponential moving average method. The reconstruction loss measures the difference between the input image and the reconstructed image using mean squared error, given by:
+
+$$
+L_{reconstruction} = \frac{1}{N} \sum_{i=1}^{N} (x_i - \hat{x}_i)^2, 
+$$
+
+where $N$ is the number of samples, $x_i$ is the original image, and $\hat{x}_i$ is the reconstructed image. The reconstruction loss ensures that the model learns to accurately regenerate the input image. The commitment loss measures the difference between the continuous latent vectors from the encoder and the embeddings in the codebook, given by:
+
+$$
+L_{commitment} = \frac{1}{N} \sum_{i=1}^{N} (z_i - e_{q(z_i)})^2,
+$$
+
+where $N$ is the number of samples, $z_i$ is the continuous latent vector, and $e_{q(z_i)}$ is the corresponding embedding in the codebook that the latent vector was mapped to. The commitment loss encourages the embeddings in the codebook to closely represent the latent vectors. The total loss is the sum of the reconstruction and commitment losses.
+
+I referenced the code from [vvvm23/vqvae-2](https://github.com/vvvm23/vqvae-2/blob/main/vqvae.py). However, since the original code was designed for VQVAE2, I modified its structure and simplified the implementation to adapt it for this specific project.
 
 **ResidualBlock**: A residual block consists of two convolutional layers, each followed by batch normalisation and ReLU activation. The output of the second convolution is scaled by a learnable parameter, alpha, which is initialised to zero. A residual connection adds the original input to the scaled output, which enables the model to combine the transformed features with the input. The residual connection significantly improves the training by mitigating the vanishing gradient problem during backpropagation and facilitates better gradient flow in earlier layers.
 
@@ -10,9 +24,17 @@ VQVAE is a generative model that integrates the concepts of Variational Autoenco
 
 **Encoder**: The encoder maps the input image to a continuous latent space by downsampling the image using convolutional layers and batch normalisation. After series of downsampling layers, the feature maps are passed to residual blocks to refine the feature maps. 
 
-**VectorQuantizer**: A layer takes the continuous feature vectors from the encoder, maps them to their nearest discrete embedding vectors using Euclidean distance, and transforms the feature vectors into their corresponding quantised vectors. The commitment loss is calculated based on the difference between the feature vectors and their corresponding embedding vectors, penalising deviations from the embeddings. During training, the embeddings are updated to more accurately represent the feature maps. This update process uses an exponential moving average, which stabilises training by smoothing the embedding changes, ensuring that previous values still contribute to the new embeddings and preventing sudden shifts.
+**VectorQuantizer**: A layer takes the continuous feature vectors from the encoder, maps them to their nearest discrete embedding vectors using Euclidean distance, and transforms the feature vectors into their corresponding quantised vectors. The commitment loss is calculated based on the difference between the feature vectors and their corresponding embedding vectors, penalising deviations from the embeddings. During training, the embeddings are updated to more accurately represent the feature maps. This update process uses an exponential moving average, which stabilises training by smoothing the embedding changes, ensuring that previous values still contribute to the new embeddings and preventing sudden shifts. The equation for the exponential moving average is as follows: 
+
+$$
+e_{i}^{t+1} = m \cdot e_{i}^{t} + (1 - m) \cdot \frac{1}{N_i}\sum_{j=1}^{N_i} z_j, 
+$$
+
+where $e_{i}^{t+1}$ is the updated embedding, $e_{i}^{t}$ is the previous embedding, $m$ is the decay factor (0.99 in this implementation), $N_i$ is the number of feature vectors assigned to the embedding, and $z_j$ is the $j$-th feature vector assigned to the embedding. The momentum value is set to 0.99 in this implementation.
 
 **Decoder**: The decoder regenerates the original image from the quantised vectors by progressively upsampling them using transposed convolutional layers and batch normalisation. The quantised vectors are first passed to residual blocks, which helps refine the features and maintain important details. Then, the decoder performs multiple upsamplings until the original image size is reached.
+
+**Losses**: The model is trained using two losses: the reconstruction loss and the commitment loss. The reconstruction loss is the mean squared error between the original and reconstructed images. The commitment loss is the mean squared error between the feature vectors and their corresponding quantised vectors. The total loss is the sum of the reconstruction loss and the commitment loss.
 
 ## Dataset
 The data is in nii.gz format, therefore 'nibabel' library is used to convert the data into numpy arrays. The data is then converted to PIL Image format as the torchvision transforms require the input to be in PIL Image format or Tensor. Augmentations are applied to the data to increase the diversity of the data. In every training I conducted, cropping the image to 256x128 because the raw data consists images with 256x128 and 256x144. The data is then transformed to Tensor and normalised to have a mean of 0.5 and a standard deviation of 0.5.

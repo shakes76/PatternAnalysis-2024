@@ -98,7 +98,8 @@ if __name__ == "__main__":
         metadata_path=meta_data_path,
         transform=transform,
         augment_transform=augment_transform,
-        num_augmentations=5  # Number of augmentations applied to each image
+        num_augmentations=5,  # Number of augmentations applied to each image
+        train=False
     )
 
     # Load and evaluate the pre-trained model

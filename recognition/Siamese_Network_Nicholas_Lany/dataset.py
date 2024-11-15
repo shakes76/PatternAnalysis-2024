@@ -30,30 +30,46 @@ class ISICDataset(Dataset):
         augment_transform (torchvision.transforms.Compose, optional): Transformations for augmenting malignant images.
         num_augmentations (int, optional): Number of augmentations to apply to each malignant image.
     """
-    def __init__(self, dataset_path, metadata_path, transform=None, augment_transform=None, num_augmentations=5):
+    def __init__(self, dataset_path, metadata_path, transform=None, augment_transform=None, num_augmentations=5, split_ratio=0.8, train=True):
         self.dataset_path = dataset_path
         self.transform = transform
         self.augment_transform = augment_transform
         self.num_augmentations = num_augmentations
-        self.labels = self.load_labels(metadata_path)  # Load image labels
-        self.data, self.malignant_data = self.load_data()  # Load image paths
+        self.split_ratio = split_ratio
+        self.train = train
+        self.labels = self.load_labels(metadata_path, split_ratio, train)  # Load image labels with split
+        self.data, self.malignant_data = self.load_data(split_ratio, train)  # Load image paths with split
 
-    def load_labels(self, metadata_path):
+    def load_labels(self, metadata_path, split_ratio=0.8, train=True):
         """
-        Load labels from the metadata file.
+        Load labels from the metadata file, split based on given ratio.
 
         Args:
             metadata_path (str): Path to the CSV file with image labels.
+            split_ratio (float): Proportion of data to use for training (0 < split_ratio < 1).
+            train (bool): If True, load training data; otherwise, load validation data.
 
         Returns:
             dict: A dictionary mapping image filenames to labels (1 for malignant, 0 for benign).
         """
         metadata = pd.read_csv(metadata_path)
-        return {row['isic_id'] + '.jpg': row['target'] for _, row in metadata.iterrows()}
+        image_ids = metadata['isic_id'].tolist()
+        split_index = int(len(image_ids) * split_ratio)
+        
+        if train:
+            selected_ids = image_ids[:split_index]
+        else:
+            selected_ids = image_ids[split_index:]
+            
+        return {row['isic_id'] + '.jpg': row['target'] for _, row in metadata.iterrows() if row['isic_id'] in selected_ids}
 
-    def load_data(self):
+    def load_data(self, split_ratio=0.8, train=True):
         """
-        Load image filenames and separate malignant images for augmentation.
+        Load image filenames and separate malignant images for augmentation, with split.
+
+        Args:
+            split_ratio (float): Proportion of data to use for training (0 < split_ratio < 1).
+            train (bool): If True, load training data; otherwise, load validation data.
 
         Returns:
             tuple: A list of all images and a list of malignant images.
@@ -67,8 +83,12 @@ class ISICDataset(Dataset):
                     image_files.append(file)
                     if self.labels[file] == 1:  # Label 1 indicates malignant
                         malignant_files.append(file)
-
-        return image_files, malignant_files
+        
+        split_index = int(len(image_files) * split_ratio)
+        if train:
+            return image_files[:split_index], malignant_files[:split_index]
+        else:
+            return image_files[split_index:], malignant_files[split_index:]
 
     def __len__(self):
         """

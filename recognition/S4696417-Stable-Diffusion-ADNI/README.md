@@ -166,14 +166,14 @@ The training process is divided into two main stages:
    - Periodically generating samples by gradually removing the predicted noise. 
 
    The model was trained with the below parameters.
-    - batch size: 16
-    - epochs: 500
-    - image size: 256x256
-    - Learning Rate (Max): 0.0001
-    - Loss: MSELoss
-    - Optimizer: AdamW
-    - Scaler: Gradscaler
-    - Scheduler: CosineAnnealingWarmupScheduler
+    - batch size: 16 due to GPU memory constraints
+    - epochs: 500 (balance between training time and quality)
+    - image size: 256x256 (match original input size)
+    - Learning Rate (Max): 0.0001 (stable learning with good results)
+    - Loss: MSELoss (standard loss for Stable Diffusion Model)
+    - Optimizer: AdamW (To help avoid overfitting and stabilise training)
+    - Scaler: Gradscaler (Mixed precision to improve training speed and memory use)
+    - Scheduler: CosineAnnealingWarmupScheduler (Prevent bad optimisation in early training)
 
 ## Results
 

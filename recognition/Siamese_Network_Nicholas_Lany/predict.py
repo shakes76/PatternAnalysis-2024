@@ -12,7 +12,6 @@ Main Process:
     2. Initializes and transforms the dataset.
     3. Loads the pre-trained model and evaluates its accuracy on the dataset.
 """
-
 import torch
 import os
 import pandas as pd
@@ -21,6 +20,8 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from modules import CNN, SiameseNetwork
 from dataset import ISICDataset
+from sklearn.metrics import confusion_matrix
+import numpy as np
 
 # Set device to GPU if available, otherwise use CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -39,9 +40,9 @@ def load_model(model_path):
     siamese_model.load_state_dict(torch.load(model_path, map_location=device))  # Load weights
     return siamese_model.cnn  # Return CNN component for classification
 
-def classify_images(model, dataset, transform=None, num_samples=100):
+def classify_images(model, dataset, transform=None):
     """
-    Classify a set of images and compute the accuracy on the dataset.
+    Classify a set of images and compute the accuracy and confusion matrix on the dataset.
 
     Args:
         model (torch.nn.Module): CNN model used for classification.
@@ -53,23 +54,31 @@ def classify_images(model, dataset, transform=None, num_samples=100):
         Accuracy of the model on the provided dataset.
     """
     dataloader = DataLoader(dataset, batch_size=16, shuffle=False)  # Load dataset in batches
+    all_labels = []
+    all_predictions = []
     correct_predictions = 0
     total_images = 0
 
     with torch.no_grad():  # Disable gradient computation for efficiency
         for images, labels in dataloader:
-            if total_images >= num_samples:
-                break  # Stop if the required sample count is reached
-
             images, labels = images.to(device), labels.to(device)  # Move data to device
             outputs = model(images)  # Get model predictions
             _, predicted = torch.max(outputs, 1)  # Get predicted classes
+
+            # Collect all true labels and predicted labels for confusion matrix
+            all_labels.extend(labels.cpu().numpy())  # Convert to numpy for easier handling
+            all_predictions.extend(predicted.cpu().numpy())
 
             correct_predictions += (predicted == labels).sum().item()  # Count correct predictions
             total_images += labels.size(0)  # Update total image count
 
     accuracy = correct_predictions / total_images  # Calculate accuracy
     print(f'Accuracy of the model on the test dataset: {accuracy * 100:.2f}%')
+
+    # Generate confusion matrix
+    cm = confusion_matrix(all_labels, all_predictions)
+    print("Confusion Matrix:")
+    print(cm)
 
 if __name__ == "__main__":
     # Download dataset and load paths for images and metadata from Kaggle
@@ -106,3 +115,4 @@ if __name__ == "__main__":
     model = load_model(model_save_path)  # Load the CNN model for classification
     model.eval()  # Set model to evaluation mode
     classify_images(model, isic_dataset, transform=transform)  # Classify images and print accuracy
+

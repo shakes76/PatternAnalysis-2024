@@ -25,7 +25,7 @@ def preprocess_and_save(input_dir, output_dir, target_size=(256, 256)):
     print("Preprocessing complete.")
 
 # Example usage
-input_dir = r"drive/MyDrive/keras_slices_train"
-output_dir = r"1HipMRI_study_keras_slices_data/keras_slices_train"
+input_dir = r"HipMRI_study_keras_slices_data/keras_slices_test"
+output_dir = r"1HipMRI_study_keras_slices_data/keras_slices_test"
 
 preprocess_and_save(input_dir, output_dir)

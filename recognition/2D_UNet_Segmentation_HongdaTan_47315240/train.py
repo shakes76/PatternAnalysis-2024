@@ -5,7 +5,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from modules import UNet
 from dataset import ProstateCancerDataset
-from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 # Check if GPU is available, else use CPU
@@ -28,11 +27,7 @@ mask_dir = r'1HipMRI_study_keras_slices_data/keras_slices_seg_train'
 train_dataset = ProstateCancerDataset(image_dir, mask_dir)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
-# Define your model, loss, and optimizer (as before)
-model = UNet(in_channels=1, out_channels=1).to(device)  # Example: Grayscale in, single class out
-criterion = nn.BCELoss()
-optimizer = optim.Adam(model.parameters(), lr=lr)
-
+# Function to plot training loss
 def plot_training_loss(train_loss):
     plt.plot(train_loss, label="Train Loss")
     plt.xlabel("Epoch")
@@ -44,9 +39,11 @@ def plot_training_loss(train_loss):
 # Training loop
 def train():
     train_loss_per_epoch = []  # To store average loss per epoch
+
     for epoch in range(epochs):
         model.train()
         running_loss = 0
+
         for i, (images, masks) in enumerate(train_loader):
             images, masks = images.to(device), masks.to(device)
             optimizer.zero_grad()
@@ -58,13 +55,18 @@ def train():
 
             if i % 100 == 0:
                 print(f"Epoch [{epoch+1}/{epochs}], Step [{i}/{len(train_loader)}], Loss: {loss.item():.4f}")
-                
+
         # Calculate and store average loss for the epoch
         avg_loss = running_loss / len(train_loader)
         train_loss_per_epoch.append(avg_loss)
-        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {running_loss / len(train_loader):.4f}")
+        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {avg_loss:.4f}")
+
     # Plot training loss after completing all epochs
     plot_training_loss(train_loss_per_epoch)
+
+    # Save the trained model
+    torch.save(model.state_dict(), 'unet_model.pth')
+    print("Model saved as 'unet_model.pth'.")
 
 if __name__ == "__main__":
     train()

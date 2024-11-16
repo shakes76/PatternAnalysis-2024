@@ -90,6 +90,6 @@ if __name__ == "__main__":
 
     # Track and print the time taken to complete training
     start_time = time.time()
-    train_siamese_network(dataset=isic_dataset, transform=transform, epochs=1)
+    train_siamese_network(dataset=isic_dataset, transform=transform, epochs=25)
     elapsed_time = time.time() - start_time
     print(f'Training completed in {elapsed_time // 60:.0f}m {elapsed_time % 60:.0f}s')

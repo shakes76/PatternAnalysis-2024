@@ -17,6 +17,9 @@ import numpy as np
 """
 """
 class MappingNetwork(nn.Module):
+    """
+    Mapping network that outputs latent vector to be the inputs of Generator
+    """
     def __init__(self, z_dim, w_dim):
         super().__init__()
         self.mapping = nn.Sequential(
@@ -43,9 +46,18 @@ class MappingNetwork(nn.Module):
 
 
 class Generator(nn.Module):
+    """
+    Generator of The StyleGan Network
+    Consists of a learned constant, a StyleBlock and a ToRGB block, and multiple generator blocks.
+    """
 
     def __init__(self, log_resolution, W_DIM, n_features = 32, max_features = 256):
-
+        """
+        :param log_resolution: log2 of the output image resolution
+        :param W_DIM: The dimension of the style vector
+        :param n_features: number of features in the highest convolution layer
+        :param max_features: maximum amount of features in any convolution layer
+        """
         super().__init__()
 
         features = [min(max_features, n_features * (2 ** i)) for i in range(log_resolution - 2, -1, -1)]
@@ -60,6 +72,13 @@ class Generator(nn.Module):
         self.blocks = nn.ModuleList(blocks)
 
     def forward(self, w, input_noise):
+        """
+        Takes in a style vector and input noise, do convolution through the style block and every generator block, and
+        returns a RGB image.
+        :param w: style vector, which has the shape [n_blocks, Batch size, W_DIM]
+        :param input_noise: input noise for each block
+        :return: The last RGB image last highest layer, with tanh as the activation function
+        """
 
         batch_size = w.shape[1]
 
@@ -75,8 +94,15 @@ class Generator(nn.Module):
         return torch.tanh(rgb)
 
 class GeneratorBlock(nn.Module):
-
+    """
+    A generator block consists of two style block and a ToRGB block to have RGB output
+    """
     def __init__(self, W_DIM, in_features, out_features):
+        """
+        :param W_DIM: The dimension of style vector
+        :param in_features: number of incoming features
+        :param out_features: number of resultant features
+        """
 
         super().__init__()
 
@@ -86,6 +112,12 @@ class GeneratorBlock(nn.Module):
         self.to_rgb = ToRGB(W_DIM, out_features)
 
     def forward(self, x, w, noise):
+        """
+        :param x: the input feature map
+        :param w: style vector with shape [batch_size, W_DIM]
+        :param noise: a tuple of two noise tensor
+        :return:
+        """
 
         x = self.style_block1(x, w, noise[0])
         x = self.style_block2(x, w, noise[1])
@@ -109,6 +141,13 @@ class StyleBlock(nn.Module):
         self.activation = nn.LeakyReLU(0.2, True)
 
     def forward(self, x, w, noise):
+        """
+        Runs the input feature map and style vector through the Weighted Modulation.
+        :param x: input feature map
+        :param w: style
+        :param noise: noise tensor of size [batch_size, 1, height, width]
+        :return: feature map
+        """
 
         s = self.to_style(w)
         x = self.conv(x, s)
@@ -118,6 +157,9 @@ class StyleBlock(nn.Module):
 
 
 class ToRGB(nn.Module):
+    """
+    Transform the input into a RGB image
+    """
 
     def __init__(self, W_DIM, features):
 
@@ -151,6 +193,9 @@ class EqualizedWeight(nn.Module):
         return self.weight * self.c
 
 class EqualizedLinear(nn.Module):
+    """
+    Equalizes the learning rate for a linear layer
+    """
 
     def __init__(self, in_features, out_features, bias = 0.):
 
@@ -162,6 +207,9 @@ class EqualizedLinear(nn.Module):
         return F.linear(x, self.weight(), bias=self.bias)
 
 class EqualizedConv2d(nn.Module):
+    """
+    Equalizes the learning rate for a convolution layer
+    """
 
     def __init__(self, in_features, out_features,
                  kernel_size, padding = 0):
@@ -175,6 +223,10 @@ class EqualizedConv2d(nn.Module):
         return F.conv2d(x, self.weight(), bias=self.bias, padding=self.padding)
 
 class Conv2dWeightModulate(nn.Module):
+    """
+    Scales the convolution weights by the style vector and demodulates it.
+    Without demodulation, the style becomes cumulative rather layer specific.
+    """
     def __init__(self, in_features, out_features, kernel_size, demodulate = True, epsilon = 1e-8):
         super().__init__()
         self.out_features = out_features
@@ -206,6 +258,10 @@ class Conv2dWeightModulate(nn.Module):
 
 
 class Discriminator(nn.Module):
+    """
+    The discriminator of the StyleGAN2 model.
+    Essentially, it is a classification network that outputs whether an input image is real or fake.
+    """
 
     def __init__(self, log_resolution, n_features = 64, max_features = 256):
 
@@ -244,6 +300,9 @@ class Discriminator(nn.Module):
 
 
 class DiscriminatorBlock(nn.Module):
+    """
+    Each discriminator block consists of 2 3x3 convolution
+    """
 
     def __init__(self, in_features, out_features):
         super().__init__()
@@ -337,12 +396,18 @@ def gradient_penalty(critic, real, fake, device="cpu"):
     return gradient_penalty
 
 def get_w(batch_size, w_dim, device, mapping_network, log_resolution):
-
+    """
+    Sample a z randomly and gets w from the mapping network
+    """
     z = torch.randn(batch_size, w_dim).to(device)
     w = mapping_network(z)
     return w[None, :, :].expand(log_resolution, -1, -1)
 
 def get_noise(batch_size, log_resolution, device):
+    """
+    Generates noise for each generator block
+    :returns the generated noise
+    """
 
     noise = []
     resolution = 4

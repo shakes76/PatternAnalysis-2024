@@ -34,12 +34,12 @@ For this training, the **Alzheimer's Disease Neuroimaging Initiative (ADNI)** da
 <p align="center">
  <div style="display: inline-block; text-align: center;">
  <p><strong>AD Image</strong></p>
- <img src="recognition/Readme_images/AD data set image.jpeg" width="45%" />
+ <img src="Readme_images/AD data set image.jpeg" width="45%" />
  </div>
 
  <div style="display: inline-block; text-align: center;">
  <p><strong>NC Image</strong></p>
- <img src="recognition/Readme_images/NC data set image.jpeg" width="45%" />
+ <img src="Readme_images/NC data set image.jpeg" width="45%" />
  </div>
 </p>
 
@@ -64,7 +64,7 @@ This repository consists of the following five major files:
 ## Model Architecture
 
 <p align="center">
- <img src="recognition/Readme_images/model structure.png" alt="Model Architecture" width="500"/>
+ <img src="Readme_images/model structure.png" alt="Model Architecture" width="500"/>
 </p>
 
 The StyleGAN model architecture is similar to the GAN with a few changes. The GAN model relied on an adversarial network that trained a Generator and a Discriminator to progressively improve the image generation outputs. However, a major issue with the GAN model was its proneness to overfitting, model collapse, and lack of diversity in the output images.
@@ -78,7 +78,7 @@ This network maps the latent space **$z$** with another latent space $w$. This a
 ### Adaptive Instance Normalization (AdaIN)
 
 <p align="center">
- <img src="recognition/Readme_images/AINI.png" alt="Model Architecture" width="400"/>
+ <img src="Readme_images/AINI.png" alt="Model Architecture" width="400"/>
 </p>
 
 Adaptive Instance Normalization (AdaIN) adjusts the **mean** ( $\mu(x_i)$ ) and **variance**( $\sigma(x_i)$ ) of the input features (like an image) based on the style you want to apply.
@@ -155,7 +155,7 @@ Due to the length and intensity of training, the model was trained on an externa
 The initial run had a wide range of issues. For this model, I attempted to directly generate 256 x 256 images, which manifested poorly as the model did not converge resulting in unrecognisable images. 
 
 <p align="center">
- <img src="recognition/Readme_images/Test 1 output.png" alt="Initial Test Results" width="500"/>
+ <img src="Readme_images/Test 1 output.png" alt="Initial Test Results" width="500"/>
 </p>
 
 This issue occurred due to an error in the data augmentation and generator setup. During this test run, the input image was processed with 3 channels, and augmentations such as saturation adjustments, blurring, and discolouration were applied. This led the model to mistakenly interpret the image as coloured. Additionally, using 3 channels caused the generator and discriminator to converge more slowly, contributing to the poor image quality observed above.
@@ -173,14 +173,14 @@ The images produced after the initial test 2 were significantly better. However,
 It was noticed that during the training CPU usage would remain relatively low and would occasionally drop off.
 
 <p align="center">
- <img src="recognition/Readme_images/CPU Usage.png" alt="Initial Test Results" width="400"/>
+ <img src="Readme_images/CPU Usage.png" alt="Initial Test Results" width="400"/>
 </p>
 
 
 This indicated that there was room to further utilise the CPU or that the model was being bottlenecked in a particular location. A similar problem was faced with the GPU utilisation, where particularly in the earlier image sizes **(4 to 64)**, the GPU was being underutilised. 
 
 <p align="center">
- <img src="recognition/Readme_images/GPU Usage.png" alt="Initial Test Results" width="700"/>
+ <img src="Readme_images/GPU Usage.png" alt="Initial Test Results" width="700"/>
 </p>
 
 **Adjustments:**
@@ -196,11 +196,11 @@ This indicated that there was room to further utilise the CPU or that the model 
 The following plots show the progressive output from the generator at each image size, slowly increasing from 4, 8, 16, 32, 64, 128 and finally 256. In the earlier stages, the images appear highly pixelated due to the low resolution. Some blurring was unintentionally introduced by the image scaling software used during processing.
 
 <p align="center">
- <img src="recognition/Readme_images/NC image progress.jpg" alt="NC Test Results" width="600"/>
+ <img src="Readme_images/NC image progress.jpg" alt="NC Test Results" width="600"/>
 </p>
 
 <p align="center">
- <img src="recognition/Readme_images/AD image progress.jpg" alt="AD Test Results" width="600"/>
+ <img src="Readme_images/AD image progress.jpg" alt="AD Test Results" width="600"/>
 </p>
 
 
@@ -212,21 +212,21 @@ After training was completed each of these models was used to generate images.
 
 <h2>AD Generated Images</h2>
 <p align="center">
- <img src="recognition/Readme_images/AD GENERATES IMAGES/generated_image_1001.png" width="19%" />
- <img src="recognition/Readme_images/AD GENERATES IMAGES/generated_image_1004.png" width="19%" />
- <img src="recognition/Readme_images/AD GENERATES IMAGES/generated_image_1006.png" width="19%" />
- <img src="recognition/Readme_images/AD GENERATES IMAGES/generated_image_1008.png" width="19%" />
- <img src="recognition/Readme_images/AD GENERATES IMAGES/generated_image_1009.png" width="19%" />
+ <img src="Readme_images/AD GENERATES IMAGES/generated_image_1001.png" width="19%" />
+ <img src="Readme_images/AD GENERATES IMAGES/generated_image_1004.png" width="19%" />
+ <img src="Readme_images/AD GENERATES IMAGES/generated_image_1006.png" width="19%" />
+ <img src="Readme_images/AD GENERATES IMAGES/generated_image_1008.png" width="19%" />
+ <img src="Readme_images/AD GENERATES IMAGES/generated_image_1009.png" width="19%" />
 </p>
 
 
 <h2>NC Generated Images</h2>
 <p align="center">
- <img src="recognition/Readme_images/NC Generated Images/generated_image_1001.png" width="19%" />
- <img src="recognition/Readme_images/NC Generated Images/generated_image_1004.png" width="19%" />
- <img src="recognition/Readme_images/NC Generated Images/generated_image_1006.png" width="19%" />
- <img src="recognition/Readme_images/NC Generated Images/generated_image_1018.png" width="19%" />
- <img src="recognition/Readme_images/NC Generated Images/generated_image_1027.png" width="19%" />
+ <img src="Readme_images/NC Generated Images/generated_image_1001.png" width="19%" />
+ <img src="Readme_images/NC Generated Images/generated_image_1004.png" width="19%" />
+ <img src="Readme_images/NC Generated Images/generated_image_1006.png" width="19%" />
+ <img src="Readme_images/NC Generated Images/generated_image_1018.png" width="19%" />
+ <img src="Readme_images/NC Generated Images/generated_image_1027.png" width="19%" />
 </p>
 
 ## Training Loss
@@ -234,13 +234,13 @@ After training was completed each of these models was used to generate images.
 In the training process of my GAN, both the discriminator loss and generator loss show distinct patterns of spikes throughout the training cycle. These spikes are not random; they incrementally increase and correspond to specific points during the training where the model transitions to a higher-resolution image size. Each time the model completes a training stage, the image resolution is doubled. This causes an immediate and notable increase in both the discriminator and generator losses.
 
 <p align="center">
- <img src="recognition/Readme_images/NC Loss.png" width="100%"/>
+ <img src="Readme_images/NC Loss.png" width="100%"/>
 </p>
 
 At each of these transitions, the model starts training on images of a larger size, requiring the generator to produce higher-resolution images and the discriminator to evaluate them with higher detail.
 
 <p align="center">
- <img src="recognition/Readme_images/AD Loss1.png" width="100%"/>
+ <img src="Readme_images/AD Loss1.png" width="100%"/>
 </p>
 
 This incremental increase in the loss spikes can be clearly seen in the AD loss function graph. Arrows in the graph highlight the key points where the image size is doubled (e.g., from 32x32 to 64x64, and so on).
@@ -250,11 +250,11 @@ This incremental increase in the loss spikes can be clearly seen in the AD loss 
 ## T-SNE Plot
 
 <p align="center">
- <img src="recognition/Readme_images/2d TSNE.png" width="70%" />
+ <img src="Readme_images/2d TSNE.png" width="70%" />
 </p>
 
 <p align="center">
- <img src="recognition/Readme_images/3d TSNE.png" width="70%" />
+ <img src="Readme_images/3d TSNE.png" width="70%" />
 </p>
 
 The t-SNE plot was generated using the style codes from each model, which were then processed through TensorFlow's t-SNE function to visualize the clustering of these codes. Below, we present both a 2D t-SNE plot (with 2 components) and a 3D version (with 3 components). These plots show a clear distinction between two well-separated clusters, which suggests that the model has successfully developed a well-structured W space. This structure reflects the model's ability to identify and represent the two different styles in the dataset—likely corresponding to the Alzheimer's Disease (AD) and Normal Control (NC) brain images. Additionally, the clustering is evidence that the model has effectively generalized these styles, demonstrating its ability to distinguish between the two categories in the latent space.

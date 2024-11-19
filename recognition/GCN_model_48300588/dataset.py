@@ -3,7 +3,7 @@ Author: Kangqi Wang
 Student Number: 48300588
 
 This script is about loading and processing graph data 
-for use in a Graph Neural Network (GNN) model..
+for use in a Graph Neural Network (GNN) model.
 '''
 
 import torch

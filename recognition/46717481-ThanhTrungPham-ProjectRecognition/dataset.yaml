@@ -1,0 +1,6 @@
+names:
+- lesion
+nc: 1
+path: /home/Student/s4671748/comp3710-project/data
+train: images/train
+val: images/val

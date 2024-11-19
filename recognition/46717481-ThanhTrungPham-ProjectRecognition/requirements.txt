@@ -1,0 +1,6 @@
+python>=3.8
+ultralytics==8.0.58
+opencv-python>=4.1.2
+albumentations==1.4
+scikit-learn
+scikit-build

@@ -1,0 +1,5 @@
+data/
+runs/
+ISIC2018_Task1-2_Test_Input/
+yolov8n-seg.pt
+yolov8n.pt

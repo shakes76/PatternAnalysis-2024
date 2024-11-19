@@ -1,0 +1,7 @@
+path: ../data
+train: images/train
+val: images/validate
+test: images/test
+
+names:
+  0: lesion

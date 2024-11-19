@@ -1,0 +1,14 @@
+parameters:
+  lr: 
+    - 0.0001
+    - 0.001
+  batch_size: 
+    - 32
+    - 64
+  weight_decay: 
+    - 0.005
+    - 0.001
+
+num_epochs: 100
+show_plots: true
+save_model: true

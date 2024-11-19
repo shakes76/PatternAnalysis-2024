@@ -1,0 +1,21 @@
+Epoch 1/10
+Train - Loss: 0.9494, Accuracy: 52.50%
+Epoch 2/10
+Train - Loss: 0.6997, Accuracy: 57.51%
+Epoch 3/10
+Train - Loss: 0.6448, Accuracy: 64.80%
+Epoch 4/10
+Train - Loss: 0.6073, Accuracy: 68.25%
+Epoch 5/10
+Train - Loss: 0.5804, Accuracy: 70.66%
+Epoch 6/10
+Train - Loss: 0.5588, Accuracy: 72.29%
+Epoch 7/10
+Train - Loss: 0.5524, Accuracy: 72.33%
+Epoch 8/10
+Train - Loss: 0.5386, Accuracy: 73.49%
+Epoch 9/10
+Train - Loss: 0.5308, Accuracy: 74.47%
+Epoch 10/10
+Train - Loss: 0.5252, Accuracy: 74.50%
+Test - Loss: 0.5935, Accuracy: 70.05%

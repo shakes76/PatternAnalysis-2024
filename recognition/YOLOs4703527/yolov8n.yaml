@@ -1,0 +1,6 @@
+train: C:/Users/raulm/OneDrive/Desktop/Yolo/train
+val: C:/Users/raulm/OneDrive/Desktop/Yolo/val
+test: C:/Users/raulm/OneDrive/Desktop/Yolo/test
+
+nc: 1  # Number of classes (lesion detection)
+names: ['lesion']

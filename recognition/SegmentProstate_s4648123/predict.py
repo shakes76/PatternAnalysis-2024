@@ -1,3 +1,13 @@
+"""
+    File name: predict.py
+    Author: Elliana Rogaczewski-Novak
+    Date last modified: 1/11/2024
+
+    Description: This script evaluates a trained 3D U-Net model, loaded from the file system (as specified by MODEL_PATH
+    in config.py), on a test dataset. It computes performance metrics, including Dice coefficients and Dice loss, and
+    generates various visualizations for segmentation results, which are saved to the file system.
+"""
+
 import os
 import time
 

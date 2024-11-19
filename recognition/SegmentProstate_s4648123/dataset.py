@@ -1,3 +1,13 @@
+"""
+    File name: dataset.py
+    Author: Elliana Rogaczewski-Novak
+    Date last modified: 1/11/2024
+
+    Description: This files contains the data loading pipeline for the 3D MRI segmentation task, including data
+    preprocessing, augmentation, and transformation using MONAI, and provides functions to create training,
+    validation, and test DataLoaders.
+"""
+
 import numpy as np
 from utils import get_images, collate_batch, load_image_and_label_3D
 from config import RANDOM_SEED

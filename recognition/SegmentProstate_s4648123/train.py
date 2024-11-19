@@ -1,3 +1,13 @@
+"""
+    File name: train.py
+    Author: Elliana Rogaczewski-Novak
+    Date last modified: 1/11/2024
+
+    Description:  This file contains the training and validation pipeline for the segmentation task, including
+    model initialization, loss computation, and performance evaluation using the Dice coefficient. It saves the best
+    model to best_unet.pth (defined in config.py)
+"""
+
 import time
 
 import numpy as np

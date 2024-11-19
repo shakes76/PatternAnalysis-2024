@@ -1,3 +1,12 @@
+"""
+    File name: utils.py
+    Author: Elliana Rogaczewski-Novak
+    Date last modified: 1/11/2024
+
+    Description: This file contains utility functions for handling NIfTI files (transforming to numpy arrays),
+    extracting input data from the filesystem, batch collation, data visualization.
+"""
+
 import os
 
 import numpy as np

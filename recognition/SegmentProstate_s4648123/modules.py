@@ -1,3 +1,13 @@
+"""
+    File name: modules.py
+    Author: Elliana Rogaczewski-Novak
+    Date last modified: 30/10/2024
+
+    Description: This file implements components for a 3D U-Net architecture based on the work of
+    Çiçek et al. (2016): "3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation"
+    (https://arxiv.org/abs/1606.06650).
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

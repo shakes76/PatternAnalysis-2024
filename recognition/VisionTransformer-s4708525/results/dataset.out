@@ -1,0 +1,5 @@
+Matplotlib created a temporary cache directory at /scratch/219752/matplotlib-kow__ji_ because the default path (/cache/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+Total training data (before splitting): {'NC': 11120, 'AD': 10400}
+Training subset counts: {'NC': 8943, 'AD': 8273}
+Validation subset counts: {'NC': 2177, 'AD': 2127}
+Test dataset counts: {'NC': 4540, 'AD': 4460}

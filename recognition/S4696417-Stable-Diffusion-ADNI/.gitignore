@@ -1,0 +1,12 @@
+*.pth
+*.pt
+*/*/*.pyc
+*/__pycache__/
+__pycache__/
+/wandb/
+/data/
+data/
+wandb/
+generated_images
+*.sh
+

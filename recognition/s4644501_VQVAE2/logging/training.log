@@ -1,0 +1,122 @@
+[2024-10-24 22:19:26,043] INFO:root:Using Device: NVIDIA GeForce GTX 1650
+[2024-10-24 22:19:26,607] INFO:root:Dataloaders Initialized
+[2024-10-24 22:19:26,608] INFO:root:Training VQVAE
+[2024-10-24 22:19:45,661] INFO:root:Epoch: 1/20 Training Loss: 71657.8203 Validation Loss: 38165.7575 Training SSIM: -0.0006 Validation SSIM: -0.0008
+[2024-10-24 22:20:56,649] INFO:root:Epoch: 1/20 Training Loss: 16196.3467 Validation Loss: 3106.7629 Training SSIM: 0.1669 Validation SSIM: 0.3436
+[2024-10-24 22:20:56,708] INFO:root:Saved Model
+[2024-10-24 22:22:04,366] INFO:root:Epoch: 1/20 Training Loss: 3485.6336 Validation Loss: 1810.8972 Training SSIM: 0.3944 Validation SSIM: 0.4921
+[2024-10-24 22:22:04,425] INFO:root:Saved Model
+[2024-10-24 22:22:30,269] INFO:root:Epoch: 2/20 Training Loss: 2781.1472 Validation Loss: 1621.0148 Training SSIM: 0.4926 Validation SSIM: 0.5280
+[2024-10-24 22:22:30,335] INFO:root:Saved Model
+[2024-10-24 22:23:36,456] INFO:root:Epoch: 2/20 Training Loss: 2037.3852 Validation Loss: 1210.7188 Training SSIM: 0.5419 Validation SSIM: 0.6020
+[2024-10-24 22:23:36,531] INFO:root:Saved Model
+[2024-10-24 22:24:42,669] INFO:root:Epoch: 2/20 Training Loss: 1669.4373 Validation Loss: 1013.7410 Training SSIM: 0.5969 Validation SSIM: 0.6489
+[2024-10-24 22:24:42,731] INFO:root:Saved Model
+[2024-10-24 22:25:08,256] INFO:root:Epoch: 3/20 Training Loss: 1017.7012 Validation Loss: 967.4333 Training SSIM: 0.6108 Validation SSIM: 0.6572
+[2024-10-24 22:25:08,315] INFO:root:Saved Model
+[2024-10-24 22:26:14,056] INFO:root:Epoch: 3/20 Training Loss: 1373.5783 Validation Loss: 881.8294 Training SSIM: 0.6373 Validation SSIM: 0.6742
+[2024-10-24 22:26:14,113] INFO:root:Saved Model
+[2024-10-24 22:27:20,264] INFO:root:Epoch: 3/20 Training Loss: 1246.4900 Validation Loss: 846.2799 Training SSIM: 0.6540 Validation SSIM: 0.6937
+[2024-10-24 22:27:20,328] INFO:root:Saved Model
+[2024-10-24 22:27:46,422] INFO:root:Epoch: 4/20 Training Loss: 1789.1732 Validation Loss: 838.9721 Training SSIM: 0.6612 Validation SSIM: 0.6970
+[2024-10-24 22:27:46,484] INFO:root:Saved Model
+[2024-10-24 22:28:53,000] INFO:root:Epoch: 4/20 Training Loss: 1197.4203 Validation Loss: 791.5490 Training SSIM: 0.6732 Validation SSIM: 0.7103
+[2024-10-24 22:28:53,066] INFO:root:Saved Model
+[2024-10-24 22:29:59,316] INFO:root:Epoch: 4/20 Training Loss: 1158.9845 Validation Loss: 762.6482 Training SSIM: 0.6850 Validation SSIM: 0.7225
+[2024-10-24 22:29:59,407] INFO:root:Saved Model
+[2024-10-24 22:30:25,312] INFO:root:Epoch: 5/20 Training Loss: 1256.0116 Validation Loss: 738.3276 Training SSIM: 0.7076 Validation SSIM: 0.7261
+[2024-10-24 22:30:25,375] INFO:root:Saved Model
+[2024-10-24 22:31:31,579] INFO:root:Epoch: 5/20 Training Loss: 1106.4178 Validation Loss: 702.9623 Training SSIM: 0.6990 Validation SSIM: 0.7371
+[2024-10-24 22:31:31,642] INFO:root:Saved Model
+[2024-10-24 22:32:37,796] INFO:root:Epoch: 5/20 Training Loss: 1007.2814 Validation Loss: 677.1837 Training SSIM: 0.7086 Validation SSIM: 0.7460
+[2024-10-24 22:32:37,860] INFO:root:Saved Model
+[2024-10-24 22:33:05,128] INFO:root:Epoch: 6/20 Training Loss: 691.2758 Validation Loss: 665.3281 Training SSIM: 0.7224 Validation SSIM: 0.7479
+[2024-10-24 22:33:05,214] INFO:root:Saved Model
+[2024-10-24 22:34:12,083] INFO:root:Epoch: 6/20 Training Loss: 958.3980 Validation Loss: 645.0820 Training SSIM: 0.7180 Validation SSIM: 0.7524
+[2024-10-24 22:34:12,145] INFO:root:Saved Model
+[2024-10-24 22:35:18,187] INFO:root:Epoch: 6/20 Training Loss: 959.3374 Validation Loss: 635.0344 Training SSIM: 0.7233 Validation SSIM: 0.7556
+[2024-10-24 22:35:18,255] INFO:root:Saved Model
+[2024-10-24 22:35:44,331] INFO:root:Epoch: 7/20 Training Loss: 701.1384 Validation Loss: 733.4474 Training SSIM: 0.7084 Validation SSIM: 0.7382
+[2024-10-24 22:35:44,393] INFO:root:Saved Model
+[2024-10-24 22:36:50,524] INFO:root:Epoch: 7/20 Training Loss: 927.8971 Validation Loss: 621.8793 Training SSIM: 0.7252 Validation SSIM: 0.7593
+[2024-10-24 22:36:50,589] INFO:root:Saved Model
+[2024-10-24 22:37:56,596] INFO:root:Epoch: 7/20 Training Loss: 912.7290 Validation Loss: 617.0561 Training SSIM: 0.7290 Validation SSIM: 0.7608
+[2024-10-24 22:37:56,655] INFO:root:Saved Model
+[2024-10-24 22:38:22,630] INFO:root:Epoch: 8/20 Training Loss: 703.2654 Validation Loss: 614.8161 Training SSIM: 0.7214 Validation SSIM: 0.7606
+[2024-10-24 22:38:22,687] INFO:root:Saved Model
+[2024-10-24 22:39:27,838] INFO:root:Epoch: 8/20 Training Loss: 905.4983 Validation Loss: 617.5899 Training SSIM: 0.7309 Validation SSIM: 0.7628
+[2024-10-24 22:39:27,898] INFO:root:Saved Model
+[2024-10-24 22:40:33,363] INFO:root:Epoch: 8/20 Training Loss: 904.6306 Validation Loss: 632.3965 Training SSIM: 0.7311 Validation SSIM: 0.7621
+[2024-10-24 22:40:33,422] INFO:root:Saved Model
+[2024-10-24 22:40:59,294] INFO:root:Epoch: 9/20 Training Loss: 616.4938 Validation Loss: 622.8972 Training SSIM: 0.7267 Validation SSIM: 0.7620
+[2024-10-24 22:40:59,355] INFO:root:Saved Model
+[2024-10-24 22:42:04,918] INFO:root:Epoch: 9/20 Training Loss: 914.0871 Validation Loss: 623.8344 Training SSIM: 0.7318 Validation SSIM: 0.7647
+[2024-10-24 22:42:04,977] INFO:root:Saved Model
+[2024-10-24 22:43:10,489] INFO:root:Epoch: 9/20 Training Loss: 899.1961 Validation Loss: 631.6218 Training SSIM: 0.7352 Validation SSIM: 0.7649
+[2024-10-24 22:43:10,549] INFO:root:Saved Model
+[2024-10-24 22:43:35,888] INFO:root:Epoch: 10/20 Training Loss: 760.2538 Validation Loss: 629.7930 Training SSIM: 0.7448 Validation SSIM: 0.7655
+[2024-10-24 22:43:35,955] INFO:root:Saved Model
+[2024-10-24 22:44:41,136] INFO:root:Epoch: 10/20 Training Loss: 928.9209 Validation Loss: 637.8499 Training SSIM: 0.7342 Validation SSIM: 0.7658
+[2024-10-24 22:44:41,200] INFO:root:Saved Model
+[2024-10-24 22:45:46,260] INFO:root:Epoch: 10/20 Training Loss: 921.8394 Validation Loss: 852.9016 Training SSIM: 0.7349 Validation SSIM: 0.7070
+[2024-10-24 22:45:46,316] INFO:root:Saved Model
+[2024-10-24 22:46:11,671] INFO:root:Epoch: 11/20 Training Loss: 828.5226 Validation Loss: 652.5775 Training SSIM: 0.7202 Validation SSIM: 0.7644
+[2024-10-24 22:46:11,727] INFO:root:Saved Model
+[2024-10-24 22:47:16,838] INFO:root:Epoch: 11/20 Training Loss: 920.4681 Validation Loss: 654.0854 Training SSIM: 0.7349 Validation SSIM: 0.7661
+[2024-10-24 22:47:16,902] INFO:root:Saved Model
+[2024-10-24 22:48:22,157] INFO:root:Epoch: 11/20 Training Loss: 959.2056 Validation Loss: 702.7309 Training SSIM: 0.7381 Validation SSIM: 0.7666
+[2024-10-24 22:48:22,214] INFO:root:Saved Model
+[2024-10-24 22:48:47,963] INFO:root:Epoch: 12/20 Training Loss: 729.9598 Validation Loss: 655.3198 Training SSIM: 0.7558 Validation SSIM: 0.7683
+[2024-10-24 22:48:48,022] INFO:root:Saved Model
+[2024-10-24 22:49:53,231] INFO:root:Epoch: 12/20 Training Loss: 944.6023 Validation Loss: 659.9485 Training SSIM: 0.7384 Validation SSIM: 0.7698
+[2024-10-24 22:49:53,289] INFO:root:Saved Model
+[2024-10-24 22:50:58,495] INFO:root:Epoch: 12/20 Training Loss: 934.0827 Validation Loss: 666.5316 Training SSIM: 0.7386 Validation SSIM: 0.7651
+[2024-10-24 22:50:58,553] INFO:root:Saved Model
+[2024-10-24 22:51:23,779] INFO:root:Epoch: 13/20 Training Loss: 747.3624 Validation Loss: 663.3821 Training SSIM: 0.7384 Validation SSIM: 0.7694
+[2024-10-24 22:51:23,839] INFO:root:Saved Model
+[2024-10-24 22:52:29,067] INFO:root:Epoch: 13/20 Training Loss: 926.9435 Validation Loss: 657.7907 Training SSIM: 0.7388 Validation SSIM: 0.7699
+[2024-10-24 22:52:29,128] INFO:root:Saved Model
+[2024-10-24 22:53:34,482] INFO:root:Epoch: 13/20 Training Loss: 958.7682 Validation Loss: 663.7500 Training SSIM: 0.7388 Validation SSIM: 0.7718
+[2024-10-24 22:53:34,551] INFO:root:Saved Model
+[2024-10-24 22:53:59,917] INFO:root:Epoch: 14/20 Training Loss: 681.4235 Validation Loss: 662.4513 Training SSIM: 0.7215 Validation SSIM: 0.7701
+[2024-10-24 22:53:59,977] INFO:root:Saved Model
+[2024-10-24 22:55:05,391] INFO:root:Epoch: 14/20 Training Loss: 957.9804 Validation Loss: 661.8858 Training SSIM: 0.7388 Validation SSIM: 0.7703
+[2024-10-24 22:55:05,451] INFO:root:Saved Model
+[2024-10-24 22:56:10,657] INFO:root:Epoch: 14/20 Training Loss: 922.4120 Validation Loss: 663.2984 Training SSIM: 0.7418 Validation SSIM: 0.7714
+[2024-10-24 22:56:10,716] INFO:root:Saved Model
+[2024-10-24 22:56:36,317] INFO:root:Epoch: 15/20 Training Loss: 787.9989 Validation Loss: 661.5186 Training SSIM: 0.7420 Validation SSIM: 0.7723
+[2024-10-24 22:56:36,382] INFO:root:Saved Model
+[2024-10-24 22:57:41,567] INFO:root:Epoch: 15/20 Training Loss: 944.3588 Validation Loss: 674.5718 Training SSIM: 0.7411 Validation SSIM: 0.7714
+[2024-10-24 22:57:41,624] INFO:root:Saved Model
+[2024-10-24 22:58:47,142] INFO:root:Epoch: 15/20 Training Loss: 945.8766 Validation Loss: 666.6282 Training SSIM: 0.7422 Validation SSIM: 0.7728
+[2024-10-24 22:58:47,205] INFO:root:Saved Model
+[2024-10-24 22:59:12,359] INFO:root:Epoch: 16/20 Training Loss: 1260.2073 Validation Loss: 686.1923 Training SSIM: 0.7328 Validation SSIM: 0.7639
+[2024-10-24 22:59:12,418] INFO:root:Saved Model
+[2024-10-24 23:00:17,631] INFO:root:Epoch: 16/20 Training Loss: 972.3858 Validation Loss: 668.0849 Training SSIM: 0.7411 Validation SSIM: 0.7733
+[2024-10-24 23:00:17,695] INFO:root:Saved Model
+[2024-10-24 23:01:22,784] INFO:root:Epoch: 16/20 Training Loss: 937.2122 Validation Loss: 671.9060 Training SSIM: 0.7437 Validation SSIM: 0.7742
+[2024-10-24 23:01:22,842] INFO:root:Saved Model
+[2024-10-24 23:01:48,512] INFO:root:Epoch: 17/20 Training Loss: 624.2781 Validation Loss: 674.9984 Training SSIM: 0.7467 Validation SSIM: 0.7695
+[2024-10-24 23:01:48,584] INFO:root:Saved Model
+[2024-10-24 23:02:53,981] INFO:root:Epoch: 17/20 Training Loss: 944.3279 Validation Loss: 673.2307 Training SSIM: 0.7427 Validation SSIM: 0.7715
+[2024-10-24 23:02:54,038] INFO:root:Saved Model
+[2024-10-24 23:03:59,283] INFO:root:Epoch: 17/20 Training Loss: 956.2567 Validation Loss: 668.9526 Training SSIM: 0.7436 Validation SSIM: 0.7747
+[2024-10-24 23:03:59,355] INFO:root:Saved Model
+[2024-10-24 23:04:24,735] INFO:root:Epoch: 18/20 Training Loss: 1170.0046 Validation Loss: 668.1000 Training SSIM: 0.7297 Validation SSIM: 0.7743
+[2024-10-24 23:04:24,800] INFO:root:Saved Model
+[2024-10-24 23:05:29,793] INFO:root:Epoch: 18/20 Training Loss: 953.9152 Validation Loss: 669.4030 Training SSIM: 0.7449 Validation SSIM: 0.7757
+[2024-10-24 23:05:29,854] INFO:root:Saved Model
+[2024-10-24 23:06:35,530] INFO:root:Epoch: 18/20 Training Loss: 945.6922 Validation Loss: 683.4262 Training SSIM: 0.7447 Validation SSIM: 0.7705
+[2024-10-24 23:06:35,589] INFO:root:Saved Model
+[2024-10-24 23:07:00,759] INFO:root:Epoch: 19/20 Training Loss: 799.1340 Validation Loss: 754.4156 Training SSIM: 0.7413 Validation SSIM: 0.7519
+[2024-10-24 23:07:00,821] INFO:root:Saved Model
+[2024-10-24 23:08:05,922] INFO:root:Epoch: 19/20 Training Loss: 933.1573 Validation Loss: 685.5689 Training SSIM: 0.7443 Validation SSIM: 0.7670
+[2024-10-24 23:08:05,984] INFO:root:Saved Model
+[2024-10-24 23:09:11,119] INFO:root:Epoch: 19/20 Training Loss: 949.9233 Validation Loss: 674.2280 Training SSIM: 0.7459 Validation SSIM: 0.7733
+[2024-10-24 23:09:11,180] INFO:root:Saved Model
+[2024-10-24 23:09:36,880] INFO:root:Epoch: 20/20 Training Loss: 716.3083 Validation Loss: 679.4915 Training SSIM: 0.7429 Validation SSIM: 0.7711
+[2024-10-24 23:09:36,940] INFO:root:Saved Model
+[2024-10-24 23:10:41,979] INFO:root:Epoch: 20/20 Training Loss: 947.7214 Validation Loss: 672.5836 Training SSIM: 0.7451 Validation SSIM: 0.7760
+[2024-10-24 23:10:42,036] INFO:root:Saved Model
+[2024-10-24 23:11:47,589] INFO:root:Epoch: 20/20 Training Loss: 946.7940 Validation Loss: 676.0211 Training SSIM: 0.7468 Validation SSIM: 0.7749
+[2024-10-24 23:11:47,651] INFO:root:Saved Model

@@ -1,0 +1,7 @@
+Class 0: 0.9945
+Class 1: 0.9768
+Class 2: 0.8689
+Class 3: 0.6563
+Class 4: 0.3489
+Class 5: 0.2344
+Average Dice Score: 0.6800

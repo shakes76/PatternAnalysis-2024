@@ -1,0 +1,6 @@
+__pycahce__/
+__pycache__/*
+*.pyc
+
+.idea/
+.idea/*

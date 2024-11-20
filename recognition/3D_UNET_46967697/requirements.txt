@@ -1,0 +1,6 @@
+matplotlib==3.9.2
+nibabel==5.3.1
+numpy==1.26.3
+torch==2.4.0
+torchvision==0.20.1
+tqdm==4.66.5

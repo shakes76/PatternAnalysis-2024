@@ -1,0 +1,16 @@
+#Ignore all
+*
+
+#Track only these
+!dataset.py
+!driver.py
+!modules.py
+!predict.py
+!train.py
+!utils.py
+!hyper.py
+!README.md
+!/images/**
+!/images/
+!environment.yml
+!.gitignore

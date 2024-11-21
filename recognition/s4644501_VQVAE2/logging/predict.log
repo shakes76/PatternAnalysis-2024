@@ -1,0 +1,5 @@
+[2024-10-25 10:47:23,434] INFO:root:Using Device: NVIDIA GeForce GTX 1650
+[2024-10-25 10:47:24,333] INFO:root:Model Loaded
+[2024-10-25 10:47:24,345] INFO:root:Dataloader Initiated
+[2024-10-25 10:47:43,959] INFO:root:SSIM on Test Dataset: 0.7582
+[2024-10-25 10:47:45,149] INFO:root:Saved Prediction Samples

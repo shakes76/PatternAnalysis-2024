@@ -1,0 +1,9 @@
+# ignore pycache
+__pycache__
+# ignore runner and output files
+*.run
+*.out
+# ignore data directory on local machine
+data
+# ignore directory with model files
+model*

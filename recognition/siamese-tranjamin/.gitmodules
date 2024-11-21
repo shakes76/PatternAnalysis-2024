@@ -1,0 +1,3 @@
+[submodule "recognition/siamese-tranjamin/Modules"]
+	path = recognition/siamese-tranjamin/Modules
+	url = git@github.com:tranjamin/machine-learning.git

@@ -1,0 +1,6 @@
+models
+plots
+data
+__pycache__
+slurm
+pyrightconfig.json

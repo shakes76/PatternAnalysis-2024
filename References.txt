@@ -1,0 +1,7 @@
+https://github.com/rishipython/BrainTumorSegmentationAI
+https://www.researchgate.net/figure/mproved-2D-U-Net-architecture-diagram_fig2_334064694
+https://github.com/cosmic-cortex/pytorch-UNet/tree/master/unet
+https://data.csiro.au/collection/csiro:51392v2?redirected=true
+https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
+https://www.markdowntutorial.com/
+https://chatgpt.com/share/671b3be3-6b64-8001-aa38-72224d2e0716

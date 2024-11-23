@@ -1,0 +1,13 @@
+
+/recognition/46822394_ViT_ADNC/AD_NC
+/recognition/46822394_ViT_ADNC/result
+/recognition/46822394_ViT_ADNC/checkpoints
+.DS_Store
+recognition/46822394_ViT_ADNC/predict_old.py
+recognition/46822394_ViT_ADNC/train3.py
+
+recognition/46822394_ViT_ADNC/ADNI/meta_data_with_label.json
+*.pyc
+*.pdf
+*.typ
+/recognition/46822394_ViT_ADNC/cross_validation_results_20241110_030810

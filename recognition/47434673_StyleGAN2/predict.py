@@ -1,0 +1,56 @@
+"""
+Author: Thomas Barros
+Date: October 2024
+
+Plots the loss vs iteration plots for the Discriminator and Generator as well as 
+generates images using the trained StyleGAN2 model.
+"""
+
+
+from __future__ import print_function
+#%matplotlib inline
+import os
+import torch
+import torch.nn.parallel
+import torch.utils.data
+import matplotlib.pyplot as plt
+from torchvision.utils import save_image
+
+import utils
+from config import *
+
+###################################################
+# Loss visualisation and generated images plotting
+
+def plot_loss(G_Loss, D_Loss):
+    """Plot Graphs of Discriminator and Generator Loss over iterations"""
+    # Generator loss vs iterations graph
+    plt.figure(figsize=(10,5))
+    plt.title("Generator Loss During Training")
+    plt.plot(G_Loss, label="G", color="blue")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig('gen_loss.png')
+
+    # Discriminator loss vs iterations graph
+    plt.figure(figsize=(10,5))
+    plt.title("Discriminator Loss During Training")
+    plt.plot(D_Loss, label="D", color="orange")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig('disc_loss.png')
+
+
+def generate_examples(gen, mapping_network, epoch, device):
+    """Generates images of brains using trained StyleGAN2 model"""
+    n = 10
+    for i in range(n):
+        with torch.no_grad():
+            w = utils.get_w(1, mapping_network, device)
+            noise = utils.get_noise(1, device)
+            img = gen(w, noise)
+            if not os.path.exists(f'saved_examples_{save}'): # Make a directory in which to store saved images
+                os.makedirs(f'saved_examples_{save}')
+            save_image(img*0.5+0.5, f"saved_examples_{save}/epoch{epoch}_img_{i}.png")

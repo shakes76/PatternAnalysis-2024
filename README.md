@@ -16,4 +16,4 @@ In the recognition folder, you will find many recognition problems solved includ
 * StyleGAN
 * Stable diffusion
 * transformers
-etc.
+etc

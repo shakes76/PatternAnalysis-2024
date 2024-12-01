@@ -1,0 +1,5 @@
+nc: 1 
+names: ['lesion']
+train: /content/drive/MyDrive/COMP3710_YOLO/train
+val: /content/drive/MyDrive/COMP3710_YOLO/val
+test: /content/drive/MyDrive/COMP3710_YOLO/test
